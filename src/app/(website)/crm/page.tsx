@@ -45,8 +45,8 @@ const COMPARE_ROWS: { feature: string; lumio: CellVal; hubspot: CellVal; salesfo
 const PRICING_TIERS = [
   {
     name: 'CRM Starter',
-    price: 99,
-    setup: 299,
+    price: 199,
+    setup: 499,
     highlight: false,
     tagline: 'For small teams moving off spreadsheets.',
     features: [
@@ -60,8 +60,8 @@ const PRICING_TIERS = [
   },
   {
     name: 'CRM Professional',
-    price: 149,
-    setup: 499,
+    price: 499,
+    setup: 999,
     highlight: true,
     tagline: 'For growing teams replacing HubSpot or Salesforce.',
     features: [
@@ -76,8 +76,8 @@ const PRICING_TIERS = [
   },
   {
     name: 'CRM Enterprise',
-    price: 249,
-    setup: 999,
+    price: 999,
+    setup: 1999,
     highlight: false,
     tagline: 'For complex orgs needing full control and customisation.',
     features: [
@@ -233,7 +233,7 @@ export default function CRMPage() {
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>The savings</p>
           <h2 className="text-3xl font-bold">How much will you save?</h2>
           <p className="mt-4 text-sm" style={{ color: '#6B7280' }}>
-            Based on Lumio CRM Professional (£149/mo) or Starter (£99/mo). 10 users, annual billing.
+            Based on Lumio CRM Professional (£499/mo) or Starter (£199/mo). 10 users, annual billing.
           </p>
         </div>
 
@@ -290,7 +290,7 @@ export default function CRMPage() {
             <div>
               <p className="text-sm font-semibold mb-2" style={{ color: '#A78BFA' }}>The Lumio stack — a better comparison</p>
               <p className="text-base leading-relaxed mb-1" style={{ color: '#E5E7EB' }}>
-                <strong>Lumio Growth (£599/mo) + Lumio CRM Professional (£149/mo) = £748/month total.</strong>
+                <strong>Lumio Growth (£1,199/mo) + Lumio CRM Professional (£499/mo) = £1,698/month total.</strong>
               </p>
               <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
                 This replaces HubSpot Professional at £1,139/month — which includes the CRM <em>and</em> automation, but with per-seat pricing, no data ownership, and no AI layer.
@@ -459,7 +459,7 @@ export default function CRMPage() {
           ))}
         </div>
         <p className="text-center text-sm mt-8" style={{ color: '#6B7280' }}>
-          Lumio CRM is an add-on to any Lumio plan. Already on Lumio Growth? Add CRM Professional for £149/mo.
+          Lumio CRM is an add-on to any Lumio plan. Already on Lumio Growth? Add CRM Professional for £499/mo.
         </p>
       </section>
 
