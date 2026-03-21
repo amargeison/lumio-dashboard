@@ -568,7 +568,7 @@ export default function HomePage() {
           Now live — 47+ workflows across 10 departments
         </div>
         {/* Headline */}
-        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-6" style={{ maxWidth: 920 }}>
+        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-6 text-center mx-auto" style={{ maxWidth: 920 }}>
           <span className="whitespace-nowrap">Your business, fully connected.</span><br />
           <span style={{ background: 'linear-gradient(135deg, #0D9488 0%, #6C3FC5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Stop doing it manually. Start running on Lumio.
