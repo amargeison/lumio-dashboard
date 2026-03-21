@@ -177,6 +177,9 @@ export default function ProductPage() {
             in your business
           </span>
         </h1>
+        <p className="text-base font-medium mb-6" style={{ color: '#0D9488', maxWidth: 580, margin: '0 auto' }}>
+          Your business, fully connected.
+        </p>
         <p className="text-lg leading-relaxed mb-4" style={{ color: '#9CA3AF', maxWidth: 580, margin: '0 auto' }}>
           Lumio connects your departments, automates the admin that's eating your team's time, and surfaces the insights that actually matter — without any code.
         </p>

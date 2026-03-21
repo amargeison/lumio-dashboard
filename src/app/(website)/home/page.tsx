@@ -569,9 +569,9 @@ export default function HomePage() {
         </div>
         {/* Headline */}
         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-6" style={{ maxWidth: 920 }}>
-          Stop doing it manually.<br />
+          Your business, fully connected.<br />
           <span style={{ background: 'linear-gradient(135deg, #0D9488 0%, #6C3FC5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Start running on Lumio.
+            Stop doing it manually. Start running on Lumio.
           </span>
         </h1>
         {/* Subheadline */}

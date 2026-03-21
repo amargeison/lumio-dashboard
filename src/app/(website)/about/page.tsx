@@ -110,6 +110,9 @@ export default function AboutPage() {
             for growing businesses
           </span>
         </h1>
+        <p className="text-base font-medium mb-4" style={{ color: '#0D9488', maxWidth: 640, margin: '0 auto' }}>
+          Your business, fully connected.
+        </p>
         <p className="text-lg leading-relaxed" style={{ color: '#9CA3AF', maxWidth: 640, margin: '0 auto' }}>
           Lumio was built to fix the operational chaos inside growing businesses. Today it powers teams across professional services, healthcare, recruitment, SaaS, education, and beyond.
         </p>
