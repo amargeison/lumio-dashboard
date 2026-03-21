@@ -1,0 +1,115 @@
+'use client'
+
+import { Users, Activity, Send, FileText, AlertCircle } from 'lucide-react'
+import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import { ChartSection, parseNum } from '@/components/chart-ui'
+
+const stats = [
+  { label: 'Total Customers', value: '181', trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
+  { label: 'Green RAG',       value: '142', trend: '+5',  trendDir: 'up' as const, trendGood: true,  icon: Activity,    sub: 'healthy'       },
+  { label: 'Amber RAG',       value: '31',  trend: '+2',  trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'at risk'       },
+  { label: 'Red RAG',         value: '8',   trend: '+1',  trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'critical'      },
+]
+
+const actions = [
+  { label: 'RAG Check',       icon: Activity    },
+  { label: 'Start Recovery',  icon: AlertCircle },
+  { label: 'Send Check-in',   icon: Send        },
+  { label: 'Usage Report',    icon: FileText    },
+  { label: 'Health Report',   icon: FileText    },
+]
+
+type RAG = 'green' | 'amber' | 'red'
+
+const customers: {
+  company: string; score: number; rag: RAG; reason: string; lastLogin: string
+}[] = [
+  { company: 'Greenfield Academy',    score: 92, rag: 'green', reason: 'High engagement, on track',       lastLogin: 'Today'      },
+  { company: 'Oakridge Schools Ltd',  score: 88, rag: 'green', reason: 'Renewal confirmed, NPS 9',        lastLogin: 'Today'      },
+  { company: 'Hopscotch Learning',    score: 85, rag: 'green', reason: 'Active users, no issues',         lastLogin: 'Yesterday'  },
+  { company: 'Crestview Academy',     score: 83, rag: 'green', reason: 'Training complete, using all mods',lastLogin: 'Today'     },
+  { company: 'Riverdale Education',   score: 80, rag: 'green', reason: 'Healthy usage patterns',          lastLogin: 'Today'      },
+  { company: 'Sunfield Trust',        score: 78, rag: 'green', reason: 'Good login rate, NPS 8',          lastLogin: '2d ago'     },
+  { company: 'Pinebrook Primary',     score: 74, rag: 'green', reason: 'Low support tickets',             lastLogin: '3d ago'     },
+  { company: 'Calibre Learning',      score: 71, rag: 'green', reason: 'Post-trial, settling in well',    lastLogin: 'Today'      },
+  { company: 'Apex Tutors',           score: 68, rag: 'amber', reason: 'Login rate dropped 30%',          lastLogin: '5d ago'     },
+  { company: 'Elmfield Institute',    score: 62, rag: 'amber', reason: 'Support ticket SLA breach',       lastLogin: '4d ago'     },
+  { company: 'Fernview College',      score: 58, rag: 'amber', reason: 'Only 2 of 5 modules active',     lastLogin: '1w ago'     },
+  { company: 'Torchbearer Trust',     score: 55, rag: 'amber', reason: 'No engagement last 2 weeks',      lastLogin: '2w ago'     },
+  { company: 'Lakewood Academy',      score: 51, rag: 'amber', reason: 'QBR not yet scheduled',           lastLogin: '1w ago'     },
+  { company: 'Brightfields MAT',      score: 48, rag: 'amber', reason: 'Poor onboarding completion',      lastLogin: '5d ago'     },
+  { company: 'Whitestone College',    score: 34, rag: 'red',   reason: 'No login for 30+ days',           lastLogin: '34d ago'    },
+  { company: 'Bramble Hill Trust',    score: 28, rag: 'red',   reason: 'Invoice overdue, at-risk flag',   lastLogin: '21d ago'    },
+  { company: 'Helix Education',       score: 22, rag: 'red',   reason: 'Low trial engagement, churning',  lastLogin: '18d ago'    },
+]
+
+const ragConfig = {
+  green: { border: '#22C55E', bg: 'rgba(34,197,94,0.06)',  label: 'Green', color: '#22C55E' },
+  amber: { border: '#F59E0B', bg: 'rgba(245,158,11,0.06)', label: 'Amber', color: '#F59E0B' },
+  red:   { border: '#EF4444', bg: 'rgba(239,68,68,0.06)',  label: 'Red',   color: '#EF4444' },
+}
+
+function HealthCard({ company, score, rag, reason, lastLogin }: typeof customers[number]) {
+  const cfg = ragConfig[rag]
+  return (
+    <div className="flex flex-col gap-2 rounded-lg p-4" style={{ backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold leading-tight" style={{ color: '#F9FAFB' }}>{company}</p>
+        <span className="shrink-0 text-lg font-bold" style={{ color: cfg.color }}>{score}</span>
+      </div>
+      <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{reason}</p>
+      <p className="text-xs" style={{ color: '#9CA3AF' }}>Last login: {lastLogin}</p>
+    </div>
+  )
+}
+
+const immediate = [
+  { company: 'Whitestone College', reason: 'No login 34 days',          badge: 'Red'   },
+  { company: 'Bramble Hill Trust', reason: 'Overdue invoice + at-risk',  badge: 'Red'   },
+  { company: 'Helix Education',    reason: 'Low engagement, churning',   badge: 'Red'   },
+  { company: 'Apex Tutors',        reason: 'Login rate dropped 30%',     badge: 'Amber' },
+  { company: 'Elmfield Institute', reason: 'SLA breach — contact now',   badge: 'Amber' },
+]
+
+export default function SuccessPage() {
+  const grouped = (['green', 'amber', 'red'] as RAG[]).map((rag) => ({
+    rag,
+    items: customers.filter((c) => c.rag === rag),
+  }))
+
+  return (
+    <PageShell>
+      <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((s) => <StatCard key={s.label} {...s} />)}
+        </div>
+      </ChartSection>
+
+      <QuickActions items={actions} />
+
+      <TwoCol
+        main={
+          <div className="flex flex-col gap-4">
+            {grouped.map(({ rag, items }) => {
+              const cfg = ragConfig[rag]
+              return (
+                <SectionCard key={rag} title={`${cfg.label} — ${items.length} customers`}>
+                  <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+                    {items.map((c) => <HealthCard key={c.company} {...c} />)}
+                  </div>
+                </SectionCard>
+              )
+            })}
+          </div>
+        }
+        side={
+          <SectionCard title="Immediate Action Required">
+            {immediate.map((i) => (
+              <PanelItem key={i.company} title={i.company} sub={i.reason} badge={i.badge} />
+            ))}
+          </SectionCard>
+        }
+      />
+    </PageShell>
+  )
+}
