@@ -1,0 +1,14 @@
+{
+  "name": "Lumio — Business OS",
+  "short_name": "Lumio",
+  "description": "Your business, fully connected.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080F",
+  "theme_color": "#0D9488",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/lumio-instagram-post-square.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/lumio-instagram-post-square.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

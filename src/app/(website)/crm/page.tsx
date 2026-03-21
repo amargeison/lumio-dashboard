@@ -104,7 +104,6 @@ function CompareCell({ val, lumio = false }: { val: CellVal; lumio?: boolean }) 
       </div>
     )
   }
-  if (val === false) return <div className="flex justify-center"><X size={15} style={{ color: '#374151' }} /></div>
   return <span style={{ color: lumio ? '#0D9488' : '#9CA3AF', fontWeight: lumio ? 500 : 400 }}>{val}</span>
 }
 

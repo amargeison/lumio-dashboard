@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Bell } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 
 const pageTitles: Record<string, string> = {
   '/':          'Overview',
@@ -17,22 +17,50 @@ const pageTitles: Record<string, string> = {
   '/settings':  'Settings',
 }
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick: () => void
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname()
   const title = pageTitles[pathname] ?? 'Lumio'
 
   return (
     <header
-      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between px-6"
+      className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between px-4 md:px-6"
       style={{
-        left: '200px',
+        left: 0,
         backgroundColor: '#07080F',
         borderBottom: '1px solid #1F2937',
       }}
     >
-      <h1 className="text-base font-semibold" style={{ color: '#F9FAFB' }}>
-        {title}
-      </h1>
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          className="flex items-center justify-center rounded-lg p-2 transition-colors md:hidden"
+          style={{ color: '#9CA3AF' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#111318'
+            e.currentTarget.style.color = '#F9FAFB'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#9CA3AF'
+          }}
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu size={20} strokeWidth={1.75} />
+        </button>
+
+        {/* On desktop offset for sidebar width */}
+        <h1
+          className="text-base font-semibold md:pl-[200px]"
+          style={{ color: '#F9FAFB' }}
+        >
+          {title}
+        </h1>
+      </div>
 
       <div className="flex items-center gap-4">
         {/* Notification bell */}
