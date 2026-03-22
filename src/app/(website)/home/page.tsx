@@ -463,7 +463,7 @@ const PRICING_TIERS = [
 ]
 
 const STATS = [
-  { value: '47+',  label: 'Pre-built workflows' },
+  { value: '150',  label: 'Pre-built workflows' },
   { value: '40+',  label: 'Integrations' },
   { value: '90s',  label: 'Avg. workflow run time' },
   { value: '30%',  label: 'Reduction in debtor days' },
@@ -565,7 +565,7 @@ export default function HomePage() {
         <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-8"
           style={{ backgroundColor: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.3)', color: '#0D9488' }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488', display: 'inline-block' }} />
-          Now live — 47+ workflows across 10 departments
+          Now live — 150 workflows across 14 departments
         </div>
         {/* Headline */}
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-6 text-center mx-auto" style={{ maxWidth: 920 }}>
@@ -580,7 +580,7 @@ export default function HomePage() {
         </p>
         {/* Proof points */}
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mb-10">
-          {['47+ pre-built workflows', '10 departments covered', 'Setup in days, not months'].map(p => (
+          {['150 pre-built workflows', '14 departments covered', 'Setup in days, not months'].map(p => (
             <div key={p} className="flex items-center gap-2">
               <Check size={14} style={{ color: '#0D9488', flexShrink: 0 }} />
               <span className="text-sm font-medium" style={{ color: '#9CA3AF' }}>{p}</span>
@@ -904,11 +904,11 @@ export default function HomePage() {
           <div className="mt-12 rounded-2xl px-10 py-12 text-center"
             style={{ background: 'linear-gradient(135deg, #3B0764 0%, #0C4A6E 50%, #042F2E 100%)', border: '1px solid rgba(108,63,197,0.4)' }}>
             <p className="text-2xl md:text-4xl font-black mb-3 leading-tight" style={{ color: '#F9FAFB' }}>
-              47+ workflows. Every department.<br />
+              150 workflows. 14 departments.<br />
               <span style={{ color: '#5EEAD4' }}>Running automatically from day one.</span>
             </p>
             <p className="text-sm mb-8" style={{ color: '#94A3B8' }}>
-              HR · Sales · Marketing · IT · Trials · Operations · Support · Success · Accounts
+              HR · Sales · Support · Trials · Finance · Customer Success · Marketing · IT · Operations · Legal · Executive · Procurement · Analytics · Projects
             </p>
             <Link href="/product"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
@@ -999,37 +999,69 @@ export default function HomePage() {
         <div className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Workflow Library</p>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            47+ workflows.{' '}
+            150 workflows. 14 departments.{' '}
             <span style={{ background: 'linear-gradient(135deg, #0D9488, #6C3FC5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Ready on day one.
+              Every part of your business, automated.
             </span>
           </h2>
-          <p className="text-base leading-relaxed" style={{ color: '#6B7280', maxWidth: 560, margin: '0 auto' }}>
-            Every workflow is pre-built, pre-tested, and ready to activate. No coding. No configuration. No consultants.
+          <p className="text-base leading-relaxed" style={{ color: '#6B7280', maxWidth: 620, margin: '0 auto' }}>
+            From the moment someone applies for a job to the moment a customer renews — Lumio has a workflow for it. Built by experts, activated in minutes, running forever.
           </p>
         </div>
 
         {/* Breakdown grid */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 mb-14">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7 mb-14">
           {[
-            { dept: 'HR & People',       count: 3,  color: '#0D9488' },
-            { dept: 'Sales & CRM',       count: 6,  color: '#6C3FC5' },
-            { dept: 'Support',           count: 5,  color: '#3B82F6' },
-            { dept: 'Customer Success',  count: 4,  color: '#EC4899' },
-            { dept: 'Accounts',          count: 5,  color: '#F59E0B' },
-            { dept: 'IT & Systems',      count: 4,  color: '#22C55E' },
-            { dept: 'Marketing',         count: 5,  color: '#F97316' },
-            { dept: 'Trials',            count: 4,  color: '#6C3FC5' },
-            { dept: 'Operations',        count: 4,  color: '#0D9488' },
-            { dept: 'AI Bots',           count: 7,  color: '#A78BFA' },
+            { emoji: '👥', dept: 'HR & People',            count: 15, color: '#0D9488' },
+            { emoji: '🤝', dept: 'Sales & CRM',            count: 15, color: '#6C3FC5' },
+            { emoji: '🎧', dept: 'Customer Support',       count: 12, color: '#3B82F6' },
+            { emoji: '🧪', dept: 'Trial & Onboarding',     count: 8,  color: '#6C3FC5' },
+            { emoji: '💰', dept: 'Accounts & Finance',     count: 15, color: '#F59E0B' },
+            { emoji: '🌟', dept: 'Customer Success',       count: 12, color: '#EC4899' },
+            { emoji: '📢', dept: 'Marketing',              count: 15, color: '#F97316' },
+            { emoji: '🔒', dept: 'IT & Security',          count: 12, color: '#22C55E' },
+            { emoji: '⚙️', dept: 'Operations',             count: 10, color: '#0D9488' },
+            { emoji: '⚖️', dept: 'Legal & Compliance',    count: 8,  color: '#A78BFA' },
+            { emoji: '🎯', dept: 'Executive & Reporting',  count: 8,  color: '#6C3FC5' },
+            { emoji: '🛒', dept: 'Procurement & Vendor',   count: 7,  color: '#F59E0B' },
+            { emoji: '📊', dept: 'Analytics & Data',       count: 7,  color: '#0D9488' },
+            { emoji: '📋', dept: 'Project Management',     count: 6,  color: '#3B82F6' },
           ].map(d => (
             <div key={d.dept} className="rounded-xl p-4 flex flex-col items-center text-center"
               style={{ backgroundColor: '#0D0E16', border: `1px solid ${d.color}33` }}>
-              <div className="text-3xl font-black mb-1" style={{ color: d.color }}>{d.count}</div>
-              <div className="text-xs font-medium leading-snug" style={{ color: '#9CA3AF' }}>{d.dept}</div>
-              <div className="text-xs mt-0.5" style={{ color: '#4B5563' }}>workflow{d.count > 1 ? 's' : ''}</div>
+              <div className="text-2xl mb-1">{d.emoji}</div>
+              <div className="text-xs font-medium leading-snug mb-1" style={{ color: '#D1D5DB' }}>{d.dept}</div>
+              <div className="text-xs font-bold" style={{ color: d.color }}>{d.count} workflows</div>
             </div>
           ))}
+        </div>
+
+        {/* Featured workflow callouts */}
+        <div className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-5 text-center" style={{ color: '#4B5563' }}>Featured workflows</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { name: 'HR-01 New Joiner Onboarding',    outcome: 'New employees arrive on Day 1 with everything ready. Zero IT tickets, zero emails to chase.' },
+              { name: 'SA-03 Proposal Generation',       outcome: 'Boardroom-quality proposals in 90 seconds.' },
+              { name: 'AC-08 VAT Return Preparation',    outcome: 'VAT returns compiled and filed automatically. No scramble at quarter end.' },
+              { name: 'TR-03 Trial Usage Monitoring',    outcome: 'Sales knows which trials are hot before they go cold.' },
+              { name: 'MK-04 SEO Content Engine',        outcome: 'Content pipeline running on autopilot.' },
+              { name: 'EX-01 CEO Daily Briefing',        outcome: 'CEO starts every day informed in 2 minutes.' },
+            ].map(wf => (
+              <div key={wf.name} className="rounded-xl px-5 py-4"
+                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: '#E5E7EB' }}>{wf.name}</p>
+                <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>{wf.outcome}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link href="/product#workflows"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium"
+              style={{ border: '1px solid rgba(13,148,136,0.4)', color: '#0D9488' }}>
+              See all 150 workflows <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
 
         {/* Bottom copy row */}

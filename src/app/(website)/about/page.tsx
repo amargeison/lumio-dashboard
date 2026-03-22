@@ -55,7 +55,7 @@ const TIMELINE = [
   {
     year: '2025',
     title: 'Platform opens to all sectors',
-    detail: '47+ workflows live. AI-powered steps powered by Claude added to the platform. Growth and Enterprise plans launched. Now serving growing businesses of 10–500 people across professional services, recruitment, healthcare, SaaS, and beyond — across the UK and internationally.',
+    detail: '150 workflows live across 14 departments. AI-powered steps powered by Claude added to the platform. Growth and Enterprise plans launched. Now serving growing businesses of 10–500 people across professional services, recruitment, healthcare, SaaS, and beyond — across the UK and internationally.',
   },
 ]
 

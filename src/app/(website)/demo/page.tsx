@@ -31,7 +31,7 @@ const WHAT_YOU_LL_SEE = [
   { emoji: '📊', text: 'The unified department dashboard — real data, not mockups' },
   { emoji: '🔌', text: 'How integrations connect in a few clicks, no developer needed' },
   { emoji: '🚨', text: 'RAG health scoring and churn alerts in action' },
-  { emoji: '📋', text: 'The workflow library — 47+ ready to activate' },
+  { emoji: '📋', text: 'The workflow library — 150 ready to activate' },
 ]
 
 const TESTIMONIAL_STYLE_QUOTES = [

@@ -15,7 +15,7 @@ const TIERS = [
     badge: null,
     features: [
       { text: 'Up to 3 departments', included: true },
-      { text: '10 active workflows', included: true },
+      { text: '20 active workflows', included: true },
       { text: '5 integrations', included: true },
       { text: 'Read-only dashboard', included: true },
       { text: '2,000 workflow runs/mo', included: true },
@@ -35,8 +35,8 @@ const TIERS = [
     highlight: true,
     badge: 'Most popular',
     features: [
-      { text: 'All departments', included: true },
-      { text: 'Unlimited active workflows', included: true },
+      { text: '6 departments', included: true },
+      { text: '35 active workflows', included: true },
       { text: '40+ integrations', included: true },
       { text: 'Read-only dashboard', included: true },
       { text: 'Dashboard Pro add-on (£199/mo)', included: true },
@@ -57,7 +57,7 @@ const TIERS = [
     highlight: false,
     badge: null,
     features: [
-      { text: 'Everything in Growth', included: true },
+      { text: 'All 150 workflows, all 14 departments', included: true },
       { text: 'Full interactive dashboard (included)', included: true },
       { text: 'Multi-organisation view', included: true },
       { text: 'Unlimited workflow runs', included: true },
@@ -76,8 +76,8 @@ const TIERS = [
 
 const COMPARE = [
   { section: 'Platform' },
-  { feature: 'Departments',                  starter: '3',           growth: 'All',           enterprise: 'All + multi-org' },
-  { feature: 'Active workflows',             starter: '10',          growth: 'Unlimited',      enterprise: 'Unlimited' },
+  { feature: 'Departments',                  starter: '3',           growth: '6',             enterprise: 'All 14 + multi-org' },
+  { feature: 'Active workflows',             starter: '20',          growth: '35',             enterprise: 'All 150' },
   { feature: 'Workflow runs/month',          starter: '2,000',       growth: '25,000',         enterprise: 'Unlimited' },
   { feature: 'Integrations',                starter: '5',           growth: '40+',            enterprise: '40+ + custom' },
   { feature: 'Dashboard',                   starter: 'Read-only',   growth: 'Read-only + Pro add-on (£199/mo)', enterprise: 'Full interactive (included)' },

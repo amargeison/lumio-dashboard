@@ -24,7 +24,7 @@ const FEATURES_INCLUDED = [
   'Email sync — Gmail and Outlook — all emails logged automatically',
   'Full REST API and GraphQL API — Lumio connects natively',
   'Webhooks — real-time triggers on deals, contacts, pipeline stage changes',
-  'All 47 Lumio automation workflows connected natively from day one',
+  'All 150 Lumio automation workflows connected natively from day one',
   'Self-hosted — your data on your server — Lumio manages infrastructure',
 ]
 
@@ -69,7 +69,7 @@ const PRICING_TIERS = [
       'Unlimited contacts',
       '10 custom objects',
       'Gmail + Outlook + shared inbox',
-      'All 47 Lumio workflows connected',
+      'All 150 Lumio workflows connected',
       'Assisted migration included',
       'Priority support — 24h SLA',
     ],

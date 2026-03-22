@@ -141,7 +141,7 @@ const HOW_IT_WORKS = [
   {
     step: '02',
     title: 'Pick your workflows',
-    desc: 'Browse 47+ pre-built SMB workflows or build your own in the drag-and-drop editor. Each one shows exactly what it does before you activate it.',
+    desc: 'Browse 150 pre-built workflows across 14 departments or build your own in the drag-and-drop editor. Each one shows exactly what it does before you activate it.',
   },
   {
     step: '03',
@@ -577,36 +577,233 @@ export default function ProductPage() {
       </section>
 
       {/* Workflow Library */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Workflow Library</p>
-            <h2 className="text-3xl font-bold mb-5">47+ workflows, ready to run</h2>
-            <p className="text-base leading-relaxed mb-6" style={{ color: '#6B7280' }}>
-              Every workflow is pre-built for growing businesses. Pick one, connect your tools, and it's live. No developer. No Zapier expert. No waiting.
-            </p>
-            <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>
-              Or build your own in the visual editor. Workflows are version-controlled, testable in staging, and fully audited in production.
-            </p>
-          </div>
-          <div className="rounded-xl p-7" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: '#4B5563' }}>Sample from the library</p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                'New hire onboarding', 'Deal Won → invoice', 'Invoice chasing', 'Lead scoring',
-                'SLA escalation', 'Proposal generation', 'RAG health score', 'QBR prep',
-                'MQL handoff', 'Offboarding', 'Equipment order', 'Event follow-up',
-                'Renewal alert', 'Lost deal re-engage', 'CSAT survey', 'Weekly report',
-              ].map(wf => (
-                <div key={wf} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"
-                  style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#0D9488', flexShrink: 0, display: 'inline-block' }} />
-                  {wf}
+      <section id="workflows" className="mx-auto max-w-7xl px-6 py-24">
+
+        {/* Hero stat block */}
+        <div className="text-center mb-16">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Workflow Library</p>
+          <h2 className="text-3xl md:text-5xl font-bold mb-5">
+            150 workflows. 14 departments.<br />
+            <span style={{ background: 'linear-gradient(135deg, #0D9488, #6C3FC5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Every part of your business, automated.
+            </span>
+          </h2>
+          <p className="text-base leading-relaxed mb-10" style={{ color: '#6B7280', maxWidth: 620, margin: '0 auto 40px' }}>
+            From the moment someone applies for a job to the moment a customer renews — Lumio has a workflow for it. Built by experts, activated in minutes, running forever.
+          </p>
+          <div className="inline-grid grid-cols-3 gap-px rounded-xl overflow-hidden"
+            style={{ border: '1px solid rgba(13,148,136,0.3)', backgroundColor: 'rgba(13,148,136,0.15)' }}>
+            {[
+              { value: '150', label: 'Workflows' },
+              { value: '14',  label: 'Departments' },
+              { value: '3',   label: 'Pricing tiers' },
+            ].map(s => (
+              <div key={s.label} className="px-10 py-6 text-center" style={{ backgroundColor: '#0D0E16' }}>
+                <div className="text-4xl font-black mb-1"
+                  style={{ background: 'linear-gradient(135deg, #0D9488, #6C3FC5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  {s.value}
                 </div>
+                <div className="text-xs font-medium" style={{ color: '#6B7280' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Every department covered */}
+        <div className="mb-16">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-6 text-center" style={{ color: '#4B5563' }}>Every department covered</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+            {[
+              { emoji: '👥', name: 'HR & People',           count: 15, color: '#0D9488' },
+              { emoji: '🤝', name: 'Sales & CRM',           count: 15, color: '#6C3FC5' },
+              { emoji: '🎧', name: 'Customer Support',      count: 12, color: '#3B82F6' },
+              { emoji: '🧪', name: 'Trial & Onboarding',    count: 8,  color: '#6C3FC5' },
+              { emoji: '💰', name: 'Accounts & Finance',    count: 15, color: '#F59E0B' },
+              { emoji: '🌟', name: 'Customer Success',      count: 12, color: '#EC4899' },
+              { emoji: '📢', name: 'Marketing',             count: 15, color: '#F97316' },
+              { emoji: '🔒', name: 'IT & Security',         count: 12, color: '#22C55E' },
+              { emoji: '⚙️', name: 'Operations',            count: 10, color: '#0D9488' },
+              { emoji: '⚖️', name: 'Legal & Compliance',   count: 8,  color: '#A78BFA' },
+              { emoji: '🎯', name: 'Executive & Reporting', count: 8,  color: '#6C3FC5' },
+              { emoji: '🛒', name: 'Procurement & Vendor',  count: 7,  color: '#F59E0B' },
+              { emoji: '📊', name: 'Analytics & Data',      count: 7,  color: '#0D9488' },
+              { emoji: '📋', name: 'Project Management',    count: 6,  color: '#3B82F6' },
+            ].map(d => (
+              <div key={d.name} className="rounded-xl p-4 flex flex-col items-center text-center"
+                style={{ backgroundColor: '#0D0E16', border: `1px solid ${d.color}33` }}>
+                <div className="text-2xl mb-1.5">{d.emoji}</div>
+                <div className="text-xs font-semibold leading-snug mb-1" style={{ color: '#D1D5DB' }}>{d.name}</div>
+                <div className="text-xs font-bold" style={{ color: d.color }}>{d.count} workflows</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Featured workflow showcase */}
+        <div className="mb-16">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-6 text-center" style={{ color: '#4B5563' }}>Featured workflows</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { name: 'HR-01 New Joiner Onboarding',    outcome: 'New employees arrive on Day 1 with everything ready. Zero IT tickets, zero emails to chase.' },
+              { name: 'SA-02 Lead Qualification',        outcome: 'Every lead scored and routed in seconds. Sales team focuses only on the right people.' },
+              { name: 'SA-03 Proposal Generation',       outcome: 'Boardroom-quality proposals in 90 seconds.' },
+              { name: 'AC-01 Invoice Generation',        outcome: 'Every invoice generated, sent, and tracked automatically.' },
+              { name: 'AC-10 Cash Flow Forecasting',     outcome: 'Cash position always visible 13 weeks ahead.' },
+              { name: 'SU-01 Ticket Intake & Triage',    outcome: 'Every support request captured, categorised, and routed instantly.' },
+              { name: 'LG-07 Companies House Filing',    outcome: 'Always compliant. No fines for missed filings.' },
+              { name: 'EX-01 CEO Daily Briefing',        outcome: 'CEO starts every day informed in 2 minutes.' },
+              { name: 'OP-10 Company OKR Tracker',       outcome: 'OKRs tracked in real time from live data. No spreadsheets.' },
+            ].map(wf => (
+              <div key={wf.name} className="rounded-xl px-5 py-4"
+                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <GitBranch size={12} style={{ color: '#0D9488', flexShrink: 0 }} />
+                  <p className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>{wf.name}</p>
+                </div>
+                <p className="text-xs leading-relaxed pl-5" style={{ color: '#6B7280' }}>{wf.outcome}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Complexity / credibility — scary workflow diagram */}
+        <div className="rounded-2xl overflow-hidden mb-8" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }}>
+          <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-2">
+              <Zap size={13} style={{ color: '#0D9488' }} />
+              <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>Lumio Workflow Engine — production build</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {['#EF4444', '#F59E0B', '#22C55E'].map(c => (
+                <span key={c} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: c, display: 'inline-block' }} />
               ))}
             </div>
-            <p className="text-xs mt-4" style={{ color: '#4B5563' }}>+ 31 more in the full library</p>
           </div>
+          <div className="relative overflow-hidden" style={{ height: 340 }}>
+            <svg viewBox="0 0 900 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                  <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                <filter id="glow2">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                  <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#0D9488" opacity="0.6" />
+                </marker>
+                <marker id="arrow2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#6C3FC5" opacity="0.6" />
+                </marker>
+                <marker id="arrow3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#F59E0B" opacity="0.5" />
+                </marker>
+              </defs>
+              {/* Connector lines */}
+              <line x1="140" y1="60" x2="220" y2="60" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              <line x1="340" y1="60" x2="420" y2="60" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              <line x1="540" y1="60" x2="620" y2="60" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              <line x1="740" y1="60" x2="820" y2="60" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              {/* Branch down from node 3 */}
+              <line x1="480" y1="80" x2="480" y2="140" stroke="#6C3FC5" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow2)" />
+              <line x1="480" y1="80" x2="330" y2="140" stroke="#6C3FC5" strokeWidth="1.5" opacity="0.4" strokeDasharray="4,3" markerEnd="url(#arrow2)" />
+              {/* Middle row connectors */}
+              <line x1="220" y1="170" x2="300" y2="170" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              <line x1="420" y1="170" x2="500" y2="170" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              <line x1="620" y1="170" x2="700" y2="170" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrow)" />
+              {/* Branch from middle row down */}
+              <line x1="360" y1="190" x2="360" y2="250" stroke="#F59E0B" strokeWidth="1.5" opacity="0.4" markerEnd="url(#arrow3)" />
+              <line x1="560" y1="190" x2="560" y2="250" stroke="#F59E0B" strokeWidth="1.5" opacity="0.4" strokeDasharray="4,3" markerEnd="url(#arrow3)" />
+              <line x1="760" y1="190" x2="760" y2="250" stroke="#F59E0B" strokeWidth="1.5" opacity="0.4" markerEnd="url(#arrow3)" />
+              {/* Bottom row connector */}
+              <line x1="430" y1="275" x2="510" y2="275" stroke="#0D9488" strokeWidth="1.5" opacity="0.4" markerEnd="url(#arrow)" />
+              <line x1="210" y1="275" x2="290" y2="275" stroke="#6C3FC5" strokeWidth="1.5" opacity="0.4" markerEnd="url(#arrow2)" />
+
+              {/* Top row nodes */}
+              {[
+                { x: 30,  y: 40, label: 'Webhook', sub: 'Receiver',    c: '#0D9488' },
+                { x: 230, y: 40, label: 'Data',    sub: 'Normaliser',  c: '#0D9488' },
+                { x: 430, y: 40, label: 'Conditional', sub: 'Branch A/B', c: '#6C3FC5' },
+                { x: 630, y: 40, label: 'Enrichment', sub: 'Layer',    c: '#0D9488' },
+                { x: 820, y: 40, label: 'Queue',   sub: 'Manager',     c: '#3B82F6' },
+              ].map(n => (
+                <g key={n.label + n.sub} filter="url(#glow2)">
+                  <rect x={n.x} y={n.y} width={110} height={40} rx={6}
+                    fill="#0D0E16" stroke={n.c} strokeWidth="1" opacity="0.9" />
+                  <text x={n.x + 55} y={n.y + 15} textAnchor="middle" fill={n.c} fontSize="9" fontWeight="600" fontFamily="monospace">{n.label}</text>
+                  <text x={n.x + 55} y={n.y + 28} textAnchor="middle" fill="#6B7280" fontSize="8" fontFamily="monospace">{n.sub}</text>
+                </g>
+              ))}
+
+              {/* Middle row nodes */}
+              {[
+                { x: 110, y: 150, label: 'Retry',  sub: 'Handler',     c: '#F59E0B' },
+                { x: 310, y: 150, label: 'Multi-step', sub: 'Validator', c: '#6C3FC5' },
+                { x: 510, y: 150, label: 'Output',  sub: 'Formatter',   c: '#0D9488' },
+                { x: 710, y: 150, label: 'Error',   sub: 'Logger',      c: '#EF4444' },
+              ].map(n => (
+                <g key={n.label + n.sub} filter="url(#glow2)">
+                  <rect x={n.x} y={n.y} width={110} height={40} rx={6}
+                    fill="#0D0E16" stroke={n.c} strokeWidth="1" opacity="0.9" />
+                  <text x={n.x + 55} y={n.y + 15} textAnchor="middle" fill={n.c} fontSize="9" fontWeight="600" fontFamily="monospace">{n.label}</text>
+                  <text x={n.x + 55} y={n.y + 28} textAnchor="middle" fill="#6B7280" fontSize="8" fontFamily="monospace">{n.sub}</text>
+                </g>
+              ))}
+
+              {/* Bottom row nodes */}
+              {[
+                { x: 100, y: 255, label: 'Notification', sub: 'Dispatcher', c: '#0D9488' },
+                { x: 300, y: 255, label: 'Audit',  sub: 'Trail',       c: '#6C3FC5' },
+                { x: 510, y: 255, label: 'Rate',   sub: 'Limiter',     c: '#F59E0B' },
+                { x: 650, y: 255, label: 'Dead',   sub: 'Letter Queue', c: '#EF4444' },
+                { x: 800, y: 255, label: 'Success', sub: 'Callback',   c: '#22C55E' },
+              ].map(n => (
+                <g key={n.label + n.sub} filter="url(#glow2)">
+                  <rect x={n.x} y={n.y} width={110} height={40} rx={6}
+                    fill="#0D0E16" stroke={n.c} strokeWidth="1" opacity="0.9" />
+                  <text x={n.x + 55} y={n.y + 15} textAnchor="middle" fill={n.c} fontSize="9" fontWeight="600" fontFamily="monospace">{n.label}</text>
+                  <text x={n.x + 55} y={n.y + 28} textAnchor="middle" fill="#6B7280" fontSize="8" fontFamily="monospace">{n.sub}</text>
+                </g>
+              ))}
+
+              {/* Pulse dots on lines */}
+              <circle cx="180" cy="60" r="3" fill="#0D9488" opacity="0.8" filter="url(#glow)">
+                <animate attributeName="cx" values="140;340" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="480" cy="110" r="3" fill="#6C3FC5" opacity="0.8" filter="url(#glow)">
+                <animate attributeName="cy" values="80;140" dur="1.8s" repeatCount="indefinite" begin="0.5s" />
+                <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" begin="0.5s" />
+              </circle>
+              <circle cx="560" cy="220" r="3" fill="#F59E0B" opacity="0.7" filter="url(#glow)">
+                <animate attributeName="cy" values="190;250" dur="2.2s" repeatCount="indefinite" begin="1s" />
+                <animate attributeName="opacity" values="0;1;0" dur="2.2s" repeatCount="indefinite" begin="1s" />
+              </circle>
+            </svg>
+          </div>
+          <div className="px-6 py-4" style={{ borderTop: '1px solid #1F2937' }}>
+            <p className="text-xs leading-relaxed text-center" style={{ color: '#4B5563' }}>
+              Every Lumio workflow is engineered to handle real-world complexity — edge cases, failures, retries, and branching logic included. This isn&apos;t a Zapier zap. This is production-grade automation.
+            </p>
+          </div>
+        </div>
+
+        {/* How it works callout */}
+        <div className="rounded-xl p-7 mb-10" style={{ backgroundColor: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <p className="text-sm font-semibold mb-2" style={{ color: '#0D9488' }}>How it works</p>
+          <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+            Each workflow is engineered, tested, and maintained for you. Activate in your dashboard. That&apos;s it.
+          </p>
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <Link href="/demo"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            See all 150 workflows in a demo <ArrowRight size={15} />
+          </Link>
         </div>
       </section>
 
