@@ -1,0 +1,108 @@
+{
+  "name": "HR — Offboarding Checklist",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "offboarding-checklist",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@yourdomain.com",
+        "toEmail": "hr@yourdomain.com",
+        "subject": "=Offboarding Checklist — {{ $json.body.employeeName }} ({{ $json.body.lastWorkingDay }})",
+        "emailFormat": "html",
+        "message": "=<h2>Offboarding Checklist</h2><p>Offboarding has been initiated for <strong>{{ $json.body.employeeName }}</strong>.</p><ul><li><strong>Role:</strong> {{ $json.body.jobTitle }} — {{ $json.body.department }}</li><li><strong>Last Working Day:</strong> {{ $json.body.lastWorkingDay }}</li><li><strong>Reason:</strong> {{ $json.body.reason }}</li><li><strong>Exit Interview Required:</strong> {{ $json.body.exitInterview ? 'Yes' : 'No' }}</li><li><strong>Handover To:</strong> {{ $json.body.handoverTo || 'Not assigned' }}</li></ul><h3>Equipment to Collect</h3><p>{{ $json.body.equipmentReturn ? $json.body.equipmentReturn.join(', ') : 'None' }}</p><h3>Systems Access to Revoke</h3><p>{{ $json.body.systemsRevoke ? $json.body.systemsRevoke.join(', ') : 'None' }}</p><p>Please ensure all checklist items are completed before the last working day.</p>",
+        "options": {}
+      },
+      "id": "send-email-hr",
+      "name": "Email HR Team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SUPABASE_PROJECT_REF }}.supabase.co/rest/v1/hr_offboardings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "employee_name",    "value": "={{ $json.body.employeeName }}" },
+            { "name": "job_title",        "value": "={{ $json.body.jobTitle }}" },
+            { "name": "department",       "value": "={{ $json.body.department }}" },
+            { "name": "last_working_day", "value": "={{ $json.body.lastWorkingDay }}" },
+            { "name": "reason",           "value": "={{ $json.body.reason }}" },
+            { "name": "exit_interview",   "value": "={{ $json.body.exitInterview }}" },
+            { "name": "handover_to",      "value": "={{ $json.body.handoverTo }}" },
+            { "name": "status",           "value": "In Progress" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Supabase — Insert Offboarding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 340]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "value": "{{ $env.SLACK_HR_CHANNEL_ID }}", "mode": "id" },
+        "text": "=:wave: *Offboarding initiated*\n*Employee:* {{ $json.body.employeeName }}\n*Role:* {{ $json.body.jobTitle }} — {{ $json.body.department }}\n*Last day:* {{ $json.body.lastWorkingDay }}\n*Reason:* {{ $json.body.reason }}\n*Handover to:* {{ $json.body.handoverTo || 'Not assigned' }}\nPlease complete the offboarding checklist.",
+        "otherOptions": {}
+      },
+      "id": "slack-notify",
+      "name": "Slack — #hr-team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"success\", \"message\": \"Offboarding checklist triggered\" }",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 340]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          { "node": "Email HR Team",                 "type": "main", "index": 0 },
+          { "node": "Supabase — Insert Offboarding", "type": "main", "index": 0 },
+          { "node": "Slack — #hr-team",              "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Insert Offboarding": {
+      "main": [[ { "node": "Respond to Webhook", "type": "main", "index": 0 } ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HR" }, { "name": "Offboarding" }]
+}

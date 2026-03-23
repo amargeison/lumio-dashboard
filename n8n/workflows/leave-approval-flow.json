@@ -1,0 +1,108 @@
+{
+  "name": "HR — Leave Approval Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leave-approval",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@yourdomain.com",
+        "toEmail": "hr@yourdomain.com",
+        "subject": "=Leave Request — {{ $json.body.employeeName }} ({{ $json.body.leaveType }}, {{ $json.body.totalDays }} day(s))",
+        "emailFormat": "html",
+        "message": "=<h2>Leave Request Submitted</h2><p>A leave request has been submitted for <strong>{{ $json.body.employeeName }}</strong>.</p><ul><li><strong>Leave Type:</strong> {{ $json.body.leaveType }}</li><li><strong>From:</strong> {{ $json.body.startDate }}</li><li><strong>To:</strong> {{ $json.body.endDate }}</li><li><strong>Total Working Days:</strong> {{ $json.body.totalDays }}</li><li><strong>Covering Colleague:</strong> {{ $json.body.coveringColleague || 'Not specified' }}</li></ul>{{ $json.body.notes ? '<h3>Notes</h3><p>' + $json.body.notes + '</p>' : '' }}<p>Please review and approve or decline this request in the HR system.</p>",
+        "options": {}
+      },
+      "id": "send-email-hr",
+      "name": "Email HR for Approval",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SUPABASE_PROJECT_REF }}.supabase.co/rest/v1/hr_leave_requests",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "employee_name",      "value": "={{ $json.body.employeeName }}" },
+            { "name": "leave_type",         "value": "={{ $json.body.leaveType }}" },
+            { "name": "start_date",         "value": "={{ $json.body.startDate }}" },
+            { "name": "end_date",           "value": "={{ $json.body.endDate }}" },
+            { "name": "total_days",         "value": "={{ $json.body.totalDays }}" },
+            { "name": "covering_colleague", "value": "={{ $json.body.coveringColleague }}" },
+            { "name": "notes",              "value": "={{ $json.body.notes }}" },
+            { "name": "status",             "value": "Pending" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Supabase — Insert Leave Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 340]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "value": "{{ $env.SLACK_HR_CHANNEL_ID }}", "mode": "id" },
+        "text": "=:calendar: *Leave request submitted*\n*Employee:* {{ $json.body.employeeName }}\n*Type:* {{ $json.body.leaveType }}\n*Dates:* {{ $json.body.startDate }} → {{ $json.body.endDate }} ({{ $json.body.totalDays }} day(s))\n*Cover:* {{ $json.body.coveringColleague || 'Not specified' }}\nPlease review and approve in the HR dashboard.",
+        "otherOptions": {}
+      },
+      "id": "slack-notify",
+      "name": "Slack — #hr-team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"success\", \"message\": \"Leave request submitted for approval\" }",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 340]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          { "node": "Email HR for Approval",           "type": "main", "index": 0 },
+          { "node": "Supabase — Insert Leave Request", "type": "main", "index": 0 },
+          { "node": "Slack — #hr-team",                "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Insert Leave Request": {
+      "main": [[ { "node": "Respond to Webhook", "type": "main", "index": 0 } ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HR" }, { "name": "Leave" }]
+}

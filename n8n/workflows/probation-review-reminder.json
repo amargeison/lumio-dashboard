@@ -1,0 +1,111 @@
+{
+  "name": "HR — Probation Review Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "probation-review",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@yourdomain.com",
+        "toEmail": "={{ $json.body.manager || 'hr@yourdomain.com' }}",
+        "subject": "=Probation Review Due — {{ $json.body.employeeName }} ({{ $json.body.dueDate }})",
+        "emailFormat": "html",
+        "message": "=<h2>Probation Review Reminder</h2><p>A probation review is due for <strong>{{ $json.body.employeeName }}</strong>.</p><ul><li><strong>Job Title:</strong> {{ $json.body.jobTitle }}</li><li><strong>Department:</strong> {{ $json.body.department }}</li><li><strong>Review Type:</strong> {{ $json.body.reviewType }}</li><li><strong>Review Period:</strong> {{ $json.body.reviewPeriod }}</li><li><strong>Due Date:</strong> {{ $json.body.dueDate }}</li><li><strong>Self Assessment:</strong> {{ $json.body.selfAssessment ? 'Required' : 'Not required' }}</li><li><strong>Peer Feedback:</strong> {{ $json.body.peerFeedback ? 'Required' : 'Not required' }}</li></ul>{{ $json.body.goals ? '<h3>Goals to Review</h3><p>' + $json.body.goals + '</p>' : '' }}{{ $json.body.notes ? '<h3>Notes</h3><p>' + $json.body.notes + '</p>' : '' }}<p>Please complete the review before the due date.</p>",
+        "options": {}
+      },
+      "id": "send-email-manager",
+      "name": "Email Manager",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SUPABASE_PROJECT_REF }}.supabase.co/rest/v1/hr_performance_reviews",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "employee_name",   "value": "={{ $json.body.employeeName }}" },
+            { "name": "job_title",       "value": "={{ $json.body.jobTitle }}" },
+            { "name": "department",      "value": "={{ $json.body.department }}" },
+            { "name": "manager",         "value": "={{ $json.body.manager }}" },
+            { "name": "review_type",     "value": "={{ $json.body.reviewType }}" },
+            { "name": "due_date",        "value": "={{ $json.body.dueDate }}" },
+            { "name": "review_period",   "value": "={{ $json.body.reviewPeriod }}" },
+            { "name": "self_assessment", "value": "={{ $json.body.selfAssessment }}" },
+            { "name": "peer_feedback",   "value": "={{ $json.body.peerFeedback }}" },
+            { "name": "goals",           "value": "={{ $json.body.goals }}" },
+            { "name": "status",          "value": "In Progress" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Supabase — Insert Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 340]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "value": "{{ $env.SLACK_HR_CHANNEL_ID }}", "mode": "id" },
+        "text": "=:clipboard: *Probation review triggered*\n*Employee:* {{ $json.body.employeeName }}\n*Type:* {{ $json.body.reviewType }}\n*Due:* {{ $json.body.dueDate }}\n*Manager:* {{ $json.body.manager }}\nReview reminder email has been sent.",
+        "otherOptions": {}
+      },
+      "id": "slack-notify",
+      "name": "Slack — #hr-team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"success\", \"message\": \"Probation review reminder sent\" }",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 340]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          { "node": "Email Manager",             "type": "main", "index": 0 },
+          { "node": "Supabase — Insert Review",  "type": "main", "index": 0 },
+          { "node": "Slack — #hr-team",          "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Insert Review": {
+      "main": [[ { "node": "Respond to Webhook", "type": "main", "index": 0 } ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HR" }, { "name": "Performance Review" }]
+}

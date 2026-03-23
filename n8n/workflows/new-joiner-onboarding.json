@@ -1,0 +1,107 @@
+{
+  "name": "HR — New Joiner Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-joiner-onboarding",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@yourdomain.com",
+        "toEmail": "={{ $json.body.manager || 'hr@yourdomain.com' }}",
+        "subject": "=New Joiner Onboarding Started — {{ $json.body.firstName }} {{ $json.body.lastName }}",
+        "emailFormat": "html",
+        "message": "=<h2>New Joiner Onboarding</h2><p>Onboarding has been triggered for <strong>{{ $json.body.firstName }} {{ $json.body.lastName }}</strong>.</p><ul><li><strong>Job Title:</strong> {{ $json.body.jobTitle }}</li><li><strong>Department:</strong> {{ $json.body.department }}</li><li><strong>Start Date:</strong> {{ $json.body.startDate }}</li><li><strong>Manager:</strong> {{ $json.body.manager }}</li></ul><h3>Equipment to Provision</h3><p>{{ $json.body.equipment ? $json.body.equipment.join(', ') : 'None selected' }}</p><h3>Software to Provision</h3><p>{{ $json.body.software ? $json.body.software.join(', ') : 'None selected' }}</p><p>Please complete your checklist items before the start date.</p>",
+        "options": {}
+      },
+      "id": "send-email-hr",
+      "name": "Email HR Manager",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.SUPABASE_PROJECT_REF }}.supabase.co/rest/v1/hr_onboardings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "first_name",  "value": "={{ $json.body.firstName }}" },
+            { "name": "last_name",   "value": "={{ $json.body.lastName }}" },
+            { "name": "job_title",   "value": "={{ $json.body.jobTitle }}" },
+            { "name": "department",  "value": "={{ $json.body.department }}" },
+            { "name": "start_date",  "value": "={{ $json.body.startDate }}" },
+            { "name": "manager",     "value": "={{ $json.body.manager }}" },
+            { "name": "status",      "value": "In Progress" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Supabase — Insert Onboarding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 340]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "value": "{{ $env.SLACK_HR_CHANNEL_ID }}", "mode": "id" },
+        "text": "=:wave: *New joiner onboarding started*\n*Name:* {{ $json.body.firstName }} {{ $json.body.lastName }}\n*Role:* {{ $json.body.jobTitle }} — {{ $json.body.department }}\n*Start date:* {{ $json.body.startDate }}\n*Manager:* {{ $json.body.manager }}\nPlease complete provisioning checklist before their start date.",
+        "otherOptions": {}
+      },
+      "id": "slack-notify",
+      "name": "Slack — #hr-team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"success\", \"message\": \"Onboarding workflow triggered\" }",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 340]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          { "node": "Email HR Manager",             "type": "main", "index": 0 },
+          { "node": "Supabase — Insert Onboarding", "type": "main", "index": 0 },
+          { "node": "Slack — #hr-team",             "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Insert Onboarding": {
+      "main": [[ { "node": "Respond to Webhook", "type": "main", "index": 0 } ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HR" }, { "name": "Onboarding" }]
+}
