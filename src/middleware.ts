@@ -7,7 +7,10 @@ export async function middleware(request: NextRequest) {
 
   // Website routing — lumiocms.com and www.lumiocms.com
   const isWebsite = hostname === 'lumiocms.com' || hostname === 'www.lumiocms.com'
-  const websiteRoutes = ['/home', '/product', '/pricing', '/about', '/demo', '/crm']
+  const websiteRoutes = [
+    '/home', '/product', '/pricing', '/about', '/demo', '/crm',
+    '/login', '/auth', '/privacy', '/terms', '/cookies', '/data-deletion',
+  ]
 
   if (isWebsite) {
     // If hitting root, redirect to /home
@@ -44,7 +47,13 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (pathname.startsWith('/login') || pathname.startsWith('/auth') || pathname.startsWith('/home') || pathname.startsWith('/demo')) {
+  const PUBLIC_ROUTES = [
+    '/login', '/auth', '/home', '/demo',
+    '/privacy', '/terms', '/cookies', '/data-deletion',
+    '/product', '/pricing', '/about', '/crm',
+  ]
+
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     return supabaseResponse
   }
 
