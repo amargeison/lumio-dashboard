@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, RefObject } from 'react'
 import Link from 'next/link'
 import { use } from 'react'
 import {
@@ -299,14 +299,15 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, focusDepts }: {
+function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void
   focusDepts: string[]
+  navRef?: RefObject<HTMLElement | null>
 }) {
   const isDimmed = (id: string) => focusDepts.length > 0 && !focusDepts.includes(id)
 
   const inner = (
-    <nav className="flex flex-col gap-0.5 p-3">
+    <nav ref={navRef} className="flex flex-col gap-0.5 p-3">
       {SIDEBAR_ITEMS.map(item => {
         const active = activeDept === item.id
         const dimmed = !active && isDimmed(item.id)
@@ -631,7 +632,11 @@ function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
 
 // ─── Department views ─────────────────────────────────────────────────────────
 
-function OverviewView({ company }: { company: string }) {
+function OverviewView({ company, bannerRef, statsRef }: {
+  company: string
+  bannerRef?: RefObject<HTMLDivElement | null>
+  statsRef?: RefObject<HTMLDivElement | null>
+}) {
   const [tab, setTab] = useState<OverviewTab>('today')
   const wf  = fakeNum(47, company, 'wf')
   const cu  = fakeNum(181, company, 'cu')
@@ -645,12 +650,12 @@ function OverviewView({ company }: { company: string }) {
   }))
   return (
     <div className="space-y-4">
-      <DemoPersonalBanner company={company} />
+      <div ref={bannerRef}><DemoPersonalBanner company={company} /></div>
       <DemoTabBar tab={tab} onChange={setTab} />
       {tab === 'today' ? (
         <div className="space-y-4">
           <DemoMeetingsToday />
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
               pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
               barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
@@ -1248,6 +1253,112 @@ function DeptPickerModal({ onComplete }: { onComplete: (depts: string[]) => void
   )
 }
 
+// ─── CoachMarks ───────────────────────────────────────────────────────────────
+
+const COACH_STEPS = [
+  { key: 'banner',  title: 'Your command centre',    desc: 'This banner updates daily with your meetings, stats, and a morning roundup of everything that needs your attention.' },
+  { key: 'nav',     title: 'Department navigation',  desc: 'Switch between departments you selected during setup. Dimmed items are outside your focus — click any to explore.' },
+  { key: 'actions', title: 'Quick actions',          desc: 'Trigger workflows, send reports, or take action without leaving the page. These adapt to whichever department you\'re viewing.' },
+  { key: 'stats',   title: 'Live stats at a glance', desc: 'Key metrics for your workspace — customers, revenue, workflow runs, and more. All powered by your connected tools.' },
+] as const
+
+interface CoachMarksProps {
+  bannerRef:  RefObject<HTMLDivElement | null>
+  navRef:     RefObject<HTMLElement | null>
+  actionsRef: RefObject<HTMLDivElement | null>
+  statsRef:   RefObject<HTMLDivElement | null>
+  onComplete: () => void
+}
+
+function CoachMarks({ bannerRef, navRef, actionsRef, statsRef, onComplete }: CoachMarksProps) {
+  const [step, setStep] = useState(0)
+  const [rect, setRect]  = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const isDone = step >= COACH_STEPS.length
+
+  const refs = [bannerRef, navRef, actionsRef, statsRef] as RefObject<HTMLElement | null>[]
+
+  useEffect(() => {
+    if (isDone) return
+    const el = refs[step]?.current
+    if (!el) { setRect(null); return }
+    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      const pad = 8
+      setRect({ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 })
+    }
+    measure()
+    const id = setTimeout(measure, 350)
+    return () => clearTimeout(id)
+  }, [step, isDone]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const advance = () => setStep(s => s + 1)
+
+  const tipBelow = rect ? rect.y + rect.h + 180 < window.innerHeight : true
+  const tipTop   = rect ? (tipBelow ? rect.y + rect.h + 16 : rect.y - 196) : window.innerHeight / 2 - 96
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {!isDone ? (
+        <>
+          <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+            <defs>
+              <mask id="coach-mask">
+                <rect width="100%" height="100%" fill="white" />
+                {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} rx="12" fill="black" />}
+              </mask>
+            </defs>
+            <rect width="100%" height="100%" fill="rgba(0,0,0,0.78)" mask="url(#coach-mask)" />
+            {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} rx="12" fill="none" stroke="#7C3AED" strokeWidth="2" strokeDasharray="6 3" />}
+          </svg>
+
+          {/* Dismiss on backdrop click */}
+          <div className="absolute inset-0" onClick={advance} style={{ pointerEvents: 'all' }} />
+
+          {/* Tooltip card */}
+          <div className="absolute left-1/2 -translate-x-1/2 w-80 rounded-2xl p-5 shadow-2xl"
+            style={{ top: Math.max(8, tipTop), backgroundColor: '#111318', border: '1px solid rgba(124,58,237,0.45)', zIndex: 1, pointerEvents: 'all' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold" style={{ color: '#A78BFA' }}>Step {step + 1} of {COACH_STEPS.length}</span>
+              <button onClick={onComplete} className="text-xs hover:opacity-80" style={{ color: '#6B7280' }}>Skip tour</button>
+            </div>
+            <h3 className="text-base font-bold mb-1.5">{COACH_STEPS[step].title}</h3>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: '#9CA3AF' }}>{COACH_STEPS[step].desc}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1.5">
+                {COACH_STEPS.map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full transition-colors"
+                    style={{ backgroundColor: i === step ? '#7C3AED' : '#374151' }} />
+                ))}
+              </div>
+              <button onClick={advance}
+                className="px-4 py-1.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>
+                {step === COACH_STEPS.length - 1 ? 'Finish' : 'Next →'}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.82)' }}>
+          <div className="w-80 rounded-2xl p-8 text-center shadow-2xl"
+            style={{ backgroundColor: '#111318', border: '1px solid rgba(124,58,237,0.45)' }}>
+            <div className="text-4xl mb-4">🎉</div>
+            <h3 className="text-xl font-bold mb-2">You&apos;re all set!</h3>
+            <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Start exploring your demo workspace. Everything is ready to go.</p>
+            <button onClick={onComplete}
+              className="w-full py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>
+              Let&apos;s go →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DemoDashboard({ params }: { params: Promise<{ slug: string }> }) {
@@ -1260,20 +1371,41 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showUpgrade, setShowUpgrade] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showInvite, setShowInvite]   = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [focusDepts, setFocusDepts]         = useState<string[]>([])
-  const [toast, setToast]                   = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding]   = useState(false)
+  const [showCoachMarks, setShowCoachMarks]   = useState(false)
+  const [focusDepts, setFocusDepts]           = useState<string[]>([])
+  const [toast, setToast]                     = useState<string | null>(null)
+
+  const bannerRef  = useRef<HTMLDivElement>(null)
+  const navRef     = useRef<HTMLElement>(null)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const statsRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const name      = localStorage.getItem('demo_company_name') || 'Your Company'
-    const user      = localStorage.getItem('demo_user_name') || ''
-    const created   = localStorage.getItem('demo_created_at')
-    const onboarded = localStorage.getItem('demo_onboarded')
-    const depts     = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
+    const name           = localStorage.getItem('demo_company_name') || 'Your Company'
+    const user           = localStorage.getItem('demo_user_name') || ''
+    const created        = localStorage.getItem('demo_created_at')
+    const onboarded      = localStorage.getItem('demo_onboarded')
+    const tipsCompleted  = localStorage.getItem('demo_tips_completed')
+    const depts          = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
     setCompany(name); setUserName(user); setFocusDepts(depts)
     if (created) setDaysLeft(Math.max(0, 14 - Math.floor((Date.now() - parseInt(created)) / 86400000)))
     if (!onboarded) setShowOnboarding(true)
+    else if (!tipsCompleted) setShowCoachMarks(true)
   }, [])
+
+  function handleTipsComplete() {
+    localStorage.setItem('demo_tips_completed', '1')
+    setShowCoachMarks(false)
+    const token = localStorage.getItem('demo_session_token')
+    if (token) {
+      fetch('/api/demo/complete-tips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_token: token }),
+      }).catch(() => {/* non-blocking */})
+    }
+  }
 
   function fireToast() {
     setToast('Demo mode — this would trigger in your live workspace')
@@ -1286,7 +1418,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
 
       <Toast message={toast} />
-      {showOnboarding && <DeptPickerModal onComplete={(depts) => { setFocusDepts(depts); setShowOnboarding(false) }} />}
+      {showOnboarding && <DeptPickerModal onComplete={(depts) => { setFocusDepts(depts); setShowOnboarding(false); setShowCoachMarks(true) }} />}
+      {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
 
       {/* Trial banner */}
@@ -1326,11 +1459,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} />
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} />
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <QuickActionsBar dept={activeDept} onAction={fireToast} />
+          <div ref={actionsRef}><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>
 
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
@@ -1342,7 +1475,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept === 'overview'    && <OverviewView   company={company} />}
+            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} />}
             {activeDept === 'insights'   && <InsightsView   company={company} />}
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}
