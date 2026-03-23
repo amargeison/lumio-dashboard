@@ -11,4 +11,6 @@ export default withPWA({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  runtimeCaching: [],
+  exclude: [/auth\/callback/, /login/, /api\/auth/],
 })(nextConfig)
