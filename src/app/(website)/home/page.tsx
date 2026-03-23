@@ -7,6 +7,8 @@ import {
   Activity, Megaphone, Server, DollarSign, ChevronRight,
   Sparkles, GitBranch, Filter, Zap, Monitor, FlaskConical, Package,
 } from 'lucide-react'
+import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
+import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -541,6 +543,8 @@ function FlowStep({ step, index, total, color }: { step: WorkflowStep; index: nu
 export default function HomePage() {
   const [activeDeptIdx, setActiveDeptIdx] = useState(0)
   const [activeWorkflowIdx, setActiveWorkflowIdx] = useState(0)
+  const [showTellMore, setShowTellMore] = useState(false)
+  const [showTrial, setShowTrial] = useState(false)
 
   const dept = DEPT_TABS[activeDeptIdx]
   const workflow = dept.workflows?.[activeWorkflowIdx]
@@ -589,13 +593,20 @@ export default function HomePage() {
         </div>
         {/* CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link href="/demo"
+          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
             Book a Demo <ArrowRight size={16} />
-          </Link>
+          </a>
+          <button onClick={() => setShowTellMore(true)}
+            className="px-7 py-3.5 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#7C3AED' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6C3FC5' }}>
+            Tell me more
+          </button>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
@@ -605,6 +616,14 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {showTellMore && (
+        <TellMeMoreModal
+          onClose={() => setShowTellMore(false)}
+          onStartTrial={() => { setShowTellMore(false); setShowTrial(true) }}
+        />
+      )}
+      {showTrial && <BookTrialModal onClose={() => setShowTrial(false)} />}
 
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section style={{ borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B12' }}>

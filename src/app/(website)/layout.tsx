@@ -81,20 +81,6 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
-            Sign in
-          </Link>
-          <button onClick={() => setShowTellMore(true)}
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#1F2937' }}>
-            Tell me more
-          </button>
           <button onClick={() => setShowTrial(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
@@ -107,8 +93,15 @@ function Nav() {
             style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#7C3AED' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
-            Book a demo
+            Book a Demo
           </a>
+          <Link href="/login"
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
+            Sign in
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -135,19 +128,16 @@ function Nav() {
             </Link>
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
-            <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
-              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-              onClick={() => setMobileOpen(false)}>Sign in</Link>
-            <button onClick={() => { setMobileOpen(false); setShowTellMore(true) }}
-              className="text-sm font-medium py-2 text-center rounded-lg"
-              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Tell me more</button>
             <button onClick={() => { setMobileOpen(false); setShowTrial(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14-day trial</button>
             <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-              onClick={() => setMobileOpen(false)}>Book a demo</a>
+              onClick={() => setMobileOpen(false)}>Book a Demo</a>
+            <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
+              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+              onClick={() => setMobileOpen(false)}>Sign in</Link>
           </div>
         </div>
       )}
