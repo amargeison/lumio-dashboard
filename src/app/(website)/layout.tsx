@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
-import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
@@ -34,8 +33,7 @@ const LEGAL_LINKS = [
 function Nav() {
   const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [showTrial, setShowTrial]   = useState(false)
-  const [showTellMore, setShowTellMore] = useState(false)
+  const [showTrial, setShowTrial] = useState(false)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8)
@@ -81,6 +79,13 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2">
+          <Link href="/login"
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
+            Sign in
+          </Link>
           <button onClick={() => setShowTrial(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
@@ -95,13 +100,6 @@ function Nav() {
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
             Book a Demo
           </a>
-          <Link href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
-            Sign in
-          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -145,12 +143,6 @@ function Nav() {
 
     {showTrial && (
       <BookTrialModal onClose={() => setShowTrial(false)} />
-    )}
-    {showTellMore && (
-      <TellMeMoreModal
-        onClose={() => setShowTellMore(false)}
-        onStartTrial={() => { setShowTellMore(false); setShowTrial(true) }}
-      />
     )}
   </>
   )
