@@ -61,26 +61,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create magic link token
-    const token = crypto.randomUUID()
-    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+    // Generate 6-digit OTP code (10-minute expiry)
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+
+    // Invalidate any previous unused codes for this email
+    await supabase
+      .from('demo_magic_links')
+      .update({ used: true })
+      .eq('email', email.toLowerCase())
+      .eq('used', false)
 
     await supabase.from('demo_magic_links').insert({
       email: email.toLowerCase(),
       slug,
-      token,
+      token: code,
       expires_at: tokenExpiry,
       used: false,
     })
-
-    const magicLinkUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.lumiocms.com'}/demo/auth?token=${token}`
 
     await resend.emails.send({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: isNew
-        ? `Your Lumio demo workspace is ready — click to enter`
-        : `Sign back in to your Lumio demo`,
+        ? `Your Lumio demo code: ${code}`
+        : `Your Lumio sign-in code: ${code}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -94,15 +99,14 @@ export async function POST(req: NextRequest) {
                 ${isNew ? 'Your demo workspace is ready' : 'Sign back in to Lumio'}
               </h2>
               <p style="color:rgba(255,255,255,0.5);font-size:14px;line-height:1.6;margin:0 0 24px;">
-                Hi ${name}, click the button below to ${isNew ? 'set up and enter' : 'enter'} your personalised Lumio demo workspace.
-                This link expires in 1 hour.
+                Hi ${name}, enter this 6-digit code to ${isNew ? 'set up and enter' : 'enter'} your Lumio demo workspace. It expires in 10 minutes.
               </p>
-              <a href="${magicLinkUrl}"
-                 style="display:block;text-align:center;background:#7C3AED;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:20px;">
-                🚀 Enter My Demo Workspace
-              </a>
+              <div style="background:rgba(124,58,237,0.15);border:2px solid #7C3AED;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px;">
+                <p style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;letter-spacing:0.15em;margin:0 0 8px;">YOUR CODE</p>
+                <p style="color:white;font-size:40px;font-weight:900;letter-spacing:0.3em;margin:0;font-variant-numeric:tabular-nums;">${code}</p>
+              </div>
               <p style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;margin:0;">
-                This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+                Expires in 10 minutes. If you didn't request this, you can safely ignore this email.
               </p>
               <div style="margin-top:24px;padding:16px;background:rgba(255,255,255,0.05);border-radius:12px;">
                 <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0 0 8px;font-weight:600;">YOUR DEMO WORKSPACE</p>
