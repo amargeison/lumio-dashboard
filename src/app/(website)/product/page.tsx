@@ -180,11 +180,11 @@ export default function ProductPage() {
         <p className="text-base font-medium mb-6" style={{ color: '#0D9488', maxWidth: 580, margin: '0 auto' }}>
           Your business, fully connected.
         </p>
-        <p className="text-lg leading-relaxed mb-4" style={{ color: '#9CA3AF', maxWidth: 580, margin: '0 auto' }}>
+        <p className="text-xl leading-relaxed mb-4" style={{ color: '#9CA3AF', maxWidth: 580, margin: '0 auto' }}>
           Lumio connects your departments, automates the admin that's eating your team's time, and surfaces the insights that actually matter — without any code.
         </p>
-        <p className="text-sm mb-10" style={{ color: '#6B7280', maxWidth: 560, margin: '0 auto 40px' }}>
-          Built for growing businesses across <span style={{ color: '#9CA3AF' }}>Professional Services, Education, Healthcare, Recruitment, SaaS</span>, and more. 10 to 500 people.
+        <p className="text-xl mb-10" style={{ color: '#9CA3AF', maxWidth: 560, margin: '0 auto 40px' }}>
+          Built for growing businesses across Professional Services, Education, Healthcare, Recruitment, SaaS, and more. 10 to 500 people.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link href="/demo"
@@ -215,7 +215,7 @@ export default function ProductPage() {
                   {item.step}
                 </div>
                 <h3 className="text-lg font-semibold mb-3">{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.desc}</p>
+                <p className="text-base leading-relaxed" style={{ color: '#6B7280' }}>{item.desc}</p>
                 {i < HOW_IT_WORKS.length - 1 && (
                   <div className="hidden md:block" aria-hidden="true" />
                 )}
@@ -230,7 +230,7 @@ export default function ProductPage() {
         <div className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Departments</p>
           <h2 className="text-3xl font-bold">Purpose-built for every team</h2>
-          <p className="mt-4 text-sm" style={{ color: '#6B7280' }}>
+          <p className="mt-4 text-base" style={{ color: '#6B7280' }}>
             Whether you're in professional services, education, healthcare, recruitment, or SaaS — every department works the same way in Lumio.
           </p>
         </div>
@@ -271,7 +271,7 @@ export default function ProductPage() {
                 </p>
               </div>
             </div>
-            <p className="text-sm leading-relaxed mb-7" style={{ color: '#9CA3AF' }}>{dept.desc}</p>
+            <p className="text-base leading-relaxed mb-7" style={{ color: '#9CA3AF' }}>{dept.desc}</p>
             <div className="space-y-3">
               {dept.workflows.map(wf => (
                 <div key={wf.name} className="rounded-lg px-4 py-3.5"
@@ -280,7 +280,7 @@ export default function ProductPage() {
                     <GitBranch size={13} style={{ color: dept.color, flexShrink: 0 }} />
                     <span className="text-sm font-medium" style={{ color: '#E5E7EB' }}>{wf.name}</span>
                   </div>
-                  <p className="text-xs leading-relaxed pl-5" style={{ color: '#6B7280' }}>{wf.detail}</p>
+                  <p className="text-sm leading-relaxed pl-5" style={{ color: '#6B7280' }}>{wf.detail}</p>
                 </div>
               ))}
             </div>
@@ -312,7 +312,7 @@ export default function ProductPage() {
                   'Full audit trail of every automation',
                   'AI-generated summaries and reports',
                 ].map(point => (
-                  <li key={point} className="flex items-center gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                  <li key={point} className="flex items-center gap-3 text-base" style={{ color: '#D1D5DB' }}>
                     <Check size={14} style={{ color: dept.color, flexShrink: 0 }} />
                     {point}
                   </li>
@@ -392,7 +392,7 @@ export default function ProductPage() {
                     <Icon size={20} style={{ color: card.color }} strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{card.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{card.desc}</p>
+                  <p className="text-base leading-relaxed" style={{ color: '#9CA3AF' }}>{card.desc}</p>
                 </div>
               )
             })}
@@ -411,7 +411,7 @@ export default function ProductPage() {
                 <h3 className="text-xl font-black" style={{ color: '#F9FAFB' }}>DfE NELI Programme Dashboard</h3>
               </div>
             </div>
-            <p className="text-base leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
+            <p className="text-lg leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
               OxEd &amp; Assessment reports to the Department for Education on the NELI programme — 10,973 registered schools, 50,052 pupils assessed, 76,567 course completions across Academic Year 2025/26. Previously this report took the team one week every month to compile manually. The Lumio DfE dashboard makes every metric available live, 24/7, with monthly trend charts, AI-generated highlights, a full data table, and one-click PDF export. The DfE can log in any time and see exactly where the programme stands — without a single email or spreadsheet.
             </p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -453,7 +453,7 @@ export default function ProductPage() {
                       style={{ backgroundColor: 'rgba(13,148,136,0.15)' }}>
                       <Check size={11} style={{ color: '#0D9488' }} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm leading-snug" style={{ color: '#D1D5DB' }}>{item}</span>
+                    <span className="text-base leading-snug" style={{ color: '#D1D5DB' }}>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -474,7 +474,7 @@ export default function ProductPage() {
                   <div key={type.label} className="rounded-lg p-4"
                     style={{ backgroundColor: '#0D0E16', border: `1px solid ${type.color}22` }}>
                     <p className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{type.label}</p>
-                    <p className="text-xs leading-snug" style={{ color: '#6B7280' }}>{type.desc}</p>
+                    <p className="text-sm leading-snug" style={{ color: '#6B7280' }}>{type.desc}</p>
                   </div>
                 ))}
               </div>
@@ -488,7 +488,7 @@ export default function ProductPage() {
               <h3 className="text-xl font-black mb-2" style={{ color: '#F9FAFB' }}>
                 Need a custom dashboard for a partner or funder?
               </h3>
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>
+              <p className="text-base" style={{ color: '#9CA3AF' }}>
                 Tell us what you need — we'll scope it and have a prototype in front of you within 5 working days.
               </p>
             </div>
@@ -526,7 +526,7 @@ export default function ProductPage() {
               <h2 className="text-3xl md:text-4xl font-bold mb-5">
                 AI that actually understands context
               </h2>
-              <p className="text-base leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
+              <p className="text-lg leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
                 Most automation tools just move data from A to B. Lumio uses Claude to understand what the data means — and act on it intelligently. Every AI-powered step is configurable, reviewable, and logged.
               </p>
               <div className="space-y-4">
@@ -535,7 +535,7 @@ export default function ProductPage() {
                     <ChevronRight size={16} style={{ color: '#6C3FC5', flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <p className="text-sm font-semibold mb-0.5" style={{ color: '#E5E7EB' }}>{f.label}</p>
-                      <p className="text-sm" style={{ color: '#6B7280' }}>{f.desc}</p>
+                      <p className="text-base" style={{ color: '#6B7280' }}>{f.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -816,7 +816,7 @@ export default function ProductPage() {
           <div className="text-center mb-12">
             <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Integrations</p>
             <h2 className="text-3xl font-bold">Works with the tools you already use</h2>
-            <p className="mt-4 text-sm" style={{ color: '#6B7280' }}>
+            <p className="mt-4 text-base" style={{ color: '#6B7280' }}>
               Native integrations that connect in minutes. No webhook configuration. No API docs to read.
             </p>
           </div>
@@ -851,7 +851,7 @@ export default function ProductPage() {
             <div key={item.title} className="rounded-xl p-6" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
               <div className="text-2xl mb-3">{item.emoji}</div>
               <h3 className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.desc}</p>
+              <p className="text-base leading-relaxed" style={{ color: '#6B7280' }}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -861,7 +861,7 @@ export default function ProductPage() {
       <section style={{ borderTop: '1px solid #1F2937' }}>
         <div className="mx-auto max-w-3xl px-6 py-24 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-5">See it in action</h2>
-          <p className="text-base mb-8" style={{ color: '#6B7280' }}>
+          <p className="text-lg mb-8" style={{ color: '#6B7280' }}>
             30-minute demo. We'll walk you through the platform with workflows relevant to your team.
           </p>
           <Link href="/demo"
