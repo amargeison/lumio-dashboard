@@ -78,7 +78,7 @@ function RAGDot({ status }: { status: RAG }) {
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="rounded-xl p-4 flex flex-col gap-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+    <div className="rounded-xl p-3 sm:p-4 flex flex-col gap-2 sm:gap-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between">
         <span className="text-xs" style={{ color: '#9CA3AF' }}>{label}</span>
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}1a` }}>
@@ -115,7 +115,7 @@ function CEOView({ company }: { company: string }) {
         <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E" />
         <StatCard label="Workflow Runs (30d)" value={String(wfRuns)} icon={Zap} color="#F59E0B" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
@@ -400,42 +400,61 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       )}
 
       {/* Top bar */}
-      <header className="px-5 py-4 flex items-center justify-between"
-        style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-            style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>
-            {company[0]?.toUpperCase() || 'L'}
+      <header style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
+        {/* Main row */}
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
+          {/* Company identity */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>
+              {company[0]?.toUpperCase() || 'L'}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-bold truncate">{company}</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>Demo workspace</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-bold">{company}</div>
-            <div className="text-xs" style={{ color: '#6B7280' }}>Demo workspace</div>
+
+          {/* Role switcher — desktop only (md+) */}
+          <div className="hidden md:flex items-center gap-1 rounded-lg p-1 shrink-0"
+            style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {roleConfig.map(r => (
+              <button key={r.id} onClick={() => setRole(r.id)}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap"
+                style={{
+                  backgroundColor: role === r.id ? '#0D9488' : 'transparent',
+                  color: role === r.id ? '#F9FAFB' : '#9CA3AF',
+                }}>
+                {r.label}
+              </button>
+            ))}
           </div>
+
+          <Link href="/pricing"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4"
+            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+            <Zap size={12} /> <span className="hidden xs:inline">Upgrade</span><span className="hidden sm:inline"> to Lumio</span>
+          </Link>
         </div>
 
-        {/* Role switcher */}
-        <div className="flex items-center gap-1 rounded-lg p-1" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        {/* Role switcher — mobile (below md) */}
+        <div className="md:hidden px-4 pb-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
           {roleConfig.map(r => (
             <button key={r.id} onClick={() => setRole(r.id)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
               style={{
-                backgroundColor: role === r.id ? '#0D9488' : 'transparent',
+                backgroundColor: role === r.id ? '#0D9488' : '#111318',
                 color: role === r.id ? '#F9FAFB' : '#9CA3AF',
+                border: `1px solid ${role === r.id ? '#0D9488' : '#1F2937'}`,
               }}>
               {r.label}
             </button>
           ))}
         </div>
-
-        <Link href="/pricing"
-          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold"
-          style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-          <Zap size={13} /> Upgrade to Lumio
-        </Link>
       </header>
 
       {/* Main content */}
-      <main className="px-5 py-6 max-w-7xl mx-auto space-y-2">
+      <main className="px-4 py-5 max-w-7xl mx-auto space-y-2">
         {/* Role label */}
         <div className="flex items-center justify-between mb-4">
           <div>
