@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, RefObject } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { use } from 'react'
 import {
   Users, TrendingUp, Headphones, GitBranch, AlertCircle,
@@ -339,6 +340,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-52 shrink-0 overflow-y-auto"
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
+        <div className="flex items-center px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          <Image src="/lumio_logo_final.jpg" alt="Lumio" width={240} height={120}
+            style={{ width: '120px', height: 'auto' }} className="rounded-md" />
+        </div>
         {inner}
       </aside>
 
