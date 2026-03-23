@@ -21,7 +21,7 @@ import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 type RAG      = 'green' | 'amber' | 'red'
 type ChartMode = 'number' | 'bar' | 'pie'
-type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings'
+type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy'
 
 interface ChartDatum { label: string; value: number; color: string }
 
@@ -56,12 +56,14 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Chase Invoice', tooltip: 'Send a payment reminder for all overdue invoices',                  icon: Receipt   },
     { label: 'New Trial',     tooltip: 'Provision a new 14-day demo workspace',                            icon: FlaskConical },
     { label: 'Raise Ticket',  tooltip: 'Open a new support ticket and assign it to the queue',             icon: Headphones},
+    { label: 'Dept Insights', tooltip: 'View AI-generated insights for this department',                   icon: BarChart3 },
   ],
   insights:   [
     { label: 'Export Report',    tooltip: 'Download the current view as a PDF or CSV',                     icon: FileText  },
     { label: 'Schedule Report',  tooltip: 'Set up a recurring email report to stakeholders',               icon: Calendar  },
     { label: 'Set Alert',        tooltip: 'Create a metric alert — notify when a threshold is hit',        icon: AlertCircle },
     { label: 'Share Dashboard',  tooltip: 'Generate a shareable link to this dashboard view',              icon: Users     },
+    { label: 'Dept Insights',    tooltip: 'View AI-generated insights for Insights',                       icon: BarChart3 },
   ],
   hr:         [
     { label: 'New Joiner',         tooltip: 'Trigger the full onboarding workflow for a new hire',         icon: UserPlus  },
@@ -69,6 +71,9 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',        icon: FileText  },
     { label: 'Performance Review', tooltip: 'Initiate a performance review cycle for selected employees',  icon: Star      },
     { label: 'Update Org Chart',   tooltip: 'Sync the org chart with the latest team structure',           icon: GitBranch },
+    { label: 'Recruitment',        tooltip: 'Post a new role and trigger the recruitment workflow',         icon: Users     },
+    { label: 'Company Events',     tooltip: 'Plan and notify team of an upcoming company event',           icon: Megaphone },
+    { label: 'Dept Insights',      tooltip: 'View AI-generated insights for HR & People',                  icon: BarChart3 },
   ],
   accounts:   [
     { label: 'Chase Invoice',   tooltip: 'Send payment reminders for all overdue invoices',                icon: Receipt   },
@@ -76,6 +81,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Credit Note',     tooltip: 'Issue a credit note against an existing invoice',                icon: FileText  },
     { label: 'Expense Report',  tooltip: 'Submit or approve an expense report',                            icon: BarChart2 },
     { label: 'Bank Reconcile',  tooltip: 'Trigger the automated bank reconciliation workflow',             icon: CheckCircle2 },
+    { label: 'Dept Insights',   tooltip: 'View AI-generated insights for Accounts',                       icon: BarChart3 },
   ],
   sales:      [
     { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
@@ -83,6 +89,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Proposal',  tooltip: 'Generate a proposal from a template and send to a prospect',     icon: Send      },
     { label: 'Update Pipeline',tooltip: 'Sync CRM pipeline data and recalculate deal scores',             icon: TrendingUp},
     { label: 'Book Demo',      tooltip: 'Send a Calendly invite for a product demo',                      icon: Calendar  },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Sales & CRM',                     icon: BarChart3 },
   ],
   marketing:  [
     { label: 'New Campaign',   tooltip: 'Create a multi-step email or ad campaign',                        icon: Megaphone },
@@ -90,6 +97,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'A/B Test',       tooltip: 'Set up an A/B test on email subject lines or ad copy',            icon: BarChart2 },
     { label: 'Email Blast',    tooltip: 'Send a one-off broadcast to a selected audience segment',         icon: Send      },
     { label: 'UTM Builder',    tooltip: 'Generate tracked UTM links for your latest campaign',             icon: Target    },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Marketing',                       icon: BarChart3 },
   ],
   trials:     [
     { label: 'New Trial',      tooltip: 'Provision a new 14-day trial workspace for a prospect',          icon: FlaskConical },
@@ -97,6 +105,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Extend Trial',   tooltip: 'Add 7 more days to an active trial workspace',                   icon: Clock     },
     { label: 'Convert to Paid',tooltip: 'Trigger the upgrade workflow and remove trial restrictions',      icon: DollarSign},
     { label: 'Offboard Trial', tooltip: 'Safely expire and delete a trial workspace and all its data',    icon: X         },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Trials',                          icon: BarChart3 },
   ],
   operations: [
     { label: 'New PO',         tooltip: 'Raise a new purchase order and send to a supplier',              icon: Package   },
@@ -104,6 +113,9 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Process Order',  tooltip: 'Trigger the order fulfilment and dispatch workflow',              icon: ArrowRight},
     { label: 'Supplier Invoice',tooltip: 'Log and approve an incoming supplier invoice',                  icon: Receipt   },
     { label: 'Stock Alert',    tooltip: 'Send a low-stock notification to the procurement team',          icon: AlertCircle },
+    { label: 'Create Wiki',    tooltip: 'Start a new internal wiki page for your team',                   icon: FileText  },
+    { label: 'Create FAQ',     tooltip: 'Build a new FAQ document for staff or customers',                icon: Hash      },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Operations',                      icon: BarChart3 },
   ],
   support:    [
     { label: 'New Ticket',     tooltip: 'Open a new support ticket and assign it to the queue',           icon: Plus      },
@@ -111,6 +123,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Close Ticket',   tooltip: 'Mark a resolved ticket as closed and trigger CSAT survey',       icon: CheckCircle2 },
     { label: 'SLA Report',     tooltip: 'Generate this week\'s SLA compliance report',                    icon: FileText  },
     { label: 'Knowledge Article', tooltip: 'Create a new article in the support knowledge base',          icon: FileText  },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Support',                         icon: BarChart3 },
   ],
   success:    [
     { label: 'Health Check',   tooltip: 'Run the automated health score calculation for all accounts',    icon: Star      },
@@ -118,6 +131,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Renewal Alert',  tooltip: 'Send a renewal reminder to accounts expiring in 60 days',        icon: AlertCircle },
     { label: 'Expansion Proposal', tooltip: 'Create an upsell proposal based on usage data',             icon: TrendingUp},
     { label: 'NPS Survey',     tooltip: 'Send an NPS survey to a selected cohort of customers',           icon: Send      },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Customer Success',                icon: BarChart3 },
   ],
   it:         [
     { label: 'New Device',     tooltip: 'Start the device provisioning workflow for a new hire',          icon: Monitor   },
@@ -125,14 +139,22 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Access Review',  tooltip: 'Trigger a quarterly access and permission audit',                icon: CheckCircle2 },
     { label: 'Security Alert', tooltip: 'Log a security incident and notify the security team',           icon: AlertCircle },
     { label: 'System Update',  tooltip: 'Schedule and push a system update to managed devices',           icon: ArrowRight},
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for IT & Systems',                    icon: BarChart3 },
   ],
   workflows:  [
     { label: 'New Workflow',   tooltip: 'Start building a new automation workflow from a template',       icon: Plus      },
     { label: 'Import',         tooltip: 'Import a workflow from a JSON file or another workspace',        icon: FileText  },
     { label: 'Test Run',       tooltip: 'Run a selected workflow against test data',                      icon: Play      },
     { label: 'Schedule',       tooltip: 'Set or update the schedule for a workflow trigger',              icon: Calendar  },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Workflows Library',               icon: BarChart3 },
   ],
   settings:   [],
+  partners:   [
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Partners',                        icon: BarChart3 },
+  ],
+  strategy:   [
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Strategy',                        icon: BarChart3 },
+  ],
 }
 
 // ─── Fake data seeder ─────────────────────────────────────────────────────────
@@ -1294,6 +1316,129 @@ function DeptPickerModal({ onComplete }: { onComplete: (depts: string[]) => void
   )
 }
 
+// ─── Department Insights Modal ────────────────────────────────────────────────
+
+const DEPT_INSIGHTS: Record<DeptId, { metric: string; value: string; trend: string; insight: string }[]> = {
+  overview:   [
+    { metric: 'Workflow efficiency',  value: '94%',    trend: '+3%',  insight: 'Automation rate has improved over the last 30 days. New Joiner and Invoice Chase workflows are performing above baseline.' },
+    { metric: 'Active automations',   value: '47',     trend: '+5',   insight: 'Five new workflows activated this month. Support and HR departments showing highest adoption.' },
+    { metric: 'Time saved (est.)',    value: '182 hrs', trend: '+22h', insight: 'Based on average manual task time. Invoice chasing and onboarding save the most time per run.' },
+  ],
+  insights:   [
+    { metric: 'Report accuracy',      value: '99.2%',  trend: '—',    insight: 'Data pipelines are healthy. No anomalies detected in the last 7 days.' },
+    { metric: 'Dashboards active',    value: '12',     trend: '+2',   insight: 'Two new dashboards created this month by the Finance and Operations teams.' },
+    { metric: 'Alerts triggered',     value: '4',      trend: '-1',   insight: 'One fewer alert than last month. Overdue invoice threshold was adjusted.' },
+  ],
+  hr:         [
+    { metric: 'Onboarding time',      value: '4 hrs',  trend: '-6h',  insight: 'Automated provisioning cut average onboarding from 10 hours to 4. IT and payroll steps are now fully automated.' },
+    { metric: 'Leave approval speed', value: '2.1 hrs', trend: '-1h', insight: 'Manager response rate improved after Slack notifications were added to the workflow.' },
+    { metric: 'Compliance rate',      value: '100%',   trend: '—',    insight: 'All contracts and GDPR notices sent within policy SLA. No exceptions this quarter.' },
+  ],
+  accounts:   [
+    { metric: 'Avg debtor days',      value: '22d',    trend: '-8d',  insight: 'Invoice chasing workflow reduced average collection time significantly. Day-30 escalations down 40%.' },
+    { metric: 'Overdue invoices',     value: '3',      trend: '-11',  insight: 'Automated chase emails resolved most overdue accounts. Only 3 remain, all in manual escalation.' },
+    { metric: 'Reconciliation time',  value: '15 min', trend: '-45m', insight: 'Bank reconciliation now automated on Monday mornings, replacing a weekly manual task.' },
+  ],
+  sales:      [
+    { metric: 'Lead response time',   value: '4 min',  trend: '-52m', insight: 'Hot lead routing to senior reps now averages under 5 minutes. Pipeline growth rate up 18%.' },
+    { metric: 'Proposal turnaround',  value: '23 min', trend: '-2h',  insight: 'Claude-generated proposals cut drafting time from hours to minutes. Win rate unchanged.' },
+    { metric: 'Pipeline accuracy',    value: '91%',    trend: '+4%',  insight: 'Automated stage updates reduced human error in CRM. Deal value forecast improved.' },
+  ],
+  marketing:  [
+    { metric: 'MQL response time',    value: '18 min', trend: '-4h',  insight: 'Marketing-to-sales handoff automation firing correctly on 97% of qualifying leads.' },
+    { metric: 'Campaign open rate',   value: '31%',    trend: '+6%',  insight: 'Claude-personalised email sequences outperforming templates. Subject line A/B tests showing strong results.' },
+    { metric: 'Content published',    value: '24',     trend: '+8',   insight: 'Scheduling automation enabled 33% more posts this month without additional headcount.' },
+  ],
+  trials:     [
+    { metric: 'Trial activation time', value: '8s',   trend: '-52s',  insight: 'Workspace provisioning now fully automated. Prospects access their environment in under 10 seconds.' },
+    { metric: 'Day-7 engagement',     value: '68%',   trend: '+12%',  insight: 'Check-in email sequence improved engagement rate. Personalised content showing 2x better CTR.' },
+    { metric: 'Trial-to-paid rate',   value: '34%',   trend: '+5%',   insight: 'Conversion sequence improved. Early intervention for low-engagement trials increased conversions.' },
+  ],
+  operations: [
+    { metric: 'PO processing time',   value: '6 min', trend: '-34m',  insight: 'Automated PO generation from stock alerts eliminated most manual purchase requests.' },
+    { metric: 'Stock-out incidents',  value: '0',     trend: '-3',    insight: 'Reorder point alerts firing correctly. Three near-misses caught by automation last month.' },
+    { metric: 'Supplier compliance',  value: '96%',   trend: '+2%',   insight: 'Automated invoice matching flagging discrepancies before approval. Dispute rate down.' },
+  ],
+  support:    [
+    { metric: 'First response time',  value: '58s',   trend: '-3m',   insight: 'Triage automation routes tickets instantly. P1 tickets acknowledged in under 30 seconds.' },
+    { metric: 'Auto-resolved rate',   value: '42%',   trend: '+7%',   insight: 'Knowledge base matching improving. AI auto-replies now handling 42% of routine tickets.' },
+    { metric: 'SLA compliance',       value: '98.4%', trend: '+1.2%', insight: 'Escalation alerts firing earlier in the SLA window. Near-breach rate reduced significantly.' },
+  ],
+  success:    [
+    { metric: 'At-risk accounts',     value: '4',     trend: '-7',    insight: 'RAG scoring caught 11 accounts trending red last month. 7 recovered after CS intervention.' },
+    { metric: 'NPS score',            value: '61',    trend: '+8',    insight: 'Improved onboarding and proactive check-ins driving higher satisfaction scores.' },
+    { metric: 'Renewal rate',         value: '94%',   trend: '+3%',   insight: '90-day renewal sequences reducing last-minute churn. Two enterprise renewals won back.' },
+  ],
+  it:         [
+    { metric: 'Provisioning time',    value: '2 min', trend: '-43m',  insight: 'Account and access provisioning fully automated on new hire confirmation. Zero IT tickets for standard setups.' },
+    { metric: 'Stale access items',   value: '0',     trend: '-14',   insight: 'Quarterly access review automation cleared 14 legacy permissions. Compliance audit passed.' },
+    { metric: 'Security incidents',   value: '0',     trend: '—',     insight: 'No security incidents this quarter. Automated alerting and access reviews maintaining clean posture.' },
+  ],
+  workflows:  [
+    { metric: 'Active workflows',     value: '47',    trend: '+5',    insight: 'Five new workflows activated this month. HR and Sales showing highest new adoption.' },
+    { metric: 'Avg run time',         value: '1.2s',  trend: '-0.3s', insight: 'Performance optimisation pass completed. Slowest workflows were batch email sequences.' },
+    { metric: 'Error rate',           value: '0.4%',  trend: '-0.2%', insight: 'Most errors from third-party API timeouts, not logic failures. Retry logic now handles these.' },
+  ],
+  settings:   [],
+  partners:   [
+    { metric: 'Active integrations',  value: '3',     trend: '+1',    insight: 'New partner integration activated this quarter. Data pipelines healthy across all active connections.' },
+  ],
+  strategy:   [
+    { metric: 'Competitor signals',   value: '14',    trend: '+3',    insight: 'Three new signals detected this week. HubSpot pricing change and monday.com hiring activity flagged as high priority.' },
+    { metric: 'Threat score avg',     value: '6.2',   trend: '+0.4',  insight: 'Slight increase in aggregate threat score. Monitor HubSpot SMB push closely over next 30 days.' },
+  ],
+}
+
+function DeptInsightsModal({ dept, onClose }: { dept: DeptId; onClose: () => void }) {
+  const label = SIDEBAR_ITEMS.find(s => s.id === dept)?.label ?? dept
+  const items = DEPT_INSIGHTS[dept] ?? []
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.78)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-lg rounded-2xl shadow-2xl"
+        style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} style={{ color: '#A78BFA' }} />
+              <h2 className="text-base font-bold" style={{ color: '#F9FAFB' }}>Department Insights</h2>
+            </div>
+            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{label} · AI-generated summary</p>
+          </div>
+          <button onClick={onClose} style={{ color: '#6B7280' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}><X size={18} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          {items.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: '#6B7280' }}>No insights available for this department yet.</p>
+          ) : items.map((item, i) => (
+            <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>{item.metric}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{item.value}</span>
+                  {item.trend !== '—' && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: item.trend.startsWith('-') ? 'rgba(34,197,94,0.1)' : 'rgba(13,148,136,0.1)', color: item.trend.startsWith('-') ? '#22C55E' : '#0D9488' }}>
+                      {item.trend}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{item.insight}</p>
+            </div>
+          ))}
+          <p className="text-xs text-center pt-2" style={{ color: '#4B5563' }}>
+            Demo data only — connect your real tools to see live insights.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── CoachMarks ───────────────────────────────────────────────────────────────
 
 const COACH_STEPS = [
@@ -1414,6 +1559,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showInvite, setShowInvite]   = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
+  const [showDeptInsights, setShowDeptInsights] = useState(false)
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
 
@@ -1448,7 +1594,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     }
   }
 
-  function fireToast() {
+  function fireToast(label: string = '') {
+    if (label === 'Dept Insights') { setShowDeptInsights(true); return }
     setToast('Demo mode — this would trigger in your live workspace')
     setTimeout(() => setToast(null), 3000)
   }
@@ -1461,6 +1608,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       <Toast message={toast} />
       {showOnboarding && <DeptPickerModal onComplete={(depts) => { setFocusDepts(depts); setShowOnboarding(false); setShowCoachMarks(true) }} />}
       {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
+      {showDeptInsights && <DeptInsightsModal dept={activeDept} onClose={() => setShowDeptInsights(false)} />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
 
       {/* Trial banner */}
