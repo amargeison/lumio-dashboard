@@ -460,6 +460,80 @@ function DemoTabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: Overvie
   )
 }
 
+// ─── Meetings Today ───────────────────────────────────────────────────────────
+
+const DEMO_MEETINGS = [
+  { id: '1', title: 'The Feed Network — Weekly Check-in',   time: '09:00', duration: '30 min', attendees: ['Sarah M.'],     location: 'Google Meet',  type: 'video'    as const, status: 'done'     as const, link: '#' },
+  { id: '2', title: 'New Customer Demo — Oakridge Schools', time: '11:00', duration: '45 min', attendees: ['Charlotte D.'], location: 'Zoom',         type: 'video'    as const, status: 'now'      as const, link: '#' },
+  { id: '3', title: 'Investor Update Call',                  time: '14:00', duration: '60 min', attendees: ['Arron'],        location: 'Google Meet',  type: 'call'     as const, status: 'upcoming' as const, link: '#' },
+  { id: '4', title: 'Team Standup',                          time: '17:00', duration: '15 min', attendees: ['All team'],     location: 'Slack Huddle', type: 'internal' as const, status: 'upcoming' as const },
+] as const
+
+const MEETING_TYPE_ICON = { call: '📞', 'in-person': '🤝', video: '📹', internal: '💬' }
+
+function DemoMeetingsToday() {
+  const live = DEMO_MEETINGS.find(m => m.status === 'now')
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 Meetings Today</h3>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>
+          {DEMO_MEETINGS.length} scheduled
+        </span>
+      </div>
+
+      {live && (
+        <div className="mb-3 rounded-xl p-3 flex items-center gap-3"
+          style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{live.title}</p>
+            <p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {live.duration}</p>
+          </div>
+          {'link' in live && live.link && (
+            <a href={live.link}
+              className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-colors"
+              style={{ backgroundColor: '#16A34A' }}>
+              Join →
+            </a>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-1">
+        {DEMO_MEETINGS.map(m => (
+          <div key={m.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl"
+            style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
+            <div className="text-center flex-shrink-0 w-12">
+              <div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div>
+            </div>
+            <span className="text-base flex-shrink-0">{MEETING_TYPE_ICON[m.type]}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate" style={{
+                color: m.status === 'done' ? '#6B7280' : '#F9FAFB',
+                textDecoration: m.status === 'done' ? 'line-through' : 'none',
+              }}>
+                {m.title}
+              </p>
+              <p className="text-xs truncate" style={{ color: '#6B7280' }}>
+                {m.attendees.join(', ')} · {m.location}
+              </p>
+            </div>
+            {'link' in m && m.link && m.status !== 'done' && (
+              <a href={m.link}
+                className="px-2 py-1 text-xs rounded-lg flex-shrink-0"
+                style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>
+                Join
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Morning Roundup panel ────────────────────────────────────────────────────
 
 const ROUNDUP_ITEMS = [
@@ -570,6 +644,7 @@ function OverviewView({ company }: { company: string }) {
       <DemoTabBar tab={tab} onChange={setTab} />
       {tab === 'today' ? (
         <div className="space-y-4">
+          <DemoMeetingsToday />
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
               pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
