@@ -1,0 +1,92 @@
+{
+  "name": "HM-01 Morning Briefing",
+  "nodes": [
+    {
+      "name": "Schedule — 6am daily",
+      "type": "n8n-nodes-base.cron",
+      "parameters": { "triggerTimes": { "item": [{ "hour": 6, "minute": 0 }] } },
+      "position": [240, 300]
+    },
+    {
+      "name": "Get workflow stats",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "workflow_executions",
+        "filterType": "string",
+        "filterString": "created_at > now() - interval '24 hours'"
+      },
+      "position": [460, 200]
+    },
+    {
+      "name": "Get overdue invoices",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.xero.com/api.xro/2.0/Invoices?where=Status==\"AUTHORISED\"&&DueDateString<Today",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "xeroApi"
+      },
+      "position": [460, 300]
+    },
+    {
+      "name": "Get at-risk customers",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customer_health",
+        "filterType": "string",
+        "filterString": "health_score < 40 AND status = 'active'"
+      },
+      "position": [460, 400]
+    },
+    {
+      "name": "Get pipeline",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "filterType": "string",
+        "filterString": "score > 70 AND stage != 'closed'"
+      },
+      "position": [460, 500]
+    },
+    {
+      "name": "Generate insights with Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "headers": { "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 1000,
+          "system": "You are a business intelligence assistant for Lumio, a SaaS automation company. Generate exactly 4 business insights from the data provided. Format as JSON array with fields: id, type (alert/opportunity/trend/achievement), title, body, metric, metricChange, positive, action, source. Be specific, actionable, and direct. No fluff.",
+          "messages": [{ "role": "user", "content": "Generate insights from this data: {{$json.combinedData}}" }]
+        }
+      },
+      "position": [700, 300]
+    },
+    {
+      "name": "Save insights to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "home_insights",
+        "conflictColumns": "date",
+        "fieldsToSend": "autoMapInputData"
+      },
+      "position": [920, 300]
+    },
+    {
+      "name": "Slack notification — briefing ready",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "channel": "#lumio-daily",
+        "text": "🌅 Morning briefing generated. {{$json.insights.length}} insights ready. Open Lumio to review."
+      },
+      "position": [920, 450]
+    }
+  ]
+}

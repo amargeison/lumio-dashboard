@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   GitBranch,
   UserPlus,
@@ -20,6 +21,15 @@ import {
 } from 'lucide-react'
 import { StatCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import PersonalBanner from './overview/components/PersonalBanner'
+import DailyTabs from './overview/components/DailyTabs'
+import MeetingsToday from './overview/components/MeetingsToday'
+import MorningReview from './overview/components/MorningReview'
+import QuickWins from './overview/components/QuickWins'
+import DailyTasks from './overview/components/DailyTasks'
+import Insights from './overview/components/Insights'
+import NotToMiss from './overview/components/NotToMiss'
+import TeamPanel from './overview/components/TeamPanel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,13 +98,22 @@ function RAGDot({ status }: { status: RAGStatus }) {
   return <Circle size={10} fill={color} strokeWidth={0} style={{ color }} />
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Home tab content (original overview) ─────────────────────────────────────
 
-export default function OverviewPage() {
+function HomeTab() {
   const total = ragCounts.reduce((s, r) => s + r.count, 0)
-
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Meetings + Morning Review */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <MeetingsToday />
+        </div>
+        <div>
+          <MorningReview />
+        </div>
+      </div>
 
       {/* Stats */}
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -200,6 +219,29 @@ export default function OverviewPage() {
           </div>
         </div>
 
+      </div>
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+type Tab = 'home' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
+
+export default function OverviewPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('home')
+
+  return (
+    <div className="flex flex-col">
+      <PersonalBanner />
+      <DailyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="px-4 py-4 sm:px-6">
+        {activeTab === 'home'        && <HomeTab />}
+        {activeTab === 'quick-wins'  && <QuickWins />}
+        {activeTab === 'tasks'       && <DailyTasks />}
+        {activeTab === 'insights'    && <Insights />}
+        {activeTab === 'not-to-miss' && <NotToMiss />}
+        {activeTab === 'team'        && <TeamPanel />}
       </div>
     </div>
   )
