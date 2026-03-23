@@ -19,6 +19,7 @@ import {
   Sparkles,
   Settings,
   Handshake,
+  Target,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -29,9 +30,10 @@ const navItems: {
   badge: number | null
   accent?: string
 }[] = [
-  { label: 'Overview',          href: '/',            icon: LayoutDashboard, badge: null },
-  { label: 'Insights',          href: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
-  { label: 'Partners',          href: '/partners',    icon: Handshake,       badge: null },
+  { label: 'Overview',          href: '/',                              icon: LayoutDashboard, badge: null },
+  { label: 'Insights',          href: '/insights',                      icon: Sparkles,        badge: null, accent: '#6C3FC5' },
+  { label: 'Competitor Intel',  href: '/strategy/competitor-watch',     icon: Target,          badge: 2,    accent: '#EF4444' },
+  { label: 'Partners',          href: '/partners',                      icon: Handshake,       badge: null },
   { label: 'HR & People',       href: '/hr',          icon: Users,           badge: 3    },
   { label: 'Accounts',          href: '/accounts',    icon: Building2,       badge: null },
   { label: 'Sales & CRM',       href: '/sales',       icon: TrendingUp,      badge: 12   },
