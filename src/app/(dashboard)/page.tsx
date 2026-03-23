@@ -14,6 +14,9 @@ import {
   Loader2,
   CircleAlert,
   Circle,
+  BookOpen,
+  CalendarHeart,
+  Target,
 } from 'lucide-react'
 import { StatCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
@@ -34,11 +37,14 @@ const stats = [
 ]
 
 const quickActions = [
-  { label: 'New Joiner',     icon: Users,        href: '/hr/new-joiner'      },
-  { label: 'New Customer',   icon: UserPlus,     href: '/sales/new-customer' },
-  { label: 'New Trial',      icon: FlaskConical, href: '/trials/new'         },
-  { label: 'Chase Invoice',  icon: Receipt,      href: '/accounts/chase'     },
-  { label: 'Support Ticket', icon: TicketCheck,  href: '/support/new'        },
+  { label: 'New Joiner',        icon: Users,          href: '/hr/new-joiner'               },
+  { label: 'New Customer',      icon: UserPlus,       href: '/sales/new-customer'          },
+  { label: 'New Trial',         icon: FlaskConical,   href: '/trials/new'                  },
+  { label: 'Chase Invoice',     icon: Receipt,        href: '/accounts/chase'              },
+  { label: 'Support Ticket',    icon: TicketCheck,    href: '/support/new'                 },
+  { label: 'Create Wiki',       icon: BookOpen,       href: '/operations/wiki'             },
+  { label: 'Team Events',       icon: CalendarHeart,  href: '/hr/events'                   },
+  { label: 'Competitor Watch',  icon: Target,         href: '/strategy/competitor-watch'   },
 ]
 
 const workflowFeed: { id: number; name: string; customer: string; status: WorkflowStatus; ts: string }[] = [

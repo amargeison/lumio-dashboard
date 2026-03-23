@@ -30,10 +30,9 @@ const navItems: {
   badge: number | null
   accent?: string
 }[] = [
-  { label: 'Overview',          href: '/',                              icon: LayoutDashboard, badge: null },
-  { label: 'Insights',          href: '/insights',                      icon: Sparkles,        badge: null, accent: '#6C3FC5' },
-  { label: 'Competitor Intel',  href: '/strategy/competitor-watch',     icon: Target,          badge: 2,    accent: '#EF4444' },
-  { label: 'Partners',          href: '/partners',                      icon: Handshake,       badge: null },
+  { label: 'Overview',          href: '/',            icon: LayoutDashboard, badge: null },
+  { label: 'Insights',          href: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
+  { label: 'Partners',          href: '/partners',    icon: Handshake,       badge: null },
   { label: 'HR & People',       href: '/hr',          icon: Users,           badge: 3    },
   { label: 'Accounts',          href: '/accounts',    icon: Building2,       badge: null },
   { label: 'Sales & CRM',       href: '/sales',       icon: TrendingUp,      badge: 12   },
@@ -42,6 +41,7 @@ const navItems: {
   { label: 'Operations',        href: '/operations',  icon: Package,         badge: null },
   { label: 'Support',           href: '/support',     icon: Headphones,      badge: 5    },
   { label: 'Success',           href: '/success',     icon: Activity,        badge: 2    },
+  { label: 'Strategy',          href: '/strategy',    icon: Target,          badge: null },
   { label: 'IT & Systems',      href: '/it',          icon: Server,          badge: 1    },
   { label: 'Workflows Library', href: '/workflows',   icon: GitBranch,       badge: null },
   { label: 'Settings',          href: '/settings',    icon: Settings,        badge: null },
