@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
@@ -10,6 +10,7 @@ function LoginContent() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || '/overview'
   const message = searchParams.get('message')
@@ -18,30 +19,88 @@ function LoginContent() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [ssoLoading, setSsoLoading] = useState<string | null>(null)
-  const [sent, setSent] = useState(false)
+  const [step, setStep] = useState<'email' | 'otp'>('email')
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [verifying, setVerifying] = useState(false)
   const [formError, setFormError] = useState('')
+  const [resendCountdown, setResendCountdown] = useState(0)
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendCountdown <= 0) return
+    const t = setTimeout(() => setResendCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendCountdown])
+
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
     setLoading(true)
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
-        shouldCreateUser: false,
-      },
+      options: { shouldCreateUser: false },
     })
     if (error) {
       setFormError(
-        error.message.includes('not found')
+        error.message.includes('not found') || error.message.includes('Email not confirmed')
           ? 'No account found for this email. Start a free trial or contact hello@lumiocms.com.'
           : error.message
       )
     } else {
-      setSent(true)
+      setDigits(['', '', '', '', '', ''])
+      setStep('otp')
+      setResendCountdown(30)
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
     }
     setLoading(false)
+  }
+
+  const handleDigitChange = (index: number, value: string) => {
+    const char = value.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[index] = char
+    setDigits(next)
+    if (char && index < 5) inputRefs.current[index + 1]?.focus()
+  }
+
+  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 6) {
+      setDigits(pasted.split(''))
+      inputRefs.current[5]?.focus()
+    }
+  }
+
+  const handleVerify = async () => {
+    const token = digits.join('')
+    if (token.length < 6) return
+    setFormError('')
+    setVerifying(true)
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    if (error) {
+      setFormError('Invalid or expired code — please try again')
+      setDigits(['', '', '', '', '', ''])
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } else {
+      router.push(redirectTo)
+    }
+    setVerifying(false)
+  }
+
+  const handleResend = async () => {
+    if (resendCountdown > 0) return
+    setFormError('')
+    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    setDigits(['', '', '', '', '', ''])
+    setResendCountdown(30)
+    setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
 
   const handleGoogle = async () => {
@@ -111,13 +170,14 @@ function LoginContent() {
             </div>
           )}
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-black mb-2">Sign in to Lumio</h1>
-            <p className="text-gray-500 text-sm">Access your dashboard</p>
-          </div>
-
-          {!sent ? (
+          {/* ── Step 1: Email entry ── */}
+          {step === 'email' && (
             <>
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-black mb-2">Sign in to Lumio</h1>
+                <p className="text-gray-500 text-sm">Access your dashboard</p>
+              </div>
+
               <div className="space-y-3 mb-6">
                 <button
                   onClick={handleGoogle}
@@ -178,7 +238,7 @@ function LoginContent() {
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
-              <form onSubmit={handleMagicLink} className="space-y-3">
+              <form onSubmit={handleSendCode} className="space-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">Work email</label>
                   <input
@@ -196,7 +256,7 @@ function LoginContent() {
                   disabled={loading || !email}
                   className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? '⏳ Sending link...' : '✉️ Send me a sign-in link'}
+                  {loading ? '⏳ Sending...' : 'Send me a code →'}
                 </button>
               </form>
 
@@ -206,23 +266,67 @@ function LoginContent() {
                 </Link>
               </div>
             </>
-          ) : (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-600/10 border border-green-500/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-                📧
+          )}
+
+          {/* ── Step 2: OTP entry ── */}
+          {step === 'otp' && (
+            <div>
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-purple-600/10 border border-purple-500/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                  📬
+                </div>
+                <h1 className="text-2xl font-black mb-2">Check your email</h1>
+                <p className="text-gray-400 text-sm">We sent a 6-digit code to</p>
+                <p className="font-semibold text-white mt-1">{email}</p>
               </div>
-              <h3 className="font-bold text-gray-100 mb-2">Check your inbox</h3>
-              <p className="text-gray-400 text-sm mb-1">We sent a sign-in link to</p>
-              <p className="font-semibold text-white mb-4">{email}</p>
-              <p className="text-gray-600 text-xs mb-6">
-                The link expires in 10 minutes. No password needed — just click it.
-              </p>
+
+              <div className="flex justify-center gap-2 mb-6" onPaste={handlePaste}>
+                {digits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={el => { inputRefs.current[i] = el }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={e => handleDigitChange(i, e.target.value)}
+                    onKeyDown={e => handleDigitKeyDown(i, e)}
+                    className="w-11 h-14 text-center text-xl font-bold bg-white/5 border border-white/15 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors caret-transparent"
+                  />
+                ))}
+              </div>
+
+              {formError && (
+                <p className="text-red-400 text-xs text-center mb-4">{formError}</p>
+              )}
+
               <button
-                onClick={() => { setSent(false); setEmail('') }}
-                className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors"
+                onClick={handleVerify}
+                disabled={verifying || digits.join('').length < 6}
+                className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-4"
               >
-                Use a different email
+                {verifying ? '⏳ Verifying...' : 'Verify code'}
               </button>
+
+              <div className="text-center text-xs">
+                {resendCountdown > 0 ? (
+                  <span className="text-gray-600">Resend code in {resendCountdown}s</span>
+                ) : (
+                  <button
+                    onClick={handleResend}
+                    className="text-gray-500 hover:text-gray-300 transition-colors underline"
+                  >
+                    Resend code
+                  </button>
+                )}
+                <span className="mx-2 text-gray-700">·</span>
+                <button
+                  onClick={() => { setStep('email'); setFormError('') }}
+                  className="text-gray-500 hover:text-gray-300 transition-colors underline"
+                >
+                  Use a different email
+                </button>
+              </div>
             </div>
           )}
 
