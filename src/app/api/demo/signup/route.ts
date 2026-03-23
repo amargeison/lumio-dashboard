@@ -10,7 +10,12 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, company_name, gdpr_consent, marketing_consent } = await req.json()
+    const body = await req.json()
+    const name             = body.name         || ''
+    const email            = body.email        || ''
+    const company_name     = body.company      || body.company_name || ''
+    const gdpr_consent     = body.gdpr         || body.gdpr_consent || false
+    const marketing_consent = body.marketing_consent || false
 
     if (!name || !email || !company_name || !gdpr_consent) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
