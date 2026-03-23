@@ -994,6 +994,74 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── AI-powered tools ─────────────────────────────────────────────────── */}
+      <section style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937' }}>
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-6"
+              style={{ backgroundColor: 'rgba(108,63,197,0.12)', border: '1px solid rgba(108,63,197,0.35)', color: '#A78BFA' }}>
+              <Sparkles size={12} strokeWidth={2.5} />
+              New — AI-powered tools
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              Not just automations.<br />
+              <span style={{ color: '#A78BFA' }}>AI tools inside your dashboard.</span>
+            </h2>
+            <p className="text-base" style={{ color: '#6B7280', maxWidth: 520, margin: '0 auto' }}>
+              Describe what you need. Lumio researches, writes, and publishes — you review and approve.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              {
+                badge: 'OP-WIKI-01',
+                emoji: '📚',
+                title: 'Wiki Builder',
+                desc: 'Connect Notion, Confluence, Google Drive, SharePoint, Slack, or upload files. Lumio reads everything and generates a clean, structured internal wiki — ready to publish in minutes.',
+                highlights: ['8 source integrations', 'Custom sections & tone', 'Publishes to Notion, Confluence, Word'],
+              },
+              {
+                badge: 'OP-FAQ-01',
+                emoji: '❓',
+                title: 'FAQ Builder',
+                desc: 'Point it at your Zendesk tickets, Intercom threads, and HubSpot KB. Lumio clusters the real questions your customers ask and generates answers — grouped, formatted, and ready to publish.',
+                highlights: ['Reads real support history', 'Customer or internal audience', 'Publishes to Zendesk Guide, HubSpot, Notion'],
+              },
+              {
+                badge: 'HR-EVENTS-01',
+                emoji: '🎉',
+                title: 'Team Events Researcher',
+                desc: 'Tell Lumio the event type, headcount, budget, and location. It searches Google, TripAdvisor, and Eventbrite — returns ranked venues with ratings, prices, and a ready-to-send enquiry email.',
+                highlights: ['12 event types', 'Live venue ratings & reviews', 'Auto-drafts enquiry email'],
+              },
+            ].map(tool => (
+              <div key={tool.badge} className="rounded-2xl p-6 flex flex-col gap-4"
+                style={{ backgroundColor: '#111318', border: '1px solid rgba(108,63,197,0.25)' }}>
+                <div className="flex items-start justify-between">
+                  <div className="text-3xl">{tool.emoji}</div>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded"
+                    style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.25)' }}>
+                    {tool.badge}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{tool.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{tool.desc}</p>
+                </div>
+                <ul className="space-y-1.5 mt-auto">
+                  {tool.highlights.map(h => (
+                    <li key={h} className="flex items-center gap-2 text-xs" style={{ color: '#9CA3AF' }}>
+                      <span style={{ color: '#A78BFA', flexShrink: 0 }}>✓</span> {h}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Workflow Library ─────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-6 py-24">
         <div className="text-center mb-14">
@@ -1047,10 +1115,18 @@ export default function HomePage() {
               { name: 'TR-03 Trial Usage Monitoring',    outcome: 'Sales knows which trials are hot before they go cold.' },
               { name: 'MK-04 SEO Content Engine',        outcome: 'Content pipeline running on autopilot.' },
               { name: 'EX-01 CEO Daily Briefing',        outcome: 'CEO starts every day informed in 2 minutes.' },
+              { name: 'OP-WIKI-01 Wiki Builder',         outcome: 'Internal wiki generated from Notion, Confluence, Slack and files — live in minutes.', isNew: true },
+              { name: 'OP-FAQ-01 FAQ Builder',           outcome: 'FAQ auto-generated from Zendesk tickets and your knowledge base. Updated every time your docs change.', isNew: true },
+              { name: 'HR-EVENTS-01 Team Events',        outcome: 'Describe the event, headcount, and budget — get ranked venues with ratings and a ready-to-send enquiry.', isNew: true },
             ].map(wf => (
               <div key={wf.name} className="rounded-xl px-5 py-4"
-                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
-                <p className="text-sm font-semibold mb-1" style={{ color: '#E5E7EB' }}>{wf.name}</p>
+                style={{ backgroundColor: '#0D0E16', border: `1px solid ${'isNew' in wf && wf.isNew ? 'rgba(108,63,197,0.35)' : '#1F2937'}` }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>{wf.name}</p>
+                  {'isNew' in wf && wf.isNew && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>NEW</span>
+                  )}
+                </div>
                 <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>{wf.outcome}</p>
               </div>
             ))}

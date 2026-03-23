@@ -1,6 +1,7 @@
 'use client'
 
-import { Users, UserPlus, FileText, Star, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 
@@ -66,6 +67,31 @@ export default function HRPage() {
       </ChartSection>
 
       <QuickActions items={actions} />
+
+      {/* AI Workflow Launchers */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          href="/hr/events"
+          className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <CalendarHeart className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">HR-EVENTS-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Team Events Researcher</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">
+              Describe your event, headcount, and budget — get ranked venue recommendations with ratings, prices, and a ready-to-send enquiry email.
+            </div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow →</div>
+        </Link>
+      </div>
 
       <TwoCol
         main={

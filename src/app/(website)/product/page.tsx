@@ -649,16 +649,19 @@ export default function ProductPage() {
               { name: 'SA-03 Proposal Generation',       outcome: 'Boardroom-quality proposals in 90 seconds.' },
               { name: 'AC-01 Invoice Generation',        outcome: 'Every invoice generated, sent, and tracked automatically.' },
               { name: 'AC-10 Cash Flow Forecasting',     outcome: 'Cash position always visible 13 weeks ahead.' },
-              { name: 'SU-01 Ticket Intake & Triage',    outcome: 'Every support request captured, categorised, and routed instantly.' },
-              { name: 'LG-07 Companies House Filing',    outcome: 'Always compliant. No fines for missed filings.' },
               { name: 'EX-01 CEO Daily Briefing',        outcome: 'CEO starts every day informed in 2 minutes.' },
-              { name: 'OP-10 Company OKR Tracker',       outcome: 'OKRs tracked in real time from live data. No spreadsheets.' },
+              { name: 'OP-WIKI-01 Wiki Builder',         outcome: 'Internal wiki generated from Notion, Confluence, Slack and files — live in minutes.', isNew: true },
+              { name: 'OP-FAQ-01 FAQ Builder',           outcome: 'FAQ auto-generated from Zendesk tickets and your knowledge base. Stays updated automatically.', isNew: true },
+              { name: 'HR-EVENTS-01 Team Events',        outcome: 'Describe the event, headcount, and budget — get ranked venues with ratings and a ready-to-send enquiry.', isNew: true },
             ].map(wf => (
               <div key={wf.name} className="rounded-xl px-5 py-4"
-                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
+                style={{ backgroundColor: '#0D0E16', border: `1px solid ${'isNew' in wf && wf.isNew ? 'rgba(108,63,197,0.35)' : '#1F2937'}` }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <GitBranch size={12} style={{ color: '#0D9488', flexShrink: 0 }} />
+                  <GitBranch size={12} style={{ color: 'isNew' in wf && wf.isNew ? '#A78BFA' : '#0D9488', flexShrink: 0 }} />
                   <p className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>{wf.name}</p>
+                  {'isNew' in wf && wf.isNew && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>NEW</span>
+                  )}
                 </div>
                 <p className="text-xs leading-relaxed pl-5" style={{ color: '#6B7280' }}>{wf.outcome}</p>
               </div>

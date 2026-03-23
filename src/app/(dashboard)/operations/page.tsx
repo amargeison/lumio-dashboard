@@ -1,6 +1,7 @@
 'use client'
 
-import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus } from 'lucide-react'
+import Link from 'next/link'
+import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 
@@ -60,6 +61,53 @@ export default function OperationsPage() {
       </ChartSection>
 
       <QuickActions items={actions} />
+
+      {/* AI Workflow Launchers */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[
+          {
+            href: '/operations/wiki',
+            icon: BookOpen,
+            accent: '#6C3FC5',
+            accentBg: 'rgba(108,63,197,0.08)',
+            badge: 'OP-WIKI-01',
+            title: 'Wiki Builder',
+            desc: 'Pull from Notion, Confluence, SharePoint, Google Drive and files — generate a structured internal wiki in minutes.',
+            cta: 'Launch workflow',
+          },
+          {
+            href: '/operations/faq',
+            icon: HelpCircle,
+            accent: '#0D9488',
+            accentBg: 'rgba(13,148,136,0.08)',
+            badge: 'OP-FAQ-01',
+            title: 'FAQ Builder',
+            desc: 'Analyse Zendesk tickets, Intercom threads, and your KB — auto-generate a categorised FAQ for customers or staff.',
+            cta: 'Launch workflow',
+          },
+        ].map(({ href, icon: Icon, accent, accentBg, badge, title, desc, cta }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: accentBg }}>
+                <Icon className="w-4 h-4" style={{ color: accent }} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
+                <span className="text-xs font-mono" style={{ color: accent }}>{badge}</span>
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">{title}</div>
+              <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">{desc}</div>
+            </div>
+            <div className="text-xs font-medium mt-auto" style={{ color: accent }}>{cta} →</div>
+          </Link>
+        ))}
+      </div>
 
       <TwoCol
         main={
