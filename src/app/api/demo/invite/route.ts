@@ -45,19 +45,27 @@ export async function POST(req: NextRequest) {
     for (const invitee of invitees) {
       if (!invitee.email || !invitee.name) continue
 
-      // Magic link token for invited user (7-day expiry — more generous than OTP)
-      const token = crypto.randomUUID()
-      const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      const email = invitee.email.toLowerCase()
+
+      // Invalidate any previous unused codes for this email
+      await supabase
+        .from('demo_magic_links')
+        .update({ used: true })
+        .eq('email', email)
+        .eq('used', false)
+
+      // 6-digit OTP with 24-hour expiry (generous for invitees who may not check immediately)
+      const code = Math.floor(100000 + Math.random() * 900000).toString()
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
       await supabase.from('demo_magic_links').insert({
-        email: invitee.email.toLowerCase(),
+        email,
         slug,
-        token,
+        token: code,
         expires_at: expires,
         used: false,
       })
 
-      const workspaceUrl = `${appUrl}/demo/auth?token=${token}`
       const deptList = invitee.departments.length
         ? invitee.departments.join(', ')
         : 'All departments'
@@ -85,12 +93,19 @@ export async function POST(req: NextRequest) {
                   <p style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;letter-spacing:0.1em;margin:0 0 6px;">YOUR FOCUS AREAS</p>
                   <p style="color:#0D9488;font-size:13px;margin:0;">${deptList}</p>
                 </div>` : ''}
-                <a href="${workspaceUrl}"
-                   style="display:block;text-align:center;background:#7C3AED;color:white;text-decoration:none;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:20px;">
-                  Enter Demo Workspace →
-                </a>
+                <div style="background:rgba(124,58,237,0.15);border:2px solid #7C3AED;border-radius:16px;padding:24px;text-align:center;margin-bottom:20px;">
+                  <p style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;letter-spacing:0.15em;margin:0 0 8px;">YOUR ACCESS CODE</p>
+                  <p style="color:white;font-size:40px;font-weight:900;letter-spacing:0.3em;margin:0;font-variant-numeric:tabular-nums;">${code}</p>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px;">
+                  <p style="color:rgba(255,255,255,0.4);font-size:12px;font-weight:600;margin:0 0 6px;">HOW TO ACCESS YOUR WORKSPACE</p>
+                  <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0;line-height:1.6;">
+                    Visit <a href="${appUrl}/demo" style="color:#A78BFA;text-decoration:none;font-weight:600;">${appUrl}/demo</a>
+                    and enter the 6-digit code above when prompted.
+                  </p>
+                </div>
                 <p style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;margin:0;">
-                  This link expires in 7 days. If you didn't expect this, you can safely ignore it.
+                  This code expires in 24 hours. If you didn't expect this, you can safely ignore it.
                 </p>
               </div>
               <div style="padding:16px 32px;border-top:1px solid rgba(255,255,255,0.07);">
