@@ -665,10 +665,12 @@ function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
 
 // ─── Department views ─────────────────────────────────────────────────────────
 
-function OverviewView({ company, bannerRef, statsRef }: {
+function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
   company: string
   bannerRef?: RefObject<HTMLDivElement | null>
   statsRef?: RefObject<HTMLDivElement | null>
+  actionsRef?: RefObject<HTMLDivElement | null>
+  onAction?: (label: string) => void
 }) {
   const [tab, setTab] = useState<OverviewTab>('today')
   const wf  = fakeNum(47, company, 'wf')
@@ -687,6 +689,7 @@ function OverviewView({ company, bannerRef, statsRef }: {
       <DemoTabBar tab={tab} onChange={setTab} />
       {tab === 'today' ? (
         <div className="space-y-4">
+          <div ref={actionsRef}><QuickActionsBar dept="overview" onAction={onAction ?? (() => {})} /></div>
           <DemoMeetingsToday />
           <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
@@ -1496,8 +1499,6 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <div ref={actionsRef}><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>
-
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -1508,7 +1509,9 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} />}
+            {activeDept !== 'overview' && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+
+            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} />}
             {activeDept === 'insights'   && <InsightsView   company={company} />}
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}
