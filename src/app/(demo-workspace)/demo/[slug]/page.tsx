@@ -422,9 +422,138 @@ function DemoPersonalBanner({ company }: { company: string }) {
   )
 }
 
+// ─── Overview tab bar ─────────────────────────────────────────────────────────
+
+type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
+
+const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'today',       label: 'Today',       icon: '🏠' },
+  { id: 'quick-wins',  label: 'Quick Wins',  icon: '⚡' },
+  { id: 'tasks',       label: 'Daily Tasks', icon: '✅' },
+  { id: 'insights',    label: 'Insights',    icon: '📊' },
+  { id: 'not-to-miss', label: "Don't Miss",  icon: '🔴' },
+  { id: 'team',        label: 'Team',        icon: '👥' },
+]
+
+function DemoTabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
+  return (
+    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5"
+      style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+      <div className="flex items-center gap-0 min-w-max px-2">
+        {OVERVIEW_TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => onChange(t.id)}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{
+              borderBottomColor: tab === t.id ? '#7C3AED' : 'transparent',
+              color: tab === t.id ? '#A78BFA' : '#6B7280',
+              backgroundColor: tab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent',
+            }}
+          >
+            <span className="text-base">{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Morning Roundup panel ────────────────────────────────────────────────────
+
+const ROUNDUP_ITEMS = [
+  { id: 'email',    icon: '📧', label: 'Emails',        count: 12, urgent: true,  color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',   border: 'rgba(96,165,250,0.2)',   preview: ['Invoice overdue from Bramble Hill', 'New trial signup — Just wow Inc', 'Stripe payment confirmed — Oakridge'] },
+  { id: 'slack',    icon: '💬', label: 'Slack',         count: 7,  urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)',  border: 'rgba(192,132,252,0.2)',  preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner'] },
+  { id: 'linkedin', icon: '💼', label: 'LinkedIn',      count: 4,  urgent: false, color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)',   border: 'rgba(45,212,191,0.2)',   preview: ['2 connection requests', 'Post got 47 reactions'] },
+  { id: 'news',     icon: '📰', label: 'Industry News', count: 3,  urgent: false, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)',   border: 'rgba(251,191,36,0.2)',   preview: ['UK SMB automation market up 34% YoY'] },
+  { id: 'notion',   icon: '📋', label: 'Notion',        count: 2,  urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.2)',   preview: ['Testing guide updated — 2 items resolved'] },
+]
+
+function DemoMorningRoundup() {
+  const [expanded, setExpanded] = useState<string | null>(null)
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+      </div>
+      <div className="space-y-2">
+        {ROUNDUP_ITEMS.map(item => {
+          const isOpen = expanded === item.id
+          return (
+            <div key={item.id} className="rounded-xl overflow-hidden"
+              style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+              <button
+                onClick={() => setExpanded(isOpen ? null : item.id)}
+                className="w-full flex items-center justify-between p-3 text-left"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
+                  {item.urgent && (
+                    <span className="text-xs px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
+                      Urgent
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-1.5">
+                  {item.preview.map((p, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}>
+                      <span className="flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }}>→</span>
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
+  const labels: Record<OverviewTab, { title: string; icon: string; desc: string }> = {
+    'today':       { title: 'Today',       icon: '🏠', desc: '' },
+    'quick-wins':  { title: 'Quick Wins',  icon: '⚡', desc: 'Your highest-impact actions for today, prioritised by AI.' },
+    'tasks':       { title: 'Daily Tasks', icon: '✅', desc: 'All your tasks in one place, synced from Notion and your calendar.' },
+    'insights':    { title: 'Insights',    icon: '📊', desc: 'Key metrics and AI-generated observations across your business.' },
+    'not-to-miss': { title: "Don't Miss",  icon: '🔴', desc: 'Critical items that need your attention today.' },
+    'team':        { title: 'Team',        icon: '👥', desc: 'See what your team is working on and who needs support.' },
+  }
+  const { title, icon, desc } = labels[tab]
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-3xl"
+        style={{ backgroundColor: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
+        {icon}
+      </div>
+      <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{title}</h3>
+      <p className="text-sm mb-6 max-w-xs" style={{ color: '#9CA3AF' }}>
+        {desc || 'This section is fully configured with real data in your live workspace.'}
+      </p>
+      <Link href="/pricing"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
+        style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+        Start your workspace <ArrowRight size={14} />
+      </Link>
+    </div>
+  )
+}
+
 // ─── Department views ─────────────────────────────────────────────────────────
 
 function OverviewView({ company }: { company: string }) {
+  const [tab, setTab] = useState<OverviewTab>('today')
   const wf  = fakeNum(47, company, 'wf')
   const cu  = fakeNum(181, company, 'cu')
   const mrr = fakeNum(42000, company, 'mrr')
@@ -438,63 +567,48 @@ function OverviewView({ company }: { company: string }) {
   return (
     <div className="space-y-4">
       <DemoPersonalBanner company={company} />
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
-          pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
-          barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
-        <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
-          pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
-          barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
-        <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
-          pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
-          barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
-        <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
-          pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
-          barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-            <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
+      <DemoTabBar tab={tab} onChange={setTab} />
+      {tab === 'today' ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
+              pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
+              barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
+            <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
+              pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
+              barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
+            <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
+              pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
+              barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
+            <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
+              pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
+              barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
           </div>
-          {feed.map((run, i) => (
-            <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
-                <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
+                <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <StatusBadge status={run.status} />
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Customer Health</p>
-            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{cu} accounts</p>
-          </div>
-          <div className="p-5 space-y-4">
-            {([{status:'green'as RAG,count:Math.round(cu*.77),label:'Healthy'},{status:'amber'as RAG,count:Math.round(cu*.17),label:'At Risk'},{status:'red'as RAG,count:Math.round(cu*.06),label:'Critical'}]).map(r => {
-              const pct = Math.round((r.count/cu)*100)
-              const col = {green:'#22C55E',amber:'#F59E0B',red:'#EF4444'}[r.status]
-              return (
-                <div key={r.status} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2"><RAGDot status={r.status}/><span className="text-sm" style={{color:'#F9FAFB'}}>{r.label}</span></div>
-                    <span className="text-sm font-bold" style={{color:'#F9FAFB'}}>{r.count}</span>
+              {feed.map((run, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
+                    <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
                   </div>
-                  <div className="h-1.5 w-full rounded-full overflow-hidden" style={{backgroundColor:'#1F2937'}}>
-                    <div className="h-full rounded-full" style={{width:`${pct}%`,backgroundColor:col}} />
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <StatusBadge status={run.status} />
+                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
                   </div>
                 </div>
-              )
-            })}
+              ))}
+            </div>
+            <DemoMorningRoundup />
           </div>
         </div>
-      </div>
+      ) : (
+        <DemoTabPlaceholder tab={tab} />
+      )}
     </div>
   )
 }
