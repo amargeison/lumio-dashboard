@@ -10,8 +10,10 @@ import {
   UserPlus, X, Plus, Send, Play, Check,
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
-  Calendar, FileText, Target, DollarSign,
+  Calendar, FileText, Target, DollarSign, Volume2, VolumeX,
 } from 'lucide-react'
+import { useSpeech } from '@/hooks/useSpeech'
+import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -375,6 +377,19 @@ function DemoPersonalBanner({ company }: { company: string }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const bg = BG_GRADIENTS[new Date().getDay()]
+  const { speak, stop, isPlaying, supported } = useSpeech()
+
+  function handleBriefing() {
+    if (isPlaying) { stop(); return }
+    const script = buildDemoBriefingScript({
+      companyName: company,
+      meetings: DEMO_MEETINGS as unknown as { title: string; time: string; status: string }[],
+      emailCount: 12,
+      urgentCount: 2,
+      workflowActionCount: 3,
+    })
+    speak(script)
+  }
 
   return (
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
@@ -423,6 +438,24 @@ function DemoPersonalBanner({ company }: { company: string }) {
           </div>
 
         </div>
+
+        {/* Play briefing button — bottom-right */}
+        {supported && (
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={handleBriefing}
+              title={isPlaying ? 'Stop briefing' : 'Play morning briefing'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${isPlaying ? 'briefing-pulse' : ''}`}
+              style={{
+                backgroundColor: isPlaying ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.1)',
+                color: isPlaying ? '#C4B5FD' : 'rgba(255,255,255,0.7)',
+                border: `1px solid ${isPlaying ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.15)'}`,
+              }}>
+              {isPlaying ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              {isPlaying ? 'Stop briefing' : 'Play briefing'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
