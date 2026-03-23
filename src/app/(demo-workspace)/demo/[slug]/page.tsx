@@ -25,9 +25,9 @@ interface ChartDatum { label: string; value: number; color: string }
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEPARTMENTS = [
-  'Overview', 'HR & People', 'Accounts', 'Sales & CRM',
+  'Overview', 'Insights', 'HR & People', 'Accounts', 'Sales & CRM',
   'Marketing', 'Trials', 'Operations', 'Support',
-  'Success', 'IT & Systems',
+  'Success', 'IT & Systems', 'Workflows Library',
 ]
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = [
@@ -1448,7 +1448,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#374151' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#1F2937' }}>
+          <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: 'transparent', color: '#0D9488', border: '1px solid rgba(13,148,136,0.5)' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0D9488' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)' }}>
             <UserPlus size={13} /> Invite team
           </button>
           <Link href="/pricing" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
