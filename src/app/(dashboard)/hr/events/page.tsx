@@ -283,7 +283,7 @@ export default function TeamEventsPage() {
               <span className="text-xs font-mono bg-[#1F2937] text-[#9CA3AF] px-2 py-0.5 rounded">HR-EVENTS-01</span>
               <span className="text-xs bg-teal-500/20 text-teal-400 px-2 py-0.5 rounded">Research agent</span>
             </div>
-            <h1 className="text-2xl font-bold">Team Events Researcher</h1>
+            <h1 className="text-2xl font-bold">Company Events — Team Events Researcher</h1>
             <p className="text-[#9CA3AF] text-sm mt-1">
               Describe what you need — get venue recommendations with ratings, prices, and a ready-to-send enquiry email.
             </p>

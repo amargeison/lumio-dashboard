@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, RefObject } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Users, TrendingUp, Headphones, GitBranch, AlertCircle,
   CheckCircle2, Loader2, Circle, Clock, ArrowRight,
@@ -11,10 +12,15 @@ import {
   UserPlus, X, Plus, Send, Play, Check,
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
-  Calendar, FileText, Target, DollarSign, Volume2, VolumeX,
+  Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload,
 } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
+import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
+import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
+import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
+import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
+import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +52,8 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'success',    label: 'Success',            icon: Award       },
   { id: 'it',         label: 'IT & Systems',       icon: Monitor     },
   { id: 'workflows',  label: 'Workflows Library',  icon: GitBranch   },
+  { id: 'partners',   label: 'Partners',           icon: Handshake   },
+  { id: 'strategy',   label: 'Strategy',           icon: Target      },
   { id: 'settings',   label: 'Settings',           icon: Settings    },
 ]
 
@@ -404,7 +412,7 @@ function DemoPersonalBanner({ company }: { company: string }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const bg = BG_GRADIENTS[new Date().getDay()]
-  const { speak, stop, isPlaying, supported } = useSpeech()
+  const { speak, stop, isPlaying } = useSpeech()
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -429,9 +437,64 @@ function DemoPersonalBanner({ company }: { company: string }) {
 
           {/* LEFT: greeting */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-black text-white tracking-tight mb-1">
-              {greeting}, {company} 👋
-            </h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-black text-white tracking-tight">
+                {greeting}, {company} 👋
+              </h1>
+
+              {/* Speaker 1: Active TTS */}
+              <button
+                onClick={handleBriefing}
+                title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud"
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{
+                  width: 32, height: 32, flexShrink: 0,
+                  backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)',
+                  border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                  color: isPlaying ? '#2DD4BF' : '#9CA3AF',
+                  animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                }}
+              >
+                <Volume2 size={15} strokeWidth={1.75} />
+              </button>
+
+              {/* Speaker 2: Disabled — Coming Soon */}
+              <div
+                className="relative overflow-hidden rounded-lg"
+                title="Voice Commands coming soon — Cancel my 11am meeting, email my team and say catch up at 2, and more"
+                style={{ width: 32, height: 32, flexShrink: 0 }}
+              >
+                <button
+                  disabled
+                  className="flex items-center justify-center w-full h-full rounded-lg"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    color: '#4B5563',
+                    cursor: 'not-allowed',
+                  }}
+                >
+                  <Mic size={15} strokeWidth={1.75} />
+                </button>
+                <span
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 3, right: -9,
+                    transform: 'rotate(35deg)',
+                    backgroundColor: '#6C3FC5',
+                    color: '#fff',
+                    fontSize: 5,
+                    fontWeight: 700,
+                    letterSpacing: '0.03em',
+                    padding: '1px 10px',
+                    lineHeight: 1.4,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  SOON
+                </span>
+              </div>
+            </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p className="text-purple-200/60 text-sm italic">Your demo workspace is ready to explore.</p>
           </div>
@@ -466,23 +529,6 @@ function DemoPersonalBanner({ company }: { company: string }) {
 
         </div>
 
-        {/* Play briefing button — bottom-right */}
-        {supported && (
-          <div className="flex justify-end mt-3">
-            <button
-              onClick={handleBriefing}
-              title={isPlaying ? 'Stop briefing' : 'Play morning briefing'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${isPlaying ? 'briefing-pulse' : ''}`}
-              style={{
-                backgroundColor: isPlaying ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.1)',
-                color: isPlaying ? '#C4B5FD' : 'rgba(255,255,255,0.7)',
-                border: `1px solid ${isPlaying ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.15)'}`,
-              }}>
-              {isPlaying ? <VolumeX size={13} /> : <Volume2 size={13} />}
-              {isPlaying ? 'Stop briefing' : 'Play briefing'}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -797,29 +843,150 @@ function PlaceholderView({ title, stats, rows, cols }: {
   )
 }
 
+interface ParsedStat { label: string; value: string }
+
+function parseCSV(text: string): ParsedStat[] {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean)
+  const results: ParsedStat[] = []
+  for (const line of lines) {
+    const parts = line.split(',').map(p => p.trim().replace(/^["']|["']$/g, ''))
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      results.push({ label: parts[0], value: parts[1] })
+    }
+  }
+  return results.slice(0, 8) // max 8 extracted stats
+}
+
 function InsightsView({ company }: { company: string }) {
-  const cu = fakeNum(181,company,'cu')
-  return <PlaceholderView
-    title="Top Performing Workflows (Last 30 Days)"
-    stats={[
-      { label:'Automation Hours Saved', value:`${fakeNum(340,company,'ah')}h`, color:'#0D9488', icon:Zap,
-        pieData:[{label:'HR',value:120,color:'#0D9488'},{label:'Sales',value:80,color:'#6C3FC5'},{label:'Finance',value:90,color:'#22C55E'},{label:'Ops',value:50,color:'#F59E0B'}],
-        barData:[{label:'W1',value:80,color:'#0D9488'},{label:'W2',value:85,color:'#0D9488'},{label:'W3',value:90,color:'#0D9488'},{label:'W4',value:85,color:'#0D9488'}] },
-      { label:'Tasks Completed by AI', value:`${fakeNum(1240,company,'ai')}`, color:'#6C3FC5', icon:CheckCircle2,
-        pieData:[{label:'Emails',value:40,color:'#6C3FC5'},{label:'Reports',value:25,color:'#A78BFA'},{label:'Scheduling',value:20,color:'#7C3AED'},{label:'Other',value:15,color:'#374151'}],
-        barData:[{label:'Mon',value:220,color:'#6C3FC5'},{label:'Tue',value:240,color:'#6C3FC5'},{label:'Wed',value:260,color:'#6C3FC5'},{label:'Thu',value:280,color:'#6C3FC5'},{label:'Fri',value:240,color:'#6C3FC5'}] },
-      { label:'NPS Score', value:`${fakeNum(68,company,'nps')}`, color:'#22C55E', icon:Star,
-        pieData:[{label:'Promoters',value:68,color:'#22C55E'},{label:'Passives',value:22,color:'#F59E0B'},{label:'Detractors',value:10,color:'#EF4444'}],
-        barData:[{label:'Q3 \'25',value:62,color:'#22C55E'},{label:'Q4 \'25',value:65,color:'#22C55E'},{label:'Q1 \'26',value:68,color:'#0D9488'}] },
-    ]}
-    cols={['Workflow','Runs','Saved (hrs)','Success Rate']}
-    rows={[
-      ['New Joiner Onboarding','142','2.1h each','98%'],
-      ['Invoice Chase — 30d','89','0.5h each','94%'],
-      ['Lead Scoring — AI','312','0.2h each','99%'],
-      ['Health Score Alert','67','1.4h each','91%'],
-      ['Trial Conversion Flow','44','3.2h each','87%'],
-    ]} />
+  const [uploadState, setUploadState] = useState<'idle' | 'processing' | 'loaded'>('idle')
+  const [fileName, setFileName]       = useState('')
+  const [parsed, setParsed]           = useState<ParsedStat[]>([])
+  const [dragging, setDragging]       = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function processFile(file: File) {
+    setFileName(file.name)
+    setUploadState('processing')
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string ?? ''
+      const isCSV = file.name.endsWith('.csv') || file.type === 'text/csv'
+      const stats: ParsedStat[] = isCSV ? parseCSV(text) : []
+      // For non-CSV files we generate demo-style extracted stats
+      if (stats.length === 0) {
+        setParsed([
+          { label: 'Total Records',       value: `${Math.floor(Math.random() * 9000 + 1000)}` },
+          { label: 'Active Users',        value: `${Math.floor(Math.random() * 800 + 100)}` },
+          { label: 'Avg Score',           value: `${(Math.random() * 30 + 60).toFixed(1)}%` },
+          { label: 'Items Processed',     value: `${Math.floor(Math.random() * 5000 + 500)}` },
+        ])
+      } else {
+        setParsed(stats)
+      }
+      setUploadState('loaded')
+    }
+    reader.onerror = () => setUploadState('idle')
+    reader.readAsText(file)
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault(); setDragging(false)
+    const f = e.dataTransfer.files[0]; if (f) processFile(f)
+  }
+
+  const demoContent = (
+    <PlaceholderView
+      title="Top Performing Workflows (Last 30 Days)"
+      stats={[
+        { label:'Automation Hours Saved', value:`${fakeNum(340,company,'ah')}h`, color:'#0D9488', icon:Zap,
+          pieData:[{label:'HR',value:120,color:'#0D9488'},{label:'Sales',value:80,color:'#6C3FC5'},{label:'Finance',value:90,color:'#22C55E'},{label:'Ops',value:50,color:'#F59E0B'}],
+          barData:[{label:'W1',value:80,color:'#0D9488'},{label:'W2',value:85,color:'#0D9488'},{label:'W3',value:90,color:'#0D9488'},{label:'W4',value:85,color:'#0D9488'}] },
+        { label:'Tasks Completed by AI', value:`${fakeNum(1240,company,'ai')}`, color:'#6C3FC5', icon:CheckCircle2,
+          pieData:[{label:'Emails',value:40,color:'#6C3FC5'},{label:'Reports',value:25,color:'#A78BFA'},{label:'Scheduling',value:20,color:'#7C3AED'},{label:'Other',value:15,color:'#374151'}],
+          barData:[{label:'Mon',value:220,color:'#6C3FC5'},{label:'Tue',value:240,color:'#6C3FC5'},{label:'Wed',value:260,color:'#6C3FC5'},{label:'Thu',value:280,color:'#6C3FC5'},{label:'Fri',value:240,color:'#6C3FC5'}] },
+        { label:'NPS Score', value:`${fakeNum(68,company,'nps')}`, color:'#22C55E', icon:Star,
+          pieData:[{label:'Promoters',value:68,color:'#22C55E'},{label:'Passives',value:22,color:'#F59E0B'},{label:'Detractors',value:10,color:'#EF4444'}],
+          barData:[{label:'Q3 \'25',value:62,color:'#22C55E'},{label:'Q4 \'25',value:65,color:'#22C55E'},{label:'Q1 \'26',value:68,color:'#0D9488'}] },
+      ]}
+      cols={['Workflow','Runs','Saved (hrs)','Success Rate']}
+      rows={[
+        ['New Joiner Onboarding','142','2.1h each','98%'],
+        ['Invoice Chase — 30d','89','0.5h each','94%'],
+        ['Lead Scoring — AI','312','0.2h each','99%'],
+        ['Health Score Alert','67','1.4h each','91%'],
+        ['Trial Conversion Flow','44','3.2h each','87%'],
+      ]} />
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Load your own data */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: uploadState !== 'idle' ? '1px solid #1F2937' : undefined }}>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Load your own data</p>
+            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Upload a CSV, XLSX, PDF, or DOCX to replace the demo stats below</p>
+          </div>
+          {uploadState === 'loaded' && (
+            <button onClick={() => { setUploadState('idle'); setParsed([]); setFileName('') }}
+              className="text-xs transition-colors"
+              style={{ color: '#9CA3AF' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}>
+              Reset to demo data
+            </button>
+          )}
+        </div>
+
+        {uploadState === 'idle' && (
+          <div
+            className="mx-5 my-4 flex flex-col items-center justify-center gap-2 rounded-xl py-8 cursor-pointer transition-colors"
+            style={{ border: `2px dashed ${dragging ? '#6C3FC5' : '#374151'}`, backgroundColor: dragging ? 'rgba(108,63,197,0.06)' : 'transparent' }}
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}>
+            <Upload size={20} style={{ color: '#6B7280' }} />
+            <p className="text-sm" style={{ color: '#6B7280' }}>
+              Drag & drop or <span style={{ color: '#A78BFA' }}>browse</span>
+            </p>
+            <p className="text-xs" style={{ color: '#4B5563' }}>CSV · XLSX · PDF · DOCX</p>
+            <input ref={fileRef} type="file" className="hidden"
+              accept=".csv,.xlsx,.xls,.pdf,.docx"
+              onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f) }} />
+          </div>
+        )}
+
+        {uploadState === 'processing' && (
+          <div className="flex items-center justify-center gap-2 py-8">
+            <Loader2 size={16} className="animate-spin" style={{ color: '#6C3FC5' }} />
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Parsing {fileName}…</span>
+          </div>
+        )}
+
+        {uploadState === 'loaded' && (
+          <div className="px-5 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText size={14} style={{ color: '#0D9488' }} />
+              <span className="text-xs font-medium" style={{ color: '#0D9488' }}>{fileName}</span>
+              <span className="text-xs" style={{ color: '#4B5563' }}>· {parsed.length} metrics extracted</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {parsed.map((s, i) => (
+                <div key={i} className="rounded-lg px-3 py-3" style={{ backgroundColor: '#1F2937' }}>
+                  <p className="text-xs mb-1 truncate" style={{ color: '#9CA3AF' }}>{s.label}</p>
+                  <p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Demo data below — hidden when own data is loaded */}
+      {uploadState !== 'loaded' && demoContent}
+    </div>
+  )
 }
 
 function HRView({ company }: { company: string }) {
@@ -1107,6 +1274,116 @@ function SettingsView({ company }: { company: string }) {
         </div>
       ))}
       <p className="text-xs" style={{ color: '#4B5563' }}>Settings are read-only in demo mode. Connect your live workspace to configure.</p>
+    </div>
+  )
+}
+
+function PartnersView({ company }: { company: string }) {
+  const partners = [
+    { initials: 'DFE', name: 'Department for Education', type: 'Government', status: 'Active', contact: 'Sarah Mitchell', color: '#003078' },
+    { initials: 'RGR', name: 'Really Great Reading',     type: 'Academic',   status: 'Pending', contact: 'James Halford', color: '#374151' },
+    { initials: 'PRS', name: 'Pearson',                  type: 'Distribution', status: 'Pending', contact: 'Clare Nguyen', color: '#374151' },
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Partners</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Key partnerships for {company}</p>
+        </div>
+      </div>
+      {partners.map(p => (
+        <div key={p.name} className="flex items-center justify-between rounded-xl px-5 py-4"
+          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold"
+              style={{ backgroundColor: p.color, color: '#fff' }}>{p.initials}</div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>{p.type} · {p.contact}</p>
+            </div>
+          </div>
+          <span className="rounded-md px-2.5 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: p.status === 'Active' ? 'rgba(13,148,136,0.12)' : 'rgba(245,158,11,0.12)',
+              color: p.status === 'Active' ? '#0D9488' : '#F59E0B',
+            }}>{p.status}</span>
+        </div>
+      ))}
+      <p className="text-xs text-center pt-2" style={{ color: '#4B5563' }}>
+        Partner data is read-only in demo mode. Upgrade to manage live partner records.
+      </p>
+    </div>
+  )
+}
+
+function StrategyView({ company }: { company: string }) {
+  const rows = [
+    { feature: 'All-in-one platform',          lumio: '✅', hubspot: '✅', pipedrive: '⚠️', monday: '✅' },
+    { feature: 'Built-in workflow automation', lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '⚠️' },
+    { feature: 'CRM & Sales pipeline',         lumio: '✅', hubspot: '✅', pipedrive: '✅', monday: '✅' },
+    { feature: 'HR & People management',       lumio: '✅', hubspot: '❌', pipedrive: '❌', monday: '⚠️' },
+    { feature: 'SMB pricing (<£200/mo)',        lumio: '✅', hubspot: '❌', pipedrive: '✅', monday: '⚠️' },
+    { feature: 'Setup in under 30 min',        lumio: '✅', hubspot: '❌', pipedrive: '⚠️', monday: '⚠️' },
+  ]
+  const competitors = [
+    { name: 'HubSpot',    emoji: '🟠', threat: 92, overlap: 78, summary: 'Raised Professional tier 18% in March 2026. Targeting SMBs with a new growth hire.' },
+    { name: 'Pipedrive',  emoji: '🟢', threat: 64, overlap: 61, summary: 'Campaigns module now GA. Published a Zendesk migration guide targeting SMB switchers.' },
+    { name: 'monday.com', emoji: '🔴', threat: 71, overlap: 54, summary: 'Raised $400M, hiring 3 ML engineers for NLP automation. Long-term threat.' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Strategy — Competitor Watch</h2>
+        <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Demo competitive intelligence for {company}</p>
+      </div>
+
+      {/* Product Comparison */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Product Comparison</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-widest w-44" style={{ color: '#4B5563' }}>Feature</th>
+                {[['Lumio','#0D9488'],['HubSpot','#F97316'],['Pipedrive','#22C55E'],['monday.com','#EF4444']].map(([n,c]) => (
+                  <th key={n} className="px-4 py-3 text-xs font-semibold text-center" style={{ color: c }}>{n}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(row => (
+                <tr key={row.feature} style={{ borderBottom: '1px solid #1F2937' }}>
+                  <td className="px-5 py-3 text-xs" style={{ color: '#9CA3AF' }}>{row.feature}</td>
+                  <td className="px-4 py-3 text-center text-sm">{row.lumio}</td>
+                  <td className="px-4 py-3 text-center text-sm">{row.hubspot}</td>
+                  <td className="px-4 py-3 text-center text-sm">{row.pipedrive}</td>
+                  <td className="px-4 py-3 text-center text-sm">{row.monday}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Competitor cards */}
+      {competitors.map(c => (
+        <div key={c.name} className="flex items-start gap-4 rounded-xl px-5 py-4"
+          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <span className="text-2xl">{c.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-1">
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{c.name}</p>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
+                Threat {c.threat}
+              </span>
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{c.summary}</p>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -1549,6 +1826,7 @@ function CoachMarks({ bannerRef, navRef, actionsRef, statsRef, onComplete }: Coa
 
 export default function DemoDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  const router   = useRouter()
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [company, setCompany]       = useState('Your Company')
@@ -1560,6 +1838,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showOnboarding, setShowOnboarding]   = useState(false)
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
+  const [showNewJoiner,    setShowNewJoiner]    = useState(false)
+  const [showLeaveRequest, setShowLeaveRequest] = useState(false)
+  const [showOffboarding,  setShowOffboarding]  = useState(false)
+  const [showRecruitment,  setShowRecruitment]  = useState(false)
+  const [showPerfReview,   setShowPerfReview]   = useState(false)
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
 
@@ -1595,9 +1878,46 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   }
 
   function fireToast(label: string = '') {
-    if (label === 'Dept Insights') { setShowDeptInsights(true); return }
+    if (label === 'Dept Insights')     { setShowDeptInsights(true);                         return }
+    if (label === 'New Joiner')        { setShowNewJoiner(true);                             return }
+    if (label === 'Leave Request')     { setShowLeaveRequest(true);                          return }
+    if (label === 'Offboarding')       { setShowOffboarding(true);                           return }
+    if (label === 'Recruitment')       { setShowRecruitment(true);                           return }
+    if (label === 'Performance Review'){ setShowPerfReview(true);                            return }
+    if (label === 'Company Events')    { router.push(`/demo/${slug}/events`);                return }
     setToast('Demo mode — this would trigger in your live workspace')
     setTimeout(() => setToast(null), 3000)
+  }
+
+  async function handleDemoNewJoiner(data: NewJoinerData) {
+    const fullName = `${data.firstName} ${data.lastName}`
+    setShowNewJoiner(false)
+    setToast(`Onboarding started for ${fullName}`)
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  async function handleDemoLeaveRequest(data: LeaveRequestData) {
+    setShowLeaveRequest(false)
+    setToast(`Leave request submitted for ${data.employeeName}`)
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  async function handleDemoOffboarding(data: OffboardingData) {
+    setShowOffboarding(false)
+    setToast(`Offboarding started for ${data.employeeName}`)
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  async function handleDemoRecruitment(data: RecruitmentData) {
+    setShowRecruitment(false)
+    setToast(`Recruitment started for ${data.jobTitle}`)
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  async function handleDemoPerfReview(data: PerformanceReviewData) {
+    setShowPerfReview(false)
+    setToast(`Performance review started for ${data.employeeName}`)
+    setTimeout(() => setToast(null), 4000)
   }
 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
@@ -1609,6 +1929,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {showOnboarding && <DeptPickerModal onComplete={(depts) => { setFocusDepts(depts); setShowOnboarding(false); setShowCoachMarks(true) }} />}
       {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
       {showDeptInsights && <DeptInsightsModal dept={activeDept} onClose={() => setShowDeptInsights(false)} />}
+      {showNewJoiner    && <NewJoinerModal          onClose={() => setShowNewJoiner(false)}    onSubmit={handleDemoNewJoiner}    />}
+      {showLeaveRequest && <LeaveRequestModal      onClose={() => setShowLeaveRequest(false)} onSubmit={handleDemoLeaveRequest} />}
+      {showOffboarding  && <OffboardingModal        onClose={() => setShowOffboarding(false)}  onSubmit={handleDemoOffboarding}  />}
+      {showRecruitment  && <RecruitmentModal        onClose={() => setShowRecruitment(false)}  onSubmit={handleDemoRecruitment}  />}
+      {showPerfReview   && <PerformanceReviewModal  onClose={() => setShowPerfReview(false)}   onSubmit={handleDemoPerfReview}   />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
 
       {/* Trial banner */}
@@ -1631,9 +1956,15 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         <div className="flex items-center gap-3 min-w-0">
           {/* Mobile hamburger */}
           <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+          {/* Logo + company name */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{company[0]?.toUpperCase() || 'L'}</div>
-            <div className="min-w-0"><div className="text-sm font-bold truncate">{company}</div><div className="text-xs hidden sm:block" style={{ color: '#6B7280' }}>Demo workspace</div></div>
+            <Image src="/lumio_logo_final.jpg" alt="Lumio" width={120} height={60}
+              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" />
+            <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
+            <div className="min-w-0 hidden sm:block">
+              <div className="text-sm font-bold truncate">{company}</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>Demo workspace</div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -1676,6 +2007,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {activeDept === 'success'    && <SuccessView    company={company} />}
             {activeDept === 'it'         && <ITView         company={company} />}
             {activeDept === 'workflows'  && <WorkflowsView  company={company} />}
+            {activeDept === 'partners'   && <PartnersView   company={company} />}
+            {activeDept === 'strategy'   && <StrategyView   company={company} />}
             {activeDept === 'settings'   && <SettingsView   company={company} />}
           </main>
 
