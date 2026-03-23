@@ -9,6 +9,7 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
+  console.log('[demo/signup] route hit')
   try {
     const body = await req.json()
     const name             = body.name         || ''
@@ -66,21 +67,28 @@ export async function POST(req: NextRequest) {
     const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
     // Invalidate any previous unused codes for this email
-    await supabase
+    const { error: invalidateError } = await supabase
       .from('demo_magic_links')
       .update({ used: true })
       .eq('email', email.toLowerCase())
       .eq('used', false)
+    if (invalidateError) console.warn('[demo/signup] invalidate error (non-fatal):', invalidateError)
 
-    await supabase.from('demo_magic_links').insert({
+    const { error: insertError } = await supabase.from('demo_magic_links').insert({
       email: email.toLowerCase(),
       slug,
       token: code,
       expires_at: tokenExpiry,
       used: false,
     })
+    if (insertError) {
+      console.error('[demo/signup] FAILED to insert OTP code:', insertError)
+      return NextResponse.json({ error: 'Failed to store verification code — please try again.' }, { status: 500 })
+    }
+    console.log('[demo/signup] OTP code inserted OK — code:', code, '| slug:', slug)
 
-    await resend.emails.send({
+    console.log('[demo/signup] sending OTP to:', email, '| code length:', code.length, '| RESEND_API_KEY set:', !!process.env.RESEND_API_KEY)
+    const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: isNew
@@ -128,6 +136,12 @@ export async function POST(req: NextRequest) {
         </html>
       `,
     })
+
+    if (emailError) {
+      console.error('[demo/signup] Resend error:', emailError)
+      return NextResponse.json({ error: 'Failed to send verification code — please try again.' }, { status: 500 })
+    }
+    console.log('[demo/signup] Email sent successfully, id:', emailData?.id)
 
     return NextResponse.json({ success: true, slug, is_new: isNew })
   } catch (err) {
