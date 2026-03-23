@@ -593,6 +593,13 @@ export default function HomePage() {
         </div>
         {/* CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4">
+          <button onClick={() => setShowTellMore(true)}
+            className="px-7 py-3.5 rounded-lg text-sm font-medium"
+            style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#F9FAFB'; el.style.borderColor = '#374151' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
+            Tell me more
+          </button>
           <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
@@ -600,13 +607,6 @@ export default function HomePage() {
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
             Book a Demo <ArrowRight size={16} />
           </a>
-          <button onClick={() => setShowTellMore(true)}
-            className="px-7 py-3.5 rounded-lg text-sm font-semibold"
-            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#7C3AED' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6C3FC5' }}>
-            Tell me more
-          </button>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
