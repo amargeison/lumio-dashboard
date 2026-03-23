@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
   const websiteRoutes = [
     '/home', '/product', '/pricing', '/about', '/demo', '/crm',
     '/login', '/auth', '/privacy', '/terms', '/cookies', '/data-deletion',
+    '/api',
   ]
 
   if (isWebsite) {
@@ -51,6 +52,7 @@ export async function middleware(request: NextRequest) {
     '/login', '/auth', '/home', '/demo',
     '/privacy', '/terms', '/cookies', '/data-deletion',
     '/product', '/pricing', '/about', '/crm',
+    '/api',
   ]
 
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
