@@ -352,6 +352,76 @@ function Sidebar({ activeDept, onSelect, open, onClose }: {
   )
 }
 
+// ─── Demo greeting banner ─────────────────────────────────────────────────────
+
+const BG_GRADIENTS = [
+  'from-violet-950 via-purple-900 to-indigo-950',
+  'from-slate-900 via-purple-950 to-violet-900',
+  'from-indigo-950 via-violet-900 to-purple-950',
+  'from-gray-900 via-violet-950 to-purple-900',
+  'from-purple-950 via-indigo-950 to-slate-900',
+  'from-violet-900 via-slate-900 to-purple-950',
+  'from-indigo-900 via-purple-950 to-violet-950',
+]
+
+function DemoPersonalBanner({ company }: { company: string }) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const bg = BG_GRADIENTS[new Date().getDay()]
+
+  return (
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
+      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
+      <div className="absolute right-40 bottom-0 w-40 h-40 bg-teal-500 rounded-full opacity-10 blur-2xl" />
+
+      <div className="relative z-10 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+
+          {/* LEFT: greeting */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-black text-white tracking-tight mb-1">
+              {greeting}, {company} 👋
+            </h1>
+            <p className="text-purple-300 text-sm mb-2">{date}</p>
+            <p className="text-purple-200/60 text-sm italic">Your demo workspace is ready to explore.</p>
+          </div>
+
+          {/* CENTRE: summary chips */}
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {[
+              { label: 'Meetings', value: 4,  color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',     icon: '📅' },
+              { label: 'Tasks',    value: 7,  color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
+              { label: 'Urgent',   value: 2,  color: 'bg-red-500/20 text-red-300 border-red-500/30',         icon: '🔴' },
+              { label: 'Emails',   value: 12, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',      icon: '📧' },
+            ].map(item => (
+              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                <span className="text-base">{item.icon}</span>
+                <span className="text-lg font-black text-white">{item.value}</span>
+                <span className="text-xs opacity-70">{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* RIGHT: weather */}
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+              <span className="text-3xl">⛅</span>
+              <div>
+                <div className="text-xl font-black text-white">11°C</div>
+                <div className="text-xs text-purple-300">Partly cloudy</div>
+                <div className="text-xs text-purple-300/60">Demo City</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Department views ─────────────────────────────────────────────────────────
 
 function OverviewView({ company }: { company: string }) {
@@ -367,6 +437,7 @@ function OverviewView({ company }: { company: string }) {
   }))
   return (
     <div className="space-y-4">
+      <DemoPersonalBanner company={company} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
           pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
