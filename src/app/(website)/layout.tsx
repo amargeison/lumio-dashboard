@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
+import BookTrialModal from '@/app/(website)/components/BookTrialModal'
+import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
@@ -30,8 +32,10 @@ const LEGAL_LINKS = [
 ]
 
 function Nav() {
-  const [scrolled, setScrolled]   = useState(false)
+  const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showTrial, setShowTrial]   = useState(false)
+  const [showTellMore, setShowTellMore] = useState(false)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8)
@@ -40,6 +44,7 @@ function Nav() {
   }, [])
 
   return (
+    <>
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
@@ -75,7 +80,7 @@ function Nav() {
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
           <Link href="/login"
             className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
             style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
@@ -83,13 +88,27 @@ function Nav() {
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
             Sign in
           </Link>
-          <Link href="/demo"
+          <button onClick={() => setShowTellMore(true)}
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#374151' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#1F2937' }}>
+            Tell me more
+          </button>
+          <button onClick={() => setShowTrial(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
-            Start free trial
-          </Link>
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
+            Free 14-day trial
+          </button>
+          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#7C3AED' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
+            Book a demo
+          </a>
         </div>
 
         {/* Mobile hamburger */}
@@ -117,13 +136,33 @@ function Nav() {
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
             <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
-              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Sign in</Link>
-            <Link href="/demo" className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial</Link>
+              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+              onClick={() => setMobileOpen(false)}>Sign in</Link>
+            <button onClick={() => { setMobileOpen(false); setShowTellMore(true) }}
+              className="text-sm font-medium py-2 text-center rounded-lg"
+              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Tell me more</button>
+            <button onClick={() => { setMobileOpen(false); setShowTrial(true) }}
+              className="text-sm font-semibold py-2 text-center rounded-lg"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14-day trial</button>
+            <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+              className="text-sm font-semibold py-2 text-center rounded-lg"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+              onClick={() => setMobileOpen(false)}>Book a demo</a>
           </div>
         </div>
       )}
     </header>
+
+    {showTrial && (
+      <BookTrialModal onClose={() => setShowTrial(false)} />
+    )}
+    {showTellMore && (
+      <TellMeMoreModal
+        onClose={() => setShowTellMore(false)}
+        onStartTrial={() => { setShowTellMore(false); setShowTrial(true) }}
+      />
+    )}
+  </>
   )
 }
 
