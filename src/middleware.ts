@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (pathname.startsWith('/login') || pathname.startsWith('/auth') || pathname.startsWith('/home')) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/auth') || pathname.startsWith('/home') || pathname.startsWith('/demo')) {
     return supabaseResponse
   }
 

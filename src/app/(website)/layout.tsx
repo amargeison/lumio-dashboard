@@ -24,9 +24,9 @@ const FOOTER_LINKS = [
 ]
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy',  href: '#' },
-  { label: 'Terms of Service',href: '#' },
-  { label: 'Cookie Policy',   href: '#' },
+  { label: 'Privacy Policy',  href: '/privacy' },
+  { label: 'Terms of Service',href: '/terms'   },
+  { label: 'Cookie Policy',   href: '/cookies' },
 ]
 
 function Nav() {
@@ -76,19 +76,19 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/dashboard"
+          <Link href="/login"
             className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
             style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
-            Login
+            Sign in
           </Link>
           <Link href="/demo"
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
-            Book a Demo
+            Start free trial
           </Link>
         </div>
 
@@ -116,10 +116,10 @@ function Nav() {
             </Link>
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
-            <Link href="/dashboard" className="text-sm font-medium py-2 text-center rounded-lg"
-              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Login</Link>
+            <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
+              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Sign in</Link>
             <Link href="/demo" className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Book a Demo</Link>
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial</Link>
           </div>
         </div>
       )}
@@ -185,7 +185,7 @@ function Footer() {
             <Link href="/demo"
               className="inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              Book a Demo →
+              Start free trial →
             </Link>
           </div>
         </div>

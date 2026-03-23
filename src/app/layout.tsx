@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import './globals.css'
+import CookieBanner from '@/components/gdpr/CookieBanner'
 
 const geist = Geist({
   variable: '--font-geist-sans',
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="h-full" style={{ backgroundColor: '#07080F' }}>
         {children}
+        <CookieBanner />
       </body>
     </html>
   )
