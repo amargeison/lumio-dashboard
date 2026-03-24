@@ -35,3 +35,36 @@ body {
 .briefing-pulse {
   animation: briefing-pulse 1.4s ease-in-out infinite;
 }
+
+@media print {
+  /* Hide navigation chrome */
+  aside, header, nav, .print\:hidden { display: none !important; }
+
+  /* Reset layout — no sidebar offset */
+  main { padding: 0 !important; margin: 0 !important; min-height: unset !important; }
+  .md\:pl-\[200px\] { padding-left: 0 !important; }
+  .pt-16 { padding-top: 0 !important; }
+
+  /* A4 page */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  /* Make cards readable on white */
+  [style*="background"] {
+    background: #f8f8f8 !important;
+    border-color: #ddd !important;
+  }
+
+  [style*="color: #F9FAFB"],
+  [style*="color:#F9FAFB"] { color: #111 !important; }
+
+  [style*="color: #9CA3AF"],
+  [style*="color:#9CA3AF"] { color: #555 !important; }
+}

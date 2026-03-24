@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ChevronDown, ChevronUp, Check, X, Minus, Trophy } from 'lucide-react'
+import ExportPdfButton from '@/components/ExportPdfButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -271,8 +272,13 @@ export default function ComparisonPage() {
         <Link href="/strategy/competitor-watch" className="inline-flex items-center gap-1 text-sm text-[#9CA3AF] hover:text-[#F9FAFB] transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" /> Back to Competitor Watch
         </Link>
-        <h1 className="text-2xl font-bold">Deep Comparison Matrix</h1>
-        <p className="text-[#9CA3AF] text-sm mt-1">Weighted like-for-like across 6 categories. Click any category or criterion to expand.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Deep Comparison Matrix</h1>
+            <p className="text-[#9CA3AF] text-sm mt-1">Weighted like-for-like across 6 categories. Click any category or criterion to expand.</p>
+          </div>
+          <ExportPdfButton />
+        </div>
       </div>
 
       <div className="px-6 py-6 space-y-6">

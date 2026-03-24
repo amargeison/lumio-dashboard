@@ -39,17 +39,17 @@ interface NewsItem {
 
 const EMAILS: Email[] = [
   { id: 'e1', from: 'Tom Wright',    fromEmail: 'tom.wright@bramblehill.org.uk', subject: 'Invoice overdue — Ref INV-2026-041',       preview: 'Hi, just chasing the invoice from last month — can you confirm when this will be settled?', time: '8:14am',  urgent: true,  read: false },
-  { id: 'e2', from: 'Apex Consulting', fromEmail: 'contracts@apex.co.uk',       subject: 'Renewal discussion — contract ends Apr 30', preview: 'We'd like to discuss the terms for our renewal. Can we schedule a call this week?',          time: '7:52am',  urgent: true,  read: false },
+  { id: 'e2', from: 'Apex Consulting', fromEmail: 'contracts@apex.co.uk',       subject: 'Renewal discussion — contract ends Apr 30', preview: "We'd like to discuss the terms for our renewal. Can we schedule a call this week?",          time: '7:52am',  urgent: true,  read: false },
   { id: 'e3', from: 'Stripe',        fromEmail: 'no-reply@stripe.com',           subject: 'Payment confirmed — £4,800 from Oakridge', preview: 'Your payment of £4,800.00 from Oakridge Schools Ltd has been processed successfully.',        time: '7:31am',  urgent: false, read: true  },
   { id: 'e4', from: 'Helen Park',    fromEmail: 'helen.park@greenfield.sch.uk',  subject: 'Re: Lumio Pro demo — follow-up questions', preview: 'Thank you for the demo yesterday. We have a few questions about the safeguarding module...',  time: 'Yesterday', urgent: false, read: true  },
-  { id: 'e5', from: 'Dan Marsh',     fromEmail: 'dan@lumiocms.com',              subject: 'Crestview — proposal ready for review',   preview: 'I've finished the proposal for Crestview Academy. Can you cast an eye before I send it?',     time: 'Yesterday', urgent: false, read: true  },
+  { id: 'e5', from: 'Dan Marsh',     fromEmail: 'dan@lumiocms.com',              subject: 'Crestview — proposal ready for review',   preview: "I've finished the proposal for Crestview Academy. Can you cast an eye before I send it?",     time: 'Yesterday', urgent: false, read: true  },
 ]
 
 const SLACK_MSGS: SlackMsg[] = [
   { id: 's1', channel: '#sa-02-leads',   sender: 'Charlotte D.', message: 'Lakewood Academy just hit 87 on the lead score — should I reach out today?',       time: '9:02am'    },
-  { id: 's2', channel: '#hr-general',    sender: 'Priya S.',     message: 'New joiner IT provisioning for Marcus is done ✅ He's all set for Monday.',          time: '8:45am'    },
+  { id: 's2', channel: '#hr-general',    sender: 'Priya S.',     message: "New joiner IT provisioning for Marcus is done \u2705 He's all set for Monday.",          time: '8:45am'    },
   { id: 's3', channel: '#support-queue', sender: 'James H.',     message: 'P1 ticket at Elmfield is escalating — SLA breach in 20 mins if unresolved.',        time: '8:30am'    },
-  { id: 's4', channel: '#sales',         sender: 'Sophie Bell',  message: 'Oakridge demo confirmed for 11am. I'll send the prep doc in the next 10 minutes.',   time: '8:15am'    },
+  { id: 's4', channel: '#sales',         sender: 'Sophie Bell',  message: "Oakridge demo confirmed for 11am. I'll send the prep doc in the next 10 minutes.",   time: '8:15am'    },
   { id: 's5', channel: '#general',       sender: 'Raj Patel',    message: 'Anyone else noticing the Supabase dashboard is slow this morning? Checking logs.',   time: 'Yesterday' },
 ]
 

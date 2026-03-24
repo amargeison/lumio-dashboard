@@ -130,15 +130,16 @@ export function StatCard({
 
 // ─── Quick Actions ─────────────────────────────────────────────────────────────
 
-export function QuickActions({ items }: { items: { label: string; icon: LucideIcon }[] }) {
+export function QuickActions({ items }: { items: { label: string; icon: LucideIcon; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-3 rounded-xl p-4"
       style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <p className="w-full text-xs font-semibold uppercase tracking-widest"
         style={{ color: '#9CA3AF' }}>Quick Actions</p>
-      {items.map(({ label, icon: Icon }) => (
+      {items.map(({ label, icon: Icon, onClick }) => (
         <button
           key={label}
+          onClick={onClick}
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
@@ -206,7 +207,7 @@ export function Badge({ status }: { status: string }) {
 // ─── Section Card ─────────────────────────────────────────────────────────────
 
 export function SectionCard({ title, action, children }: {
-  title: string; action?: string; children: React.ReactNode
+  title: string; action?: React.ReactNode; children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col rounded-xl"
@@ -215,9 +216,9 @@ export function SectionCard({ title, action, children }: {
         style={{ borderBottom: '1px solid #1F2937' }}>
         <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{title}</p>
         {action && (
-          <span className="cursor-pointer text-xs font-medium" style={{ color: '#0D9488' }}>
-            {action} →
-          </span>
+          typeof action === 'string'
+            ? <span className="cursor-pointer text-xs font-medium" style={{ color: '#0D9488' }}>{action} →</span>
+            : <>{action}</>
         )}
       </div>
       {children}

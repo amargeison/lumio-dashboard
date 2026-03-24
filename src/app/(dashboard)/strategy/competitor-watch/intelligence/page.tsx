@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Zap, ArrowRight, Clock } from 'lucide-react'
+import ExportPdfButton from '@/components/ExportPdfButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -347,8 +348,13 @@ export default function IntelligencePage() {
         <Link href="/strategy/competitor-watch" className="inline-flex items-center gap-1 text-sm text-[#9CA3AF] hover:text-[#F9FAFB] transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" /> Back to Competitor Watch
         </Link>
-        <h1 className="text-2xl font-bold">Intelligence Brief</h1>
-        <p className="text-[#9CA3AF] text-sm mt-1">What&apos;s coming, what to do about it, and where the market is going.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Intelligence Brief</h1>
+            <p className="text-[#9CA3AF] text-sm mt-1">What&apos;s coming, what to do about it, and where the market is going.</p>
+          </div>
+          <ExportPdfButton />
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-0 mt-5 border-b border-[#1F2937] -mb-px">

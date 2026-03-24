@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import {
   Phone, Heart, TrendingUp, AlertCircle, Star, Search, Download,
   Sparkles, Users, RotateCcw, Plus, X, ChevronRight, ChevronDown,

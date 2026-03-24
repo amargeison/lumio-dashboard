@@ -1280,14 +1280,14 @@ export default function HomePage() {
               </div>
               {/* CTAs */}
               <div className="flex flex-wrap items-center justify-center gap-4">
-                <Link href="/crm"
+                <Link href="/lumio-crm"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold"
                   style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#5B35A5' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
                   Join the waitlist
                 </Link>
-                <Link href="/crm"
+                <Link href="/lumio-crm"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium"
                   style={{ border: '1px solid rgba(108,63,197,0.35)', color: '#A78BFA' }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(108,63,197,0.6)'; el.style.color = '#C4B5FD' }}
