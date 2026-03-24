@@ -1,5 +1,6 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -884,8 +885,31 @@ const TABS = [
 ]
 
 export default function WraparoundPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_wraparound_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="wraparound"
+      title="No wraparound data yet"
+      description="Upload your breakfast club register, bookings and payment data to activate Pre & After School."
+      uploads={[
+        { key: 'register', label: 'Upload Breakfast Club Register (CSV)' },
+        { key: 'bookings', label: 'Upload Bookings (CSV)' },
+        { key: 'payments', label: 'Upload Payment Data (CSV)' },
+        { key: 'mis', label: 'Connect MIS' },
+      ]}
+    />
+  )
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

@@ -205,17 +205,18 @@ function StatCard({
   color?: 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal'
   alert?: boolean
 }) {
-  const colorMap = {
-    blue: 'bg-blue-50 border-blue-200 text-blue-700',
-    green: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-    amber: 'bg-amber-50 border-amber-200 text-amber-700',
-    red: 'bg-red-50 border-red-200 text-red-700',
-    purple: 'bg-purple-50 border-purple-200 text-purple-700',
-    teal: 'bg-teal-50 border-teal-200 text-teal-700',
+  const colorMap: Record<string, React.CSSProperties> = {
+    blue: { backgroundColor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)', color: '#93C5FD' },
+    green: { backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', color: '#86EFAC' },
+    amber: { backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#FCD34D' },
+    red: { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#FCA5A5' },
+    purple: { backgroundColor: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)', color: '#C4B5FD' },
+    teal: { backgroundColor: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', color: '#5EEAD4' },
   }
   return (
     <div
-      className={`rounded-xl border p-4 ${colorMap[color]} ${alert ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+      className={`rounded-xl p-4 ${alert ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+      style={colorMap[color]}
     >
       <p className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
@@ -234,7 +235,7 @@ function SectionTitle({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
       <span className="text-lg">{icon}</span>
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{title}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#D1D5DB' }}>{title}</h3>
     </div>
   )
 }
@@ -256,12 +257,12 @@ function ProgressBar({
   return (
     <div className="w-full">
       {label && (
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="flex justify-between text-xs mb-1" style={{ color: '#9CA3AF' }}>
           <span>{label}</span>
           {showPct && <span>{value}{max !== 100 ? `/${max}` : '%'}</span>}
         </div>
       )}
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${pct}%`, backgroundColor: color }}
@@ -273,14 +274,14 @@ function ProgressBar({
 
 function AIInsightBox({ text }: { text: string }) {
   return (
-    <div className="rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 p-4 mb-6">
+    <div className="rounded-xl border p-4 mb-6" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
           AI
         </div>
         <div>
-          <p className="text-xs font-semibold text-violet-700 mb-1 uppercase tracking-wide">AI Summary</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+          <p className="text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: '#C4B5FD' }}>AI Summary</p>
+          <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{text}</p>
         </div>
       </div>
     </div>
@@ -288,23 +289,23 @@ function AIInsightBox({ text }: { text: string }) {
 }
 
 function Badge({ label, color }: { label: string; color: 'green' | 'amber' | 'red' | 'blue' | 'purple' }) {
-  const map = {
-    green: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    red: 'bg-red-100 text-red-700',
-    blue: 'bg-blue-100 text-blue-700',
-    purple: 'bg-purple-100 text-purple-700',
+  const map: Record<string, React.CSSProperties> = {
+    green: { backgroundColor: 'rgba(34,197,94,0.15)', color: '#86EFAC' },
+    amber: { backgroundColor: 'rgba(245,158,11,0.15)', color: '#FCD34D' },
+    red: { backgroundColor: 'rgba(239,68,68,0.15)', color: '#FCA5A5' },
+    blue: { backgroundColor: 'rgba(96,165,250,0.15)', color: '#93C5FD' },
+    purple: { backgroundColor: 'rgba(167,139,250,0.15)', color: '#C4B5FD' },
   }
-  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${map[color]}`}>{label}</span>
+  return <span className="inline-block px-2 py-0.5 rounded text-xs font-medium" style={map[color]}>{label}</span>
 }
 
 function CheckItem({ label, done }: { label: string; done: boolean }) {
   return (
-    <div className="flex items-center gap-2 text-sm py-1.5 border-b border-gray-100 last:border-0">
+    <div className="flex items-center gap-2 text-sm py-1.5 border-b last:border-0" style={{ borderColor: '#1F2937' }}>
       <span className={done ? 'text-emerald-500' : 'text-gray-300'}>
         {done ? '✓' : '○'}
       </span>
-      <span className={done ? 'text-gray-700' : 'text-gray-400'}>{label}</span>
+      <span style={{ color: done ? '#D1D5DB' : '#6B7280' }}>{label}</span>
       {!done && <Badge label="Pending" color="amber" />}
     </div>
   )
@@ -320,17 +321,17 @@ function AlertRow({
   sub?: string
 }) {
   const map = {
-    high: { bg: 'bg-red-50 border-red-200', dot: 'bg-red-500', text: 'text-red-800' },
-    medium: { bg: 'bg-amber-50 border-amber-200', dot: 'bg-amber-400', text: 'text-amber-800' },
-    low: { bg: 'bg-blue-50 border-blue-200', dot: 'bg-blue-400', text: 'text-blue-800' },
+    high: { bgStyle: { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }, dotStyle: { backgroundColor: '#EF4444' }, textColor: '#FCA5A5' },
+    medium: { bgStyle: { backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }, dotStyle: { backgroundColor: '#FBBF24' }, textColor: '#FCD34D' },
+    low: { bgStyle: { backgroundColor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)' }, dotStyle: { backgroundColor: '#60A5FA' }, textColor: '#93C5FD' },
   }
   const s = map[level]
   return (
-    <div className={`flex items-start gap-3 rounded-lg border p-3 ${s.bg}`}>
-      <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
+    <div className="flex items-start gap-3 rounded-lg p-3" style={s.bgStyle}>
+      <span className="mt-1.5 w-2 h-2 rounded-full flex-shrink-0" style={s.dotStyle} />
       <div>
-        <p className={`text-sm font-medium ${s.text}`}>{text}</p>
-        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
+        <p className="text-sm font-medium" style={{ color: s.textColor }}>{text}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{sub}</p>}
       </div>
     </div>
   )
@@ -347,9 +348,9 @@ function TrustView() {
 
       <div>
         <SectionTitle icon="🏫" title="School-by-School Overview" />
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid #1F2937' }}>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+            <thead className="text-xs uppercase tracking-wide" style={{ backgroundColor: '#0D0E14', color: '#9CA3AF' }}>
               <tr>
                 <th className="px-4 py-3 text-left">School</th>
                 <th className="px-4 py-3 text-center">Attendance</th>
@@ -360,18 +361,18 @@ function TrustView() {
                 <th className="px-4 py-3 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
               {mockData.trust.schools.map((s) => (
-                <tr key={s.name} className={s.flag ? 'bg-red-50' : 'hover:bg-gray-50'}>
-                  <td className="px-4 py-3 font-medium text-gray-800">
+                <tr key={s.name} style={s.flag ? { backgroundColor: 'rgba(239,68,68,0.1)' } : undefined}>
+                  <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>
                     {s.flag && <span className="mr-1">🚩</span>}
                     {s.name}
                   </td>
-                  <td className={`px-4 py-3 text-center font-semibold ${s.attendance < 93 ? 'text-red-600' : 'text-gray-700'}`}>
+                  <td className="px-4 py-3 text-center font-semibold" style={{ color: s.attendance < 93 ? '#FCA5A5' : '#D1D5DB' }}>
                     {s.attendance}%
                   </td>
-                  <td className="px-4 py-3 text-center text-gray-600">{s.sen}%</td>
-                  <td className="px-4 py-3 text-center text-gray-600">{s.phonics}%</td>
+                  <td className="px-4 py-3 text-center" style={{ color: '#9CA3AF' }}>{s.sen}%</td>
+                  <td className="px-4 py-3 text-center" style={{ color: '#9CA3AF' }}>{s.phonics}%</td>
                   <td className="px-4 py-3 text-center">
                     <Badge
                       label={s.budget}
@@ -408,7 +409,7 @@ function TrustView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="⚠️" title="Trust Alerts" />
           <div className="space-y-2">
             <AlertRow level="high" text="Riverside Academy — Budget overspend requires review" sub="Finance team notified 12 Mar 2025" />
@@ -416,9 +417,9 @@ function TrustView() {
             <AlertRow level="medium" text="Trust-wide average attendance below national" sub="3 of 4 schools under 94.5%" />
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📋" title="SEND White Paper — Trust Readiness" />
-          <p className="text-xs text-gray-500 mb-3">Phase 1 compliance (2025/26)</p>
+          <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Phase 1 compliance (2025/26)</p>
           <div className="space-y-1">
             <CheckItem label="Trust SEND strategy document updated" done={true} />
             <CheckItem label="All schools have named SENCO on SLT" done={true} />
@@ -447,7 +448,7 @@ function HeadteacherView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📈" title="Attendance by Year Group" />
           <div className="space-y-2 mt-2">
             {mockData.attendance.byYear.map((y) => (
@@ -459,10 +460,10 @@ function HeadteacherView() {
               />
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-3">National average: 94.5%</p>
+          <p className="text-xs mt-3" style={{ color: '#6B7280' }}>National average: 94.5%</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="🎓" title="Academic Performance vs National" />
           <div className="space-y-3">
             {[
@@ -473,19 +474,20 @@ function HeadteacherView() {
               { label: 'KS2 Combined', school: 62, national: 65 },
             ].map((m) => (
               <div key={m.label}>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs mb-1" style={{ color: '#9CA3AF' }}>
                   <span>{m.label}</span>
-                  <span className={m.school < m.national ? 'text-red-500' : 'text-emerald-600'}>
-                    {m.school}% <span className="text-gray-400">(nat: {m.national}%)</span>
+                  <span style={{ color: m.school < m.national ? '#FCA5A5' : '#86EFAC' }}>
+                    {m.school}% <span style={{ color: '#6B7280' }}>(nat: {m.national}%)</span>
                   </span>
                 </div>
-                <div className="relative h-2 bg-gray-100 rounded-full">
+                <div className="relative h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
                   <div
-                    className="h-full rounded-full bg-blue-400"
-                    style={{ width: `${m.school}%` }}
+                    className="h-full rounded-full"
+                    style={{ width: `${m.school}%`, backgroundColor: '#60A5FA' }}
                   />
                   <div
-                    className="absolute top-0 h-full w-0.5 bg-gray-400"
+                    className="absolute top-0 h-full w-0.5"
+                    style={{ backgroundColor: '#6B7280' }}
                     style={{ left: `${m.national}%` }}
                     title={`National: ${m.national}%`}
                   />
@@ -503,7 +505,7 @@ function HeadteacherView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="🚨" title="Headteacher Alerts" />
           <div className="space-y-2">
             <AlertRow level="high" text="1 EHCP annual review overdue" sub="Action required within 5 working days" />
@@ -512,7 +514,7 @@ function HeadteacherView() {
             <AlertRow level="medium" text="KS2 combined 3pts below national" sub="Improvement plan being drafted" />
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📅" title="Upcoming This Term" />
           <div className="space-y-2 text-sm">
             {[
@@ -522,9 +524,9 @@ function HeadteacherView() {
               { date: '7 Apr', event: 'SLT Performance Appraisals', type: 'staff' },
               { date: '11 Apr', event: 'End of Term — Budget reconciliation due', type: 'finance' },
             ].map((e) => (
-              <div key={e.event} className="flex items-center gap-3 py-1.5 border-b border-gray-100 last:border-0">
-                <span className="text-xs text-gray-400 w-12 flex-shrink-0">{e.date}</span>
-                <span className="text-gray-700">{e.event}</span>
+              <div key={e.event} className="flex items-center gap-3 py-1.5 border-b last:border-0" style={{ borderColor: '#1F2937' }}>
+                <span className="text-xs w-12 flex-shrink-0" style={{ color: '#6B7280' }}>{e.date}</span>
+                <span style={{ color: '#D1D5DB' }}>{e.event}</span>
               </div>
             ))}
           </div>
@@ -545,16 +547,15 @@ function HeadOfYearView() {
       />
 
       <div className="flex flex-wrap gap-2 mb-2">
-        <p className="text-sm text-gray-500 mr-2 self-center">Viewing year group:</p>
+        <p className="text-sm mr-2 self-center" style={{ color: '#9CA3AF' }}>Viewing year group:</p>
         {['Y3', 'Y4', 'Y5', 'Y6'].map((y) => (
           <button
             key={y}
             onClick={() => setSelectedYear(y)}
-            className={`px-3 py-1 rounded-lg text-sm font-medium border transition ${
-              selectedYear === y
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-            }`}
+            className="px-3 py-1 rounded-lg text-sm font-medium border transition"
+            style={selectedYear === y
+              ? { backgroundColor: '#0D9488', color: '#F9FAFB', borderColor: '#0D9488' }
+              : { backgroundColor: '#111318', color: '#9CA3AF', borderColor: '#1F2937' }}
           >
             Year {y}
           </button>
@@ -569,7 +570,7 @@ function HeadOfYearView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="👦" title="Pupils Requiring Attention" />
           <div className="space-y-2">
             <AlertRow level="high" text="Pupil C — Attendance dropped to 72% this month" sub="Parent meeting requested — not yet responded" />
@@ -578,18 +579,18 @@ function HeadOfYearView() {
             <AlertRow level="low" text="Pupil H — Parent reports anxiety around SATs" sub="Referred to school counsellor" />
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📚" title="Academic Progress — Year Group" />
           <div className="space-y-3">
             {mockData.academic.bySubject.map((s) => (
               <div key={s.subject}>
-                <p className="text-xs text-gray-500 mb-1">{s.subject}</p>
+                <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{s.subject}</p>
                 <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
                   <div className="bg-emerald-400 rounded-l" style={{ width: `${s.above}%` }} title={`Above: ${s.above}%`} />
                   <div className="bg-blue-300" style={{ width: `${s.expected}%` }} title={`Expected: ${s.expected}%`} />
                   <div className="bg-red-300 rounded-r" style={{ width: `${s.below}%` }} title={`Below: ${s.below}%`} />
                 </div>
-                <div className="flex gap-4 text-xs text-gray-400 mt-0.5">
+                <div className="flex gap-4 text-xs mt-0.5" style={{ color: '#6B7280' }}>
                   <span>Above: {s.above}%</span>
                   <span>Expected: {s.expected}%</span>
                   <span>Below: {s.below}%</span>
@@ -600,11 +601,11 @@ function HeadOfYearView() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <SectionTitle icon="🤝" title="Interventions Active in Year Group" />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+            <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
               <tr>
                 <th className="py-2 text-left">Intervention</th>
                 <th className="py-2 text-center">Pupils</th>
@@ -612,7 +613,7 @@ function HeadOfYearView() {
                 <th className="py-2 text-center">Impact</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
               {[
                 { name: 'Reading Recovery', pupils: 4, provider: 'Mrs. Ahmed', impact: 'High' },
                 { name: 'SEMH Thrive Programme', pupils: 3, provider: 'School counsellor', impact: 'High' },
@@ -620,9 +621,9 @@ function HeadOfYearView() {
                 { name: 'Speech & Language', pupils: 2, provider: 'External SALT', impact: 'Medium' },
               ].map((i) => (
                 <tr key={i.name}>
-                  <td className="py-2 font-medium text-gray-700">{i.name}</td>
-                  <td className="py-2 text-center text-gray-500">{i.pupils}</td>
-                  <td className="py-2 text-center text-gray-500">{i.provider}</td>
+                  <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{i.name}</td>
+                  <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{i.pupils}</td>
+                  <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{i.provider}</td>
                   <td className="py-2 text-center">
                     <Badge label={i.impact} color={i.impact === 'High' ? 'green' : 'blue'} />
                   </td>
@@ -651,28 +652,28 @@ function TeacherView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📊" title="Class Progress Breakdown" />
           <div className="space-y-3">
             {mockData.academic.bySubject.map((s) => (
               <div key={s.subject}>
-                <p className="text-xs text-gray-500 mb-1">{s.subject}</p>
+                <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{s.subject}</p>
                 <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
                   <div className="bg-emerald-400 rounded-l" style={{ width: `${s.above}%` }} />
                   <div className="bg-blue-300" style={{ width: `${s.expected}%` }} />
                   <div className="bg-red-300 rounded-r" style={{ width: `${s.below}%` }} />
                 </div>
-                <div className="flex gap-4 text-xs text-gray-400 mt-0.5">
-                  <span className="text-emerald-600">Above: {s.above}%</span>
-                  <span className="text-blue-500">Expected: {s.expected}%</span>
-                  <span className="text-red-500">Below: {s.below}%</span>
+                <div className="flex gap-4 text-xs mt-0.5">
+                  <span style={{ color: '#86EFAC' }}>Above: {s.above}%</span>
+                  <span style={{ color: '#93C5FD' }}>Expected: {s.expected}%</span>
+                  <span style={{ color: '#FCA5A5' }}>Below: {s.below}%</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="🧩" title="SEND Pupils — My Class" />
           <div className="space-y-2">
             {[
@@ -683,10 +684,10 @@ function TeacherView() {
               { pupil: 'Pupil E', need: 'MLD', plan: 'SEN Support', review: '—', status: 'Monitoring' },
               { pupil: 'Pupil F', need: 'SEMH', plan: 'SEN Support', review: '—', status: 'Monitoring' },
             ].map((p) => (
-              <div key={p.pupil} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-100 last:border-0">
+              <div key={p.pupil} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0" style={{ borderColor: '#1F2937' }}>
                 <div>
-                  <span className="font-medium text-gray-700">{p.pupil}</span>
-                  <span className="text-gray-400 ml-2">· {p.need}</span>
+                  <span className="font-medium" style={{ color: '#D1D5DB' }}>{p.pupil}</span>
+                  <span className="ml-2" style={{ color: '#6B7280' }}>· {p.need}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge label={p.plan} color="purple" />
@@ -701,7 +702,7 @@ function TeacherView() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <SectionTitle icon="✅" title="This Week's Task List" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
           {[
@@ -782,17 +783,16 @@ function SENView() {
       </div>
 
       {/* Sub-tab navigation */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex flex-wrap border-b border-gray-100 bg-gray-50 px-4 pt-3 gap-1">
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex flex-wrap border-b px-4 pt-3 gap-1" style={{ borderColor: '#1F2937', backgroundColor: '#0D0E14' }}>
           {senTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setSenTab(t.id as any)}
-              className={`px-3 py-1.5 rounded-t-lg text-xs font-medium border-b-2 transition ${
-                senTab === t.id
-                  ? 'border-blue-600 text-blue-700 bg-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+              className="px-3 py-1.5 rounded-t-lg text-xs font-medium border-b-2 transition"
+              style={senTab === t.id
+                ? { borderColor: '#0D9488', color: '#2DD4BF', backgroundColor: '#111318' }
+                : { borderColor: 'transparent', color: '#9CA3AF' }}
             >
               {t.label}
             </button>
@@ -811,39 +811,39 @@ function SENView() {
                   <div className="space-y-2">
                     {mockData.sen.byNeed.map((n) => (
                       <div key={n.type} className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500 w-24 flex-shrink-0">{n.type}</span>
-                        <div className="flex-1 h-2.5 bg-gray-100 rounded-full">
+                        <span className="text-xs w-24 flex-shrink-0" style={{ color: '#9CA3AF' }}>{n.type}</span>
+                        <div className="flex-1 h-2.5 rounded-full" style={{ backgroundColor: '#1F2937' }}>
                           <div className="h-full rounded-full" style={{ width: `${(n.count / 38) * 100}%`, backgroundColor: n.color }} />
                         </div>
-                        <span className="text-xs font-bold text-gray-600 w-5 text-right">{n.count}</span>
+                        <span className="text-xs font-bold w-5 text-right" style={{ color: '#9CA3AF' }}>{n.count}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">Total: 38 pupils · SEMH and SpLD are the dominant needs</p>
+                  <p className="text-xs mt-2" style={{ color: '#6B7280' }}>Total: 38 pupils · SEMH and SpLD are the dominant needs</p>
                 </div>
 
                 {/* Three-tier model */}
                 <div>
                   <SectionTitle icon="🏗️" title="Three-Tier Support Model" />
-                  <p className="text-xs text-gray-400 mb-3">As required by the 2026 White Paper</p>
+                  <p className="text-xs mb-3" style={{ color: '#6B7280' }}>As required by the 2026 White Paper</p>
                   <div className="space-y-3">
                     {[
                       { label: 'Universal', sub: 'Quality-first teaching for all', value: 62, color: '#10b981', desc: 'Whole-class differentiation, reasonable adjustments, trained staff' },
                       { label: 'Targeted / Targeted+', sub: 'SALT groups, EP support, sensory needs', value: 28, color: '#6366f1', desc: 'ISP required · Experts at Hand eligible' },
                       { label: 'Specialist', sub: 'EHCP + Specialist Provision Package', value: 10, color: '#ef4444', desc: 'Most complex needs · Digital EHCP incoming 2030' },
                     ].map((t) => (
-                      <div key={t.label} className="rounded-lg border border-gray-100 p-3">
+                      <div key={t.label} className="rounded-lg p-3" style={{ border: '1px solid #1F2937' }}>
                         <div className="flex justify-between items-center mb-1">
                           <div>
-                            <span className="text-sm font-semibold text-gray-700">{t.label}</span>
-                            <span className="text-xs text-gray-400 ml-2">{t.sub}</span>
+                            <span className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>{t.label}</span>
+                            <span className="text-xs ml-2" style={{ color: '#6B7280' }}>{t.sub}</span>
                           </div>
                           <span className="text-sm font-bold" style={{ color: t.color }}>{t.value}%</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full mb-1">
+                        <div className="h-2 rounded-full mb-1" style={{ backgroundColor: '#1F2937' }}>
                           <div className="h-full rounded-full" style={{ width: `${t.value}%`, backgroundColor: t.color }} />
                         </div>
-                        <p className="text-xs text-gray-400">{t.desc}</p>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>{t.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -867,22 +867,22 @@ function SENView() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <SectionTitle icon="💰" title="SEN Budget" />
-                  <div className="rounded-lg border border-gray-100 p-4 space-y-2">
+                  <div className="rounded-lg p-4 space-y-2" style={{ border: '1px solid #1F2937' }}>
                     {[
-                      { label: 'Allocated', value: mockData.sen.budget.allocated, color: 'text-gray-700' },
-                      { label: 'Spent', value: mockData.sen.budget.spent, color: 'text-blue-600' },
-                      { label: 'Committed', value: mockData.sen.budget.committed, color: 'text-amber-600' },
-                      { label: 'Available', value: mockData.sen.budget.allocated - mockData.sen.budget.spent - mockData.sen.budget.committed, color: 'text-emerald-600' },
+                      { label: 'Allocated', value: mockData.sen.budget.allocated, color: '#D1D5DB' },
+                      { label: 'Spent', value: mockData.sen.budget.spent, color: '#93C5FD' },
+                      { label: 'Committed', value: mockData.sen.budget.committed, color: '#FCD34D' },
+                      { label: 'Available', value: mockData.sen.budget.allocated - mockData.sen.budget.spent - mockData.sen.budget.committed, color: '#86EFAC' },
                     ].map((b) => (
                       <div key={b.label} className="flex justify-between text-sm">
-                        <span className="text-gray-500">{b.label}</span>
-                        <span className={`font-semibold ${b.color}`}>£{b.value.toLocaleString()}</span>
+                        <span style={{ color: '#9CA3AF' }}>{b.label}</span>
+                        <span className="font-semibold" style={{ color: b.color }}>£{b.value.toLocaleString()}</span>
                       </div>
                     ))}
                     <ProgressBar value={(mockData.sen.budget.spent / mockData.sen.budget.allocated) * 100} color="#3b82f6" />
-                    <p className="text-xs text-gray-400">64% of budget spent at end of spring term — on track</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>64% of budget spent at end of spring term — on track</p>
                   </div>
-                  <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
+                  <div className="mt-3 rounded-lg p-3 text-xs" style={{ backgroundColor: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.25)', color: '#A5B4FC' }}>
                     <p className="font-semibold mb-1">New funding available:</p>
                     <p>• Inclusive Mainstream Fund — £1.6bn nationally (apply via LA)</p>
                     <p>• Experts at Hand — £1.8bn for SALT, EP, OT (apply via ICB)</p>
@@ -899,9 +899,9 @@ function SENView() {
                       { date: '11 Apr', task: 'ISP reviews due — 4 pupils on SEN support', urgency: 'medium' },
                       { date: '14 Apr', task: 'Inclusive Mainstream Fund application', urgency: 'medium' },
                     ].map((d) => (
-                      <div key={d.task} className={`flex gap-3 p-2 rounded-lg text-sm ${d.urgency === 'high' ? 'bg-red-50' : 'bg-amber-50'}`}>
-                        <span className={`text-xs font-bold w-12 flex-shrink-0 ${d.urgency === 'high' ? 'text-red-600' : 'text-amber-600'}`}>{d.date}</span>
-                        <span className="text-gray-700">{d.task}</span>
+                      <div key={d.task} className="flex gap-3 p-2 rounded-lg text-sm" style={d.urgency === 'high' ? { backgroundColor: 'rgba(239,68,68,0.1)' } : { backgroundColor: 'rgba(245,158,11,0.1)' }}>
+                        <span className="text-xs font-bold w-12 flex-shrink-0" style={{ color: d.urgency === 'high' ? '#FCA5A5' : '#FCD34D' }}>{d.date}</span>
+                        <span style={{ color: '#D1D5DB' }}>{d.task}</span>
                       </div>
                     ))}
                   </div>
@@ -915,13 +915,13 @@ function SENView() {
             <div className="space-y-5">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
                 {[
-                  { stage: 'Request Received', count: 2, color: 'bg-gray-100 text-gray-700' },
-                  { stage: 'Assessment Agreed', count: 3, color: 'bg-blue-100 text-blue-700' },
-                  { stage: 'Evidence Gathering', count: 2, color: 'bg-indigo-100 text-indigo-700' },
-                  { stage: 'Draft Plan', count: 1, color: 'bg-amber-100 text-amber-700' },
-                  { stage: 'Final Issued', count: 14, color: 'bg-emerald-100 text-emerald-700' },
+                  { stage: 'Request Received', count: 2, bgStyle: { backgroundColor: '#1F2937', color: '#9CA3AF' } },
+                  { stage: 'Assessment Agreed', count: 3, bgStyle: { backgroundColor: 'rgba(96,165,250,0.15)', color: '#93C5FD' } },
+                  { stage: 'Evidence Gathering', count: 2, bgStyle: { backgroundColor: 'rgba(129,140,248,0.15)', color: '#A5B4FC' } },
+                  { stage: 'Draft Plan', count: 1, bgStyle: { backgroundColor: 'rgba(245,158,11,0.15)', color: '#FCD34D' } },
+                  { stage: 'Final Issued', count: 14, bgStyle: { backgroundColor: 'rgba(34,197,94,0.15)', color: '#86EFAC' } },
                 ].map((s) => (
-                  <div key={s.stage} className={`rounded-xl p-3 ${s.color}`}>
+                  <div key={s.stage} className="rounded-xl p-3" style={s.bgStyle}>
                     <p className="text-2xl font-bold">{s.count}</p>
                     <p className="text-xs mt-1 font-medium">{s.stage}</p>
                   </div>
@@ -930,7 +930,7 @@ function SENView() {
 
               <div>
                 <SectionTitle icon="⏱️" title="20-Week Statutory Deadline Tracker" />
-                <p className="text-xs text-gray-400 mb-3">From date of request to final EHCP — LA must comply within 20 weeks</p>
+                <p className="text-xs mb-3" style={{ color: '#6B7280' }}>From date of request to final EHCP — LA must comply within 20 weeks</p>
                 <div className="space-y-3">
                   {[
                     { pupil: 'Pupil J', year: 'Y2', requestDate: '3 Nov 2024', weeksPassed: 19, weeksLeft: 1, stage: 'Draft Plan', urgency: 'high' },
@@ -939,23 +939,23 @@ function SENView() {
                     { pupil: 'Pupil M', year: 'Y5', requestDate: '12 Jan 2025', weeksPassed: 10, weeksLeft: 10, stage: 'Request Received', urgency: 'low' },
                     { pupil: 'Pupil N', year: 'Y3', requestDate: '3 Feb 2025', weeksPassed: 7, weeksLeft: 13, stage: 'Request Received', urgency: 'low' },
                   ].map((e) => (
-                    <div key={e.pupil} className="rounded-lg border border-gray-100 p-3">
+                    <div key={e.pupil} className="rounded-lg p-3" style={{ border: '1px solid #1F2937' }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-sm text-gray-700">{e.pupil} ({e.year})</span>
+                          <span className="font-semibold text-sm" style={{ color: '#D1D5DB' }}>{e.pupil} ({e.year})</span>
                           <Badge label={e.stage} color={e.urgency === 'high' ? 'red' : e.urgency === 'medium' ? 'amber' : 'blue'} />
                         </div>
-                        <span className={`text-xs font-bold ${e.urgency === 'high' ? 'text-red-600' : e.urgency === 'medium' ? 'text-amber-600' : 'text-gray-400'}`}>
+                        <span className="text-xs font-bold" style={{ color: e.urgency === 'high' ? '#FCA5A5' : e.urgency === 'medium' ? '#FCD34D' : '#6B7280' }}>
                           {e.weeksLeft} wk{e.weeksLeft !== 1 ? 's' : ''} left
                         </span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full">
+                      <div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
                         <div
-                          className={`h-full rounded-full ${e.urgency === 'high' ? 'bg-red-400' : e.urgency === 'medium' ? 'bg-amber-400' : 'bg-blue-400'}`}
-                          style={{ width: `${(e.weeksPassed / 20) * 100}%` }}
+                          className="h-full rounded-full"
+                          style={{ width: `${(e.weeksPassed / 20) * 100}%`, backgroundColor: e.urgency === 'high' ? '#F87171' : e.urgency === 'medium' ? '#FBBF24' : '#60A5FA' }}
                         />
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Requested: {e.requestDate} · Week {e.weeksPassed} of 20</p>
+                      <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Requested: {e.requestDate} · Week {e.weeksPassed} of 20</p>
                     </div>
                   ))}
                 </div>
@@ -965,7 +965,7 @@ function SENView() {
                 <SectionTitle icon="📅" title="Annual Review Schedule" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">Pupil</th>
                         <th className="py-2 text-center">Year</th>
@@ -974,7 +974,7 @@ function SENView() {
                         <th className="py-2 text-left">Notes</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                       {[
                         { pupil: 'Pupil A', year: 'Y4', due: '14 Mar 2025', status: 'Overdue', notes: 'Parent did not attend. Reschedule urgently.' },
                         { pupil: 'Pupil B', year: 'Y6', due: '28 Mar 2025', status: 'Due soon', notes: 'Transition to secondary — include transfer letter' },
@@ -983,17 +983,17 @@ function SENView() {
                         { pupil: 'Pupil E', year: 'Y1', due: '11 May 2025', status: 'On track', notes: '' },
                         { pupil: 'Pupil F', year: 'Y5', due: '2 Jun 2025', status: 'On track', notes: '' },
                       ].map((r) => (
-                        <tr key={r.pupil} className={r.status === 'Overdue' ? 'bg-red-50' : ''}>
-                          <td className="py-2 font-medium text-gray-700">{r.pupil}</td>
-                          <td className="py-2 text-center text-gray-500">{r.year}</td>
-                          <td className="py-2 text-center text-gray-500">{r.due}</td>
+                        <tr key={r.pupil} style={r.status === 'Overdue' ? { backgroundColor: 'rgba(239,68,68,0.1)' } : undefined}>
+                          <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{r.pupil}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{r.year}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{r.due}</td>
                           <td className="py-2 text-center">
                             <Badge
                               label={r.status}
                               color={r.status === 'Overdue' ? 'red' : r.status === 'Due soon' ? 'amber' : r.status === 'Scheduled' ? 'blue' : 'green'}
                             />
                           </td>
-                          <td className="py-2 text-xs text-gray-400">{r.notes}</td>
+                          <td className="py-2 text-xs" style={{ color: '#6B7280' }}>{r.notes}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1003,17 +1003,17 @@ function SENView() {
 
               <div>
                 <SectionTitle icon="🏫" title="Y6 Transition Tracker" />
-                <p className="text-xs text-gray-400 mb-3">All pupils with EHCPs must have transition plans in place before leaving primary — secondary schools must receive EHCP files before the summer.</p>
+                <p className="text-xs mb-3" style={{ color: '#6B7280' }}>All pupils with EHCPs must have transition plans in place before leaving primary — secondary schools must receive EHCP files before the summer.</p>
                 <div className="space-y-2">
                   {[
                     { pupil: 'Pupil B', secondary: 'Hillside Academy', ehcpTransferred: true, planInPlace: true, parentConsulted: true },
                     { pupil: 'Pupil C', secondary: 'TBC', ehcpTransferred: false, planInPlace: false, parentConsulted: true },
                     { pupil: 'Pupil O', secondary: 'Riverside Academy', ehcpTransferred: false, planInPlace: true, parentConsulted: false },
                   ].map((t) => (
-                    <div key={t.pupil} className="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                    <div key={t.pupil} className="flex items-center justify-between p-3 rounded-lg" style={{ border: '1px solid #1F2937' }}>
                       <div>
-                        <span className="font-semibold text-sm text-gray-700">{t.pupil}</span>
-                        <span className="text-xs text-gray-400 ml-2">→ {t.secondary}</span>
+                        <span className="font-semibold text-sm" style={{ color: '#D1D5DB' }}>{t.pupil}</span>
+                        <span className="text-xs ml-2" style={{ color: '#6B7280' }}>→ {t.secondary}</span>
                       </div>
                       <div className="flex gap-3 text-xs">
                         <span className={t.ehcpTransferred ? 'text-emerald-500' : 'text-red-400'}>
@@ -1036,9 +1036,9 @@ function SENView() {
           {/* ── ISP TRACKER TAB ── */}
           {senTab === 'isp' && (
             <div className="space-y-5">
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm">
-                <p className="font-semibold text-amber-800">⚠️ Individual Support Plans — New Statutory Requirement (Sept 2029)</p>
-                <p className="text-amber-700 mt-1 text-xs">
+              <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                <p className="font-semibold" style={{ color: '#FCD34D' }}>⚠️ Individual Support Plans — New Statutory Requirement (Sept 2029)</p>
+                <p className="mt-1 text-xs" style={{ color: '#FCD34D' }}>
                   Under the 2026 White Paper, every child with SEND will require a digital ISP from September 2029. ISPs replace SEN Information Reports and sit alongside EHCPs for complex cases.
                   Schools must start preparing now — the DfE recommends piloting ISP templates in Phase 1 (2025/26).
                   Current status: <strong>templates not yet created.</strong>
@@ -1056,7 +1056,7 @@ function SENView() {
                 <SectionTitle icon="📋" title="ISP Status by Pupil" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">Pupil</th>
                         <th className="py-2 text-center">Year</th>
@@ -1068,7 +1068,7 @@ function SENView() {
                         <th className="py-2 text-center">Parent Sign-off</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 text-xs">
+                    <tbody className="divide-y text-xs" style={{ borderColor: '#1F2937' }}>
                       {[
                         { pupil: 'Pupil A', year: 'Y4', need: 'ASD', tier: 'Specialist', status: 'Active', last: 'Sep 2024', next: '28 Mar', parentOk: true },
                         { pupil: 'Pupil B', year: 'Y6', need: 'SEMH', tier: 'Specialist', status: 'Active', last: 'Oct 2024', next: '28 Mar', parentOk: true },
@@ -1079,18 +1079,18 @@ function SENView() {
                         { pupil: 'Pupil G', year: 'Y5', need: 'SpLD', tier: 'Targeted', status: 'Draft', last: '—', next: 'Awaiting', parentOk: false },
                         { pupil: 'Pupil H', year: 'Y6', need: 'ASD', tier: 'Targeted', status: 'None', last: '—', next: '— Create', parentOk: false },
                       ].map((p) => (
-                        <tr key={p.pupil} className={p.status === 'None' ? 'bg-purple-50' : p.status === 'Overdue' ? 'bg-red-50' : ''}>
-                          <td className="py-2 font-semibold text-gray-700">{p.pupil}</td>
-                          <td className="py-2 text-center text-gray-500">{p.year}</td>
-                          <td className="py-2 text-center text-gray-500">{p.need}</td>
+                        <tr key={p.pupil} style={p.status === 'None' ? { backgroundColor: 'rgba(167,139,250,0.1)' } : p.status === 'Overdue' ? { backgroundColor: 'rgba(239,68,68,0.1)' } : undefined}>
+                          <td className="py-2 font-semibold" style={{ color: '#D1D5DB' }}>{p.pupil}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{p.year}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{p.need}</td>
                           <td className="py-2 text-center">
                             <Badge label={p.tier} color={p.tier === 'Specialist' ? 'red' : p.tier === 'Targeted+' ? 'purple' : 'blue'} />
                           </td>
                           <td className="py-2 text-center">
                             <Badge label={p.status} color={p.status === 'Active' ? 'green' : p.status === 'Draft' ? 'amber' : p.status === 'Overdue' ? 'red' : 'purple'} />
                           </td>
-                          <td className="py-2 text-center text-gray-400">{p.last}</td>
-                          <td className={`py-2 text-center font-medium ${p.next.includes('⚠') ? 'text-red-600' : 'text-gray-500'}`}>{p.next}</td>
+                          <td className="py-2 text-center" style={{ color: '#6B7280' }}>{p.last}</td>
+                          <td className="py-2 text-center font-medium" style={{ color: p.next.includes('⚠') ? '#FCA5A5' : '#9CA3AF' }}>{p.next}</td>
                           <td className="py-2 text-center">
                             <span className={p.parentOk ? 'text-emerald-500' : 'text-red-400'}>{p.parentOk ? '✓' : '✗'}</span>
                           </td>
@@ -1101,9 +1101,9 @@ function SENView() {
                 </div>
               </div>
 
-              <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4">
+              <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.25)' }}>
                 <SectionTitle icon="📝" title="ISP Template Preparation Status" />
-                <p className="text-xs text-gray-500 mb-3">Required for White Paper Phase 1 compliance. DfE recommends digital ISPs aligned to EHCP structure.</p>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Required for White Paper Phase 1 compliance. DfE recommends digital ISPs aligned to EHCP structure.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
                     { section: 'Barriers to learning', ready: false },
@@ -1124,9 +1124,9 @@ function SENView() {
           {/* ── INTERVENTIONS TAB ── */}
           {senTab === 'interventions' && (
             <div className="space-y-5">
-              <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid #1F2937' }}>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-xs text-gray-400 uppercase">
+                  <thead className="text-xs uppercase" style={{ backgroundColor: '#0D0E14', color: '#6B7280' }}>
                     <tr>
                       <th className="px-4 py-3 text-left">Intervention</th>
                       <th className="px-4 py-3 text-center">Pupils</th>
@@ -1138,7 +1138,7 @@ function SENView() {
                       <th className="px-4 py-3 text-center">Evidence</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                     {[
                       { name: 'Reading Recovery', pupils: 12, send: 8, provider: 'Mrs. Ahmed (trained)', freq: 'Daily 30min', cost: 2400, impact: 'High', evidence: 'Good' },
                       { name: 'SEMH Thrive Programme', pupils: 10, send: 9, provider: 'School Counsellor', freq: '2x weekly', cost: 3200, impact: 'High', evidence: 'Strong' },
@@ -1149,14 +1149,14 @@ function SENView() {
                       { name: 'OT Fine Motor', pupils: 3, send: 3, provider: 'External — OT', freq: 'Fortnightly', cost: 0, impact: 'High', evidence: 'Strong' },
                       { name: '1:1 Literacy (SpLD)', pupils: 4, send: 4, provider: 'HLTA', freq: '3x weekly', cost: 1600, impact: 'High', evidence: 'Good' },
                     ].map((i) => (
-                      <tr key={i.name} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-700">{i.name}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-500">{i.pupils}</td>
-                        <td className="px-4 py-2.5 text-center text-purple-600 font-semibold">{i.send}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-500 text-xs">{i.provider}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-500 text-xs">{i.freq}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-500">
-                          {i.cost === 0 ? <span className="text-emerald-600 text-xs">Free</span> : `£${i.cost.toLocaleString()}`}
+                      <tr key={i.name}>
+                        <td className="px-4 py-2.5 font-medium" style={{ color: '#D1D5DB' }}>{i.name}</td>
+                        <td className="px-4 py-2.5 text-center" style={{ color: '#9CA3AF' }}>{i.pupils}</td>
+                        <td className="px-4 py-2.5 text-center font-semibold" style={{ color: '#C4B5FD' }}>{i.send}</td>
+                        <td className="px-4 py-2.5 text-center text-xs" style={{ color: '#9CA3AF' }}>{i.provider}</td>
+                        <td className="px-4 py-2.5 text-center text-xs" style={{ color: '#9CA3AF' }}>{i.freq}</td>
+                        <td className="px-4 py-2.5 text-center" style={{ color: '#9CA3AF' }}>
+                          {i.cost === 0 ? <span className="text-xs" style={{ color: '#86EFAC' }}>Free</span> : `£${i.cost.toLocaleString()}`}
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           <Badge label={i.impact} color={i.impact === 'High' ? 'green' : 'blue'} />
@@ -1169,16 +1169,16 @@ function SENView() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-gray-400">EEF = Education Endowment Foundation evidence rating. Impact and evidence ratings are based on SENCO assessment and EEF Toolkit.</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>EEF = Education Endowment Foundation evidence rating. Impact and evidence ratings are based on SENCO assessment and EEF Toolkit.</p>
             </div>
           )}
 
           {/* ── AGENCIES TAB ── */}
           {senTab === 'agencies' && (
             <div className="space-y-5">
-              <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid #1F2937' }}>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-xs text-gray-400 uppercase">
+                  <thead className="text-xs uppercase" style={{ backgroundColor: '#0D0E14', color: '#6B7280' }}>
                     <tr>
                       <th className="px-4 py-3 text-left">Agency</th>
                       <th className="px-4 py-3 text-center">Referrals Total</th>
@@ -1188,7 +1188,7 @@ function SENView() {
                       <th className="px-4 py-3 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                     {[
                       { agency: 'CAMHS', total: 4, waiting: '8 wks', active: 2, next: '2 Apr', status: 'Delayed' },
                       { agency: 'Educational Psychologist', total: 6, waiting: '12 wks', active: 3, next: '15 Apr', status: 'Long wait' },
@@ -1198,12 +1198,12 @@ function SENView() {
                       { agency: "Children's Social Care", total: 2, waiting: '—', active: 2, next: '26 Mar', status: 'Active' },
                       { agency: 'Specialist SEND Teacher (LA)', total: 3, waiting: '3 wks', active: 2, next: '3 Apr', status: 'Active' },
                     ].map((a) => (
-                      <tr key={a.agency} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-700">{a.agency}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-500">{a.total}</td>
-                        <td className={`px-4 py-2.5 text-center font-semibold ${a.status === 'Delayed' || a.status === 'Long wait' ? 'text-red-600' : 'text-amber-500'}`}>{a.waiting}</td>
-                        <td className="px-4 py-2.5 text-center text-emerald-600 font-semibold">{a.active}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-400 text-xs">{a.next}</td>
+                      <tr key={a.agency}>
+                        <td className="px-4 py-2.5 font-medium" style={{ color: '#D1D5DB' }}>{a.agency}</td>
+                        <td className="px-4 py-2.5 text-center" style={{ color: '#9CA3AF' }}>{a.total}</td>
+                        <td className="px-4 py-2.5 text-center font-semibold" style={{ color: a.status === 'Delayed' || a.status === 'Long wait' ? '#FCA5A5' : '#FCD34D' }}>{a.waiting}</td>
+                        <td className="px-4 py-2.5 text-center font-semibold" style={{ color: '#86EFAC' }}>{a.active}</td>
+                        <td className="px-4 py-2.5 text-center text-xs" style={{ color: '#6B7280' }}>{a.next}</td>
                         <td className="px-4 py-2.5 text-center">
                           <Badge label={a.status} color={a.status === 'Active' ? 'green' : a.status === 'Moderate' ? 'blue' : 'red'} />
                         </td>
@@ -1212,7 +1212,7 @@ function SENView() {
                   </tbody>
                 </table>
               </div>
-              <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-sm text-indigo-700">
+              <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.25)', color: '#A5B4FC' }}>
                 <p className="font-semibold mb-1">📌 Experts at Hand Programme (2026 White Paper)</p>
                 <p className="text-xs">
                   The £1.8bn Experts at Hand offer will bring SALT, EP and OT closer to schools — reducing dependency on long CAMHS and NHS waits.
@@ -1228,7 +1228,7 @@ function SENView() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   {
-                    phase: 'Phase 1', dates: '2025/26 – 2026/27', color: 'from-blue-50 to-indigo-50 border-blue-200',
+                    phase: 'Phase 1', dates: '2025/26 – 2026/27', bgStyle: { background: 'linear-gradient(to bottom right, rgba(96,165,250,0.1), rgba(129,140,248,0.1))', border: '1px solid rgba(96,165,250,0.25)' },
                     tasks: [
                       { task: 'Inclusion Strategy drafted and published', done: true },
                       { task: 'Universal offer baseline defined for all staff', done: true },
@@ -1243,7 +1243,7 @@ function SENView() {
                     ]
                   },
                   {
-                    phase: 'Phase 2', dates: '2026/27 – 2028/29', color: 'from-amber-50 to-orange-50 border-amber-200',
+                    phase: 'Phase 2', dates: '2026/27 – 2028/29', bgStyle: { background: 'linear-gradient(to bottom right, rgba(245,158,11,0.1), rgba(249,115,22,0.1))', border: '1px solid rgba(245,158,11,0.25)' },
                     tasks: [
                       { task: 'National Inclusion Standards embedded', done: false },
                       { task: 'ISPs fully piloted school-wide', done: false },
@@ -1255,7 +1255,7 @@ function SENView() {
                     ]
                   },
                   {
-                    phase: 'Phase 3', dates: '2028/29 onward', color: 'from-purple-50 to-pink-50 border-purple-200',
+                    phase: 'Phase 3', dates: '2028/29 onward', bgStyle: { background: 'linear-gradient(to bottom right, rgba(167,139,250,0.1), rgba(236,72,153,0.1))', border: '1px solid rgba(167,139,250,0.25)' },
                     tasks: [
                       { task: 'ISPs become statutory (Sept 2029)', done: false },
                       { task: 'Digital EHCPs live', done: false },
@@ -1265,20 +1265,20 @@ function SENView() {
                     ]
                   },
                 ].map((ph) => (
-                  <div key={ph.phase} className={`rounded-xl border bg-gradient-to-br p-4 ${ph.color}`}>
-                    <p className="font-bold text-gray-800 text-sm">{ph.phase}</p>
-                    <p className="text-xs text-gray-500 mb-3">{ph.dates}</p>
+                  <div key={ph.phase} className="rounded-xl p-4" style={ph.bgStyle}>
+                    <p className="font-bold text-sm" style={{ color: '#F9FAFB' }}>{ph.phase}</p>
+                    <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{ph.dates}</p>
                     <div className="space-y-0.5">
                       {ph.tasks.map((t) => <CheckItem key={t.task} label={t.task} done={t.done} />)}
                     </div>
-                    <p className="text-xs text-gray-400 mt-3">
+                    <p className="text-xs mt-3" style={{ color: '#6B7280' }}>
                       {ph.tasks.filter((t) => t.done).length}/{ph.tasks.length} complete
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
+              <div className="rounded-xl p-4" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
                 <SectionTitle icon="🔍" title="Ofsted — What They'll Look For on SEND (2025 Framework)" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   {[
@@ -1289,9 +1289,9 @@ function SENView() {
                     { area: 'Progress of SEND pupils', detail: 'Evidence of progress for SEND pupils specifically — Ofsted takes particular care with this group.' },
                     { area: 'Parent engagement', detail: 'Evidence of co-production with parents in ISPs and annual reviews. Parent complaints and mediation process.' },
                   ].map((o) => (
-                    <div key={o.area} className="rounded-lg bg-white border border-gray-100 p-3">
-                      <p className="font-semibold text-gray-700 text-xs mb-1">{o.area}</p>
-                      <p className="text-xs text-gray-500">{o.detail}</p>
+                    <div key={o.area} className="rounded-lg p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <p className="font-semibold text-xs mb-1" style={{ color: '#D1D5DB' }}>{o.area}</p>
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{o.detail}</p>
                     </div>
                   ))}
                 </div>
@@ -1313,7 +1313,7 @@ function SENView() {
                 <SectionTitle icon="👩‍🏫" title="TA Deployment — SEND Pupils" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">TA Name</th>
                         <th className="py-2 text-center">Assigned SEND Pupils</th>
@@ -1323,7 +1323,7 @@ function SENView() {
                         <th className="py-2 text-center">Review Due</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                       {[
                         { name: 'Ms. Perry', pupils: 3, hours: 10, type: '1:1', trained: true, due: 'Jul 2025' },
                         { name: 'Mr. Clarke', pupils: 5, hours: 12, type: 'Group', trained: true, due: 'Apr 2025' },
@@ -1331,13 +1331,13 @@ function SENView() {
                         { name: 'Mr. Singh', pupils: 4, hours: 9, type: 'Group', trained: true, due: 'Sep 2025' },
                         { name: 'Ms. Thomas', pupils: 2, hours: 6, type: '1:1', trained: false, due: 'Pending' },
                       ].map((ta) => (
-                        <tr key={ta.name} className={!ta.trained ? 'bg-amber-50' : ''}>
-                          <td className="py-2 font-medium text-gray-700">{ta.name}</td>
-                          <td className="py-2 text-center text-gray-500">{ta.pupils}</td>
-                          <td className="py-2 text-center text-gray-500">{ta.hours}</td>
+                        <tr key={ta.name} style={!ta.trained ? { backgroundColor: 'rgba(245,158,11,0.1)' } : undefined}>
+                          <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{ta.name}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{ta.pupils}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{ta.hours}</td>
                           <td className="py-2 text-center"><Badge label={ta.type} color="blue" /></td>
                           <td className="py-2 text-center"><span className={ta.trained ? 'text-emerald-500' : 'text-red-400'}>{ta.trained ? '✓ Current' : '✗ Outstanding'}</span></td>
-                          <td className={`py-2 text-center text-xs font-medium ${ta.due === 'Overdue' ? 'text-red-600' : 'text-gray-500'}`}>{ta.due}</td>
+                          <td className="py-2 text-center text-xs font-medium" style={{ color: ta.due === 'Overdue' ? '#FCA5A5' : '#9CA3AF' }}>{ta.due}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1349,7 +1349,7 @@ function SENView() {
                 <SectionTitle icon="🎓" title="Staff SEND CPD Training Matrix" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
-                    <thead className="text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">Staff Member</th>
                         <th className="py-2 text-center">SEND Awareness</th>
@@ -1359,7 +1359,7 @@ function SENView() {
                         <th className="py-2 text-center">Safeguarding + SEND</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 text-sm">
+                    <tbody className="divide-y text-sm" style={{ borderColor: '#1F2937' }}>
                       {[
                         { name: 'SENCO', s: true, e: true, a: true, d: true, sg: true },
                         { name: 'Head', s: true, e: true, a: true, d: false, sg: true },
@@ -1371,7 +1371,7 @@ function SENView() {
                         { name: 'Mrs. Okafor (TA)', s: false, e: false, a: false, d: false, sg: false },
                       ].map((s) => (
                         <tr key={s.name}>
-                          <td className="py-2 font-medium text-gray-700">{s.name}</td>
+                          <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{s.name}</td>
                           {[s.s, s.e, s.a, s.d, s.sg].map((v, i) => (
                             <td key={i} className="py-2 text-center">
                               <span className={v ? 'text-emerald-500' : 'text-red-300'}>{v ? '✓' : '✗'}</span>
@@ -1444,17 +1444,16 @@ function SafeguardingView() {
       </div>
 
       {/* Sub-tab navigation */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex flex-wrap border-b border-gray-100 bg-gray-50 px-4 pt-3 gap-1">
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex flex-wrap border-b px-4 pt-3 gap-1" style={{ borderColor: '#1F2937', backgroundColor: '#0D0E14' }}>
           {dslTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setDslTab(t.id as any)}
-              className={`px-3 py-1.5 rounded-t-lg text-xs font-medium border-b-2 transition ${
-                dslTab === t.id
-                  ? 'border-red-600 text-red-700 bg-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+              className="px-3 py-1.5 rounded-t-lg text-xs font-medium border-b-2 transition"
+              style={dslTab === t.id
+                ? { borderColor: '#EF4444', color: '#FCA5A5', backgroundColor: '#111318' }
+                : { borderColor: 'transparent', color: '#9CA3AF' }}
             >
               {t.label}
             </button>
@@ -1489,9 +1488,9 @@ function SafeguardingView() {
                       { date: '1 May', event: 'DSL Supervision session', type: 'staff', urgent: false },
                       { date: '1 Jul', event: 'Annual safeguarding audit due', type: 'compliance', urgent: false },
                     ].map((e) => (
-                      <div key={e.event} className={`flex items-center gap-3 py-2 px-3 rounded-lg text-sm ${e.urgent ? 'bg-red-50' : 'bg-gray-50'}`}>
-                        <span className="text-xs font-bold text-gray-400 w-12 flex-shrink-0">{e.date}</span>
-                        <span className={`flex-1 ${e.urgent ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{e.event}</span>
+                      <div key={e.event} className="flex items-center gap-3 py-2 px-3 rounded-lg text-sm" style={e.urgent ? { backgroundColor: 'rgba(239,68,68,0.1)' } : { backgroundColor: '#0D0E14' }}>
+                        <span className="text-xs font-bold w-12 flex-shrink-0" style={{ color: '#6B7280' }}>{e.date}</span>
+                        <span className="flex-1" style={{ color: e.urgent ? '#FCA5A5' : '#D1D5DB', fontWeight: e.urgent ? 500 : undefined }}>{e.event}</span>
                         <Badge
                           label={e.type.toUpperCase()}
                           color={e.type === 'cp' ? 'red' : e.type === 'cin' ? 'amber' : e.type === 'lac' ? 'purple' : 'blue'}
@@ -1515,13 +1514,13 @@ function SafeguardingView() {
             <div className="space-y-5">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
                 {[
-                  { label: 'Child Protection', count: 2, color: 'bg-red-100 text-red-700' },
-                  { label: 'Children in Need', count: 2, color: 'bg-orange-100 text-orange-700' },
-                  { label: 'Looked After', count: 3, color: 'bg-purple-100 text-purple-700' },
-                  { label: 'Early Help', count: 4, color: 'bg-blue-100 text-blue-700' },
-                  { label: 'Monitored/Logged', count: 6, color: 'bg-gray-100 text-gray-700' },
+                  { label: 'Child Protection', count: 2, bgStyle: { backgroundColor: 'rgba(239,68,68,0.15)', color: '#FCA5A5' } },
+                  { label: 'Children in Need', count: 2, bgStyle: { backgroundColor: 'rgba(249,115,22,0.15)', color: '#FDBA74' } },
+                  { label: 'Looked After', count: 3, bgStyle: { backgroundColor: 'rgba(167,139,250,0.15)', color: '#C4B5FD' } },
+                  { label: 'Early Help', count: 4, bgStyle: { backgroundColor: 'rgba(96,165,250,0.15)', color: '#93C5FD' } },
+                  { label: 'Monitored/Logged', count: 6, bgStyle: { backgroundColor: '#1F2937', color: '#9CA3AF' } },
                 ].map((s) => (
-                  <div key={s.label} className={`rounded-xl p-3 ${s.color}`}>
+                  <div key={s.label} className="rounded-xl p-3" style={s.bgStyle}>
                     <p className="text-2xl font-bold">{s.count}</p>
                     <p className="text-xs mt-1 font-medium">{s.label}</p>
                   </div>
@@ -1553,21 +1552,21 @@ function SafeguardingView() {
                       status: 'CiN Plan active', notes: 'Mum receiving community mental health support.',
                     },
                   ].map((c) => (
-                    <div key={c.pupil} className={`rounded-xl border p-4 ${c.type === 'CP' ? 'border-red-200 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
+                    <div key={c.pupil} className="rounded-xl p-4" style={c.type === 'CP' ? { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' } : { backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)' }}>
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-800">{c.pupil} ({c.year})</span>
+                          <span className="font-bold" style={{ color: '#F9FAFB' }}>{c.pupil} ({c.year})</span>
                           <Badge label={c.type} color={c.type === 'CP' ? 'red' : 'amber'} />
                           <Badge label={c.category} color="blue" />
                         </div>
-                        <span className="text-xs text-gray-400">Opened: {c.dateOpened}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>Opened: {c.dateOpened}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs" style={{ color: '#9CA3AF' }}>
                         <p><span className="font-semibold">Social Worker:</span> {c.sw}</p>
                         <p><span className="font-semibold">Next Meeting:</span> {c.nextMeeting}</p>
                         <p><span className="font-semibold">Status:</span> {c.status}</p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2 italic">{c.notes}</p>
+                      <p className="text-xs mt-2 italic" style={{ color: '#9CA3AF' }}>{c.notes}</p>
                     </div>
                   ))}
                 </div>
@@ -1577,7 +1576,7 @@ function SafeguardingView() {
                 <SectionTitle icon="💜" title="Looked After Children" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">Pupil</th>
                         <th className="py-2 text-center">Year</th>
@@ -1588,18 +1587,18 @@ function SafeguardingView() {
                         <th className="py-2 text-center">PP+ Claimed</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                       {[
                         { pupil: 'Pupil W', year: 'Y4', pep: true, review: '7 Apr', att: '91%', send: true, pp: true },
                         { pupil: 'Pupil X', year: 'Y2', pep: true, review: '14 May', att: '95%', send: false, pp: true },
                         { pupil: 'Pupil Y', year: 'Y6', pep: false, review: '28 Apr', att: '88%', send: true, pp: true },
                       ].map((l) => (
-                        <tr key={l.pupil} className={!l.pep ? 'bg-amber-50' : ''}>
-                          <td className="py-2 font-medium text-gray-700">{l.pupil}</td>
-                          <td className="py-2 text-center text-gray-500">{l.year}</td>
+                        <tr key={l.pupil} style={!l.pep ? { backgroundColor: 'rgba(245,158,11,0.1)' } : undefined}>
+                          <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{l.pupil}</td>
+                          <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{l.year}</td>
                           <td className="py-2 text-center"><span className={l.pep ? 'text-emerald-500' : 'text-red-400'}>{l.pep ? '✓ Current' : '✗ Overdue'}</span></td>
-                          <td className="py-2 text-center text-xs text-gray-500">{l.review}</td>
-                          <td className={`py-2 text-center font-semibold ${parseFloat(l.att) < 90 ? 'text-red-600' : 'text-gray-600'}`}>{l.att}</td>
+                          <td className="py-2 text-center text-xs" style={{ color: '#9CA3AF' }}>{l.review}</td>
+                          <td className="py-2 text-center font-semibold" style={{ color: parseFloat(l.att) < 90 ? '#FCA5A5' : '#9CA3AF' }}>{l.att}</td>
                           <td className="py-2 text-center"><span className={l.send ? 'text-purple-500' : 'text-gray-300'}>{l.send ? '✓' : '—'}</span></td>
                           <td className="py-2 text-center"><span className={l.pp ? 'text-emerald-500' : 'text-red-400'}>{l.pp ? '✓' : '✗'}</span></td>
                         </tr>
@@ -1680,9 +1679,9 @@ function SafeguardingView() {
           {/* ── ONLINE SAFETY TAB ── */}
           {dslTab === 'online' && (
             <div className="space-y-5">
-              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+              <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)', color: '#93C5FD' }}>
                 <p className="font-semibold">💻 KCSIE 2024: Online Safety is a DSL Statutory Responsibility</p>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className="text-xs mt-1" style={{ color: '#93C5FD' }}>
                   The DSL has overall responsibility for online safety and must personally understand the filtering and monitoring systems in place. This responsibility cannot be delegated.
                   Schools must conduct an annual risk assessment and review filtering/monitoring at least yearly.
                 </p>
@@ -1761,7 +1760,7 @@ function SafeguardingView() {
                 <SectionTitle icon="🎓" title="Whole-School Safeguarding Training Matrix" />
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
-                    <thead className="text-gray-400 uppercase border-b border-gray-100">
+                    <thead className="uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                       <tr>
                         <th className="py-2 text-left">Staff Member</th>
                         <th className="py-2 text-center">KCSIE Induction</th>
@@ -1772,7 +1771,7 @@ function SafeguardingView() {
                         <th className="py-2 text-center">Next Due</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 text-sm">
+                    <tbody className="divide-y text-sm" style={{ borderColor: '#1F2937' }}>
                       {[
                         { name: 'DSL (Mrs. Hall)', kcsie: true, annual: true, online: true, prevent: true, pop: true, due: 'Nov 2025' },
                         { name: 'Deputy DSL', kcsie: true, annual: true, online: true, prevent: true, pop: true, due: 'Nov 2025' },
@@ -1786,14 +1785,14 @@ function SafeguardingView() {
                         { name: 'Mrs. Okafor (TA)', kcsie: false, annual: false, online: false, prevent: false, pop: false, due: '⚠ Overdue' },
                         { name: 'Lunchtime supervisor', kcsie: true, annual: false, online: false, prevent: false, pop: false, due: '⚠ Overdue' },
                       ].map((s) => (
-                        <tr key={s.name} className={!s.kcsie || !s.annual ? 'bg-red-50' : ''}>
-                          <td className="py-2 font-medium text-gray-700">{s.name}</td>
+                        <tr key={s.name} style={!s.kcsie || !s.annual ? { backgroundColor: 'rgba(239,68,68,0.1)' } : undefined}>
+                          <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{s.name}</td>
                           {[s.kcsie, s.annual, s.online, s.prevent, s.pop].map((v, i) => (
                             <td key={i} className="py-2 text-center">
                               <span className={v ? 'text-emerald-500' : 'text-red-300'}>{v ? '✓' : '✗'}</span>
                             </td>
                           ))}
-                          <td className={`py-2 text-center text-xs font-medium ${s.due.includes('⚠') ? 'text-red-600' : 'text-gray-400'}`}>{s.due}</td>
+                          <td className="py-2 text-center text-xs font-medium" style={{ color: s.due.includes('⚠') ? '#FCA5A5' : '#6B7280' }}>{s.due}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1809,9 +1808,9 @@ function SafeguardingView() {
                       { role: 'DSL — Mrs. Hall', date: '14 Nov 2024', expires: '14 Nov 2026', valid: true },
                       { role: 'Deputy DSL — Mr. Wilson', date: '14 Nov 2024', expires: '14 Nov 2026', valid: true },
                     ].map((d) => (
-                      <div key={d.role} className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm">
-                        <p className="font-semibold text-emerald-800">{d.role}</p>
-                        <p className="text-xs text-emerald-700 mt-0.5">Trained: {d.date} · Expires: {d.expires}</p>
+                      <div key={d.role} className="rounded-lg p-3 text-sm" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                        <p className="font-semibold" style={{ color: '#86EFAC' }}>{d.role}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#86EFAC' }}>Trained: {d.date} · Expires: {d.expires}</p>
                       </div>
                     ))}
                   </div>
@@ -1824,12 +1823,12 @@ function SafeguardingView() {
                       { date: '2 Dec 2024', with: 'Head / External supervisor', notes: 'End-of-term case review and wellbeing check' },
                       { date: '1 Oct 2024', with: 'External Safeguarding Lead', notes: 'New academic year case overview' },
                     ].map((s) => (
-                      <div key={s.date} className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                        <p className="font-medium text-gray-700 text-xs">{s.date} — {s.with}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{s.notes}</p>
+                      <div key={s.date} className="p-3 rounded-lg" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
+                        <p className="font-medium text-xs" style={{ color: '#D1D5DB' }}>{s.date} — {s.with}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{s.notes}</p>
                       </div>
                     ))}
-                    <p className="text-xs text-gray-400">Next supervision: 1 May 2025</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>Next supervision: 1 May 2025</p>
                   </div>
                 </div>
               </div>
@@ -1839,9 +1838,9 @@ function SafeguardingView() {
           {/* ── RECORDS & TRANSFERS TAB ── */}
           {dslTab === 'records' && (
             <div className="space-y-5">
-              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-700">
+              <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937', color: '#D1D5DB' }}>
                 <p className="font-semibold">📁 KCSIE 2024: Record-Keeping Requirements</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
                   The DSL must keep detailed, accurate, written records including a chronology of concerns, referrals, meetings, phone calls and emails.
                   Records must be kept separately from pupil records, held securely, and transferred to the new school immediately when pupils leave — with confirmation of receipt obtained.
                 </p>
@@ -1852,7 +1851,7 @@ function SafeguardingView() {
                   <SectionTitle icon="📤" title="Records Transfer — Leavers" />
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                      <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
                         <tr>
                           <th className="py-2 text-left">Pupil</th>
                           <th className="py-2 text-center">Left</th>
@@ -1861,16 +1860,16 @@ function SafeguardingView() {
                           <th className="py-2 text-center">Receipt Confirmed</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50">
+                      <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
                         {[
                           { pupil: 'Former Pupil A', left: 'Jan 2025', school: 'Riverside Academy', transferred: true, receipt: true },
                           { pupil: 'Former Pupil B', left: 'Feb 2025', school: 'St. Mary\'s Primary', transferred: true, receipt: false },
                           { pupil: 'Former Pupil C', left: 'Mar 2025', school: 'TBC', transferred: false, receipt: false },
                         ].map((r) => (
-                          <tr key={r.pupil} className={!r.transferred ? 'bg-red-50' : !r.receipt ? 'bg-amber-50' : ''}>
-                            <td className="py-2 font-medium text-gray-700">{r.pupil}</td>
-                            <td className="py-2 text-center text-xs text-gray-400">{r.left}</td>
-                            <td className="py-2 text-center text-xs text-gray-500">{r.school}</td>
+                          <tr key={r.pupil} style={!r.transferred ? { backgroundColor: 'rgba(239,68,68,0.1)' } : !r.receipt ? { backgroundColor: 'rgba(245,158,11,0.1)' } : undefined}>
+                            <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{r.pupil}</td>
+                            <td className="py-2 text-center text-xs" style={{ color: '#6B7280' }}>{r.left}</td>
+                            <td className="py-2 text-center text-xs" style={{ color: '#9CA3AF' }}>{r.school}</td>
                             <td className="py-2 text-center"><span className={r.transferred ? 'text-emerald-500' : 'text-red-400'}>{r.transferred ? '✓' : '✗ Pending'}</span></td>
                             <td className="py-2 text-center"><span className={r.receipt ? 'text-emerald-500' : 'text-amber-500'}>{r.receipt ? '✓' : '○ Awaited'}</span></td>
                           </tr>
@@ -1888,12 +1887,12 @@ function SafeguardingView() {
                       { pupil: 'New Pupil AA', year: 'Y3', from: 'Maple Grove Primary', received: true, concerns: false },
                       { pupil: 'New Pupil BB', year: 'Y5', from: 'Out of LA (Birmingham)', received: false, concerns: true },
                     ].map((r) => (
-                      <div key={r.pupil} className={`rounded-lg border p-3 text-sm ${!r.received ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
+                      <div key={r.pupil} className="rounded-lg p-3 text-sm" style={!r.received ? { backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' } : { backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
                         <div className="flex justify-between items-center">
-                          <span className="font-medium text-gray-700">{r.pupil} ({r.year})</span>
+                          <span className="font-medium" style={{ color: '#D1D5DB' }}>{r.pupil} ({r.year})</span>
                           {r.concerns && <Badge label="Safeguarding concern flagged" color="red" />}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">From: {r.from}</p>
+                        <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>From: {r.from}</p>
                         <p className={`text-xs mt-0.5 font-medium ${r.received ? 'text-emerald-600' : 'text-amber-600'}`}>
                           {r.received ? '✓ Records received' : '○ Records requested — awaiting'}
                         </p>
@@ -1941,11 +1940,11 @@ function PupilPremiumView() {
         <StatCard label="PP Funding" value="£12,800" sub={`£${mockData.pupilPremium.spentToDate.toLocaleString()} spent`} color="purple" />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <SectionTitle icon="🎯" title="Intervention Impact Tracker" />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
+            <thead className="text-xs uppercase border-b" style={{ color: '#6B7280', borderColor: '#1F2937' }}>
               <tr>
                 <th className="py-2 text-left">Intervention</th>
                 <th className="py-2 text-center">PP Pupils</th>
@@ -1953,12 +1952,12 @@ function PupilPremiumView() {
                 <th className="py-2 text-center">Impact</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y" style={{ borderColor: '#1F2937' }}>
               {mockData.pupilPremium.interventions.map((i) => (
                 <tr key={i.name}>
-                  <td className="py-2 font-medium text-gray-700">{i.name}</td>
-                  <td className="py-2 text-center text-gray-500">{i.pupils}</td>
-                  <td className="py-2 text-center text-gray-500">£{i.cost.toLocaleString()}</td>
+                  <td className="py-2 font-medium" style={{ color: '#D1D5DB' }}>{i.name}</td>
+                  <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>{i.pupils}</td>
+                  <td className="py-2 text-center" style={{ color: '#9CA3AF' }}>£{i.cost.toLocaleString()}</td>
                   <td className="py-2 text-center">
                     <Badge label={i.impact} color={i.impact === 'High' ? 'green' : 'blue'} />
                   </td>
@@ -1970,18 +1969,18 @@ function PupilPremiumView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="💰" title="Budget Tracking" />
           <ProgressBar
             label={`Spent: £${mockData.pupilPremium.spentToDate.toLocaleString()} of £${mockData.pupilPremium.funding.toLocaleString()}`}
             value={(mockData.pupilPremium.spentToDate / mockData.pupilPremium.funding) * 100}
             color="#6366f1"
           />
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs mt-2" style={{ color: '#6B7280' }}>
             Remaining: £{(mockData.pupilPremium.funding - mockData.pupilPremium.spentToDate).toLocaleString()} — 2 terms remaining
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📉" title="Attainment Gap Trend" />
           <div className="flex items-end gap-4 h-20 mt-2">
             {[
@@ -1990,18 +1989,18 @@ function PupilPremiumView() {
               { year: '24/25', gap: 14 },
             ].map((d) => (
               <div key={d.year} className="flex flex-col items-center flex-1">
-                <span className="text-xs font-bold text-gray-700 mb-1">{d.gap}pts</span>
+                <span className="text-xs font-bold mb-1" style={{ color: '#D1D5DB' }}>{d.gap}pts</span>
                 <div
-                  className="w-full rounded-t bg-blue-400"
-                  style={{ height: `${(d.gap / 25) * 70}px` }}
+                  className="w-full rounded-t"
+                  style={{ height: `${(d.gap / 25) * 70}px`, backgroundColor: '#60A5FA' }}
                 />
-                <span className="text-xs text-gray-400 mt-1">{d.year}</span>
+                <span className="text-xs mt-1" style={{ color: '#6B7280' }}>{d.year}</span>
               </div>
             ))}
             <div className="flex flex-col items-center flex-1">
-              <span className="text-xs font-bold text-gray-400 mb-1">18pts</span>
-              <div className="w-full rounded-t bg-gray-200" style={{ height: `${(18 / 25) * 70}px` }} />
-              <span className="text-xs text-gray-400 mt-1">National</span>
+              <span className="text-xs font-bold mb-1" style={{ color: '#6B7280' }}>18pts</span>
+              <div className="w-full rounded-t" style={{ height: `${(18 / 25) * 70}px`, backgroundColor: '#374151' }} />
+              <span className="text-xs mt-1" style={{ color: '#6B7280' }}>National</span>
             </div>
           </div>
         </div>
@@ -2018,9 +2017,9 @@ function InspectionsView() {
       />
 
       {/* New framework explainer */}
-      <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm">
-        <p className="font-semibold text-amber-800">📌 New Ofsted Framework — November 2025</p>
-        <p className="text-amber-700 mt-1 text-xs">
+      <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
+        <p className="font-semibold" style={{ color: '#FCD34D' }}>📌 New Ofsted Framework — November 2025</p>
+        <p className="mt-1 text-xs" style={{ color: '#FCD34D' }}>
           The familiar single Overall Effectiveness grade (Outstanding/Good/RI/Inadequate) has been replaced by a detailed <strong>Report Card</strong> across 6 evaluation areas, graded on a 5-point scale:
           Exceptional → Strong Standard → Expected Standard → Needs Attention → Urgent Improvement.
           Safeguarding is judged separately as Met / Not Met.
@@ -2031,24 +2030,25 @@ function InspectionsView() {
         <SectionTitle icon="🧾" title="Ofsted Report Card — Current Readiness" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {mockData.ofsted.areas.map((a) => {
-            const gradeColor = {
-              green: 'bg-emerald-50 border-emerald-200',
-              blue: 'bg-blue-50 border-blue-200',
-              amber: 'bg-amber-50 border-amber-200',
-              red: 'bg-red-50 border-red-200',
-            }[a.color] || 'bg-gray-50 border-gray-200'
+            const gradeStyle: React.CSSProperties = {
+              green: { backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)' },
+              blue: { backgroundColor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)' },
+              amber: { backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' },
+              red: { backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' },
+            }[a.color] || { backgroundColor: '#0D0E14', border: '1px solid #1F2937' }
             const badgeColor = { green: 'green', blue: 'blue', amber: 'amber', red: 'red' }[a.color] as any
             return (
-              <div key={a.area} className={`rounded-xl border p-4 ${gradeColor}`}>
+              <div key={a.area} className="rounded-xl p-4" style={gradeStyle}>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-700">{a.area}</p>
+                  <p className="text-sm font-semibold" style={{ color: '#D1D5DB' }}>{a.area}</p>
                   <Badge label={a.grade} color={badgeColor} />
                 </div>
                 <div className="mt-2 flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <div
                       key={n}
-                      className={`flex-1 h-1.5 rounded-full ${n <= a.score ? (a.color === 'green' ? 'bg-emerald-400' : 'bg-blue-400') : 'bg-gray-200'}`}
+                      className="flex-1 h-1.5 rounded-full"
+                      style={{ backgroundColor: n <= a.score ? (a.color === 'green' ? '#34D399' : '#60A5FA') : '#374151' }}
                     />
                   ))}
                 </div>
@@ -2059,46 +2059,46 @@ function InspectionsView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📂" title="Evidence Readiness Tracker" />
           <div className="space-y-0.5">
             {mockData.ofsted.evidenceReadiness.map((e) => (
               <CheckItem key={e.area} label={e.area} done={e.ready} />
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs mt-3" style={{ color: '#6B7280' }}>
             {mockData.ofsted.evidenceReadiness.filter((e) => e.ready).length}/{mockData.ofsted.evidenceReadiness.length} items ready
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <SectionTitle icon="📅" title="Inspection Timeline" />
           <div className="space-y-3 text-sm">
             <div className="flex items-start gap-3">
               <span className="text-emerald-500 mt-0.5">✓</span>
               <div>
-                <p className="font-medium text-gray-700">Last Inspection: May 2023</p>
-                <p className="text-xs text-gray-400">Graded 'Good' under previous framework</p>
+                <p className="font-medium" style={{ color: '#D1D5DB' }}>Last Inspection: May 2023</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Graded 'Good' under previous framework</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-blue-500 mt-0.5">→</span>
               <div>
-                <p className="font-medium text-gray-700">Next Expected: Autumn 2026</p>
-                <p className="text-xs text-gray-400">Under new 2025 EIF framework (report cards)</p>
+                <p className="font-medium" style={{ color: '#D1D5DB' }}>Next Expected: Autumn 2026</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Under new 2025 EIF framework (report cards)</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-amber-400 mt-0.5">⚠</span>
               <div>
-                <p className="font-medium text-gray-700">Pre-inspection: 2 evidence gaps</p>
-                <p className="text-xs text-gray-400">Attendance plan + Disadvantage gap plan outstanding</p>
+                <p className="font-medium" style={{ color: '#D1D5DB' }}>Pre-inspection: 2 evidence gaps</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Attendance plan + Disadvantage gap plan outstanding</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">11 Ofsted Evaluation Areas (2025)</p>
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: '#1F2937' }}>
+            <p className="text-xs font-semibold mb-2 uppercase" style={{ color: '#9CA3AF' }}>11 Ofsted Evaluation Areas (2025)</p>
             <div className="flex flex-wrap gap-1">
               {[
                 'Inclusion', 'Curriculum & Teaching', 'Achievement',
@@ -2106,7 +2106,7 @@ function InspectionsView() {
                 'Leadership & Governance', 'Safeguarding',
                 'Early Years (if applicable)', 'Post-16 (if applicable)',
               ].map((a) => (
-                <span key={a} className="text-xs bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{a}</span>
+                <span key={a} className="text-xs rounded px-1.5 py-0.5" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{a}</span>
               ))}
             </div>
           </div>
@@ -2150,28 +2150,27 @@ export default function InsightsPage() {
   const activeRoleMeta = ROLES.find((r) => r.id === activeRole)!
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#07080F' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Insights</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{SCHOOL_NAME} · Select a role to view tailored insights</p>
+          <h1 className="text-2xl font-bold text-white">Insights</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>{SCHOOL_NAME} · Select a role to view tailored insights</p>
         </div>
 
         {/* Role selector */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">View insights as</p>
+        <div className="rounded-2xl p-4 mb-6 shadow-sm" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>View insights as</p>
           <div className="flex flex-wrap gap-2">
             {ROLES.map((role) => (
               <button
                 key={role.id}
                 onClick={() => setActiveRole(role.id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
-                  activeRole === role.id
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                }`}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
+                style={activeRole === role.id
+                  ? { backgroundColor: '#0D9488', color: '#F9FAFB', borderColor: '#0D9488' }
+                  : { backgroundColor: '#111318', color: '#9CA3AF', borderColor: '#1F2937' }}
               >
                 <span>{role.icon}</span>
                 <span>{role.label}</span>
@@ -2186,10 +2185,10 @@ export default function InsightsPage() {
             {activeRoleMeta.icon}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{activeRoleMeta.label} View</h2>
-            <p className="text-xs text-gray-400">{activeRoleMeta.description}</p>
+            <h2 className="text-lg font-bold text-white">{activeRoleMeta.label} View</h2>
+            <p className="text-xs" style={{ color: '#6B7280' }}>{activeRoleMeta.description}</p>
           </div>
-          <div className="ml-auto text-xs text-gray-400">
+          <div className="ml-auto text-xs" style={{ color: '#6B7280' }}>
             Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
           </div>
         </div>

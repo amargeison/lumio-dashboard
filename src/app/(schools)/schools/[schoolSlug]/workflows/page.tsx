@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Plus, Play, History, Link, HelpCircle, Sparkles } from 'lucide-react'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
@@ -188,6 +189,21 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
 }
 
 export default function WorkflowsPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_workflows_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="workflows" title="Workflows — Coming Soon" description="This section is being set up. Use demo data to explore what's possible." uploads={[
+    { key: 'data', label: 'Upload Data (CSV)' },
+    { key: 'mis', label: 'Connect Data Source' },
+  ]} />
+
   const [statusFilter, setStatusFilter] = useState<WorkflowStatus | 'ALL'>('ALL')
 
   const totalWorkflows = departments.reduce((sum, d) => sum + d.workflows.length, 0)

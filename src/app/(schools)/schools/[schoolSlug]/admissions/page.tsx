@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
@@ -91,6 +92,22 @@ const commsHistory = [
 ]
 
 export default function AdmissionsPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_admissions_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="admissions" title="No admissions data yet" description="Upload your applications, waiting list and marketing data to activate Admissions & Marketing." uploads={[
+    { key: 'applications', label: 'Upload Applications (CSV)' },
+    { key: 'waitinglist', label: 'Upload Waiting List (CSV)' },
+    { key: 'mis', label: 'Connect MIS' },
+  ]} />
+
   return (
     <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#07080F' }}>
       {/* Header */}

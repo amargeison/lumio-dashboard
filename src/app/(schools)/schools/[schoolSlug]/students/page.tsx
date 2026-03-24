@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -656,6 +657,7 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: string }[] = [
 const YEARS = ['All Years', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6']
 
 export default function StudentsPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
   const [view, setView] = useState<ViewMode>('all')
   const [yearFilter, setYearFilter] = useState('All Years')
@@ -679,6 +681,28 @@ export default function StudentsPage() {
       return matchSearch && matchYear && matchFlag
     })
   }, [search, yearFilter, flagFilter])
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_students_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="students"
+      title="No pupil records yet"
+      description="Upload your pupil data, SEND register and medical information to activate the Students module."
+      uploads={[
+        { key: 'pupils', label: 'Upload Pupil Data (CSV)' },
+        { key: 'send', label: 'Upload SEND Register (CSV)' },
+        { key: 'medical', label: 'Upload Medical Data (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
 
   // Stats
   const totalSend = PUPILS.filter(p => p.sendStatus !== 'None').length

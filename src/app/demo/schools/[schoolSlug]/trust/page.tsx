@@ -910,7 +910,7 @@ function EstatesCompliance() {
             { std: 'Filtering & Monitoring', desc: 'Appropriate content filtering, DSL monitoring (KCSIE 2024 statutory)', schools: [true,true,true,true,true,true], priority:'High' },
             { std: 'Digital Leadership & Governance', desc: 'Named digital lead, digital strategy, board oversight', schools: [true,false,false,false,false,true], priority:'Medium' },
           ].map(item => {
-            const done = item.done = item.schools.filter(Boolean).length
+            const done = item.schools.filter(Boolean).length
             const color = done===6?'#22C55E':done>=4?'#F59E0B':'#EF4444'
             return (
               <div key={item.std} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

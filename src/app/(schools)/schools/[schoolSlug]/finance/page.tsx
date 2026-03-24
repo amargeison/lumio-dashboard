@@ -1,5 +1,6 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
 
 const HIGHLIGHTS = [
@@ -118,6 +119,29 @@ function budgetBarColor(pct: number) {
 }
 
 export default function FinancePage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_finance_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="finance"
+      title="No financial data yet"
+      description="Upload your budget data, payment records and expenditure to activate Finance."
+      uploads={[
+        { key: 'budget', label: 'Upload Budget Data (CSV/XLSX)', accept: '.csv,.xlsx' },
+        { key: 'payments', label: 'Upload Payment Records (CSV)' },
+        { key: 'mis', label: 'Connect ParentPay / SchoolMoney' },
+      ]}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page title */}

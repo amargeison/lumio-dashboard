@@ -1,5 +1,6 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText } from 'lucide-react'
 
 const HIGHLIGHTS = [
@@ -118,6 +119,30 @@ function statusBadge(status: string) {
 }
 
 export default function HRStaffPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_hr-staff_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="hr-staff"
+      title="No staff data yet"
+      description="Upload your staff list, Single Central Record and CPD data to activate HR & Staff."
+      uploads={[
+        { key: 'staff', label: 'Upload Staff List (CSV)' },
+        { key: 'scr', label: 'Upload SCR Data (CSV)' },
+        { key: 'cpd', label: 'Upload CPD Records (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page title */}

@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
@@ -88,6 +89,23 @@ const caseTimeline = [
 ]
 
 export default function SafeguardingPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_safeguarding_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="safeguarding" title="No safeguarding data yet" description="Upload your concern logs, case records and training data to activate Safeguarding." uploads={[
+    { key: 'concerns', label: 'Upload Concern Log (CSV)' },
+    { key: 'cases', label: 'Upload Case Records (CSV)' },
+    { key: 'training', label: 'Upload Training Matrix (CSV)' },
+    { key: 'mis', label: 'Connect MIS / CPOMS' },
+  ]} />
+
   return (
     <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#07080F' }}>
       {/* Header */}

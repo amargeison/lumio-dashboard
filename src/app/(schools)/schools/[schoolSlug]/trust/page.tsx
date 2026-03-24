@@ -1,5 +1,6 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, Minus, Users, DollarSign, BookOpen,
@@ -910,7 +911,7 @@ function EstatesCompliance() {
             { std: 'Filtering & Monitoring', desc: 'Appropriate content filtering, DSL monitoring (KCSIE 2024 statutory)', schools: [true,true,true,true,true,true], priority:'High' },
             { std: 'Digital Leadership & Governance', desc: 'Named digital lead, digital strategy, board oversight', schools: [true,false,false,false,false,true], priority:'Medium' },
           ].map(item => {
-            const done = item.done = item.schools.filter(Boolean).length
+            const done = item.schools.filter(Boolean).length
             const color = done===6?'#22C55E':done>=4?'#F59E0B':'#EF4444'
             return (
               <div key={item.std} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1253,6 +1254,22 @@ const TABS = [
 ]
 
 export default function TrustDashboard() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_trust_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="trust" title="No trust data yet" description="Upload your school data to activate the Trust Overview dashboard." uploads={[
+    { key: 'schools', label: 'Upload Schools Data (CSV)' },
+    { key: 'finance', label: 'Upload Trust Finance (CSV/XLSX)', accept: '.csv,.xlsx' },
+    { key: 'mis', label: 'Connect MIS' },
+  ]} />
+
   const [tab, setTab] = useState('exec')
   const ActiveTab = TABS.find(t=>t.id===tab)!.component
 

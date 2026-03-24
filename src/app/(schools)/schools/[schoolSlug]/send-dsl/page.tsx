@@ -1,5 +1,8 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, FileText, User, ClipboardList, TrendingDown } from 'lucide-react'
 
 const HIGHLIGHTS = [
@@ -105,6 +108,31 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 }
 
 export default function SendDslPage() {
+  const pathname = usePathname()
+  const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+  const slug = slugMatch?.[1] ?? 'school'
+
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    setHasData(localStorage.getItem(`lumio_${slug}_send-dsl_hasData`) === 'true')
+  }, [slug])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="send-dsl"
+      title="No SEND or safeguarding data yet"
+      description="Upload your SEND register, EHCP data and safeguarding log to activate SEND & DSL."
+      uploads={[
+        { key: 'send', label: 'Upload SEND Register (CSV)' },
+        { key: 'ehcp', label: 'Upload EHCP Data (CSV)' },
+        { key: 'safeguarding', label: 'Upload Safeguarding Log (CSV)' },
+        { key: 'mis', label: 'Connect MIS' },
+      ]}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page title */}
@@ -112,6 +140,22 @@ export default function SendDslPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>SEND & DSL</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Safeguarding, SEND register, EHCP reviews and attendance concerns</p>
       </div>
+
+      {/* White Paper link */}
+      <Link href={`/schools/${slug}/send-dsl/white-paper`}
+        className="flex items-center justify-between gap-4 rounded-xl px-5 py-4 transition-all"
+        style={{ background: 'linear-gradient(135deg,rgba(13,148,136,0.15),rgba(108,63,197,0.1))', border: '1px solid rgba(13,148,136,0.4)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(13,148,136,0.7)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(13,148,136,0.4)' }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-xl shrink-0">📄</span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>SEND White Paper 2026 — Every Child Achieving and Thriving</p>
+            <p className="text-xs mt-0.5" style={{ color: '#0D9488' }}>In-app document viewer · Phase 1/2/3 checklists · ISP templates · Three-tier model</p>
+          </div>
+        </div>
+        <span className="shrink-0 text-sm font-semibold" style={{ color: '#0D9488' }}>Open →</span>
+      </Link>
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />

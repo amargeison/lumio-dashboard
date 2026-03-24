@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles } from 'lucide-react'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
@@ -94,6 +95,22 @@ const aiHighlights = [
 ]
 
 export default function FacilitiesPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_facilities_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="facilities" title="No facilities data yet" description="Upload your site information, maintenance records and asset register." uploads={[
+    { key: 'assets', label: 'Upload Asset Register (CSV)' },
+    { key: 'maintenance', label: 'Upload Maintenance Log (CSV)' },
+    { key: 'mis', label: 'Connect Data Source' },
+  ]} />
+
   return (
     <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#07080F' }}>
       {/* Header */}

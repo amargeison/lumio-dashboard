@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -2132,9 +2133,32 @@ const ROLES: { id: Role; label: string; icon: string; description: string }[] = 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InsightsPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
   const params = useParams()
   const slug = params?.slug as string
   const [activeRole, setActiveRole] = useState<Role>('headteacher')
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_insights_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="insights"
+      title="Set up your data to unlock Insights"
+      description="Lumio Insights gives every role a tailored live view of your school. Upload your data or connect your MIS to get started."
+      uploads={[
+        { key: 'attendance', label: 'Upload Attendance Data (CSV)' },
+        { key: 'assessment', label: 'Upload Assessment Results (CSV)' },
+        { key: 'pupils', label: 'Upload Pupil Data (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
 
   const roleView: Record<Role, React.ReactNode> = {
     trust: <TrustView />,

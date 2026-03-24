@@ -1,5 +1,6 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
 
 const HIGHLIGHTS = [
@@ -112,6 +113,29 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 }
 
 export default function CurriculumPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(localStorage.getItem(`lumio_${slug}_curriculum_hasData`) === 'true')
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="curriculum"
+      title="No curriculum data yet"
+      description="Upload your assessment data, subject plans and timetable to activate Curriculum."
+      uploads={[
+        { key: 'assessment', label: 'Upload Assessment Data (CSV)' },
+        { key: 'timetable', label: 'Upload Timetable (CSV)' },
+        { key: 'mis', label: 'Connect MIS' },
+      ]}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page title */}
