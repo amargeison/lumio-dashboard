@@ -5,10 +5,11 @@ import { createBrowserClient } from '@supabase/ssr'
 import {
   UserMinus, AlertTriangle, CheckCircle2, Loader2,
   X, Plus, Phone, Mail, MessageSquare, ShieldAlert,
-  CalendarDays, Users, BookOpen, Bell,
+  CalendarDays, Users, BookOpen, Bell, ChevronRight,
 } from 'lucide-react'
 import { StatCard, PageShell, SectionCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import Link from 'next/link'
 
 // ─── Supabase ──────────────────────────────────────────────────────────────────
 
@@ -467,6 +468,16 @@ export default function SchoolOfficePage() {
 
   return (
     <PageShell>
+      {/* Sub-navigation */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>School Office</span>
+        <Link href="/school-office/safeguarding"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <ShieldAlert size={12} /> Safeguarding & SEND <ChevronRight size={11} />
+        </Link>
+      </div>
+
       {/* Quick action */}
       <div className="flex items-center justify-between">
         <div>
