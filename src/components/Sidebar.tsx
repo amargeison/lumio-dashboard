@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
+// nav
 const navItems: {
   label: string
   href: string
