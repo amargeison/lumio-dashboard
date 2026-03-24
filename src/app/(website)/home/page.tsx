@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Check, X, ArrowRight, Users, TrendingUp, Headphones,
   Activity, Megaphone, Server, DollarSign, ChevronRight,
-  Sparkles, GitBranch, Filter, Zap, Monitor, FlaskConical, Package,
+  Sparkles, GitBranch, Filter, Zap, Monitor, FlaskConical, Package, Layers,
 } from 'lucide-react'
 import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
@@ -444,6 +444,25 @@ const KEY_FEATURES = [
     href: '/product',
     wide: false,
   },
+  {
+    icon: Layers,
+    color: '#6C3FC5',
+    headline: 'Project Management — Built for Every Team',
+    sub: 'Plan sprints, track OKRs, manage your product roadmap and keep every project on time — all in one place.',
+    bullets: [
+      'Kanban board with drag-and-drop task management across sprints',
+      'OKR tracking — set objectives, track key results, keep teams aligned',
+      'Product roadmap — quarterly timeline view with initiative tracking',
+      'Sprint planning with burndown charts and velocity tracking',
+      'RICE-scored backlog prioritisation (Reach × Impact × Confidence ÷ Effort)',
+      'Risk register — probability/impact matrix with mitigation tracking',
+      'Team capacity dashboard — workload, utilisation and skill mapping',
+      'AI-powered PM summary — daily intelligence briefing on all projects',
+    ],
+    stat: 'The project management tool your whole business actually uses.',
+    href: '/product',
+    wide: true,
+  },
 ]
 
 const COMPARE_ROWS = [
@@ -846,11 +865,12 @@ export default function HomePage() {
           {/* Feature cards — full-width, left border glow */}
           <div className="flex flex-col gap-5">
             {[
-              { dept: 'Sales',        ...KEY_FEATURES[0] },
-              { dept: 'Marketing',    ...KEY_FEATURES[1] },
-              { dept: 'IT & Systems', ...KEY_FEATURES[2] },
-              { dept: 'Trials',       ...KEY_FEATURES[3] },
-              { dept: 'Operations',   ...KEY_FEATURES[4] },
+              { dept: 'Sales',               ...KEY_FEATURES[0] },
+              { dept: 'Marketing',           ...KEY_FEATURES[1] },
+              { dept: 'IT & Systems',        ...KEY_FEATURES[2] },
+              { dept: 'Trials',              ...KEY_FEATURES[3] },
+              { dept: 'Operations',          ...KEY_FEATURES[4] },
+              { dept: 'Project Management',  ...KEY_FEATURES[5] },
             ].map(card => {
               const Icon = card.icon
               return (

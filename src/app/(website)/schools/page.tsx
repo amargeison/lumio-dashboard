@@ -8,7 +8,7 @@ import Link from 'next/link'
 import {
   Building2, Users, Heart, Shield, BookOpen, GraduationCap,
   Sunrise, BarChart2, Check, AlertTriangle, Sparkles, FileText,
-  ArrowRight, Twitter, Linkedin, Network,
+  ArrowRight, Twitter, Linkedin, Network, Layers,
 } from 'lucide-react'
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
@@ -352,6 +352,7 @@ function FeaturesSection() {
                 { icon: Shield, color: '#F59E0B', text: 'Ofsted readiness per school — mapped to the 2025 framework' },
                 { icon: FileText, color: '#22C55E', text: 'Trust finance overview — budget vs actuals, overspend alerts' },
                 { icon: Users, color: '#A78BFA', text: 'HR dashboard — vacancies, absence, SCR compliance across all schools' },
+                { icon: Layers, color: '#6C3FC5', text: 'Trust project management — school improvement projects, capital works and policy rollouts tracked across every academy' },
               ].map(item => {
                 const Icon = item.icon
                 return (
