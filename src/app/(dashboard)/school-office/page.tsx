@@ -476,6 +476,11 @@ export default function SchoolOfficePage() {
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
           <ShieldAlert size={12} /> Safeguarding & SEND <ChevronRight size={11} />
         </Link>
+        <Link href="/school-office/cover"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          style={{ backgroundColor: 'rgba(13,148,136,0.08)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <CalendarDays size={12} /> Supply Cover <ChevronRight size={11} />
+        </Link>
       </div>
 
       {/* Quick action */}
