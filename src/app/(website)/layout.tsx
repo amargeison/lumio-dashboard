@@ -9,6 +9,7 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
   { label: 'Workflows',    href: '/product#workflows' },
+  { label: 'Schools',      href: '/schools' },
   { label: 'CRM',          href: '/lumio-crm' },
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
@@ -79,13 +80,6 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
-            Sign in
-          </Link>
           <button onClick={() => setShowTrial(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
@@ -100,6 +94,13 @@ function Nav() {
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
             Book a Demo
           </a>
+          <Link href="/login"
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
+            Sign in
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
