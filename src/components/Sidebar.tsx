@@ -80,7 +80,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{ borderBottom: '1px solid #1F2937' }}
         >
           <Image
-            src="/lumio_logo_final.jpg"
+            src="/lumio-logo-primary.png"
             alt="Lumio"
             width={280}
             height={140}
