@@ -7,6 +7,7 @@ import {
   ExternalLink, Filter, Briefcase, Globe, ChevronRight,
   TrendingUp, TrendingDown, Sparkles, BarChart3, Eye,
 } from 'lucide-react'
+import ExportPdfButton from '@/components/ExportPdfButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -361,6 +362,111 @@ const JOB_SIGNALS: JobSignal[] = [
   },
 ]
 
+// ─── Product Comparison Data ──────────────────────────────────────────────────
+
+interface ProductComparison {
+  closestProduct: string
+  table: { feature: string; competitor: string; lumio: string; edge: string }[]
+  pricing: string[]
+  pros: string[]
+  cons: string[]
+}
+
+const PRODUCT_COMPARISONS: Record<string, ProductComparison> = {
+  hubspot: {
+    closestProduct: 'HubSpot Operations Hub + Marketing Hub',
+    table: [
+      { feature: 'Workflow automation', competitor: 'Yes — complex builder',          lumio: 'Yes — no-code, faster setup',  edge: 'Lumio'   },
+      { feature: 'Department coverage', competitor: 'Sales/Marketing focus',           lumio: 'All 14 departments',           edge: 'Lumio'   },
+      { feature: 'CRM built-in',        competitor: 'Yes — market leading',            lumio: 'Basic (via Twenty OSS)',        edge: 'HubSpot' },
+      { feature: 'AI features',         competitor: 'AI copilot (enterprise only)',     lumio: 'AI insights, voice, briefings', edge: 'Lumio'   },
+      { feature: 'Reporting',           competitor: 'Advanced, customisable',           lumio: 'Good, growing',                edge: 'HubSpot' },
+      { feature: 'Setup time',          competitor: 'Weeks–months',                    lumio: 'Days',                         edge: 'Lumio'   },
+      { feature: 'UK SME fit',          competitor: 'Poor — enterprise pricing',        lumio: 'Built for UK SMEs',            edge: 'Lumio'   },
+    ],
+    pricing: [
+      'Starter: $20/user/month',
+      'Professional: $890/month (up 18% Jan 2026)',
+      'Enterprise: $3,600/month',
+      'vs Lumio: significantly cheaper, no per-user penalty',
+    ],
+    pros: [
+      'Covers every department, not just sales/marketing',
+      'No-code workflow builder — faster to implement',
+      'Fraction of the cost — no surprise add-ons',
+      'Built for UK SMEs — GDPR-first, GBP pricing',
+      'AI features available at all tiers',
+    ],
+    cons: [
+      'HubSpot CRM is more mature and feature-rich',
+      'Larger ecosystem of integrations',
+      'Better brand recognition — easier internal sell',
+    ],
+  },
+  pipedrive: {
+    closestProduct: 'Pipedrive + Campaigns add-on',
+    table: [
+      { feature: 'Sales pipeline',       competitor: 'Excellent — core product', lumio: 'Good via Sales & CRM',         edge: 'Pipedrive' },
+      { feature: 'Marketing automation', competitor: 'New Campaigns module',      lumio: 'Built-in marketing dept',      edge: 'Lumio'     },
+      { feature: 'Department coverage',  competitor: 'Sales only',                lumio: 'All 14 departments',           edge: 'Lumio'     },
+      { feature: 'Workflow automation',  competitor: 'Limited',                   lumio: 'Full no-code builder',         edge: 'Lumio'     },
+      { feature: 'AI features',          competitor: 'Basic',                     lumio: 'AI insights + voice',          edge: 'Lumio'     },
+      { feature: 'Reporting',            competitor: 'Good',                      lumio: 'Growing',                      edge: 'Pipedrive' },
+      { feature: 'Setup time',           competitor: 'Days',                      lumio: 'Days',                         edge: 'Draw'      },
+    ],
+    pricing: [
+      'Essential: $14/user/month',
+      'Advanced: $34/user/month',
+      'Professional: $49/user/month',
+      'Power: $64/user/month',
+      'vs Lumio: comparable entry price but Lumio covers more',
+    ],
+    pros: [
+      'Full business platform vs sales-only tool',
+      'Workflow automation across all departments',
+      'No per-user pricing trap as team grows',
+      'AI insights built in at all tiers',
+      'Better for operations-heavy businesses',
+    ],
+    cons: [
+      'Pipedrive pipeline UX is best-in-class',
+      'More third-party integrations available',
+      'Larger sales-focused community and resources',
+    ],
+  },
+  monday: {
+    closestProduct: 'monday Work OS + monday CRM',
+    table: [
+      { feature: 'Project management',  competitor: 'Excellent',                    lumio: 'Basic',                        edge: 'monday.com' },
+      { feature: 'CRM',                 competitor: 'Good — growing fast',           lumio: 'Basic (via Twenty)',            edge: 'monday.com' },
+      { feature: 'Workflow automation', competitor: 'Yes — board-based',             lumio: 'Yes — department-based',       edge: 'Draw'       },
+      { feature: 'Department coverage', competitor: 'Flexible boards',               lumio: '14 dedicated depts',           edge: 'Lumio'      },
+      { feature: 'AI features',         competitor: '3 ML engineers hired — growing',lumio: 'AI insights + voice',          edge: 'Draw'       },
+      { feature: 'SME pricing',         competitor: 'Gets expensive fast',            lumio: 'Flat rate',                   edge: 'Lumio'      },
+      { feature: 'UK focus',            competitor: 'Global',                         lumio: 'UK-first',                    edge: 'Lumio'      },
+    ],
+    pricing: [
+      'Basic: $12/user/month (min 3 seats)',
+      'Standard: $14/user/month',
+      'Pro: $24/user/month',
+      'Enterprise: custom',
+      'vs Lumio: similar entry but scales poorly for larger teams',
+    ],
+    pros: [
+      'Purpose-built departments vs generic boards',
+      'Automated workflows built in — no manual setup',
+      'Better value as team grows — no seat penalties',
+      'UK SME focus — better fit for target market',
+      'Unified platform — no need for CRM add-on',
+    ],
+    cons: [
+      'monday.com project management is superior',
+      'Much larger marketplace and template library',
+      'Better known — easier board approval',
+    ],
+  },
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STRENGTH_CONFIG: Record<Strength, { color: string; bg: string; border: string }> = {
@@ -410,8 +516,9 @@ export default function CompetitorWatchPage() {
   const [lastScanned]                       = useState('Today at 06:00')
   const [strengthFilter, setStrengthFilter] = useState<string>('All')
   const [competitorFilter, setCompetitorFilter] = useState<string>('All')
-  const [expandedSignal, setExpandedSignal] = useState<string | null>(null)
-  const [expandedJob, setExpandedJob]       = useState<string | null>(null)
+  const [expandedSignal, setExpandedSignal]           = useState<string | null>(null)
+  const [expandedJob, setExpandedJob]                 = useState<string | null>(null)
+  const [expandedComparison, setExpandedComparison]   = useState<string | null>(null)
 
   const filteredSignals = SIGNALS.filter(s => {
     if (strengthFilter !== 'All' && s.strength !== strengthFilter) return false
@@ -446,6 +553,7 @@ export default function CompetitorWatchPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
+            <ExportPdfButton />
             <Link href="/strategy/competitor-watch/comparison"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#1F2937] text-sm text-[#9CA3AF] hover:text-[#F9FAFB] hover:border-[#374151] transition-colors">
               <BarChart3 className="w-4 h-4" /> Comparison Matrix
@@ -488,7 +596,66 @@ export default function CompetitorWatchPage() {
 
         {/* ── Overview tab ──────────────────────────────────────────────────── */}
         {tab === 'overview' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+
+            {/* Product Comparison */}
+            <div className="bg-[#111318] border border-[#1F2937] rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#1F2937] flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-[#F9FAFB]">Product Comparison</h2>
+                  <p className="text-xs text-[#6B7280] mt-0.5">How Lumio stacks up against key competitors across core feature areas</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#1F2937]">
+                      <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-widest text-[#4B5563] w-44">Feature</th>
+                      {[
+                        { name: 'Lumio', color: '#0D9488', bg: 'rgba(13,148,136,0.1)' },
+                        { name: 'HubSpot', color: '#F97316', bg: 'rgba(249,115,22,0.08)' },
+                        { name: 'Pipedrive', color: '#22C55E', bg: 'rgba(34,197,94,0.08)' },
+                        { name: 'monday.com', color: '#EF4444', bg: 'rgba(239,68,68,0.08)' },
+                      ].map(c => (
+                        <th key={c.name} className="px-4 py-3 text-xs font-semibold text-center"
+                          style={{ color: c.color }}>
+                          {c.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { feature: 'All-in-one platform',       lumio: '✅', hubspot: '✅', pipedrive: '⚠️', monday: '✅' },
+                      { feature: 'Built-in workflow automation', lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '⚠️' },
+                      { feature: 'CRM & Sales pipeline',       lumio: '✅', hubspot: '✅', pipedrive: '✅', monday: '✅' },
+                      { feature: 'HR & People management',     lumio: '✅', hubspot: '❌', pipedrive: '❌', monday: '⚠️' },
+                      { feature: 'Partner management',         lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '❌' },
+                      { feature: 'AI Insights dashboard',      lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '⚠️' },
+                      { feature: 'SMB pricing (<£200/mo)',     lumio: '✅', hubspot: '❌', pipedrive: '✅', monday: '⚠️' },
+                      { feature: 'Setup in under 30 min',      lumio: '✅', hubspot: '❌', pipedrive: '⚠️', monday: '⚠️' },
+                    ].map((row, i) => (
+                      <tr key={row.feature}
+                        className="border-b border-[#1F2937] last:border-0 hover:bg-white/[0.02] transition-colors">
+                        <td className="px-5 py-3 text-xs text-[#9CA3AF]">{row.feature}</td>
+                        <td className="px-4 py-3 text-center text-sm">{row.lumio}</td>
+                        <td className="px-4 py-3 text-center text-sm">{row.hubspot}</td>
+                        <td className="px-4 py-3 text-center text-sm">{row.pipedrive}</td>
+                        <td className="px-4 py-3 text-center text-sm">{row.monday}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center gap-4 px-5 py-3 border-t border-[#1F2937]">
+                <span className="text-xs text-[#4B5563]">✅ Full support</span>
+                <span className="text-xs text-[#4B5563]">⚠️ Partial / add-on</span>
+                <span className="text-xs text-[#4B5563]">❌ Not available</span>
+              </div>
+            </div>
+
+            {/* Competitor summary cards */}
+            <div className="space-y-4">
             {COMPETITORS.map(comp => (
               <div key={comp.id} className="bg-[#111318] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#374151] transition-colors">
                 <div className="p-5">
@@ -538,6 +705,92 @@ export default function CompetitorWatchPage() {
                       <p className="text-[10px] text-[#6B7280] mt-1">{comp.lastSignalDate}</p>
                     </div>
                   </div>
+
+                  {/* Product comparison expandable */}
+                  {PRODUCT_COMPARISONS[comp.id] && (() => {
+                    const cmp = PRODUCT_COMPARISONS[comp.id]
+                    const isOpen = expandedComparison === comp.id
+                    return (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setExpandedComparison(isOpen ? null : comp.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium transition-colors"
+                          style={{ color: isOpen ? '#A78BFA' : '#6B7280' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#A78BFA' }}
+                          onMouseLeave={e => { if (!isOpen) (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
+                        >
+                          {isOpen ? 'Hide product comparison ↑' : 'View product comparison →'}
+                        </button>
+                        {isOpen && (
+                          <div className="mt-3 rounded-xl overflow-hidden" style={{ border: '1px solid #2D2057' }}>
+                            {/* Header */}
+                            <div className="px-4 py-3" style={{ backgroundColor: 'rgba(108,63,197,0.06)', borderBottom: '1px solid #2D2057' }}>
+                              <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>Closest product match: </span>
+                              <span className="text-xs font-semibold" style={{ color: '#A78BFA' }}>{cmp.closestProduct}</span>
+                            </div>
+                            {/* Table */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#0f0e17' }}>
+                                    <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider" style={{ color: '#4B5563', width: '28%' }}>Feature</th>
+                                    <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider" style={{ color: '#F97316' }}>{comp.name}</th>
+                                    <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider" style={{ color: '#0D9488' }}>Lumio</th>
+                                    <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider" style={{ color: '#6B7280', width: '12%' }}>Edge</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {cmp.table.map((row, i) => (
+                                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#07080F' : '#0d0c13', borderBottom: '1px solid #1A1F2E' }}>
+                                      <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{row.feature}</td>
+                                      <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{row.competitor}</td>
+                                      <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{row.lumio}</td>
+                                      <td className="px-4 py-2.5 font-semibold" style={{ color: row.edge === 'Lumio' ? '#0D9488' : row.edge === 'Draw' ? '#6B7280' : '#F97316' }}>{row.edge}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            {/* Pricing */}
+                            <div className="px-4 py-3" style={{ backgroundColor: '#0d0c13', borderTop: '1px solid #1F2937' }}>
+                              <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: '#6B7280' }}>Pricing</div>
+                              <div className="flex flex-wrap gap-2">
+                                {cmp.pricing.map((p, i) => (
+                                  <span key={i} className="text-xs px-2.5 py-1 rounded-lg"
+                                    style={{ backgroundColor: '#1F2937', color: i === cmp.pricing.length - 1 ? '#0D9488' : '#9CA3AF' }}>
+                                    {p}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Pros / Cons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ borderTop: '1px solid #1F2937' }}>
+                              <div className="px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.04)', borderRight: '1px solid #1F2937' }}>
+                                <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: '#0D9488' }}>Lumio advantages</div>
+                                <ul className="space-y-1.5">
+                                  {cmp.pros.map((p, i) => (
+                                    <li key={i} className="flex gap-2 text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>
+                                      <span className="flex-shrink-0" style={{ color: '#0D9488' }}>✅</span>{p}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="px-4 py-3" style={{ backgroundColor: 'rgba(239,68,68,0.03)' }}>
+                                <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: '#EF4444' }}>Where {comp.name} leads</div>
+                                <ul className="space-y-1.5">
+                                  {cmp.cons.map((c, i) => (
+                                    <li key={i} className="flex gap-2 text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>
+                                      <span className="flex-shrink-0" style={{ color: '#EF4444' }}>❌</span>{c}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             ))}
@@ -556,6 +809,7 @@ export default function CompetitorWatchPage() {
                 </div>
               ))}
             </div>
+            </div>{/* end competitor summary cards */}
           </div>
         )}
 
