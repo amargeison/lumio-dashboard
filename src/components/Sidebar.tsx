@@ -80,12 +80,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{ borderBottom: '1px solid #1F2937' }}
         >
           <Image
-            src="/lumio-logo-primary.png"
+            src="/lumio-transparent-new.png"
             alt="Lumio"
-            width={280}
-            height={140}
-            style={{ width: '140px', height: 'auto' }}
-            className="block object-contain rounded-lg"
+            width={360}
+            height={180}
+            style={{ width: '180px', height: 'auto', objectFit: 'contain' }}
+            className="block"
             priority
           />
           {/* Close button — mobile only */}

@@ -54,8 +54,8 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/lumio_logo_final.jpg" alt="Lumio" width={280} height={140}
-            style={{ width: 140, height: 'auto', objectFit: 'contain' }} priority />
+          <Image src="/lumio-transparent-new.png" alt="Lumio" width={360} height={180}
+            style={{ width: 180, height: 'auto', objectFit: 'contain' }} priority />
         </Link>
 
         {/* Desktop nav */}
@@ -155,7 +155,7 @@ function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Image src="/lumio_logo_final.jpg" alt="Lumio" width={200} height={100}
+            <Image src="/lumio-transparent-new.png" alt="Lumio" width={200} height={100}
               style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
