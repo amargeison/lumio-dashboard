@@ -20,7 +20,6 @@ import {
   Settings,
   Handshake,
   Target,
-  School,
   Database,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -46,7 +45,6 @@ const navItems: {
   { label: 'Success',           href: '/success',     icon: Activity,        badge: 2    },
   { label: 'Strategy',          href: '/strategy',    icon: Target,          badge: null },
   { label: 'IT & Systems',      href: '/it',          icon: Server,          badge: 1    },
-  { label: 'School Office',      href: '/school-office',icon: School,          badge: null },
   { label: 'Workflows Library', href: '/workflows',   icon: GitBranch,       badge: null },
   { label: 'Settings',          href: '/settings',    icon: Settings,        badge: null },
 ]
