@@ -4,9 +4,11 @@ import { useState } from 'react'
 import {
   TrendingUp, Users, Activity, Zap, Star, Shield,
   Headphones, GitBranch, DollarSign, AlertCircle, Clock, BarChart2,
+  Sparkles, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { StatCard, SectionCard, Badge, PageShell } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import ExportPdfButton from '@/components/ExportPdfButton'
 
 // ─── Types & helpers ──────────────────────────────────────────────────────────
 
@@ -56,6 +58,83 @@ function TrendLine({ up, color }: { up: boolean; color: string }) {
   )
 }
 
+// ─── AI Highlights data ───────────────────────────────────────────────────────
+
+const directorHighlights = [
+  'MRR up 12% month-on-month — strongest growth since Q3 last year',
+  '23 new customers added in last 30 days — pipeline converting well',
+  '3 workflows flagged as needing attention — support SLA at risk',
+  'Customer health score stable — 132 healthy, 29 at risk, 10 critical',
+  'Workflow automation saved an estimated 47 hours this month',
+]
+
+const managerHighlights = [
+  '8 active onboardings in progress — all on track',
+  '14 leave requests pending approval — 3 flagged as urgent',
+  '3 probation reviews overdue — HR action required',
+  'Headcount at 187 — 2 open roles in recruitment pipeline',
+  'Team sentiment stable — no escalations this month',
+]
+
+const financeHighlights = [
+  'Monthly MRR: £41,993 — on track for £500k ARR by year end',
+  'Expansion revenue up 18% — existing customers adding seats',
+  'Average contract value increased to £4,200 — up from £3,800',
+  '7 overdue invoices totalling £12,400 — chase sequence active',
+  'Forecast: £44,500 MRR next month based on pipeline conversion',
+]
+
+const operationsHighlights = [
+  '1,834 workflow runs in last 30 days — 0 critical failures',
+  'Most triggered workflow: New Joiner Onboarding (248 runs)',
+  'Invoice Chase workflow saving average £2,400/month in recovered debt',
+  '3 workflows running slower than baseline — review recommended',
+  'Automation coverage up to 67% of manual tasks across all departments',
+]
+
+// ─── AI Highlights panel ──────────────────────────────────────────────────────
+
+function InsightsAIPanel({ items }: { items: string[] }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
+      <button
+        className="flex w-full items-center justify-between px-5 py-4"
+        style={{
+          backgroundColor: 'rgba(108,63,197,0.08)',
+          borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined,
+        }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} style={{ color: '#6C3FC5' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
+            style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+            Mar
+          </span>
+        </div>
+        {open
+          ? <ChevronUp size={14} style={{ color: '#9CA3AF' }} />
+          : <ChevronDown size={14} style={{ color: '#9CA3AF' }} />}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          {items.map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+                {i + 1}
+              </span>
+              <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Director View ─────────────────────────────────────────────────────────────
 
 function DirectorView() {
@@ -94,6 +173,8 @@ function DirectorView() {
 
   return (
     <div className="flex flex-col gap-6">
+      <InsightsAIPanel items={directorHighlights} />
+
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -201,6 +282,8 @@ function ManagerView() {
 
   return (
     <div className="flex flex-col gap-6">
+      <InsightsAIPanel items={managerHighlights} />
+
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -308,6 +391,8 @@ function FinanceView() {
 
   return (
     <div className="flex flex-col gap-6">
+      <InsightsAIPanel items={financeHighlights} />
+
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -424,6 +509,8 @@ function OperationsView() {
 
   return (
     <div className="flex flex-col gap-6">
+      <InsightsAIPanel items={operationsHighlights} />
+
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -531,6 +618,15 @@ export default function InsightsPage() {
 
   return (
     <PageShell>
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>Insights</h1>
+          <p className="mt-0.5 text-sm" style={{ color: '#9CA3AF' }}>Performance metrics and analysis across all departments</p>
+        </div>
+        <ExportPdfButton />
+      </div>
+
       {/* Global filter bar */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl px-5 py-4"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
