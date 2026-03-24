@@ -127,7 +127,7 @@ export default function AdmissionsPage() {
       {/* Quick Actions */}
       <QuickActions actions={[
         { label: 'New Enquiry', icon: <MessageSquare size={14} /> },
-        { label: 'Book Tour', icon: <Calendar size={14} /> },
+        { label: 'Book School Trip', icon: <Calendar size={14} /> },
         { label: 'Send Newsletter', icon: <Mail size={14} /> },
         { label: 'Open Day', icon: <Users size={14} /> },
         { label: 'Social Post', icon: <Share2 size={14} /> },

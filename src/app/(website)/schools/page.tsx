@@ -491,6 +491,117 @@ function ComplianceSection() {
   )
 }
 
+// ─── Ofsted Section ───────────────────────────────────────────────────────────
+
+function OfstedSection() {
+  const areas = [
+    { n: 1, title: 'Quality of Education', body: 'Curriculum intent, implementation and impact. Is your curriculum ambitious? Does it actually work?', color: '#0D9488', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.2)' },
+    { n: 2, title: 'Behaviour & Attitudes', body: 'Conduct, attendance, attitudes to learning. Your attendance data, behaviour log and exclusions — all in one place.', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)' },
+    { n: 3, title: 'Personal Development', body: 'Character education, enrichment, wider opportunities. Evidence your PSHE, trips, clubs and extra-curricular offer.', color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' },
+    { n: 4, title: 'Leadership & Management', body: 'Vision, strategy, governance, staff wellbeing. Your SIP, SEF, governor minutes and budget — auto-populated.', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' },
+    { n: 5, title: 'Inclusion (NEW)', body: 'SEND provision, disadvantaged pupils, EAL, vulnerable groups. The new standalone area. The one schools are least prepared for.', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.35)' },
+    { n: 6, title: 'Safeguarding', body: "Culture, records, training, DSL compliance. One failing here stops everything else. Lumio makes it watertight.", color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
+  ]
+
+  const features = [
+    'SEF Evidence Hub — auto-populated from your live Lumio data, mapped to all 6 evaluation areas',
+    'Inspection-Ready Dashboard — everything an inspector asks for, available in one click on the day',
+    'Attendance Data — year group breakdown, PA rate, trend over time, vs national — formatted for Ofsted',
+    'Inclusion Evidence Pack — ISPs, EHCP reviews, three-tier model, TA deployment — all in one export',
+    'Safeguarding Audit Trail — every concern logged, every action recorded, DSL training, SCR current',
+    'Governor Minutes & SIP — live School Improvement Plan with RAG ratings and evidence per priority',
+    'Behaviour & Exclusions Log — full chronological record with patterns analysis and intervention evidence',
+    'Pre-Inspection Checklist — 47-point Lumio inspection readiness checker with live RAG status',
+  ]
+
+  return (
+    <section className="py-24" style={{ backgroundColor: '#08090F', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* Header */}
+        <div className="mb-12 max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#60A5FA' }}>Ofsted 2025</p>
+          <h2 className="text-4xl font-black mb-5" style={{ color: '#F9FAFB' }}>
+            Ofsted Ready. Every Time.<br />Not Just Inspection Time.
+          </h2>
+          <p className="text-lg leading-relaxed" style={{ color: '#9CA3AF' }}>
+            The 2025 Education Inspection Framework changed everything. No more single overall grade. Six evaluation areas. A new 5-point scale. An Inclusion area scored separately for the first time. Schools that are data-ready will thrive. Schools that aren&apos;t will struggle. Lumio makes sure you&apos;re always ready.
+          </p>
+        </div>
+
+        {/* Two columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+          {/* Left — 6 evaluation areas */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: '#4B5563' }}>The New Ofsted 2025 Framework</p>
+            <div className="grid grid-cols-1 gap-3">
+              {areas.map(a => (
+                <div key={a.title} className="rounded-xl p-4 flex gap-4" style={{ backgroundColor: a.bg, border: `1px solid ${a.border}` }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black" style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: a.color }}>
+                    {a.n}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold mb-0.5" style={{ color: a.title.includes('NEW') ? a.color : '#F9FAFB' }}>{a.title}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{a.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — Lumio features */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: '#4B5563' }}>What Lumio Does for Ofsted</p>
+            <div className="flex flex-col gap-3">
+              {features.map(f => (
+                <div key={f} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <Check size={14} style={{ color: '#0D9488', flexShrink: 0, marginTop: 2 }} />
+                  <p className="text-sm" style={{ color: '#D1D5DB' }}>{f}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Callout box */}
+        <div className="rounded-2xl p-8 mb-8" style={{ background: 'linear-gradient(135deg,rgba(13,148,136,0.18),rgba(15,118,110,0.1))', border: '1px solid rgba(13,148,136,0.35)' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+              <p className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>The Inspection Window Is 48 Hours</p>
+              <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+                Ofsted gives schools just one working day&apos;s notice. That&apos;s not enough time to gather evidence, brief staff, pull attendance data, compile safeguarding records and prepare your SEF. Unless it&apos;s all already live in Lumio. Schools using Lumio report spending less than 2 hours preparing for inspection — because every piece of evidence inspectors ask for is already there, current, and a click away.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { value: '47', label: 'Point inspection readiness checklist' },
+                { value: '2 hours', label: 'Average Lumio school prep time vs 2+ days' },
+                { value: '6/6', label: 'Evaluation areas covered by Lumio evidence tools' },
+              ].map(s => (
+                <div key={s.label} className="text-center rounded-xl p-4" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                  <p className="text-2xl font-black mb-1" style={{ color: '#0D9488' }}>{s.value}</p>
+                  <p className="text-xs leading-tight" style={{ color: '#9CA3AF' }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <Link href="/demo/schools/oakridge-primary/insights"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            See the Ofsted Readiness Dashboard <ArrowRight size={15} />
+          </Link>
+        </div>
+
+      </div>
+    </section>
+  )
+}
+
 // ─── FAQ Section ──────────────────────────────────────────────────────────────
 
 function FAQSection() {
@@ -703,6 +814,7 @@ export default function SchoolsPage() {
       <FeaturesSection />
       <TestimonialsSection />
       <ComplianceSection />
+      <OfstedSection />
       <FAQSection />
       <FinalCTASection />
       <SchoolsFooter />

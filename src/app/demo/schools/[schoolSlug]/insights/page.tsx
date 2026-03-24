@@ -487,8 +487,7 @@ function HeadteacherView() {
                   />
                   <div
                     className="absolute top-0 h-full w-0.5"
-                    style={{ backgroundColor: '#6B7280' }}
-                    style={{ left: `${m.national}%` }}
+                    style={{ backgroundColor: '#6B7280', left: `${m.national}%` }}
                     title={`National: ${m.national}%`}
                   />
                 </div>
