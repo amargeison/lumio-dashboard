@@ -511,6 +511,11 @@ export default function SchoolOfficePage() {
           style={{ backgroundColor: 'rgba(168,85,247,0.08)', color: '#A855F7', border: '1px solid rgba(168,85,247,0.2)' }}>
           <Sparkles size={12} /> Governor Reports <ChevronRight size={11} />
         </Link>
+        <Link href="/school-office/ofsted"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          style={{ backgroundColor: 'rgba(13,148,136,0.08)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <ShieldCheck size={12} /> Ofsted Readiness <ChevronRight size={11} />
+        </Link>
       </div>
 
       {/* Quick action */}
