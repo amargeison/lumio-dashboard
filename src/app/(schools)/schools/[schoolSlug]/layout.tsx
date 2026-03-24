@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -41,6 +41,26 @@ export default function SchoolLayout({ children }: Props) {
   const slugMatch = pathname.match(/\/schools\/([^/]+)/)
   const slug = slugMatch?.[1] ?? ''
   const base = `/schools/${slug}`
+
+  const [schoolName, setSchoolName] = useState(
+    slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  )
+  useEffect(() => {
+    const stored = localStorage.getItem(`lumio_school_${slug}_name`)
+    if (stored) setSchoolName(stored)
+  }, [slug])
+
+  const [initials, setInitials] = useState('SH')
+  useEffect(() => {
+    const stored = localStorage.getItem(`lumio_school_${slug}_initials`)
+    if (stored) setInitials(stored)
+  }, [slug])
+
+  const [planLabel, setPlanLabel] = useState('Trial workspace')
+  useEffect(() => {
+    const plan = localStorage.getItem(`lumio_school_${slug}_plan`)
+    if (plan) setPlanLabel(`${plan.charAt(0).toUpperCase() + plan.slice(1)} plan`)
+  }, [slug])
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#07080F' }}>
@@ -96,21 +116,24 @@ export default function SchoolLayout({ children }: Props) {
           })}
         </nav>
 
-        <div className="shrink-0 px-4 py-3 text-xs" style={{ borderTop: '1px solid #1F2937', color: '#4B5563' }}>Lumio for Schools</div>
+        <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid #1F2937' }}>
+          <p className="text-xs font-semibold truncate" style={{ color: '#9CA3AF' }}>{schoolName}</p>
+          <p className="text-xs" style={{ color: '#4B5563' }}>{planLabel}</p>
+        </div>
       </aside>
 
       <div className="flex flex-1 flex-col md:pl-[200px] overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-3 px-4 md:px-6" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#07080F' }}>
           <button className="md:hidden" onClick={() => setOpen(true)} style={{ color: '#9CA3AF' }}><Menu size={20} /></button>
           <div className="flex flex-1 items-center gap-2 min-w-0">
-            <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>Oakridge Primary School</span>
+            <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative" style={{ color: '#9CA3AF' }}>
               <Bell size={18} />
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB', fontSize: 9 }}>3</span>
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>SH</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>{initials}</div>
           </div>
         </header>
 

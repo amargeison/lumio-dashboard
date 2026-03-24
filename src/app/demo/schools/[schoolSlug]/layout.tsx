@@ -99,9 +99,9 @@ export default function DemoSchoolLayout({ children }: Props) {
         </nav>
 
         <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid #1F2937' }}>
-          <Link href="/demo" className="block w-full rounded-lg py-2 text-center text-xs font-semibold"
+          <Link href="/schools/checkout" className="block w-full rounded-lg py-2 text-center text-xs font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            Upgrade to Live
+            Buy Lumio
           </Link>
         </div>
       </aside>
@@ -116,9 +116,9 @@ export default function DemoSchoolLayout({ children }: Props) {
               <span className="font-semibold">Trial workspace</span> · 14 days remaining · Demo data only
             </p>
           </div>
-          <Link href="/demo" className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold"
+          <Link href="/schools/checkout" className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            Invite team
+            Buy Lumio
           </Link>
         </div>
 
