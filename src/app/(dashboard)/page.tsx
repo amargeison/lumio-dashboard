@@ -18,6 +18,9 @@ import {
   BookOpen,
   CalendarHeart,
   Target,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { StatCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
@@ -75,6 +78,57 @@ const ragCounts: { status: RAGStatus; count: number; label: string }[] = [
   { status: 'amber', count: 31,  label: 'At Risk'  },
   { status: 'red',   count: 8,   label: 'Critical' },
 ]
+
+// ─── Morning AI Summary ───────────────────────────────────────────────────────
+
+const morningHighlights = [
+  'You have 4 meetings today — first up: New Customer Demo with Oakridge Schools at 9am (happening in 45 min)',
+  '12 emails overnight — 2 marked urgent, including one from Apex Consulting re: renewal',
+  '3 workflows need your attention — Support SLA breach at Pinebrook Primary is highest priority',
+  'Monthly MRR at £41,993 — up 12% on last month, on track for £500k ARR',
+  'New customer trial conversion yesterday — Sunfield Trust now a paying customer 🎉',
+  'Team standup at 5pm — 2 team members on leave today, consider cover for afternoon support queue',
+]
+
+function MorningAIPanel() {
+  const [open, setOpen] = useState(true)
+  const now = new Date()
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
+  return (
+    <div className="px-4 pt-3 sm:px-6">
+      <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
+        <button
+          className="flex w-full items-center justify-between px-5 py-4"
+          style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
+            <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
+              style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{dayLabel}</span>
+          </div>
+          {open
+            ? <ChevronUp size={14} style={{ color: '#6C3FC5' }} />
+            : <ChevronDown size={14} style={{ color: '#6C3FC5' }} />}
+        </button>
+        {open && (
+          <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+            {morningHighlights.map((item, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -234,6 +288,7 @@ export default function OverviewPage() {
   return (
     <div className="flex flex-col">
       <PersonalBanner />
+      <MorningAIPanel />
       <DailyTabs activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="px-4 py-4 sm:px-6">
         {activeTab === 'home'        && <HomeTab />}
