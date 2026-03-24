@@ -827,10 +827,8 @@ export default function DfEPage() {
         <div className="flex items-center gap-3 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images.png" alt="NELI" style={{ height: 36, width: 'auto', display: 'block' }} />
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black"
-            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', letterSpacing: '-0.05em' }}>
-            DfE
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/dfe.png" alt="Department for Education" style={{ height: 60, width: 'auto', display: 'block' }} />
           <div className="hidden sm:block">
             <p className="text-sm font-bold leading-tight" style={{ color: '#F9FAFB' }}>
               NELI Programme Dashboard
