@@ -3,15 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Volume2, Mic } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
-
-interface BriefingData {
-  userName: string
-  greeting: string
-  date: string
-  weather: { temp: string; condition: string; icon: string; location: string }
-  todaySummary: { meetings: number; tasks: number; urgent: number; emails: number }
-  motivationalLine: string
-}
+import { buildBriefingScript, type BriefingData, type ActionedItem } from '@/lib/buildBriefingScript'
 
 const WEATHER_ICONS: Record<string, string> = {
   sunny: '☀️', clear: '☀️', cloudy: '☁️', overcast: '☁️',
@@ -41,42 +33,6 @@ const BG_GRADIENTS = [
   'from-violet-900 via-slate-900 to-purple-950',
   'from-indigo-900 via-purple-950 to-violet-950',
 ]
-
-function buildBriefingScript(data: BriefingData): string {
-  const { greeting, todaySummary, motivationalLine, weather } = data
-  const { meetings, tasks, urgent, emails } = todaySummary
-  const parts: string[] = []
-
-  parts.push(`${greeting}.`)
-  parts.push(`Here's your day at a glance.`)
-
-  if (meetings > 0) {
-    parts.push(`You have ${meetings} meeting${meetings !== 1 ? 's' : ''} today.`)
-  } else {
-    parts.push(`No meetings scheduled today.`)
-  }
-
-  if (emails > 0) {
-    if (urgent > 0) {
-      parts.push(`On emails, you have ${emails} overnight. ${urgent} ${urgent !== 1 ? 'are' : 'is'} marked urgent — worth checking those first.`)
-    } else {
-      parts.push(`You have ${emails} email${emails !== 1 ? 's' : ''} waiting. None are marked urgent.`)
-    }
-  }
-
-  if (tasks > 0) {
-    parts.push(`Also, ${tasks} task${tasks !== 1 ? 's' : ''} on your list today.`)
-  }
-
-  if (weather?.temp && weather.temp !== '--') {
-    parts.push(`Worth noting — it's ${weather.temp} and ${weather.condition} in ${weather.location} today.`)
-  }
-
-  parts.push(motivationalLine)
-  parts.push(`Have a great day.`)
-
-  return parts.join('  ')
-}
 
 // ─── Live Clock ───────────────────────────────────────────────────────────────
 
@@ -252,6 +208,7 @@ export default function PersonalBanner() {
     greeting: getGreeting('Arron'),
     date: formatDate(),
   }))
+  const [actioned, setActioned] = useState<ActionedItem[]>([])
   const [bgGradient] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
 
@@ -260,8 +217,10 @@ export default function PersonalBanner() {
     Promise.all([
       fetch('/api/home/briefing').then(r => r.json()).catch(() => ({})),
       fetch('/api/home/weather').then(r => r.json()).catch(() => ({})),
-    ]).then(([brief, weather]) => {
+      fetch('/api/briefing/action').then(r => r.json()).catch(() => ({ actions: [] })),
+    ]).then(([brief, weather, actionData]) => {
       setData({ ...fallback, ...brief, weather: { ...fallback.weather, ...weather } })
+      setActioned(actionData.actions ?? [])
     })
   }, [])
 
@@ -289,7 +248,7 @@ export default function PersonalBanner() {
 
               {/* Speaker 1: Active TTS */}
               <button
-                onClick={() => isPlaying ? stop() : speak(buildBriefingScript(data))}
+                onClick={() => isPlaying ? stop() : speak(buildBriefingScript(data, actioned))}
                 title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud"
                 className="flex items-center justify-center rounded-lg transition-all"
                 style={{

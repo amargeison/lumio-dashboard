@@ -4,6 +4,18 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp, ExternalLink, ThumbsUp, Check, Bookmark, Share2, X, Send, Settings } from 'lucide-react'
 
+// ─── Action tracker ───────────────────────────────────────────────────────────
+
+async function trackAction(itemType: string, itemRef: string, actionTaken: string) {
+  try {
+    await fetch('/api/briefing/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_type: itemType, item_ref: itemRef, action_taken: actionTaken }),
+    })
+  } catch { /* fire-and-forget, ignore errors */ }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Email {
@@ -101,6 +113,7 @@ function EmailPane() {
     })
     setSending(false)
     if (res.status === 503) { setNotConnected(true); return }
+    trackAction('email', email.id, 'replied')
     setSent(s => new Set([...s, email.id]))
     setReplyId(null)
     setReplyText('')
@@ -137,7 +150,7 @@ function EmailPane() {
               className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
               Reply
             </button>
-            <button onClick={() => setArchived(a => new Set([...a, email.id]))}
+            <button onClick={() => { trackAction('email', email.id, 'archived'); setArchived(a => new Set([...a, email.id])) }}
               className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
               Archive
             </button>
@@ -202,6 +215,7 @@ function SlackPane() {
     })
     setSending(false)
     if (res.status === 503) { setNotConnected(true); return }
+    trackAction('slack', msg.id, 'replied')
     setSent(s => new Set([...s, msg.id]))
     setReplyId(null)
     setReplyText('')
@@ -240,7 +254,7 @@ function SlackPane() {
               style={{ backgroundColor: reacted.has(msg.id) ? 'rgba(251,191,36,0.12)' : '#1F2937', color: reacted.has(msg.id) ? '#FBBF24' : '#9CA3AF' }}>
               <ThumbsUp size={11} /> {reacted.has(msg.id) ? '1' : ''}
             </button>
-            <button onClick={() => setDone(d => new Set([...d, msg.id]))}
+            <button onClick={() => { trackAction('slack', msg.id, 'done'); setDone(d => new Set([...d, msg.id])) }}
               className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
               <Check size={11} /> Done
             </button>
@@ -289,7 +303,7 @@ function NotionPane() {
             <a href={item.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#FB923C' }}>
               <ExternalLink size={11} /> View
             </a>
-            <button onClick={() => setRead(r => new Set([...r, item.id]))} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
+            <button onClick={() => { trackAction('notion', item.id, 'read'); setRead(r => new Set([...r, item.id])) }} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
               Read
             </button>
           </div>
@@ -330,11 +344,11 @@ function LinkedInPane() {
           <div className="flex items-center gap-2 px-4 pb-2">
             {item.type === 'connection' && !accepted.has(item.id) && (
               <>
-                <button onClick={() => setAccepted(a => new Set([...a, item.id]))}
+                <button onClick={() => { trackAction('linkedin', item.id, 'accepted'); setAccepted(a => new Set([...a, item.id])) }}
                   className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ backgroundColor: 'rgba(45,212,191,0.12)', color: '#2DD4BF' }}>
                   Accept
                 </button>
-                <button onClick={() => setIgnored(i => new Set([...i, item.id]))}
+                <button onClick={() => { trackAction('linkedin', item.id, 'ignored'); setIgnored(i => new Set([...i, item.id])) }}
                   className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
                   Ignore
                 </button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   GitBranch,
   UserPlus,
@@ -81,50 +81,101 @@ const ragCounts: { status: RAGStatus; count: number; label: string }[] = [
 
 // ─── Morning AI Summary ───────────────────────────────────────────────────────
 
-const morningHighlights = [
-  'You have 4 meetings today — first up: New Customer Demo with Oakridge Schools at 9am (happening in 45 min)',
-  '12 emails overnight — 2 marked urgent, including one from Apex Consulting re: renewal',
-  '3 workflows need your attention — Support SLA breach at Pinebrook Primary is highest priority',
-  'Monthly MRR at £41,993 — up 12% on last month, on track for £500k ARR',
-  'New customer trial conversion yesterday — Sunfield Trust now a paying customer 🎉',
-  'Team standup at 5pm — 2 team members on leave today, consider cover for afternoon support queue',
+type HighlightCat = 'email' | 'slack' | 'workflow' | 'meeting' | null
+
+const morningHighlights: { id: string; cat: HighlightCat; text: string }[] = [
+  { id: 'meetings',  cat: 'meeting',  text: 'You have 4 meetings today — first up: New Customer Demo with Oakridge Schools at 9am (happening in 45 min)' },
+  { id: 'emails',    cat: 'email',    text: '12 emails overnight — 2 marked urgent, including one from Apex Consulting re: renewal' },
+  { id: 'workflows', cat: 'workflow', text: '3 workflows need your attention — Support SLA breach at Pinebrook Primary is highest priority' },
+  { id: 'mrr',       cat: null,       text: 'Monthly MRR at £41,993 — up 12% on last month, on track for £500k ARR' },
+  { id: 'trial_win', cat: null,       text: 'New customer trial conversion yesterday — Sunfield Trust now a paying customer 🎉' },
+  { id: 'standup',   cat: 'meeting',  text: 'Team standup at 5pm — 2 team members on leave today, consider cover for afternoon support queue' },
 ]
 
 function MorningAIPanel() {
   const [open, setOpen] = useState(true)
+  const [resolvedCats, setResolvedCats] = useState<Set<string>>(new Set())
+
   const now = new Date()
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
+
+  useEffect(() => {
+    fetch('/api/briefing/action')
+      .then(r => r.json())
+      .then(data => {
+        const cats = new Set<string>((data.actions ?? []).map((a: { item_type: string }) => a.item_type))
+        setResolvedCats(cats)
+      })
+      .catch(() => {})
+  }, [])
+
+  const actionableItems = morningHighlights.filter(h => h.cat !== null)
+  const resolvedCount = actionableItems.filter(h => h.cat && resolvedCats.has(h.cat)).length
+  const totalActionable = actionableItems.length
+  const allCaughtUp = resolvedCount === totalActionable && totalActionable > 0
+
   return (
     <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
-        <button
-          className="flex w-full items-center justify-between px-5 py-4"
-          style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <div className="flex items-center gap-2">
-            <Sparkles size={14} style={{ color: '#6C3FC5' }} />
-            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
-            <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
-              style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{dayLabel}</span>
-          </div>
-          {open
-            ? <ChevronUp size={14} style={{ color: '#6C3FC5' }} />
-            : <ChevronDown size={14} style={{ color: '#6C3FC5' }} />}
-        </button>
-        {open && (
-          <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
-            {morningHighlights.map((item, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
-                <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
+      <button
+        className="flex w-full items-center justify-between px-5 py-4"
+        style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Sparkles size={14} style={{ color: '#6C3FC5' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
+            style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{dayLabel}</span>
+        </div>
+        {open
+          ? <ChevronUp size={14} style={{ color: '#6C3FC5' }} />
+          : <ChevronDown size={14} style={{ color: '#6C3FC5' }} />}
+      </button>
+
+      {/* Progress bar */}
+      {open && (
+        <div className="px-5 pt-3" style={{ backgroundColor: '#0f0e17' }}>
+          {allCaughtUp ? (
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold mb-3"
+              style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', color: '#22C55E' }}>
+              ✓ All caught up! Everything actioned this morning.
+            </div>
+          ) : resolvedCount > 0 ? (
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs" style={{ color: '#6B7280' }}>Items resolved</span>
+                <span className="text-xs font-semibold" style={{ color: '#A78BFA' }}>{resolvedCount} of {totalActionable}</span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${(resolvedCount / totalActionable) * 100}%`, backgroundColor: '#6C3FC5' }} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {open && (
+        <div className="flex flex-col gap-3 px-5 pb-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '14rem' }}>
+          {morningHighlights.map((item, i) => {
+            const resolved = item.cat !== null && resolvedCats.has(item.cat)
+            return (
+              <div key={item.id} className="flex gap-3 items-start">
+                {resolved ? (
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>✓</span>
+                ) : (
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                )}
+                <p className="text-xs leading-relaxed" style={{ color: resolved ? '#4B5563' : '#C4B5FD', textDecoration: resolved ? 'line-through' : 'none' }}>{item.text}</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
