@@ -4,6 +4,9 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  redirects: async () => [
+    { source: '/sales-crm', destination: '/sales', permanent: true },
+  ],
   headers: async () => [
     {
       source: '/(.*)',

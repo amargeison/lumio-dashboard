@@ -21,6 +21,7 @@ import {
   Handshake,
   Target,
   School,
+  Database,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -36,7 +37,8 @@ const navItems: {
   { label: 'Partners',          href: '/partners',    icon: Handshake,       badge: null },
   { label: 'HR & People',       href: '/hr',          icon: Users,           badge: 3    },
   { label: 'Accounts',          href: '/accounts',    icon: Building2,       badge: null },
-  { label: 'Sales & CRM',       href: '/sales',       icon: TrendingUp,      badge: 12   },
+  { label: 'Sales',             href: '/sales',       icon: TrendingUp,      badge: 12   },
+  { label: 'CRM',               href: '/crm',         icon: Database,        badge: null },
   { label: 'Marketing',         href: '/marketing',   icon: Megaphone,       badge: null },
   { label: 'Trials',            href: '/trials',      icon: FlaskConical,    badge: null },
   { label: 'Operations',        href: '/operations',  icon: Package,         badge: null },

@@ -13,6 +13,7 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload,
+  Database, RotateCcw,
 } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
@@ -27,14 +28,14 @@ import PerformanceReviewModal, { type PerformanceReviewData } from '@/components
 type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 type RAG      = 'green' | 'amber' | 'red'
 type ChartMode = 'number' | 'bar' | 'pie'
-type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy'
+type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy'
 
 interface ChartDatum { label: string; value: number; color: string }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEPARTMENTS = [
-  'Overview', 'Insights', 'HR & People', 'Accounts', 'Sales & CRM',
+  'Overview', 'Insights', 'HR & People', 'Accounts', 'Sales', 'CRM',
   'Marketing', 'Trials', 'Operations', 'Support',
   'Success', 'IT & Systems', 'Workflows Library',
 ]
@@ -44,7 +45,8 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'insights',   label: 'Insights',           icon: BarChart3   },
   { id: 'hr',         label: 'HR & People',        icon: Users       },
   { id: 'accounts',   label: 'Accounts',           icon: Receipt     },
-  { id: 'sales',      label: 'Sales & CRM',        icon: TrendingUp  },
+  { id: 'sales',      label: 'Sales',              icon: TrendingUp  },
+  { id: 'crm',        label: 'CRM',                icon: Database    },
   { id: 'marketing',  label: 'Marketing',          icon: Megaphone   },
   { id: 'trials',     label: 'Trials',             icon: FlaskConical},
   { id: 'operations', label: 'Operations',         icon: Package     },
@@ -92,12 +94,20 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Dept Insights',   tooltip: 'View AI-generated insights for Accounts',                       icon: BarChart3 },
   ],
   sales:      [
-    { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
-    { label: 'Score Leads',    tooltip: 'Run AI lead scoring on all unscored leads in the pipeline',       icon: Star      },
-    { label: 'Send Proposal',  tooltip: 'Generate a proposal from a template and send to a prospect',     icon: Send      },
-    { label: 'Update Pipeline',tooltip: 'Sync CRM pipeline data and recalculate deal scores',             icon: TrendingUp},
+    { label: 'New Deal',       tooltip: 'Add a new deal and start the qualification workflow',             icon: TrendingUp},
     { label: 'Book Demo',      tooltip: 'Send a Calendly invite for a product demo',                      icon: Calendar  },
-    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Sales & CRM',                     icon: BarChart3 },
+    { label: 'Send Proposal',  tooltip: 'Generate a proposal from a template and send to a prospect',     icon: Send      },
+    { label: 'Log Call',       tooltip: 'Log a call with a prospect or lead',                             icon: FileText  },
+    { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Sales',                           icon: BarChart3 },
+  ],
+  crm:        [
+    { label: 'Log Call',       tooltip: 'Log a call against a customer account',                          icon: FileText  },
+    { label: 'Health Check',   tooltip: 'Run an account health check and update the RAG score',           icon: Star      },
+    { label: 'Chase Renewal',  tooltip: 'Send a renewal reminder to an account',                          icon: RotateCcw },
+    { label: 'Send NPS',       tooltip: 'Send an NPS survey to selected customers',                       icon: Send      },
+    { label: 'Account Review', tooltip: 'Schedule an account review meeting',                             icon: Calendar  },
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for CRM',                             icon: BarChart3 },
   ],
   marketing:  [
     { label: 'New Campaign',   tooltip: 'Create a multi-step email or ad campaign',                        icon: Megaphone },
@@ -1135,6 +1145,68 @@ function SalesView({ company }: { company: string }) {
   )
 }
 
+function CRMView({ company }: { company: string }) {
+  const customers = fakeNum(171, company, 'crmtotal')
+  const mrr = fakeNum(28400, company, 'crmrr')
+  const nps = fakeNum(67, company, 'crmnps')
+  const churnRiskAccounts = [
+    { name: fakeCompany(company, 20), reason: 'No login in 42 days',    risk: 91 },
+    { name: fakeCompany(company, 21), reason: 'Support tickets × 4',    risk: 78 },
+    { name: fakeCompany(company, 22), reason: 'Downgrade request sent', risk: 65 },
+  ]
+  const renewals = [
+    { name: fakeCompany(company, 23), due: 'Apr 12', arr: `£${fakeNum(14800, company, 'ren1').toLocaleString()}`, health: 'Critical' },
+    { name: fakeCompany(company, 24), due: 'Apr 18', arr: `£${fakeNum(33400, company, 'ren2').toLocaleString()}`, health: 'At Risk'  },
+    { name: fakeCompany(company, 25), due: 'May 2',  arr: `£${fakeNum(76000, company, 'ren3').toLocaleString()}`, health: 'Healthy'  },
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <StatCard label="Total Customers" value={String(customers)} icon={Database} color="#0D9488"
+          pieData={[{label:'Healthy',value:132,color:'#22C55E'},{label:'At Risk',value:29,color:'#F59E0B'},{label:'Critical',value:10,color:'#EF4444'}]}
+          barData={[{label:'Jan',value:155,color:'#0D9488'},{label:'Feb',value:163,color:'#0D9488'},{label:'Mar',value:customers,color:'#0F766E'}]} />
+        <StatCard label="MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#6C3FC5"
+          pieData={[{label:'Core',value:45,color:'#6C3FC5'},{label:'Pro',value:38,color:'#A78BFA'},{label:'Lite',value:17,color:'#7C3AED'}]}
+          barData={[{label:'Jan',value:26000,color:'#6C3FC5'},{label:'Feb',value:27200,color:'#6C3FC5'},{label:'Mar',value:mrr,color:'#7C3AED'}]} />
+        <StatCard label="NPS Score" value={String(nps)} icon={Star} color="#F59E0B"
+          pieData={[{label:'Promoters',value:nps,color:'#22C55E'},{label:'Passives',value:22,color:'#F59E0B'},{label:'Detractors',value:11,color:'#EF4444'}]}
+          barData={[{label:'Q3\'25',value:55,color:'#F59E0B'},{label:'Q4\'25',value:63,color:'#F59E0B'},{label:'Q1\'26',value:nps,color:'#D97706'}]} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Churn risk */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Churn Risk Alerts</p></div>
+          {churnRiskAccounts.map((r, i) => (
+            <div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < churnRiskAccounts.length - 1 ? '1px solid #1F2937' : undefined }}>
+              <AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{r.name}</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{r.reason}</p>
+              </div>
+              <span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}% risk</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Renewals */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Renewals</p></div>
+          {renewals.map((r, i) => (
+            <div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < renewals.length - 1 ? '1px solid #1F2937' : undefined }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{r.name}</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>Due {r.due} · {r.arr} ARR</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MarketingView({ company }: { company: string }) {
   return <PlaceholderView
     title="Active Campaigns"
@@ -1667,7 +1739,12 @@ const DEPT_INSIGHTS: Record<DeptId, { metric: string; value: string; trend: stri
   sales:      [
     { metric: 'Lead response time',   value: '4 min',  trend: '-52m', insight: 'Hot lead routing to senior reps now averages under 5 minutes. Pipeline growth rate up 18%.' },
     { metric: 'Proposal turnaround',  value: '23 min', trend: '-2h',  insight: 'Claude-generated proposals cut drafting time from hours to minutes. Win rate unchanged.' },
-    { metric: 'Pipeline accuracy',    value: '91%',    trend: '+4%',  insight: 'Automated stage updates reduced human error in CRM. Deal value forecast improved.' },
+    { metric: 'Pipeline accuracy',    value: '91%',    trend: '+4%',  insight: 'Automated stage updates reduced human error in deal tracking. Deal value forecast improved.' },
+  ],
+  crm:        [
+    { metric: 'Churn rate',           value: '2.1%',   trend: '-0.2%',insight: 'Below 3% target for the fourth consecutive month. Proactive health checks catching at-risk accounts earlier.' },
+    { metric: 'NPS score',            value: '67',     trend: '+4',   insight: 'Three new positive reviews added this month. Onboarding improvements driving higher early satisfaction.' },
+    { metric: 'Renewal conversion',   value: '94%',    trend: '+3%',  insight: '90-day renewal sequences reducing last-minute churn. Two enterprise accounts renewed early after check-ins.' },
   ],
   marketing:  [
     { metric: 'MQL response time',    value: '18 min', trend: '-4h',  insight: 'Marketing-to-sales handoff automation firing correctly on 97% of qualifying leads.' },
@@ -2048,6 +2125,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}
             {activeDept === 'sales'      && <SalesView      company={company} />}
+            {activeDept === 'crm'        && <CRMView        company={company} />}
             {activeDept === 'marketing'  && <MarketingView  company={company} />}
             {activeDept === 'trials'     && <TrialsView     company={company} />}
             {activeDept === 'operations' && <OpsView        company={company} />}
