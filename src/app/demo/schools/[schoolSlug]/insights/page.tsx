@@ -2136,7 +2136,7 @@ export default function InsightsPage() {
   const slug = params?.slug as string
   const [activeRole, setActiveRole] = useState<Role>('headteacher')
 
-  const roleView: Record<Role, JSX.Element> = {
+  const roleView: Record<Role, React.ReactNode> = {
     trust: <TrustView />,
     headteacher: <HeadteacherView />,
     'head-of-year': <HeadOfYearView />,
