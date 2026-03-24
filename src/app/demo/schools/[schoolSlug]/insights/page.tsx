@@ -1195,7 +1195,7 @@ function SENView() {
                       { agency: 'SALT (NHS)', total: 5, waiting: '4 wks', active: 4, next: '28 Mar', status: 'Active' },
                       { agency: 'Occupational Therapy', total: 3, waiting: '6 wks', active: 1, next: '10 Apr', status: 'Moderate' },
                       { agency: 'Early Help / Family Support', total: 2, waiting: '0 wks', active: 2, next: '26 Mar', status: 'Active' },
-                      { agency: 'Children's Social Care', total: 2, waiting: '—', active: 2, next: '26 Mar', status: 'Active' },
+                      { agency: "Children's Social Care", total: 2, waiting: '—', active: 2, next: '26 Mar', status: 'Active' },
                       { agency: 'Specialist SEND Teacher (LA)', total: 3, waiting: '3 wks', active: 2, next: '3 Apr', status: 'Active' },
                     ].map((a) => (
                       <tr key={a.agency} className="hover:bg-gray-50">
@@ -2136,7 +2136,7 @@ export default function InsightsPage() {
   const slug = params?.slug as string
   const [activeRole, setActiveRole] = useState<Role>('headteacher')
 
-  const roleView: Record<Role, JSX.Element> = {
+  const roleView: Record<Role, React.ReactNode> = {
     trust: <TrustView />,
     headteacher: <HeadteacherView />,
     'head-of-year': <HeadOfYearView />,
