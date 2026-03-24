@@ -44,16 +44,38 @@ const BG_GRADIENTS = [
 
 function buildBriefingScript(data: BriefingData): string {
   const { greeting, todaySummary, motivationalLine, weather } = data
-  const parts: string[] = []
-  parts.push(`${greeting}.`)
   const { meetings, tasks, urgent, emails } = todaySummary
-  if (meetings > 0) parts.push(`You have ${meetings} meeting${meetings !== 1 ? 's' : ''} today.`)
-  if (tasks > 0) parts.push(`${tasks} task${tasks !== 1 ? 's' : ''} on your list.`)
-  if (urgent > 0) parts.push(`${urgent} item${urgent !== 1 ? 's are' : ' is'} marked urgent.`)
-  if (emails > 0) parts.push(`${emails} email${emails !== 1 ? 's' : ''} waiting.`)
-  if (weather?.temp && weather.temp !== '--') parts.push(`It's ${weather.temp} and ${weather.condition} in ${weather.location}.`)
+  const parts: string[] = []
+
+  parts.push(`${greeting}.`)
+  parts.push(`Here's your day at a glance.`)
+
+  if (meetings > 0) {
+    parts.push(`You have ${meetings} meeting${meetings !== 1 ? 's' : ''} today.`)
+  } else {
+    parts.push(`No meetings scheduled today.`)
+  }
+
+  if (emails > 0) {
+    if (urgent > 0) {
+      parts.push(`On emails, you have ${emails} overnight. ${urgent} ${urgent !== 1 ? 'are' : 'is'} marked urgent — worth checking those first.`)
+    } else {
+      parts.push(`You have ${emails} email${emails !== 1 ? 's' : ''} waiting. None are marked urgent.`)
+    }
+  }
+
+  if (tasks > 0) {
+    parts.push(`Also, ${tasks} task${tasks !== 1 ? 's' : ''} on your list today.`)
+  }
+
+  if (weather?.temp && weather.temp !== '--') {
+    parts.push(`Worth noting — it's ${weather.temp} and ${weather.condition} in ${weather.location} today.`)
+  }
+
   parts.push(motivationalLine)
-  return parts.join(' ')
+  parts.push(`Have a great day.`)
+
+  return parts.join('  ')
 }
 
 // ─── Live Clock ───────────────────────────────────────────────────────────────

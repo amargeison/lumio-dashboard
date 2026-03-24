@@ -34,33 +34,39 @@ export function buildDemoBriefingScript({
   const parts: string[] = []
 
   parts.push(`Good ${timeOfDay}. Welcome to your Lumio demo workspace for ${companyName}.`)
+  parts.push(`Here's a quick rundown of your day.`)
 
   // Meetings
   const upcoming = meetings.filter(m => m.status !== 'done')
   if (upcoming.length === 0) {
-    parts.push('You have no meetings scheduled for today.')
+    parts.push(`No meetings scheduled for today.`)
   } else {
     parts.push(`You have ${meetings.length} meeting${meetings.length !== 1 ? 's' : ''} today.`)
     const first = upcoming[0]
     if (first) {
-      parts.push(`Your ${first.status === 'now' ? 'current meeting is' : 'next meeting is'} ${first.title}, at ${formatTime(first.time)}.`)
+      const when = first.status === 'now' ? 'right now' : `at ${formatTime(first.time)}`
+      parts.push(`${first.status === 'now' ? 'You are currently in' : 'First up —'} ${first.title}, ${when}.`)
     }
   }
 
   // Emails
   if (emailCount > 0) {
-    const urgentPart = urgentCount > 0 ? `, ${urgentCount} marked urgent` : ''
-    parts.push(`You have ${emailCount} email${emailCount !== 1 ? 's' : ''}${urgentPart}.`)
+    if (urgentCount > 0) {
+      parts.push(`On emails, you have ${emailCount} waiting. ${urgentCount} ${urgentCount !== 1 ? 'are' : 'is'} marked urgent — worth a look.`)
+    } else {
+      parts.push(`You have ${emailCount} email${emailCount !== 1 ? 's' : ''} waiting. None are marked urgent.`)
+    }
   }
 
   // Workflow actions
   if (workflowActionCount > 0) {
-    parts.push(`${workflowActionCount} workflow${workflowActionCount !== 1 ? 's are' : ' is'} waiting for your attention.`)
+    parts.push(`Also — ${workflowActionCount} workflow${workflowActionCount !== 1 ? 's need' : ' needs'} your attention today.`)
   } else {
-    parts.push('All workflows are running smoothly.')
+    parts.push(`All workflows are running smoothly.`)
   }
 
-  parts.push('This is a demo workspace. Upgrade to connect your real data and see live insights.')
+  parts.push(`And finally — this is a live demo. Connect your real data and Lumio will brief you like this every morning.`)
+  parts.push(`Have a great day.`)
 
-  return parts.join(' ')
+  return parts.join('  ')
 }
