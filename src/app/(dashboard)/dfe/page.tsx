@@ -596,7 +596,7 @@ const TREND_SECTIONS = [
 
 function MonthlyTrendsTab() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pt-2">
       <TabInsightsPanel items={trendsInsights} label="Jan" />
 
       <p className="text-xs" style={{ color: '#9CA3AF' }}>
@@ -694,7 +694,7 @@ function FullDataTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pt-2">
       <TabInsightsPanel items={dataInsights} label="Jan" />
 
       <div className="flex items-center justify-between">
