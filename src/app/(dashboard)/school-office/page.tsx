@@ -5,7 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import {
   UserMinus, AlertTriangle, CheckCircle2, Loader2,
   X, Plus, Phone, Mail, MessageSquare, ShieldAlert,
-  CalendarDays, Users, BookOpen, Bell, ChevronRight, UserPlus, MessageSquare, ShieldCheck,
+  CalendarDays, Users, BookOpen, Bell, ChevronRight, UserPlus, ShieldCheck, Brain,
 } from 'lucide-react'
 import { StatCard, PageShell, SectionCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
@@ -495,6 +495,11 @@ export default function SchoolOfficePage() {
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
           style={{ backgroundColor: 'rgba(13,148,136,0.08)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.2)' }}>
           <ShieldCheck size={12} /> DBS Tracker <ChevronRight size={11} />
+        </Link>
+        <Link href="/school-office/cover-work"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          style={{ backgroundColor: 'rgba(139,92,246,0.08)', color: '#A855F7', border: '1px solid rgba(139,92,246,0.2)' }}>
+          <Brain size={12} /> AI Cover Work <ChevronRight size={11} />
         </Link>
       </div>
 
