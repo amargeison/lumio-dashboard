@@ -97,8 +97,7 @@ function MorningAIPanel() {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
   return (
-    <div className="px-4 pt-3 sm:px-6">
-      <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
         <button
           className="flex w-full items-center justify-between px-5 py-4"
           style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }}
@@ -126,7 +125,6 @@ function MorningAIPanel() {
           </div>
         )}
       </div>
-    </div>
   )
 }
 
@@ -159,13 +157,13 @@ function HomeTab() {
   return (
     <div className="flex flex-col gap-6">
 
-      {/* Meetings + Morning Review */}
+      {/* Meetings + AI Summary */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <MeetingsToday />
         </div>
         <div>
-          <MorningReview />
+          <MorningAIPanel />
         </div>
       </div>
 
@@ -288,7 +286,9 @@ export default function OverviewPage() {
   return (
     <div className="flex flex-col">
       <PersonalBanner />
-      <MorningAIPanel />
+      <div className="px-4 pt-3 sm:px-6">
+        <MorningReview />
+      </div>
       <DailyTabs activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="px-4 py-4 sm:px-6">
         {activeTab === 'home'        && <HomeTab />}
