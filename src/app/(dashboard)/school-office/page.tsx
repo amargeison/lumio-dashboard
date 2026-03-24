@@ -5,7 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import {
   UserMinus, AlertTriangle, CheckCircle2, Loader2,
   X, Plus, Phone, Mail, MessageSquare, ShieldAlert,
-  CalendarDays, Users, BookOpen, Bell, ChevronRight, UserPlus, ShieldCheck, Brain, TrendingDown,
+  CalendarDays, Users, BookOpen, Bell, ChevronRight, UserPlus, ShieldCheck, Brain, TrendingDown, Sparkles,
 } from 'lucide-react'
 import { StatCard, PageShell, SectionCard } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
@@ -506,6 +506,11 @@ export default function SchoolOfficePage() {
           style={{ backgroundColor: 'rgba(245,158,11,0.08)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)' }}>
           <TrendingDown size={12} /> Persistent Absence <ChevronRight size={11} />
         </Link>
+        <Link href="/school-office/governor-report"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          style={{ backgroundColor: 'rgba(168,85,247,0.08)', color: '#A855F7', border: '1px solid rgba(168,85,247,0.2)' }}>
+          <Sparkles size={12} /> Governor Reports <ChevronRight size={11} />
+        </Link>
       </div>
 
       {/* Quick action */}
@@ -516,15 +521,23 @@ export default function SchoolOfficePage() {
             Daily attendance — log absences and trigger parent notifications
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
-          <Plus size={15} />
-          Log Absence
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/school-office/governor-report"
+            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+            style={{ backgroundColor: 'rgba(168,85,247,0.12)', color: '#A855F7', border: '1px solid rgba(168,85,247,0.25)' }}>
+            <Sparkles size={14} />
+            Generate Report
+          </Link>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
+            <Plus size={15} />
+            Log Absence
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
