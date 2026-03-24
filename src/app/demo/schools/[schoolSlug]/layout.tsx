@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Building2, Users, BookOpen, Heart,
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
-  Settings, Bell, Menu, X, Zap, GraduationCap, Sunrise,
+  Settings, Bell, Menu, X, Zap, GraduationCap, Sunrise, Network,
 } from 'lucide-react'
 
 const NAV = [
@@ -22,7 +22,8 @@ const NAV = [
   { section: null,          path: 'facilities',    label: 'Facilities',             icon: Wrench,          badge: null },
   { section: null,          path: 'admissions',    label: 'Admissions & Marketing', icon: UserPlus,        badge: null },
   { section: null,          path: 'safeguarding',  label: 'Safeguarding',           icon: Shield,          badge: 1    },
-  { section: 'Tools',       path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
+  { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
+  { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
   { section: null,          path: 'reports',       label: 'Reports',                icon: FileText,        badge: null },
   { section: null,          path: 'settings',      label: 'Settings',               icon: Settings,        badge: null },
 ]
