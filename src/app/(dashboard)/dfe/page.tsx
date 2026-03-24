@@ -130,6 +130,38 @@ const insights: Record<Month, string[]> = {
   ],
 }
 
+const deliveryInsights: string[] = [
+  '8,829 fully trained schools — 85.1% of those with active trainees',
+  'Training completion rate up 0.3% vs December baseline',
+  '1,364 schools with trainees not yet fully trained — priority cohort for the remainder of AY 2025/26',
+  'Resource pack distribution at 348 — 134% increase vs December baseline',
+  'Delivery pipeline on track for end-of-year targets across all training and assessment metrics',
+]
+
+const engagementInsights: string[] = [
+  '24,377 outreach emails sent in January — 189% month-on-month surge in targeted communications',
+  '2,111 schools showing active digital footprint (19.2% of registered schools)',
+  '2,318 schools spoken to by phone or meeting this academic year',
+  '10,266 schools contacted by email — 93.5% coverage of all registered schools',
+  'Follow-up assessments up 203% from December — 1,226 recorded in January alone',
+]
+
+const trendsInsights: string[] = [
+  'January strongest month of AY 2025/26 across all key metrics — positive trajectory maintained',
+  'MoU registrations peaked at 124 in January — highest monthly total this academic year',
+  'Pupil assessments crossed the 50,000 milestone for the first time (50,052 cumulative)',
+  'Consistent zero complaints across all 5 reported months — exceptional record at programme scale',
+  'Digital footprint growing steadily — 2,111 schools in January, 9.2% increase on December',
+]
+
+const dataInsights: string[] = [
+  'All 5 filed months show positive trajectory across core KPIs — no regressions recorded',
+  'Schools registered holding steady at 10,973 — only 28 closed or merged this academic year',
+  'Pupils assessed cumulative total: 50,052 as of January 31st 2026',
+  'Course completions at 76,567 — strong and sustained engagement with the FutureLearn training platform',
+  'Data complete for September 2025 – January 2026; February – July pending live programme submissions',
+]
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string { return n.toLocaleString('en-GB') }
@@ -361,6 +393,49 @@ function InsightsPanel({ month }: { month: Month }) {
   )
 }
 
+// ─── Tab Insights Panel ───────────────────────────────────────────────────────
+
+function TabInsightsPanel({ items, label }: { items: string[]; label: string }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
+      <button
+        className="flex w-full items-center justify-between px-5 py-4"
+        style={{
+          backgroundColor: 'rgba(108,63,197,0.08)',
+          borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined,
+        }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} style={{ color: '#6C3FC5' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
+            style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+            {label}
+          </span>
+        </div>
+        {open
+          ? <ChevronUp size={14} style={{ color: '#9CA3AF' }} />
+          : <ChevronDown size={14} style={{ color: '#9CA3AF' }} />}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          {items.map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+                {i + 1}
+              </span>
+              <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 function Toast({ onClose }: { onClose: () => void }) {
@@ -437,6 +512,8 @@ function DeliveryTab({ month }: { month: Month }) {
           </div>
         </DfeChartSection>
       </div>
+
+      <TabInsightsPanel items={deliveryInsights} label="Jan" />
     </div>
   )
 }
@@ -499,6 +576,8 @@ function EngagementTab({ month }: { month: Month }) {
           </div>
         </DfeChartSection>
       </div>
+
+      <TabInsightsPanel items={engagementInsights} label="Jan" />
     </div>
   )
 }
@@ -518,6 +597,8 @@ const TREND_SECTIONS = [
 function MonthlyTrendsTab() {
   return (
     <div className="flex flex-col gap-4">
+      <TabInsightsPanel items={trendsInsights} label="Jan" />
+
       <p className="text-xs" style={{ color: '#9CA3AF' }}>
         Colour coding: <span style={{ color: '#22C55E' }}>green</span> = favourable movement ·{' '}
         <span style={{ color: '#EF4444' }}>red</span> = unfavourable movement · grey = base month or no change
@@ -614,6 +695,8 @@ function FullDataTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabInsightsPanel items={dataInsights} label="Jan" />
+
       <div className="flex items-center justify-between">
         <p className="text-xs" style={{ color: '#9CA3AF' }}>
           All metrics · Academic Year 2025/26 · September 2025 – January 2026
