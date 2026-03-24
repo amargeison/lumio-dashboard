@@ -9,7 +9,7 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
   { label: 'Workflows',    href: '/product#workflows' },
-  { label: 'CRM',          href: '/lumio-crm',              badge: 'Soon' },
+  { label: 'CRM',          href: '/lumio-crm' },
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
   { label: 'About',        href: '/about'    },
