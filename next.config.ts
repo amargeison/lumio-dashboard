@@ -4,6 +4,14 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  headers: async () => [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+      ],
+    },
+  ],
 }
 
 export default withPWA({
