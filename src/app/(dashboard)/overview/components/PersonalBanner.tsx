@@ -215,20 +215,26 @@ function LiveClock() {
   )
 }
 
+const INITIAL_DATA: BriefingData = {
+  userName: 'Arron',
+  greeting: '',
+  date: '',
+  weather: { temp: '--', condition: 'Loading...', icon: '🌤️', location: 'Milton Keynes' },
+  todaySummary: { meetings: 0, tasks: 0, urgent: 0, emails: 0 },
+  motivationalLine: 'Ready to automate everything.',
+}
+
 export default function PersonalBanner() {
-  const [data, setData] = useState<BriefingData | null>(null)
+  const [data, setData] = useState<BriefingData>(() => ({
+    ...INITIAL_DATA,
+    greeting: getGreeting('Arron'),
+    date: formatDate(),
+  }))
   const [bgGradient] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
 
   useEffect(() => {
-    const fallback: BriefingData = {
-      userName: 'Arron',
-      greeting: getGreeting('Arron'),
-      date: formatDate(),
-      weather: { temp: '--', condition: 'Loading...', icon: '🌤️', location: 'Milton Keynes' },
-      todaySummary: { meetings: 0, tasks: 0, urgent: 0, emails: 0 },
-      motivationalLine: 'Ready to automate everything.',
-    }
+    const fallback: BriefingData = { ...INITIAL_DATA, greeting: getGreeting('Arron'), date: formatDate() }
     Promise.all([
       fetch('/api/home/briefing').then(r => r.json()).catch(() => ({})),
       fetch('/api/home/weather').then(r => r.json()).catch(() => ({})),
@@ -236,8 +242,6 @@ export default function PersonalBanner() {
       setData({ ...fallback, ...brief, weather: { ...fallback.weather, ...weather } })
     })
   }, [])
-
-  if (!data) return <div className="h-44 bg-gray-900 animate-pulse" />
 
   const weatherKey = Object.keys(WEATHER_ICONS).find(k =>
     data.weather.condition?.toLowerCase().includes(k)

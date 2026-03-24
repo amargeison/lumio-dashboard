@@ -115,7 +115,7 @@ function MorningAIPanel() {
             : <ChevronDown size={14} style={{ color: '#6C3FC5' }} />}
         </button>
         {open && (
-          <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
             {morningHighlights.map((item, i) => (
               <div key={i} className="flex gap-3">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
