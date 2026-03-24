@@ -1,10 +1,10 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState, useEffect } from 'react'
 import {
   Users, Shield, Calendar, FileText, Phone, UserPlus,
   AlertTriangle, CheckCircle2, Clock, Loader2, Sparkles,
-  TrendingUp, Activity,
+  TrendingUp, Activity, X, ChevronRight, Mail, Plus,
 } from 'lucide-react'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -109,12 +109,372 @@ function CardHeader({ title, action }: { title: string; action?: React.ReactNode
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const DEPARTMENTS = [
+  'School Office',
+  'HR & Staff',
+  'Curriculum',
+  'SEND & DSL',
+  'Finance',
+  'Facilities',
+  'Admissions',
+  'Safeguarding',
+]
+
+// ─── Onboarding Modal ─────────────────────────────────────────────────────────
+
+interface InviteRow {
+  email: string
+  role: string
+}
+
+function OnboardingModal({
+  slug,
+  onComplete,
+}: {
+  slug: string
+  onComplete: () => void
+}) {
+  const [step, setStep] = useState(1)
+  const [invites, setInvites] = useState<InviteRow[]>([{ email: '', role: 'teacher' }])
+  const [selectedDept, setSelectedDept] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+
+  function addInviteRow() {
+    if (invites.length >= 5) return
+    setInvites(prev => [...prev, { email: '', role: 'teacher' }])
+  }
+
+  function updateInvite(index: number, field: keyof InviteRow, value: string) {
+    setInvites(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
+  }
+
+  async function handleSendInvites() {
+    const validInvites = invites.filter(r => r.email.trim())
+    setSending(true)
+    try {
+      if (validInvites.length > 0) {
+        // Fire-and-forget; if the invite endpoint doesn't exist yet we skip silently
+        await fetch('/api/schools/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, invites: validInvites }),
+        }).catch(() => {/* endpoint may not exist yet */})
+      }
+    } finally {
+      setSending(false)
+      setStep(3)
+    }
+  }
+
+  function handleFinish() {
+    if (!selectedDept) return
+    onComplete()
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#111318',
+          border: '1px solid #1F2937',
+          borderRadius: '16px',
+          width: '100%',
+          maxWidth: '520px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Modal header bar */}
+        <div style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '0.05em', color: 'white' }}>Lumio for Schools</div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+              Step {step} of 3 — {step === 1 ? 'Your school' : step === 2 ? 'Invite team' : 'First department'}
+            </div>
+          </div>
+          {/* Step dots */}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {[1, 2, 3].map(n => (
+              <div
+                key={n}
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: n <= step ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.25)',
+                  transition: 'background-color 0.2s',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Step 1: School details ── */}
+        {step === 1 && (
+          <div style={{ padding: '32px 28px' }}>
+            <h2 style={{ color: '#F9FAFB', margin: '0 0 6px', fontSize: '22px', fontWeight: 700 }}>
+              Welcome to Lumio, {SCHOOL.name}! 👋
+            </h2>
+            <p style={{ color: '#6B7280', fontSize: '14px', margin: '0 0 28px', lineHeight: 1.6 }}>
+              Let&apos;s get your school set up in 3 steps.
+            </p>
+
+            {/* Pre-filled school info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+              {[
+                { label: 'School name', value: SCHOOL.name },
+                { label: 'Town', value: SCHOOL.town },
+                { label: 'Headteacher', value: SCHOOL.headteacher },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937', borderRadius: '10px', padding: '12px 16px' }}>
+                  <p style={{ color: '#6B7280', fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', margin: '0 0 2px', textTransform: 'uppercase' }}>{label}</p>
+                  <p style={{ color: '#F9FAFB', fontSize: '14px', margin: 0, fontWeight: 500 }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setStep(2)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '14px 20px',
+                background: 'linear-gradient(135deg,#0D9488,#0F766E)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Continue <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* ── Step 2: Invite team ── */}
+        {step === 2 && (
+          <div style={{ padding: '32px 28px' }}>
+            <h2 style={{ color: '#F9FAFB', margin: '0 0 6px', fontSize: '22px', fontWeight: 700 }}>
+              Invite your team
+            </h2>
+            <p style={{ color: '#6B7280', fontSize: '14px', margin: '0 0 24px', lineHeight: 1.6 }}>
+              Add colleagues who should have access to your school workspace.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              {invites.map((row, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Mail size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6B7280', pointerEvents: 'none' }} />
+                    <input
+                      type="email"
+                      placeholder="colleague@school.edu"
+                      value={row.email}
+                      onChange={e => updateInvite(i, 'email', e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid #1F2937',
+                        borderRadius: '10px',
+                        padding: '10px 12px 10px 36px',
+                        color: '#F9FAFB',
+                        fontSize: '13px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <select
+                    value={row.role}
+                    onChange={e => updateInvite(i, 'role', e.target.value)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid #1F2937',
+                      borderRadius: '10px',
+                      padding: '10px 10px',
+                      color: '#F9FAFB',
+                      fontSize: '12px',
+                      outline: 'none',
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="teacher">Teacher</option>
+                    <option value="headteacher">Headteacher</option>
+                    <option value="deputy">Deputy</option>
+                    <option value="business_manager">Business Mgr</option>
+                    <option value="office">Office</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            {invites.length < 5 && (
+              <button
+                onClick={addInviteRow}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#0D9488',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '0 0 20px',
+                }}
+              >
+                <Plus size={14} /> Add another
+              </button>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={handleSendInvites}
+                disabled={sending}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '14px 20px',
+                  background: sending ? 'rgba(13,148,136,0.4)' : 'linear-gradient(135deg,#0D9488,#0F766E)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  cursor: sending ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {sending ? <Loader2 size={16} className="animate-spin" /> : null}
+                Send invites &amp; continue →
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6B7280',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  textDecoration: 'underline',
+                }}
+              >
+                Skip for now →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 3: First department ── */}
+        {step === 3 && (
+          <div style={{ padding: '32px 28px' }}>
+            <h2 style={{ color: '#F9FAFB', margin: '0 0 6px', fontSize: '22px', fontWeight: 700 }}>
+              Which department do you want to set up first?
+            </h2>
+            <p style={{ color: '#6B7280', fontSize: '14px', margin: '0 0 24px', lineHeight: 1.6 }}>
+              You can always come back and configure others later.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
+              {DEPARTMENTS.map(dept => (
+                <button
+                  key={dept}
+                  onClick={() => setSelectedDept(dept)}
+                  style={{
+                    padding: '14px 12px',
+                    background: selectedDept === dept
+                      ? 'rgba(13,148,136,0.15)'
+                      : 'rgba(255,255,255,0.03)',
+                    border: selectedDept === dept
+                      ? '1px solid #0D9488'
+                      : '1px solid #1F2937',
+                    borderRadius: '10px',
+                    color: selectedDept === dept ? '#0D9488' : '#D1D5DB',
+                    fontSize: '13px',
+                    fontWeight: selectedDept === dept ? 700 : 500,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleFinish}
+              disabled={!selectedDept}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '14px 20px',
+                background: selectedDept ? 'linear-gradient(135deg,#0D9488,#0F766E)' : 'rgba(255,255,255,0.06)',
+                color: selectedDept ? 'white' : '#6B7280',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: selectedDept ? 'pointer' : 'not-allowed',
+                transition: 'all 0.15s',
+              }}
+            >
+              Let&apos;s go →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function SchoolDashboard({ params }: { params: Promise<{ schoolSlug: string }> }) {
   const { schoolSlug: _slug } = use(params)
   const attendanceAvg = Math.round(ATTENDANCE_BY_YEAR.reduce((s, y) => s + y.pct, 0) / ATTENDANCE_BY_YEAR.length * 10) / 10
   const staffIn = STAFF_TODAY.filter(s => s.status === 'in').length
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    const key = `lumio_onboarded_${_slug}`
+    if (!localStorage.getItem(key)) {
+      setShowOnboarding(true)
+    }
+  }, [_slug])
+
+  function completeOnboarding() {
+    localStorage.setItem(`lumio_onboarded_${_slug}`, 'true')
+    setShowOnboarding(false)
+  }
 
   return (
     <div className="space-y-6">
@@ -314,6 +674,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </Card>
 
       </div>
+
+      {/* ── Onboarding modal ────────────────────────────────────── */}
+      {showOnboarding && (
+        <OnboardingModal slug={_slug} onComplete={completeOnboarding} />
+      )}
+
     </div>
   )
 }
