@@ -8,6 +8,7 @@ import {
   TrendingUp, TrendingDown, Sparkles, BarChart3, Eye,
 } from 'lucide-react'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import { useHasDashboardData, DashboardEmptyState } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -511,6 +512,7 @@ function ScoreRing({ score, color, label }: { score: number; color: string; labe
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CompetitorWatchPage() {
+  const hasData = useHasDashboardData('strategy')
   const [tab, setTab]                       = useState<'overview' | 'signals' | 'jobs'>('overview')
   const [scanning, setScanning]             = useState(false)
   const [lastScanned]                       = useState('Today at 06:00')
@@ -525,6 +527,9 @@ export default function CompetitorWatchPage() {
     if (competitorFilter !== 'All' && s.competitor !== competitorFilter) return false
     return true
   })
+
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="strategy" />
 
   async function runScan() {
     setScanning(true)

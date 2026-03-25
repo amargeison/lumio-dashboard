@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 import SchoolBanner from './components/SchoolBanner'
-import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
+import MorningReview from '@/app/(dashboard)/overview/components/MorningReview'
 
 // ─── Demo seed data ───────────────────────────────────────────────────────────
 
@@ -111,7 +111,6 @@ export default function DemoSchoolOverviewPage() {
   return (
     <div className="space-y-6">
 
-      <ClearDemoBar />
       <SchoolBanner
         schoolName={SCHOOL.name}
         headteacher={SCHOOL.headteacher}
@@ -135,6 +134,8 @@ export default function DemoSchoolOverviewPage() {
           Review now
         </button>
       </div>
+
+      <MorningReview />
 
       {/* AI Briefing */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

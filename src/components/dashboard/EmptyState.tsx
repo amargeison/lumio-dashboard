@@ -79,7 +79,12 @@ export function DashboardEmptyState({
     setLoading(true)
     showToast('Loading demo data...')
     await new Promise(r => setTimeout(r, 1200))
-    localStorage.setItem(storageKey(), 'true')
+    const ALL_PAGES = [
+      'overview','crm','sales','marketing','projects','hr','partners',
+      'finance','insights','workflows','strategy','reports','settings',
+      'inbox','calendar','analytics',
+    ]
+    ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     localStorage.setItem('lumio_demo_active', 'true')
     window.location.reload()
   }
@@ -109,10 +114,14 @@ export function DashboardEmptyState({
             <div key={btn.key}>
               <input
                 type="file"
+                multiple
                 accept={btn.accept ?? '.csv,.xlsx,.xls'}
                 className="hidden"
                 ref={el => { fileRefs.current[btn.key] = el }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(btn.key, f) }}
+                onChange={e => {
+                  const files = e.target.files
+                  if (files && files.length > 0) handleFile(btn.key, files[0])
+                }}
               />
               <button
                 onClick={() => fileRefs.current[btn.key]?.click()}
@@ -249,6 +258,15 @@ export function useHasDashboardData(pageKey: string): boolean | null {
   const [has, setHas] = useState<boolean | null>(null)
   useEffect(() => {
     setHas(localStorage.getItem(`lumio_dashboard_${pageKey}_hasData`) === 'true')
+  }, [pageKey])
+  return has
+}
+
+// Hook to check if a school page has data
+export function useHasSchoolData(pageKey: string): boolean | null {
+  const [has, setHas] = useState<boolean | null>(null)
+  useEffect(() => {
+    setHas(localStorage.getItem(`lumio_school_${pageKey}_hasData`) === 'true')
   }, [pageKey])
   return has
 }
