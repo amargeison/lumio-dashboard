@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
+import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -15,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="min-h-screen pt-16 md:pl-[200px]"
         style={{ backgroundColor: '#07080F' }}
       >
+        <ClearDemoBar />
         <div className="p-4 md:p-6">
           {children}
         </div>
