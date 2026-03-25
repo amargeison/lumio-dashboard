@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { PageShell, StatCard, QuickActions, Badge } from '@/components/page-ui'
 import { parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -905,6 +906,18 @@ function SequencesTab() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
+  const hasData = useHasDashboardData('crm')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="crm"
+    title="No CRM data yet"
+    description="Add your contacts, companies and deals to activate the CRM. Import from HubSpot, Salesforce or upload a CSV — your pipeline will be ready in seconds."
+    uploads={[
+      { key: 'contacts', label: 'Upload Contacts (CSV)' },
+      { key: 'companies', label: 'Upload Companies (CSV)' },
+      { key: 'deals', label: 'Upload Deals & Pipeline (CSV)' },
+    ]}
+  />
+
   const [tab, setTab]                     = useState<Tab>('Overview')
   const [showNewContact, setShowNewContact] = useState(false)
   const [showNewDeal,    setShowNewDeal]    = useState(false)

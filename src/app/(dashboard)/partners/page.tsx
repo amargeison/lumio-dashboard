@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { StatCard, Badge, SectionCard, PageShell } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 
@@ -580,6 +581,17 @@ const HARDCODED_PARTNERS: HardcodedPartner[] = ['DfE', 'Really Great Reading', '
 const MAX_ADDED = 3
 
 export default function PartnersPage() {
+  const hasData = useHasDashboardData('partners')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="partners"
+    title="No partner data yet"
+    description="Add your agency, reseller and referral partners to activate the Partners module. Track deals, commissions and co-marketing activity."
+    uploads={[
+      { key: 'partners', label: 'Upload Partner List (CSV)' },
+      { key: 'deals', label: 'Upload Partner Deals (CSV)' },
+    ]}
+  />
+
   const supabase = useSupabase()
   const [hardcoded, setHardcoded]   = useState<HardcodedPartner>('DfE')
   const [added, setAdded]           = useState<AddedPartner[]>([])

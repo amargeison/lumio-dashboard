@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Open Purchase Orders',    value: '14',     trend: '+3',   trendDir: 'up'   as const, trendGood: false, icon: Package,     sub: 'vs last week'   },
@@ -52,6 +53,17 @@ const upcoming = [
 ]
 
 export default function OperationsPage() {
+  const hasData = useHasDashboardData('operations')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="operations"
+    title="No operations data yet"
+    description="Upload your process documentation, FAQ library and operational data to activate the Operations module."
+    uploads={[
+      { key: 'processes', label: 'Upload Process Docs (CSV)' },
+      { key: 'faq', label: 'Upload FAQ Library (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>

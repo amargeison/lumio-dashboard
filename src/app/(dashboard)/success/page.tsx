@@ -3,6 +3,7 @@
 import { Users, Activity, Send, FileText, AlertCircle } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Total Customers', value: '181', trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
@@ -72,6 +73,17 @@ const immediate = [
 ]
 
 export default function SuccessPage() {
+  const hasData = useHasDashboardData('success')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="success"
+    title="No customer success data yet"
+    description="Upload your customer health data, renewal pipeline and success playbooks to activate the Customer Success module."
+    uploads={[
+      { key: 'health', label: 'Upload Customer Health Data (CSV)' },
+      { key: 'renewals', label: 'Upload Renewal Pipeline (CSV)' },
+    ]}
+  />
+
   const grouped = (['green', 'amber', 'red'] as RAG[]).map((rag) => ({
     rag,
     items: customers.filter((c) => c.rag === rag),

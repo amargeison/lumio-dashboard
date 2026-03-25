@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Bell, Menu } from 'lucide-react'
 
@@ -24,6 +25,11 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname()
   const title = pageTitles[pathname] ?? 'Lumio'
+  const [initials, setInitials] = useState('AM')
+  useEffect(() => {
+    const stored = localStorage.getItem('lumio_company_initials')
+    if (stored) setInitials(stored)
+  }, [])
 
   return (
     <header
@@ -101,9 +107,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
             className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"
             style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
           >
-            A
+            {initials}
           </div>
-          <span className="hidden sm:block">Arron</span>
+          <span className="hidden sm:block">{initials}</span>
         </button>
       </div>
     </header>

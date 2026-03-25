@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,16 @@ function RunButton({ status, onClick }: { status: RunStatus; onClick: () => void
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WorkflowsPage() {
+  const hasData = useHasDashboardData('workflows')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="workflows"
+    title="No workflows configured yet"
+    description="Lumio Workflows automates your repetitive tasks. Browse the template library and activate your first workflow to get started."
+    uploads={[
+      { key: 'workflows', label: 'Import Workflow Config (JSON)', accept: '.json' },
+    ]}
+  />
+
   const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
 
   async function runWorkflow(name: string, route: string) {

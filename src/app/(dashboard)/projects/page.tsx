@@ -6,6 +6,7 @@ import {
   Calendar, Target, Star, Filter, Search, X, MoreHorizontal,
   ArrowUp, ArrowDown, Minus, Play, Pause, Circle
 } from 'lucide-react'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Status = 'backlog' | 'todo' | 'in-progress' | 'review' | 'done' | 'blocked'
@@ -813,6 +814,17 @@ const TABS = [
 ]
 
 export default function ProjectsPage() {
+  const hasData = useHasDashboardData('projects')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="projects"
+    title="No project data yet"
+    description="Create your first project or import your existing project data to activate the Project Management module with kanban, sprints and OKRs."
+    uploads={[
+      { key: 'projects', label: 'Upload Projects (CSV)' },
+      { key: 'tasks', label: 'Upload Tasks (CSV)' },
+    ]}
+  />
+
   const [tab, setTab] = useState('overview')
 
   return (

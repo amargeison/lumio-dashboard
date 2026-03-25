@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Social Posts This Month', value: '24',    trend: '+6%',  trendDir: 'up' as const, trendGood: true, icon: Megaphone,  sub: 'vs last month'  },
@@ -66,6 +67,18 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 }
 
 export default function MarketingPage() {
+  const hasData = useHasDashboardData('marketing')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="marketing"
+    title="No marketing data yet"
+    description="Connect your marketing tools or upload campaign data to activate the Marketing module with analytics, campaign tracking and lead attribution."
+    uploads={[
+      { key: 'campaigns', label: 'Upload Campaign Data (CSV)' },
+      { key: 'leads', label: 'Upload Lead Data (CSV)' },
+      { key: 'analytics', label: 'Upload Web Analytics (CSV)' },
+    ]}
+  />
+
   const [country,  setCountry]  = useState('All Countries')
   const [product,  setProduct]  = useState('All Products')
   const [district, setDistrict] = useState('All Districts')

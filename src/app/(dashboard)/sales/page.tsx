@@ -3,6 +3,7 @@
 import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Open Deals',       value: '34',    trend: '+8%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
@@ -56,6 +57,18 @@ const highlights = [
 ]
 
 export default function SalesPage() {
+  const hasData = useHasDashboardData('sales')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="sales"
+    title="No sales data yet"
+    description="Import your deal pipeline, revenue data and sales activity to unlock the Sales dashboard with forecasting, leaderboard and conversion analytics."
+    uploads={[
+      { key: 'pipeline', label: 'Upload Sales Pipeline (CSV)' },
+      { key: 'revenue', label: 'Upload Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
+      { key: 'targets', label: 'Upload Sales Targets (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>

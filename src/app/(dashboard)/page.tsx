@@ -33,6 +33,7 @@ import DailyTasks from './overview/components/DailyTasks'
 import Insights from './overview/components/Insights'
 import NotToMiss from './overview/components/NotToMiss'
 import TeamPanel from './overview/components/TeamPanel'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -332,6 +333,18 @@ function HomeTab() {
 type Tab = 'home' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
 
 export default function OverviewPage() {
+  const hasData = useHasDashboardData('overview')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="overview"
+    title="Welcome to Lumio — Let's get you set up"
+    description="Your workspace is ready. Start by adding your company data, connecting your tools, or exploring with demo data."
+    uploads={[
+      { key: 'contacts', label: 'Upload Contacts & CRM Data (CSV)' },
+      { key: 'team', label: 'Upload Team Roster (CSV)' },
+      { key: 'revenue', label: 'Upload Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
+    ]}
+  />
+
   const [activeTab, setActiveTab] = useState<Tab>('home')
 
   return (

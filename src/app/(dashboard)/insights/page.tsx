@@ -9,6 +9,7 @@ import {
 import { StatCard, SectionCard, Badge, PageShell } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Types & helpers ──────────────────────────────────────────────────────────
 
@@ -604,6 +605,17 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InsightsPage() {
+  const hasData = useHasDashboardData('insights')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="insights"
+    title="Add data to unlock Insights"
+    description="Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard."
+    uploads={[
+      { key: 'data', label: 'Upload Business Data (CSV)' },
+      { key: 'metrics', label: 'Upload Key Metrics (CSV/XLSX)', accept: '.csv,.xlsx' },
+    ]}
+  />
+
   const [role,     setRole]     = useState<Role>('Director')
   const [region,   setRegion]   = useState('All Regions')
   const [country,  setCountry]  = useState('All Countries')

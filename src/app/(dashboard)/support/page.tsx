@@ -3,6 +3,7 @@
 import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Open Tickets',      value: '18',   trend: '+5%',  trendDir: 'up'   as const, trendGood: false, icon: Headphones,   sub: 'vs last week'   },
@@ -50,6 +51,17 @@ const ops = [
 ]
 
 export default function SupportPage() {
+  const hasData = useHasDashboardData('support')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="support"
+    title="No support data yet"
+    description="Upload your support tickets, customer contacts and SLA data to activate the Support module with ticket management and response tracking."
+    uploads={[
+      { key: 'tickets', label: 'Upload Support Tickets (CSV)' },
+      { key: 'contacts', label: 'Upload Customer Contacts (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>

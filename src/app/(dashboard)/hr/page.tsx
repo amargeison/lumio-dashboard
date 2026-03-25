@@ -12,6 +12,7 @@ import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/L
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -89,6 +90,18 @@ function formatStartDate(iso: string): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HRPage() {
+  const hasData = useHasDashboardData('hr')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="hr"
+    title="No HR data yet"
+    description="Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure."
+    uploads={[
+      { key: 'people', label: 'Upload Team Roster (CSV)' },
+      { key: 'org', label: 'Upload Org Chart (CSV)' },
+      { key: 'absences', label: 'Upload Absence Records (CSV)' },
+    ]}
+  />
+
   const router = useRouter()
 
   const [showModal,       setShowModal]       = useState(false)

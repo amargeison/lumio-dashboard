@@ -3,6 +3,7 @@
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Outstanding Invoices', value: '£84,200', trend: '+£12k', trendDir: 'up'   as const, trendGood: false, icon: Receipt,    sub: 'vs last month' },
@@ -48,6 +49,18 @@ const revenueSummary = [
 ]
 
 export default function AccountsPage() {
+  const hasData = useHasDashboardData('accounts')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="accounts"
+    title="No accounts data yet"
+    description="Upload your customer accounts, ARR data and contract information to activate the Accounts module."
+    uploads={[
+      { key: 'accounts', label: 'Upload Customer Accounts (CSV)' },
+      { key: 'revenue', label: 'Upload ARR / Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
+      { key: 'contracts', label: 'Upload Contracts (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>

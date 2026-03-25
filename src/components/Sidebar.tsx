@@ -1,6 +1,7 @@
 // updated: March 24 2026
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -60,6 +61,11 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const [companyName, setCompanyName] = useState('Lumio')
+  useEffect(() => {
+    const stored = localStorage.getItem('lumio_company_name')
+    if (stored) setCompanyName(stored)
+  }, [])
 
   return (
     <>
@@ -87,7 +93,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         >
           <Image
             src="/lumio-transparent-new.png"
-            alt="Lumio"
+            alt={companyName}
             width={360}
             height={180}
             style={{ width: '180px', height: 'auto', objectFit: 'contain' }}
@@ -153,12 +159,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Footer */}
-        <div
-          className="shrink-0 px-6 py-3 text-xs"
-          style={{ borderTop: '1px solid #1F2937', color: '#9CA3AF' }}
-        >
-          Lumio v0.1
+        {/* Buy CTA */}
+        <div className="p-4 mt-auto border-t border-[#1F2937]">
+          <Link href="/buy"
+            className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-bold transition-all"
+            style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)', color: '#F9FAFB' }}>
+            ✦ Buy Lumio
+          </Link>
+          <p className="text-xs text-center mt-2" style={{ color: '#4B5563' }}>14-day free trial · From £49/mo</p>
         </div>
       </aside>
     </>

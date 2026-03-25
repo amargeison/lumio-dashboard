@@ -3,6 +3,7 @@
 import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Active Trials',           value: '23',  trend: '0',    trendDir: 'up'   as const, trendGood: true,  icon: FlaskConical, sub: 'vs last week'  },
@@ -57,6 +58,17 @@ const opportunities = [
 ]
 
 export default function TrialsPage() {
+  const hasData = useHasDashboardData('trials')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="trials"
+    title="No trial data yet"
+    description="Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline."
+    uploads={[
+      { key: 'trials', label: 'Upload Trial Signups (CSV)' },
+      { key: 'onboarding', label: 'Upload Onboarding Data (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>

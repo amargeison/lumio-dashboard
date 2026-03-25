@@ -3,6 +3,7 @@
 import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 const stats = [
   { label: 'Open IT Requests',       value: '12',  trend: '+3',  trendDir: 'up'   as const, trendGood: false, icon: Server,  sub: 'vs last week'   },
@@ -50,6 +51,17 @@ const licences = [
 ]
 
 export default function ITPage() {
+  const hasData = useHasDashboardData('it')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="it"
+    title="No IT data yet"
+    description="Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking."
+    uploads={[
+      { key: 'systems', label: 'Upload Systems Inventory (CSV)' },
+      { key: 'assets', label: 'Upload Asset Register (CSV)' },
+    ]}
+  />
+
   return (
     <PageShell>
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
