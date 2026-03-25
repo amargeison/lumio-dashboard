@@ -118,6 +118,8 @@ function RunButton({ status, onClick }: { status: RunStatus; onClick: () => void
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WorkflowsPage() {
+  const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
+
   const hasData = useHasDashboardData('workflows')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="workflows"
@@ -127,8 +129,6 @@ export default function WorkflowsPage() {
       { key: 'workflows', label: 'Import Workflow Config (JSON)', accept: '.json' },
     ]}
   />
-
-  const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
 
   async function runWorkflow(name: string, route: string) {
     setRunStatus(s => ({ ...s, [name]: 'running' }))

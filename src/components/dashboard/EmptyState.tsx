@@ -38,12 +38,14 @@ export function DashboardEmptyState({
   const [loading, setLoading] = useState(false)
   const [intModal, setIntModal] = useState(false)
   const [showDevButton, setShowDevButton] = useState(false)
+  const [showClearDemo, setShowClearDemo] = useState(false)
 
   useEffect(() => {
     setShowDevButton(
       process.env.NODE_ENV === 'development' ||
       window.location.hostname.includes('vercel.app')
     )
+    setShowClearDemo(localStorage.getItem('lumio_demo_active') === 'true')
   }, [])
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
@@ -62,6 +64,14 @@ export function DashboardEmptyState({
     showToast('Data imported successfully! Loading your portal...')
     await new Promise(r => setTimeout(r, 700))
     localStorage.setItem(storageKey(), 'true')
+    window.location.reload()
+  }
+
+  function clearDemoData() {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('lumio_demo_'))
+      .forEach(k => localStorage.removeItem(k))
+    localStorage.setItem('lumio_demo_active', 'false')
     window.location.reload()
   }
 
@@ -126,6 +136,18 @@ export function DashboardEmptyState({
             Connect an Integration (HubSpot, Xero, Slack + more)
           </button>
         </div>
+
+        {/* Clear demo data */}
+        {showClearDemo && (
+          <button
+            onClick={clearDemoData}
+            className="text-xs mt-1 mb-3"
+            style={{ color: '#4B5563' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#9CA3AF' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#4B5563' }}>
+            ✕ Clear demo data
+          </button>
+        )}
 
         {/* Divider */}
         <div className="flex items-center gap-3 w-full mb-4">

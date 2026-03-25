@@ -67,6 +67,11 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 }
 
 export default function MarketingPage() {
+  const [country,  setCountry]  = useState('All Countries')
+  const [product,  setProduct]  = useState('All Products')
+  const [district, setDistrict] = useState('All Districts')
+  const [trust,    setTrust]    = useState('All Trusts')
+
   const hasData = useHasDashboardData('marketing')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="marketing"
@@ -78,11 +83,6 @@ export default function MarketingPage() {
       { key: 'analytics', label: 'Upload Web Analytics (CSV)' },
     ]}
   />
-
-  const [country,  setCountry]  = useState('All Countries')
-  const [product,  setProduct]  = useState('All Products')
-  const [district, setDistrict] = useState('All Districts')
-  const [trust,    setTrust]    = useState('All Trusts')
 
   const isFiltered = country !== 'All Countries' || product !== 'All Products' ||
                      district !== 'All Districts' || trust !== 'All Trusts'
