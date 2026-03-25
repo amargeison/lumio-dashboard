@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 
@@ -35,6 +36,17 @@ function Nav() {
   const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
+  const pathname = usePathname()
+  const isSchools = pathname?.startsWith('/schools') ?? false
+
+  const navLinks = NAV_LINKS
+    .filter(l => !(isSchools && l.label === 'CRM'))
+    .map(l => {
+      if (!isSchools) return l
+      if (l.label === 'Pricing')   return { ...l, href: '/schools/pricing' }
+      if (l.label === 'Workflows') return { ...l, href: '/schools/workflows' }
+      return l
+    })
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8)
@@ -61,7 +73,7 @@ function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map(l => (
+          {navLinks.map(l => (
             <Link key={l.label} href={l.href}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-base font-semibold transition-colors"
               style={{ color: '#9CA3AF' }}
@@ -114,7 +126,7 @@ function Nav() {
       {mobileOpen && (
         <div className="md:hidden border-t px-6 py-4 flex flex-col gap-4"
           style={{ backgroundColor: '#07080F', borderColor: '#1F2937' }}>
-          {NAV_LINKS.map(l => (
+          {navLinks.map(l => (
             <Link key={l.label} href={l.href} onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
               {l.label}
