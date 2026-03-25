@@ -35,7 +35,7 @@ const navItems: {
   badge: number | null
   accent?: string
 }[] = [
-  { label: 'Overview',          href: '/',            icon: LayoutDashboard, badge: null },
+  { label: 'Overview',          href: '/overview',    icon: LayoutDashboard, badge: null },
   { label: 'Insights',          href: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
   { label: 'Partners',          href: '/partners',    icon: Handshake,       badge: null },
   { label: 'HR & People',       href: '/hr',          icon: Users,           badge: 3    },
@@ -114,7 +114,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-3">
           {navItems.map(({ label, href, icon: Icon, badge, accent }) => {
-            const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
+            const isActive = pathname.startsWith(href)
             const activeColor = accent ?? '#0D9488'
             const hoverBg = accent ? `${accent}1a` : '#111318'
 

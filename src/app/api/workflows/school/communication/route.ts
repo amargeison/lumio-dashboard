@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nWebhook } from '@/lib/n8n'
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>
@@ -77,8 +78,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Fire n8n webhook for email (via Resend) and/or SMS
-  const emailWebhookUrl = process.env.N8N_SCHOOL_COMMS_EMAIL_WEBHOOK_URL
-  const smsWebhookUrl   = process.env.N8N_SCHOOL_COMMS_SMS_WEBHOOK_URL
+  const emailWebhookUrl = n8nWebhook('school-comms-email')
+  const smsWebhookUrl   = n8nWebhook('school-comms-sms')
 
   const webhookPayload = {
     id: savedId,

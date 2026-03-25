@@ -25,41 +25,42 @@ export async function POST(req: NextRequest) {
     // Check for existing demo tenant for this email
     const { data: existing } = await supabase
       .from('demo_tenants')
-      .select('id, slug, status')
+      .select('id, slug, status, company_name')
       .eq('owner_email', email.toLowerCase())
       .not('status', 'eq', 'deleted')
       .maybeSingle()
 
-    let slug: string
-    let isNew = true
-
     if (existing) {
-      slug = existing.slug
-      isNew = false
-    } else {
-      // Generate URL-safe slug
-      const base = company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      const suffix = Math.random().toString(36).slice(2, 6)
-      slug = `${base}-${suffix}`
+      return NextResponse.json({
+        success: false,
+        already_exists: true,
+        slug: existing.slug,
+        company_name: existing.company_name,
+      }, { status: 200 })
+    }
 
-      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    // Generate URL-safe slug
+    const base = company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const suffix = Math.random().toString(36).slice(2, 6)
+    const slug = `${base}-${suffix}`
 
-      const { error } = await supabase.from('demo_tenants').insert({
-        slug,
-        company_name,
-        owner_email: email.toLowerCase(),
-        owner_name: name,
-        gdpr_consent: true,
-        marketing_consent: !!marketing_consent,
-        gdpr_consent_at: new Date().toISOString(),
-        expires_at: expiresAt,
-        status: 'pending_onboarding',
-      })
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
 
-      if (error) {
-        console.error('Tenant creation error:', error)
-        return NextResponse.json({ error: 'Failed to create workspace' }, { status: 500 })
-      }
+    const { error: insertError } = await supabase.from('demo_tenants').insert({
+      slug,
+      company_name,
+      owner_email: email.toLowerCase(),
+      owner_name: name,
+      gdpr_consent: true,
+      marketing_consent: !!marketing_consent,
+      gdpr_consent_at: new Date().toISOString(),
+      expires_at: expiresAt,
+      status: 'pending_onboarding',
+    })
+
+    if (insertError) {
+      console.error('Tenant creation error:', insertError)
+      return NextResponse.json({ error: 'Failed to create workspace' }, { status: 500 })
     }
 
     // Generate 6-digit OTP code (10-minute expiry)
@@ -74,15 +75,15 @@ export async function POST(req: NextRequest) {
       .eq('used', false)
     if (invalidateError) console.warn('[demo/signup] invalidate error (non-fatal):', invalidateError)
 
-    const { error: insertError } = await supabase.from('demo_magic_links').insert({
+    const { error: otpInsertError } = await supabase.from('demo_magic_links').insert({
       email: email.toLowerCase(),
       slug,
       token: code,
       expires_at: tokenExpiry,
       used: false,
     })
-    if (insertError) {
-      console.error('[demo/signup] FAILED to insert OTP code:', insertError)
+    if (otpInsertError) {
+      console.error('[demo/signup] FAILED to insert OTP code:', otpInsertError)
       return NextResponse.json({ error: 'Failed to store verification code — please try again.' }, { status: 500 })
     }
     console.log('[demo/signup] OTP code inserted OK — code:', code, '| slug:', slug)
@@ -91,9 +92,7 @@ export async function POST(req: NextRequest) {
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
-      subject: isNew
-        ? `Your Lumio demo code: ${code}`
-        : `Your Lumio sign-in code: ${code}`,
+      subject: `Your Lumio demo code: ${code}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -104,10 +103,10 @@ export async function POST(req: NextRequest) {
             </div>
             <div style="padding:32px;">
               <h2 style="color:white;margin:0 0 8px;font-size:22px;">
-                ${isNew ? 'Your demo workspace is ready' : 'Sign back in to Lumio'}
+                Your demo workspace is ready
               </h2>
               <p style="color:rgba(255,255,255,0.5);font-size:14px;line-height:1.6;margin:0 0 24px;">
-                Hi ${name}, enter this 6-digit code to ${isNew ? 'set up and enter' : 'enter'} your Lumio demo workspace. It expires in 10 minutes.
+                Hi ${name}, enter this 6-digit code to set up and enter your Lumio demo workspace. It expires in 10 minutes.
               </p>
               <div style="background:rgba(124,58,237,0.15);border:2px solid #7C3AED;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px;">
                 <p style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;letter-spacing:0.15em;margin:0 0 8px;">YOUR CODE</p>
@@ -143,7 +142,7 @@ export async function POST(req: NextRequest) {
     }
     console.log('[demo/signup] Email sent successfully, id:', emailData?.id)
 
-    return NextResponse.json({ success: true, slug, is_new: isNew })
+    return NextResponse.json({ success: true, slug, is_new: true })
   } catch (err) {
     console.error('Demo signup error:', err)
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })

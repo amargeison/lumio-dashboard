@@ -226,25 +226,6 @@ function HomeTab() {
         </div>
       </ChartSection>
 
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-3 rounded-xl p-4"
-        style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="w-full text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>
-          Quick Actions
-        </p>
-        {quickActions.map(({ label, icon: Icon, href }) => (
-          <a key={label} href={href}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}
-          >
-            <Icon size={15} strokeWidth={2} />
-            {label}
-          </a>
-        ))}
-      </div>
-
       {/* Feed + RAG */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
@@ -354,6 +335,25 @@ export default function OverviewPage() {
         <MorningReview />
       </div>
       <DailyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="px-4 pt-3 pb-0 sm:px-6">
+        <div className="flex flex-wrap gap-3 rounded-xl p-4"
+          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="w-full text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>
+            Quick Actions
+          </p>
+          {quickActions.map(({ label, icon: Icon, href }) => (
+            <a key={label} href={href}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}
+            >
+              <Icon size={15} strokeWidth={2} />
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
       <div className="px-4 py-4 sm:px-6">
         {activeTab === 'home'        && <HomeTab />}
         {activeTab === 'quick-wins'  && <QuickWins />}

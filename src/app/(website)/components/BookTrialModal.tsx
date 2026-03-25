@@ -14,6 +14,8 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
   const [form, setForm]       = useState({ name: '', email: '', company: '', gdpr: false })
   const [digits, setDigits]   = useState(['', '', '', '', '', ''])
   const [resendCountdown, setResendCountdown] = useState(0)
+  const [verified, setVerified] = useState(false)
+  const [alreadyExists, setAlreadyExists] = useState<{ slug: string; companyName: string } | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   function set(k: keyof typeof form, v: string | boolean) {
@@ -41,6 +43,11 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error || 'Something went wrong. Please try again.')
+      }
+      const data = await res.json()
+      if (data.already_exists) {
+        setAlreadyExists({ slug: data.slug, companyName: data.company_name })
+        return
       }
       setDigits(['', '', '', '', '', ''])
       setStep('otp')
@@ -104,7 +111,8 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
       const dest = data.is_new_user
         ? '/demo/onboarding'
         : `/demo/${data.company.slug}`
-      router.push(dest)
+      setVerified(true)
+      setTimeout(() => router.push(dest), 1500)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -136,10 +144,12 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between p-6" style={{ borderBottom: '1px solid #1F2937' }}>
           <div>
             <h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>
-              {step === 'form' ? 'Start your free trial' : 'Check your email'}
+              {alreadyExists ? 'Active trial found' : step === 'form' ? 'Start your free trial' : 'Check your email'}
             </h2>
             <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>
-              {step === 'form'
+              {alreadyExists
+                ? `Workspace: ${alreadyExists.companyName}`
+                : step === 'form'
                 ? '14 days free. No credit card. Auto-deleted after.'
                 : `We sent a 6-digit code to ${form.email}`}
             </p>
@@ -152,6 +162,32 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        {/* ── Already exists ── */}
+        {alreadyExists ? (
+          <div className="space-y-4 text-center px-6 py-8">
+            <div className="text-3xl">👋</div>
+            <h3 className="text-lg font-semibold" style={{ color: '#F9FAFB' }}>You already have an active trial</h3>
+            <p className="text-sm" style={{ color: '#9CA3AF' }}>
+              We found an existing trial workspace for{' '}
+              <span className="font-medium" style={{ color: '#F9FAFB' }}>{alreadyExists.companyName}</span>.
+            </p>
+            <div className="rounded-lg p-3 text-sm font-mono break-all"
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#0D9488' }}>
+              lumiocms.com/demo/{alreadyExists.slug}
+            </div>
+            <a href={`/demo/${alreadyExists.slug}`}
+              className="block w-full py-3 px-4 rounded-lg text-sm font-semibold text-center transition-colors"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+              Go to my trial workspace →
+            </a>
+            <button onClick={() => setAlreadyExists(null)}
+              className="text-xs underline transition-colors"
+              style={{ color: '#6B7280' }}>
+              That&apos;s not me — use a different email
+            </button>
+          </div>
+        ) : (
+        <>
         {/* ── Step 1: Sign-up form ── */}
         {step === 'form' && (
           <form onSubmit={submit} className="p-6 space-y-4">
@@ -229,54 +265,71 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
         {/* ── Step 2: OTP entry ── */}
         {step === 'otp' && (
           <div className="p-6 space-y-5">
-            <div className="flex justify-center gap-2" onPaste={handlePaste}>
-              {digits.map((d, i) => (
-                <input
-                  key={i}
-                  ref={el => { inputRefs.current[i] = el }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={d}
-                  onChange={e => handleDigitChange(i, e.target.value)}
-                  onKeyDown={e => handleDigitKeyDown(i, e)}
-                  className="w-11 h-14 text-center text-xl font-bold rounded-xl transition-colors caret-transparent"
-                  style={{
-                    backgroundColor: '#07080F',
-                    border: '1px solid #1F2937',
-                    color: '#F9FAFB',
-                    outline: 'none',
-                  }}
-                  onFocus={e => (e.currentTarget.style.borderColor = '#7C3AED')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#1F2937')}
-                />
-              ))}
-            </div>
 
-            {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+            {/* ── Verified success screen ── */}
+            {verified ? (
+              <div className="flex flex-col items-center justify-center py-6 space-y-3 text-center">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(13,148,136,0.12)' }}>
+                  <span style={{ color: '#0D9488', fontSize: 28 }}>✓</span>
+                </div>
+                <h3 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>You&apos;re in!</h3>
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>Setting up your workspace…</p>
+              </div>
+            ) : (
+            <>
+              <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                {digits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={el => { inputRefs.current[i] = el }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={e => handleDigitChange(i, e.target.value)}
+                    onKeyDown={e => handleDigitKeyDown(i, e)}
+                    className="w-11 h-14 text-center text-xl font-bold rounded-xl transition-colors caret-transparent"
+                    style={{
+                      backgroundColor: '#07080F',
+                      border: '1px solid #1F2937',
+                      color: '#F9FAFB',
+                      outline: 'none',
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = '#7C3AED')}
+                    onBlur={e => (e.currentTarget.style.borderColor = '#1F2937')}
+                  />
+                ))}
+              </div>
 
-            <button
-              onClick={handleVerify}
-              disabled={verifying || digits.join('').length < 6}
-              className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity"
-              style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: (verifying || digits.join('').length < 6) ? 0.5 : 1 }}>
-              {verifying ? '⏳ Verifying…' : 'Verify code'}
-            </button>
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-            <div className="text-center text-xs space-x-2">
-              {resendCountdown > 0 ? (
-                <span style={{ color: '#6B7280' }}>Resend code in {resendCountdown}s</span>
-              ) : (
-                <button onClick={handleResend} className="underline" style={{ color: '#9CA3AF' }}>
-                  Resend code
-                </button>
-              )}
-              <span style={{ color: '#374151' }}>·</span>
-              <button onClick={() => { setStep('form'); setError('') }} className="underline" style={{ color: '#9CA3AF' }}>
-                Use a different email
+              <button
+                onClick={handleVerify}
+                disabled={verifying || digits.join('').length < 6}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity"
+                style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: (verifying || digits.join('').length < 6) ? 0.5 : 1 }}>
+                {verifying ? '⏳ Verifying…' : 'Verify code'}
               </button>
-            </div>
+
+              <div className="text-center text-xs space-x-2">
+                {resendCountdown > 0 ? (
+                  <span style={{ color: '#6B7280' }}>Resend code in {resendCountdown}s</span>
+                ) : (
+                  <button onClick={handleResend} className="underline" style={{ color: '#9CA3AF' }}>
+                    Resend code
+                  </button>
+                )}
+                <span style={{ color: '#374151' }}>·</span>
+                <button onClick={() => { setStep('form'); setError('') }} className="underline" style={{ color: '#9CA3AF' }}>
+                  Use a different email
+                </button>
+              </div>
+            </>
+            )}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

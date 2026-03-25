@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS demo_magic_links (
   id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email      TEXT NOT NULL,
   slug       TEXT NOT NULL,
-  token      UUID NOT NULL UNIQUE,
+  token      TEXT NOT NULL UNIQUE,
   expires_at TIMESTAMPTZ NOT NULL,
   used       BOOLEAN DEFAULT false,
   used_at    TIMESTAMPTZ,

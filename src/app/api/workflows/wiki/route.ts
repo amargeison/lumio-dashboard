@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { n8nWebhook } from '@/lib/n8n'
 
 export async function POST(request: NextRequest) {
-  const webhookUrl = process.env.N8N_WIKI_WEBHOOK_URL
+  const webhookUrl = n8nWebhook('wiki')
 
   if (!webhookUrl) {
     // No webhook configured — client uses mock data

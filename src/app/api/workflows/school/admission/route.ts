@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nWebhook } from '@/lib/n8n'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateAdmissionNumber(supabase: any): Promise<string> {
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest) {
     schedule_induction: true,
   }
 
-  const webhookUrl = process.env.N8N_SCHOOL_ADMISSION_WEBHOOK_URL
+  const webhookUrl = n8nWebhook('school-admission')
   const webhookPayload = {
     id: savedId,
     admission_number: admissionNumber,

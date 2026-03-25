@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nWebhook } from '@/lib/n8n'
 
 function currentTerm(): string {
   const now = new Date()
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── n8n webhook ───────────────────────────────────────────────────────────
-  const webhookUrl = process.env.N8N_SCHOOL_ABSENCE_WEBHOOK_URL
+  const webhookUrl = n8nWebhook('school-absence')
 
   const webhookPayload = {
     id: savedId,

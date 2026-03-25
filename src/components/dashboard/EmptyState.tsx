@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { Upload, Database, X, CheckCircle, Link2, Plus } from 'lucide-react'
+import { loadDemoData } from '@/lib/devUtils'
 
 export interface UploadButton {
   key: string
@@ -36,6 +37,14 @@ export function DashboardEmptyState({
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(false)
   const [intModal, setIntModal] = useState(false)
+  const [showDevButton, setShowDevButton] = useState(false)
+
+  useEffect(() => {
+    setShowDevButton(
+      process.env.NODE_ENV === 'development' ||
+      window.location.hostname.includes('vercel.app')
+    )
+  }, [])
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   function storageKey() {
@@ -124,6 +133,18 @@ export function DashboardEmptyState({
           <span className="text-xs" style={{ color: '#4B5563' }}>or</span>
           <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
         </div>
+
+        {/* Dev shortcut — only shown in development or on Vercel preview */}
+        {showDevButton && (
+          <button
+            onClick={() => loadDemoData(pageKey)}
+            className="w-full rounded-xl px-4 py-2 text-xs font-medium mb-2"
+            style={{ border: '1px solid #1F2937', color: '#4B5563', backgroundColor: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#6B7280' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#4B5563' }}>
+            ⚡ Dev: Load Demo Instantly
+          </button>
+        )}
 
         {/* Demo data button */}
         <button

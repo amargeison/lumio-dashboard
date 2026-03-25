@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nWebhook } from '@/lib/n8n'
 
 const SUPPLY_DAY_RATE = 180 // £ per day — default estimate if no agency rate set
 
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Fire n8n webhook only if no internal cover found (or explicitly requesting supply)
-  const webhookUrl = process.env.N8N_SUPPLY_COVER_WEBHOOK_URL
+  const webhookUrl = n8nWebhook('supply-cover')
   const fireWebhook = !internalFound && !!webhookUrl
 
   if (fireWebhook && webhookUrl) {

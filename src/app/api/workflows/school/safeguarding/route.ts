@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { n8nWebhook } from '@/lib/n8n'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateRef(supabase: any): Promise<string> {
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── n8n webhook ─────────────────────────────────────────────────────────────
-  const webhookUrl = process.env.N8N_SCHOOL_SAFEGUARDING_WEBHOOK_URL
+  const webhookUrl = n8nWebhook('school-safeguarding')
 
   const webhookPayload = {
     id: savedId,
