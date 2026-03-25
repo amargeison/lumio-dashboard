@@ -9,7 +9,6 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY)
-  console.log('[demo/signup] route hit')
   try {
     const body = await req.json()
     const name             = body.name         || ''
@@ -86,9 +85,6 @@ export async function POST(req: NextRequest) {
       console.error('[demo/signup] FAILED to insert OTP code:', otpInsertError)
       return NextResponse.json({ error: 'Failed to store verification code — please try again.' }, { status: 500 })
     }
-    console.log('[demo/signup] OTP code inserted OK — code:', code, '| slug:', slug)
-
-    console.log('[demo/signup] sending OTP to:', email, '| code length:', code.length, '| RESEND_API_KEY set:', !!process.env.RESEND_API_KEY)
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
@@ -140,8 +136,6 @@ export async function POST(req: NextRequest) {
       console.error('[demo/signup] Resend error:', emailError)
       return NextResponse.json({ error: 'Failed to send verification code — please try again.' }, { status: 500 })
     }
-    console.log('[demo/signup] Email sent successfully, id:', emailData?.id)
-
     return NextResponse.json({ success: true, slug, is_new: true })
   } catch (err) {
     console.error('Demo signup error:', err)

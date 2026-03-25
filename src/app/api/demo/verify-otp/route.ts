@@ -7,23 +7,12 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  console.log('[demo/verify-otp] route hit')
   try {
     const { email, code } = await req.json()
-    console.log('[demo/verify-otp] received — email:', email, '| code:', code, '| code type:', typeof code)
 
     if (!email || !code) {
       return NextResponse.json({ error: 'Email and code are required' }, { status: 400 })
     }
-
-    // Diagnostic: fetch all rows for this email to compare
-    const { data: allRows, error: allErr } = await supabase
-      .from('demo_magic_links')
-      .select('token, used, expires_at, slug')
-      .eq('email', email.toLowerCase())
-      .order('created_at', { ascending: false })
-      .limit(5)
-    console.log('[demo/verify-otp] all recent rows for email:', JSON.stringify(allRows), '| query error:', allErr)
 
     // Find the most recent unused code for this email
     const { data: link, error: linkError } = await supabase
@@ -33,8 +22,6 @@ export async function POST(req: NextRequest) {
       .eq('token', code.toString())
       .eq('used', false)
       .maybeSingle()
-
-    console.log('[demo/verify-otp] filtered lookup result — link:', JSON.stringify(link), '| error:', linkError)
 
     if (linkError || !link) {
       return NextResponse.json({ error: 'Invalid or expired code — please try again' }, { status: 401 })
