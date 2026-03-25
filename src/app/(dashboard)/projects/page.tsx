@@ -814,6 +814,8 @@ const TABS = [
 ]
 
 export default function ProjectsPage() {
+  const [tab, setTab] = useState('overview')
+
   const hasData = useHasDashboardData('projects')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="projects"
@@ -824,8 +826,6 @@ export default function ProjectsPage() {
       { key: 'tasks', label: 'Upload Tasks (CSV)' },
     ]}
   />
-
-  const [tab, setTab] = useState('overview')
 
   return (
     <div className="flex flex-col gap-0" style={{ backgroundColor: '#07080F', minHeight: '100vh' }}>

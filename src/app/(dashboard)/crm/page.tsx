@@ -906,6 +906,14 @@ function SequencesTab() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
+  const [tab, setTab]                     = useState<Tab>('Overview')
+  const [showNewContact, setShowNewContact] = useState(false)
+  const [showNewDeal,    setShowNewDeal]    = useState(false)
+  const [showLogActivity,setShowLogActivity]= useState(false)
+  const [showLostReason, setShowLostReason] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [selectedDeal,    setSelectedDeal]    = useState<Deal    | null>(null)
+
   const hasData = useHasDashboardData('crm')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="crm"
@@ -917,14 +925,6 @@ export default function CRMPage() {
       { key: 'deals', label: 'Upload Deals & Pipeline (CSV)' },
     ]}
   />
-
-  const [tab, setTab]                     = useState<Tab>('Overview')
-  const [showNewContact, setShowNewContact] = useState(false)
-  const [showNewDeal,    setShowNewDeal]    = useState(false)
-  const [showLogActivity,setShowLogActivity]= useState(false)
-  const [showLostReason, setShowLostReason] = useState(false)
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  const [selectedDeal,    setSelectedDeal]    = useState<Deal    | null>(null)
 
   return (
     <PageShell>

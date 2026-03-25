@@ -605,6 +605,13 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InsightsPage() {
+  const [role,     setRole]     = useState<Role>('Director')
+  const [region,   setRegion]   = useState('All Regions')
+  const [country,  setCountry]  = useState('All Countries')
+  const [product,  setProduct]  = useState('All Products')
+  const [district, setDistrict] = useState('All Districts')
+  const [trust,    setTrust]    = useState('All Trusts')
+
   const hasData = useHasDashboardData('insights')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="insights"
@@ -615,13 +622,6 @@ export default function InsightsPage() {
       { key: 'metrics', label: 'Upload Key Metrics (CSV/XLSX)', accept: '.csv,.xlsx' },
     ]}
   />
-
-  const [role,     setRole]     = useState<Role>('Director')
-  const [region,   setRegion]   = useState('All Regions')
-  const [country,  setCountry]  = useState('All Countries')
-  const [product,  setProduct]  = useState('All Products')
-  const [district, setDistrict] = useState('All Districts')
-  const [trust,    setTrust]    = useState('All Trusts')
 
   const isFiltered = region !== 'All Regions' || country !== 'All Countries' ||
                      product !== 'All Products' || district !== 'All Districts' || trust !== 'All Trusts'
