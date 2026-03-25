@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumio Schools — Reporting &amp; Insights Flyer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a1a;padding:40px;font-family:'DM Sans',sans-serif;display:flex;justify-content:center;align-items:flex-start}
+#f5{background:#F0EDE5}
+#f5 .top-stripe{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1B3060 0%,#0E7490 50%,#C8960C 100%)}
+#f5 .eyebrow{position:absolute;top:36px;left:52px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#0E7490}
+#f5 .headline{position:absolute;top:70px;left:52px;right:52px;font-family:'Cormorant Garamond',serif;font-size:60px;line-height:1;color:#1B3060;font-weight:700;font-style:italic}
+#f5 .sub{position:absolute;top:230px;left:52px;right:52px;font-size:15px;color:#4B5563;line-height:1.7;font-weight:300}
+#f5 .dashboard-mock{position:absolute;top:340px;left:52px;right:52px;background:#fff;border-radius:10px;padding:20px;box-shadow:0 8px 40px rgba(0,0,0,0.1)}
+#f5 .dash-header{font-size:10px;font-weight:700;color:#0E7490;text-transform:uppercase;letter-spacing:0.14em;margin-bottom:14px}
+#f5 .dash-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+#f5 .dash-card{background:#F8FAFF;border-radius:6px;padding:12px;text-align:center;border-top:3px solid transparent}
+#f5 .dash-card.green{border-top-color:#15803D}
+#f5 .dash-card.amber{border-top-color:#C8960C}
+#f5 .dash-card.blue{border-top-color:#1B3060}
+#f5 .dash-num{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;display:block}
+#f5 .dash-num.g{color:#15803D}
+#f5 .dash-num.a{color:#C8960C}
+#f5 .dash-num.b{color:#1B3060}
+#f5 .dash-label{font-size:9px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;display:block}
+#f5 .bar-row{display:flex;gap:4px;align-items:flex-end;height:40px;margin-bottom:14px}
+#f5 .bar-col{flex:1;border-radius:2px 2px 0 0;background:linear-gradient(180deg,#1B3060,#0E7490)}
+#f5 .dash-footer-text{font-size:10px;color:#9CA3AF;text-align:center}
+#f5 .f5-bottom{position:absolute;bottom:0;left:0;right:0;height:80px;background:#1B3060;display:flex;align-items:center;justify-content:space-between;padding:0 52px}
+#f5 .f5-brand{color:#fff;font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic}
+#f5 .f5-url{font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.08em}
+.flyer{width:595px!important;height:842px!important;margin:0!important;border-radius:0!important;box-shadow:none!important;position:relative;overflow:hidden;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="flyer" id="f5">
+  <div class="top-stripe"></div>
+  <div class="eyebrow">Reporting &amp; Insights</div>
+  <div class="headline">The data<br>was always<br><em>there.</em></div>
+  <div class="sub">Governors, trustees, and the LA need reports. Ofsted needs evidence. Your SBM needs numbers. Lumio Schools generates every report automatically — filtered, formatted, and ready to share. No spreadsheets. No chasing. No waiting.</div>
+  <div class="dashboard-mock">
+    <div class="dash-header">📊 Lumio Schools — Live Dashboard · Parkside Primary</div>
+    <div class="dash-row">
+      <div class="dash-card green"><span class="dash-num g">94.2%</span><span class="dash-label">Attendance</span></div>
+      <div class="dash-card amber"><span class="dash-num a">3</span><span class="dash-label">Open concerns</span></div>
+      <div class="dash-card blue"><span class="dash-num b">2</span><span class="dash-label">Uncovered</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-col" style="height:70%"></div>
+      <div class="bar-col" style="height:85%"></div>
+      <div class="bar-col" style="height:60%"></div>
+      <div class="bar-col" style="height:90%"></div>
+      <div class="bar-col" style="height:75%"></div>
+      <div class="bar-col" style="height:95%"></div>
+      <div class="bar-col" style="height:80%"></div>
+    </div>
+    <div class="dash-footer-text">Weekly attendance trend · Auto-generated every Monday 7:00am</div>
+  </div>
+  <div class="f5-bottom">
+    <div class="f5-brand">Lumio Schools</div>
+    <div class="f5-url">lumiocms.com/schools</div>
+  </div>
+</div>
+<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#C8960C;color:#0C1A2E;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:0.06em;box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;">DEV</div>
+</body>
+</html>

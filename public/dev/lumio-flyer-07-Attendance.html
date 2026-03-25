@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumio Schools — Attendance Automation Flyer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a1a;padding:40px;font-family:'DM Sans',sans-serif;display:flex;justify-content:center;align-items:flex-start}
+#f7{background:#fff}
+#f7 .left-panel{position:absolute;top:0;left:0;width:240px;height:100%;background:#0C1A2E}
+#f7 .left-deco{position:absolute;top:0;left:0;width:240px;height:100%;background-image:radial-gradient(circle at 50% 50%,rgba(200,150,12,0.1) 0%,transparent 60%)}
+#f7 .left-content{position:absolute;top:0;left:0;width:240px;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 30px}
+#f7 .big-pct{font-family:'Bebas Neue',sans-serif;font-size:100px;color:#C8960C;line-height:1;text-align:center}
+#f7 .pct-label{font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.12em;text-align:center;line-height:1.5;margin-top:8px}
+#f7 .pct-sub{font-size:11px;color:rgba(200,150,12,0.7);text-align:center;margin-top:20px;border-top:1px solid rgba(200,150,12,0.2);padding-top:20px;line-height:1.5}
+#f7 .right-content{position:absolute;top:0;left:240px;right:0;height:100%;padding:52px 44px}
+#f7 .r-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#B91C1C;margin-bottom:12px}
+#f7 .r-headline{font-family:'Playfair Display',serif;font-size:38px;line-height:1.1;color:#0C1A2E;font-weight:900;margin-bottom:20px}
+#f7 .r-divider{width:40px;height:3px;background:#C8960C;margin-bottom:20px}
+#f7 .r-body{font-size:13px;color:#4B5563;line-height:1.7;margin-bottom:24px}
+#f7 .timeline{display:flex;flex-direction:column;gap:0}
+#f7 .tl-item{display:flex;gap:14px;padding-bottom:16px;position:relative}
+#f7 .tl-item:not(:last-child)::after{content:'';position:absolute;left:11px;top:24px;width:2px;height:calc(100% - 8px);background:linear-gradient(180deg,#C8960C,rgba(200,150,12,0.2))}
+#f7 .tl-dot{width:24px;height:24px;border-radius:50%;background:#C8960C;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+#f7 .tl-dot svg{width:10px;height:10px}
+#f7 .tl-text strong{font-size:13px;color:#111827;display:block;font-weight:700;margin-bottom:2px}
+#f7 .tl-text span{font-size:12px;color:#6B7280}
+#f7 .r-cta{position:absolute;bottom:44px;left:240px;right:0;padding:0 44px;display:flex;justify-content:space-between;align-items:center}
+#f7 .cta-pill{background:#C8960C;color:#fff;padding:12px 24px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase}
+#f7 .r-url{font-size:11px;color:#9CA3AF;letter-spacing:0.08em}
+.flyer{width:595px!important;height:842px!important;margin:0!important;border-radius:0!important;box-shadow:none!important;position:relative;overflow:hidden;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="flyer" id="f7">
+  <div class="left-panel"></div>
+  <div class="left-deco"></div>
+  <div class="left-content">
+    <div class="big-pct">90<br>min</div>
+    <div class="pct-label">average time spent on absence calls every morning</div>
+    <div class="pct-sub">Lumio Schools reduces this to a 5-minute monitoring task. Every single day.</div>
+  </div>
+  <div class="right-content">
+    <div class="r-eyebrow">Attendance Automation</div>
+    <div class="r-headline">Your school office deserves better than this.</div>
+    <div class="r-divider"></div>
+    <div class="r-body">Every morning, school offices across England spend hours calling parents of absent children. It's manual, it's slow, and someone always gets missed. Lumio Schools does it automatically — before your staff arrive.</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"><svg fill="none" viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.2"/></svg></div>
+        <div class="tl-text"><strong>Child marked absent at register</strong><span>8:45am — trigger fires instantly</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><svg fill="none" viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.2"/></svg></div>
+        <div class="tl-text"><strong>SMS &amp; email sent to parent automatically</strong><span>8:46am — no staff involvement needed</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><svg fill="none" viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.2"/></svg></div>
+        <div class="tl-text"><strong>No response? DSL alerted automatically</strong><span>9:30am — escalation logged with timestamp</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="r-cta">
+    <div class="cta-pill">Start Free Trial</div>
+    <div class="r-url">lumiocms.com/schools</div>
+  </div>
+</div>
+<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#C8960C;color:#0C1A2E;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:0.06em;box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;">DEV</div>
+</body>
+</html>

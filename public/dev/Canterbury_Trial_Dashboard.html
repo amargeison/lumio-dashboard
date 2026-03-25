@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University of Canterbury Trial Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            padding: 20px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            overflow: hidden;
+            padding-bottom: 50px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+
+        .header .subtitle {
+            font-size: 1em;
+            margin-top: 10px;
+            opacity: 0.85;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 50px;
+            background: #0f0f0f;
+        }
+
+        .card {
+            background: #262626;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-top: 4px solid #667eea;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(102,126,234,0.3);
+        }
+
+        .card-title {
+            font-size: 0.95em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .card-detail {
+            font-size: 0.95em;
+            color: #aaa;
+        }
+
+        .section {
+            padding: 50px;
+            border-top: 1px solid #333;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #fff;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            font-weight: 600;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .usage-card {
+            background: #262626;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .usage-card.normal {
+            border-left-color: #10b981;
+        }
+
+        .usage-card.some {
+            border-left-color: #f59e0b;
+        }
+
+        .usage-card.none {
+            border-left-color: #ef4444;
+        }
+
+        .usage-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .usage-label {
+            font-size: 0.95em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .city-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .city-item {
+            background: #262626;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .city-name {
+            font-size: 1.1em;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .city-count {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #262626;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #667eea;
+        }
+
+        th {
+            padding: 18px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #333;
+            color: #ddd;
+        }
+
+        tr:hover {
+            background: #2a2a2a;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-normal {
+            background: #10b98120;
+            color: #10b981;
+        }
+
+        .status-some {
+            background: #f59e0b20;
+            color: #f59e0b;
+        }
+
+        .status-none {
+            background: #ef444420;
+            color: #ef4444;
+        }
+
+        .trained-yes {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .trained-no {
+            color: #ef4444;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #333;
+        }
+
+        .alert-box {
+            background: #f59e0b20;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #f59e0b;
+        }
+
+        .alert-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🇳🇿 University of Canterbury Trial</h1>
+            <p>LanguageScreen & NELI Research Trial</p>
+            <div class="subtitle">New Zealand | Generated: December 08, 2025</div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-title">Total Schools</div>
+                <div class="card-value">64</div>
+                <div class="card-detail">Participating in trial</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">LS Usage Rate</div>
+                <div class="card-value">85.9%</div>
+                <div class="card-detail">55 schools actively using</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Training Complete</div>
+                <div class="card-value">67.2%</div>
+                <div class="card-detail">43 schools fully trained (C1+C2)</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Assessment Activity</div>
+                <div class="card-value">76.6%</div>
+                <div class="card-detail">49 schools with assessments (CAY)</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Access Period</div>
+                <div class="card-value">May 2024</div>
+                <div class="card-detail">Expires: December 31, 2025</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Staff Trained</div>
+                <div class="card-value">93</div>
+                <div class="card-detail">C1: 93 | C2: 68</div>
+            </div>
+        </div>
+
+        <div class="alert-box" style="margin: 0 50px;">
+            <strong>⚠️ Intervention vs Control Groups</strong>
+            The data export does not contain group assignments. All 64 schools have identical access dates. 
+            Contact George (deal owner) or Gail Gillon to obtain the randomization list.
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">LanguageScreen Usage Breakdown</h2>
+            <div class="usage-grid">
+                <div class="usage-card normal">
+                    <div class="usage-number">51</div>
+                    <div class="usage-label">Normal Use</div>
+                    <div class="card-detail" style="margin-top: 10px;">79.7%</div>
+                </div>
+                <div class="usage-card some">
+                    <div class="usage-number">4</div>
+                    <div class="usage-label">Some Use</div>
+                    <div class="card-detail" style="margin-top: 10px;">6.2%</div>
+                </div>
+                <div class="usage-card none">
+                    <div class="usage-number">9</div>
+                    <div class="usage-label">Not Used</div>
+                    <div class="card-detail" style="margin-top: 10px;">14.1%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Geographic Distribution - Top 10 Cities</h2>
+            <div class="city-list">
+                <div class="city-item">
+                    <div class="city-name">Auckland</div>
+                    <div class="city-count">18</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Christchurch</div>
+                    <div class="city-count">10</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Wellington</div>
+                    <div class="city-count">6</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Tauranga</div>
+                    <div class="city-count">4</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Rotorua</div>
+                    <div class="city-count">4</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Masterton</div>
+                    <div class="city-count">3</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Dunedin</div>
+                    <div class="city-count">3</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Hamilton</div>
+                    <div class="city-count">2</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Timaru</div>
+                    <div class="city-count">2</div>
+                </div>
+                <div class="city-item">
+                    <div class="city-name">Ashburton</div>
+                    <div class="city-count">2</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">All Schools - Detailed View</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>School Name</th>
+                        <th>City</th>
+                        <th>LS Usage</th>
+                        <th>Assessments</th>
+                        <th>Staff C1</th>
+                        <th>Staff C2</th>
+                        <th>Trained</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Aidanfield Christian School (8025)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>18</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Ashburton Borough School (7700)</td>
+                        <td>Ashburton</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>12</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Blockhouse Bay Primary School (0600)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>12</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Brooklyn Primary School (6021)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>8</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Clyde Quay School (6011)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>11</td>
+                        <td>3</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Dominion Road School (1041)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>14</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Douglas Park School (5810)</td>
+                        <td>Masterton</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>36</td>
+                        <td>3</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Dyer Street School (5011)</td>
+                        <td>Lower Hutt</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Elm Park School (2010)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>50</td>
+                        <td>2</td>
+                        <td>3</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Enner Glynn School (7011)</td>
+                        <td>Nelson</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>22</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Fernridge School (5888)</td>
+                        <td>Masterton</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Gate Pa School (3112)</td>
+                        <td>Tauranga</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Glen Eden Primary School (0602)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>3</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Glenholme School (3010)</td>
+                        <td>Rotorua</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>13</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Gleniti School (7910)</td>
+                        <td>Timaru</td>
+                        <td><span class="status-badge status-some">Some use</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Greenacres School (5028)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>17</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Hamilton East School (3216)</td>
+                        <td>Hamilton</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Heathcote Valley School (8022)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>23</td>
+                        <td>3</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Houghton Valley School (6023)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Isleworth School (8053)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>10</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Lincoln Heights School (0614)</td>
+                        <td>Waitakere City</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Lyall Bay School (6022)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Lyttelton Primary School (8082)</td>
+                        <td>Lyttelton</td>
+                        <td><span class="status-badge status-some">Some use</span></td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Malfroy School (3015)</td>
+                        <td>Rotorua</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>18</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Mornington School (9011)</td>
+                        <td>Dunedin</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>New Lynn School (0600)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Ormiston Primary School (2019)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>33</td>
+                        <td>4</td>
+                        <td>3</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Otumoetai Primary School (3110)</td>
+                        <td>Tauranga</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>15</td>
+                        <td>2</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Owairoa Primary School (2014)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>18</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Owhata School (3010)</td>
+                        <td>Rotorua</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>14</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Paparoa Street School (8053)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>19</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Paraparaumu Beach School  (5032)</td>
+                        <td>Paraparaumu Beach</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>18</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Parkview PÄrua School (8083)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>17</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Pinehill School (0632)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>19</td>
+                        <td>3</td>
+                        <td>3</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Rangiora New Life School (7400)</td>
+                        <td>Rangiora</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>0</td>
+                        <td>3</td>
+                        <td>3</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Reremoana Primary School (2103)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>20</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Rolleston Christian School  (7615)</td>
+                        <td>Rolleston</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>12</td>
+                        <td>3</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>RÄwhiti School (8083)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>10</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Selwyn Ridge Primary (3112)</td>
+                        <td>Tauranga</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>17</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Solway School (5810)</td>
+                        <td>Masterton</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>12</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Springlands School (7201)</td>
+                        <td>Blenheim</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>17</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>St Anne's Catholic School  (8023)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>16</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>St Bernard's School (6021)</td>
+                        <td>Wellington</td>
+                        <td><span class="status-badge status-some">Some use</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>St Clair School (9012)</td>
+                        <td>Dunedin</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>22</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>St Columba's Catholic Primary School (3204)</td>
+                        <td>Hamilton</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>27</td>
+                        <td>3</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>St Joseph's School (Timaru) (7910)</td>
+                        <td>Timaru</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>19</td>
+                        <td>4</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>St Joseph's School Otahuhu (1062)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>St Mary's Catholic School Avondale (0600)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>23</td>
+                        <td>4</td>
+                        <td>4</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>St. Leonards Road School (0602)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>19</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Stanmore Bay School (0932)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>33</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Sunnybrae Normal School (0627)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>18</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Sunset Primary School (3015)</td>
+                        <td>Rotorua</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>8</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Tainui School (9013)</td>
+                        <td>Dunedin</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>23</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Tamaoho School (2120)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>21</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Tauriko School (3171)</td>
+                        <td>Tauranga</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>9</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Te Huruhi Primary School (1081)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>5</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Te KÄpehu Riccarton (8042)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-none">Not used</span></td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Te Papapa School (1061)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>8</td>
+                        <td>2</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Tinwald School (7700)</td>
+                        <td>Ashburton</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>33</td>
+                        <td>4</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Tuia Burnside Primary School (8053)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>15</td>
+                        <td>3</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Upper Hutt School (5018)</td>
+                        <td>Upper Hutt</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>7</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Waitakere Primary School (0816)</td>
+                        <td>Waitakere</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>16</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td class="trained-yes">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Warkworth School  (0910)</td>
+                        <td>Auckland</td>
+                        <td><span class="status-badge status-normal">Normal use</span></td>
+                        <td>21</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                    <tr>
+                        <td>Wharenui School (8022)</td>
+                        <td>Christchurch</td>
+                        <td><span class="status-badge status-some">Some use</span></td>
+                        <td>4</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="trained-no">No</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>University of Canterbury Research Trial Dashboard</p>
+            <p>Data sourced from OxEd portal | For internal use only</p>
+            <p>Generated: December 08, 2025 at 12:36 GMT</p>
+        </div>
+    </div>
+<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#C8960C;color:#0C1A2E;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:0.06em;box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;">DEV</div>
+</body>
+</html>

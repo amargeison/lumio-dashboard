@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumio Dev</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #0C1A2E;
+    color: #E8EDF4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 28px 40px 20px;
+    border-bottom: 1px solid #1F3460;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #F0F4FA;
+    letter-spacing: -0.3px;
+  }
+  .badge {
+    background: #14532d;
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    border: 1px solid #166534;
+    white-space: nowrap;
+  }
+  main {
+    flex: 1;
+    padding: 32px 40px;
+  }
+  .section {
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #C8960C;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1F3460;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: #111E35;
+    border: 1px solid #1F3460;
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: #C8960C; }
+  .card-icon { font-size: 24px; }
+  .card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #C8D8F0;
+    word-break: break-word;
+  }
+  .card-file {
+    font-size: 11px;
+    color: #4A6080;
+    font-family: monospace;
+  }
+  .open-btn {
+    margin-top: auto;
+    background: #C8960C;
+    color: #0C1A2E;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    transition: background 0.15s;
+  }
+  .open-btn:hover { background: #E5AC14; }
+  footer {
+    padding: 14px 40px;
+    border-top: 1px solid #1F3460;
+    font-size: 12px;
+    color: #4A6080;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Lumio Dev</h1>
+  <span class="badge">DEV — No Login</span>
+</header>
+
+<main>
+
+  <div class="section">
+    <div class="section-title">Flyers</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🏫</div>
+        <div class="card-name">Headteacher</div>
+        <div class="card-file">lumio-flyer-01-Headteacher.html</div>
+        <a class="open-btn" href="lumio-flyer-01-Headteacher.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">💛</div>
+        <div class="card-name">SEN &amp; SEND</div>
+        <div class="card-file">lumio-flyer-02-SEN.html</div>
+        <a class="open-btn" href="lumio-flyer-02-SEN.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏛️</div>
+        <div class="card-name">Multi-Academy Trust</div>
+        <div class="card-file">lumio-flyer-03-Trust.html</div>
+        <a class="open-btn" href="lumio-flyer-03-Trust.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔴</div>
+        <div class="card-name">Ofsted Preparation</div>
+        <div class="card-file">lumio-flyer-04-Ofsted.html</div>
+        <a class="open-btn" href="lumio-flyer-04-Ofsted.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-name">Reporting &amp; Insights</div>
+        <div class="card-file">lumio-flyer-05-Reporting.html</div>
+        <a class="open-btn" href="lumio-flyer-05-Reporting.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-name">Platform Features</div>
+        <div class="card-file">lumio-flyer-06-Features.html</div>
+        <a class="open-btn" href="lumio-flyer-06-Features.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">📵</div>
+        <div class="card-name">Attendance Automation</div>
+        <div class="card-file">lumio-flyer-07-Attendance.html</div>
+        <a class="open-btn" href="lumio-flyer-07-Attendance.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <div class="card-name">Safeguarding</div>
+        <div class="card-file">lumio-flyer-08-Safeguarding.html</div>
+        <a class="open-btn" href="lumio-flyer-08-Safeguarding.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <div class="card-name">AI Morning Briefing</div>
+        <div class="card-file">lumio-flyer-09-AIBriefing.html</div>
+        <a class="open-btn" href="lumio-flyer-09-AIBriefing.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-name">Supply Cover</div>
+        <div class="card-file">lumio-flyer-10-SupplyCover.html</div>
+        <a class="open-btn" href="lumio-flyer-10-SupplyCover.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-name">All Flyers (Grid)</div>
+        <div class="card-file">lumio-flyers.html</div>
+        <a class="open-btn" href="lumio-flyers.html">Open →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Schools Pages</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <div class="card-name">Pricing</div>
+        <div class="card-file">lumio-schools-pricing.html</div>
+        <a class="open-btn" href="lumio-schools-pricing.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚙️</div>
+        <div class="card-name">150 Workflows</div>
+        <div class="card-file">lumio-schools-workflows.html</div>
+        <a class="open-btn" href="lumio-schools-workflows.html">Open →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Other</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🏗️</div>
+        <div class="card-name">Canterbury Trial Dashboard</div>
+        <div class="card-file">Canterbury_Trial_Dashboard.html</div>
+        <a class="open-btn" href="Canterbury_Trial_Dashboard.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏛️</div>
+        <div class="card-name">DfE Checker</div>
+        <div class="card-file">DFE Checker.html</div>
+        <a class="open-btn" href="DFE%20Checker.html">Open →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌍</div>
+        <div class="card-name">USA NELI Whole Class Report</div>
+        <div class="card-file">USA_NELI_Whole_Class_Report.html</div>
+        <a class="open-btn" href="USA_NELI_Whole_Class_Report.html">Open →</a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Branch: dev · Repo: github.com/amargeison/lumio-dashboard
+</footer>
+
+</body>
+</html>
