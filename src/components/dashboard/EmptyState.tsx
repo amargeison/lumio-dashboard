@@ -80,6 +80,7 @@ export function DashboardEmptyState({
     showToast('Loading demo data...')
     await new Promise(r => setTimeout(r, 1200))
     localStorage.setItem(storageKey(), 'true')
+    localStorage.setItem('lumio_demo_active', 'true')
     window.location.reload()
   }
 
