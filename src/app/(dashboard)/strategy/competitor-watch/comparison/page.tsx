@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ChevronDown, ChevronUp, Check, X, Minus, Trophy } from 'lucide-react'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import { useHasDashboardData, DashboardEmptyState } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -253,11 +254,15 @@ function ScoreBar({ score, isLumio }: { score: number; isLumio: boolean }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ComparisonPage() {
+  const hasData = useHasDashboardData('strategy')
   const [visibleCompetitors, setVisibleCompetitors] = useState<string[]>(['HubSpot', 'Pipedrive', 'monday.com', 'Zapier'])
   const [expandedCategory, setExpandedCategory]     = useState<string | null>(null)
   const [expandedCriterion, setExpandedCriterion]   = useState<string | null>(null)
 
   const allCols = ['Lumio', ...visibleCompetitors]
+
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="strategy" />
 
   function toggleCompetitor(name: string) {
     setVisibleCompetitors(prev =>

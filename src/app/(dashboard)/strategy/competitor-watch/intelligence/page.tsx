@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Zap, ArrowRight, Clock } from 'lucide-react'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import { useHasDashboardData, DashboardEmptyState } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -336,10 +337,14 @@ const URGENCY_CONFIG = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function IntelligencePage() {
+  const hasData = useHasDashboardData('strategy')
   const [tab, setTab]                             = useState<'roadmap' | 'actions' | 'movements'>('roadmap')
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null)
   const [expandedRoadmapItem, setExpandedRoadmapItem] = useState<string | null>(null)
   const [expandedAction, setExpandedAction]       = useState<number | null>(null)
+
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="strategy" />
 
   return (
     <div className="min-h-screen bg-[#07080F] text-[#F9FAFB]">

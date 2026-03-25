@@ -7,6 +7,8 @@ import {
   Shield, BookOpen, Users, ChevronRight, CheckCircle, XCircle, Clock,
   AlertCircle, Activity, Building, Laptop, GraduationCap, FolderOpen
 } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
@@ -998,14 +1000,16 @@ const QUICK_ACTIONS = [
 ]
 
 export default function DemoSendDslPage() {
+  const hasData = useHasSchoolData('send-dsl')
   const pathname = usePathname()
-  const slugMatch = pathname.match(/\/demo\/schools\/([^/]+)/)
-  const slug = slugMatch?.[1] ?? 'oakridge-primary'
-
   const [section, setSection] = useState<'send' | 'dsl'>('send')
   const [sendTab, setSendTab] = useState('overview')
   const [dslTab, setDslTab] = useState('overview')
   const [toast, setToast] = useState('')
+  const slugMatch = pathname.match(/\/demo\/schools\/([^/]+)/)
+  const slug = slugMatch?.[1] ?? 'oakridge-primary'
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="send-dsl" title="No SEND & DSL data yet" description="Upload your SEND register and DSL log to activate SEND & DSL." uploads={[{ key: 'send-dsl', label: 'Upload SEND Register (CSV)' }]} />
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

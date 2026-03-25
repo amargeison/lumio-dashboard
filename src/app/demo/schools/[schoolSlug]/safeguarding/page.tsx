@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -100,7 +102,10 @@ const caseTimeline = [
 ]
 
 export default function DemoSafeguardingPage() {
+  const hasData = useHasSchoolData('safeguarding')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="safeguarding" title="No safeguarding data yet" description="Upload your safeguarding log and concern records to activate Safeguarding." uploads={[{ key: 'safeguarding', label: 'Upload Safeguarding Log (CSV)' }]} />
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

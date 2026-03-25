@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, useMemo } from 'react'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -656,12 +658,12 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: string }[] = [
 const YEARS = ['All Years', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6']
 
 export default function StudentsPage() {
+  const hasData = useHasSchoolData('students')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<ViewMode>('all')
   const [yearFilter, setYearFilter] = useState('All Years')
   const [flagFilter, setFlagFilter] = useState<FilterKey>('all')
   const [selectedPupil, setSelectedPupil] = useState<Pupil | null>(null)
-
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -679,6 +681,8 @@ export default function StudentsPage() {
       return matchSearch && matchYear && matchFlag
     })
   }, [search, yearFilter, flagFilter])
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="students" title="No student data yet" description="Upload your student roll, attendance and assessment data to activate Students." uploads={[{ key: 'students', label: 'Upload Student Data (CSV)' }]} />
 
   // Stats
   const totalSend = PUPILS.filter(p => p.sendStatus !== 'None').length

@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -124,7 +126,10 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 }
 
 export default function DemoCurriculumPage() {
+  const hasData = useHasSchoolData('curriculum')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="curriculum" title="No curriculum data yet" description="Upload your curriculum plans and assessment data to activate Curriculum." uploads={[{ key: 'curriculum', label: 'Upload Curriculum Data (CSV)' }]} />
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)

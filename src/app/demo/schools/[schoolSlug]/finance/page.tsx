@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -130,7 +132,10 @@ function budgetBarColor(pct: number) {
 }
 
 export default function DemoFinancePage() {
+  const hasData = useHasSchoolData('finance')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="finance" title="No finance data yet" description="Upload your budget, invoices and spend data to activate Finance." uploads={[{ key: 'finance', label: 'Upload Finance Data (CSV)' }]} />
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)

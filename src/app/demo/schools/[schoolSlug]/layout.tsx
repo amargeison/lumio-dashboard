@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -8,6 +8,7 @@ import {
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
   Settings, Bell, Menu, X, Zap, GraduationCap, Sunrise, Network,
 } from 'lucide-react'
+import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 
 const NAV = [
   { section: null,          path: '',              label: 'Overview',               icon: LayoutDashboard, badge: null },
@@ -32,7 +33,20 @@ interface Props { children: React.ReactNode }
 
 export default function DemoSchoolLayout({ children }: Props) {
   const [open, setOpen] = useState(false)
+  const [isSchoolDemo, setIsSchoolDemo] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    setIsSchoolDemo(localStorage.getItem('lumio_school_demo_active') === 'true')
+  }, [])
+
+  function clearSchoolDemo() {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('lumio_school_'))
+      .forEach(k => localStorage.removeItem(k))
+    localStorage.setItem('lumio_school_demo_active', 'false')
+    window.location.reload()
+  }
 
   const slugMatch = pathname.match(/\/demo\/schools\/([^/]+)/)
   const slug = slugMatch?.[1] ?? 'oakridge-primary'
@@ -98,7 +112,17 @@ export default function DemoSchoolLayout({ children }: Props) {
           })}
         </nav>
 
-        <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="shrink-0 px-4 py-3 flex flex-col gap-2" style={{ borderTop: '1px solid #1F2937' }}>
+          {isSchoolDemo && (
+            <button
+              onClick={clearSchoolDemo}
+              className="block w-full rounded-lg py-2 text-center text-xs font-semibold transition-colors"
+              style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.2)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)' }}>
+              ✕ Clear Demo Data
+            </button>
+          )}
           <Link href="/schools/checkout" className="block w-full rounded-lg py-2 text-center text-xs font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             Buy Lumio
@@ -138,6 +162,7 @@ export default function DemoSchoolLayout({ children }: Props) {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <ClearDemoBar />
           {children}
         </main>
       </div>
