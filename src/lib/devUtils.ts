@@ -6,5 +6,5 @@ export function loadDemoData(pageKey = 'overview') {
 
 // Attach to window for browser console access during development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  ;(window as Record<string, unknown>).loadDemoData = loadDemoData
+  ;(window as unknown as Record<string, unknown>).loadDemoData = loadDemoData
 }
