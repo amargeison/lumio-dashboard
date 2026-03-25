@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   // Keep the root → /home redirect for the website-style landing
   if (pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/home'
+    url.pathname = '/overview'
     return NextResponse.redirect(url)
   }
 
