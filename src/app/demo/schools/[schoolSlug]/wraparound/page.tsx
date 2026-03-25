@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -884,8 +886,11 @@ const TABS = [
 ]
 
 export default function WraparoundPage() {
+  const hasData = useHasSchoolData('wraparound')
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="wraparound" title="No wraparound data yet" description="Upload your breakfast and after school club data to activate Pre & After School." uploads={[{ key: 'wraparound', label: 'Upload Club Register (CSV)' }]} />
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

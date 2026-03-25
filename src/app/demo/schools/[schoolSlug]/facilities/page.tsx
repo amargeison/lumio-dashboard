@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -106,7 +108,10 @@ const aiHighlights = [
 ]
 
 export default function DemoFacilitiesPage() {
+  const hasData = useHasSchoolData('facilities')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="facilities" title="No facilities data yet" description="Upload your asset register and maintenance records to activate Facilities." uploads={[{ key: 'facilities', label: 'Upload Facilities Data (CSV)' }]} />
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

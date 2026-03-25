@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -103,7 +105,10 @@ const commsHistory = [
 ]
 
 export default function DemoAdmissionsPage() {
+  const hasData = useHasSchoolData('admissions')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="admissions" title="No admissions data yet" description="Upload your admissions register and enquiry data to activate Admissions." uploads={[{ key: 'admissions', label: 'Upload Admissions Data (CSV)' }]} />
 
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)

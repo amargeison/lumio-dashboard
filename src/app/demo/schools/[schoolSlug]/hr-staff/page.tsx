@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText } from 'lucide-react'
+import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 const HIGHLIGHTS = [
   'M. Taylor DBS expired 10 March — urgent renewal needed before next classroom contact',
@@ -130,7 +132,10 @@ function statusBadge(status: string) {
 }
 
 export default function DemoHRStaffPage() {
+  const hasData = useHasSchoolData('hr-staff')
   const [toast, setToast] = useState('')
+  if (hasData === null) return null
+  if (!hasData) return <SchoolEmptyState pageKey="hr-staff" title="No HR & staff data yet" description="Upload your staff roster, contracts and absence records to activate HR & Staff." uploads={[{ key: 'hr-staff', label: 'Upload Staff Roster (CSV)' }]} />
   function fireToast(action: string) {
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
