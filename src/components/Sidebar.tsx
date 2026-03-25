@@ -126,7 +126,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
                 style={{
                   backgroundColor: isActive ? activeColor : 'transparent',
-                  color: isActive ? '#F9FAFB' : accent ?? '#9CA3AF',
+                  color: isActive ? '#F9FAFB' : '#9CA3AF',
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
