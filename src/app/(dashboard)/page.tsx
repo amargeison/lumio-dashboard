@@ -314,6 +314,8 @@ function HomeTab() {
 type Tab = 'home' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
 
 export default function OverviewPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('home')
+
   const hasData = useHasDashboardData('overview')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="overview"
@@ -325,8 +327,6 @@ export default function OverviewPage() {
       { key: 'revenue', label: 'Upload Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
     ]}
   />
-
-  const [activeTab, setActiveTab] = useState<Tab>('home')
 
   return (
     <div className="flex flex-col">

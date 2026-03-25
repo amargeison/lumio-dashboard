@@ -175,7 +175,7 @@ function LoginContent() {
             <>
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-black mb-2">Sign in to Lumio</h1>
-                <p className="text-gray-500 text-sm">Access your dashboard</p>
+                <p className="text-gray-500 text-sm">Access your portal</p>
               </div>
 
               <div className="space-y-3 mb-6">

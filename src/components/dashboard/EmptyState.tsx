@@ -59,7 +59,7 @@ export function DashboardEmptyState({
   async function handleFile(key: string, file: File) {
     showToast(`Uploading ${file.name}...`)
     await new Promise(r => setTimeout(r, 2000))
-    showToast('Data imported successfully! Loading your dashboard...')
+    showToast('Data imported successfully! Loading your portal...')
     await new Promise(r => setTimeout(r, 700))
     localStorage.setItem(storageKey(), 'true')
     window.location.reload()
