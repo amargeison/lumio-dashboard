@@ -90,18 +90,6 @@ function formatStartDate(iso: string): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HRPage() {
-  const hasData = useHasDashboardData('hr')
-  if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="hr"
-    title="No HR data yet"
-    description="Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure."
-    uploads={[
-      { key: 'people', label: 'Upload Team Roster (CSV)' },
-      { key: 'org', label: 'Upload Org Chart (CSV)' },
-      { key: 'absences', label: 'Upload Absence Records (CSV)' },
-    ]}
-  />
-
   const router = useRouter()
 
   const [showModal,       setShowModal]       = useState(false)
@@ -121,6 +109,18 @@ export default function HRPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+
+  const hasData = useHasDashboardData('hr')
+  if (hasData === null) return null
+  if (!hasData) return <DashboardEmptyState pageKey="hr"
+    title="No HR data yet"
+    description="Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure."
+    uploads={[
+      { key: 'people', label: 'Upload Team Roster (CSV)' },
+      { key: 'org', label: 'Upload Org Chart (CSV)' },
+      { key: 'absences', label: 'Upload Absence Records (CSV)' },
+    ]}
+  />
 
   function showToast(msg: string) {
     setToast(msg)
