@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo } from 'react'
+import { usePathname } from 'next/navigation'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
@@ -660,6 +661,9 @@ const YEARS = ['All Years', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4',
 
 export default function StudentsPage() {
   const hasData = useHasSchoolData('students')
+  const pathname = usePathname()
+  const schoolSlug = pathname.match(/\/schools\/([^/]+)/)?.[1] ?? ''
+  const schoolName = schoolSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
   const [search, setSearch] = useState('')
   const [view, setView] = useState<ViewMode>('all')
   const [yearFilter, setYearFilter] = useState('All Years')
@@ -912,7 +916,7 @@ export default function StudentsPage() {
         <LanguageScreenApp
           studentName={assessing.name}
           studentDob={assessing.dob}
-          schoolName="Demo School"
+          schoolName={schoolName}
           assessorName="Demo Assessor"
           onClose={() => setAssessing(null)}
           onComplete={(r: unknown) => { console.log(r); setAssessing(null) }}
