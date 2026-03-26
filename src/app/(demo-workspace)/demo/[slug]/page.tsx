@@ -820,7 +820,6 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
       <DemoTabBar tab={tab} onChange={setTab} />
       {tab === 'today' ? (
         <div className="space-y-4">
-          <div ref={actionsRef}><QuickActionsBar dept="overview" onAction={onAction ?? (() => {})} /></div>
           <DemoMeetingsToday />
           <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
@@ -836,6 +835,7 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
               pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
               barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
           </div>
+          <div ref={actionsRef}><QuickActionsBar dept="overview" onAction={onAction ?? (() => {})} /></div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
