@@ -34,7 +34,7 @@ export default function AvatarDropdown({ initials, onConvert }: Props) {
 
   function handleLogout() {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('lumio_'))
+      .filter(k => k.startsWith('lumio_') || k.startsWith('demo_'))
       .forEach(k => localStorage.removeItem(k))
     router.push('/')
   }

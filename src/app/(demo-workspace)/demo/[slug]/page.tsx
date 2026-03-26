@@ -1955,6 +1955,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const { slug } = use(params)
   const router   = useRouter()
 
+  const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true'
+
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [company, setCompany]       = useState('Your Company')
   const [userName, setUserName]     = useState('')
@@ -1980,7 +1982,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const statsRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const name           = localStorage.getItem('demo_company_name') || 'Your Company'
+    const name           = localStorage.getItem('demo_company_name') || (isPreview ? 'Preview' : 'Your Company')
     const user           = localStorage.getItem('demo_user_name') || ''
     const created        = localStorage.getItem('demo_created_at')
     const onboarded      = localStorage.getItem('demo_onboarded')
@@ -1988,8 +1990,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     const depts          = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
     setCompany(name); setUserName(user); setFocusDepts(depts)
     if (created) setDaysLeft(Math.max(0, 14 - Math.floor((Date.now() - parseInt(created)) / 86400000)))
-    if (!onboarded) setShowOnboarding(true)
-    else if (!tipsCompleted) setShowCoachMarks(true)
+    if (!isPreview && !onboarded) setShowOnboarding(true)
+    else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
   }, [])
 
   function handleTipsComplete() {
