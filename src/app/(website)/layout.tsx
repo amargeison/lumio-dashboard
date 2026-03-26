@@ -45,6 +45,7 @@ function Nav() {
     .filter(l => !(isSchools && l.label === 'CRM'))
     .map(l => {
       if (!isSchools) return l
+      if (l.label === 'Product')      return { ...l, href: '/schools/product' }
       if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
       if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
       if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
