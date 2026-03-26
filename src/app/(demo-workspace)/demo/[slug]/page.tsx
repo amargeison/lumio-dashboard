@@ -502,8 +502,8 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
   }
 
   function startListening() {
-    const SR = (window as unknown as { SpeechRecognition?: new() => SpeechRecognition; webkitSpeechRecognition?: new() => SpeechRecognition }).SpeechRecognition
-      || (window as unknown as { SpeechRecognition?: new() => SpeechRecognition; webkitSpeechRecognition?: new() => SpeechRecognition }).webkitSpeechRecognition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) { onError('Speech recognition is not supported in this browser. Try Chrome.'); return }
     const recognition = new SR()
     recognition.lang = 'en-GB'
@@ -511,7 +511,7 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
     recognition.maxAlternatives = 1
     setListening(true)
     setTranscript('')
-    recognition.onresult = (e: SpeechRecognitionEvent) => {
+    recognition.onresult = (e: any) => {
       const text = e.results[0][0].transcript
       setTranscript(text)
       setListening(false)
