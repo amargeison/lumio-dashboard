@@ -879,8 +879,10 @@ export default function StudentsPage() {
 
       {/* Assessment picker modal */}
       {assessPickerPupil && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setAssessPickerPupil(null)}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative z-[51]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
+            onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
               <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Assess {assessPickerPupil.name}</p>
               <button onClick={() => setAssessPickerPupil(null)} style={{ color: '#6B7280' }}><X size={16} /></button>
@@ -932,7 +934,7 @@ export default function StudentsPage() {
           schoolName={schoolName}
           assessorName=""
           onClose={() => setAssessing(null)}
-          onComplete={(report: unknown) => { console.log('Assessment complete:', report); setAssessing(null) }}
+          onComplete={() => { setAssessing(null) }}
         />
       )}
 
