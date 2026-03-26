@@ -487,30 +487,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   return (
     <div className="space-y-6">
 
-      {/* ── Greeting banner ─────────────────────────────────────── */}
-      <div className="rounded-2xl p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0D9488 0%,#0F766E 50%,#134E4A 100%)' }}>
-        <div className="relative z-10">
-          <p className="text-sm font-medium mb-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>{today}</p>
-          <h1 className="text-2xl font-bold mb-1" style={{ color: '#F9FAFB' }}>Good morning, {SCHOOL.headteacher.split(' ')[0]}.</h1>
-          <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>Term 4, Week 9 · 7 weeks to SATs · {SCHOOL.name}</p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: `Attendance ${attendanceAvg}%`,    color: 'rgba(255,255,255,0.2)' },
-              { label: `${staffIn}/${STAFF_TODAY.length} staff in`,      color: 'rgba(255,255,255,0.2)' },
-              { label: '1 open concern',                  color: 'rgba(239,68,68,0.4)'   },
-              { label: '23 active workflows',             color: 'rgba(255,255,255,0.2)' },
-            ].map(c => (
-              <span key={c.label} className="rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: c.color, color: '#F9FAFB', backdropFilter: 'blur(4px)' }}>
-                {c.label}
-              </span>
-            ))}
-          </div>
-        </div>
-        {/* decorative circle */}
-        <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }} />
-        <div className="absolute -right-4 -bottom-8 h-32 w-32 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }} />
-      </div>
-
       {/* ── Safeguarding alert ──────────────────────────────────── */}
       <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
         <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
