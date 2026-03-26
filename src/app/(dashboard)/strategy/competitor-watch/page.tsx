@@ -529,7 +529,7 @@ export default function CompetitorWatchPage() {
   })
 
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="strategy" />
+  if (!hasData) return <DashboardEmptyState pageKey="strategy" title="No strategy data yet" description="Upload your competitor research and market data to activate the Strategy module." uploads={[{ key: 'competitors', label: 'Upload Competitor Data (CSV)' }]} />
 
   async function runScan() {
     setScanning(true)
