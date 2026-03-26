@@ -24,7 +24,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Lumio" />
-        <link rel="apple-touch-icon" href="/lumio-instagram-post-square.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/lumio-favicon-32.png" />
+        <link rel="apple-touch-icon" href="/lumio-favicon-256.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body className="h-full" style={{ backgroundColor: '#07080F' }}>
