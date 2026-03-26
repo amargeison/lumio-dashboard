@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
+import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -564,6 +565,7 @@ export default function HomePage() {
   const [activeWorkflowIdx, setActiveWorkflowIdx] = useState(0)
   const [showTellMore, setShowTellMore] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
+  const [showTypeModal, setShowTypeModal] = useState(false)
 
   const dept = DEPT_TABS[activeDeptIdx]
   const workflow = dept.workflows?.[activeWorkflowIdx]
@@ -619,13 +621,13 @@ export default function HomePage() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
             Tell me more
           </button>
-          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+          <button onClick={() => setShowTypeModal(true)}
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
             Book a Demo <ArrowRight size={16} />
-          </a>
+          </button>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
@@ -643,6 +645,13 @@ export default function HomePage() {
         />
       )}
       {showTrial && <BookTrialModal onClose={() => setShowTrial(false)} />}
+      {showTypeModal && (
+        <TrialTypeModal
+          onClose={() => setShowTypeModal(false)}
+          onBusiness={() => { setShowTypeModal(false); setShowTrial(true) }}
+          onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
+        />
+      )}
 
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section style={{ borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B12' }}>
@@ -1388,7 +1397,7 @@ export default function HomePage() {
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
-              Book a Demo <ArrowRight size={18} />
+              Buy now <ArrowRight size={18} />
             </Link>
             <Link href="/pricing"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-lg text-base font-medium"

@@ -2149,8 +2149,7 @@ export default function InsightsPage() {
   const activeRoleMeta = ROLES.find((r) => r.id === activeRole)!
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#07080F' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="w-full max-w-none space-y-6 px-4 sm:px-6 py-6">
 
         {/* Header */}
         <div className="mb-6">
@@ -2195,7 +2194,6 @@ export default function InsightsPage() {
         {/* Role content */}
         <div>{roleView[activeRole]}</div>
 
-      </div>
     </div>
   )
 }

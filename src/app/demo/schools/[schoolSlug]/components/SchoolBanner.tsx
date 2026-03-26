@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { Volume2 } from 'lucide-react'
 
 const QUOTES = [
   { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
@@ -172,7 +173,19 @@ interface Props {
 
 export default function SchoolBanner({ schoolName, headteacher, town, attendance, staffIn, openConcerns, activeWorkflows, weeksToSATs }: Props) {
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+  const [speaking, setSpeaking] = useState(false)
   const quote = getDailyQuote()
+
+  function speak() {
+    if (!('speechSynthesis' in window)) return
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return }
+    const text = `${greeting}, ${firstName}. Today is ${dateStr}. ${termWeek}. Attendance is ${attendance}%. ${staffIn} staff in. ${openConcerns} open safeguarding concerns. ${activeWorkflows} active workflows.`
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    setSpeaking(true)
+    window.speechSynthesis.speak(utterance)
+  }
 
   const now = new Date()
   const h = now.getHours()
@@ -196,7 +209,12 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
 
           {/* LEFT */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-black text-white tracking-tight mb-1">{greeting}, {firstName}. 👋</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName}. 👋</h1>
+              <button onClick={speak} title={speaking ? 'Stop' : 'Read aloud'} className="flex-shrink-0 rounded-lg p-1.5 transition-colors" style={{ backgroundColor: speaking ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)', color: speaking ? '#6EE7B7' : 'rgba(167,243,208,0.7)' }}>
+                <Volume2 size={15} />
+              </button>
+            </div>
             <p className="text-sm mb-1" style={{ color: 'rgba(167,243,208,0.8)' }}>{dateStr}</p>
             <p className="text-xs mb-3" style={{ color: 'rgba(167,243,208,0.6)' }}>{termWeek}</p>
             <p className="text-sm italic" style={{ color: 'rgba(167,243,208,0.7)' }}>&ldquo;{quote.text}&rdquo;</p>
