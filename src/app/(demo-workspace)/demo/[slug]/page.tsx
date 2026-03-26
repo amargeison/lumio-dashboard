@@ -419,12 +419,65 @@ const BG_GRADIENTS = [
   'from-indigo-900 via-purple-950 to-violet-950',
 ]
 
+const QUOTES = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "The harder I work, the luckier I get.", author: "Samuel Goldwyn" },
+  { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+  { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+  { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
+  { text: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
+  { text: "The only limit to our realisation of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt" },
+  { text: "Do one thing every day that scares you.", author: "Eleanor Roosevelt" },
+  { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+  { text: "The best revenge is massive success.", author: "Frank Sinatra" },
+  { text: "I never dreamed about success. I worked for it.", author: "Estée Lauder" },
+  { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "Whether you think you can or think you can't, you're right.", author: "Henry Ford" },
+  { text: "There are no secrets to success. It is the result of preparation, hard work, and learning from failure.", author: "Colin Powell" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "You only live once, but if you do it right, once is enough.", author: "Mae West" },
+  { text: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+  { text: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+  { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+  { text: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
+  { text: "The best teachers are those who show you where to look but don't tell you what to see.", author: "Alexandra K. Trenfor" },
+]
+
+function getRandomQuote() {
+  const usedRaw = localStorage.getItem('lumio_used_quotes')
+  let used: number[] = usedRaw ? JSON.parse(usedRaw) : []
+  if (used.length >= QUOTES.length) used = []
+  const available = QUOTES.map((_, i) => i).filter(i => !used.includes(i))
+  const idx = available[Math.floor(Math.random() * available.length)]
+  used.push(idx)
+  localStorage.setItem('lumio_used_quotes', JSON.stringify(used))
+  return QUOTES[idx]
+}
+
 function DemoPersonalBanner({ company }: { company: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const bg = BG_GRADIENTS[new Date().getDay()]
   const { speak, stop, isPlaying } = useSpeech()
+  const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -508,7 +561,7 @@ function DemoPersonalBanner({ company }: { company: string }) {
               </div>
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p className="text-purple-200/60 text-sm italic">Your demo workspace is ready to explore.</p>
+            <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
           </div>
 
           {/* CENTRE: summary chips */}
