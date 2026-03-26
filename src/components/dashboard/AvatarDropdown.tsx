@@ -40,7 +40,7 @@ export default function AvatarDropdown({ initials, onConvert }: Props) {
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative z-[9999]">
       <button
         onClick={() => setOpen(v => !v)}
         className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-opacity hover:opacity-80"
@@ -50,7 +50,7 @@ export default function AvatarDropdown({ initials, onConvert }: Props) {
 
       {open && (
         <div
-          className="absolute right-0 top-10 z-50 w-52 rounded-xl py-1 shadow-xl"
+          className="absolute right-0 top-10 z-[9999] w-52 rounded-xl py-1 shadow-xl"
           style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
 
           {/* User info */}

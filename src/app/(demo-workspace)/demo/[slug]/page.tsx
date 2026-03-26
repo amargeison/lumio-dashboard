@@ -2080,7 +2080,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       )}
 
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
+      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3 overflow-visible" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
         <div className="flex items-center gap-3 min-w-0">
           {/* Mobile hamburger */}
           <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
