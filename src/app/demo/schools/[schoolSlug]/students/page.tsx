@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import LanguageScreenApp from '@/components/LanguageScreenApp'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -664,6 +665,7 @@ export default function StudentsPage() {
   const [yearFilter, setYearFilter] = useState('All Years')
   const [flagFilter, setFlagFilter] = useState<FilterKey>('all')
   const [selectedPupil, setSelectedPupil] = useState<Pupil | null>(null)
+  const [assessing, setAssessing] = useState<Pupil | null>(null)
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -865,6 +867,12 @@ export default function StudentsPage() {
                   </>
                 )}
 
+                <button
+                  onClick={e => { e.stopPropagation(); setAssessing(pupil) }}
+                  className="px-2 py-1 rounded-lg text-xs font-semibold"
+                  style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+                  Assess
+                </button>
                 <ChevronRight size={14} style={{ color: '#4B5563' }} />
               </div>
             )
@@ -897,6 +905,17 @@ export default function StudentsPage() {
           pupil={selectedPupil}
           view={view}
           onClose={() => setSelectedPupil(null)}
+        />
+      )}
+
+      {assessing && (
+        <LanguageScreenApp
+          studentName={assessing.name}
+          studentDob={assessing.dob}
+          schoolName="Demo School"
+          assessorName="Demo Assessor"
+          onClose={() => setAssessing(null)}
+          onComplete={(r: unknown) => { console.log(r); setAssessing(null) }}
         />
       )}
     </div>
