@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-// DEV BRANCH — no auth required, all routes open
+// DEMO-BUSINESS BRANCH — root redirects to business demo workspace
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Keep the root → /home redirect for the website-style landing
+  // Root → business demo workspace
   if (pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/overview'
+    url.pathname = '/demo/lumio-demo'
     return NextResponse.redirect(url)
   }
 
