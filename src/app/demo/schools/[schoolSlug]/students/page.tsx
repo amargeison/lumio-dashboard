@@ -670,6 +670,8 @@ export default function StudentsPage() {
   const [flagFilter, setFlagFilter] = useState<FilterKey>('all')
   const [selectedPupil, setSelectedPupil] = useState<Pupil | null>(null)
   const [assessing, setAssessing] = useState<Pupil | null>(null)
+  const [assessPickerPupil, setAssessPickerPupil] = useState<Pupil | null>(null)
+  const [toast, setToast] = useState('')
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -872,7 +874,7 @@ export default function StudentsPage() {
                 )}
 
                 <button
-                  onClick={e => { e.stopPropagation(); setAssessing(pupil) }}
+                  onClick={e => { e.stopPropagation(); setAssessPickerPupil(pupil) }}
                   className="px-2 py-1 rounded-lg text-xs font-semibold"
                   style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
                   Assess
@@ -912,15 +914,70 @@ export default function StudentsPage() {
         />
       )}
 
+      {/* Assessment picker modal */}
+      {assessPickerPupil && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Assess {assessPickerPupil.name}</p>
+              <button onClick={() => setAssessPickerPupil(null)} style={{ color: '#6B7280' }}><X size={16} /></button>
+            </div>
+            <div className="py-2">
+              {[
+                { label: 'LanguageScreen', desc: 'NELI oral language assessment', live: true },
+                { label: 'EYFS Profile Update', desc: 'Early years foundation stage profile', live: false },
+                { label: 'Leuven Wellbeing Scale', desc: 'Wellbeing and involvement observation', live: false },
+                { label: 'Phonics Readiness Screen', desc: 'Phase readiness and phoneme awareness', live: false },
+                { label: 'DfE SEND Assessment', desc: 'Graduated approach needs analysis', live: false },
+                { label: 'Teacher Observation Note', desc: 'Free-form observation record', live: false },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  className="flex items-start gap-3 w-full px-5 py-3 text-left transition-all"
+                  style={{ borderBottom: '1px solid #1A1D27' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+                  onClick={() => {
+                    if (item.live) {
+                      setAssessPickerPupil(null)
+                      setAssessing(assessPickerPupil)
+                    } else {
+                      setAssessPickerPupil(null)
+                      setToast('Coming soon')
+                      setTimeout(() => setToast(''), 3000)
+                    }
+                  }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{item.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{item.desc}</p>
+                  </div>
+                  {item.live
+                    ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full self-center" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>Launch</span>
+                    : <span className="text-xs px-2 py-0.5 rounded-full self-center" style={{ backgroundColor: 'rgba(107,114,128,0.1)', color: '#4B5563' }}>Soon</span>
+                  }
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {assessing && (
         <LanguageScreenApp
           studentName={assessing.name}
           studentDob={assessing.dob}
           schoolName={schoolName}
-          assessorName="Demo Assessor"
+          assessorName=""
           onClose={() => setAssessing(null)}
-          onComplete={(r: unknown) => { console.log(r); setAssessing(null) }}
+          onComplete={(report: unknown) => { console.log('Assessment complete:', report); setAssessing(null) }}
         />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-sm font-medium shadow-xl" style={{ backgroundColor: '#1A1D27', border: '1px solid #374151', color: '#F9FAFB' }}>
+          {toast}
+        </div>
       )}
     </div>
   )
