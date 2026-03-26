@@ -60,8 +60,8 @@ export function useSpeech() {
       )
 
       if (voice) utterance.voice = voice
-      utterance.rate   = 0.9
-      utterance.pitch  = 1.0
+      utterance.rate   = 0.88
+      utterance.pitch  = 1.08
       utterance.volume = 1.0
       utterance.lang   = 'en-GB'
 

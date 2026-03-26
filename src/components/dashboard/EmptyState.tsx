@@ -82,7 +82,8 @@ export function DashboardEmptyState({
     const ALL_PAGES = [
       'overview','crm','sales','marketing','projects','hr','partners',
       'finance','insights','workflows','strategy','reports','settings',
-      'inbox','calendar','analytics',
+      'inbox','calendar','analytics','accounts','support','success',
+      'trials','operations','it',
     ]
     ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     localStorage.setItem('lumio_demo_active', 'true')
