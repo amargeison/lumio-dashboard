@@ -543,7 +543,7 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
   )
 }
 
-function DemoPersonalBanner({ company, dept, onToast }: { company: string; dept: string; onToast: (msg: string) => void }) {
+function DemoPersonalBanner({ company, dept = 'overview', onToast }: { company: string; dept?: string; onToast?: (msg: string) => void }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -681,7 +681,7 @@ function DemoPersonalBanner({ company, dept, onToast }: { company: string; dept:
                           )}
                         </div>
                         <button
-                          onClick={() => { onToast(`✓ ${action.label}`); setShowVoiceModal(false) }}
+                          onClick={() => { onToast?.(`✓ ${action.label}`); setShowVoiceModal(false) }}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
                           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
                           Confirm
@@ -983,7 +983,7 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
   return (
     <div className="space-y-4">
       {/* 1. Banner */}
-      <div ref={bannerRef}><DemoPersonalBanner company={company} dept={activeDept} onToast={(msg) => { setToast(msg); setTimeout(() => setToast(null), 3000) }} /></div>
+      <div ref={bannerRef}><DemoPersonalBanner company={company} /></div>
 
       {/* 2. Morning Roundup — full width, below banner */}
       <DemoMorningRoundup />
