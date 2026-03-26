@@ -568,6 +568,7 @@ function DemoPersonalBanner({ company, dept, onToast }: { company: string; dept:
   }
 
   return (
+    <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
@@ -706,6 +707,7 @@ function DemoPersonalBanner({ company, dept, onToast }: { company: string; dept:
           </div>
         </div>
       )}
+    </>
   )
 }
 
