@@ -38,13 +38,18 @@ export async function POST(req: NextRequest) {
       .eq('email', email.toLowerCase())
       .eq('used', false)
 
-    await supabase.from('school_magic_links').insert({
+    const { error: linkError } = await supabase.from('school_magic_links').insert({
       email: email.toLowerCase(),
       school_id: school.id,
       token: code,
       expires_at: expiresAt,
       used: false,
     })
+
+    if (linkError) {
+      console.error('[schools/signup] magic_link insert error', linkError)
+      return NextResponse.json({ error: 'Failed to generate sign-in code' }, { status: 500 })
+    }
 
     await resend.emails.send({
       from: 'Lumio for Schools <schools@lumiocms.com>',
