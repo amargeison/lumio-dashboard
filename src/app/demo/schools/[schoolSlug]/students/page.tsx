@@ -5,6 +5,7 @@ import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield,
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import LanguageScreenApp from '@/components/LanguageScreenApp'
+import PupilOverview from '@/components/PupilOverview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -316,45 +317,7 @@ function PupilProfile({ pupil, onClose, view }: { pupil: Pupil; onClose: () => v
         <div className="flex-1 overflow-y-auto p-5">
 
           {/* OVERVIEW */}
-          {tab === 'overview' && (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Attendance</p>
-                  <p className="text-2xl font-black mt-1" style={{ color: attendanceColor }}>{pupil.attendancePct}%</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>This academic year</p>
-                </div>
-                <div className="rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Attainment</p>
-                  <p className="text-2xl font-black mt-1" style={{ color: pupil.attainment === 'Above' ? '#22C55E' : pupil.attainment === 'Below' ? '#EF4444' : '#0D9488' }}>{pupil.attainment}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Overall expectation</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-0">
-                <InfoRow label="Date of Birth" value={pupil.dob} />
-                <InfoRow label="Gender" value={pupil.gender === 'M' ? 'Male' : 'Female'} />
-                <InfoRow label="Ethnicity" value={pupil.ethnicity} />
-                <InfoRow label="Class" value={`${pupil.class} — ${pupil.classTeacher}`} />
-                <InfoRow label="FSM Eligible" value={pupil.fsm ? 'Yes' : 'No'} />
-                <InfoRow label="Pupil Premium" value={pupil.pp ? 'Yes' : 'No'} />
-                <InfoRow label="EAL" value={pupil.eal ? 'Yes' : 'No'} />
-                <InfoRow label="LAC" value={pupil.lac ? 'Yes — see safeguarding tab' : 'No'} />
-                <InfoRow label="Young Carer" value={pupil.youngCarer ? 'Yes — handle sensitively' : 'No'} />
-              </div>
-              {pupil.safeguardingFlag && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: '#FCA5A5' }}>⚠️ Safeguarding Flag Active</p>
-                  <p className="text-xs" style={{ color: '#9CA3AF' }}>{pupil.cpStatus} — see Safeguarding tab. Contact DSL for details.</p>
-                </div>
-              )}
-              {pupil.medicalNotes && pupil.medicalNotes !== 'None' && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: '#FCD34D' }}>⚕️ Medical Note</p>
-                  <p className="text-xs" style={{ color: '#D1D5DB' }}>{pupil.medicalNotes}</p>
-                </div>
-              )}
-            </div>
-          )}
+          {tab === 'overview' && <PupilOverview pupil={pupil} />}
 
           {/* PUPIL PASSPORT */}
           {tab === 'passport' && (
