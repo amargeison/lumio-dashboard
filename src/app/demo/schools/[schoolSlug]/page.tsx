@@ -135,29 +135,65 @@ export default function DemoSchoolOverviewPage() {
         </button>
       </div>
 
-      <MorningReview />
-
-      {/* AI Briefing */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Briefing</p>
-          <span className="flex items-center gap-1 text-xs" style={{ color: '#0D9488' }}><Sparkles size={12} /> Updated 7:30am</span>
-        </div>
-        <div className="px-5 py-4 space-y-3">
-          {[
-            { icon: Activity,   color: '#0D9488', text: `Overall attendance today is ${attendanceAvg}% — Year 6 is lowest at 91.8%. Two pupils flagged for persistent absence review.` },
-            { icon: Shield,     color: '#EF4444', text: '1 open safeguarding concern logged 2 days ago has not been reviewed. DSL sign-off required today.' },
-            { icon: Users,      color: '#F59E0B', text: 'Mrs S. Okafor (SENCO) is absent today. Cover has been arranged. EHCP review meeting at 11:30am still scheduled.' },
-            { icon: FileText,   color: '#A78BFA', text: 'M. Taylor DBS check expired on 10 March. Renewal must be initiated before end of week.' },
-            { icon: TrendingUp, color: '#22C55E', text: 'Year 6 SATs prep session running at 10am. All 28 registered pupils confirmed.' },
-          ].map(({ icon: Icon, color, text }, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid #1F2937' }}>
-                <Icon size={12} style={{ color }} />
+      {/* MorningReview + AI Briefing side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2"><MorningReview /></div>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Briefing</p>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#0D9488' }}><Sparkles size={12} /> Updated 7:30am</span>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            {[
+              { icon: Activity,   color: '#0D9488', text: `Attendance today is ${attendanceAvg}% — Year 6 lowest at 91.8%. Two pupils flagged for persistent absence.` },
+              { icon: Shield,     color: '#EF4444', text: '1 open safeguarding concern logged 2 days ago. DSL sign-off required today.' },
+              { icon: Users,      color: '#F59E0B', text: 'Mrs S. Okafor (SENCO) absent. Cover arranged. EHCP review at 11:30am still scheduled.' },
+              { icon: FileText,   color: '#A78BFA', text: 'M. Taylor DBS expired 10 March. Renewal needed before end of week.' },
+              { icon: TrendingUp, color: '#22C55E', text: 'Year 6 SATs prep at 10am. All 28 registered pupils confirmed.' },
+            ].map(({ icon: Icon, color, text }, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid #1F2937' }}>
+                  <Icon size={12} style={{ color }} />
+                </div>
+                <p className="text-xs pt-0.5" style={{ color: '#D1D5DB' }}>{text}</p>
               </div>
-              <p className="text-sm pt-0.5" style={{ color: '#D1D5DB' }}>{text}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: 'Log Absence',    action: 'log a pupil absence and trigger the attendance workflow',     icon: Users,    color: '#0D9488' },
+          { label: 'New Concern',    action: 'open a new safeguarding concern form for DSL review',         icon: Shield,   color: '#EF4444' },
+          { label: 'Parent Contact', action: 'compose and send a parent communication via email or SMS',    icon: Phone,    color: '#6C3FC5' },
+          { label: 'Book Cover',     action: 'create a new supply cover booking and notify the cover pool', icon: Calendar, color: '#F59E0B' },
+          { label: 'New Admission',  action: 'start the new pupil admission workflow with 3-step form',     icon: UserPlus, color: '#0D9488' },
+          { label: 'Run Report',     action: 'generate an AI-powered report for governors or Ofsted',       icon: FileText, color: '#9CA3AF' },
+        ].map(({ label, action, icon: Icon, color }) => (
+          <button key={label} onClick={() => fireToast(action)}
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <Icon size={14} style={{ color }} />{label}
+          </button>
+        ))}
+      </div>
+
+      {/* Today's Schedule (standalone) */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Schedule</p></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x" style={{ borderColor: '#1F2937' }}>
+          {SCHEDULE.map((s, i) => {
+            const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
+            return (
+              <div key={i} className="flex flex-col gap-1 px-4 py-3">
+                <span className="text-xs font-mono" style={{ color: '#6B7280' }}>{s.time}</span>
+                <p className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{s.event}</p>
+                <div className="h-1 w-10 rounded-full mt-0.5" style={{ backgroundColor: colors[s.type] ?? '#9CA3AF' }} />
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -185,27 +221,8 @@ export default function DemoSchoolOverviewPage() {
         })}
       </div>
 
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { label: 'Log Absence',    action: 'log a pupil absence and trigger the attendance workflow',     icon: Users,    color: '#0D9488' },
-          { label: 'New Concern',    action: 'open a new safeguarding concern form for DSL review',         icon: Shield,   color: '#EF4444' },
-          { label: 'Parent Contact', action: 'compose and send a parent communication via email or SMS',    icon: Phone,    color: '#6C3FC5' },
-          { label: 'Book Cover',     action: 'create a new supply cover booking and notify the cover pool', icon: Calendar, color: '#F59E0B' },
-          { label: 'New Admission',  action: 'start the new pupil admission workflow with 3-step form',     icon: UserPlus, color: '#0D9488' },
-          { label: 'Run Report',     action: 'generate an AI-powered report for governors or Ofsted',       icon: FileText, color: '#9CA3AF' },
-        ].map(({ label, action, icon: Icon, color }) => (
-          <button key={label} onClick={() => fireToast(action)}
-            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-            <Icon size={14} style={{ color }} />{label}
-          </button>
-        ))}
-      </div>
-
-      {/* Two column */}
+      {/* Two column: attendance + workflows */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Attendance */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Attendance by Year Group</p>
@@ -224,7 +241,6 @@ export default function DemoSchoolOverviewPage() {
           </div>
         </div>
 
-        {/* Workflows */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Workflows</p>
@@ -243,9 +259,8 @@ export default function DemoSchoolOverviewPage() {
         </div>
       </div>
 
-      {/* Three column */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Staff */}
+      {/* Two column: staff + compliance */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Staff Today</p></div>
           <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
@@ -264,26 +279,6 @@ export default function DemoSchoolOverviewPage() {
           </div>
         </div>
 
-        {/* Schedule */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Schedule</p></div>
-          <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
-            {SCHEDULE.map((s, i) => {
-              const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
-              return (
-                <div key={i} className="flex gap-3 px-4 py-3">
-                  <span className="text-xs shrink-0 mt-0.5 w-14" style={{ color: '#6B7280' }}>{s.time}</span>
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{s.event}</p>
-                    <div className="h-1 w-12 rounded-full mt-1.5" style={{ backgroundColor: colors[s.type] ?? '#9CA3AF' }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Compliance */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Compliance Tracker</p></div>
           <div className="divide-y" style={{ borderColor: '#0D0E14' }}>

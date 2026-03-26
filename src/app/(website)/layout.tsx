@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
+import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
@@ -36,6 +37,7 @@ function Nav() {
   const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
+  const [showTypeModal, setShowTypeModal] = useState(false)
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
 
@@ -99,20 +101,26 @@ function Nav() {
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
             Free 14-day trial
           </button>
-          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+          <button onClick={() => setShowTypeModal(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#7C3AED' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#6C3FC5' }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#7C3AED' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6C3FC5' }}>
             Book a Demo
-          </a>
-          <Link href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.borderColor = '#1F2937' }}>
-            Sign in
-          </Link>
+          </button>
+          {isSchools ? (
+            <Link href="/login?type=school"
+              className="px-4 py-2 text-sm font-medium rounded-lg"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+              Schools sign in
+            </Link>
+          ) : (
+            <Link href="/login"
+              className="px-4 py-2 text-sm font-medium rounded-lg"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+              Sign in
+            </Link>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -142,13 +150,18 @@ function Nav() {
             <button onClick={() => { setMobileOpen(false); setShowTrial(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14-day trial</button>
-            <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+            <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-              onClick={() => setMobileOpen(false)}>Book a Demo</a>
-            <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
-              style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}
-              onClick={() => setMobileOpen(false)}>Sign in</Link>
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>Book a Demo</button>
+            {isSchools ? (
+              <Link href="/login?type=school" className="text-sm font-medium py-2 text-center rounded-lg"
+                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+                onClick={() => setMobileOpen(false)}>Schools sign in</Link>
+            ) : (
+              <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
+                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+                onClick={() => setMobileOpen(false)}>Sign in</Link>
+            )}
           </div>
         </div>
       )}
@@ -156,6 +169,13 @@ function Nav() {
 
     {showTrial && (
       <BookTrialModal onClose={() => setShowTrial(false)} />
+    )}
+    {showTypeModal && (
+      <TrialTypeModal
+        onClose={() => setShowTypeModal(false)}
+        onBusiness={() => { setShowTypeModal(false); setShowTrial(true) }}
+        onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
+      />
     )}
   </>
   )
