@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Volume2 } from 'lucide-react'
+import { Volume2, Mic } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
 
 const QUOTES = [
@@ -68,7 +68,7 @@ const CLOCK_OPTIONS: { id: ClockStyle; label: string; emoji: string }[] = [
 
 function AnalogFace({ now }: { now: Date }) {
   const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds()
-  const hourDeg = (h / 12) * 360 + (m / 60) * 30
+  const hourDeg   = (h / 12) * 360 + (m / 60) * 30
   const minuteDeg = (m / 60) * 360 + (s / 60) * 6
   const secondDeg = (s / 60) * 360
   const cx = 28
@@ -77,11 +77,14 @@ function AnalogFace({ now }: { now: Date }) {
       <circle cx={cx} cy={cx} r={cx - 1} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2 - Math.PI / 2
-        return <line key={i} x1={cx + (cx-4)*Math.cos(angle)} y1={cx + (cx-4)*Math.sin(angle)} x2={cx + (cx-8)*Math.cos(angle)} y2={cx + (cx-8)*Math.sin(angle)} stroke="rgba(255,255,255,0.3)" strokeWidth={i%3===0?1.5:0.75} />
+        return <line key={i}
+          x1={cx + (cx - 4) * Math.cos(angle)} y1={cx + (cx - 4) * Math.sin(angle)}
+          x2={cx + (cx - 8) * Math.cos(angle)} y2={cx + (cx - 8) * Math.sin(angle)}
+          stroke="rgba(255,255,255,0.3)" strokeWidth={i % 3 === 0 ? 1.5 : 0.75} />
       })}
-      <line x1={cx} y1={cx} x2={cx+Math.cos((hourDeg-90)*Math.PI/180)*(cx-14)} y2={cx+Math.sin((hourDeg-90)*Math.PI/180)*(cx-14)} stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1={cx} y1={cx} x2={cx+Math.cos((minuteDeg-90)*Math.PI/180)*(cx-8)} y2={cx+Math.sin((minuteDeg-90)*Math.PI/180)*(cx-8)} stroke="white" strokeWidth="1.75" strokeLinecap="round" />
-      <line x1={cx} y1={cx} x2={cx+Math.cos((secondDeg-90)*Math.PI/180)*(cx-6)} y2={cx+Math.sin((secondDeg-90)*Math.PI/180)*(cx-6)} stroke="#0D9488" strokeWidth="1" strokeLinecap="round" />
+      <line x1={cx} y1={cx} x2={cx + Math.cos((hourDeg - 90) * Math.PI / 180) * (cx - 14)}   y2={cx + Math.sin((hourDeg - 90) * Math.PI / 180) * (cx - 14)}   stroke="white"   strokeWidth="2.5"  strokeLinecap="round" />
+      <line x1={cx} y1={cx} x2={cx + Math.cos((minuteDeg - 90) * Math.PI / 180) * (cx - 8)}  y2={cx + Math.sin((minuteDeg - 90) * Math.PI / 180) * (cx - 8)}  stroke="white"   strokeWidth="1.75" strokeLinecap="round" />
+      <line x1={cx} y1={cx} x2={cx + Math.cos((secondDeg - 90) * Math.PI / 180) * (cx - 6)}  y2={cx + Math.sin((secondDeg - 90) * Math.PI / 180) * (cx - 6)}  stroke="#0D9488" strokeWidth="1"    strokeLinecap="round" />
       <circle cx={cx} cy={cx} r="2" fill="#0D9488" />
     </svg>
   )
@@ -92,11 +95,11 @@ function FuturistFace({ now }: { now: Date }) {
   return (
     <div style={{ minWidth: 88 }}>
       <div className="font-mono text-xs font-black tracking-widest mb-1.5" style={{ color: '#0D9488', letterSpacing: '0.2em' }}>{pad(h)}:{pad(m)}:{pad(s)}</div>
-      {[{ label: 'H', pct: (h%24/24)*100, color: '#34D399' }, { label: 'M', pct: (m/60)*100, color: '#0D9488' }, { label: 'S', pct: (s/60)*100, color: '#6EE7B7' }].map(({ label, pct, color }) => (
+      {[{ label: 'H', pct: (h % 24 / 24) * 100, color: '#34D399' }, { label: 'M', pct: (m / 60) * 100, color: '#0D9488' }, { label: 'S', pct: (s / 60) * 100, color: '#6EE7B7' }].map(({ label, pct, color }) => (
         <div key={label} className="flex items-center gap-1.5 mb-1">
           <span className="text-xs font-mono font-bold w-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</span>
           <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color, transition: label==='S'?'width 0.9s linear':'width 0.9s ease' }} />
+            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color, transition: label === 'S' ? 'width 0.9s linear' : 'width 0.9s ease' }} />
           </div>
         </div>
       ))}
@@ -136,8 +139,8 @@ function LiveClock() {
             <div className="text-xs mt-1" style={{ color: 'rgba(167,243,208,0.4)' }}>World Clock</div>
           </div>
         )}
-        {style === 'analog' && <div className="flex items-center gap-2"><AnalogFace now={now} /><div><div className="font-mono text-sm font-black text-white">{pad(now.getHours())}:{pad(now.getMinutes())}</div><div className="text-xs mt-0.5" style={{ color: 'rgba(167,243,208,0.6)' }}>Local Time</div></div></div>}
-        {style === 'digital' && <div style={{ minWidth: 80 }}><div className="text-xl font-black text-white font-mono">{pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())}</div><div className="text-xs mt-0.5" style={{ color: 'rgba(167,243,208,0.6)' }}>Local Time</div></div>}
+        {style === 'analog'   && <div className="flex items-center gap-2"><AnalogFace now={now} /><div><div className="font-mono text-sm font-black text-white">{pad(now.getHours())}:{pad(now.getMinutes())}</div><div className="text-xs mt-0.5" style={{ color: 'rgba(167,243,208,0.6)' }}>Local Time</div></div></div>}
+        {style === 'digital'  && <div style={{ minWidth: 80 }}><div className="text-xl font-black text-white font-mono">{pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())}</div><div className="text-xs mt-0.5" style={{ color: 'rgba(167,243,208,0.6)' }}>Local Time</div></div>}
         {style === 'futurist' && <FuturistFace now={now} />}
       </button>
       {pickerOpen && (
@@ -146,12 +149,12 @@ function LiveClock() {
           <div className="p-1.5 flex flex-col gap-0.5">
             {CLOCK_OPTIONS.map(({ id, label, emoji }) => (
               <button key={id} onClick={() => select(id)} className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 w-full text-left"
-                style={{ backgroundColor: style===id ? 'rgba(13,148,136,0.15)' : 'transparent', border: `1px solid ${style===id ? 'rgba(13,148,136,0.4)' : 'transparent'}` }}
-                onMouseEnter={e => { if (style!==id) (e.currentTarget as HTMLButtonElement).style.backgroundColor='rgba(255,255,255,0.04)' }}
-                onMouseLeave={e => { if (style!==id) (e.currentTarget as HTMLButtonElement).style.backgroundColor='transparent' }}>
+                style={{ backgroundColor: style === id ? 'rgba(13,148,136,0.15)' : 'transparent', border: `1px solid ${style === id ? 'rgba(13,148,136,0.4)' : 'transparent'}` }}
+                onMouseEnter={e => { if (style !== id) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(255,255,255,0.04)' }}
+                onMouseLeave={e => { if (style !== id) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}>
                 <span>{emoji}</span>
-                <span className="text-sm font-medium" style={{ color: style===id ? '#0D9488' : '#9CA3AF' }}>{label}</span>
-                {style===id && <span className="ml-auto text-xs" style={{ color: '#0D9488' }}>✓</span>}
+                <span className="text-sm font-medium" style={{ color: style === id ? '#0D9488' : '#9CA3AF' }}>{label}</span>
+                {style === id && <span className="ml-auto text-xs" style={{ color: '#0D9488' }}>✓</span>}
               </button>
             ))}
           </div>
@@ -160,6 +163,57 @@ function LiveClock() {
     </div>
   )
 }
+
+// ─── School briefing script ───────────────────────────────────────────────────
+
+function buildSchoolBriefing({
+  firstName, dateStr, termWeek, attendance, staffIn, openConcerns, activeWorkflows,
+}: {
+  firstName: string
+  dateStr: string
+  termWeek: string
+  attendance: number
+  staffIn: string
+  openConcerns: number
+  activeWorkflows: number
+}): string {
+  const h = new Date().getHours()
+  const period = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'
+  const parts: string[] = []
+
+  parts.push(`Good ${period}, ${firstName}.`)
+
+  if (period === 'morning') {
+    parts.push(`Today is ${dateStr}.`)
+    parts.push(`${termWeek}.`)
+    parts.push(`Whole school attendance is currently ${attendance} percent.`)
+    parts.push(`${staffIn} staff confirmed in today.`)
+    if (openConcerns > 0) {
+      parts.push(`There ${openConcerns === 1 ? 'is' : 'are'} ${openConcerns} open safeguarding concern${openConcerns !== 1 ? 's' : ''} requiring DSL review.`)
+    } else {
+      parts.push(`No open safeguarding concerns — all clear.`)
+    }
+    parts.push(`${activeWorkflows} workflows are active and running.`)
+    parts.push(`Have a wonderful day.`)
+  } else if (period === 'afternoon') {
+    parts.push(`Afternoon check-in.`)
+    parts.push(`Attendance is at ${attendance} percent today.`)
+    if (openConcerns > 0) {
+      parts.push(`Reminder — ${openConcerns} safeguarding concern${openConcerns !== 1 ? 's' : ''} still awaiting review.`)
+    }
+    parts.push(`${activeWorkflows} workflows still running.`)
+    parts.push(`Good work this morning — keep it up.`)
+  } else {
+    parts.push(`End of day summary.`)
+    parts.push(`Attendance today was ${attendance} percent.`)
+    parts.push(`${activeWorkflows} workflows ran today.`)
+    parts.push(`Well done — rest up, see you tomorrow.`)
+  }
+
+  return parts.join('  ')
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
   schoolName: string
@@ -179,17 +233,16 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
 
   const now = new Date()
   const h = now.getHours()
-  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
-  const firstName = headteacher.replace(/^(Mrs?|Ms|Miss|Dr)\s+/, '').split(' ')[0]
-  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const termWeek = `Term 4, Week 9${weeksToSATs ? ` · ${weeksToSATs} weeks to SATs` : ''} · ${schoolName}`
+  const greeting    = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  const firstName   = headteacher.replace(/^(Mrs?|Ms|Miss|Dr)\s+/, '').split(' ')[0]
+  const dateStr     = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const termWeek    = `Term 4, Week 9${weeksToSATs ? ` · ${weeksToSATs} weeks to SATs` : ''} · ${schoolName}`
 
   function handleSpeak() {
     if (isPlaying) {
       stop()
     } else {
-      const text = `${greeting}, ${firstName}. Today is ${dateStr}. ${termWeek}. Attendance is ${attendance}%. ${staffIn} staff in. ${openConcerns} open safeguarding concerns. ${activeWorkflows} active workflows. Do have a rather splendid day.`
-      speak(text)
+      speak(buildSchoolBriefing({ firstName, dateStr, termWeek, attendance, staffIn, openConcerns, activeWorkflows }))
     }
   }
 
@@ -210,12 +263,46 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName}. 👋</h1>
-              <button onClick={handleSpeak} title={isPlaying ? 'Stop' : 'Read aloud'} className="flex-shrink-0 rounded-lg p-1.5 transition-colors" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)', color: isPlaying ? '#6EE7B7' : 'rgba(167,243,208,0.7)' }}>
-                <Volume2 size={15} />
+
+              {/* TTS */}
+              <button
+                onClick={handleSpeak}
+                title={isPlaying ? 'Stop' : 'Read aloud'}
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{
+                  width: 32, height: 32, flexShrink: 0,
+                  backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)',
+                  border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                  color: isPlaying ? '#6EE7B7' : 'rgba(167,243,208,0.7)',
+                }}
+              >
+                <Volume2 size={15} strokeWidth={1.75} />
               </button>
+
+              {/* Mic — coming soon */}
+              <div
+                className="relative overflow-hidden rounded-lg"
+                title="Voice Commands coming soon"
+                style={{ width: 32, height: 32, flexShrink: 0 }}
+              >
+                <button
+                  disabled
+                  className="flex items-center justify-center w-full h-full rounded-lg"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: '#4B5563', cursor: 'not-allowed' }}
+                >
+                  <Mic size={15} strokeWidth={1.75} />
+                </button>
+                <span
+                  className="absolute pointer-events-none"
+                  style={{ top: 3, right: -9, transform: 'rotate(35deg)', backgroundColor: '#6C3FC5', color: '#fff', fontSize: 5, fontWeight: 700, letterSpacing: '0.03em', padding: '1px 10px', lineHeight: 1.4, whiteSpace: 'nowrap' }}
+                >
+                  SOON
+                </span>
+              </div>
             </div>
-            <p className="text-sm mb-1" style={{ color: 'rgba(167,243,208,0.8)' }}>{dateStr}</p>
-            <p className="text-xs mb-3" style={{ color: 'rgba(167,243,208,0.6)' }}>{termWeek}</p>
+
+            <p className="text-sm mb-1"  style={{ color: 'rgba(167,243,208,0.8)' }}>{dateStr}</p>
+            <p className="text-xs mb-3"  style={{ color: 'rgba(167,243,208,0.6)' }}>{termWeek}</p>
             <p className="text-sm italic" style={{ color: 'rgba(167,243,208,0.7)' }}>&ldquo;{quote.text}&rdquo;</p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(167,243,208,0.4)' }}>— {quote.author}</p>
           </div>
@@ -223,10 +310,10 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
           {/* CENTRE: stat pills */}
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Attendance', value: `${attendance}%`, color: attendance >= 95 ? 'rgba(16,185,129,0.2)' : attendance >= 90 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', border: attendance >= 95 ? 'rgba(16,185,129,0.4)' : attendance >= 90 ? 'rgba(245,158,11,0.4)' : 'rgba(239,68,68,0.4)', icon: '📊' },
-              { label: 'Staff in',   value: staffIn,          color: 'rgba(16,185,129,0.2)',   border: 'rgba(16,185,129,0.4)',   icon: '👥' },
-              { label: 'Concerns',   value: String(openConcerns), color: openConcerns > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', border: openConcerns > 0 ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)', icon: '🔴' },
-              { label: 'Workflows',  value: String(activeWorkflows), color: 'rgba(16,185,129,0.2)', border: 'rgba(16,185,129,0.4)', icon: '⚡' },
+              { label: 'Attendance', value: `${attendance}%`,        color: attendance >= 95 ? 'rgba(16,185,129,0.2)' : attendance >= 90 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', border: attendance >= 95 ? 'rgba(16,185,129,0.4)' : attendance >= 90 ? 'rgba(245,158,11,0.4)' : 'rgba(239,68,68,0.4)', icon: '📊' },
+              { label: 'Staff in',   value: staffIn,                  color: 'rgba(16,185,129,0.2)',                                                                                           border: 'rgba(16,185,129,0.4)',                                                                                           icon: '👥' },
+              { label: 'Concerns',   value: String(openConcerns),     color: openConcerns > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',                                                border: openConcerns > 0 ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)',                                                icon: '🛡️' },
+              { label: 'Workflows',  value: String(activeWorkflows),  color: 'rgba(16,185,129,0.2)',                                                                                           border: 'rgba(16,185,129,0.4)',                                                                                           icon: '⚡' },
             ].map(item => (
               <div key={item.label} className="flex flex-col items-center px-3 py-2 rounded-xl min-w-[70px]" style={{ backgroundColor: item.color, border: `1px solid ${item.border}` }}>
                 <span className="text-base">{item.icon}</span>
@@ -248,6 +335,7 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
             </div>
             <LiveClock />
           </div>
+
         </div>
       </div>
     </div>
