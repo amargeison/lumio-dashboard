@@ -166,13 +166,18 @@ export async function POST(req: NextRequest) {
       .eq('email', yourEmail.toLowerCase())
       .eq('used', false)
 
-    await supabase.from('school_magic_links').insert({
+    const { error: linkError } = await supabase.from('school_magic_links').insert({
       email: yourEmail.toLowerCase(),
       school_id: school.id,
       token: code,
       expires_at: expiresAt,
       used: false,
     })
+
+    if (linkError) {
+      console.error('[schools/register] magic_link insert error', linkError)
+      return NextResponse.json({ error: 'Failed to generate sign-in code' }, { status: 500 })
+    }
 
     // Send OTP email
     await resend.emails.send({
