@@ -94,7 +94,7 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2">
-          <button onClick={() => setShowTrial(true)}
+          <button onClick={() => setShowTypeModal(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
@@ -147,7 +147,7 @@ function Nav() {
             </Link>
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
-            <button onClick={() => { setMobileOpen(false); setShowTrial(true) }}
+            <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14-day trial</button>
             <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
