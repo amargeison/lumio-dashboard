@@ -684,8 +684,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       </div>
 
       {/* ── Onboarding modal ────────────────────────────────────── */}
-      {showOnboarding && (
-        {schoolData && <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />}
+      {showOnboarding && schoolData && (
+        <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />
       )}
 
     </div>
