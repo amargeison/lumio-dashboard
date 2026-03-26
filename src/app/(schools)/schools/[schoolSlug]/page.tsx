@@ -9,13 +9,13 @@ import {
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
-const SCHOOL = {
-  name:        'Oakridge Primary School',
-  headteacher: 'Sarah Henderson',
-  ofsted:      'Good',
-  pupils:      423,
-  staff:       41,
-  town:        'Milton Keynes',
+interface SchoolData {
+  name: string
+  headteacher: string | null
+  town: string | null
+  ofsted_rating: string | null
+  pupil_count: number | null
+  staff_count: number | null
 }
 
 const ATTENDANCE_BY_YEAR = [
@@ -129,9 +129,11 @@ interface InviteRow {
 
 function OnboardingModal({
   slug,
+  school,
   onComplete,
 }: {
   slug: string
+  school: SchoolData
   onComplete: () => void
 }) {
   const [step, setStep] = useState(1)
@@ -224,7 +226,7 @@ function OnboardingModal({
         {step === 1 && (
           <div style={{ padding: '32px 28px' }}>
             <h2 style={{ color: '#F9FAFB', margin: '0 0 6px', fontSize: '22px', fontWeight: 700 }}>
-              Welcome to Lumio, {SCHOOL.name}! 👋
+              Welcome to Lumio, {school.name}! 👋
             </h2>
             <p style={{ color: '#6B7280', fontSize: '14px', margin: '0 0 28px', lineHeight: 1.6 }}>
               Let&apos;s get your school set up in 3 steps.
@@ -233,9 +235,9 @@ function OnboardingModal({
             {/* Pre-filled school info */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
               {[
-                { label: 'School name', value: SCHOOL.name },
-                { label: 'Town', value: SCHOOL.town },
-                { label: 'Headteacher', value: SCHOOL.headteacher },
+                { label: 'School name', value: school.name },
+                { label: 'Town', value: school.town ?? '—' },
+                { label: 'Headteacher', value: school.headteacher ?? '—' },
               ].map(({ label, value }) => (
                 <div key={label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937', borderRadius: '10px', padding: '12px 16px' }}>
                   <p style={{ color: '#6B7280', fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', margin: '0 0 2px', textTransform: 'uppercase' }}>{label}</p>
@@ -463,8 +465,14 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [schoolData, setSchoolData] = useState<SchoolData | null>(null)
 
   useEffect(() => {
+    fetch(`/api/schools/${_slug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setSchoolData(data) })
+      .catch(() => {/* non-fatal — modal falls back gracefully */})
+
     const key = `lumio_onboarded_${_slug}`
     if (!localStorage.getItem(key)) {
       setShowOnboarding(true)
@@ -677,7 +685,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* ── Onboarding modal ────────────────────────────────────── */}
       {showOnboarding && (
-        <OnboardingModal slug={_slug} onComplete={completeOnboarding} />
+        {schoolData && <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />}
       )}
 
     </div>
