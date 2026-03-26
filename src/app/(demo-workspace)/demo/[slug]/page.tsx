@@ -471,6 +471,78 @@ function getRandomQuote() {
   return QUOTES[idx]
 }
 
+// ─── Voice Input ──────────────────────────────────────────────────────────────
+
+type VoiceResult = { response: string; actions: { label: string; requiresIntegration?: boolean; integrationNote?: string }[] }
+
+function VoiceInput({ dept, company, onResult, onLoading, onError }: {
+  dept: string
+  company: string
+  onResult: (r: VoiceResult) => void
+  onLoading: () => void
+  onError: (e: string) => void
+}) {
+  const [listening, setListening] = useState(false)
+  const [transcript, setTranscript] = useState('')
+
+  async function sendToAPI(text: string) {
+    onLoading()
+    try {
+      const res = await fetch('/api/demo/voice-command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: text, dept, company }),
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      onResult(data)
+    } catch {
+      onError('Something went wrong. Please try again.')
+    }
+  }
+
+  function startListening() {
+    const SR = (window as unknown as { SpeechRecognition?: new() => SpeechRecognition; webkitSpeechRecognition?: new() => SpeechRecognition }).SpeechRecognition
+      || (window as unknown as { SpeechRecognition?: new() => SpeechRecognition; webkitSpeechRecognition?: new() => SpeechRecognition }).webkitSpeechRecognition
+    if (!SR) { onError('Speech recognition is not supported in this browser. Try Chrome.'); return }
+    const recognition = new SR()
+    recognition.lang = 'en-GB'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    setListening(true)
+    setTranscript('')
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
+      const text = e.results[0][0].transcript
+      setTranscript(text)
+      setListening(false)
+      sendToAPI(text)
+    }
+    recognition.onerror = () => { setListening(false); onError('Could not hear you. Please try again.') }
+    recognition.onend = () => setListening(false)
+    recognition.start()
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-4">
+      <button
+        onClick={startListening}
+        disabled={listening}
+        className="flex items-center justify-center w-20 h-20 rounded-full transition-all"
+        style={{ backgroundColor: listening ? 'rgba(108,63,197,0.3)' : 'rgba(108,63,197,0.15)', border: `2px solid ${listening ? '#A78BFA' : 'rgba(108,63,197,0.4)'}` }}>
+        <Mic size={32} style={{ color: listening ? '#A78BFA' : '#6C3FC5' }} />
+      </button>
+      <p className="text-sm text-center" style={{ color: '#9CA3AF' }}>
+        {listening ? '🎙 Listening...' : 'Tap the mic and speak your command'}
+      </p>
+      {transcript && <p className="text-xs text-center px-2" style={{ color: '#6B7280' }}>&ldquo;{transcript}&rdquo;</p>}
+      <div className="text-xs text-center space-y-1" style={{ color: '#4B5563' }}>
+        <p>Try: <span style={{ color: '#9CA3AF' }}>&ldquo;Cancel my 11am meeting&rdquo;</span></p>
+        <p>Or: <span style={{ color: '#9CA3AF' }}>&ldquo;Email the team about the 2pm catch-up&rdquo;</span></p>
+      </div>
+    </div>
+  )
+}
+
 function DemoPersonalBanner({ company }: { company: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -523,42 +595,17 @@ function DemoPersonalBanner({ company }: { company: string }) {
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
 
-              {/* Speaker 2: Disabled — Coming Soon */}
-              <div
-                className="relative overflow-hidden rounded-lg"
-                title="Voice Commands coming soon — Cancel my 11am meeting, email my team and say catch up at 2, and more"
-                style={{ width: 32, height: 32, flexShrink: 0 }}
+              {/* Mic: Voice Commands */}
+              <button
+                onClick={() => { setVoiceResult(null); setVoiceError(''); setShowVoiceModal(true) }}
+                className="flex items-center justify-center rounded-lg transition-all"
+                title="Voice Commands — try 'Cancel my 11am meeting' or 'Email my team'"
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: 'rgba(108,63,197,0.2)', border: '1px solid rgba(108,63,197,0.4)', color: '#A78BFA' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.35)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.2)' }}
               >
-                <button
-                  disabled
-                  className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#4B5563',
-                    cursor: 'not-allowed',
-                  }}
-                >
-                  <Mic size={15} strokeWidth={1.75} />
-                </button>
-                <span
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 3, right: -9,
-                    transform: 'rotate(35deg)',
-                    backgroundColor: '#6C3FC5',
-                    color: '#fff',
-                    fontSize: 5,
-                    fontWeight: 700,
-                    letterSpacing: '0.03em',
-                    padding: '1px 10px',
-                    lineHeight: 1.4,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  SOON
-                </span>
-              </div>
+                <Mic size={15} strokeWidth={1.75} />
+              </button>
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -2044,6 +2091,10 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
   const [showConvert, setShowConvert]         = useState(false)
+  const [showVoiceModal, setShowVoiceModal]   = useState(false)
+  const [voiceLoading, setVoiceLoading]       = useState(false)
+  const [voiceError, setVoiceError]           = useState('')
+  const [voiceResult, setVoiceResult]         = useState<{ response: string; actions: { label: string; requiresIntegration?: boolean; integrationNote?: string }[] } | null>(null)
 
   const bannerRef  = useRef<HTMLDivElement>(null)
   const navRef     = useRef<HTMLElement>(null)
@@ -2198,6 +2249,65 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         </div>
       </header>
       {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
+
+      {showVoiceModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)' }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2"><Mic size={18} /> Voice Command</h2>
+                <button onClick={() => setShowVoiceModal(false)} style={{ color: 'rgba(255,255,255,0.7)' }}><X size={18} /></button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              {voiceLoading && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+                  <p className="text-sm" style={{ color: '#9CA3AF' }}>Understanding your command...</p>
+                </div>
+              )}
+              {voiceError && <p className="text-sm text-red-400">{voiceError}</p>}
+              {voiceResult && !voiceLoading && (
+                <>
+                  <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                    <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>&ldquo;{voiceResult.response}&rdquo;</p>
+                  </div>
+                  <div className="space-y-2">
+                    {voiceResult.actions.map((action, i) => (
+                      <div key={i} className="rounded-xl p-3 flex items-start justify-between gap-3" style={{ backgroundColor: '#1A1D27', border: '1px solid #1F2937' }}>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{action.label}</p>
+                          {action.requiresIntegration && (
+                            <p className="text-xs mt-0.5" style={{ color: '#F59E0B' }}>⚡ Requires {action.integrationNote}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { fireToast(`✓ ${action.label}`); setShowVoiceModal(false) }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
+                          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                          Confirm
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowVoiceModal(false)} className="w-full py-2.5 rounded-xl text-sm" style={{ color: '#6B7280', backgroundColor: '#1A1D27' }}>
+                    Cancel
+                  </button>
+                </>
+              )}
+              {!voiceLoading && !voiceResult && !voiceError && (
+                <VoiceInput
+                  dept={activeDept}
+                  company={company}
+                  onResult={(result) => { setVoiceResult(result); setVoiceLoading(false) }}
+                  onLoading={() => setVoiceLoading(true)}
+                  onError={(err) => { setVoiceError(err); setVoiceLoading(false) }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
