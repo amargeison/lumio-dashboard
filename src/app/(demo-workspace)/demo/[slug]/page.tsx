@@ -22,6 +22,8 @@ import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/L
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
+import ConvertModal from '@/app/(demo-workspace)/components/ConvertModal'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1970,6 +1972,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showPerfReview,   setShowPerfReview]   = useState(false)
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
+  const [showConvert, setShowConvert]         = useState(false)
 
   const bannerRef  = useRef<HTMLDivElement>(null)
   const navRef     = useRef<HTMLElement>(null)
@@ -2099,8 +2102,13 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <Link href="/pricing" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
             <Zap size={12} /><span className="hidden sm:inline">Upgrade to Lumio</span><span className="sm:hidden">Upgrade</span>
           </Link>
+          <AvatarDropdown
+            initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+            onConvert={() => setShowConvert(true)}
+          />
         </div>
       </header>
+      {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
