@@ -50,16 +50,20 @@ Rules:
   })
 
   if (!res.ok) {
-    return NextResponse.json({ error: 'Claude API error' }, { status: 500 })
+    const errBody = await res.text()
+    console.error('[voice-command] Anthropic error', res.status, errBody)
+    return NextResponse.json({ error: 'Claude API error', status: res.status, detail: errBody }, { status: 500 })
   }
 
   const data = await res.json()
   const text = data.content?.[0]?.text ?? '{}'
+  console.log('[voice-command] raw response:', text)
 
   try {
     const parsed = JSON.parse(text)
     return NextResponse.json(parsed)
-  } catch {
-    return NextResponse.json({ error: 'Failed to parse response' }, { status: 500 })
+  } catch (e) {
+    console.error('[voice-command] JSON parse error:', e, 'raw:', text)
+    return NextResponse.json({ error: 'Failed to parse response', raw: text }, { status: 500 })
   }
 }
