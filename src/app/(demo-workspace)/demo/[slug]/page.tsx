@@ -63,12 +63,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
 
 const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React.ElementType }[]> = {
   overview:   [
-    { label: 'New Joiner',    tooltip: 'Trigger the HR onboarding workflow for a new team member',          icon: UserPlus  },
-    { label: 'New Customer',  tooltip: 'Create a customer record and start the welcome sequence',           icon: Users     },
-    { label: 'Chase Invoice', tooltip: 'Send a payment reminder for all overdue invoices',                  icon: Receipt   },
-    { label: 'New Trial',     tooltip: 'Provision a new 14-day demo workspace',                            icon: FlaskConical },
-    { label: 'Raise Ticket',  tooltip: 'Open a new support ticket and assign it to the queue',             icon: Headphones},
-    { label: 'Dept Insights', tooltip: 'View AI-generated insights for this department',                   icon: BarChart3 },
+    { label: 'New Joiner',        tooltip: 'Trigger the HR onboarding workflow for a new team member',     icon: UserPlus    },
+    { label: 'New Customer',      tooltip: 'Create a customer record and start the welcome sequence',      icon: Users       },
+    { label: 'New Trial',         tooltip: 'Provision a new 14-day demo workspace',                       icon: FlaskConical },
+    { label: 'Chase Invoice',     tooltip: 'Send a payment reminder for all overdue invoices',             icon: Receipt     },
+    { label: 'Support Ticket',    tooltip: 'Open a new support ticket and assign it to the queue',         icon: Headphones  },
+    { label: 'Create Wiki',       tooltip: 'Create a new internal wiki page or knowledge base article',    icon: FileText    },
+    { label: 'Team Events',       tooltip: 'Schedule a team event or all-hands meeting',                   icon: Calendar    },
+    { label: 'Competitor Watch',  tooltip: 'Log a competitor update and notify the strategy team',         icon: BarChart3   },
   ],
   insights:   [
     { label: 'Export Report',    tooltip: 'Download the current view as a PDF or CSV',                     icon: FileText  },
@@ -312,10 +314,8 @@ function QuickActionsBar({ dept, onAction }: { dept: DeptId; onAction: (label: s
       {actions.map(a => (
         <div key={a.label} className="relative group shrink-0">
           <button onClick={() => onAction(a.label)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-            style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#1F2937' }}>
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             <a.icon size={12} />
             {a.label}
           </button>
