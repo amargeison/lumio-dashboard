@@ -381,8 +381,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
       <aside className="hidden md:flex flex-col w-52 shrink-0 overflow-y-auto"
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
         <div className="flex items-center px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
-          <Image src="/lumio-logo-primary.png" alt="Lumio" width={240} height={120}
-            style={{ width: '120px', height: 'auto' }} className="rounded-md" />
+          <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={240} height={120}
+            style={{ width: '120px', height: 'auto' }} className="rounded-md" /></Link>
         </div>
         {inner}
       </aside>
@@ -2083,8 +2083,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
           {/* Logo + company name */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
-              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" />
+            <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
+              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" /></Link>
             <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
             <div className="min-w-0 hidden sm:block">
               <div className="text-sm font-bold truncate">{company}</div>
