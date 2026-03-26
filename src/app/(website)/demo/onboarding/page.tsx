@@ -175,8 +175,12 @@ export default function OnboardingPage() {
           invites: invites.filter(Boolean),
         }),
       })
-      if (r.ok) { const d = await r.json(); newSlug = d.slug || '' }
-    } catch { /* graceful — use company_id as slug fallback */ }
+      if (r.ok) {
+        const d = await r.json()
+        newSlug = d.slug || ''
+        if (newSlug) localStorage.setItem('demo_company_slug', newSlug)
+      }
+    } catch { /* graceful */ }
 
     setSlug(newSlug)
 
@@ -191,8 +195,8 @@ export default function OnboardingPage() {
 
     // Auto-redirect after brief pause
     setTimeout(() => {
-      const dest = newSlug ? `/demo/${newSlug}` : `/demo/${companyId}`
-      router.push(dest)
+      const storedSlug = newSlug || localStorage.getItem('demo_company_slug') || ''
+      router.push(storedSlug ? `/demo/${storedSlug}` : '/demo')
     }, 1800)
   }
 

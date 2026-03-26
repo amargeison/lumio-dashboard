@@ -8,7 +8,9 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { session_token, company_name, logo_url, departments, integrations, invites } = await req.json()
+    const body = await req.json()
+    const session_token = req.headers.get('x-demo-token') || body.session_token
+    const { company_name, logo_url, departments, integrations, invites } = body
 
     if (!session_token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
