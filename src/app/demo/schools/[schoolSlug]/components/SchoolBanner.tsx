@@ -254,7 +254,7 @@ interface Props {
 export default function SchoolBanner({ schoolName, headteacher, town, attendance, staffIn, openConcerns, activeWorkflows, weeksToSATs }: Props) {
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
   const { speak, stop, isPlaying } = useSpeech()
-  const [quote] = useState(() => getRandomQuote())
+  const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
 
   const now = new Date()
   const h = now.getHours()

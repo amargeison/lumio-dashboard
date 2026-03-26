@@ -1995,6 +1995,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     localStorage.setItem('lumio_demo_active', 'true')
     localStorage.setItem('lumio_company_name', 'Preview Co')
     localStorage.setItem('lumio_company_initials', 'PR')
+    localStorage.setItem('lumio_used_quotes', '[]')
     window.location.reload()
   }, [isPreview])
 
@@ -2118,9 +2119,9 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: 'transparent', color: '#0D9488', border: '1px solid rgba(13,148,136,0.5)' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0D9488' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)' }}>
             <UserPlus size={13} /> Invite team
           </button>
-          <Link href="/pricing" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-            <Zap size={12} /><span className="hidden sm:inline">Upgrade to Lumio</span><span className="sm:hidden">Upgrade</span>
-          </Link>
+          <button onClick={() => setShowConvert(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+            <Zap size={12} /><span className="hidden sm:inline">Go Live</span><span className="sm:hidden">Go Live</span>
+          </button>
           <AvatarDropdown
             initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
             onConvert={() => setShowConvert(true)}

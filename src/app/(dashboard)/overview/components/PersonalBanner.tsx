@@ -339,7 +339,7 @@ export default function PersonalBanner() {
   const [actioned, setActioned] = useState<ActionedItem[]>([])
   const [bgGradient] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
-  const [quote] = useState(() => getRandomQuote())
+  const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
 
   useEffect(() => {
     const fallback: BriefingData = { ...INITIAL_DATA, greeting: getGreeting('Arron'), date: formatDate() }
