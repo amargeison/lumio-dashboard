@@ -15,6 +15,11 @@ function LoginContent() {
   const redirectTo = searchParams.get('redirectTo') || '/overview'
   const message = searchParams.get('message')
   const error = searchParams.get('error')
+  const type = searchParams.get('type')
+
+  useEffect(() => {
+    if (type === 'school') router.replace('/schools/login')
+  }, [type, router])
 
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
