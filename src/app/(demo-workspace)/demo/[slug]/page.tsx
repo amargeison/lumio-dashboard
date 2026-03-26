@@ -1982,6 +1982,20 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const statsRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Auto-load demo data for preview mode
+    if (isPreview && localStorage.getItem('lumio_demo_active') !== 'true') {
+      const ALL_PAGES = [
+        'overview','crm','sales','marketing','projects','hr','partners',
+        'finance','insights','workflows','strategy','reports','settings',
+        'inbox','calendar','analytics','accounts','support','success',
+        'trials','operations','it',
+      ]
+      ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
+      localStorage.setItem('lumio_demo_active', 'true')
+      window.location.reload()
+      return
+    }
+
     const name           = localStorage.getItem('demo_company_name') || (isPreview ? 'Preview' : 'Your Company')
     const user           = localStorage.getItem('demo_user_name') || ''
     const created        = localStorage.getItem('demo_created_at')
