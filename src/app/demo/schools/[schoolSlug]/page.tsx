@@ -135,6 +135,24 @@ export default function DemoSchoolOverviewPage() {
         </button>
       </div>
 
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: 'Log Absence',    action: 'log a pupil absence and trigger the attendance workflow',     icon: Users,    color: '#0D9488' },
+          { label: 'New Concern',    action: 'open a new safeguarding concern form for DSL review',         icon: Shield,   color: '#EF4444' },
+          { label: 'Parent Contact', action: 'compose and send a parent communication via email or SMS',    icon: Phone,    color: '#6C3FC5' },
+          { label: 'Book Cover',     action: 'create a new supply cover booking and notify the cover pool', icon: Calendar, color: '#F59E0B' },
+          { label: 'New Admission',  action: 'start the new pupil admission workflow with 3-step form',     icon: UserPlus, color: '#0D9488' },
+          { label: 'Run Report',     action: 'generate an AI-powered report for governors or Ofsted',       icon: FileText, color: '#9CA3AF' },
+        ].map(({ label, action, icon: Icon, color }) => (
+          <button key={label} onClick={() => fireToast(action)}
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <Icon size={14} style={{ color }} />{label}
+          </button>
+        ))}
+      </div>
+
       {/* MorningReview + AI Briefing side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2"><MorningReview /></div>
@@ -160,24 +178,6 @@ export default function DemoSchoolOverviewPage() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { label: 'Log Absence',    action: 'log a pupil absence and trigger the attendance workflow',     icon: Users,    color: '#0D9488' },
-          { label: 'New Concern',    action: 'open a new safeguarding concern form for DSL review',         icon: Shield,   color: '#EF4444' },
-          { label: 'Parent Contact', action: 'compose and send a parent communication via email or SMS',    icon: Phone,    color: '#6C3FC5' },
-          { label: 'Book Cover',     action: 'create a new supply cover booking and notify the cover pool', icon: Calendar, color: '#F59E0B' },
-          { label: 'New Admission',  action: 'start the new pupil admission workflow with 3-step form',     icon: UserPlus, color: '#0D9488' },
-          { label: 'Run Report',     action: 'generate an AI-powered report for governors or Ofsted',       icon: FileText, color: '#9CA3AF' },
-        ].map(({ label, action, icon: Icon, color }) => (
-          <button key={label} onClick={() => fireToast(action)}
-            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-            <Icon size={14} style={{ color }} />{label}
-          </button>
-        ))}
       </div>
 
       {/* Today's Schedule (standalone) */}
