@@ -817,47 +817,63 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
   }))
   return (
     <div className="space-y-4">
+      {/* 1. Banner */}
       <div ref={bannerRef}><DemoPersonalBanner company={company} /></div>
-      <DemoMorningAIPanel />
+
+      {/* 2. Morning Roundup — full width, below banner */}
+      <DemoMorningRoundup />
+
+      {/* 3. Tab bar */}
       <DemoTabBar tab={tab} onChange={setTab} />
+
       {tab === 'today' ? (
         <div className="space-y-4">
-          <DemoMeetingsToday />
-          <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-            <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
-              pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
-              barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
-            <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
-              pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
-              barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
-            <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
-              pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
-              barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
-            <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
-              pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
-              barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
-          </div>
+          {/* 4. Quick Actions — above the main grid */}
           <div ref={actionsRef}><QuickActionsBar dept="overview" onAction={onAction ?? (() => {})} /></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-                <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
+
+          {/* 5. Three-col grid: left (meetings + stats) / right (AI panel) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* LEFT — col-span-2 */}
+            <div className="lg:col-span-2 space-y-4">
+              <DemoMeetingsToday />
+              <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
+                  pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
+                  barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
+                <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
+                  pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
+                  barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
+                <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
+                  pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
+                  barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
+                <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
+                  pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
+                  barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
               </div>
-              {feed.map((run, i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
-                    <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <StatusBadge status={run.status} />
-                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
-                  </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
+                  <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
                 </div>
-              ))}
+                {feed.map((run, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
+                      <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusBadge status={run.status} />
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <DemoMorningRoundup />
+
+            {/* RIGHT — AI Morning Summary */}
+            <div className="lg:col-span-1">
+              <DemoMorningAIPanel />
+            </div>
           </div>
         </div>
       ) : (
