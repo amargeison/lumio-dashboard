@@ -621,7 +621,7 @@ export default function HomePage() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
             Tell me more
           </button>
-          <a href="https://calendly.com/amargeison/30min" target="_blank" rel="noreferrer"
+          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
