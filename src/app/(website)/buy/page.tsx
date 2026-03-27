@@ -609,7 +609,7 @@ export default function CompanyCheckoutPage() {
               className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold"
               style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)', color: '#F9FAFB' }}>
               {step === 2
-                ? <><Lock size={14} /> Start Free Trial — £0 Today</>
+                ? <><Lock size={14} /> {plan.price > 0 ? `Start Lumio — £${plan.price} Today` : 'Start Free Trial — £0 Today'}</>
                 : <>Continue <ArrowRight size={14} /></>}
             </button>
           </div>

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "golive": "git checkout main && git merge dev && git push origin main && git checkout dev",
+    "golive-schools": "git checkout schools-dev && git merge dev && git push origin schools-dev && git checkout dev"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.15.0",
