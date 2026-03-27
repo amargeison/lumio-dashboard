@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+}
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase()
   try {
     const { email, code } = await req.json()
 
@@ -75,6 +78,17 @@ export async function POST(req: NextRequest) {
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
 
+    // Check if this user has a paid business workspace (returning paid user)
+    let redirect_to: string | undefined
+    if (tenant.business_id) {
+      const { data: biz } = await supabase
+        .from('businesses')
+        .select('slug')
+        .eq('id', tenant.business_id)
+        .single()
+      if (biz) redirect_to = `/workspace/${biz.slug}`
+    }
+
     return NextResponse.json({
       session_token: sessionToken,
       company: {
@@ -87,6 +101,7 @@ export async function POST(req: NextRequest) {
         name: tenant.owner_name,
       },
       is_new_user: isNewUser,
+      redirect_to,
     })
   } catch (err) {
     console.error('Demo OTP verify error:', err)

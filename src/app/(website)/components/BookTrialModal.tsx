@@ -108,11 +108,22 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
       localStorage.setItem('demo_user_email',    data.user.email)
       localStorage.setItem('demo_user_name',     data.user.name)
 
-      const dest = data.is_new_user
-        ? '/demo/onboarding'
-        : `/demo/${data.company.slug}`
+      const dest = data.redirect_to
+        ? data.redirect_to
+        : data.is_new_user
+          ? '/demo/onboarding'
+          : `/demo/${data.company.slug}`
       setVerified(true)
-      setTimeout(() => router.push(dest), 1500)
+      setTimeout(() => {
+        try {
+          router.push(dest)
+        } catch (navErr) {
+          console.error('[Lumio] router.push failed, using fallback:', navErr)
+          window.location.href = dest
+        }
+        // Fallback: if still on the same page after 3s, force navigate
+        setTimeout(() => { window.location.href = dest }, 3000)
+      }, 1500)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -136,7 +147,7 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
+>
       <div className="w-full max-w-md rounded-2xl shadow-2xl"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
 

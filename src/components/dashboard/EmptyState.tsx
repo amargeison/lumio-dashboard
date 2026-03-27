@@ -69,7 +69,7 @@ export function DashboardEmptyState({
 
   function clearDemoData() {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_school_'))
+      .filter(k => (k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_school_')) && k !== 'lumio_dashboard_overview_hasData')
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
     window.location.reload()

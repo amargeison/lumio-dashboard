@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, RefObject } from 'react'
+import React, { useState, useEffect, useRef, useCallback, RefObject } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -16,12 +16,15 @@ import {
   Database, RotateCcw,
 } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
+import { useWakeWord } from '@/hooks/useWakeWord'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
+import ConvertModal from '@/app/(demo-workspace)/components/ConvertModal'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,12 +64,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
 
 const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React.ElementType }[]> = {
   overview:   [
-    { label: 'New Joiner',    tooltip: 'Trigger the HR onboarding workflow for a new team member',          icon: UserPlus  },
-    { label: 'New Customer',  tooltip: 'Create a customer record and start the welcome sequence',           icon: Users     },
-    { label: 'Chase Invoice', tooltip: 'Send a payment reminder for all overdue invoices',                  icon: Receipt   },
-    { label: 'New Trial',     tooltip: 'Provision a new 14-day demo workspace',                            icon: FlaskConical },
-    { label: 'Raise Ticket',  tooltip: 'Open a new support ticket and assign it to the queue',             icon: Headphones},
-    { label: 'Dept Insights', tooltip: 'View AI-generated insights for this department',                   icon: BarChart3 },
+    { label: 'New Joiner',        tooltip: 'Trigger the HR onboarding workflow for a new team member',     icon: UserPlus    },
+    { label: 'New Customer',      tooltip: 'Create a customer record and start the welcome sequence',      icon: Users       },
+    { label: 'New Trial',         tooltip: 'Provision a new 14-day demo workspace',                       icon: FlaskConical },
+    { label: 'Chase Invoice',     tooltip: 'Send a payment reminder for all overdue invoices',             icon: Receipt     },
+    { label: 'Support Ticket',    tooltip: 'Open a new support ticket and assign it to the queue',         icon: Headphones  },
+    { label: 'Create Wiki',       tooltip: 'Create a new internal wiki page or knowledge base article',    icon: FileText    },
+    { label: 'Team Events',       tooltip: 'Schedule a team event or all-hands meeting',                   icon: Calendar    },
+    { label: 'Competitor Watch',  tooltip: 'Log a competitor update and notify the strategy team',         icon: BarChart3   },
   ],
   insights:   [
     { label: 'Export Report',    tooltip: 'Download the current view as a PDF or CSV',                     icon: FileText  },
@@ -310,10 +315,8 @@ function QuickActionsBar({ dept, onAction }: { dept: DeptId; onAction: (label: s
       {actions.map(a => (
         <div key={a.label} className="relative group shrink-0">
           <button onClick={() => onAction(a.label)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-            style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#374151' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#1F2937' }}>
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             <a.icon size={12} />
             {a.label}
           </button>
@@ -342,10 +345,12 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
+function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, companyName, companyLogo }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void
   focusDepts: string[]
   navRef?: RefObject<HTMLElement | null>
+  companyName?: string
+  companyLogo?: string
 }) {
   const isDimmed = (id: string) => focusDepts.length > 0 && !focusDepts.includes(id)
 
@@ -380,9 +385,16 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-52 shrink-0 overflow-y-auto"
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
-        <div className="flex items-center px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
-          <Image src="/lumio-logo-primary.png" alt="Lumio" width={240} height={120}
-            style={{ width: '120px', height: 'auto' }} className="rounded-md" />
+        <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          {companyLogo ? (
+            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
+          ) : (
+            <div className="flex items-center justify-center rounded-lg text-xs font-bold"
+              style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
+              {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          {companyName && <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</span>}
         </div>
         {inner}
       </aside>
@@ -417,12 +429,154 @@ const BG_GRADIENTS = [
   'from-indigo-900 via-purple-950 to-violet-950',
 ]
 
-function DemoPersonalBanner({ company }: { company: string }) {
+const QUOTES = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "The harder I work, the luckier I get.", author: "Samuel Goldwyn" },
+  { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+  { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+  { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
+  { text: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
+  { text: "The only limit to our realisation of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt" },
+  { text: "Do one thing every day that scares you.", author: "Eleanor Roosevelt" },
+  { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+  { text: "The best revenge is massive success.", author: "Frank Sinatra" },
+  { text: "I never dreamed about success. I worked for it.", author: "Estée Lauder" },
+  { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "Whether you think you can or think you can't, you're right.", author: "Henry Ford" },
+  { text: "There are no secrets to success. It is the result of preparation, hard work, and learning from failure.", author: "Colin Powell" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "You only live once, but if you do it right, once is enough.", author: "Mae West" },
+  { text: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+  { text: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+  { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+  { text: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
+  { text: "The best teachers are those who show you where to look but don't tell you what to see.", author: "Alexandra K. Trenfor" },
+]
+
+function getRandomQuote() {
+  const usedRaw = localStorage.getItem('lumio_used_quotes')
+  let used: number[] = usedRaw ? JSON.parse(usedRaw) : []
+  if (used.length >= QUOTES.length) used = []
+  const available = QUOTES.map((_, i) => i).filter(i => !used.includes(i))
+  const idx = available[Math.floor(Math.random() * available.length)]
+  used.push(idx)
+  localStorage.setItem('lumio_used_quotes', JSON.stringify(used))
+  return QUOTES[idx]
+}
+
+// ─── Voice Input ──────────────────────────────────────────────────────────────
+
+type VoiceResult = { response: string; actions: { label: string; requiresIntegration?: boolean; integrationNote?: string }[] }
+
+function VoiceInput({ dept, company, onResult, onLoading, onError }: {
+  dept: string
+  company: string
+  onResult: (r: VoiceResult) => void
+  onLoading: () => void
+  onError: (e: string) => void
+}) {
+  const [listening, setListening] = useState(false)
+  const [transcript, setTranscript] = useState('')
+
+  async function sendToAPI(text: string) {
+    onLoading()
+    try {
+      const res = await fetch('/api/demo/voice-command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: text, dept, company }),
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      onResult(data)
+    } catch {
+      onError('Something went wrong. Please try again.')
+    }
+  }
+
+  function startListening() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) { onError('Speech recognition is not supported in this browser. Try Chrome.'); return }
+    const recognition = new SR()
+    recognition.lang = 'en-GB'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    setListening(true)
+    setTranscript('')
+    recognition.onresult = (e: any) => {
+      const text = e.results[0][0].transcript
+      setTranscript(text)
+      setListening(false)
+      sendToAPI(text)
+    }
+    recognition.onerror = () => { setListening(false); onError('Could not hear you. Please try again.') }
+    recognition.onend = () => setListening(false)
+    recognition.start()
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-4">
+      <button
+        onClick={startListening}
+        disabled={listening}
+        className="flex items-center justify-center w-20 h-20 rounded-full transition-all"
+        style={{ backgroundColor: listening ? 'rgba(108,63,197,0.3)' : 'rgba(108,63,197,0.15)', border: `2px solid ${listening ? '#A78BFA' : 'rgba(108,63,197,0.4)'}` }}>
+        <Mic size={32} style={{ color: listening ? '#A78BFA' : '#6C3FC5' }} />
+      </button>
+      <p className="text-sm text-center" style={{ color: '#9CA3AF' }}>
+        {listening ? '🎙 Listening...' : 'Tap the mic and speak your command'}
+      </p>
+      {transcript && <p className="text-xs text-center px-2" style={{ color: '#6B7280' }}>&ldquo;{transcript}&rdquo;</p>}
+      <div className="text-xs text-center space-y-1" style={{ color: '#4B5563' }}>
+        <p>Try: <span style={{ color: '#9CA3AF' }}>&ldquo;Cancel my 11am meeting&rdquo;</span></p>
+        <p>Or: <span style={{ color: '#9CA3AF' }}>&ldquo;Email the team about the 2pm catch-up&rdquo;</span></p>
+      </div>
+    </div>
+  )
+}
+
+function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wakeWordEnabled = true }: { company: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const bg = BG_GRADIENTS[new Date().getDay()]
   const { speak, stop, isPlaying } = useSpeech()
+  const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
+  const [showVoiceModal, setShowVoiceModal] = useState(false)
+  const [voiceLoading, setVoiceLoading]     = useState(false)
+  const [voiceError, setVoiceError]         = useState('')
+  const [voiceResult, setVoiceResult]       = useState<{ response: string; actions: { label: string; requiresIntegration?: boolean; integrationNote?: string }[] } | null>(null)
+  const [wakeFlash, setWakeFlash]           = useState(false)
+
+  const openVoiceModal = useCallback(() => {
+    setVoiceResult(null)
+    setVoiceError('')
+    setWakeFlash(true)
+    setTimeout(() => setWakeFlash(false), 600)
+    setShowVoiceModal(true)
+  }, [])
+
+  // Always-on wake word listener — pauses while voice modal is open or disabled in settings
+  const wakeActive = wakeWordEnabled && !showVoiceModal
+  useWakeWord(openVoiceModal, wakeActive)
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -437,6 +591,7 @@ function DemoPersonalBanner({ company }: { company: string }) {
   }
 
   return (
+    <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
@@ -449,7 +604,7 @@ function DemoPersonalBanner({ company }: { company: string }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">
-                {greeting}, {company} 👋
+                {greeting}, {firstName || 'there'} 👋
               </h1>
 
               {/* Speaker 1: Active TTS */}
@@ -468,45 +623,47 @@ function DemoPersonalBanner({ company }: { company: string }) {
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
 
-              {/* Speaker 2: Disabled — Coming Soon */}
-              <div
-                className="relative overflow-hidden rounded-lg"
-                title="Voice Commands coming soon — Cancel my 11am meeting, email my team and say catch up at 2, and more"
-                style={{ width: 32, height: 32, flexShrink: 0 }}
+              {/* Mic: Voice Commands */}
+              <button
+                onClick={openVoiceModal}
+                className="flex items-center justify-center rounded-lg transition-all"
+                title="Voice Commands — say 'Hi Lumio' or tap the mic"
+                style={{
+                  width: 32, height: 32, flexShrink: 0,
+                  backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)',
+                  border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`,
+                  color: '#A78BFA',
+                  transition: 'background-color 0.3s, border-color 0.3s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.35)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.2)' }}
               >
-                <button
-                  disabled
-                  className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#4B5563',
-                    cursor: 'not-allowed',
-                  }}
-                >
-                  <Mic size={15} strokeWidth={1.75} />
-                </button>
+                <Mic size={15} strokeWidth={1.75} />
+              </button>
+
+              {/* Wake word status pill */}
+              {wakeWordEnabled && (
                 <span
-                  className="absolute pointer-events-none"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium select-none"
                   style={{
-                    top: 3, right: -9,
-                    transform: 'rotate(35deg)',
-                    backgroundColor: '#6C3FC5',
-                    color: '#fff',
-                    fontSize: 5,
-                    fontWeight: 700,
-                    letterSpacing: '0.03em',
-                    padding: '1px 10px',
-                    lineHeight: 1.4,
-                    whiteSpace: 'nowrap',
+                    backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)',
+                    color: showVoiceModal ? '#4ADE80' : '#A78BFA',
+                    border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}`,
                   }}
                 >
-                  SOON
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{
+                      backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA',
+                      animation: 'pulse 2s ease-in-out infinite',
+                    }}
+                  />
+                  {showVoiceModal ? 'Listening\u2026' : 'Wake word active'}
                 </span>
-              </div>
+              )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p className="text-purple-200/60 text-sm italic">Your demo workspace is ready to explore.</p>
+            <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
           </div>
 
           {/* CENTRE: summary chips */}
@@ -541,6 +698,66 @@ function DemoPersonalBanner({ company }: { company: string }) {
 
       </div>
     </div>
+
+      {showVoiceModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)' }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2"><Mic size={18} /> Voice Command</h2>
+                <button onClick={() => setShowVoiceModal(false)} style={{ color: 'rgba(255,255,255,0.7)' }}><X size={18} /></button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              {voiceLoading && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+                  <p className="text-sm" style={{ color: '#9CA3AF' }}>Understanding your command...</p>
+                </div>
+              )}
+              {voiceError && <p className="text-sm text-red-400">{voiceError}</p>}
+              {voiceResult && !voiceLoading && (
+                <>
+                  <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                    <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>&ldquo;{voiceResult.response}&rdquo;</p>
+                  </div>
+                  <div className="space-y-2">
+                    {voiceResult.actions.map((action, i) => (
+                      <div key={i} className="rounded-xl p-3 flex items-start justify-between gap-3" style={{ backgroundColor: '#1A1D27', border: '1px solid #1F2937' }}>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{action.label}</p>
+                          {action.requiresIntegration && (
+                            <p className="text-xs mt-0.5" style={{ color: '#F59E0B' }}>⚡ Requires {action.integrationNote}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { onToast?.(`✓ ${action.label}`); setShowVoiceModal(false) }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
+                          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                          Confirm
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowVoiceModal(false)} className="w-full py-2.5 rounded-xl text-sm" style={{ color: '#6B7280', backgroundColor: '#1A1D27' }}>
+                    Cancel
+                  </button>
+                </>
+              )}
+              {!voiceLoading && !voiceResult && !voiceError && (
+                <VoiceInput
+                  dept={dept}
+                  company={company}
+                  onResult={(result) => { setVoiceResult(result); setVoiceLoading(false) }}
+                  onLoading={() => setVoiceLoading(true)}
+                  onError={(err) => { setVoiceError(err); setVoiceLoading(false) }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -795,12 +1012,14 @@ function DemoMorningAIPanel() {
   )
 }
 
-function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
+function OverviewView({ company, firstName, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
   company: string
+  firstName?: string
   bannerRef?: RefObject<HTMLDivElement | null>
   statsRef?: RefObject<HTMLDivElement | null>
   actionsRef?: RefObject<HTMLDivElement | null>
   onAction?: (label: string) => void
+  wakeWordEnabled?: boolean
 }) {
   const [tab, setTab] = useState<OverviewTab>('today')
   const wf  = fakeNum(47, company, 'wf')
@@ -815,47 +1034,63 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
   }))
   return (
     <div className="space-y-4">
-      <div ref={bannerRef}><DemoPersonalBanner company={company} /></div>
-      <DemoMorningAIPanel />
+      {/* 1. Banner */}
+      <div ref={bannerRef}><DemoPersonalBanner company={company} firstName={firstName} wakeWordEnabled={wakeWordEnabled} /></div>
+
+      {/* 2. Morning Roundup — full width, below banner */}
+      <DemoMorningRoundup />
+
+      {/* 3. Tab bar */}
       <DemoTabBar tab={tab} onChange={setTab} />
+
       {tab === 'today' ? (
         <div className="space-y-4">
-          <DemoMeetingsToday />
-          <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-            <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
-              pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
-              barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
-            <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
-              pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
-              barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
-            <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
-              pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
-              barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
-            <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
-              pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
-              barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
-          </div>
+          {/* 4. Quick Actions — above the main grid */}
           <div ref={actionsRef}><QuickActionsBar dept="overview" onAction={onAction ?? (() => {})} /></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-                <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
+
+          {/* 5. Three-col grid: left (meetings + stats) / right (AI panel) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* LEFT — col-span-2 */}
+            <div className="lg:col-span-2 space-y-4">
+              <DemoMeetingsToday />
+              <div ref={statsRef} className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <StatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
+                  pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
+                  barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
+                <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
+                  pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
+                  barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
+                <StatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
+                  pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
+                  barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
+                <StatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
+                  pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
+                  barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
               </div>
-              {feed.map((run, i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
-                    <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <StatusBadge status={run.status} />
-                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
-                  </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
+                  <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
                 </div>
-              ))}
+                {feed.map((run, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
+                      <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusBadge status={run.status} />
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <DemoMorningRoundup />
+
+            {/* RIGHT — AI Morning Summary */}
+            <div className="lg:col-span-1">
+              <DemoMorningAIPanel />
+            </div>
           </div>
         </div>
       ) : (
@@ -1371,7 +1606,8 @@ function WorkflowsView({ company }: { company: string }) {
     ]} />
 }
 
-function SettingsView({ company }: { company: string }) {
+function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company: string; wakeWordEnabled: boolean; onToggleWakeWord: (val: boolean) => void }) {
+  const speechSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
   return (
     <div className="max-w-2xl space-y-6">
       {[
@@ -1393,6 +1629,32 @@ function SettingsView({ company }: { company: string }) {
           </div>
         </div>
       ))}
+
+      {/* Voice & Accessibility */}
+      {speechSupported && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice &amp; Accessibility</p>
+          </div>
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Wake word activation</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice commands hands-free</p>
+            </div>
+            <div
+              className="relative h-5 w-9 rounded-full cursor-pointer transition-colors"
+              style={{ backgroundColor: wakeWordEnabled ? '#6C3FC5' : '#1F2937' }}
+              onClick={() => onToggleWakeWord(!wakeWordEnabled)}
+            >
+              <div
+                className="absolute top-0.5 h-4 w-4 rounded-full transition-transform"
+                style={{ backgroundColor: '#F9FAFB', transform: wakeWordEnabled ? 'translateX(16px)' : 'translateX(2px)' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <p className="text-xs" style={{ color: '#4B5563' }}>Settings are read-only in demo mode. Connect your live workspace to configure.</p>
     </div>
   )
@@ -1953,11 +2215,16 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const { slug } = use(params)
   const router   = useRouter()
 
+  const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true'
+
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [company, setCompany]       = useState('Your Company')
   const [userName, setUserName]     = useState('')
+  const [companyLogo, setCompanyLogo] = useState('')
   const [daysLeft, setDaysLeft]     = useState(14)
   const [showUpgrade, setShowUpgrade] = useState(true)
+  const [workspaceStatus, setWorkspaceStatus] = useState<'trial' | 'converted' | 'unknown'>('unknown')
+  const isTrial = workspaceStatus !== 'converted'
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showInvite, setShowInvite]   = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
@@ -1970,6 +2237,17 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showPerfReview,   setShowPerfReview]   = useState(false)
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
+  const [showConvert, setShowConvert]         = useState(false)
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    const stored = localStorage.getItem('lumio_wake_word_enabled')
+    return stored === null ? true : stored === 'true'
+  })
+
+  function toggleWakeWord(val: boolean) {
+    setWakeWordEnabled(val)
+    localStorage.setItem('lumio_wake_word_enabled', String(val))
+  }
 
   const bannerRef  = useRef<HTMLDivElement>(null)
   const navRef     = useRef<HTMLElement>(null)
@@ -1977,16 +2255,70 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const statsRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const name           = localStorage.getItem('demo_company_name') || 'Your Company'
+    if (!isPreview) return
+    const alreadyLoaded = localStorage.getItem('lumio_demo_active') === 'true'
+    if (alreadyLoaded) return
+    const ALL_PAGES = [
+      'overview','crm','sales','marketing','projects','hr','partners',
+      'finance','insights','workflows','strategy','reports','settings',
+      'inbox','calendar','analytics','accounts','support','success',
+      'trials','operations','it'
+    ]
+    ALL_PAGES.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true'))
+    localStorage.setItem('lumio_demo_active', 'true')
+    localStorage.setItem('lumio_company_name', 'Preview Co')
+    localStorage.setItem('lumio_company_initials', 'PR')
+    localStorage.setItem('lumio_used_quotes', '[]')
+    window.location.reload()
+  }, [isPreview])
+
+  useEffect(() => {
+    const name           = localStorage.getItem('demo_company_name') || (isPreview ? 'Preview' : 'Your Company')
     const user           = localStorage.getItem('demo_user_name') || ''
+    const logo           = localStorage.getItem('demo_company_logo') || ''
     const created        = localStorage.getItem('demo_created_at')
     const onboarded      = localStorage.getItem('demo_onboarded')
     const tipsCompleted  = localStorage.getItem('demo_tips_completed')
     const depts          = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
-    setCompany(name); setUserName(user); setFocusDepts(depts)
+    setCompany(name); setUserName(user); setCompanyLogo(logo); setFocusDepts(depts)
     if (created) setDaysLeft(Math.max(0, 14 - Math.floor((Date.now() - parseInt(created)) / 86400000)))
-    if (!onboarded) setShowOnboarding(true)
-    else if (!tipsCompleted) setShowCoachMarks(true)
+    if (!isPreview && !onboarded) setShowOnboarding(true)
+    else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
+
+    // Legacy slug redirect: if URL has an old random-suffix slug, redirect to the clean slug
+    const storedSlug = localStorage.getItem('demo_company_slug')
+    if (storedSlug && storedSlug !== slug && slug.startsWith(storedSlug.replace(/\d+$/, ''))) {
+      router.replace(`/demo/${storedSlug}`)
+    }
+
+    // Fetch workspace status from Supabase
+    const sessionToken = localStorage.getItem('demo_session_token')
+    if (sessionToken) {
+      fetch('/api/demo/status', { headers: { 'x-demo-token': sessionToken } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return
+          if (data.status === 'converted') {
+            // Redirect converted users to their live workspace
+            if (data.live_slug) {
+              router.replace(`/workspace/${data.live_slug}`)
+              return
+            }
+            setWorkspaceStatus('converted')
+            setShowUpgrade(false)
+          } else if (data.status === 'deleted' || (data.expires_at && new Date(data.expires_at) < new Date())) {
+            router.replace('/trial-ended')
+            return
+          } else {
+            setWorkspaceStatus('trial')
+            if (data.expires_at) {
+              const remaining = Math.max(0, Math.ceil((new Date(data.expires_at).getTime() - Date.now()) / 86400000))
+              setDaysLeft(remaining)
+            }
+          }
+        })
+        .catch(() => {})
+    }
   }, [])
 
   function handleTipsComplete() {
@@ -2061,8 +2393,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {showPerfReview   && <PerformanceReviewModal  onClose={() => setShowPerfReview(false)}   onSubmit={handleDemoPerfReview}   />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
 
-      {/* Trial banner */}
-      {showUpgrade && (
+      {/* Trial banner — hidden for converted/paid workspaces */}
+      {showUpgrade && isTrial && (
         <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
@@ -2077,18 +2409,18 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       )}
 
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
+      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3 overflow-visible" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
         <div className="flex items-center gap-3 min-w-0">
           {/* Mobile hamburger */}
           <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
           {/* Logo + company name */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
-              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" />
+            <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
+              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" /></Link>
             <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
             <div className="min-w-0 hidden sm:block">
               <div className="text-sm font-bold truncate">{company}</div>
-              <div className="text-xs" style={{ color: '#6B7280' }}>Demo workspace</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>{isTrial ? 'Trial workspace' : 'Live workspace'}</div>
             </div>
           </div>
         </div>
@@ -2096,15 +2428,22 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: 'transparent', color: '#0D9488', border: '1px solid rgba(13,148,136,0.5)' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0D9488' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)' }}>
             <UserPlus size={13} /> Invite team
           </button>
-          <Link href="/pricing" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-            <Zap size={12} /><span className="hidden sm:inline">Upgrade to Lumio</span><span className="sm:hidden">Upgrade</span>
-          </Link>
+          {isTrial && (
+            <button onClick={() => setShowConvert(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+              <Zap size={12} /><span className="hidden sm:inline">Go Live</span><span className="sm:hidden">Go Live</span>
+            </button>
+          )}
+          <AvatarDropdown
+            initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+            onConvert={() => setShowConvert(true)}
+          />
         </div>
       </header>
+      {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} />
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} companyName={company} companyLogo={companyLogo} />
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
@@ -2112,7 +2451,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Demo data for <span style={{ color: '#F9FAFB' }}>{company}</span></p>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>
               </div>
               {/* Mobile invite */}
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
@@ -2120,7 +2459,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
             {activeDept !== 'overview' && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
-            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} />}
+            {activeDept === 'overview'    && <OverviewView   company={company} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
             {activeDept === 'insights'   && <InsightsView   company={company} />}
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}
@@ -2135,19 +2474,31 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {activeDept === 'workflows'  && <WorkflowsView  company={company} />}
             {activeDept === 'partners'   && <PartnersView   company={company} />}
             {activeDept === 'strategy'   && <StrategyView   company={company} />}
-            {activeDept === 'settings'   && <SettingsView   company={company} />}
+            {activeDept === 'settings'   && <SettingsView   company={company} wakeWordEnabled={wakeWordEnabled} onToggleWakeWord={toggleWakeWord} />}
           </main>
 
-          {/* Upgrade CTA */}
-          <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(108,63,197,0.35)' }}>
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(108,63,197,0.12)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.25)' }}><Zap size={12} /> Ready to go live?</div>
-            <h2 className="text-2xl font-bold mb-2">This is your real dashboard. Without the demo data.</h2>
-            <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Connect your real tools, activate your workflows, and your team starts saving hours from day one.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/pricing" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>See pricing <ArrowRight size={15} /></Link>
-              <Link href="/demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book a walkthrough</Link>
+          {/* Upgrade CTA (trial) / Connect data prompt (paid) */}
+          {isTrial ? (
+            <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(108,63,197,0.35)' }}>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(108,63,197,0.12)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.25)' }}><Zap size={12} /> Ready to go live?</div>
+              <h2 className="text-2xl font-bold mb-2">This is your real dashboard. Without the demo data.</h2>
+              <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Connect your real tools, activate your workflows, and your team starts saving hours from day one.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>See pricing <ArrowRight size={15} /></Link>
+                <Link href="/demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book a walkthrough</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(13,148,136,0.35)' }}>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#2DD4BF', border: '1px solid rgba(13,148,136,0.25)' }}><CheckCircle2 size={12} /> You&apos;re live</div>
+              <h2 className="text-2xl font-bold mb-2">Connect your real data</h2>
+              <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Replace the demo data with your real tools — email, CRM, calendar, and more. Your workspace is ready for production.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={() => setActiveDept('settings')} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Go to Settings <ArrowRight size={15} /></button>
+                <Link href="/book-demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book onboarding call</Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

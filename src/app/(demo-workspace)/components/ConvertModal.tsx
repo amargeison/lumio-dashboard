@@ -25,41 +25,45 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
     return val.replace(/\D/g, '').slice(0, 4).replace(/^(\d{2})(\d)/, '$1/$2')
   }
 
+  const [newSlug, setNewSlug] = useState('')
+
   async function handlePayment() {
     setError('')
-    if (card.number.replace(/\s/g, '').length < 16) {
-      setError('Please enter a valid card number.')
-      return
-    }
-    if (!card.expiry || !card.cvc || !card.name) {
-      setError('Please complete all payment fields.')
-      return
-    }
-
     setLoading(true)
     setStep('processing')
-
     try {
       if (dataChoice === 'fresh') {
         await fetch('/api/demo/wipe', {
           method: 'POST',
           headers: { 'x-demo-token': sessionToken || '' }
         })
-        // Clear all local demo data
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('lumio_dashboard_') || key.startsWith('lumio_demo')) {
             localStorage.removeItem(key)
           }
         })
       }
-
-      const res = await fetch('/api/demo/convert', {
+      const res = await fetch('/api/workspace/create', {
         method: 'POST',
-        headers: { 'x-demo-token': sessionToken || '' }
+        headers: { 'Content-Type': 'application/json', 'x-demo-token': sessionToken || '' },
+        body: JSON.stringify({ merge: dataChoice === 'keep' }),
       })
-
       if (!res.ok) throw new Error('Conversion failed')
-
+      const data = await res.json()
+      if (data.session_token) {
+        localStorage.setItem('workspace_session_token', data.session_token)
+      }
+      if (data.slug) {
+        localStorage.setItem('workspace_slug', data.slug)
+        // Copy company details to workspace keys
+        const companyName = localStorage.getItem('demo_company_name')
+        const userName = localStorage.getItem('demo_user_name')
+        const logo = localStorage.getItem('demo_company_logo')
+        if (companyName) localStorage.setItem('workspace_company_name', companyName)
+        if (userName) localStorage.setItem('workspace_user_name', userName)
+        if (logo) localStorage.setItem('workspace_company_logo', logo)
+        setNewSlug(data.slug)
+      }
       setStep('done')
     } catch {
       setError('Something went wrong. Please try again.')
@@ -69,10 +73,9 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
   }
 
   function handleDone() {
-    const slug = localStorage.getItem('demo_company_slug')
+    const slug = newSlug || localStorage.getItem('workspace_slug') || localStorage.getItem('demo_company_slug')
     onClose()
-    router.refresh()
-    router.push(slug ? `/demo/${slug}` : '/demo')
+    router.replace(slug ? `/workspace/${slug}` : '/demo')
   }
 
   return (
@@ -150,72 +153,13 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
                 <span className="text-gray-600">Lumio Business — Monthly</span>
                 <span className="font-bold text-gray-900">£49 / month</span>
               </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Card number</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="1234 5678 9012 3456"
-                    value={card.number}
-                    onChange={e => setCard(c => ({ ...c, number: formatCard(e.target.value) }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Expiry</label>
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      value={card.expiry}
-                      onChange={e => setCard(c => ({ ...c, expiry: formatExpiry(e.target.value) }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">CVC</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="123"
-                      value={card.cvc}
-                      onChange={e => setCard(c => ({ ...c, cvc: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Name on card</label>
-                  <input
-                    type="text"
-                    placeholder="Jane Smith"
-                    value={card.name}
-                    onChange={e => setCard(c => ({ ...c, name: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
+              <div className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-4 text-center">
+                <p className="text-sm font-semibold text-teal-700">🧪 Test mode active</p>
+                <p className="text-xs text-teal-600 mt-1">No payment required during testing. Click Pay to activate instantly.</p>
               </div>
-
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-
-              <p className="text-xs text-gray-400 text-center">
-                🔒 Payments processed securely via Stripe. Cancel anytime.
-              </p>
-
               <div className="flex gap-3">
-                <button
-                  onClick={() => setStep('choice')}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={loading}
-                  className="flex-1 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-60"
-                >
+                <button onClick={() => setStep('choice')} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition">Back</button>
+                <button onClick={handlePayment} disabled={loading} className="flex-1 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-60">
                   {loading ? 'Processing...' : 'Pay £49 →'}
                 </button>
               </div>

@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
+import { logEmail } from '@/lib/emails/log'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+}
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase()
   try {
     const body = await req.json()
     const session_token = req.headers.get('x-demo-token') || body.session_token
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
         onboarded_at: new Date().toISOString(),
       })
       .eq('id', session.tenant_id)
-      .select('slug, company_name')
+      .select('id, slug, company_name, owner_name, owner_email, expires_at, welcome_email_sent')
       .single()
 
     if (error) {
@@ -52,8 +57,12 @@ export async function POST(req: NextRequest) {
     // Send invite emails if any
     if (invites?.length) {
       const validInvites = invites.filter((e: string) => e && e.includes('@'))
-      // Fire-and-forget invite emails (don't block response)
       sendInviteEmails(validInvites, tenant.company_name, tenant.slug).catch(console.error)
+    }
+
+    // Send trial welcome email (once only)
+    if (!tenant.welcome_email_sent) {
+      sendWelcomeEmail(tenant).catch(console.error)
     }
 
     return NextResponse.json({ success: true, slug: tenant.slug })
@@ -61,6 +70,30 @@ export async function POST(req: NextRequest) {
     console.error('Provision error:', err)
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
+}
+
+async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name: string; owner_name: string; owner_email: string; expires_at: string }) {
+  const supabase = getSupabase()
+  const { Resend } = await import('resend')
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
+  const expiresDate = new Date(tenant.expires_at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const firstName = tenant.owner_name?.split(' ')[0] || 'there'
+
+  const { error } = await resend.emails.send({
+    from: 'Lumio <hello@lumiocms.com>',
+    to: [tenant.owner_email],
+    subject: 'Welcome to Lumio — your 14-day trial starts now 🚀',
+    html: welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
+  })
+
+  if (error) {
+    console.error('[provision] Welcome email failed:', error)
+    return
+  }
+
+  await supabase.from('demo_tenants').update({ welcome_email_sent: true }).eq('id', tenant.id)
+  logEmail(tenant.id, 'welcome_trial', tenant.owner_email).catch(() => {})
 }
 
 async function sendInviteEmails(emails: string[], companyName: string, slug: string) {

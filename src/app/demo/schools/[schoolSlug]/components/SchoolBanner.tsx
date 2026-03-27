@@ -4,44 +4,69 @@ import { Volume2, Mic } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
 
 const QUOTES = [
-  { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
-  { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
-  { text: "Teaching is the one profession that creates all other professions.", author: "Unknown" },
-  { text: "In learning you will teach, and in teaching you will learn.", author: "Phil Collins" },
-  { text: "Every child deserves a champion — an adult who will never give up on them.", author: "Rita Pierson" },
-  { text: "The art of teaching is the art of assisting discovery.", author: "Mark Van Doren" },
-  { text: "Children must be taught how to think, not what to think.", author: "Margaret Mead" },
-  { text: "It takes a village to raise a child.", author: "African Proverb" },
-  { text: "The whole purpose of education is to turn mirrors into windows.", author: "Sydney J. Harris" },
-  { text: "A good teacher can inspire hope, ignite the imagination, and instill a love of learning.", author: "Brad Henry" },
-  { text: "Education is not preparation for life; education is life itself.", author: "John Dewey" },
-  { text: "The mediocre teacher tells. The good teacher explains. The great teacher inspires.", author: "William Arthur Ward" },
-  { text: "What we learn with pleasure we never forget.", author: "Alfred Mercier" },
-  { text: "The function of education is to teach one to think intensively and to think critically.", author: "Martin Luther King Jr." },
-  { text: "Tell me and I forget. Teach me and I remember. Involve me and I learn.", author: "Benjamin Franklin" },
-  { text: "One child, one teacher, one book, one pen can change the world.", author: "Malala Yousafzai" },
-  { text: "The greatest sign of success for a teacher is to be able to say the children are now working as if I did not exist.", author: "Maria Montessori" },
-  { text: "Education is the passport to the future, for tomorrow belongs to those who prepare for it today.", author: "Malcolm X" },
-  { text: "A teacher affects eternity; he can never tell where his influence stops.", author: "Henry Adams" },
-  { text: "The task of the modern educator is not to cut down jungles, but to irrigate deserts.", author: "C.S. Lewis" },
-  { text: "Creativity is intelligence having fun.", author: "Albert Einstein" },
-  { text: "Learning is not attained by chance; it must be sought with ardour and attended with diligence.", author: "Abigail Adams" },
-  { text: "You can teach a student a lesson for a day; but if you can teach him to learn by creating curiosity, he will continue the learning process.", author: "Clay P. Bedford" },
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "The harder I work, the luckier I get.", author: "Samuel Goldwyn" },
+  { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+  { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+  { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
+  { text: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
+  { text: "The only limit to our realisation of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt" },
+  { text: "Do one thing every day that scares you.", author: "Eleanor Roosevelt" },
+  { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+  { text: "The best revenge is massive success.", author: "Frank Sinatra" },
+  { text: "I never dreamed about success. I worked for it.", author: "Estée Lauder" },
+  { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "Whether you think you can or think you can't, you're right.", author: "Henry Ford" },
+  { text: "The road to success and the road to failure are almost exactly the same.", author: "Colin R. Davis" },
+  { text: "I owe my success to having listened respectfully to the very best advice, and then going away and doing the exact opposite.", author: "G.K. Chesterton" },
+  { text: "There are no secrets to success. It is the result of preparation, hard work, and learning from failure.", author: "Colin Powell" },
+  { text: "Success seems to be connected with action. Successful people keep moving.", author: "Conrad Hilton" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
+  { text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson" },
+  { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "Do not go where the path may lead; go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
+  { text: "You only live once, but if you do it right, once is enough.", author: "Mae West" },
+  { text: "In three words I can sum up everything I've learned about life: it goes on.", author: "Robert Frost" },
+  { text: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
+  { text: "If you set your goals ridiculously high and it's a failure, you will fail above everyone else's success.", author: "James Cameron" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+  { text: "Try not to become a man of success. Rather become a man of value.", author: "Albert Einstein" },
+  { text: "Great minds discuss ideas; average minds discuss events; small minds discuss people.", author: "Eleanor Roosevelt" },
+  { text: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+  { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein" },
+  { text: "The real test is not whether you avoid failure, because you won't. It's whether you let it harden or shame you into inaction.", author: "Barack Obama" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+  { text: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
   { text: "The best teachers are those who show you where to look but don't tell you what to see.", author: "Alexandra K. Trenfor" },
-  { text: "Education breeds confidence. Confidence breeds hope. Hope breeds peace.", author: "Confucius" },
-  { text: "It is the supreme art of the teacher to awaken joy in creative expression and knowledge.", author: "Albert Einstein" },
-  { text: "The more that you read, the more things you will know. The more that you learn, the more places you'll go.", author: "Dr. Seuss" },
-  { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
-  { text: "The roots of education are bitter, but the fruit is sweet.", author: "Aristotle" },
-  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
-  { text: "Try to learn something about everything and everything about something.", author: "Thomas Henry Huxley" },
 ]
 
-function getDailyQuote() {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 0)
-  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-  return QUOTES[dayOfYear % QUOTES.length]
+function getRandomQuote() {
+  const usedRaw = localStorage.getItem('lumio_used_quotes')
+  let used: number[] = usedRaw ? JSON.parse(usedRaw) : []
+  if (used.length >= QUOTES.length) {
+    used = []
+  }
+  const available = QUOTES.map((_, i) => i).filter(i => !used.includes(i))
+  const idx = available[Math.floor(Math.random() * available.length)]
+  used.push(idx)
+  localStorage.setItem('lumio_used_quotes', JSON.stringify(used))
+  return QUOTES[idx]
 }
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -229,7 +254,7 @@ interface Props {
 export default function SchoolBanner({ schoolName, headteacher, town, attendance, staffIn, openConcerns, activeWorkflows, weeksToSATs }: Props) {
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
   const { speak, stop, isPlaying } = useSpeech()
-  const quote = getDailyQuote()
+  const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
 
   const now = new Date()
   const h = now.getHours()

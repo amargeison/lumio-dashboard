@@ -8,6 +8,7 @@ import {
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
   Settings, Bell, Menu, X, GraduationCap, Sunrise, Network,
 } from 'lucide-react'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 
 const NAV = [
   { section: null,          path: '',              label: 'Overview',               icon: LayoutDashboard, badge: null },
@@ -133,7 +134,7 @@ export default function SchoolLayout({ children }: Props) {
               <Bell size={18} />
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB', fontSize: 9 }}>3</span>
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>{initials}</div>
+            <AvatarDropdown initials={initials} />
           </div>
         </header>
 

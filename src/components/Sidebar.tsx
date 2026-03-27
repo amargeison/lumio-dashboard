@@ -91,15 +91,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="flex shrink-0 items-center justify-between px-5 py-5"
           style={{ borderBottom: '1px solid #1F2937' }}
         >
-          <Image
-            src="/lumio-transparent-new.png"
-            alt={companyName}
-            width={360}
-            height={180}
-            style={{ width: '180px', height: 'auto', objectFit: 'contain' }}
-            className="block"
-            priority
-          />
+          <Link href="/">
+            <Image
+              src="/lumio-transparent-new.png"
+              alt={companyName}
+              width={360}
+              height={180}
+              style={{ width: '180px', height: 'auto', objectFit: 'contain' }}
+              className="block"
+              priority
+            />
+          </Link>
           {/* Close button — mobile only */}
           <button
             className="flex items-center justify-center rounded-lg p-1 md:hidden"

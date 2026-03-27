@@ -179,6 +179,7 @@ export default function OnboardingPage() {
         const d = await r.json()
         newSlug = d.slug || ''
         if (newSlug) localStorage.setItem('demo_company_slug', newSlug)
+        if (logoUrl) localStorage.setItem('demo_company_logo', logoUrl)
       }
     } catch { /* graceful */ }
 
