@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
 import { logEmail } from '@/lib/emails/log'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -74,13 +75,11 @@ export async function POST(req: NextRequest) {
 
 async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name: string; owner_name: string; owner_email: string; expires_at: string }) {
   const supabase = getSupabase()
-  const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
 
   const expiresDate = new Date(tenant.expires_at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const firstName = tenant.owner_name?.split(' ')[0] || 'there'
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendEmail({
     from: 'Lumio <hello@lumiocms.com>',
     to: [tenant.owner_email],
     subject: 'Welcome to Lumio — your 14-day trial starts now 🚀',
@@ -97,13 +96,11 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
 }
 
 async function sendInviteEmails(emails: string[], companyName: string, slug: string) {
-  const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.lumiocms.com'
 
   await Promise.allSettled(
     emails.map(email =>
-      resend.emails.send({
+      sendEmail({
         from: 'Lumio <hello@lumiocms.com>',
         to: [email],
         subject: `${companyName} has invited you to their Lumio workspace`,

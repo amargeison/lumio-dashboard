@@ -17,6 +17,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and code are required' }, { status: 400 })
     }
 
+    // Dev bypass: code 000000 auto-approves on non-production environments
+    const isDev = process.env.NEXT_PUBLIC_ENV === 'dev' || (process.env.NODE_ENV !== 'production')
+    if (isDev && code.toString() === '000000') {
+      // Find the most recent magic link for this email (any status) to get the slug
+      const { data: devLink } = await supabase
+        .from('demo_magic_links')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (devLink) {
+        // Continue with this link as if it were valid — fall through to the rest of the handler
+        const link = devLink
+        // Skip to tenant lookup below
+        const { data: tenant, error: tenantError } = await supabase.from('demo_tenants').select('*').eq('slug', link.slug).maybeSingle()
+        if (!tenant) return NextResponse.json({ error: 'Workspace not found.' }, { status: 404 })
+        const isNewUser = tenant.status === 'pending_onboarding'
+        if (isNewUser) {
+          await supabase.from('demo_tenants').update({ status: 'active', activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }).eq('id', tenant.id)
+        }
+        const sessionToken = crypto.randomUUID()
+        await supabase.from('demo_sessions').insert({ token: sessionToken, tenant_id: tenant.id, email: email.toLowerCase(), expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() })
+        let redirect_to: string | undefined
+        if (tenant.business_id) {
+          const { data: biz } = await supabase.from('businesses').select('slug').eq('id', tenant.business_id).single()
+          if (biz) redirect_to = `/${biz.slug}`
+        }
+        return NextResponse.json({ session_token: sessionToken, company: { id: tenant.id, name: tenant.company_name, slug: tenant.slug }, user: { email: email.toLowerCase(), name: tenant.owner_name }, is_new_user: isNewUser, redirect_to })
+      }
+    }
+
     // Find the most recent unused code for this email
     const { data: link, error: linkError } = await supabase
       .from('demo_magic_links')
