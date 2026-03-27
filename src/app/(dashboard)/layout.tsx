@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Sidebar from '@/components/Sidebar'
-import Header from '@/components/Header'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -11,9 +10,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Header onMenuClick={() => setSidebarOpen(true)} />
       <main
-        className="min-h-screen pt-16 md:pl-[200px]"
+        className="min-h-screen md:pl-[200px]"
         style={{ backgroundColor: '#07080F' }}
       >
         <ClearDemoBar />

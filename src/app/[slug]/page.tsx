@@ -466,6 +466,11 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
   async function handleClearDemo() {
     setClearing(true)
     await fetch('/api/onboarding/clear-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    // Clear localStorage flags
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
+      .forEach(k => localStorage.removeItem(k))
+    localStorage.setItem('lumio_demo_active', 'false')
     onDemoToggle(false)
     setClearing(false)
   }
@@ -473,6 +478,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
   async function handleLoadDemo() {
     setLoading(true)
     await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    // Set localStorage flags so department pages show content immediately
+    localStorage.setItem('lumio_demo_active', 'true')
+    const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
+    allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     onDemoToggle(true)
     setLoading(false)
   }

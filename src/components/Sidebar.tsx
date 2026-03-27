@@ -1,11 +1,11 @@
-// updated: March 24 2026
+// updated: March 27 2026
 'use client'
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { X } from 'lucide-react'
+import { X, Bell } from 'lucide-react'
 import {
   LayoutDashboard,
   Users,
@@ -27,7 +27,6 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-// nav
 const navItems: {
   label: string
   href: string
@@ -62,9 +61,15 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [companyName, setCompanyName] = useState('Lumio')
+  const [initials, setInitials] = useState('AM')
+  const [planLabel, setPlanLabel] = useState('Live workspace')
   useEffect(() => {
     const stored = localStorage.getItem('lumio_company_name')
     if (stored) setCompanyName(stored)
+    const storedInitials = localStorage.getItem('lumio_company_initials')
+    if (storedInitials) setInitials(storedInitials)
+    const storedPlan = localStorage.getItem('lumio_company_plan')
+    if (storedPlan) setPlanLabel(`${storedPlan.charAt(0).toUpperCase() + storedPlan.slice(1)} plan`)
   }, [])
 
   return (
@@ -80,28 +85,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside
         className={[
           'fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300',
-          // Mobile: slide in/out; Desktop: always visible
           'md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         ].join(' ')}
         style={{ width: '200px', backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}
       >
-        {/* Logo */}
+        {/* Workspace identity — top */}
         <div
-          className="flex shrink-0 items-center justify-between px-5 py-5"
+          className="flex shrink-0 items-center gap-2.5 px-4 py-4"
           style={{ borderBottom: '1px solid #1F2937' }}
         >
-          <Link href="/">
-            <Image
-              src="/lumio-transparent-new.png"
-              alt={companyName}
-              width={360}
-              height={180}
-              style={{ width: '180px', height: 'auto', objectFit: 'contain' }}
-              className="block"
-              priority
-            />
-          </Link>
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0"
+            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+          >
+            {companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>
+            <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
+          </div>
           {/* Close button — mobile only */}
           <button
             className="flex items-center justify-center rounded-lg p-1 md:hidden"
@@ -161,14 +164,38 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Buy CTA */}
-        <div className="p-4 mt-auto border-t border-[#1F2937]">
-          <Link href="/buy"
-            className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-bold transition-all"
-            style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)', color: '#F9FAFB' }}>
-            ✦ Buy Lumio
-          </Link>
-          <p className="text-xs text-center mt-2" style={{ color: '#4B5563' }}>14-day free trial · From £49/mo</p>
+        {/* Bottom section: avatar + bell + logo */}
+        <div className="mt-auto" style={{ borderTop: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 px-4 py-3">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+            >
+              {initials}
+            </div>
+            <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+            <button
+              className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
+              style={{ color: '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF' }}
+              aria-label="Notifications"
+            >
+              <Bell size={16} strokeWidth={1.75} />
+              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
+            </button>
+          </div>
+          <div className="px-4 pb-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+              <Image
+                src="/lumio-transparent-new.png"
+                alt="Lumio"
+                width={180}
+                height={90}
+                style={{ width: '80px', height: 'auto', objectFit: 'contain' }}
+              />
+            </a>
+          </div>
         </div>
       </aside>
     </>

@@ -69,6 +69,10 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
         headers: { 'Content-Type': 'application/json', 'x-workspace-token': sessionToken },
       })
     } catch {}
+    // Set localStorage flags so department pages show content immediately
+    localStorage.setItem('lumio_demo_active', 'true')
+    const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
+    allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     setPhase('done')
   }
 
