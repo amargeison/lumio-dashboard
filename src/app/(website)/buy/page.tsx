@@ -488,7 +488,12 @@ export default function CompanyCheckoutPage() {
       const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
       keys.forEach(k => localStorage.removeItem(k))
     }
-    router.push('/')
+    if (slug && slug !== 'my-company') {
+      router.push(`/${slug}`)
+    } else {
+      console.error('[buy] No slug found after purchase — redirecting to login')
+      router.push('/login')
+    }
   }
 
   const isBuilding = step === 3
