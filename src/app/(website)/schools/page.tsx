@@ -3,7 +3,7 @@
 // NOTE: The (website)/layout.tsx renders a site-wide nav + footer.
 // This page also renders a schools-specific footer as the final section.
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Building2, Users, Heart, Shield, BookOpen, GraduationCap,
@@ -13,101 +13,286 @@ import {
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 
-const ROLE_DATA: Record<string, {
-  stats: { label: string; value: string; color: string }[]
-  alert: { text: string; color: string } | null
-  items: { label: string; dot: string }[]
-}> = {
+type RoleDataEntry = {
+  kpis: { label: string; value: string; color: string; trend?: string }[]
+  chart: React.ReactNode
+  feed: { icon: string; text: string; color: string }[]
+  badges: { label: string; status: 'green' | 'amber' | 'info' }[]
+}
+
+/* ── SVG Chart helpers ─────────────────────────────────────────────────── */
+
+function VerticalBarChart({ bars, maxVal }: { bars: { label: string; value: number; color?: string }[]; maxVal: number }) {
+  const h = 90, barW = 20, gap = 6
+  const totalW = bars.length * (barW + gap) - gap
+  return (
+    <svg viewBox={`0 0 ${totalW + 16} ${h + 22}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+      {bars.map((b, i) => {
+        const barH = (b.value / maxVal) * h
+        return (
+          <g key={i}>
+            <rect x={8 + i * (barW + gap)} y={h - barH} width={barW} height={barH} rx={3}
+              fill={b.color || '#0D9488'} opacity={0.85} />
+            <text x={8 + i * (barW + gap) + barW / 2} y={h + 14} textAnchor="middle"
+              fill="#6B7280" fontSize="8" fontFamily="inherit">{b.label}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function HorizontalBarChart({ bars, maxVal }: { bars: { label: string; value: number; color: string; suffix?: string }[]; maxVal: number }) {
+  const rowH = 22, labelW = 72, barMaxW = 100, totalH = bars.length * rowH + 4
+  return (
+    <svg viewBox={`0 0 ${labelW + barMaxW + 50} ${totalH}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+      {bars.map((b, i) => {
+        const barW = (b.value / maxVal) * barMaxW
+        return (
+          <g key={i}>
+            <text x={labelW - 4} y={i * rowH + 15} textAnchor="end" fill="#9CA3AF" fontSize="9" fontFamily="inherit">{b.label}</text>
+            <rect x={labelW} y={i * rowH + 4} width={barW} height={14} rx={3} fill={b.color} opacity={0.85} />
+            <text x={labelW + barW + 4} y={i * rowH + 15} fill="#9CA3AF" fontSize="8" fontFamily="inherit">{b.suffix || b.value}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function DualBarChart({ groups }: { groups: { label: string; v1: number; v2: number }[]; maxVal?: number }) {
+  const maxV = 12, h = 90, barW = 12, gap = 28
+  const totalW = groups.length * gap + 40
+  return (
+    <svg viewBox={`0 0 ${totalW} ${h + 28}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+      {/* target line */}
+      <line x1={8} y1={h - (11 / maxV) * h} x2={totalW - 8} y2={h - (11 / maxV) * h}
+        stroke="#F59E0B" strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />
+      <text x={totalW - 6} y={h - (11 / maxV) * h - 2} fill="#F59E0B" fontSize="7" textAnchor="end">Target</text>
+      {groups.map((g, i) => {
+        const h1 = (g.v1 / maxV) * h, h2 = (g.v2 / maxV) * h
+        const x = 16 + i * gap
+        return (
+          <g key={i}>
+            <rect x={x} y={h - h1} width={barW} height={h1} rx={2} fill="#0D9488" opacity={0.85} />
+            <rect x={x + barW + 2} y={h - h2} width={barW} height={h2} rx={2} fill="#6366F1" opacity={0.7} />
+            <text x={x + barW} y={h + 14} textAnchor="middle" fill="#6B7280" fontSize="8">{g.label}</text>
+          </g>
+        )
+      })}
+      <g transform={`translate(8, ${h + 22})`}>
+        <rect width={8} height={6} rx={1} fill="#0D9488" /><text x={12} y={6} fill="#6B7280" fontSize="7">Reading</text>
+        <rect x={52} width={8} height={6} rx={1} fill="#6366F1" /><text x={64} y={6} fill="#6B7280" fontSize="7">Writing</text>
+      </g>
+    </svg>
+  )
+}
+
+/* ── Role data ─────────────────────────────────────────────────────────── */
+
+const ROLE_DATA: Record<string, RoleDataEntry> = {
   Headteacher: {
-    stats: [
-      { label: 'Attendance', value: '93.9%', color: '#0D9488' },
-      { label: 'Open concerns', value: '1', color: '#EF4444' },
-      { label: 'PP gap', value: '−3.2', color: '#F59E0B' },
+    kpis: [
+      { label: 'Attendance', value: '93.9%', color: '#22C55E', trend: '↑0.4%' },
+      { label: 'PP Gap', value: '−3.2', color: '#F59E0B' },
+      { label: 'Open SG Cases', value: '1', color: '#EF4444' },
+      { label: 'SATs Ready', value: '82%', color: '#22C55E' },
     ],
-    alert: { text: 'SG-2026-047 · DSL review overdue 2 days', color: '#EF4444' },
-    items: [
-      { label: 'EHCP annual review — T. Morris due 15 Apr', dot: '#F59E0B' },
-      { label: 'Year 6 SATs readiness: 82% on track', dot: '#22C55E' },
-      { label: 'Breakfast club — 47 booked tomorrow', dot: '#0D9488' },
+    chart: <VerticalBarChart bars={[
+      { label: 'Yr1', value: 92 }, { label: 'Yr2', value: 94 }, { label: 'Yr3', value: 91 },
+      { label: 'Yr4', value: 95 }, { label: 'Yr5', value: 96 }, { label: 'Yr6', value: 93 },
+    ]} maxVal={100} />,
+    feed: [
+      { icon: '⚠️', text: 'DSL review overdue 2 days', color: '#EF4444' },
+      { icon: '📋', text: 'EHCP review T.Morris due 15 Apr', color: '#F59E0B' },
+      { icon: '✅', text: 'Y6 SATs 82% on track', color: '#22C55E' },
+      { icon: '🍳', text: 'Breakfast club 47 booked', color: '#0D9488' },
+    ],
+    badges: [
+      { label: 'Ofsted Ready ✓', status: 'green' },
+      { label: 'SEND White Paper ✓', status: 'green' },
+      { label: 'KCSIE 2024 ✓', status: 'green' },
     ],
   },
   SENCO: {
-    stats: [
+    kpis: [
       { label: 'Active EHCPs', value: '12', color: '#0D9488' },
-      { label: 'ISPs unsigned', value: '3', color: '#F59E0B' },
-      { label: 'Reviews due', value: '4', color: '#0D9488' },
+      { label: 'Reviews Due', value: '4', color: '#F59E0B' },
+      { label: 'ISPs Unsigned', value: '3', color: '#F59E0B' },
+      { label: 'CAMHS Referrals', value: '3', color: '#EF4444' },
     ],
-    alert: { text: '2 EHCPs approaching 20-week deadline', color: '#F59E0B' },
-    items: [
-      { label: 'External agency referrals: CAMHS (3 pending), EP (1)', dot: '#F59E0B' },
-      { label: 'SEND White Paper Phase 1: ✅  Phase 2: In progress', dot: '#0D9488' },
-      { label: '3 ISPs awaiting parent sign-off', dot: '#EF4444' },
+    chart: <HorizontalBarChart bars={[
+      { label: 'T.Morris', value: 18, color: '#0D9488', suffix: '18wks' },
+      { label: 'J.Ahmed', value: 12, color: '#F59E0B', suffix: '12wks' },
+      { label: 'S.Patel', value: 6, color: '#EF4444', suffix: '6wks' },
+    ]} maxVal={20} />,
+    feed: [
+      { icon: '🔴', text: 'S.Patel EHCP — 6 weeks remaining', color: '#EF4444' },
+      { icon: '🟡', text: 'ISP sign-off pending × 3', color: '#F59E0B' },
+      { icon: '🟢', text: 'White Paper Phase 1 complete', color: '#22C55E' },
+      { icon: '📋', text: 'EP review booked 22 Apr', color: '#0D9488' },
+    ],
+    badges: [
+      { label: 'White Paper Phase 1 ✓', status: 'green' },
+      { label: 'Phase 2 In Progress', status: 'amber' },
+      { label: 'ISP Tracker Live', status: 'info' },
     ],
   },
   DSL: {
-    stats: [
-      { label: 'Open CP cases', value: '2', color: '#EF4444' },
-      { label: 'CiN / Early Help', value: '1 / 3', color: '#F59E0B' },
-      { label: 'KCSIE compliance', value: '94%', color: '#0D9488' },
+    kpis: [
+      { label: 'CP Cases', value: '2', color: '#EF4444' },
+      { label: 'CiN', value: '1', color: '#F59E0B' },
+      { label: 'Early Help', value: '3', color: '#0D9488' },
+      { label: 'KCSIE Compliance', value: '94%', color: '#22C55E' },
     ],
-    alert: { text: '2 staff with safeguarding training renewals due this month', color: '#F59E0B' },
-    items: [
-      { label: 'Online safety audit: due 12 May', dot: '#F59E0B' },
-      { label: 'SCR last reviewed: 3 days ago', dot: '#22C55E' },
-      { label: 'KCSIE 2024 compliance: 94%', dot: '#0D9488' },
+    chart: <VerticalBarChart bars={[
+      { label: 'Oct', value: 1 }, { label: 'Nov', value: 2 }, { label: 'Dec', value: 1 },
+      { label: 'Jan', value: 3 }, { label: 'Feb', value: 2 }, { label: 'Mar', value: 1 },
+    ]} maxVal={4} />,
+    feed: [
+      { icon: '🔴', text: 'CP Case — review due today', color: '#EF4444' },
+      { icon: '🟡', text: 'Online safety audit due 12 May', color: '#F59E0B' },
+      { icon: '🟡', text: 'SCR reviewed 3 days ago', color: '#F59E0B' },
+      { icon: '🟢', text: '2 staff training renewals due', color: '#22C55E' },
+    ],
+    badges: [
+      { label: 'KCSIE 2024 ✓', status: 'green' },
+      { label: 'SCR Current ✓', status: 'green' },
+      { label: 'Online Safety Audit Due', status: 'amber' },
     ],
   },
   Teacher: {
-    stats: [
-      { label: 'Pupils (6B)', value: '28', color: '#0D9488' },
-      { label: 'Reading avg', value: '10.2', color: '#22C55E' },
-      { label: 'Writing avg', value: '9.8', color: '#F59E0B' },
+    kpis: [
+      { label: 'Class Size', value: '28', color: '#0D9488' },
+      { label: 'SEND Pupils', value: '3', color: '#F59E0B' },
+      { label: 'Below Expected', value: '4', color: '#EF4444' },
+      { label: 'Tasks Due', value: '3', color: '#F59E0B' },
     ],
-    alert: { text: '4 pupils below expected progress', color: '#F59E0B' },
-    items: [
-      { label: 'Class 6B: 3 SEND · 1 EHCP', dot: '#0D9488' },
-      { label: 'Weekly tasks: 3 outstanding', dot: '#F59E0B' },
-      { label: 'Next assessment: 14 Apr', dot: '#6B7280' },
+    chart: <DualBarChart groups={[
+      { label: 'Class', v1: 10.2, v2: 9.8 },
+    ]} />,
+    feed: [
+      { icon: '🟡', text: '4 pupils below expected progress', color: '#F59E0B' },
+      { icon: '📋', text: 'Assessment due 14 Apr', color: '#0D9488' },
+      { icon: '🟢', text: 'EHCP strategy updated — L.Khan', color: '#22C55E' },
+      { icon: '🟡', text: '3 tasks outstanding', color: '#F59E0B' },
+    ],
+    badges: [
+      { label: 'SEND Support Plans ✓', status: 'green' },
+      { label: 'Assessment Due 14 Apr', status: 'amber' },
+      { label: 'Pupil Passport Ready', status: 'info' },
     ],
   },
   'Trust / MAT': {
-    stats: [
+    kpis: [
       { label: 'Schools', value: '6', color: '#0D9488' },
-      { label: 'Trust attendance', value: '94.1%', color: '#0D9488' },
-      { label: 'PP gap', value: '−2.8', color: '#F59E0B' },
+      { label: 'Trust Attendance', value: '94.1%', color: '#0D9488', trend: '↓0.2%' },
+      { label: 'Amber RAG', value: '2', color: '#F59E0B' },
+      { label: 'Budget Var.', value: '−£42k', color: '#EF4444' },
     ],
-    alert: { text: '2 schools RAG flagged amber — review recommended', color: '#F59E0B' },
-    items: [
-      { label: 'SEND compliance: 4/6 Phase 1 complete', dot: '#F59E0B' },
-      { label: 'Ofsted: 3 outstanding, 2 good, 1 RI', dot: '#0D9488' },
-      { label: 'Budget variance: −£42k across trust', dot: '#EF4444' },
+    chart: <HorizontalBarChart bars={[
+      { label: 'Oakridge', value: 93.9, color: '#0D9488', suffix: '93.9%' },
+      { label: 'Maple', value: 95.1, color: '#0D9488', suffix: '95.1%' },
+      { label: 'Birchwood', value: 91.2, color: '#EF4444', suffix: '91.2%' },
+      { label: 'Westfield', value: 94.7, color: '#0D9488', suffix: '94.7%' },
+      { label: 'Crestview', value: 96.0, color: '#22C55E', suffix: '96.0%' },
+      { label: 'Hillside', value: 92.8, color: '#F59E0B', suffix: '92.8%' },
+    ]} maxVal={100} />,
+    feed: [
+      { icon: '🔴', text: 'Birchwood — 91.2%, intervention needed', color: '#EF4444' },
+      { icon: '🟡', text: 'Hillside — SEND Phase 2 behind', color: '#F59E0B' },
+      { icon: '🟢', text: '3/6 schools Ofsted Ready', color: '#22C55E' },
+      { icon: '📊', text: 'Trust board report due 30 Apr', color: '#0D9488' },
+    ],
+    badges: [
+      { label: '3/6 Ofsted Ready', status: 'green' },
+      { label: 'SEND Phase 1 4/6', status: 'amber' },
+      { label: 'Finance Dashboard Live', status: 'info' },
     ],
   },
   Governance: {
-    stats: [
-      { label: 'Budget spent', value: '98.2%', color: '#0D9488' },
-      { label: 'SIP on track', value: '4/6', color: '#22C55E' },
-      { label: 'Policies overdue', value: '2', color: '#EF4444' },
+    kpis: [
+      { label: 'Next Meeting', value: '24 Apr', color: '#0D9488' },
+      { label: 'For Approval', value: '3', color: '#F59E0B' },
+      { label: 'SIP On Track', value: '4/6', color: '#22C55E' },
+      { label: 'Policies Overdue', value: '2', color: '#F59E0B' },
     ],
-    alert: { text: 'Next full governor meeting: 24 Apr — 3 items require approval', color: '#F59E0B' },
-    items: [
-      { label: 'SIP: 1 priority behind schedule', dot: '#F59E0B' },
-      { label: 'Ofsted last visit: Nov 2023 — Good', dot: '#22C55E' },
-      { label: 'Staff wellbeing survey due: May', dot: '#6B7280' },
+    chart: (() => {
+      const items = [
+        { label: 'Quality of Ed', pct: 90, color: '#22C55E' },
+        { label: 'Behaviour', pct: 85, color: '#22C55E' },
+        { label: 'SEND', pct: 55, color: '#F59E0B' },
+        { label: 'Attendance', pct: 80, color: '#22C55E' },
+        { label: 'Wellbeing', pct: 30, color: '#EF4444' },
+        { label: 'Finance', pct: 75, color: '#22C55E' },
+      ]
+      const rowH = 20, labelW = 72, barMaxW = 90
+      return (
+        <svg viewBox={`0 0 ${labelW + barMaxW + 12} ${items.length * rowH + 4}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+          {items.map((it, i) => (
+            <g key={i}>
+              <text x={labelW - 4} y={i * rowH + 14} textAnchor="end" fill="#9CA3AF" fontSize="8" fontFamily="inherit">{it.label}</text>
+              <rect x={labelW} y={i * rowH + 4} width={barMaxW} height={12} rx={3} fill="#1F2937" />
+              <rect x={labelW} y={i * rowH + 4} width={it.pct / 100 * barMaxW} height={12} rx={3} fill={it.color} opacity={0.85} />
+            </g>
+          ))}
+        </svg>
+      )
+    })(),
+    feed: [
+      { icon: '📋', text: '3 agenda items pending approval', color: '#0D9488' },
+      { icon: '🟡', text: '2 policies overdue review', color: '#F59E0B' },
+      { icon: '🟢', text: 'Ofsted Nov 2023 — Good', color: '#22C55E' },
+      { icon: '📊', text: 'Budget 98.2% spent to date', color: '#0D9488' },
+    ],
+    badges: [
+      { label: 'Governor Portal ✓', status: 'green' },
+      { label: 'SIP Tracker Live', status: 'info' },
+      { label: 'Clerk Support Tools', status: 'info' },
     ],
   },
 }
 
 const ROLES = Object.keys(ROLE_DATA)
 
+const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  green:  { bg: 'rgba(34,197,94,0.1)',  text: '#22C55E', border: 'rgba(34,197,94,0.25)' },
+  amber:  { bg: 'rgba(245,158,11,0.1)', text: '#F59E0B', border: 'rgba(245,158,11,0.25)' },
+  info:   { bg: 'rgba(13,148,136,0.1)', text: '#0D9488', border: 'rgba(13,148,136,0.25)' },
+}
+
 function HeroSection() {
   const [activeRole, setActiveRole] = useState('Headteacher')
+  const [paused, setPaused] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const data = ROLE_DATA[activeRole]
+
+  const advance = useCallback(() => {
+    setActiveRole(prev => {
+      const idx = ROLES.indexOf(prev)
+      return ROLES[(idx + 1) % ROLES.length]
+    })
+  }, [])
+
+  useEffect(() => {
+    if (paused) { intervalRef.current && clearInterval(intervalRef.current); return }
+    intervalRef.current = setInterval(advance, 4000)
+    return () => { intervalRef.current && clearInterval(intervalRef.current) }
+  }, [paused, advance])
+
+  const handleRoleClick = (role: string) => {
+    setActiveRole(role)
+    setPaused(true)
+  }
 
   return (
     <section style={{ backgroundColor: '#07080F' }} className="pt-32 pb-24">
+      <style>{`
+        @keyframes heroFadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes livePulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+      `}</style>
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-12 items-center">
 
           {/* Left — copy */}
           <div>
@@ -156,39 +341,58 @@ function HeroSection() {
             </p>
           </div>
 
-          {/* Right — mock dashboard */}
-          <div>
+          {/* Right — full mini-dashboard */}
+          <div
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
             <div
               className="rounded-2xl overflow-hidden"
               style={{
-                border: '1px solid #1F2937',
-                boxShadow: '0 0 80px rgba(13,148,136,0.15)',
+                border: '1px solid rgba(13,148,136,0.3)',
+                boxShadow: '0 0 100px rgba(13,148,136,0.18), 0 0 40px rgba(13,148,136,0.08)',
                 backgroundColor: '#111318',
+                minHeight: 520,
               }}
             >
+              {/* Title bar */}
               <div
-                className="flex items-center gap-3 px-5 py-4"
+                className="flex items-center gap-3 px-5 py-3.5"
                 style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#0D1117' }}
               >
-                <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.2)' }}>
-                  <Building2 size={14} style={{ color: '#0D9488' }} />
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#EF4444', opacity: 0.7 }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#F59E0B', opacity: 0.7 }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22C55E', opacity: 0.7 }} />
                 </div>
-                <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Oakridge Primary · Insights</span>
-                <span className="ml-auto text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>Live</span>
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-md" style={{ backgroundColor: 'rgba(13,148,136,0.2)' }}>
+                    <Building2 size={12} style={{ color: '#0D9488' }} />
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Oakridge Primary · Insights</span>
+                </div>
+                <span
+                  className="ml-auto text-[10px] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5"
+                  style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: '#0D9488', animation: 'livePulse 2s ease-in-out infinite' }} />
+                  Live
+                </span>
               </div>
 
-              <div className="p-5 flex flex-col gap-4">
-                {/* Role switcher */}
-                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {/* Content area */}
+              <div className="p-4 flex flex-col gap-3">
+                {/* Role tabs */}
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
                   {ROLES.map(role => (
                     <button
                       key={role}
-                      onClick={() => setActiveRole(role)}
-                      className="text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap transition-colors duration-200"
+                      onClick={() => handleRoleClick(role)}
+                      className="text-[11px] px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all duration-200"
                       style={{
-                        backgroundColor: activeRole === role ? '#0D9488' : '#1F2937',
+                        backgroundColor: activeRole === role ? '#0D9488' : 'transparent',
                         color: activeRole === role ? '#F9FAFB' : '#6B7280',
-                        border: 'none',
+                        border: activeRole === role ? '1px solid #0D9488' : '1px solid #1F2937',
                         cursor: 'pointer',
                       }}
                     >
@@ -197,41 +401,67 @@ function HeroSection() {
                   ))}
                 </div>
 
-                <div
-                  key={activeRole}
-                  className="flex flex-col gap-4"
-                  style={{ animation: 'fadein 0.25s ease-in-out' }}
-                >
-                  <style>{`@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+                {/* Animated content */}
+                <div key={activeRole} style={{ animation: 'heroFadeIn 0.15s ease-out' }} className="flex flex-col gap-3">
 
-                  <div className="grid grid-cols-3 gap-3">
-                    {data.stats.map(stat => (
-                      <div key={stat.label} className="rounded-xl p-3" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-                        <p className="text-xl font-black leading-none mb-1" style={{ color: stat.color }}>{stat.value}</p>
-                        <p className="text-xs" style={{ color: '#6B7280' }}>{stat.label}</p>
+                  {/* ZONE A — KPI cards */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {data.kpis.map(kpi => (
+                      <div key={kpi.label} className="rounded-lg p-2.5" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-black leading-none" style={{ color: kpi.color }}>{kpi.value}</span>
+                          {kpi.trend && (
+                            <span className="text-[10px] font-semibold" style={{ color: kpi.trend.startsWith('↑') ? '#22C55E' : '#EF4444' }}>
+                              {kpi.trend}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] mt-1 leading-tight" style={{ color: '#6B7280' }}>{kpi.label}</p>
                       </div>
                     ))}
                   </div>
 
-                  {data.alert && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                      style={{
-                        backgroundColor: `${data.alert.color}1A`,
-                        border: `1px solid ${data.alert.color}33`,
-                        color: data.alert.color === '#EF4444' ? '#F87171' : '#FBBF24',
-                      }}>
-                      <span>⚠</span>
-                      <span>{data.alert.text}</span>
+                  {/* ZONE B — Chart + Feed */}
+                  <div className="grid grid-cols-2 gap-2" style={{ minHeight: 160 }}>
+                    {/* Left — chart */}
+                    <div className="rounded-lg p-3 flex flex-col" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                      <p className="text-[10px] font-semibold mb-2" style={{ color: '#6B7280' }}>
+                        {activeRole === 'Headteacher' && 'Attendance by Year Group'}
+                        {activeRole === 'SENCO' && 'EHCP 20-Week Timeline'}
+                        {activeRole === 'DSL' && 'Concern Log (Oct–Mar)'}
+                        {activeRole === 'Teacher' && 'Reading vs Writing Attainment'}
+                        {activeRole === 'Trust / MAT' && 'Cross-School Attendance'}
+                        {activeRole === 'Governance' && 'SIP Priority Progress'}
+                      </p>
+                      <div className="flex-1 flex items-end">{data.chart}</div>
                     </div>
-                  )}
 
-                  <div className="flex flex-col gap-2">
-                    {data.items.map(item => (
-                      <div key={item.label} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
-                        <span className="text-xs" style={{ color: '#9CA3AF' }}>{item.label}</span>
-                      </div>
-                    ))}
+                    {/* Right — feed */}
+                    <div className="rounded-lg p-3 flex flex-col gap-2" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                      <p className="text-[10px] font-semibold" style={{ color: '#6B7280' }}>Live Feed</p>
+                      {data.feed.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-xs leading-none shrink-0 mt-0.5" style={{ fontSize: 11 }}>{item.icon}</span>
+                          <span className="text-[11px] leading-snug" style={{ color: '#D1D5DB' }}>{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ZONE C — Compliance badges */}
+                  <div className="flex gap-2 flex-wrap">
+                    {data.badges.map(badge => {
+                      const c = BADGE_COLORS[badge.status]
+                      return (
+                        <span
+                          key={badge.label}
+                          className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+                        >
+                          {badge.label}
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

@@ -1,15 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { useWorkspace } from '@/hooks/useWorkspace'
+import { createBrowserClient } from '@supabase/ssr'
 
-const stats = [
+const DEFAULT_STATS = [
   { label: 'Outstanding Invoices', value: '£84,200', trend: '+£12k', trendDir: 'up'   as const, trendGood: false, icon: Receipt,    sub: 'vs last month' },
   { label: 'Overdue Amount',       value: '£23,400', trend: '+£8k',  trendDir: 'up'   as const, trendGood: false, icon: AlertCircle,sub: 'vs last month' },
   { label: 'Collected This Month', value: '£142,800',trend: '+18%',  trendDir: 'up'   as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month' },
-  { label: 'Avg Days to Pay',      value: '28d',     trend: '−3d',   trendDir: 'down' as const, trendGood: true,  icon: Clock,      sub: 'vs last quarter'},
+  { label: 'Avg Days to Pay',      value: '28d',     trend: '\u22123d',   trendDir: 'down' as const, trendGood: true,  icon: Clock,      sub: 'vs last quarter'},
 ]
 
 const actions = [
@@ -20,35 +23,99 @@ const actions = [
   { label: 'Xero Sync',      icon: RefreshCw   },
 ]
 
-const invoices = [
-  { company: 'Whitestone College',    amount: '£12,400', due: '15 Feb 2026', daysOverdue: 34, status: 'Overdue' },
-  { company: 'Bramble Hill Trust',    amount: '£8,200',  due: '1 Mar 2026',  daysOverdue: 20, status: 'Overdue' },
-  { company: 'Elmfield Institute',    amount: '£2,800',  due: '10 Mar 2026', daysOverdue: 11, status: 'Overdue' },
-  { company: 'Greenfield Academy',    amount: '£42,000', due: '31 Mar 2026', daysOverdue: 0,  status: 'Unpaid'  },
-  { company: 'Hopscotch Learning',    amount: '£14,500', due: '31 Mar 2026', daysOverdue: 0,  status: 'Unpaid'  },
-  { company: 'Oakridge Schools Ltd',  amount: '£28,000', due: '7 Apr 2026',  daysOverdue: 0,  status: 'Unpaid'  },
-  { company: 'Pinebrook Primary',     amount: '£6,400',  due: '14 Apr 2026', daysOverdue: 0,  status: 'Unpaid'  },
-  { company: 'Crestview Academy',     amount: '£19,200', due: '30 Apr 2026', daysOverdue: 0,  status: 'Unpaid'  },
-  { company: 'Sunfield Trust',        amount: '£14,800', due: '15 Mar 2026', daysOverdue: 6,  status: 'Paid'    },
-  { company: 'Riverdale Education',   amount: '£9,600',  due: '14 Mar 2026', daysOverdue: 0,  status: 'Paid'    },
+const DEFAULT_INVOICES = [
+  { company: 'Whitestone College',    amount: '\u00A312,400', due: '15 Feb 2026', daysOverdue: 34, status: 'Overdue' },
+  { company: 'Bramble Hill Trust',    amount: '\u00A38,200',  due: '1 Mar 2026',  daysOverdue: 20, status: 'Overdue' },
+  { company: 'Elmfield Institute',    amount: '\u00A32,800',  due: '10 Mar 2026', daysOverdue: 11, status: 'Overdue' },
+  { company: 'Greenfield Academy',    amount: '\u00A342,000', due: '31 Mar 2026', daysOverdue: 0,  status: 'Unpaid'  },
+  { company: 'Hopscotch Learning',    amount: '\u00A314,500', due: '31 Mar 2026', daysOverdue: 0,  status: 'Unpaid'  },
+  { company: 'Oakridge Schools Ltd',  amount: '\u00A328,000', due: '7 Apr 2026',  daysOverdue: 0,  status: 'Unpaid'  },
+  { company: 'Pinebrook Primary',     amount: '\u00A36,400',  due: '14 Apr 2026', daysOverdue: 0,  status: 'Unpaid'  },
+  { company: 'Crestview Academy',     amount: '\u00A319,200', due: '30 Apr 2026', daysOverdue: 0,  status: 'Unpaid'  },
+  { company: 'Sunfield Trust',        amount: '\u00A314,800', due: '15 Mar 2026', daysOverdue: 6,  status: 'Paid'    },
+  { company: 'Riverdale Education',   amount: '\u00A39,600',  due: '14 Mar 2026', daysOverdue: 0,  status: 'Paid'    },
 ]
 
-const payments = [
-  { company: 'Sunfield Trust',      amount: '£14,800', date: '15 Mar 2026', badge: 'Paid' },
-  { company: 'Riverdale Education', amount: '£9,600',  date: '14 Mar 2026', badge: 'Paid' },
-  { company: 'Apex Tutors',         amount: '£7,200',  date: '12 Mar 2026', badge: 'Paid' },
-  { company: 'Calibre Learning',    amount: '£5,400',  date: '10 Mar 2026', badge: 'Paid' },
+const DEFAULT_PAYMENTS = [
+  { company: 'Sunfield Trust',      amount: '\u00A314,800', date: '15 Mar 2026', badge: 'Paid' },
+  { company: 'Riverdale Education', amount: '\u00A39,600',  date: '14 Mar 2026', badge: 'Paid' },
+  { company: 'Apex Tutors',         amount: '\u00A37,200',  date: '12 Mar 2026', badge: 'Paid' },
+  { company: 'Calibre Learning',    amount: '\u00A35,400',  date: '10 Mar 2026', badge: 'Paid' },
 ]
 
-const revenueSummary = [
-  { label: 'Invoiced this month',  value: '£186,300' },
-  { label: 'Collected this month', value: '£142,800' },
-  { label: 'Outstanding',          value: '£84,200'  },
-  { label: 'Overdue',              value: '£23,400'  },
+const DEFAULT_REVENUE = [
+  { label: 'Invoiced this month',  value: '\u00A3186,300' },
+  { label: 'Collected this month', value: '\u00A3142,800' },
+  { label: 'Outstanding',          value: '\u00A384,200'  },
+  { label: 'Overdue',              value: '\u00A323,400'  },
   { label: 'Avg days to pay',      value: '28 days'  },
 ]
 
+function fmtGBP(n: number): string {
+  return '\u00A3' + n.toLocaleString('en-GB')
+}
+
 export default function AccountsPage() {
+  const workspace = useWorkspace()
+  const [stats, setStats] = useState(DEFAULT_STATS)
+  const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
+  const [payments, setPayments] = useState(DEFAULT_PAYMENTS)
+  const [revenueSummary, setRevenueSummary] = useState(DEFAULT_REVENUE)
+
+  useEffect(() => {
+    if (!workspace?.id) return
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+
+    // Invoices
+    supabase.from('business_invoices').select('*').eq('business_id', workspace.id).order('due_date', { ascending: true }).then(({ data }) => {
+      if (!data?.length) return
+      const now = new Date()
+      const outstanding = data.filter(i => i.status !== 'paid')
+      const overdue = data.filter(i => i.status === 'overdue')
+      const paid = data.filter(i => i.status === 'paid')
+      const outstandingTotal = outstanding.reduce((s, i) => s + Number(i.amount), 0)
+      const overdueTotal = overdue.reduce((s, i) => s + Number(i.amount), 0)
+      const paidTotal = paid.reduce((s, i) => s + Number(i.amount), 0)
+
+      setStats([
+        { label: 'Outstanding Invoices', value: fmtGBP(outstandingTotal), trend: `${outstanding.length} invoices`, trendDir: 'up' as const, trendGood: false, icon: Receipt, sub: 'open' },
+        { label: 'Overdue Amount', value: fmtGBP(overdueTotal), trend: `${overdue.length} overdue`, trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'past due' },
+        { label: 'Collected', value: fmtGBP(paidTotal), trend: `${paid.length} paid`, trendDir: 'up' as const, trendGood: true, icon: TrendingUp, sub: 'received' },
+        { label: 'Avg Days to Pay', value: '28d', trend: '\u22123d', trendDir: 'down' as const, trendGood: true, icon: Clock, sub: 'vs last quarter' },
+      ])
+
+      setInvoices(data.map(inv => {
+        const dueDate = new Date(inv.due_date)
+        const daysOverdue = inv.status === 'overdue' ? Math.max(0, Math.floor((now.getTime() - dueDate.getTime()) / 86400000)) : 0
+        return {
+          company: inv.company,
+          amount: fmtGBP(Number(inv.amount)),
+          due: dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          daysOverdue,
+          status: inv.status === 'overdue' ? 'Overdue' : inv.status === 'paid' ? 'Paid' : 'Unpaid',
+        }
+      }))
+
+      setPayments(paid.map(p => ({
+        company: p.company,
+        amount: fmtGBP(Number(p.amount)),
+        date: new Date(p.paid_date || p.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        badge: 'Paid',
+      })))
+
+      setRevenueSummary([
+        { label: 'Invoiced total', value: fmtGBP(data.reduce((s, i) => s + Number(i.amount), 0)) },
+        { label: 'Collected', value: fmtGBP(paidTotal) },
+        { label: 'Outstanding', value: fmtGBP(outstandingTotal) },
+        { label: 'Overdue', value: fmtGBP(overdueTotal) },
+        { label: 'Avg days to pay', value: '28 days' },
+      ])
+    })
+  }, [workspace?.id])
+
   const hasData = useHasDashboardData('accounts')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="accounts"

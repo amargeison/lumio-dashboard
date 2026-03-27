@@ -98,16 +98,32 @@ CREATE INDEX IF NOT EXISTS idx_biz_invoices_bid    ON business_invoices(business
 CREATE INDEX IF NOT EXISTS idx_biz_tasks_bid       ON business_tasks(business_id);
 CREATE INDEX IF NOT EXISTS idx_biz_compliance_bid  ON business_compliance_logs(business_id);
 
--- ── Add business_id + is_demo to existing tables ────────────────────────────
+-- ── Add business_id + is_demo to existing tables (safe — skips if table missing)
 
-ALTER TABLE hr_onboardings         ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
-ALTER TABLE hr_onboardings         ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'hr_onboardings') THEN
+    ALTER TABLE hr_onboardings ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
+    ALTER TABLE hr_onboardings ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
 
-ALTER TABLE hr_leave_requests      ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
-ALTER TABLE hr_leave_requests      ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'hr_leave_requests') THEN
+    ALTER TABLE hr_leave_requests ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
+    ALTER TABLE hr_leave_requests ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
 
-ALTER TABLE hr_performance_reviews ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
-ALTER TABLE hr_performance_reviews ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'hr_performance_reviews') THEN
+    ALTER TABLE hr_performance_reviews ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
+    ALTER TABLE hr_performance_reviews ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
 
-ALTER TABLE crm_deals              ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
-ALTER TABLE crm_deals              ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'crm_deals') THEN
+    ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id) ON DELETE SET NULL;
+    ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
