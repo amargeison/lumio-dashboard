@@ -5,6 +5,7 @@ import {
   Users, Shield, Calendar, FileText, Phone, UserPlus,
   AlertTriangle, CheckCircle2, Clock, Loader2, Sparkles,
   TrendingUp, Activity, X, ChevronRight, Mail, Plus,
+  ChevronUp, ChevronDown, GitBranch, Volume2,
 } from 'lucide-react'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -103,6 +104,168 @@ function CardHeader({ title, action }: { title: string; action?: React.ReactNode
     <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
       <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{title}</p>
       {action}
+    </div>
+  )
+}
+
+// ─── Greeting banner ─────────────────────────────────────────────────────────
+
+const SCHOOL_BG_GRADIENTS = [
+  'from-teal-950 via-emerald-900 to-green-950',
+  'from-slate-900 via-teal-950 to-emerald-900',
+  'from-emerald-950 via-teal-900 to-slate-900',
+  'from-gray-900 via-emerald-950 to-teal-900',
+  'from-teal-900 via-slate-900 to-emerald-950',
+  'from-emerald-900 via-gray-900 to-teal-950',
+  'from-green-950 via-teal-900 to-emerald-900',
+]
+
+const SCHOOL_QUOTES = [
+  { text: "Every child deserves a champion.", author: "Rita Pierson" },
+  { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
+  { text: "The beautiful thing about learning is that nobody can take it away from you.", author: "B.B. King" },
+  { text: "Children must be taught how to think, not what to think.", author: "Margaret Mead" },
+  { text: "A good teacher can inspire hope and ignite the imagination.", author: "Brad Henry" },
+]
+
+function SchoolGreetingBanner({ schoolName, firstName }: { schoolName: string; firstName?: string }) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const bg = SCHOOL_BG_GRADIENTS[new Date().getDay()]
+  const [quote] = useState(() => SCHOOL_QUOTES[Math.floor(Math.random() * SCHOOL_QUOTES.length)])
+
+  return (
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
+      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="relative z-10 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-black text-white tracking-tight mb-1">
+              {greeting}, {firstName || 'there'} 👋
+            </h1>
+            <p className="text-teal-300 text-sm mb-2">{date}</p>
+            <p className="text-teal-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-teal-500/20 text-teal-300 border-teal-500/30 min-w-[70px]">
+              <span className="text-base">📊</span>
+              <span className="text-lg font-black text-white">{schoolName ? '94.3%' : '—'}</span>
+              <span className="text-xs opacity-70">Attendance</span>
+            </div>
+            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-red-500/20 text-red-300 border-red-500/30 min-w-[70px]">
+              <span className="text-base">🔴</span>
+              <span className="text-lg font-black text-white">1</span>
+              <span className="text-xs opacity-70">Concerns</span>
+            </div>
+            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-purple-500/20 text-purple-300 border-purple-500/30 min-w-[70px]">
+              <span className="text-base">✅</span>
+              <span className="text-lg font-black text-white">23</span>
+              <span className="text-xs opacity-70">Workflows</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── School Morning Roundup ──────────────────────────────────────────────────
+
+const SCHOOL_ROUNDUP_ITEMS = [
+  { id: 'attendance', icon: '📊', label: 'Attendance', count: 3, urgent: true, color: '#0D9488', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.2)', preview: ['2 pupils flagged for persistent absence review', 'Year 6 attendance 91.8% — below target', 'Reception 96.1% — highest today'] },
+  { id: 'safeguarding', icon: '🛡️', label: 'Safeguarding', count: 1, urgent: true, color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', preview: ['1 open concern logged 2 days ago — DSL sign-off required today'] },
+  { id: 'staff', icon: '👤', label: 'Staff', count: 2, urgent: false, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', preview: ['Mrs S. Okafor (SENCO) absent — cover arranged', 'M. Taylor DBS expired 10 Mar — renewal required'] },
+  { id: 'comms', icon: '📧', label: 'Communications', count: 4, urgent: false, color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', preview: ['Year 4 trip letter sent to 28 parents', 'Governor report draft ready for review'] },
+  { id: 'curriculum', icon: '📚', label: 'Curriculum', count: 1, urgent: false, color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)', preview: ['Year 6 SATs prep session at 10am — 28 pupils confirmed'] },
+]
+
+function SchoolMorningRoundup() {
+  const [expanded, setExpanded] = useState<string | null>(null)
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+        <span className="flex items-center gap-1 text-xs" style={{ color: '#6B7280' }}>
+          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
+          Sample data
+        </span>
+      </div>
+      <div className="space-y-2">
+        {SCHOOL_ROUNDUP_ITEMS.map(item => {
+          const isOpen = expanded === item.id
+          return (
+            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+              <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
+                  {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-1.5">
+                  {item.preview.map((p, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}>
+                      <span className="flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }}>→</span>
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── School AI Summary Panel ─────────────────────────────────────────────────
+
+const SCHOOL_AI_HIGHLIGHTS = [
+  'Overall attendance today is 94.3% — Year 6 is lowest at 91.8%. Two pupils flagged for persistent absence review.',
+  '1 open safeguarding concern logged 2 days ago. DSL sign-off required before end of day.',
+  'Mrs S. Okafor (SENCO) absent — cover arranged. EHCP review at 11:30am still scheduled.',
+  'M. Taylor DBS expired 10 Mar. Renewal must be initiated this week.',
+  'Year 6 SATs prep session at 10am — all 28 registered pupils confirmed.',
+  'Parent consultation with J. Morris at 2pm. Behaviour log attached.',
+]
+
+function SchoolAIPanel() {
+  const [open, setOpen] = useState(true)
+  const now = new Date()
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #0D9488' }}>
+      <button
+        className="flex w-full items-center justify-between px-5 py-4"
+        style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: open ? '1px solid rgba(13,148,136,0.3)' : undefined }}
+        onClick={() => setOpen(v => !v)}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} style={{ color: '#0D9488' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{dayLabel}</span>
+        </div>
+        {open ? <ChevronUp size={14} style={{ color: '#0D9488' }} /> : <ChevronDown size={14} style={{ color: '#0D9488' }} />}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '16rem' }}>
+          {SCHOOL_AI_HIGHLIGHTS.map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#99F6E4' }}>{item}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -500,10 +663,20 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     setShowOnboarding(false)
   }
 
-  return (
-    <div className="space-y-6">
+  const ownerName = localStorage.getItem(`lumio_school_${_slug}_owner`) || ''
+  const firstName = ownerName ? ownerName.split(' ')[0] : undefined
+  const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
-      {/* ── Safeguarding alert ──────────────────────────────────── */}
+  return (
+    <div className="space-y-4">
+
+      {/* 1. Greeting banner */}
+      <SchoolGreetingBanner schoolName={schoolName} firstName={firstName} />
+
+      {/* 2. Morning Roundup — full width */}
+      <SchoolMorningRoundup />
+
+      {/* 3. Safeguarding alert */}
       <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
         <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
         <div className="flex-1 min-w-0">
@@ -513,52 +686,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <button className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
       </div>
 
-      {/* ── AI Morning Briefing ─────────────────────────────────── */}
-      <Card>
-        <CardHeader title="AI Morning Briefing" action={<span className="flex items-center gap-1 text-xs" style={{ color: '#0D9488' }}><Sparkles size={12} /> Updated 7:30am</span>} />
-        <div className="px-5 py-4 space-y-3">
-          {[
-            { icon: Activity,      color: '#0D9488', text: `Overall attendance today is ${attendanceAvg}% — Year 6 is lowest at 91.8%. Two pupils flagged for persistent absence review.` },
-            { icon: Shield,        color: '#EF4444', text: '1 open safeguarding concern logged 2 days ago has not been reviewed. DSL sign-off required today.' },
-            { icon: Users,         color: '#F59E0B', text: 'Mrs S. Okafor (SENCO) is absent today. Cover has been arranged. EHCP review meeting at 11:30am still scheduled.' },
-            { icon: FileText,      color: '#A78BFA', text: 'M. Taylor DBS check expired on 10 March. Renewal must be initiated before end of week or staff member cannot work unsupervised.' },
-            { icon: TrendingUp,    color: '#22C55E', text: 'Year 6 SATs prep session running at 10am. All 28 registered pupils confirmed. Resources prepared and uploaded.' },
-          ].map(({ icon: Icon, color, text }, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid #1F2937' }}>
-                <Icon size={12} style={{ color }} />
-              </div>
-              <p className="text-sm pt-0.5" style={{ color: '#D1D5DB' }}>{text}</p>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ── Stats row ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[
-          { label: 'Attendance today',  value: `${attendanceAvg}%`,         sub: '7-year group avg',      color: ragColor(attendanceAvg), icon: Activity   },
-          { label: 'Active workflows',  value: '23',                         sub: '3 need attention',      color: '#6C3FC5',               icon: GitBranch  },
-          { label: 'Open concerns',     value: '1',                          sub: 'Safeguarding',          color: '#EF4444',               icon: Shield     },
-          { label: 'Staff in today',    value: `${staffIn}/${STAFF_TODAY.length}`, sub: '1 on cover',       color: '#0D9488',               icon: Users      },
-        ].map(s => {
-          const Icon = s.icon
-          return (
-            <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${s.color}18` }}>
-                  <Icon size={14} style={{ color: s.color }} />
-                </div>
-              </div>
-              <p className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{s.value}</p>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.sub}</p>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ── Quick actions ───────────────────────────────────────── */}
+      {/* 4. Quick actions — above main content */}
       <div className="flex flex-wrap gap-2">
         {[
           { label: 'Log Absence',     icon: Users,         color: '#0D9488' },
@@ -575,8 +703,37 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         ))}
       </div>
 
-      {/* ── Two column: Attendance + Workflows ──────────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* 5. Three-col grid: left (stats + cards) / right (AI panel) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* LEFT — col-span-2 */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* Stats row */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {[
+              { label: 'Attendance today',  value: `${attendanceAvg}%`,         sub: '7-year group avg',      color: ragColor(attendanceAvg), icon: Activity   },
+              { label: 'Active workflows',  value: '23',                         sub: '3 need attention',      color: '#6C3FC5',               icon: GitBranch  },
+              { label: 'Open concerns',     value: '1',                          sub: 'Safeguarding',          color: '#EF4444',               icon: Shield     },
+              { label: 'Staff in today',    value: `${staffIn}/${STAFF_TODAY.length}`, sub: '1 on cover',       color: '#0D9488',               icon: Users      },
+            ].map(s => {
+              const Icon = s.icon
+              return (
+                <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${s.color}18` }}>
+                      <Icon size={14} style={{ color: s.color }} />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{s.value}</p>
+                  <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.sub}</p>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Attendance + Workflows — two col */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
         {/* Attendance by year */}
         <Card>
@@ -611,69 +768,70 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </Card>
       </div>
 
-      {/* ── Three column: Staff / Schedule / Compliance ──────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-
-        {/* Staff today */}
-        <Card>
-          <CardHeader title="Staff Today" />
-          <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
-            {STAFF_TODAY.map((s, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-2.5">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
-                  {s.name.split(' ').slice(-1)[0][0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{s.role}</p>
-                </div>
-                <StaffBadge status={s.status} />
+          {/* Three row: Staff / Schedule / Compliance */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card>
+              <CardHeader title="Staff Today" />
+              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+                {STAFF_TODAY.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 px-4 py-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
+                      {s.name.split(' ').slice(-1)[0][0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{s.role}</p>
+                    </div>
+                    <StaffBadge status={s.status} />
+                  </div>
+                ))}
               </div>
-            ))}
+            </Card>
+            <Card>
+              <CardHeader title="Today's Schedule" />
+              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+                {SCHEDULE.map((s, i) => {
+                  const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
+                  return (
+                    <div key={i} className="flex gap-3 px-4 py-3">
+                      <span className="text-xs shrink-0 mt-0.5 w-14" style={{ color: '#6B7280' }}>{s.time}</span>
+                      <div>
+                        <p className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{s.event}</p>
+                        <div className="h-1 w-12 rounded-full mt-1.5" style={{ backgroundColor: colors[s.type] ?? '#9CA3AF' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+            <Card>
+              <CardHeader title="Compliance Tracker" />
+              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+                {COMPLIANCE.map((c, i) => {
+                  const icon = c.status === 'ok' ? <CheckCircle2 size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
+                             : c.status === 'urgent' ? <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
+                             : <Clock size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />
+                  return (
+                    <div key={i} className="flex gap-3 px-4 py-3">
+                      {icon}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium" style={{ color: c.status === 'urgent' ? '#F9FAFB' : '#D1D5DB' }}>{c.item}</p>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>{c.detail}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
           </div>
-        </Card>
 
-        {/* Today's schedule */}
-        <Card>
-          <CardHeader title="Today's Schedule" />
-          <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
-            {SCHEDULE.map((s, i) => {
-              const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
-              return (
-                <div key={i} className="flex gap-3 px-4 py-3">
-                  <span className="text-xs shrink-0 mt-0.5 w-14" style={{ color: '#6B7280' }}>{s.time}</span>
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{s.event}</p>
-                    <div className="h-1 w-12 rounded-full mt-1.5" style={{ backgroundColor: colors[s.type] ?? '#9CA3AF' }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
+        </div>{/* end LEFT col-span-2 */}
 
-        {/* Compliance tracker */}
-        <Card>
-          <CardHeader title="Compliance Tracker" />
-          <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
-            {COMPLIANCE.map((c, i) => {
-              const icon = c.status === 'ok' ? <CheckCircle2 size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
-                         : c.status === 'urgent' ? <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
-                         : <Clock size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />
-              return (
-                <div key={i} className="flex gap-3 px-4 py-3">
-                  {icon}
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: c.status === 'urgent' ? '#F9FAFB' : '#D1D5DB' }}>{c.item}</p>
-                    <p className="text-xs" style={{ color: '#6B7280' }}>{c.detail}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-
-      </div>
+        {/* RIGHT — AI Morning Summary */}
+        <div className="lg:col-span-1">
+          <SchoolAIPanel />
+        </div>
+      </div>{/* end 3-col grid */}
 
       {/* ── Onboarding modal ────────────────────────────────────── */}
       {showOnboarding && schoolData && (
@@ -682,9 +840,4 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
     </div>
   )
-}
-
-// keep import used
-function GitBranch({ size, style }: { size: number; style?: React.CSSProperties }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
 }
