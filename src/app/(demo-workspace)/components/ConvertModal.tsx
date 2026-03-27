@@ -75,7 +75,7 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
   function handleDone() {
     const slug = newSlug || localStorage.getItem('workspace_slug') || localStorage.getItem('demo_company_slug')
     onClose()
-    router.replace(slug ? `/workspace/${slug}` : '/demo')
+    router.replace(slug ? `/${slug}` : '/demo')
   }
 
   return (

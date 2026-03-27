@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         .select('slug')
         .eq('id', tenant.business_id)
         .single()
-      if (biz) redirect_to = `/workspace/${biz.slug}`
+      if (biz) redirect_to = `/${biz.slug}`
     }
 
     return NextResponse.json({

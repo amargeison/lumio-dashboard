@@ -2301,7 +2301,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           if (data.status === 'converted') {
             // Redirect converted users to their live workspace
             if (data.live_slug) {
-              router.replace(`/workspace/${data.live_slug}`)
+              router.replace(`/${data.live_slug}`)
               return
             }
             setWorkspaceStatus('converted')
