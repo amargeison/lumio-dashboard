@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Volume2, Mic } from 'lucide-react'
-import { useSpeech } from '@/hooks/useSpeech'
+import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 
 const QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },

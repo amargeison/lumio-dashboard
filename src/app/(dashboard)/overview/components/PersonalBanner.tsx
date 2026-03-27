@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Volume2, Mic } from 'lucide-react'
-import { useSpeech } from '@/hooks/useSpeech'
+import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { buildBriefingScript, type BriefingData, type ActionedItem } from '@/lib/buildBriefingScript'
 
 const WEATHER_ICONS: Record<string, string> = {
