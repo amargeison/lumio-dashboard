@@ -2,9 +2,9 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Upload, Users, Sparkles, X, Check, FileText, Loader2, Mail, ArrowRight, ArrowLeft, Play } from 'lucide-react'
+import { Upload, Users, Sparkles, X, Check, FileText, Loader2, Mail, ArrowRight, ArrowLeft, Play, Link2 } from 'lucide-react'
 
-type Phase = 'welcome' | 'options' | 'upload' | 'it-team' | 'demo-loading' | 'done'
+type Phase = 'welcome' | 'options' | 'upload' | 'it-team' | 'connect-apps' | 'demo-loading' | 'done'
 
 interface Props {
   companyName: string
@@ -156,6 +156,7 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
             <div className="flex flex-col gap-4">
               {[
                 { icon: '📤', title: 'Upload Your Own Data', desc: 'Import your files, spreadsheets, and documents', action: () => setPhase('upload') },
+                { icon: '🔗', title: 'Connect Your Apps', desc: 'Sync Office 365, Slack, Google and more automatically', action: () => setPhase('connect-apps') },
                 { icon: '👥', title: 'Work With Your IT Team', desc: "We'll send your IT team full setup instructions", action: () => setPhase('it-team') },
                 { icon: '✨', title: 'Explore With Demo Data', desc: 'Load sample data and explore — clear it any time', action: handleLoadDemo },
               ].map(opt => (
@@ -259,6 +260,57 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
                 {itSent ? <><Check size={16} className="inline mr-2" /> Sent!</> : itSending ? 'Sending...' : 'Send Instructions'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── CONNECT APPS PHASE ── */}
+        {phase === 'connect-apps' && (
+          <div style={{ animation: 'fadeIn 0.3s ease' }}>
+            <button onClick={() => setPhase('options')} className="flex items-center gap-1 text-sm mb-8" style={{ color: '#6B7280' }}>
+              <ArrowLeft size={14} /> Back
+            </button>
+
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: 'rgba(245,166,35,0.12)' }}>
+                <Link2 size={28} style={{ color: '#F5A623' }} />
+              </div>
+              <h2 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Connect Your Apps</h2>
+              <p className="text-sm" style={{ color: '#6B7280' }}>Sync your existing tools so Lumio can pull in your data automatically</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {[
+                { name: 'Office 365', icon: '📧', color: '#2563EB', desc: 'Email, Calendar, Teams' },
+                { name: 'Slack', icon: '💬', color: '#7C3AED', desc: 'Messages & channels' },
+                { name: 'Google Workspace', icon: '🔵', color: '#DC2626', desc: 'Gmail, Drive, Calendar' },
+              ].map(app => (
+                <div key={app.name} className="rounded-xl p-5 flex flex-col items-center text-center gap-3"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <span className="text-3xl">{app.icon}</span>
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{app.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{app.desc}</p>
+                  </div>
+                  <button
+                    className="w-full py-2 rounded-lg text-xs font-semibold relative overflow-hidden"
+                    style={{ backgroundColor: `${app.color}20`, color: app.color, border: `1px solid ${app.color}40` }}
+                    onClick={() => {}}
+                  >
+                    Coming Soon
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={onComplete}
+              className="w-full text-center text-sm font-medium py-3 transition-colors"
+              style={{ color: '#F5A623' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#FBBF24' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#F5A623' }}
+            >
+              Configure all later in Settings →
+            </button>
           </div>
         )}
 
