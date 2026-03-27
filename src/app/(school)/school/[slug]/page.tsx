@@ -10,8 +10,9 @@ import {
   Settings, Bell, Menu, X, GraduationCap, Sunrise, Network,
   ChevronUp, ChevronDown, ArrowRight, Zap, Clock,
   Phone, Calendar, CheckCircle2, AlertTriangle, Activity,
-  TrendingUp, Loader2,
+  TrendingUp, Loader2, Volume2,
 } from 'lucide-react'
+import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -153,19 +154,43 @@ const SCHOOL_QUOTES = [
   { text: "A good teacher can inspire hope and ignite the imagination.", author: "Brad Henry" },
 ]
 
-function SchoolBanner({ firstName }: { firstName?: string }) {
+function SchoolBanner({ firstName, schoolName }: { firstName?: string; schoolName?: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [quote] = useState(() => SCHOOL_QUOTES[Math.floor(Math.random() * SCHOOL_QUOTES.length)])
+  const { speak, stop, isPlaying } = useElevenLabsTTS()
+
+  function handleBriefing() {
+    if (isPlaying) { stop(); return }
+    const name = firstName || 'there'
+    const school = schoolName || 'your school'
+    speak(`${greeting}, ${name}. Welcome to ${school} on Lumio. Connect your school systems in Settings to see live attendance, safeguarding, and staff data here.`)
+  }
 
   return (
     <div className="relative bg-gradient-to-r from-teal-950 via-emerald-900 to-green-950 overflow-hidden rounded-xl">
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="relative z-10 px-6 py-5">
-        <h1 className="text-2xl font-black text-white tracking-tight mb-1">
-          {greeting}, {firstName || 'there'} 👋
-        </h1>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-2xl font-black text-white tracking-tight">
+            {greeting}, {firstName || 'there'} 👋
+          </h1>
+          <button
+            onClick={handleBriefing}
+            title="Lumio will read your morning briefing aloud"
+            className="flex items-center justify-center rounded-lg transition-all"
+            style={{
+              width: 32, height: 32, flexShrink: 0,
+              backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)',
+              border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)',
+              color: isPlaying ? '#2DD4BF' : '#9CA3AF',
+              animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
+            }}
+          >
+            <Volume2 size={15} strokeWidth={1.75} />
+          </button>
+        </div>
         <p className="text-teal-300 text-sm mb-2">{date}</p>
         <p className="text-teal-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
       </div>
@@ -250,7 +275,7 @@ function SettingsView({ schoolName }: { schoolName: string }) {
 function OverviewView({ schoolName, firstName, onGoToSettings }: { schoolName: string; firstName?: string; onGoToSettings: () => void }) {
   return (
     <div className="space-y-4">
-      <SchoolBanner firstName={firstName} />
+      <SchoolBanner firstName={firstName} schoolName={schoolName} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
