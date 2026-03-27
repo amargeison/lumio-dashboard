@@ -34,76 +34,72 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!trial) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
-  if (trial.workspace_type === 'live') return NextResponse.json({ error: 'Already a live workspace' }, { status: 400 })
+  if (trial.business_id) return NextResponse.json({ error: 'Already converted' }, { status: 400 })
 
-  // Generate slug for the live workspace (same as trial, or with suffix on collision)
-  let liveSlug = trial.slug
+  // Generate slug for the business (check businesses table for collisions)
+  const base = trial.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')
+  let bizSlug = base
   for (let attempt = 0; attempt < 20; attempt++) {
-    const candidate = attempt === 0 ? trial.slug : `${trial.slug}${attempt + 1}`
+    const candidate = attempt === 0 ? base : `${base}${attempt + 1}`
     const { data: clash } = await supabase
-      .from('demo_tenants')
+      .from('businesses')
       .select('id')
       .eq('slug', candidate)
-      .neq('id', trial.id)
       .maybeSingle()
-    if (!clash) { liveSlug = candidate; break }
+    if (!clash) { bizSlug = candidate; break }
   }
 
-  // Create the live workspace record
-  const { data: liveWorkspace, error: createError } = await supabase
-    .from('demo_tenants')
+  // Create the business record
+  const { data: business, error: createError } = await supabase
+    .from('businesses')
     .insert({
-      slug: liveSlug,
       company_name: trial.company_name,
+      slug: bizSlug,
+      logo_url: trial.logo_url,
       owner_email: trial.owner_email,
       owner_name: trial.owner_name,
-      logo_url: trial.logo_url,
+      status: 'active',
+      plan: 'paid',
       departments: merge ? trial.departments : [],
       integrations: merge ? trial.integrations : [],
       invite_emails: merge ? trial.invite_emails : [],
-      status: 'active',
-      workspace_type: 'live',
-      gdpr_consent: trial.gdpr_consent,
-      marketing_consent: trial.marketing_consent,
-      gdpr_consent_at: trial.gdpr_consent_at,
-      activated_at: new Date().toISOString(),
-      onboarded_at: new Date().toISOString(),
-      welcome_email_sent: false,
+      demo_tenant_id: trial.id,
+      onboarded: true,
     })
     .select('id, slug')
     .single()
 
-  if (createError || !liveWorkspace) {
-    console.error('[workspace/create] Failed to create live workspace:', createError)
+  if (createError || !business) {
+    console.error('[workspace/create] Failed to create business:', createError)
     return NextResponse.json({ error: 'Failed to create workspace' }, { status: 500 })
   }
 
-  // Update trial tenant: mark as converted, link to live workspace
+  // Soft-delete the trial: mark as converted, link to business
   await supabase
     .from('demo_tenants')
     .update({
       status: 'converted',
       expires_at: null,
       converted_at: new Date().toISOString(),
-      live_workspace_id: liveWorkspace.id,
+      business_id: business.id,
     })
     .eq('id', trial.id)
 
-  // Create a session for the live workspace
+  // Create a session for the business workspace
   const sessionToken = crypto.randomUUID()
-  await supabase.from('demo_sessions').insert({
+  await supabase.from('business_sessions').insert({
     token: sessionToken,
-    tenant_id: liveWorkspace.id,
+    business_id: business.id,
     email: session.email,
     expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   })
 
   // Send welcome paid email (fire-and-forget)
-  sendWelcomeEmail(liveWorkspace.id, liveWorkspace.slug, trial.owner_name, trial.owner_email).catch(console.error)
+  sendWelcomeEmail(business.id, business.slug, trial.owner_name, trial.owner_email).catch(console.error)
 
   return NextResponse.json({
     success: true,
-    slug: liveWorkspace.slug,
+    slug: business.slug,
     session_token: sessionToken,
   })
 }
@@ -125,11 +121,7 @@ async function sendWelcomeEmail(id: string, slug: string, ownerName: string, own
     return
   }
 
-  await supabase_markWelcomeSent(id)
-  logEmail(id, 'welcome_paid', ownerEmail).catch(() => {})
-}
-
-async function supabase_markWelcomeSent(tenantId: string) {
   const supabase = getSupabase()
-  await supabase.from('demo_tenants').update({ welcome_email_sent: true }).eq('id', tenantId)
+  await supabase.from('businesses').update({ welcome_email_sent: true }).eq('id', id)
+  logEmail(id, 'welcome_paid', ownerEmail).catch(() => {})
 }

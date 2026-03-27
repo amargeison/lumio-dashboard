@@ -333,25 +333,23 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     setUserName(user)
     setCompanyLogo(logo)
 
-    // Validate session against Supabase
-    const sessionToken = localStorage.getItem('workspace_session_token') || localStorage.getItem('demo_session_token')
+    // Validate session against businesses table
+    const sessionToken = localStorage.getItem('workspace_session_token')
     if (sessionToken) {
-      fetch('/api/demo/status', { headers: { 'x-demo-token': sessionToken } })
+      fetch('/api/workspace/status', { headers: { 'x-workspace-token': sessionToken } })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          if (!data) { router.replace('/trial-ended'); return }
-          if (data.workspace_type !== 'live' && data.status !== 'converted') {
-            // Not a paid workspace — redirect to demo or trial-ended
-            if (data.status === 'active') router.replace(`/demo/${slug}`)
-            else router.replace('/trial-ended')
+          if (!data || data.status !== 'active') {
+            router.replace('/trial-ended')
             return
           }
-          // Update from Supabase data
           if (data.company_name) setCompany(data.company_name)
           if (data.owner_name) setUserName(data.owner_name)
           if (data.logo_url) setCompanyLogo(data.logo_url)
         })
         .catch(() => {})
+    } else {
+      router.replace('/trial-ended')
     }
   }, [slug, router])
 
