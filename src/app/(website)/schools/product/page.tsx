@@ -178,7 +178,7 @@ export default function SchoolsProductPage() {
             style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}>
             Start Free Trial <ArrowRight size={16} />
           </Link>
-          <Link href="https://calendly.com/lumiocms"
+          <Link href="https://calendly.com/lumiocms/lumio-schools"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
             Book a Demo
@@ -441,7 +441,7 @@ export default function SchoolsProductPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
-              <Link href="https://calendly.com/lumiocms"
+              <Link href="https://calendly.com/lumiocms/lumio-schools"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold whitespace-nowrap"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
                 Request a Dashboard <ArrowRight size={15} />
@@ -651,7 +651,7 @@ export default function SchoolsProductPage() {
               style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}>
               Start Free Trial <ArrowRight size={16} />
             </Link>
-            <Link href="https://calendly.com/lumiocms"
+            <Link href="https://calendly.com/lumiocms/lumio-schools"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium"
               style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
               Book a Demo

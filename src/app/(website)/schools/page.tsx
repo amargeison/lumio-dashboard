@@ -327,7 +327,7 @@ function HeroSection() {
                 Start Free 14-Day Trial <ArrowRight size={15} />
               </Link>
               <a
-                href="https://calendly.com/lumiocms"
+                href="https://calendly.com/lumiocms/lumio-schools"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-colors"
@@ -1030,7 +1030,7 @@ function FinalCTASection() {
             Start Free Trial <ArrowRight size={16} />
           </Link>
           <a
-            href="https://calendly.com/lumiocms"
+            href="https://calendly.com/lumiocms/lumio-schools"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold"

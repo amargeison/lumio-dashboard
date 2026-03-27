@@ -55,7 +55,7 @@ const PLANS = [
       'Custom onboarding & training',
     ],
     cta: 'Contact Sales',
-    ctaHref: 'https://calendly.com/lumiocms',
+    ctaHref: 'https://calendly.com/lumiocms/lumio-schools',
     outline: true,
     featured: false,
   },

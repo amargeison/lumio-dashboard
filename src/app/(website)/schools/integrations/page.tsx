@@ -121,7 +121,7 @@ export default function SchoolsIntegrationsPage() {
               Start Free Trial
             </Link>
             <Link
-              href="https://calendly.com/lumiocms"
+              href="https://calendly.com/lumiocms/lumio-schools"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
               style={{ border: '1px solid #374151', color: '#9CA3AF' }}
             >
@@ -220,7 +220,7 @@ export default function SchoolsIntegrationsPage() {
             We add new integrations every month. If your MIS or tool isn&apos;t listed, get in touch — most custom connections are live within two weeks.
           </p>
           <Link
-            href="https://calendly.com/lumiocms"
+            href="https://calendly.com/lumiocms/lumio-schools"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           >

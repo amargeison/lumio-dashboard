@@ -6,8 +6,12 @@ interface Props {
 }
 
 export default function BookDemoModal({ onClose }: Props) {
-  function openCalendly() {
-    window.open('https://calendly.com/lumiocms', '_blank')
+  function openBusiness() {
+    window.open('https://calendly.com/lumiocms/30min', '_blank')
+    onClose()
+  }
+  function openSchool() {
+    window.open('https://calendly.com/lumiocms/lumio-schools', '_blank')
     onClose()
   }
 
@@ -19,12 +23,12 @@ export default function BookDemoModal({ onClose }: Props) {
           <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
         </div>
         <div className="p-6 grid grid-cols-2 gap-4">
-          <button onClick={openCalendly} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+          <button onClick={openBusiness} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
             <span className="text-4xl">🏢</span>
             <span className="text-base font-bold" style={{ color: '#F9FAFB' }}>Business</span>
             <span className="text-xs" style={{ color: '#9CA3AF' }}>CRM, HR, Sales, Operations and more</span>
           </button>
-          <button onClick={openCalendly} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+          <button onClick={openSchool} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
             <span className="text-4xl">🏫</span>
             <span className="text-base font-bold" style={{ color: '#F9FAFB' }}>School</span>
             <span className="text-xs" style={{ color: '#9CA3AF' }}>Attendance, safeguarding, staff, curriculum and more</span>
