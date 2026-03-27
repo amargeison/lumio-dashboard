@@ -405,10 +405,10 @@ function HeroSection() {
                 </div>
 
                 {/* Animated content — fixed height so all tabs are identical */}
-                <div key={activeRole} style={{ animation: 'heroFadeIn 0.15s ease-out', height: 310, overflow: 'hidden' }} className="flex flex-col gap-3">
+                <div key={activeRole} style={{ animation: 'heroFadeIn 0.15s ease-out', height: 320 }} className="flex flex-col gap-3">
 
                   {/* ZONE A — KPI cards */}
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2 shrink-0">
                     {data.kpis.map(kpi => (
                       <div key={kpi.label} className="rounded-lg p-2.5" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
                         <div className="flex items-baseline gap-1">
@@ -424,11 +424,11 @@ function HeroSection() {
                     ))}
                   </div>
 
-                  {/* ZONE B — Chart + Feed */}
-                  <div className="grid grid-cols-2 gap-2" style={{ minHeight: 160 }}>
+                  {/* ZONE B — Chart + Feed (fills remaining space, clipped) */}
+                  <div className="grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-hidden">
                     {/* Left — chart */}
-                    <div className="rounded-lg p-3 flex flex-col" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-                      <p className="text-[10px] font-semibold mb-2" style={{ color: '#6B7280' }}>
+                    <div className="rounded-lg p-3 flex flex-col overflow-hidden" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                      <p className="text-[10px] font-semibold mb-2 shrink-0" style={{ color: '#6B7280' }}>
                         {activeRole === 'Headteacher' && 'Attendance by Year Group'}
                         {activeRole === 'SENCO' && 'EHCP 20-Week Timeline'}
                         {activeRole === 'DSL' && 'Concern Log (Oct–Mar)'}
@@ -436,12 +436,12 @@ function HeroSection() {
                         {activeRole === 'Trust / MAT' && 'Cross-School Attendance'}
                         {activeRole === 'Governance' && 'SIP Priority Progress'}
                       </p>
-                      <div className="flex-1 flex items-end">{data.chart}</div>
+                      <div className="flex-1 flex items-end min-h-0">{data.chart}</div>
                     </div>
 
                     {/* Right — feed */}
-                    <div className="rounded-lg p-3 flex flex-col gap-2" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-                      <p className="text-[10px] font-semibold" style={{ color: '#6B7280' }}>Live Feed</p>
+                    <div className="rounded-lg p-3 flex flex-col gap-2 overflow-hidden" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                      <p className="text-[10px] font-semibold shrink-0" style={{ color: '#6B7280' }}>Live Feed</p>
                       {data.feed.map((item, i) => (
                         <div key={i} className="flex items-start gap-2">
                           <span className="text-xs leading-none shrink-0 mt-0.5" style={{ fontSize: 11 }}>{item.icon}</span>
@@ -451,8 +451,8 @@ function HeroSection() {
                     </div>
                   </div>
 
-                  {/* ZONE C — Compliance badges */}
-                  <div className="flex gap-2 flex-wrap">
+                  {/* ZONE C — Compliance badges (always at bottom) */}
+                  <div className="flex gap-2 flex-wrap shrink-0 mt-auto pt-1">
                     {data.badges.map(badge => {
                       const c = BADGE_COLORS[badge.status]
                       return (
