@@ -25,6 +25,8 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
     return val.replace(/\D/g, '').slice(0, 4).replace(/^(\d{2})(\d)/, '$1/$2')
   }
 
+  const [newSlug, setNewSlug] = useState('')
+
   async function handlePayment() {
     setError('')
     setLoading(true)
@@ -41,11 +43,27 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
           }
         })
       }
-      const res = await fetch('/api/demo/convert', {
+      const res = await fetch('/api/workspace/create', {
         method: 'POST',
-        headers: { 'x-demo-token': sessionToken || '' }
+        headers: { 'Content-Type': 'application/json', 'x-demo-token': sessionToken || '' },
+        body: JSON.stringify({ merge: dataChoice === 'keep' }),
       })
       if (!res.ok) throw new Error('Conversion failed')
+      const data = await res.json()
+      if (data.session_token) {
+        localStorage.setItem('workspace_session_token', data.session_token)
+      }
+      if (data.slug) {
+        localStorage.setItem('workspace_slug', data.slug)
+        // Copy company details to workspace keys
+        const companyName = localStorage.getItem('demo_company_name')
+        const userName = localStorage.getItem('demo_user_name')
+        const logo = localStorage.getItem('demo_company_logo')
+        if (companyName) localStorage.setItem('workspace_company_name', companyName)
+        if (userName) localStorage.setItem('workspace_user_name', userName)
+        if (logo) localStorage.setItem('workspace_company_logo', logo)
+        setNewSlug(data.slug)
+      }
       setStep('done')
     } catch {
       setError('Something went wrong. Please try again.')
@@ -55,10 +73,9 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
   }
 
   function handleDone() {
-    const slug = localStorage.getItem('demo_company_slug')
+    const slug = newSlug || localStorage.getItem('workspace_slug') || localStorage.getItem('demo_company_slug')
     onClose()
-    router.refresh()
-    router.push(slug ? `/demo/${slug}` : '/demo')
+    router.replace(slug ? `/workspace/${slug}` : '/demo')
   }
 
   return (

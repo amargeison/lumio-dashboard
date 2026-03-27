@@ -2299,8 +2299,16 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         .then(data => {
           if (!data) return
           if (data.status === 'converted') {
+            // Redirect converted users to their live workspace
+            if (data.live_slug) {
+              router.replace(`/workspace/${data.live_slug}`)
+              return
+            }
             setWorkspaceStatus('converted')
             setShowUpgrade(false)
+          } else if (data.status === 'deleted' || (data.expires_at && new Date(data.expires_at) < new Date())) {
+            router.replace('/trial-ended')
+            return
           } else {
             setWorkspaceStatus('trial')
             if (data.expires_at) {

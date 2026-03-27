@@ -108,9 +108,11 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
       localStorage.setItem('demo_user_email',    data.user.email)
       localStorage.setItem('demo_user_name',     data.user.name)
 
-      const dest = data.is_new_user
-        ? '/demo/onboarding'
-        : `/demo/${data.company.slug}`
+      const dest = data.redirect_to
+        ? data.redirect_to
+        : data.is_new_user
+          ? '/demo/onboarding'
+          : `/demo/${data.company.slug}`
       setVerified(true)
       setTimeout(() => {
         try {
