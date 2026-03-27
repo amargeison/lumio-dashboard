@@ -149,6 +149,12 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
           {/* Step 2 — Payment */}
           {step === 'payment' && (
             <div className="space-y-4">
+              {process.env.NEXT_PUBLIC_ENV !== 'production' && (
+                <div className="rounded-xl p-3 text-center" style={{ backgroundColor: '#fef3c7', border: '2px solid #f59e0b' }}>
+                  <p className="text-sm font-bold" style={{ color: '#92400e' }}>TEST MODE — no real payment will be taken</p>
+                  <p className="text-xs mt-1" style={{ color: '#a16207' }}>Use card 4242 4242 4242 4242, any expiry, any CVC</p>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-xl p-3 flex justify-between items-center text-sm">
                 <span className="text-gray-600">Lumio Business — Monthly</span>
                 <span className="font-bold text-gray-900">£49 / month</span>
