@@ -10,6 +10,7 @@ import {
 import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
+import BookDemoModal from '@/app/(website)/components/BookDemoModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -566,6 +567,7 @@ export default function HomePage() {
   const [showTellMore, setShowTellMore] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
   const [showTypeModal, setShowTypeModal] = useState(false)
+  const [showDemoModal, setShowDemoModal] = useState(false)
 
   const dept = DEPT_TABS[activeDeptIdx]
   const workflow = dept.workflows?.[activeWorkflowIdx]
@@ -621,13 +623,13 @@ export default function HomePage() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
             Tell me more
           </button>
-          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+          <button onClick={() => setShowDemoModal(true)}
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
             Book a Demo <ArrowRight size={16} />
-          </a>
+          </button>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
@@ -652,6 +654,7 @@ export default function HomePage() {
           onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
         />
       )}
+      {showDemoModal && <BookDemoModal onClose={() => setShowDemoModal(false)} />}
 
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section style={{ borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B12' }}>

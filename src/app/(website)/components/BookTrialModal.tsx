@@ -144,9 +144,17 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
 
+  // Close on Escape key
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
 >
       <div className="w-full max-w-md rounded-2xl shadow-2xl"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

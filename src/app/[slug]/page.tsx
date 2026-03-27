@@ -737,11 +737,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
     // Validate session against businesses table
     const sessionToken = localStorage.getItem('workspace_session_token')
+    const justPurchased = localStorage.getItem('lumio_company_active') === 'true'
     if (sessionToken) {
       fetch('/api/workspace/status', { headers: { 'x-workspace-token': sessionToken } })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (!data || data.status !== 'active') {
+            // Don't boot fresh purchases — session may still be propagating
+            if (justPurchased) { setShowOnboarding(true); return }
             router.replace('/trial-ended')
             return
           }
@@ -752,8 +755,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (data.demo_data_active) setDemoDataActive(true)
           if (!data.onboarding_complete) setShowOnboarding(true)
         })
-        .catch(() => {})
-    } else {
+        .catch(() => {
+          // Network error — don't redirect if this looks like a fresh purchase
+          if (!justPurchased) router.replace('/trial-ended')
+        })
+    } else if (!justPurchased) {
       router.replace('/trial-ended')
     }
   }, [slug, router])

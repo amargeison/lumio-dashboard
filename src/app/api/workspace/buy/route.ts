@@ -59,12 +59,18 @@ export async function POST(req: NextRequest) {
 
   // Create session token
   const sessionToken = crypto.randomUUID()
-  await supabase.from('business_sessions').insert({
+  const { error: sessionError } = await supabase.from('business_sessions').insert({
     token: sessionToken,
     business_id: business.id,
     email,
     expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   })
+
+  if (sessionError) {
+    console.error('[workspace/buy] Failed to create session:', sessionError)
+    // Still return the slug so the user can at least reach the page
+    return NextResponse.json({ success: true, slug: business.slug, session_token: null })
+  }
 
   return NextResponse.json({
     success: true,

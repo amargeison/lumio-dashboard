@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import BookDemoModal from '@/app/(website)/components/BookDemoModal'
 import {
   ArrowRight, Users, TrendingUp, Megaphone, Headphones,
   Activity, Sparkles, GitBranch, Server, DollarSign,
@@ -163,6 +164,7 @@ const AI_FEATURES = [
 
 export default function ProductPage() {
   const [activeDept, setActiveDept] = useState(0)
+  const [showDemoModal, setShowDemoModal] = useState(false)
   const dept = DEPARTMENTS[activeDept]
 
   return (
@@ -187,11 +189,11 @@ export default function ProductPage() {
           Built for growing businesses across Professional Services, Education, Healthcare, Recruitment, SaaS, and more. 10 to 500 people.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+          <button onClick={() => setShowDemoModal(true)}
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             Book a Demo <ArrowRight size={16} />
-          </a>
+          </button>
           <Link href="/pricing"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
@@ -864,14 +866,15 @@ export default function ProductPage() {
           <p className="text-lg mb-8" style={{ color: '#6B7280' }}>
             30-minute demo. We'll walk you through the platform with workflows relevant to your team.
           </p>
-          <a href="https://calendly.com/lumiocms" target="_blank" rel="noreferrer"
+          <button onClick={() => setShowDemoModal(true)}
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             Book a Demo <ArrowRight size={16} />
-          </a>
+          </button>
         </div>
       </section>
 
+      {showDemoModal && <BookDemoModal onClose={() => setShowDemoModal(false)} />}
     </div>
   )
 }
