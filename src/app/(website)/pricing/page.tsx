@@ -371,13 +371,13 @@ export default function PricingPage() {
             Book a 30-minute demo. We'll walk you through the platform and help you work out exactly what you need.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/demo"
+            <a href="https://calendly.com/amargeison/30min" target="_blank" rel="noreferrer"
               className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
               Book a Demo →
-            </Link>
+            </a>
             <a href="mailto:hello@lumiocms.com"
               className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium"
               style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>

@@ -621,13 +621,13 @@ export default function HomePage() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
             Tell me more
           </button>
-          <button onClick={() => setShowTypeModal(true)}
+          <a href="https://calendly.com/amargeison/30min" target="_blank" rel="noreferrer"
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
             Book a Demo <ArrowRight size={16} />
-          </button>
+          </a>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
