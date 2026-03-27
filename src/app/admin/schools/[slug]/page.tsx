@@ -58,7 +58,8 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
   }
 
   async function deleteAccount() {
-    if (confirmDelete !== account?.name) return
+    const name = (account?.name || '').trim()
+    if (!name || confirmDelete.trim() !== name) return
     await fetch(`/api/admin/accounts/${slug}?type=schools`, { method: 'DELETE', headers: { 'x-admin-token': token } })
     router.replace('/admin/schools')
   }
@@ -195,11 +196,11 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
 
           <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16 }}>
             <p className="text-sm font-medium mb-1" style={{ color: '#EF4444' }}>Delete account permanently</p>
-            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Type &quot;{account.name}&quot; to confirm</p>
+            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Type &quot;{(account.name || '').trim()}&quot; to confirm</p>
             <div className="flex gap-2">
-              <input value={confirmDelete} onChange={e => setConfirmDelete(e.target.value)} placeholder={account.name}
+              <input value={confirmDelete} onChange={e => setConfirmDelete(e.target.value)} placeholder={(account.name || '').trim()}
                 className="flex-1 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB' }} />
-              <button onClick={deleteAccount} disabled={confirmDelete !== account.name}
+              <button onClick={deleteAccount} disabled={confirmDelete.trim() !== (account.name || '').trim()}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-semibold disabled:opacity-30"
                 style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
                 <Trash2 size={12} /> Delete
