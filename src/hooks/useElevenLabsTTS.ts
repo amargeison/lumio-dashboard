@@ -89,12 +89,30 @@ export function useElevenLabsTTS() {
 
     try {
       setIsPlaying(true)
+
+      // Send session tokens so the API can check trial vs paid
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (typeof window !== 'undefined') {
+        const demoToken = localStorage.getItem('demo_session_token')
+        const wsToken = localStorage.getItem('workspace_session_token')
+        if (wsToken) headers['x-workspace-token'] = wsToken
+        else if (demoToken) headers['x-demo-token'] = demoToken
+      }
+
       const res = await fetch('/api/tts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ text }),
         signal: controller.signal,
       })
+
+      if (res.status === 429) {
+        // Daily limit reached — fall back to browser TTS
+        console.warn('[Lumio TTS] Daily limit reached, falling back to browser TTS')
+        fallbackSpeak(text)
+        setIsPlaying(false)
+        return
+      }
 
       if (!res.ok) throw new Error('TTS API failed')
 
