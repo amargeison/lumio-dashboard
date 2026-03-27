@@ -275,15 +275,8 @@ function StepDetails({ form, setForm }: { form: Record<string, string>; setForm:
 }
 
 // ─── Step 3: Payment ──────────────────────────────────────────────────────────
-function StepPayment({ form, setForm, plan }: { form: Record<string, string>; setForm: (f: Record<string, string>) => void; plan: typeof PLANS[0] }) {
-  const set = (key: string) => (v: string) => setForm({ ...form, [key]: v })
-
-  // Format card number with spaces
-  const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
-  const formatExpiry = (v: string) => {
-    const clean = v.replace(/\D/g, '').slice(0, 4)
-    return clean.length >= 2 ? `${clean.slice(0, 2)}/${clean.slice(2)}` : clean
-  }
+function StepPayment({ plan, onComplete }: { plan: typeof PLANS[0]; onComplete: () => void }) {
+  const isDev = process.env.NEXT_PUBLIC_ENV !== 'production'
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
@@ -321,88 +314,39 @@ function StepPayment({ form, setForm, plan }: { form: Record<string, string>; se
           <p className="text-xs text-center" style={{ color: '#4B5563' }}>
             Your card will be charged £{plan.price}/month after your 14-day trial. Cancel anytime.
           </p>
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <Lock size={11} style={{ color: '#6B7280' }} />
-            <p className="text-xs" style={{ color: '#6B7280' }}>Secured by Stripe · 256-bit SSL</p>
-          </div>
         </div>
       </div>
 
-      {/* Payment form */}
+      {/* Payment action */}
       <div className="lg:col-span-3 flex flex-col gap-5">
         <div>
-          <h2 className="text-xl font-bold mb-1" style={{ color: '#F9FAFB' }}>Payment details</h2>
+          <h2 className="text-xl font-bold mb-1" style={{ color: '#F9FAFB' }}>Payment</h2>
           <p className="text-sm" style={{ color: '#9CA3AF' }}>Your 14-day free trial starts today. Nothing charged until {new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>
         </div>
 
-        {/* Card number */}
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>Card number <span style={{ color: '#EF4444' }}>*</span></label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={form.cardNumber}
-              onChange={e => setForm({ ...form, cardNumber: formatCard(e.target.value) })}
-              placeholder="1234 5678 9012 3456"
-              maxLength={19}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#0D9488'}
-              onBlur={e => e.target.style.borderColor = '#374151'}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-              {['VISA', 'MC', 'AMEX'].map(c => (
-                <span key={c} className="text-xs rounded px-1 font-bold" style={{ backgroundColor: '#1F2937', color: '#6B7280', fontSize: 8 }}>{c}</span>
-              ))}
+        {isDev ? (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#fef3c7', border: '2px solid #f59e0b' }}>
+              <p className="text-sm font-bold" style={{ color: '#92400e' }}>TEST MODE — no real payment will be taken</p>
+              <p className="text-xs mt-1" style={{ color: '#a16207' }}>Click below to simulate a successful purchase</p>
             </div>
+            <button
+              onClick={onComplete}
+              className="w-full py-4 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+            >
+              Complete Purchase (Test Mode)
+            </button>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>Expiry date <span style={{ color: '#EF4444' }}>*</span></label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={form.expiry}
-              onChange={e => setForm({ ...form, expiry: formatExpiry(e.target.value) })}
-              placeholder="MM/YY"
-              maxLength={5}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#0D9488'}
-              onBlur={e => e.target.style.borderColor = '#374151'}
-            />
+        ) : (
+          <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Coming Soon</p>
+            <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Online payments are launching soon. Contact us to get started today.</p>
+            <a href="mailto:hello@lumiocms.com" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+              Contact Us — hello@lumiocms.com
+            </a>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>CVV <span style={{ color: '#EF4444' }}>*</span></label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={form.cvv}
-              onChange={e => setForm({ ...form, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-              placeholder="123"
-              maxLength={4}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#0D9488'}
-              onBlur={e => e.target.style.borderColor = '#374151'}
-            />
-          </div>
-        </div>
-
-        <Input label="Name on card" value={form.cardName} onChange={set('cardName')} placeholder="e.g. Sarah Henley" required />
-        <Input label="Billing postcode" value={form.postcode} onChange={set('postcode')} placeholder="e.g. MK9 1AA" required />
-
-        {/* Terms */}
-        <div className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.2)' }}>
-          <input type="checkbox" checked={form.terms === 'true'} onChange={e => setForm({ ...form, terms: e.target.checked ? 'true' : '' })}
-            className="mt-0.5 flex-shrink-0" style={{ accentColor: '#0D9488' }} />
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            I agree to the <Link href="/terms" className="underline" style={{ color: '#0D9488' }}>Terms of Service</Link> and <Link href="/privacy" className="underline" style={{ color: '#0D9488' }}>Privacy Policy</Link>. I understand my 14-day free trial starts today and my card will be charged £{plan.price}/month afterwards. I can cancel at any time.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -494,14 +438,7 @@ export default function CheckoutPage() {
       if (!form.email.includes('@')) { setError('Please enter a valid email address.'); return false }
       if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return false }
     }
-    if (step === 2) {
-      if (!form.cardNumber || form.cardNumber.replace(/\s/g, '').length < 16) { setError('Please enter a valid 16-digit card number.'); return false }
-      if (!form.expiry || form.expiry.length < 5) { setError('Please enter a valid expiry date (MM/YY).'); return false }
-      if (!form.cvv || form.cvv.length < 3) { setError('Please enter a valid CVV.'); return false }
-      if (!form.cardName) { setError('Please enter the name on your card.'); return false }
-      if (!form.postcode) { setError('Please enter your billing postcode.'); return false }
-      if (form.terms !== 'true') { setError('Please accept the Terms of Service to continue.'); return false }
-    }
+    // Step 2 (payment) is handled by the mock button or coming soon — no validation needed
     setError('')
     return true
   }
@@ -571,7 +508,7 @@ export default function CheckoutPage() {
       <div className="max-w-5xl mx-auto px-6 pb-12">
         {step === 0 && <StepPlan selected={selectedPlan} onSelect={setSelectedPlan} />}
         {step === 1 && <StepDetails form={form} setForm={setForm} />}
-        {step === 2 && <StepPayment form={form} setForm={setForm} plan={plan} />}
+        {step === 2 && <StepPayment plan={plan} onComplete={() => setStep(3)} />}
         {step === 3 && <StepConfirmation schoolName={form.schoolName || 'Your School'} slug={slug} onComplete={handleComplete} />}
 
         {/* Error */}
@@ -597,17 +534,15 @@ export default function CheckoutPage() {
               </Link>
             )}
 
-            <button onClick={next}
-              className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all"
-              style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              {isLastFormStep ? (
-                <><Lock size={14} /> Start Free Trial — £0 Today</>
-              ) : (
-                <>Continue <ArrowRight size={14} /></>
-              )}
-            </button>
+            {step !== 2 && (
+              <button onClick={next}
+                className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all"
+                style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                Continue <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         )}
 

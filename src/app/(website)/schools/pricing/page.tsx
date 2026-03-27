@@ -41,7 +41,7 @@ const PLANS = [
     featured: true,
   },
   {
-    name: 'Trust',
+    name: 'Trust / Academies',
     price: '2,499',
     desc: 'Cross-school visibility and trust-wide analytics for Multi-Academy Trusts.',
     features: [
