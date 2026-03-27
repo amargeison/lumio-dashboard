@@ -46,12 +46,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo }: {
+function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo, userInitials }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void
-  companyName?: string; companyLogo?: string
+  companyName?: string; companyLogo?: string; userInitials?: string
 }) {
+  const initials = userInitials || (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
   const inner = (
-    <nav className="flex flex-col gap-0.5 p-3">
+    <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
       {SIDEBAR_ITEMS.map(item => {
         const active = activeDept === item.id
         return (
@@ -71,34 +73,63 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     </nav>
   )
 
+  const topSection = (
+    <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+      {companyLogo ? (
+        <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
+      ) : (
+        <div className="flex items-center justify-center rounded-lg text-xs font-bold"
+          style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
+          {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        {companyName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>}
+        <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Live workspace</p>
+      </div>
+    </div>
+  )
+
+  const bottomSection = (
+    <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-2 px-4 py-3">
+        <AvatarDropdown initials={initials} />
+        <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+        <button className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
+          style={{ color: '#9CA3AF' }} aria-label="Notifications">
+          <Calendar size={16} strokeWidth={1.75} />
+          <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
+        </button>
+      </div>
+      <div className="px-4 pb-3">
+        <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+          <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90}
+            style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
+        </a>
+      </div>
+    </div>
+  )
+
   return (
     <>
-      <aside className="hidden md:flex flex-col w-52 shrink-0 overflow-y-auto"
+      <aside className="hidden md:flex flex-col w-52 shrink-0"
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
-          {companyLogo ? (
-            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
-          ) : (
-            <div className="flex items-center justify-center rounded-lg text-xs font-bold"
-              style={{ width: 36, height: 36, backgroundColor: '#0D9488', color: '#F9FAFB', flexShrink: 0 }}>
-              {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          {companyName && <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</span>}
-        </div>
+        {topSection}
         {inner}
+        {bottomSection}
       </aside>
 
       {open && (
         <div className="md:hidden fixed inset-0 z-40 flex">
           <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
-          <aside className="relative z-50 w-56 flex flex-col overflow-y-auto"
+          <aside className="relative z-50 w-56 flex flex-col"
             style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
               <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>NAVIGATION</span>
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
             {inner}
+            {bottomSection}
           </aside>
         </div>
       )}
@@ -179,6 +210,31 @@ const QUOTES = [
   { text: "Success is not final, failure is not fatal.", author: "Winston Churchill" },
 ]
 
+const WORLD_ZONES = [
+  { label: 'London',   tz: 'Europe/London'    },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai',    tz: 'Asia/Dubai'       },
+  { label: 'Tokyo',    tz: 'Asia/Tokyo'       },
+]
+
+function WorldClock() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3" style={{ minWidth: 160 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+        {WORLD_ZONES.map(z => (
+          <div key={z.label} className="flex items-center gap-1.5">
+            <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+            <span className="text-xs" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+    </div>
+  )
+}
+
 function PersonalBanner({ company, firstName }: { company: string; firstName?: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -186,6 +242,9 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
   const bg = BG_GRADIENTS[new Date().getDay()]
   const { speak, stop, isPlaying } = useSpeech()
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+
+  useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -201,10 +260,20 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
-              <button onClick={handleBriefing} title="Lumio will read your morning briefing aloud" className="flex items-center justify-center rounded-lg transition-all"
+              <button onClick={handleBriefing} title="Text-to-Speech" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
+              <div className="relative overflow-hidden rounded-lg" title="Voice Commands coming soon" style={{ width: 32, height: 32, flexShrink: 0 }}>
+                <button disabled className="flex items-center justify-center w-full h-full rounded-lg"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#6B7280', cursor: 'not-allowed' }}>
+                  <Mic size={15} strokeWidth={1.75} />
+                </button>
+                <span className="absolute pointer-events-none"
+                  style={{ top: 3, right: -9, transform: 'rotate(35deg)', backgroundColor: '#6C3FC5', color: '#fff', fontSize: 5, fontWeight: 700, letterSpacing: '0.03em', padding: '1px 10px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
+                  SOON
+                </span>
+              </div>
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -223,14 +292,15 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
               </div>
             ))}
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-start gap-3 flex-shrink-0">
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-              <span className="text-3xl">⛅</span>
+              <span className="text-3xl">{weather.icon}</span>
               <div>
-                <div className="text-xl font-black text-white">11°C</div>
-                <div className="text-xs text-purple-300">Partly cloudy</div>
+                <div className="text-xl font-black text-white">{weather.temp}</div>
+                <div className="text-xs text-purple-300">{weather.condition}</div>
               </div>
             </div>
+            <WorldClock />
           </div>
         </div>
       </div>
@@ -364,6 +434,28 @@ function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
           <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2.5 py-1.5 rounded-lg text-xs w-48 text-center z-50 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>{a.tooltip}</div>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ─── Dept Redirect — navigate to the real (dashboard) page ──────────────────
+
+const DEPT_ROUTES: Record<string, string> = {
+  hr: '/hr', accounts: '/accounts', sales: '/sales', crm: '/crm',
+  marketing: '/marketing', trials: '/trials', operations: '/operations',
+  support: '/support', success: '/success', it: '/it', workflows: '/workflows',
+  partners: '/partners', strategy: '/strategy', insights: '/insights',
+}
+
+function DeptRedirect({ dept }: { dept: DeptId }) {
+  const router = useRouter()
+  useEffect(() => {
+    const route = DEPT_ROUTES[dept]
+    if (route) router.push(route)
+  }, [dept, router])
+  return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 size={24} className="animate-spin" style={{ color: '#0D9488' }} />
     </div>
   )
 }
@@ -810,36 +902,28 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
       {/* Demo data banner */}
       {demoDataActive && (
-        <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#F59E0B', color: '#0A0B10' }}>
-          <span className="font-medium">You&apos;re viewing demo data — clear it any time in Settings</span>
-          <button onClick={() => setActiveDept('settings')} className="text-xs font-bold underline">Go to Settings</button>
+        <div className="flex items-center justify-between px-4 py-2.5 text-xs shrink-0 mx-4 mt-3 rounded-lg"
+          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', border: '1px solid rgba(139,92,246,0.2)' }}>
+          <span style={{ color: '#F9FAFB' }}>You&apos;re viewing demo data — clear it any time in Settings</span>
+          <button onClick={() => setActiveDept('settings')} className="text-xs font-semibold transition-colors"
+            style={{ color: 'rgba(249,250,251,0.6)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(249,250,251,0.6)' }}>
+            Go to Settings →
+          </button>
         </div>
       )}
 
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3 overflow-visible" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-3 min-w-0">
-          <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
-              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" /></Link>
-            <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
-            <div className="min-w-0 hidden sm:block">
-              <div className="text-sm font-bold truncate">{company}</div>
-              <div className="text-xs" style={{ color: '#0D9488' }}>Live workspace</div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <AvatarDropdown
-            initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-          />
-        </div>
-      </header>
+      {/* Mobile menu button */}
+      <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+        <button className="p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+        <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{company}</span>
+      </div>
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} companyName={company} companyLogo={companyLogo} />
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} companyName={company} companyLogo={companyLogo}
+          userInitials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : undefined} />
 
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
@@ -852,7 +936,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && <ComingSoonView dept={activeDept} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} />}
           </main>
         </div>
       </div>
