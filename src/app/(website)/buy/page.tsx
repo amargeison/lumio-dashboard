@@ -506,7 +506,7 @@ export default function CompanyCheckoutPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)' }}>
             <Sparkles size={13} color="white" />
           </div>
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Lumio <span style={{ color: '#6C3FC5' }}>CRM</span></span>
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Lumio</span>
         </Link>
         <div className="flex items-center gap-2">
           <Lock size={12} style={{ color: '#6B7280' }} />
