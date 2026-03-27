@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 // ElevenLabs voice ID for "Rachel" — warm, natural British female
 // Renamed as "Lumio" in the UI
 const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
 const MODEL_ID = 'eleven_turbo_v2_5'
+const TRIAL_DAILY_LIMIT = 5
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ELEVENLABS_API_KEY
@@ -18,10 +27,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 })
     }
 
-    // Rate limit: reject requests over 500 characters
     if (text.length > 500) {
       return NextResponse.json({ error: 'Text too long — max 500 characters' }, { status: 400 })
     }
+
+    // Check if caller is trial — enforce daily limit
+    const demoToken = req.headers.get('x-demo-token')
+    const workspaceToken = req.headers.get('x-workspace-token')
+
+    if (demoToken && !workspaceToken) {
+      // Trial user — check daily usage
+      const supabase = getSupabase()
+      const { data: session } = await supabase
+        .from('demo_sessions')
+        .select('tenant_id')
+        .eq('token', demoToken)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle()
+
+      if (session) {
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+
+        const { count } = await supabase
+          .from('email_log')
+          .select('id', { count: 'exact', head: true })
+          .eq('workspace_id', session.tenant_id)
+          .eq('email_type', 'tts_usage')
+          .gte('sent_at', todayStart.toISOString())
+
+        if ((count ?? 0) >= TRIAL_DAILY_LIMIT) {
+          return NextResponse.json({
+            error: 'Daily limit reached — upgrade to Lumio for unlimited voice',
+            limit_reached: true,
+          }, { status: 429 })
+        }
+
+        // Log this usage
+        await supabase.from('email_log').insert({
+          workspace_id: session.tenant_id,
+          email_type: 'tts_usage',
+          recipient: 'tts',
+        })
+      }
+    }
+    // Paid users (workspaceToken) — no limit
 
     const voiceId = voice || VOICE_ID
 
@@ -52,7 +102,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'TTS failed' }, { status: 500 })
     }
 
-    // Stream the audio back as mpeg
     const audioBuffer = await response.arrayBuffer()
 
     return new NextResponse(audioBuffer, {
