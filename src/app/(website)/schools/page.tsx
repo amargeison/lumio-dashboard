@@ -61,26 +61,29 @@ function HorizontalBarChart({ bars, maxVal }: { bars: { label: string; value: nu
 }
 
 function DualBarChart({ groups }: { groups: { label: string; v1: number; v2: number }[]; maxVal?: number }) {
-  const maxV = 12, h = 70, barW = 14, gap = 36
+  const maxV = 12, top = 14, h = 56, barW = 14, gap = 36
   const totalW = Math.max(groups.length * gap + 60, 140)
+  const totalH = top + h + 34
   return (
-    <svg viewBox={`0 0 ${totalW} ${h + 24}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox={`0 0 ${totalW} ${totalH}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
       {/* target line */}
-      <line x1={8} y1={h - (11 / maxV) * h} x2={totalW - 8} y2={h - (11 / maxV) * h}
+      <line x1={8} y1={top + h - (11 / maxV) * h} x2={totalW - 8} y2={top + h - (11 / maxV) * h}
         stroke="#F59E0B" strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />
-      <text x={totalW - 6} y={h - (11 / maxV) * h - 2} fill="#F59E0B" fontSize="7" textAnchor="end">Target</text>
+      <text x={totalW - 6} y={top + h - (11 / maxV) * h - 3} fill="#F59E0B" fontSize="7" textAnchor="end">Target 11.0</text>
       {groups.map((g, i) => {
         const h1 = (g.v1 / maxV) * h, h2 = (g.v2 / maxV) * h
         const x = 16 + i * gap
         return (
           <g key={i}>
-            <rect x={x} y={h - h1} width={barW} height={h1} rx={2} fill="#0D9488" opacity={0.85} />
-            <rect x={x + barW + 2} y={h - h2} width={barW} height={h2} rx={2} fill="#6366F1" opacity={0.7} />
-            <text x={x + barW} y={h + 14} textAnchor="middle" fill="#6B7280" fontSize="8">{g.label}</text>
+            <rect x={x} y={top + h - h1} width={barW} height={h1} rx={2} fill="#0D9488" opacity={0.85} />
+            <text x={x + barW / 2} y={top + h - h1 - 3} textAnchor="middle" fill="#0D9488" fontSize="7">{g.v1}</text>
+            <rect x={x + barW + 3} y={top + h - h2} width={barW} height={h2} rx={2} fill="#6366F1" opacity={0.7} />
+            <text x={x + barW + 3 + barW / 2} y={top + h - h2 - 3} textAnchor="middle" fill="#6366F1" fontSize="7">{g.v2}</text>
+            <text x={x + barW + 1} y={top + h + 12} textAnchor="middle" fill="#6B7280" fontSize="8">{g.label}</text>
           </g>
         )
       })}
-      <g transform={`translate(8, ${h + 22})`}>
+      <g transform={`translate(8, ${top + h + 20})`}>
         <rect width={8} height={6} rx={1} fill="#0D9488" /><text x={12} y={6} fill="#6B7280" fontSize="7">Reading</text>
         <rect x={52} width={8} height={6} rx={1} fill="#6366F1" /><text x={64} y={6} fill="#6B7280" fontSize="7">Writing</text>
       </g>
