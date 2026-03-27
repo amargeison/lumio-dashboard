@@ -30,7 +30,10 @@ export default function MeetingsToday() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/home/meetings')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/meetings', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setMeetings(d.meetings || MOCK_MEETINGS))
       .catch(() => setMeetings(MOCK_MEETINGS))

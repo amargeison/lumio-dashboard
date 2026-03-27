@@ -33,7 +33,10 @@ export default function NotToMiss() {
   const [items, setItems] = useState<NotToMissItem[]>([])
 
   useEffect(() => {
-    fetch('/api/home/not-to-miss')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/not-to-miss', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setItems(d.items || MOCK_ITEMS))
       .catch(() => setItems(MOCK_ITEMS))

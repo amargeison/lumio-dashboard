@@ -33,7 +33,10 @@ export default function QuickWins() {
   const [wins, setWins] = useState<QuickWin[]>([])
 
   useEffect(() => {
-    fetch('/api/home/quick-wins')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/quick-wins', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setWins(d.wins || MOCK_WINS))
       .catch(() => setWins(MOCK_WINS))

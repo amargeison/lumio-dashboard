@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { DEMO_TABLES } from '@/lib/demo-data'
 
 function getSupabase() {
   return createClient(
@@ -22,11 +23,20 @@ export async function POST(req: NextRequest) {
 
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
 
-  // Clear demo flag
+  const bid = session.business_id
+
+  // Delete all demo records from every table
+  await Promise.all(
+    DEMO_TABLES.map(t =>
+      supabase.from(t).delete().eq('business_id', bid).eq('is_demo', true),
+    ),
+  )
+
+  // Set flag to false
   await supabase
     .from('businesses')
     .update({ demo_data_active: false })
-    .eq('id', session.business_id)
+    .eq('id', bid)
 
   return NextResponse.json({ success: true })
 }

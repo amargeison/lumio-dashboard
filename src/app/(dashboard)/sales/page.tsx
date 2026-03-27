@@ -1,11 +1,19 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { useWorkspace } from '@/hooks/useWorkspace'
+import { createBrowserClient } from '@supabase/ssr'
 
-const stats = [
+const STAGE_LABELS: Record<string, string> = {
+  lead: 'Lead', qualified: 'Discovery', demo: 'Demo', proposal: 'Proposal',
+  closing: 'Negotiation', won: 'Closed', lost: 'Lost',
+}
+
+const DEFAULT_STATS = [
   { label: 'Open Deals',       value: '34',    trend: '+8%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
   { label: 'Pipeline Value',   value: '£2.4M', trend: '+12%', trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
   { label: 'Win Rate (30d)',   value: '23%',   trend: '+3%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'deals closed won' },
@@ -21,7 +29,7 @@ const actions = [
   { label: 'Dept Insights',    icon: Sparkles     },
 ]
 
-const deals = [
+const DEFAULT_DEALS = [
   { company: 'Greenfield Academy',   stage: 'Negotiation', value: '£42,000', owner: 'Dan Marsh',   activity: '2h ago'    },
   { company: 'Hopscotch Learning',   stage: 'Proposal',    value: '£28,500', owner: 'Sophie Bell', activity: '4h ago'    },
   { company: 'Bramble Hill Trust',   stage: 'Discovery',   value: '£76,000', owner: 'Dan Marsh',   activity: 'Yesterday' },
@@ -48,7 +56,7 @@ const outreach = [
   { name: 'Re-engagement — Lost Deals',status: 'Draft',    sent: 0,   replies: 0,  meetings: 0 },
 ]
 
-const highlights = [
+const DEFAULT_HIGHLIGHTS = [
   '3 trials expiring this week — £8,400 combined value at risk of not converting',
   'Pipeline velocity up 18% — deals now closing in an average of 11 days',
   'Oakridge Schools demo today at 11am — prep briefing and deck ready to review',
@@ -56,7 +64,66 @@ const highlights = [
   'Top performing source this month: referrals at 40% conversion rate',
 ]
 
+function timeAgo(date: string | null): string {
+  if (!date) return ''
+  const diff = Date.now() - new Date(date).getTime()
+  const hours = Math.floor(diff / 3600000)
+  if (hours < 1) return 'Just now'
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days}d ago`
+  return `${Math.floor(days / 7)}w ago`
+}
+
 export default function SalesPage() {
+  const workspace = useWorkspace()
+  const [stats, setStats] = useState(DEFAULT_STATS)
+  const [deals, setDeals] = useState(DEFAULT_DEALS)
+  const [highlights, setHighlights] = useState(DEFAULT_HIGHLIGHTS)
+
+  useEffect(() => {
+    if (!workspace?.id) return
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+
+    supabase.from('crm_deals').select('*').eq('business_id', workspace.id).order('created_at', { ascending: false }).then(({ data }) => {
+      if (!data?.length) return
+      const open = data.filter(d => !['won', 'lost'].includes(d.stage))
+      const pipelineValue = open.reduce((s, d) => s + (d.value_annual || 0), 0)
+      const won = data.filter(d => d.stage === 'won').length
+      const total = data.filter(d => ['won', 'lost'].includes(d.stage)).length
+      const winRate = total > 0 ? Math.round((won / total) * 100) : 0
+      const hot = data.filter(d => d.heat === 'hot' && d.stage !== 'won' && d.stage !== 'lost').length
+
+      setStats([
+        { label: 'Open Deals', value: String(open.length), trend: `+${open.length}`, trendDir: 'up' as const, trendGood: true, icon: TrendingUp, sub: 'in pipeline' },
+        { label: 'Pipeline Value', value: `£${(pipelineValue / 1000).toFixed(0)}k`, trend: '+12%', trendDir: 'up' as const, trendGood: true, icon: TrendingUp, sub: 'open deals' },
+        { label: 'Win Rate', value: `${winRate}%`, trend: '', trendDir: 'up' as const, trendGood: true, icon: TrendingUp, sub: 'closed deals' },
+        { label: 'Hot Leads', value: String(hot), trend: `+${hot}`, trendDir: 'up' as const, trendGood: true, icon: UserPlus, sub: 'in pipeline' },
+      ])
+
+      setDeals(data.map(d => ({
+        company: d.company,
+        stage: STAGE_LABELS[d.stage] || d.stage,
+        value: `£${(d.value_annual || 0).toLocaleString()}`,
+        owner: d.owner || '—',
+        activity: timeAgo(d.won_at || d.lost_at || d.created_at),
+      })))
+
+      // Generate highlights from data
+      const hl: string[] = []
+      if (open.length > 0) hl.push(`${open.length} open deals totalling £${(pipelineValue / 1000).toFixed(0)}k currently active in pipeline`)
+      if (won > 0) hl.push(`${won} deal${won > 1 ? 's' : ''} closed won — ${winRate}% win rate`)
+      if (hot > 0) hl.push(`${hot} hot lead${hot > 1 ? 's' : ''} in pipeline — focus on conversion this week`)
+      const closingDeals = data.filter(d => d.stage === 'closing')
+      if (closingDeals.length > 0) hl.push(`${closingDeals.length} deal${closingDeals.length > 1 ? 's' : ''} in negotiation stage — close to signing`)
+      if (hl.length > 0) setHighlights(hl)
+    })
+  }, [workspace?.id])
+
   const hasData = useHasDashboardData('sales')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="sales"

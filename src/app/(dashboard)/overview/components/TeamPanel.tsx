@@ -37,7 +37,10 @@ export default function TeamPanel() {
   const [filter, setFilter] = useState<'all' | 'alerts' | 'away'>('all')
 
   useEffect(() => {
-    fetch('/api/home/team')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/team', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setTeam(d.team || MOCK_TEAM))
       .catch(() => setTeam(MOCK_TEAM))

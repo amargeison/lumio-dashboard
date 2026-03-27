@@ -1,6 +1,54 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function GET() {
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+}
+
+export async function GET(req: NextRequest) {
+  const token = req.headers.get('x-workspace-token')
+
+  if (token) {
+    try {
+      const supabase = getSupabase()
+      const { data: session } = await supabase
+        .from('business_sessions')
+        .select('business_id')
+        .eq('token', token)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle()
+
+      if (session) {
+        const { data: rows } = await supabase
+          .from('business_tasks')
+          .select('*')
+          .eq('business_id', session.business_id)
+          .order('created_at', { ascending: true })
+
+        if (rows && rows.length > 0) {
+          const tasks = rows.map(t => ({
+            id: t.id,
+            title: t.title,
+            description: t.description ?? undefined,
+            due: t.due ?? 'Any time',
+            priority: t.priority,
+            category: t.category ?? '',
+            source: t.source,
+            assignee: t.assignee ?? undefined,
+            done: t.done,
+            overdue: t.overdue,
+            linkedWorkflow: t.linked_workflow ?? undefined,
+          }))
+          return NextResponse.json({ tasks })
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Fallback: hardcoded tasks
   return NextResponse.json({
     tasks: [
       { id: '1', title: 'Review and respond to Bramble Hill invoice dispute', description: 'They queried the September charge. Email from George Harrison at 11pm.', due: '12:00', priority: 'critical', category: 'Finance', source: 'lumio', done: false, overdue: false },

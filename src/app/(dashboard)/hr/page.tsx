@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
@@ -13,10 +13,11 @@ import OffboardingModal,      { type OffboardingData }      from '@/components/O
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { useWorkspace } from '@/hooks/useWorkspace'
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+// ─── Default static data (fallback) ──────────────────────────────────────────
 
-const stats = [
+const DEFAULT_STATS = [
   { label: 'Total Employees',    value: '187', trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
   { label: 'Active Onboardings', value: '8',   trend: '+2',  trendDir: 'up' as const, trendGood: true,  icon: UserPlus,    sub: 'this month'    },
   { label: 'Leave Requests',     value: '14',  trend: '+4',  trendDir: 'up' as const, trendGood: false, icon: FileText,    sub: 'pending'       },
@@ -91,6 +92,7 @@ function formatStartDate(iso: string): string {
 
 export default function HRPage() {
   const router = useRouter()
+  const workspace = useWorkspace()
 
   const [showModal,       setShowModal]       = useState(false)
   const [showLeaveModal,  setShowLeaveModal]  = useState(false)
@@ -98,6 +100,7 @@ export default function HRPage() {
   const [showRecruitment, setShowRecruitment] = useState(false)
   const [showPerfReview,  setShowPerfReview]  = useState(false)
 
+  const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
   const [leaveRequests, setLeaveRequests] = useState<LeaveRow[]>(INITIAL_LEAVE)
   const [probations,    setProbations]    = useState<ProbationRow[]>(INITIAL_PROBATIONS)
@@ -109,6 +112,69 @@ export default function HRPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+
+  // ── Fetch demo/real data from Supabase ──────────────────────────────────
+  useEffect(() => {
+    if (!workspace?.id) return
+    const bid = workspace.id
+
+    // Employees → stats
+    supabase.from('business_employees').select('*').eq('business_id', bid).then(({ data }) => {
+      if (!data?.length) return
+      const onboarding = data.filter(e => e.status === 'probation' || new Date(e.start_date) > new Date(Date.now() - 90 * 86400000)).length
+      const onLeave = data.filter(e => e.status === 'on_leave').length
+      setStats([
+        { label: 'Total Employees', value: String(data.length), trend: '+3', trendDir: 'up' as const, trendGood: true, icon: Users, sub: 'vs last month' },
+        { label: 'Active Onboardings', value: String(onboarding), trend: `+${onboarding}`, trendDir: 'up' as const, trendGood: true, icon: UserPlus, sub: 'this quarter' },
+        { label: 'On Leave', value: String(onLeave), trend: '', trendDir: 'up' as const, trendGood: false, icon: FileText, sub: 'currently' },
+        { label: 'Overdue Reviews', value: '3', trend: '+1', trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'vs last week' },
+      ])
+    })
+
+    // Onboardings → starters
+    supabase.from('hr_onboardings').select('*').eq('business_id', bid).order('start_date', { ascending: false }).then(({ data }) => {
+      if (!data?.length) return
+      setStarters(data.map(o => {
+        const startDate = new Date(o.start_date)
+        const daysSince = Math.floor((Date.now() - startDate.getTime()) / 86400000)
+        const day = daysSince < 0 ? 'Pending' : `Day ${daysSince + 1}`
+        const progress = o.status === 'Complete' ? 100 : o.status === 'Pending' ? 0 : Math.min(95, Math.max(10, Math.round(daysSince / 30 * 100)))
+        return {
+          name: `${o.first_name} ${o.last_name}`,
+          role: o.job_title,
+          start: startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          day,
+          progress,
+          status: o.status,
+        }
+      }))
+    })
+
+    // Leave requests
+    supabase.from('hr_leave_requests').select('*').eq('business_id', bid).order('created_at', { ascending: false }).then(({ data }) => {
+      if (!data?.length) return
+      setLeaveRequests(data.map(r => {
+        const start = new Date(r.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+        const end = new Date(r.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+        return {
+          name: r.employee_name,
+          type: r.leave_type,
+          dates: r.start_date === r.end_date ? start : `${start} – ${end}`,
+          days: `${r.total_days} day${r.total_days !== 1 ? 's' : ''}`,
+        }
+      }))
+    })
+
+    // Performance reviews → probations
+    supabase.from('hr_performance_reviews').select('*').eq('business_id', bid).order('due_date', { ascending: true }).then(({ data }) => {
+      if (!data?.length) return
+      setProbations(data.map(r => ({
+        name: r.employee_name,
+        date: new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        manager: r.manager || '—',
+      })))
+    })
+  }, [workspace?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasData = useHasDashboardData('hr')
   if (hasData === null) return null

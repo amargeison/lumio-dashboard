@@ -13,7 +13,97 @@ import {
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 
+const ROLE_DATA: Record<string, {
+  stats: { label: string; value: string; color: string }[]
+  alert: { text: string; color: string } | null
+  items: { label: string; dot: string }[]
+}> = {
+  Headteacher: {
+    stats: [
+      { label: 'Attendance', value: '93.9%', color: '#0D9488' },
+      { label: 'Open concerns', value: '1', color: '#EF4444' },
+      { label: 'PP gap', value: '−3.2', color: '#F59E0B' },
+    ],
+    alert: { text: 'SG-2026-047 · DSL review overdue 2 days', color: '#EF4444' },
+    items: [
+      { label: 'EHCP annual review — T. Morris due 15 Apr', dot: '#F59E0B' },
+      { label: 'Year 6 SATs readiness: 82% on track', dot: '#22C55E' },
+      { label: 'Breakfast club — 47 booked tomorrow', dot: '#0D9488' },
+    ],
+  },
+  SENCO: {
+    stats: [
+      { label: 'Active EHCPs', value: '12', color: '#0D9488' },
+      { label: 'ISPs unsigned', value: '3', color: '#F59E0B' },
+      { label: 'Reviews due', value: '4', color: '#0D9488' },
+    ],
+    alert: { text: '2 EHCPs approaching 20-week deadline', color: '#F59E0B' },
+    items: [
+      { label: 'External agency referrals: CAMHS (3 pending), EP (1)', dot: '#F59E0B' },
+      { label: 'SEND White Paper Phase 1: ✅  Phase 2: In progress', dot: '#0D9488' },
+      { label: '3 ISPs awaiting parent sign-off', dot: '#EF4444' },
+    ],
+  },
+  DSL: {
+    stats: [
+      { label: 'Open CP cases', value: '2', color: '#EF4444' },
+      { label: 'CiN / Early Help', value: '1 / 3', color: '#F59E0B' },
+      { label: 'KCSIE compliance', value: '94%', color: '#0D9488' },
+    ],
+    alert: { text: '2 staff with safeguarding training renewals due this month', color: '#F59E0B' },
+    items: [
+      { label: 'Online safety audit: due 12 May', dot: '#F59E0B' },
+      { label: 'SCR last reviewed: 3 days ago', dot: '#22C55E' },
+      { label: 'KCSIE 2024 compliance: 94%', dot: '#0D9488' },
+    ],
+  },
+  Teacher: {
+    stats: [
+      { label: 'Pupils (6B)', value: '28', color: '#0D9488' },
+      { label: 'Reading avg', value: '10.2', color: '#22C55E' },
+      { label: 'Writing avg', value: '9.8', color: '#F59E0B' },
+    ],
+    alert: { text: '4 pupils below expected progress', color: '#F59E0B' },
+    items: [
+      { label: 'Class 6B: 3 SEND · 1 EHCP', dot: '#0D9488' },
+      { label: 'Weekly tasks: 3 outstanding', dot: '#F59E0B' },
+      { label: 'Next assessment: 14 Apr', dot: '#6B7280' },
+    ],
+  },
+  'Trust / MAT': {
+    stats: [
+      { label: 'Schools', value: '6', color: '#0D9488' },
+      { label: 'Trust attendance', value: '94.1%', color: '#0D9488' },
+      { label: 'PP gap', value: '−2.8', color: '#F59E0B' },
+    ],
+    alert: { text: '2 schools RAG flagged amber — review recommended', color: '#F59E0B' },
+    items: [
+      { label: 'SEND compliance: 4/6 Phase 1 complete', dot: '#F59E0B' },
+      { label: 'Ofsted: 3 outstanding, 2 good, 1 RI', dot: '#0D9488' },
+      { label: 'Budget variance: −£42k across trust', dot: '#EF4444' },
+    ],
+  },
+  Governance: {
+    stats: [
+      { label: 'Budget spent', value: '98.2%', color: '#0D9488' },
+      { label: 'SIP on track', value: '4/6', color: '#22C55E' },
+      { label: 'Policies overdue', value: '2', color: '#EF4444' },
+    ],
+    alert: { text: 'Next full governor meeting: 24 Apr — 3 items require approval', color: '#F59E0B' },
+    items: [
+      { label: 'SIP: 1 priority behind schedule', dot: '#F59E0B' },
+      { label: 'Ofsted last visit: Nov 2023 — Good', dot: '#22C55E' },
+      { label: 'Staff wellbeing survey due: May', dot: '#6B7280' },
+    ],
+  },
+}
+
+const ROLES = Object.keys(ROLE_DATA)
+
 function HeroSection() {
+  const [activeRole, setActiveRole] = useState('Headteacher')
+  const data = ROLE_DATA[activeRole]
+
   return (
     <section style={{ backgroundColor: '#07080F' }} className="pt-32 pb-24">
       <div className="max-w-7xl mx-auto px-6">
@@ -89,45 +179,60 @@ function HeroSection() {
 
               <div className="p-5 flex flex-col gap-4">
                 {/* Role switcher */}
-                <div className="flex gap-2 flex-wrap">
-                  {['Headteacher', 'SENCO', 'DSL', 'Teacher'].map((role, i) => (
-                    <span key={role} className="text-xs px-3 py-1 rounded-full font-medium"
-                      style={{ backgroundColor: i === 0 ? '#0D9488' : '#1F2937', color: i === 0 ? '#F9FAFB' : '#6B7280' }}>
+                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  {ROLES.map(role => (
+                    <button
+                      key={role}
+                      onClick={() => setActiveRole(role)}
+                      className="text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap transition-colors duration-200"
+                      style={{
+                        backgroundColor: activeRole === role ? '#0D9488' : '#1F2937',
+                        color: activeRole === role ? '#F9FAFB' : '#6B7280',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
                       {role}
-                    </span>
+                    </button>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Attendance', value: '93.9%', color: '#0D9488' },
-                    { label: 'Open concerns', value: '1', color: '#EF4444' },
-                    { label: 'PP gap', value: '−3.2', color: '#F59E0B' },
-                  ].map(stat => (
-                    <div key={stat.label} className="rounded-xl p-3" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-                      <p className="text-xl font-black leading-none mb-1" style={{ color: stat.color }}>{stat.value}</p>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>{stat.label}</p>
+                <div
+                  key={activeRole}
+                  className="flex flex-col gap-4"
+                  style={{ animation: 'fadein 0.25s ease-in-out' }}
+                >
+                  <style>{`@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {data.stats.map(stat => (
+                      <div key={stat.label} className="rounded-xl p-3" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <p className="text-xl font-black leading-none mb-1" style={{ color: stat.color }}>{stat.value}</p>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {data.alert && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+                      style={{
+                        backgroundColor: `${data.alert.color}1A`,
+                        border: `1px solid ${data.alert.color}33`,
+                        color: data.alert.color === '#EF4444' ? '#F87171' : '#FBBF24',
+                      }}>
+                      <span>⚠</span>
+                      <span>{data.alert.text}</span>
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                  style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171' }}>
-                  <span>⚠</span>
-                  <span>SG-2026-047 · DSL review overdue 2 days</span>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  {[
-                    { label: 'EHCP annual review — T. Morris due 15 Apr', dot: '#F59E0B' },
-                    { label: 'Year 6 SATs readiness: 82% on track', dot: '#22C55E' },
-                    { label: 'Breakfast club — 47 booked tomorrow', dot: '#0D9488' },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
-                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{item.label}</span>
-                    </div>
-                  ))}
+                  <div className="flex flex-col gap-2">
+                    {data.items.map(item => (
+                      <div key={item.label} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
+                        <span className="text-xs" style={{ color: '#9CA3AF' }}>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

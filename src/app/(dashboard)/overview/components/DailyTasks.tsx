@@ -42,7 +42,10 @@ export default function DailyTasks() {
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
-    fetch('/api/home/tasks')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/tasks', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setTasks(d.tasks || MOCK_TASKS))
       .catch(() => setTasks(MOCK_TASKS))

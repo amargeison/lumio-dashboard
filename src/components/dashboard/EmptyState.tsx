@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Upload, Database, X, CheckCircle, Link2, Plus } from 'lucide-react'
 import { loadDemoData } from '@/lib/devUtils'
+import { invalidateWorkspaceCache } from '@/hooks/useWorkspace'
 
 export interface UploadButton {
   key: string
@@ -19,16 +20,23 @@ interface EmptyStateProps {
 }
 
 const INTEGRATIONS = [
-  { name: 'HubSpot', logo: '🟠', category: 'CRM' },
-  { name: 'Salesforce', logo: '☁️', category: 'CRM' },
-  { name: 'Xero', logo: '💙', category: 'Finance' },
-  { name: 'QuickBooks', logo: '🟢', category: 'Finance' },
-  { name: 'Slack', logo: '💜', category: 'Comms' },
-  { name: 'Google Workspace', logo: '🔵', category: 'Productivity' },
-  { name: 'Microsoft 365', logo: '🔷', category: 'Productivity' },
-  { name: 'Zapier', logo: '⚡', category: 'Automation' },
-  { name: 'Stripe', logo: '💳', category: 'Payments' },
-  { name: 'Pipedrive', logo: '🟤', category: 'CRM' },
+  { name: 'HubSpot', logo: '\u{1F7E0}', category: 'CRM' },
+  { name: 'Salesforce', logo: '\u2601\uFE0F', category: 'CRM' },
+  { name: 'Xero', logo: '\u{1F499}', category: 'Finance' },
+  { name: 'QuickBooks', logo: '\u{1F7E2}', category: 'Finance' },
+  { name: 'Slack', logo: '\u{1F49C}', category: 'Comms' },
+  { name: 'Google Workspace', logo: '\u{1F535}', category: 'Productivity' },
+  { name: 'Microsoft 365', logo: '\u{1F537}', category: 'Productivity' },
+  { name: 'Zapier', logo: '\u26A1', category: 'Automation' },
+  { name: 'Stripe', logo: '\u{1F4B3}', category: 'Payments' },
+  { name: 'Pipedrive', logo: '\u{1F7E4}', category: 'CRM' },
+]
+
+const ALL_PAGES = [
+  'overview','crm','sales','marketing','projects','hr','partners',
+  'finance','insights','workflows','strategy','reports','settings',
+  'inbox','calendar','analytics','accounts','support','success',
+  'trials','operations','it',
 ]
 
 export function DashboardEmptyState({
@@ -67,26 +75,51 @@ export function DashboardEmptyState({
     window.location.reload()
   }
 
-  function clearDemoData() {
+  async function clearDemoData() {
+    setLoading(true)
+    showToast('Clearing demo data...')
+
+    // Call the API to delete Supabase records
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/onboarding/clear-demo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+        })
+      } catch { /* continue with localStorage cleanup */ }
+    }
+
+    // Clear localStorage flags
     Object.keys(localStorage)
       .filter(k => (k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_school_')) && k !== 'lumio_dashboard_overview_hasData')
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
+
+    invalidateWorkspaceCache()
     window.location.reload()
   }
 
   async function handleDemo() {
     setLoading(true)
     showToast('Loading demo data...')
-    await new Promise(r => setTimeout(r, 1200))
-    const ALL_PAGES = [
-      'overview','crm','sales','marketing','projects','hr','partners',
-      'finance','insights','workflows','strategy','reports','settings',
-      'inbox','calendar','analytics','accounts','support','success',
-      'trials','operations','it',
-    ]
+
+    // Call the API to insert Supabase records
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/onboarding/load-demo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+        })
+      } catch { /* continue — localStorage flags ensure the UI still works */ }
+    }
+
+    // Set localStorage flags for immediate UI update
     ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     localStorage.setItem('lumio_demo_active', 'true')
+
+    invalidateWorkspaceCache()
     window.location.reload()
   }
 
@@ -185,7 +218,7 @@ export function DashboardEmptyState({
           disabled={loading}
           className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all"
           style={{ backgroundColor: accentColor, color: '#F9FAFB', opacity: loading ? 0.75 : 1 }}>
-          {loading ? 'Loading demo data...' : '✨ Explore with Demo Data'}
+          {loading ? 'Loading demo data...' : '\u2728 Explore with Demo Data'}
         </button>
         <p className="text-xs mt-3" style={{ color: '#4B5563' }}>
           Pre-filled sample data so you can explore every feature before adding your own
@@ -254,12 +287,43 @@ export function DashboardEmptyState({
   )
 }
 
-// Hook to check if a page has data
+/**
+ * Hook to check if a page has data to display.
+ * Fast path: checks localStorage.
+ * Async fallback: checks workspace demo_data_active flag via API.
+ */
 export function useHasDashboardData(pageKey: string): boolean | null {
   const [has, setHas] = useState<boolean | null>(null)
+
   useEffect(() => {
-    setHas(localStorage.getItem(`lumio_dashboard_${pageKey}_hasData`) === 'true')
+    // Fast path: localStorage says data exists
+    if (localStorage.getItem(`lumio_dashboard_${pageKey}_hasData`) === 'true') {
+      setHas(true)
+      return
+    }
+
+    // Async fallback: check Supabase via workspace status API
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) {
+      setHas(false)
+      return
+    }
+
+    fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.demo_data_active) {
+          // Sync localStorage so future checks are instant
+          ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
+          localStorage.setItem('lumio_demo_active', 'true')
+          setHas(true)
+        } else {
+          setHas(false)
+        }
+      })
+      .catch(() => setHas(false))
   }, [pageKey])
+
   return has
 }
 

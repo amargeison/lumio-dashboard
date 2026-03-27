@@ -35,7 +35,10 @@ export default function Insights() {
   const [insights, setInsights] = useState<Insight[]>([])
 
   useEffect(() => {
-    fetch('/api/home/insights')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/insights', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setInsights(d.insights || MOCK_INSIGHTS))
       .catch(() => setInsights(MOCK_INSIGHTS))
