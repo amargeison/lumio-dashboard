@@ -4,10 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Keep the root → /home redirect for the website-style landing
+  // Root → marketing homepage
   if (pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/overview'
+    url.pathname = '/home'
     return NextResponse.redirect(url)
   }
 
