@@ -345,10 +345,12 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
+function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, companyName, companyLogo }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void
   focusDepts: string[]
   navRef?: RefObject<HTMLElement | null>
+  companyName?: string
+  companyLogo?: string
 }) {
   const isDimmed = (id: string) => focusDepts.length > 0 && !focusDepts.includes(id)
 
@@ -383,9 +385,16 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef }: {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-52 shrink-0 overflow-y-auto"
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
-        <div className="flex items-center px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
-          <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={240} height={120}
-            style={{ width: '120px', height: 'auto' }} className="rounded-md" /></Link>
+        <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          {companyLogo ? (
+            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
+          ) : (
+            <div className="flex items-center justify-center rounded-lg text-xs font-bold"
+              style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
+              {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          {companyName && <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</span>}
         </div>
         {inner}
       </aside>
@@ -544,7 +553,7 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
   )
 }
 
-function DemoPersonalBanner({ company, dept = 'overview', onToast, wakeWordEnabled = true }: { company: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean }) {
+function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wakeWordEnabled = true }: { company: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -595,7 +604,7 @@ function DemoPersonalBanner({ company, dept = 'overview', onToast, wakeWordEnabl
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">
-                {greeting}, {company} 👋
+                {greeting}, {firstName || 'there'} 👋
               </h1>
 
               {/* Speaker 1: Active TTS */}
@@ -1003,8 +1012,9 @@ function DemoMorningAIPanel() {
   )
 }
 
-function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
+function OverviewView({ company, firstName, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
   company: string
+  firstName?: string
   bannerRef?: RefObject<HTMLDivElement | null>
   statsRef?: RefObject<HTMLDivElement | null>
   actionsRef?: RefObject<HTMLDivElement | null>
@@ -1025,7 +1035,7 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction, wake
   return (
     <div className="space-y-4">
       {/* 1. Banner */}
-      <div ref={bannerRef}><DemoPersonalBanner company={company} wakeWordEnabled={wakeWordEnabled} /></div>
+      <div ref={bannerRef}><DemoPersonalBanner company={company} firstName={firstName} wakeWordEnabled={wakeWordEnabled} /></div>
 
       {/* 2. Morning Roundup — full width, below banner */}
       <DemoMorningRoundup />
@@ -2210,6 +2220,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [company, setCompany]       = useState('Your Company')
   const [userName, setUserName]     = useState('')
+  const [companyLogo, setCompanyLogo] = useState('')
   const [daysLeft, setDaysLeft]     = useState(14)
   const [showUpgrade, setShowUpgrade] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -2262,14 +2273,21 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   useEffect(() => {
     const name           = localStorage.getItem('demo_company_name') || (isPreview ? 'Preview' : 'Your Company')
     const user           = localStorage.getItem('demo_user_name') || ''
+    const logo           = localStorage.getItem('demo_company_logo') || ''
     const created        = localStorage.getItem('demo_created_at')
     const onboarded      = localStorage.getItem('demo_onboarded')
     const tipsCompleted  = localStorage.getItem('demo_tips_completed')
     const depts          = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
-    setCompany(name); setUserName(user); setFocusDepts(depts)
+    setCompany(name); setUserName(user); setCompanyLogo(logo); setFocusDepts(depts)
     if (created) setDaysLeft(Math.max(0, 14 - Math.floor((Date.now() - parseInt(created)) / 86400000)))
     if (!isPreview && !onboarded) setShowOnboarding(true)
     else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
+
+    // Legacy slug redirect: if URL has an old random-suffix slug, redirect to the clean slug
+    const storedSlug = localStorage.getItem('demo_company_slug')
+    if (storedSlug && storedSlug !== slug && slug.startsWith(storedSlug.replace(/\d+$/, ''))) {
+      router.replace(`/demo/${storedSlug}`)
+    }
   }, [])
 
   function handleTipsComplete() {
@@ -2392,7 +2410,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} />
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} companyName={company} companyLogo={companyLogo} />
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
@@ -2408,7 +2426,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
             {activeDept !== 'overview' && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
-            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
+            {activeDept === 'overview'    && <OverviewView   company={company} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
             {activeDept === 'insights'   && <InsightsView   company={company} />}
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}

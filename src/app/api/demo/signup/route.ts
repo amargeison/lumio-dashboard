@@ -41,10 +41,19 @@ export async function POST(req: NextRequest) {
       }, { status: 200 })
     }
 
-    // Generate URL-safe slug
-    const base = company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const suffix = Math.random().toString(36).slice(2, 6)
-    const slug = `${base}-${suffix}`
+    // Generate clean URL slug — lowercase alphanumeric only, no random suffix
+    const base = company_name.toLowerCase().replace(/[^a-z0-9]/g, '')
+    let slug = base
+    // Check for collisions and append a number if needed
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const candidate = attempt === 0 ? base : `${base}${attempt + 1}`
+      const { data: clash } = await supabase
+        .from('demo_tenants')
+        .select('id')
+        .eq('slug', candidate)
+        .maybeSingle()
+      if (!clash) { slug = candidate; break }
+    }
 
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
 
