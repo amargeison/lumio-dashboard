@@ -110,19 +110,13 @@ function Nav() {
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
             Buy Now
           </Link>
-          {isSchools ? (
-            <Link href="/login?type=school"
-              className="px-4 py-2 text-sm font-medium rounded-lg"
-              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-              Sign In
-            </Link>
-          ) : (
-            <Link href="/login"
-              className="px-4 py-2 text-sm font-medium rounded-lg"
-              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-              Sign In
-            </Link>
-          )}
+          <Link href={isSchools ? '/login?type=school' : '/login'}
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}>
+            Sign In
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -156,15 +150,10 @@ function Nav() {
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
               onClick={() => setMobileOpen(false)}>Buy Now</Link>
-            {isSchools ? (
-              <Link href="/login?type=school" className="text-sm font-medium py-2 text-center rounded-lg"
-                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                onClick={() => setMobileOpen(false)}>Sign In</Link>
-            ) : (
-              <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
-                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                onClick={() => setMobileOpen(false)}>Sign In</Link>
-            )}
+            <Link href={isSchools ? '/login?type=school' : '/login'}
+              className="text-sm font-semibold py-2 text-center rounded-lg"
+              style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
+              onClick={() => setMobileOpen(false)}>Sign In</Link>
           </div>
         </div>
       )}
