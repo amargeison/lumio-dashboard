@@ -101,26 +101,26 @@ function Nav() {
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
-            Free 14-day trial
+            Free 14 day trial
           </button>
           <button onClick={() => setShowTypeModal(true)}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#7C3AED' }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6C3FC5' }}>
-            Book a Demo
+            Buy Now
           </button>
           {isSchools ? (
             <Link href="/login?type=school"
               className="px-4 py-2 text-sm font-medium rounded-lg"
               style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-              Schools sign in
+              Sign In
             </Link>
           ) : (
             <Link href="/login"
               className="px-4 py-2 text-sm font-medium rounded-lg"
               style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-              Sign in
+              Sign In
             </Link>
           )}
         </div>
@@ -151,18 +151,18 @@ function Nav() {
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
             <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14-day trial</button>
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14 day trial</button>
             <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
               className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>Book a Demo</button>
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>Buy Now</button>
             {isSchools ? (
               <Link href="/login?type=school" className="text-sm font-medium py-2 text-center rounded-lg"
                 style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                onClick={() => setMobileOpen(false)}>Schools sign in</Link>
+                onClick={() => setMobileOpen(false)}>Sign In</Link>
             ) : (
               <Link href="/login" className="text-sm font-medium py-2 text-center rounded-lg"
                 style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                onClick={() => setMobileOpen(false)}>Sign in</Link>
+                onClick={() => setMobileOpen(false)}>Sign In</Link>
             )}
           </div>
         </div>
