@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 -- Seed first super admin
 INSERT INTO admin_users (email, name, role)
-VALUES ('arron@oxedandassessment.com', 'Arron', 'super_admin')
+VALUES ('amargeison@gmail.com', 'Arron', 'super_admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- Admin sessions
