@@ -8,7 +8,7 @@ function getSupabase() {
   )
 }
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const supabase = getSupabase()
   const token = req.headers.get('x-workspace-token')
   if (!token) return NextResponse.json({ error: 'No token' }, { status: 401 })
@@ -22,13 +22,10 @@ export async function GET(req: NextRequest) {
 
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
 
-  const { data: business } = await supabase
+  await supabase
     .from('businesses')
-    .select('id, slug, company_name, owner_name, owner_email, logo_url, status, plan, onboarding_complete, demo_data_active')
+    .update({ onboarding_complete: true })
     .eq('id', session.business_id)
-    .single()
 
-  if (!business) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  return NextResponse.json(business)
+  return NextResponse.json({ success: true })
 }

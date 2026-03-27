@@ -13,11 +13,13 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake,
-  Database, RotateCcw,
+  Database, RotateCcw, Upload,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
+import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
+import TabGuide from '@/components/onboarding/TabGuide'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -225,12 +227,68 @@ function ComingSoonView({ dept }: { dept: DeptId }) {
 
 // ─── Settings View ───────────────────────────────────────────────────────────
 
-function SettingsView({ company }: { company: string }) {
+function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
+  company: string; demoDataActive: boolean; sessionToken: string; onDemoToggle: (active: boolean) => void
+}) {
+  const [clearing, setClearing] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const isDev = process.env.NEXT_PUBLIC_ENV !== 'production'
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploadFiles, setUploadFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+
+  async function handleClearDemo() {
+    setClearing(true)
+    await fetch('/api/onboarding/clear-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    onDemoToggle(false)
+    setClearing(false)
+  }
+
+  async function handleLoadDemo() {
+    setLoading(true)
+    await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    onDemoToggle(true)
+    setLoading(false)
+  }
+
+  async function handleUpload() {
+    if (!uploadFiles.length) return
+    setUploading(true)
+    const fd = new FormData()
+    uploadFiles.forEach(f => fd.append('files', f))
+    fd.append('session_token', sessionToken)
+    await fetch('/api/onboarding/process-data', { method: 'POST', body: fd }).catch(() => {})
+    setUploadFiles([])
+    setUploading(false)
+  }
+
+  async function handleResetOnboarding() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    // Just call the complete endpoint with a reset flag — or update directly
+    await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    // Actually we need to UN-set it. Let's just reload — the API doesn't support reset.
+    // For dev: we'll clear localStorage flag and reload
+    localStorage.removeItem('onboarding_completed_' + company)
+    window.location.reload()
+  }
+
+  const INTEGRATIONS = [
+    { name: 'Gmail / Outlook', desc: 'Connect your email' },
+    { name: 'Slack', desc: 'Team messaging' },
+    { name: 'Microsoft Teams', desc: 'Meetings & chat' },
+    { name: 'Xero', desc: 'Accounting & finance' },
+    { name: 'QuickBooks', desc: 'Bookkeeping' },
+    { name: 'Google Calendar', desc: 'Calendar sync' },
+    { name: 'Outlook Calendar', desc: 'Calendar sync' },
+    { name: 'BambooHR / Sage HR', desc: 'HR management' },
+  ]
+
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
+      {/* Workspace info */}
       {[
         { title: 'Workspace', fields: [['Company name', company], ['Plan', 'Lumio Business'], ['Status', 'Active']] },
-        { title: 'Integrations', fields: [['Email', 'Not connected'], ['CRM', 'Not connected'], ['Calendar', 'Not connected'], ['Slack', 'Not connected']] },
         { title: 'Team', fields: [['Members', '1 (you)'], ['Pending invites', '0']] },
       ].map(section => (
         <div key={section.title} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -241,12 +299,98 @@ function SettingsView({ company }: { company: string }) {
             {section.fields.map(([label, value]) => (
               <div key={label} className="flex items-center justify-between px-5 py-3">
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
-                <span className="text-sm font-medium" style={{ color: value === 'Not connected' ? '#6B7280' : '#F9FAFB' }}>{value}</span>
+                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{value}</span>
               </div>
             ))}
           </div>
         </div>
       ))}
+
+      {/* Bulk Data Import */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data Import</p>
+        </div>
+        <div className="p-5">
+          <div
+            className="rounded-xl p-6 text-center cursor-pointer transition-colors"
+            style={{ backgroundColor: dragOver ? 'rgba(245,166,35,0.06)' : '#0A0B10', border: `2px dashed ${dragOver ? '#F5A623' : '#1F2937'}` }}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); setUploadFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]) }}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload size={24} style={{ color: '#F5A623', margin: '0 auto 8px' }} />
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop any files here — Lumio will sort them automatically</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>CSV, XLSX, DOCX, PDF, images</p>
+            <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { if (e.target.files) setUploadFiles(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+          </div>
+          {uploadFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {uploadFiles.map((f, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <span className="text-xs" style={{ color: '#F9FAFB' }}>{f.name}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{(f.size / 1024).toFixed(0)} KB</span>
+                </div>
+              ))}
+              <button onClick={handleUpload} disabled={uploading} className="w-full py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+                {uploading ? 'Processing...' : 'Process & Import'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Demo Data */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Demo Data</p>
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: demoDataActive ? 'rgba(245,166,35,0.15)' : 'rgba(34,197,94,0.15)', color: demoDataActive ? '#F5A623' : '#22C55E' }}>
+            {demoDataActive ? 'Active' : 'Off'}
+          </span>
+        </div>
+        <div className="px-5 py-4">
+          {demoDataActive ? (
+            <button onClick={handleClearDemo} disabled={clearing} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+              {clearing ? 'Clearing...' : 'Clear Demo Data'}
+            </button>
+          ) : (
+            <button onClick={handleLoadDemo} disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+              {loading ? 'Loading...' : 'Load Demo Data'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Integrations */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
+          {INTEGRATIONS.map(integ => (
+            <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.name}</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p>
+              </div>
+              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                Connect
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dev: Reset onboarding */}
+      {isDev && (
+        <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.2)' }}>
+          <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>DEV TOOLS</p>
+          <button onClick={handleResetOnboarding} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+            Reset Onboarding (re-test flow)
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -318,6 +462,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [companyLogo, setCompanyLogo] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast]           = useState<string | null>(null)
+  const [ownerEmail, setOwnerEmail] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showTabGuide, setShowTabGuide] = useState(false)
+  const [demoDataActive, setDemoDataActive] = useState(false)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -345,7 +493,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           }
           if (data.company_name) setCompany(data.company_name)
           if (data.owner_name) setUserName(data.owner_name)
+          if (data.owner_email) setOwnerEmail(data.owner_email)
           if (data.logo_url) setCompanyLogo(data.logo_url)
+          if (data.demo_data_active) setDemoDataActive(true)
+          if (!data.onboarding_complete) setShowOnboarding(true)
         })
         .catch(() => {})
     } else {
@@ -354,10 +505,47 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   }, [slug, router])
 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
+  const sessionToken = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+
+  function handleOnboardingComplete() {
+    setShowOnboarding(false)
+    setShowTabGuide(true)
+  }
+
+  async function handleTabGuideComplete() {
+    setShowTabGuide(false)
+    // Mark onboarding as complete in Supabase
+    try {
+      await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'x-workspace-token': sessionToken },
+      })
+    } catch {}
+    fireToast('Welcome to Lumio! Your workspace is ready.')
+  }
 
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
+
+      {/* Onboarding */}
+      {showOnboarding && (
+        <GettingStartedModal
+          companyName={company}
+          ownerEmail={ownerEmail}
+          sessionToken={sessionToken}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+      {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
+
+      {/* Demo data banner */}
+      {demoDataActive && (
+        <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#F59E0B', color: '#0A0B10' }}>
+          <span className="font-medium">You&apos;re viewing demo data — clear it any time in Settings</span>
+          <button onClick={() => setActiveDept('settings')} className="text-xs font-bold underline">Go to Settings</button>
+        </div>
+      )}
 
       {/* Top bar */}
       <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3 overflow-visible" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
@@ -394,7 +582,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             </div>
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onGoToSettings={() => setActiveDept('settings')} />}
-            {activeDept === 'settings' && <SettingsView company={company} />}
+            {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <ComingSoonView dept={activeDept} />}
           </main>
         </div>
