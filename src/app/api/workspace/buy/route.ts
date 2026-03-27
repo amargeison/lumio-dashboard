@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const { data: business, error: createError } = await supabase
     .from('businesses')
     .insert({
-      company_name: companyName,
+      company_name: companyName.trim(),
       slug,
       owner_email: email,
       owner_name: `${firstName || ''} ${lastName || ''}`.trim() || null,

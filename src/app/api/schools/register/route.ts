@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const { data: school, error: schoolError } = await supabase
       .from('schools')
       .insert({
-        name: schoolName,
+        name: schoolName.trim(),
         slug,
         type: schoolType,
         ofsted_rating: ofstedRating,

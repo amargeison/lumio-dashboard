@@ -42,6 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   const type = body.type || 'business'
   delete body.type
 
+  if (body.company_name) body.company_name = body.company_name.trim()
+  if (body.name) body.name = body.name.trim()
   const table = type === 'schools' ? 'schools' : 'businesses'
   const { error } = await supabase.from(table).update(body).eq('slug', slug)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

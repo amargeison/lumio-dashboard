@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const name             = body.name         || ''
     const email            = body.email        || ''
-    const company_name     = body.company      || body.company_name || ''
+    const company_name     = (body.company || body.company_name || '').trim()
     const gdpr_consent     = body.gdpr         || body.gdpr_consent || false
     const marketing_consent = body.marketing_consent || false
 
