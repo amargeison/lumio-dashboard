@@ -61,19 +61,35 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
 
   if (type === 'schools') {
     const { data: school } = await supabase.from('schools').select('id, owner_email').eq('slug', slug).maybeSingle()
-    if (school) {
-      ownerEmail = school.owner_email || null
-      await supabase.from('school_users').delete().eq('school_id', school.id)
-      await supabase.from('school_magic_links').delete().eq('school_id', school.id)
-      await supabase.from('schools').delete().eq('id', school.id)
+    if (!school) {
+      console.error(`[admin/delete] School not found for slug: ${slug}`)
+      return NextResponse.json({ error: 'School not found' }, { status: 404 })
     }
+    ownerEmail = school.owner_email || null
+    // Clean up related tables (best-effort — tables may not exist yet)
+    await supabase.from('school_users').delete().eq('school_id', school.id).then(r => r.error && console.error('[admin/delete] school_users:', r.error.message))
+    await supabase.from('school_magic_links').delete().eq('school_id', school.id).then(r => r.error && console.error('[admin/delete] school_magic_links:', r.error.message))
+    // Delete the school record itself
+    const { error: deleteError } = await supabase.from('schools').delete().eq('id', school.id)
+    if (deleteError) {
+      console.error(`[admin/delete] Failed to delete school ${slug}:`, deleteError.message)
+      return NextResponse.json({ error: deleteError.message }, { status: 500 })
+    }
+    console.log(`[admin/delete] School ${slug} (id: ${school.id}) deleted successfully`)
   } else {
     const { data: biz } = await supabase.from('businesses').select('id, owner_email').eq('slug', slug).maybeSingle()
-    if (biz) {
-      ownerEmail = biz.owner_email || null
-      await supabase.from('business_sessions').delete().eq('business_id', biz.id)
-      await supabase.from('businesses').delete().eq('id', biz.id)
+    if (!biz) {
+      console.error(`[admin/delete] Business not found for slug: ${slug}`)
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
+    ownerEmail = biz.owner_email || null
+    await supabase.from('business_sessions').delete().eq('business_id', biz.id).then(r => r.error && console.error('[admin/delete] business_sessions:', r.error.message))
+    const { error: deleteError } = await supabase.from('businesses').delete().eq('id', biz.id)
+    if (deleteError) {
+      console.error(`[admin/delete] Failed to delete business ${slug}:`, deleteError.message)
+      return NextResponse.json({ error: deleteError.message }, { status: 500 })
+    }
+    console.log(`[admin/delete] Business ${slug} (id: ${biz.id}) deleted successfully`)
   }
 
   // Clean up the Supabase Auth user so the email can be reused
@@ -82,7 +98,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
       const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 })
       const authUser = users.find(u => u.email === ownerEmail)
       if (authUser) await supabase.auth.admin.deleteUser(authUser.id)
-    } catch { /* auth cleanup is best-effort */ }
+    } catch (e) { console.error('[admin/delete] Auth user cleanup failed:', e) }
   }
 
   await supabase.from('activity_log').delete().eq('account_slug', slug)

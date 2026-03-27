@@ -60,7 +60,12 @@ export default function BusinessDetailPage({ params }: { params: Promise<{ slug:
   async function deleteAccount() {
     const name = (account?.company_name || '').trim()
     if (!name || confirmDelete.trim() !== name) return
-    await fetch(`/api/admin/accounts/${slug}?type=business`, { method: 'DELETE', headers: { 'x-admin-token': token } })
+    const res = await fetch(`/api/admin/accounts/${slug}?type=business`, { method: 'DELETE', headers: { 'x-admin-token': token } })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Delete failed' }))
+      alert(`Delete failed: ${err.error || 'Unknown error'}`)
+      return
+    }
     router.replace('/admin/businesses')
   }
 
