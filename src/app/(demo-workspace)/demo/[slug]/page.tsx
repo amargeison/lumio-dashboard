@@ -15,7 +15,7 @@ import {
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload,
   Database, RotateCcw,
 } from 'lucide-react'
-import { useSpeech } from '@/hooks/useSpeech'
+import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
@@ -2301,7 +2301,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           if (data.status === 'converted') {
             // Redirect converted users to their live workspace
             if (data.live_slug) {
-              router.replace(`/workspace/${data.live_slug}`)
+              router.replace(`/${data.live_slug}`)
               return
             }
             setWorkspaceStatus('converted')

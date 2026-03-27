@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Sparkles, Users, Shield, UserPlus, GitBranch, FileText,
@@ -117,6 +117,12 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 export default function DemoSchoolOverviewPage() {
   const [toast, setToast]         = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('Today')
+  const [demoCleared, setDemoCleared] = useState(false)
+
+  useEffect(() => {
+    const active = localStorage.getItem('lumio_school_demo_active')
+    if (active === 'false') setDemoCleared(true)
+  }, [])
 
   const attendanceAvg = Math.round(ATTENDANCE_BY_YEAR.reduce((s, y) => s + y.pct, 0) / ATTENDANCE_BY_YEAR.length * 10) / 10
   const staffIn       = STAFF_TODAY.filter(s => s.status === 'in').length
@@ -124,6 +130,23 @@ export default function DemoSchoolOverviewPage() {
   function fireToast(action: string) {
     setToast(`In your live workspace, this would: ${action}`)
     setTimeout(() => setToast(''), 4000)
+  }
+
+  if (demoCleared) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <Sparkles size={28} style={{ color: '#0D9488' }} />
+        </div>
+        <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Demo data cleared</h2>
+        <p className="text-sm mb-4 max-w-sm" style={{ color: '#9CA3AF' }}>
+          This is what your empty school workspace looks like. Ready to go live? Buy Lumio to connect your real school data.
+        </p>
+        <a href="/schools/checkout" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+          Buy Lumio →
+        </a>
+      </div>
+    )
   }
 
   return (

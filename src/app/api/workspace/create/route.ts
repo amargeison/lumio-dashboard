@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { welcomePaidEmail } from '@/lib/emails/welcome-paid'
 import { logEmail } from '@/lib/emails/log'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
       status: 'converted',
       expires_at: null,
       converted_at: new Date().toISOString(),
+      deleted_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       business_id: business.id,
     })
     .eq('id', trial.id)
@@ -105,11 +107,9 @@ export async function POST(req: NextRequest) {
 }
 
 async function sendWelcomeEmail(id: string, slug: string, ownerName: string, ownerEmail: string) {
-  const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const firstName = ownerName?.split(' ')[0] || 'there'
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendEmail({
     from: 'Lumio <hello@lumiocms.com>',
     to: [ownerEmail],
     subject: "You're live on Lumio — here's everything you need 🎉",

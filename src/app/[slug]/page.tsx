@@ -15,7 +15,7 @@ import {
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake,
   Database, RotateCcw,
 } from 'lucide-react'
-import { useSpeech } from '@/hooks/useSpeech'
+import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 import { otpEmail } from '@/lib/emails/otp'
 import { logEmail } from '@/lib/emails/log'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -13,7 +13,6 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const body = await req.json()
     const name             = body.name         || ''
@@ -99,7 +98,7 @@ export async function POST(req: NextRequest) {
       console.error('[demo/signup] FAILED to insert OTP code:', otpInsertError)
       return NextResponse.json({ error: 'Failed to store verification code — please try again.' }, { status: 500 })
     }
-    const { error: emailError } = await resend.emails.send({
+    const { error: emailError } = await sendEmail({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio sign-in code: ${code}`,

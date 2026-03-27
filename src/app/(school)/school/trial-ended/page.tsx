@@ -1,12 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Clock, Building2 } from 'lucide-react'
 
 export default function SchoolTrialEndedPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#07080F', color: '#F9FAFB' }}>
       <div className="max-w-md w-full text-center space-y-6">
+        <div className="flex justify-center mb-2">
+          <Image src="/lumio-logo-primary.png" alt="Lumio" width={320} height={160} style={{ width: 160, height: 'auto' }} />
+        </div>
+
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
             <Clock size={28} style={{ color: '#F59E0B' }} />
