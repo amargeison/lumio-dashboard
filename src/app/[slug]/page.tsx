@@ -118,61 +118,289 @@ const BG_GRADIENTS = [
   'from-green-950 via-teal-900 to-emerald-900',
 ]
 
-function PersonalBanner({ firstName }: { firstName?: string }) {
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const bg = BG_GRADIENTS[new Date().getDay()]
-  const { speak, stop, isPlaying } = useSpeech()
+// ─── Fake data helpers (same as demo) ────────────────────────────────────────
 
+function seed(str: string): number { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i); return Math.abs(h) }
+function fakeNum(base: number, co: string, salt: string) { return base + (seed(co + salt) % 20) - 10 }
+function fakeCompany(co: string, i: number) { return ['Greenfield Academy','Hopscotch Learning','Bramble Hill Trust','Whitestone College','Oakridge Schools','Crestview Academy'][seed(co+'c'+i)%6] }
+
+type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
+type ChartMode = 'number' | 'bar' | 'pie'
+interface ChartDatum { label: string; value: number; color: string }
+type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
+
+// ─── Charts ──────────────────────────────────────────────────────────────────
+
+function DonutChart({ segments }: { segments: ChartDatum[] }) {
+  const total = segments.reduce((s, d) => s + d.value, 0)
+  let acc = 0
+  const gradient = segments.map(d => { const pct = (d.value / total) * 100; const s = `${d.color} ${acc.toFixed(1)}% ${(acc + pct).toFixed(1)}%`; acc += pct; return s }).join(', ')
+  return (<div className="relative" style={{ width: 64, height: 64, flexShrink: 0 }}><div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `conic-gradient(${gradient})` }} /><div style={{ position: 'absolute', inset: '22%', borderRadius: '50%', backgroundColor: '#111318' }} /></div>)
+}
+
+function MiniBarChart({ bars, color }: { bars: ChartDatum[]; color: string }) {
+  const max = Math.max(...bars.map(b => b.value), 1)
+  return (<div className="flex items-end gap-1 w-full" style={{ height: 52 }}>{bars.map((b, i) => (<div key={i} className="flex-1 flex flex-col items-center gap-0.5"><div className="w-full rounded-sm" style={{ height: Math.max(4, (b.value / max) * 44), backgroundColor: b.color || color }} /><span style={{ fontSize: 8, color: '#6B7280' }}>{b.label}</span></div>))}</div>)
+}
+
+function EnhancedStatCard({ label, value, icon: Icon, color, pieData, barData }: { label: string; value: string; icon: React.ElementType; color: string; pieData: ChartDatum[]; barData: ChartDatum[] }) {
+  const [mode, setMode] = useState<ChartMode>('number')
   return (
-    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="relative z-10 px-6 py-5">
-        <h1 className="text-2xl font-black text-white tracking-tight mb-1">
-          {greeting}, {firstName || 'there'} 👋
-        </h1>
-        <p className="text-teal-300 text-sm">{date}</p>
+    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 110 }}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs truncate" style={{ color: '#9CA3AF' }}>{label}</span>
+        <div className="flex items-center shrink-0">
+          <button style={{ color: mode === 'number' ? color : '#374151', padding: 3, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setMode('number')}><Hash size={11} /></button>
+          <button style={{ color: mode === 'bar' ? color : '#374151', padding: 3, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setMode('bar')}><BarChart3 size={11} /></button>
+        </div>
+      </div>
+      <div className="flex-1 flex items-center">
+        {mode === 'number' && <div className="flex items-center justify-between w-full"><div className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{value}</div><div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}1a` }}><Icon size={14} style={{ color }} /></div></div>}
+        {mode === 'bar' && <MiniBarChart bars={barData} color={color} />}
       </div>
     </div>
   )
 }
 
-// ─── AI Summary Panel ────────────────────────────────────────────────────────
+// ─── Status Badge ────────────────────────────────────────────────────────────
 
-const AI_HIGHLIGHTS = [
-  'Welcome to your live Lumio workspace. Connect your tools in Settings to see real data here.',
-  'Your Morning Roundup will populate once email, calendar, and CRM integrations are connected.',
-  'Invite your team under Settings > Team to start collaborating.',
-  'Visit the Workflows Library to activate automations for your business.',
+function WFStatusBadge({ status }: { status: WFStatus }) {
+  const cfg = { COMPLETE: { label: 'COMPLETE', color: '#22C55E', bg: 'rgba(34,197,94,0.12)', Icon: CheckCircle2 }, RUNNING: { label: 'RUNNING', color: '#0D9488', bg: 'rgba(13,148,136,0.12)', Icon: Loader2 }, ACTION: { label: 'ACTION', color: '#EF4444', bg: 'rgba(239,68,68,0.12)', Icon: AlertCircle } }[status]
+  return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold" style={{ color: cfg.color, backgroundColor: cfg.bg }}><cfg.Icon size={11} /> {cfg.label}</span>
+}
+
+// ─── Personal Banner (with TTS + weather + chips) ────────────────────────────
+
+const QUOTES = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "Success is not final, failure is not fatal.", author: "Winston Churchill" },
 ]
 
-function AISummaryPanel() {
+function PersonalBanner({ company, firstName }: { company: string; firstName?: string }) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const bg = BG_GRADIENTS[new Date().getDay()]
+  const { speak, stop, isPlaying } = useSpeech()
+  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+
+  function handleBriefing() {
+    if (isPlaying) { stop(); return }
+    speak(`${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`)
+  }
+
+  return (
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
+      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
+      <div className="relative z-10 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
+              <button onClick={handleBriefing} title="Lumio will read your morning briefing aloud" className="flex items-center justify-center rounded-lg transition-all"
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                <Volume2 size={15} strokeWidth={1.75} />
+              </button>
+            </div>
+            <p className="text-purple-300 text-sm mb-2">{date}</p>
+            <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {[
+              { label: 'Meetings', value: 4, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅' },
+              { label: 'Tasks', value: 7, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
+              { label: 'Urgent', value: 2, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Emails', value: 12, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧' },
+            ].map(item => (
+              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                <span className="text-base">{item.icon}</span>
+                <span className="text-lg font-black text-white">{item.value}</span>
+                <span className="text-xs opacity-70">{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+              <span className="text-3xl">⛅</span>
+              <div>
+                <div className="text-xl font-black text-white">11°C</div>
+                <div className="text-xs text-purple-300">Partly cloudy</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Morning Roundup ─────────────────────────────────────────────────────────
+
+const ROUNDUP_ITEMS = [
+  { id: 'email', icon: '📧', label: 'Emails', count: 12, urgent: true, color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', preview: ['Invoice overdue from Bramble Hill', 'New trial signup — Just wow Inc', 'Stripe payment confirmed — Oakridge'] },
+  { id: 'slack', icon: '💬', label: 'Slack', count: 7, urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner'] },
+  { id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false, color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)', preview: ['2 connection requests', 'Post got 47 reactions'] },
+  { id: 'news', icon: '📰', label: 'Industry News', count: 3, urgent: false, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)', preview: ['UK SMB automation market up 34% YoY'] },
+  { id: 'notion', icon: '📋', label: 'Notion', count: 2, urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)', preview: ['Testing guide updated — 2 items resolved'] },
+]
+
+function MorningRoundup() {
+  const [expanded, setExpanded] = useState<string | null>(null)
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+      </div>
+      <div className="space-y-2">
+        {ROUNDUP_ITEMS.map(item => {
+          const isOpen = expanded === item.id
+          return (
+            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+              <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
+                  {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </button>
+              {isOpen && (<div className="px-3 pb-3 space-y-1.5">{item.preview.map((p, idx) => (<div key={idx} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}><span className="flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }}>→</span>{p}</div>))}</div>)}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Tab Bar ─────────────────────────────────────────────────────────────────
+
+const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'today', label: 'Today', icon: '🏠' }, { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
+  { id: 'tasks', label: 'Daily Tasks', icon: '✅' }, { id: 'insights', label: 'Insights', icon: '📊' },
+  { id: 'not-to-miss', label: "Don't Miss", icon: '🔴' }, { id: 'team', label: 'Team', icon: '👥' },
+]
+
+function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
+  return (
+    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+      <div className="flex items-center gap-0 min-w-max px-2">
+        {OVERVIEW_TABS.map(t => (
+          <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{ borderBottomColor: tab === t.id ? '#7C3AED' : 'transparent', color: tab === t.id ? '#A78BFA' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Meetings Today ──────────────────────────────────────────────────────────
+
+const MEETINGS: { id: string; title: string; time: string; duration: string; attendees: string[]; location: string; type: string; status: string; link?: string }[] = [
+  { id: '1', title: 'Weekly Team Check-in', time: '09:00', duration: '30 min', attendees: ['Sarah M.'], location: 'Google Meet', type: 'video', status: 'done' },
+  { id: '2', title: 'New Customer Demo', time: '11:00', duration: '45 min', attendees: ['Charlotte D.'], location: 'Zoom', type: 'video', status: 'now', link: '#' },
+  { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['Arron'], location: 'Google Meet', type: 'call', status: 'upcoming', link: '#' },
+  { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
+]
+
+function MeetingsToday() {
+  const live = MEETINGS.find(m => m.status === 'now')
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 Meetings Today</h3>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{MEETINGS.length} scheduled</span>
+      </div>
+      {live && (
+        <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+          <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{live.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {live.duration}</p></div>
+          {'link' in live && live.link && <a href={live.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
+        </div>
+      )}
+      <div className="space-y-1">
+        {MEETINGS.map(m => (
+          <div key={m.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
+            <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
+            <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
+            <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
+            {'link' in m && m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Quick Actions Bar ───────────────────────────────────────────────────────
+
+const QUICK_ACTIONS = [
+  { label: 'New Joiner', tooltip: 'Trigger the HR onboarding workflow', icon: UserPlus },
+  { label: 'New Customer', tooltip: 'Create a customer record and start welcome sequence', icon: Users },
+  { label: 'Chase Invoice', tooltip: 'Send payment reminders for overdue invoices', icon: Receipt },
+  { label: 'Support Ticket', tooltip: 'Open a new support ticket', icon: Headphones },
+  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Calendar },
+]
+
+function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+      <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+      {QUICK_ACTIONS.map(a => (
+        <div key={a.label} className="relative group shrink-0">
+          <button onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2.5 py-1.5 rounded-lg text-xs w-48 text-center z-50 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>{a.tooltip}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── AI Morning Summary Panel ────────────────────────────────────────────────
+
+const MORNING_HIGHLIGHTS = [
+  'You have 3 meetings today — first up: Weekly Check-in at 9am',
+  '8 emails overnight — 1 marked urgent, re: upcoming contract renewal',
+  '2 workflows need your attention — Invoice chase is highest priority',
+  'Monthly MRR tracking ahead of target — 12% growth month-on-month',
+  'New trial conversion this week — explore the Trials section for details',
+  'Reminder: end-of-month reporting due Friday',
+]
+
+function MorningAIPanel() {
   const [open, setOpen] = useState(true)
   const now = new Date()
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
   return (
-    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #0D9488' }}>
-      <button
-        className="flex w-full items-center justify-between px-5 py-4"
-        style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: open ? '1px solid rgba(13,148,136,0.3)' : undefined }}
-        onClick={() => setOpen(v => !v)}
-      >
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
+      <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
         <div className="flex items-center gap-2">
-          <Sparkles size={14} style={{ color: '#0D9488' }} />
+          <Sparkles size={14} style={{ color: '#6C3FC5' }} />
           <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
-          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{dayLabel}</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{dayLabel}</span>
         </div>
-        {open ? <ChevronUp size={14} style={{ color: '#0D9488' }} /> : <ChevronDown size={14} style={{ color: '#0D9488' }} />}
+        {open ? <ChevronUp size={14} style={{ color: '#6C3FC5' }} /> : <ChevronDown size={14} style={{ color: '#6C3FC5' }} />}
       </button>
       {open && (
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {AI_HIGHLIGHTS.map((item, i) => (
+        <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
+          {MORNING_HIGHLIGHTS.map((item, i) => (
             <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#99F6E4' }}>{item}</p>
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
             </div>
           ))}
         </div>
@@ -181,26 +409,23 @@ function AISummaryPanel() {
   )
 }
 
-// ─── Connect Data Prompt ─────────────────────────────────────────────────────
+// ─── Tab Placeholder ─────────────────────────────────────────────────────────
 
-function ConnectDataPrompt({ onGoToSettings }: { onGoToSettings: () => void }) {
+function TabPlaceholder({ tab }: { tab: OverviewTab }) {
+  const labels: Record<OverviewTab, { title: string; icon: string; desc: string }> = {
+    'today': { title: 'Today', icon: '🏠', desc: '' },
+    'quick-wins': { title: 'Quick Wins', icon: '⚡', desc: 'Your highest-impact actions for today, prioritised by AI.' },
+    'tasks': { title: 'Daily Tasks', icon: '✅', desc: 'All your tasks in one place, synced from Notion and your calendar.' },
+    'insights': { title: 'Insights', icon: '📊', desc: 'Key metrics and AI-generated observations across your business.' },
+    'not-to-miss': { title: "Don't Miss", icon: '🔴', desc: 'Critical items that need your attention today.' },
+    'team': { title: 'Team', icon: '👥', desc: 'See what your team is working on and who needs support.' },
+  }
+  const { title, icon, desc } = labels[tab]
   return (
-    <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(13,148,136,0.25)' }}>
-      <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#2DD4BF', border: '1px solid rgba(13,148,136,0.25)' }}>
-        <Zap size={12} /> Get started
-      </div>
-      <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Connect your tools to see real data</h3>
-      <p className="text-sm mb-5 mx-auto max-w-sm" style={{ color: '#9CA3AF' }}>
-        Link your email, CRM, calendar, and other tools to populate your dashboard with live data.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <button onClick={onGoToSettings} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-          Go to Integrations <ArrowRight size={15} />
-        </button>
-        <Link href="/book-demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>
-          Book onboarding call
-        </Link>
-      </div>
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-3xl" style={{ backgroundColor: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>{icon}</div>
+      <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{title}</h3>
+      <p className="text-sm max-w-xs" style={{ color: '#9CA3AF' }}>{desc || 'Coming soon to your live workspace.'}</p>
     </div>
   )
 }
@@ -397,44 +622,73 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onGoToSettings }: { company: string; firstName?: string; onGoToSettings: () => void }) {
+function OverviewView({ company, firstName, onAction }: { company: string; firstName?: string; onAction: (label: string) => void }) {
+  const [tab, setTab] = useState<OverviewTab>('today')
+  const wf = fakeNum(47, company, 'wf')
+  const cu = fakeNum(181, company, 'cu')
+  const mrr = fakeNum(42000, company, 'mrr')
+  const runs = fakeNum(1840, company, 'runs')
+  const wfStatuses: WFStatus[] = ['COMPLETE','RUNNING','ACTION','COMPLETE','COMPLETE','ACTION','RUNNING','COMPLETE']
+  const feed = Array.from({ length: 8 }, (_, i) => ({
+    name: ['New joiner — IT provisioning','Invoice chase — 30d overdue','Proposal generated','Health score alert','Trial conversion','Support SLA breach — P1','Renewal reminder','Marketing drip sent'][i],
+    customer: i < 4 ? 'Internal' : fakeCompany(company, i),
+    status: wfStatuses[i], ts: ['Just now','3 min ago','8 min ago','15 min ago','24 min ago','1 hr ago','2 hr ago','3 hr ago'][i],
+  }))
+
   return (
     <div className="space-y-4">
-      <PersonalBanner firstName={firstName} />
+      <PersonalBanner company={company} firstName={firstName} />
+      <MorningRoundup />
+      <TabBar tab={tab} onChange={setTab} />
 
-      {/* 3-col grid: main content left, AI panel right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <ConnectDataPrompt onGoToSettings={onGoToSettings} />
+      {tab === 'today' ? (
+        <div className="space-y-4">
+          <QuickActionsBar onAction={onAction} />
 
-          {/* Placeholder stat cards */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-            {[
-              { label: 'Active Workflows', value: '0', icon: GitBranch, color: '#0D9488' },
-              { label: 'Team Members', value: '1', icon: Users, color: '#6C3FC5' },
-              { label: 'Integrations', value: '0', icon: Database, color: '#22C55E' },
-              { label: 'Automations', value: '0', icon: Zap, color: '#F59E0B' },
-            ].map(s => {
-              const Icon = s.icon
-              return (
-                <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${s.color}18` }}>
-                      <Icon size={14} style={{ color: s.color }} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+              <MeetingsToday />
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <EnhancedStatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
+                  pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
+                  barData={[{label:'HR',value:12,color:'#0D9488'},{label:'Sales',value:8,color:'#6C3FC5'},{label:'Fin',value:9,color:'#22C55E'},{label:'Ops',value:11,color:'#F59E0B'},{label:'Sup',value:7,color:'#EF4444'}]} />
+                <EnhancedStatCard label="Total Customers" value={String(cu)} icon={Users} color="#6C3FC5"
+                  pieData={[{label:'Healthy',value:Math.round(cu*.77),color:'#22C55E'},{label:'At Risk',value:Math.round(cu*.17),color:'#F59E0B'},{label:'Critical',value:Math.round(cu*.06),color:'#EF4444'}]}
+                  barData={[{label:'Enterprise',value:45,color:'#6C3FC5'},{label:'Mid-Mkt',value:82,color:'#A78BFA'},{label:'SMB',value:54,color:'#7C3AED'}]} />
+                <EnhancedStatCard label="Monthly MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#22C55E"
+                  pieData={[{label:'Pro',value:60,color:'#22C55E'},{label:'Enterprise',value:30,color:'#0D9488'},{label:'Starter',value:10,color:'#374151'}]}
+                  barData={[{label:'Oct',value:38000,color:'#22C55E'},{label:'Nov',value:39000,color:'#22C55E'},{label:'Dec',value:41000,color:'#22C55E'},{label:'Jan',value:42000,color:'#22C55E'},{label:'Feb',value:43000,color:'#22C55E'},{label:'Mar',value:mrr,color:'#0D9488'}]} />
+                <EnhancedStatCard label="Workflow Runs (30d)" value={String(runs)} icon={Zap} color="#F59E0B"
+                  pieData={[{label:'Success',value:92,color:'#22C55E'},{label:'Failed',value:5,color:'#EF4444'},{label:'Partial',value:3,color:'#F59E0B'}]}
+                  barData={[{label:'Mon',value:240,color:'#F59E0B'},{label:'Tue',value:280,color:'#F59E0B'},{label:'Wed',value:260,color:'#F59E0B'},{label:'Thu',value:310,color:'#F59E0B'},{label:'Fri',value:290,color:'#F59E0B'},{label:'Sat',value:180,color:'#F59E0B'},{label:'Sun',value:280,color:'#F59E0B'}]} />
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
+                  <span className="text-xs" style={{ color: '#0D9488' }}>Live</span>
+                </div>
+                {feed.map((run, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < feed.length-1 ? '1px solid #1F2937' : undefined }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
+                      <p className="truncate text-xs" style={{ color: '#9CA3AF' }}>{run.customer}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <WFStatusBadge status={run.status} />
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
                     </div>
                   </div>
-                  <p className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{s.value}</p>
-                </div>
-              )
-            })}
+                ))}
+              </div>
+            </div>
+            <div className="lg:col-span-1">
+              <MorningAIPanel />
+            </div>
           </div>
         </div>
-
-        <div className="lg:col-span-1">
-          <AISummaryPanel />
-        </div>
-      </div>
+      ) : (
+        <TabPlaceholder tab={tab} />
+      )}
     </div>
   )
 }
@@ -581,7 +835,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             </div>
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onGoToSettings={() => setActiveDept('settings')} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <ComingSoonView dept={activeDept} />}
           </main>
