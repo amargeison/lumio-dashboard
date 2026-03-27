@@ -78,6 +78,19 @@ export async function POST(req: NextRequest) {
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
 
+    // Check if this user has a live workspace (returning paid user)
+    let redirect_to: string | undefined
+    if (tenant.live_workspace_id) {
+      const { data: live } = await supabase
+        .from('demo_tenants')
+        .select('slug')
+        .eq('id', tenant.live_workspace_id)
+        .single()
+      if (live) redirect_to = `/workspace/${live.slug}`
+    } else if (tenant.workspace_type === 'live') {
+      redirect_to = `/workspace/${tenant.slug}`
+    }
+
     return NextResponse.json({
       session_token: sessionToken,
       company: {
@@ -90,6 +103,7 @@ export async function POST(req: NextRequest) {
         name: tenant.owner_name,
       },
       is_new_user: isNewUser,
+      redirect_to,
     })
   } catch (err) {
     console.error('Demo OTP verify error:', err)

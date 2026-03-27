@@ -1,7 +1,7 @@
 import { emailLayout, ctaButton } from './layout'
 
 export function welcomePaidEmail({ name, slug }: { name: string; slug: string }) {
-  const workspaceUrl = `https://lumiocms.com/demo/${slug}`
+  const workspaceUrl = `https://lumiocms.com/workspace/${slug}`
   return emailLayout({
     preheader: "You're live on Lumio. Here's everything you need to get started.",
     body: `

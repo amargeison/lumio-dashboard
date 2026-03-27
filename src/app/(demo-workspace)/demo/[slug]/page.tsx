@@ -2223,6 +2223,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [companyLogo, setCompanyLogo] = useState('')
   const [daysLeft, setDaysLeft]     = useState(14)
   const [showUpgrade, setShowUpgrade] = useState(true)
+  const [workspaceStatus, setWorkspaceStatus] = useState<'trial' | 'converted' | 'unknown'>('unknown')
+  const isTrial = workspaceStatus !== 'converted'
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showInvite, setShowInvite]   = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
@@ -2287,6 +2289,35 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     const storedSlug = localStorage.getItem('demo_company_slug')
     if (storedSlug && storedSlug !== slug && slug.startsWith(storedSlug.replace(/\d+$/, ''))) {
       router.replace(`/demo/${storedSlug}`)
+    }
+
+    // Fetch workspace status from Supabase
+    const sessionToken = localStorage.getItem('demo_session_token')
+    if (sessionToken) {
+      fetch('/api/demo/status', { headers: { 'x-demo-token': sessionToken } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return
+          if (data.status === 'converted') {
+            // Redirect converted users to their live workspace
+            if (data.live_slug) {
+              router.replace(`/workspace/${data.live_slug}`)
+              return
+            }
+            setWorkspaceStatus('converted')
+            setShowUpgrade(false)
+          } else if (data.status === 'deleted' || (data.expires_at && new Date(data.expires_at) < new Date())) {
+            router.replace('/trial-ended')
+            return
+          } else {
+            setWorkspaceStatus('trial')
+            if (data.expires_at) {
+              const remaining = Math.max(0, Math.ceil((new Date(data.expires_at).getTime() - Date.now()) / 86400000))
+              setDaysLeft(remaining)
+            }
+          }
+        })
+        .catch(() => {})
     }
   }, [])
 
@@ -2362,8 +2393,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {showPerfReview   && <PerformanceReviewModal  onClose={() => setShowPerfReview(false)}   onSubmit={handleDemoPerfReview}   />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
 
-      {/* Trial banner */}
-      {showUpgrade && (
+      {/* Trial banner — hidden for converted/paid workspaces */}
+      {showUpgrade && isTrial && (
         <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
@@ -2389,7 +2420,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
             <div className="min-w-0 hidden sm:block">
               <div className="text-sm font-bold truncate">{company}</div>
-              <div className="text-xs" style={{ color: '#6B7280' }}>Demo workspace</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>{isTrial ? 'Trial workspace' : 'Live workspace'}</div>
             </div>
           </div>
         </div>
@@ -2397,9 +2428,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: 'transparent', color: '#0D9488', border: '1px solid rgba(13,148,136,0.5)' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0D9488' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)' }}>
             <UserPlus size={13} /> Invite team
           </button>
-          <button onClick={() => setShowConvert(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-            <Zap size={12} /><span className="hidden sm:inline">Go Live</span><span className="sm:hidden">Go Live</span>
-          </button>
+          {isTrial && (
+            <button onClick={() => setShowConvert(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+              <Zap size={12} /><span className="hidden sm:inline">Go Live</span><span className="sm:hidden">Go Live</span>
+            </button>
+          )}
           <AvatarDropdown
             initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
             onConvert={() => setShowConvert(true)}
@@ -2418,7 +2451,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Demo data for <span style={{ color: '#F9FAFB' }}>{company}</span></p>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>
               </div>
               {/* Mobile invite */}
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
@@ -2444,16 +2477,28 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {activeDept === 'settings'   && <SettingsView   company={company} wakeWordEnabled={wakeWordEnabled} onToggleWakeWord={toggleWakeWord} />}
           </main>
 
-          {/* Upgrade CTA */}
-          <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(108,63,197,0.35)' }}>
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(108,63,197,0.12)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.25)' }}><Zap size={12} /> Ready to go live?</div>
-            <h2 className="text-2xl font-bold mb-2">This is your real dashboard. Without the demo data.</h2>
-            <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Connect your real tools, activate your workflows, and your team starts saving hours from day one.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/pricing" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>See pricing <ArrowRight size={15} /></Link>
-              <Link href="/demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book a walkthrough</Link>
+          {/* Upgrade CTA (trial) / Connect data prompt (paid) */}
+          {isTrial ? (
+            <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(108,63,197,0.35)' }}>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(108,63,197,0.12)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.25)' }}><Zap size={12} /> Ready to go live?</div>
+              <h2 className="text-2xl font-bold mb-2">This is your real dashboard. Without the demo data.</h2>
+              <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Connect your real tools, activate your workflows, and your team starts saving hours from day one.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>See pricing <ArrowRight size={15} /></Link>
+                <Link href="/demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book a walkthrough</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mx-4 sm:mx-5 my-8 rounded-2xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(13,148,136,0.35)' }}>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#2DD4BF', border: '1px solid rgba(13,148,136,0.25)' }}><CheckCircle2 size={12} /> You&apos;re live</div>
+              <h2 className="text-2xl font-bold mb-2">Connect your real data</h2>
+              <p className="text-sm mb-6 mx-auto max-w-md" style={{ color: '#9CA3AF' }}>Replace the demo data with your real tools — email, CRM, calendar, and more. Your workspace is ready for production.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={() => setActiveDept('settings')} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Go to Settings <ArrowRight size={15} /></button>
+                <Link href="/book-demo" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm" style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}>Book onboarding call</Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
