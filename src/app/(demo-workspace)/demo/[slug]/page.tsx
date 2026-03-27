@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, RefObject } from 'react'
+import React, { useState, useEffect, useRef, useCallback, RefObject } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -16,6 +16,7 @@ import {
   Database, RotateCcw,
 } from 'lucide-react'
 import { useSpeech } from '@/hooks/useSpeech'
+import { useWakeWord } from '@/hooks/useWakeWord'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
@@ -543,7 +544,7 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
   )
 }
 
-function DemoPersonalBanner({ company, dept = 'overview', onToast }: { company: string; dept?: string; onToast?: (msg: string) => void }) {
+function DemoPersonalBanner({ company, dept = 'overview', onToast, wakeWordEnabled = true }: { company: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -554,6 +555,19 @@ function DemoPersonalBanner({ company, dept = 'overview', onToast }: { company: 
   const [voiceLoading, setVoiceLoading]     = useState(false)
   const [voiceError, setVoiceError]         = useState('')
   const [voiceResult, setVoiceResult]       = useState<{ response: string; actions: { label: string; requiresIntegration?: boolean; integrationNote?: string }[] } | null>(null)
+  const [wakeFlash, setWakeFlash]           = useState(false)
+
+  const openVoiceModal = useCallback(() => {
+    setVoiceResult(null)
+    setVoiceError('')
+    setWakeFlash(true)
+    setTimeout(() => setWakeFlash(false), 600)
+    setShowVoiceModal(true)
+  }, [])
+
+  // Always-on wake word listener — pauses while voice modal is open or disabled in settings
+  const wakeActive = wakeWordEnabled && !showVoiceModal
+  useWakeWord(openVoiceModal, wakeActive)
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -602,15 +616,42 @@ function DemoPersonalBanner({ company, dept = 'overview', onToast }: { company: 
 
               {/* Mic: Voice Commands */}
               <button
-                onClick={() => { setVoiceResult(null); setVoiceError(''); setShowVoiceModal(true) }}
+                onClick={openVoiceModal}
                 className="flex items-center justify-center rounded-lg transition-all"
-                title="Voice Commands — try 'Cancel my 11am meeting' or 'Email my team'"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: 'rgba(108,63,197,0.2)', border: '1px solid rgba(108,63,197,0.4)', color: '#A78BFA' }}
+                title="Voice Commands — say 'Hi Lumio' or tap the mic"
+                style={{
+                  width: 32, height: 32, flexShrink: 0,
+                  backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)',
+                  border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`,
+                  color: '#A78BFA',
+                  transition: 'background-color 0.3s, border-color 0.3s',
+                }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.35)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.2)' }}
               >
                 <Mic size={15} strokeWidth={1.75} />
               </button>
+
+              {/* Wake word status pill */}
+              {wakeWordEnabled && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium select-none"
+                  style={{
+                    backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)',
+                    color: showVoiceModal ? '#4ADE80' : '#A78BFA',
+                    border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}`,
+                  }}
+                >
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{
+                      backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA',
+                      animation: 'pulse 2s ease-in-out infinite',
+                    }}
+                  />
+                  {showVoiceModal ? 'Listening\u2026' : 'Wake word active'}
+                </span>
+              )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -962,12 +1003,13 @@ function DemoMorningAIPanel() {
   )
 }
 
-function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
+function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
   company: string
   bannerRef?: RefObject<HTMLDivElement | null>
   statsRef?: RefObject<HTMLDivElement | null>
   actionsRef?: RefObject<HTMLDivElement | null>
   onAction?: (label: string) => void
+  wakeWordEnabled?: boolean
 }) {
   const [tab, setTab] = useState<OverviewTab>('today')
   const wf  = fakeNum(47, company, 'wf')
@@ -983,7 +1025,7 @@ function OverviewView({ company, bannerRef, statsRef, actionsRef, onAction }: {
   return (
     <div className="space-y-4">
       {/* 1. Banner */}
-      <div ref={bannerRef}><DemoPersonalBanner company={company} /></div>
+      <div ref={bannerRef}><DemoPersonalBanner company={company} wakeWordEnabled={wakeWordEnabled} /></div>
 
       {/* 2. Morning Roundup — full width, below banner */}
       <DemoMorningRoundup />
@@ -1554,7 +1596,8 @@ function WorkflowsView({ company }: { company: string }) {
     ]} />
 }
 
-function SettingsView({ company }: { company: string }) {
+function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company: string; wakeWordEnabled: boolean; onToggleWakeWord: (val: boolean) => void }) {
+  const speechSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
   return (
     <div className="max-w-2xl space-y-6">
       {[
@@ -1576,6 +1619,32 @@ function SettingsView({ company }: { company: string }) {
           </div>
         </div>
       ))}
+
+      {/* Voice & Accessibility */}
+      {speechSupported && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice &amp; Accessibility</p>
+          </div>
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Wake word activation</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice commands hands-free</p>
+            </div>
+            <div
+              className="relative h-5 w-9 rounded-full cursor-pointer transition-colors"
+              style={{ backgroundColor: wakeWordEnabled ? '#6C3FC5' : '#1F2937' }}
+              onClick={() => onToggleWakeWord(!wakeWordEnabled)}
+            >
+              <div
+                className="absolute top-0.5 h-4 w-4 rounded-full transition-transform"
+                style={{ backgroundColor: '#F9FAFB', transform: wakeWordEnabled ? 'translateX(16px)' : 'translateX(2px)' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <p className="text-xs" style={{ color: '#4B5563' }}>Settings are read-only in demo mode. Connect your live workspace to configure.</p>
     </div>
   )
@@ -2156,6 +2225,16 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
   const [showConvert, setShowConvert]         = useState(false)
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    const stored = localStorage.getItem('lumio_wake_word_enabled')
+    return stored === null ? true : stored === 'true'
+  })
+
+  function toggleWakeWord(val: boolean) {
+    setWakeWordEnabled(val)
+    localStorage.setItem('lumio_wake_word_enabled', String(val))
+  }
 
   const bannerRef  = useRef<HTMLDivElement>(null)
   const navRef     = useRef<HTMLElement>(null)
@@ -2329,7 +2408,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
             {activeDept !== 'overview' && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
-            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} />}
+            {activeDept === 'overview'    && <OverviewView   company={company} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
             {activeDept === 'insights'   && <InsightsView   company={company} />}
             {activeDept === 'hr'         && <HRView         company={company} />}
             {activeDept === 'accounts'   && <AccountsView   company={company} />}
@@ -2344,7 +2423,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {activeDept === 'workflows'  && <WorkflowsView  company={company} />}
             {activeDept === 'partners'   && <PartnersView   company={company} />}
             {activeDept === 'strategy'   && <StrategyView   company={company} />}
-            {activeDept === 'settings'   && <SettingsView   company={company} />}
+            {activeDept === 'settings'   && <SettingsView   company={company} wakeWordEnabled={wakeWordEnabled} onToggleWakeWord={toggleWakeWord} />}
           </main>
 
           {/* Upgrade CTA */}
