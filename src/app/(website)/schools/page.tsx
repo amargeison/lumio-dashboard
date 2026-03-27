@@ -61,10 +61,10 @@ function HorizontalBarChart({ bars, maxVal }: { bars: { label: string; value: nu
 }
 
 function DualBarChart({ groups }: { groups: { label: string; v1: number; v2: number }[]; maxVal?: number }) {
-  const maxV = 12, h = 90, barW = 12, gap = 28
-  const totalW = groups.length * gap + 40
+  const maxV = 12, h = 70, barW = 14, gap = 36
+  const totalW = Math.max(groups.length * gap + 60, 140)
   return (
-    <svg viewBox={`0 0 ${totalW} ${h + 28}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox={`0 0 ${totalW} ${h + 24}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
       {/* target line */}
       <line x1={8} y1={h - (11 / maxV) * h} x2={totalW - 8} y2={h - (11 / maxV) * h}
         stroke="#F59E0B" strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />
@@ -401,8 +401,8 @@ function HeroSection() {
                   ))}
                 </div>
 
-                {/* Animated content */}
-                <div key={activeRole} style={{ animation: 'heroFadeIn 0.15s ease-out' }} className="flex flex-col gap-3">
+                {/* Animated content — fixed height so all tabs are identical */}
+                <div key={activeRole} style={{ animation: 'heroFadeIn 0.15s ease-out', height: 310, overflow: 'hidden' }} className="flex flex-col gap-3">
 
                   {/* ZONE A — KPI cards */}
                   <div className="grid grid-cols-4 gap-2">
