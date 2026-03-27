@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Building2, GraduationCap, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react'
+import RagBadge from '@/components/admin/RagBadge'
+import { calculateRag } from '@/lib/rag-score'
 
 type Tab = 'business' | 'schools'
 
@@ -115,7 +117,7 @@ export default function AdminDashboard() {
                     <td className="px-5 py-3 capitalize" style={{ color: '#9CA3AF' }}>{plan}</td>
                     <td className="px-5 py-3"><StatusBadge status={status} /></td>
                     <td className="px-5 py-3" style={{ color: '#6B7280' }}>{new Date(a.created_at).toLocaleDateString('en-GB')}</td>
-                    <td className="px-5 py-3"><HealthBadge score={getHealth(a)} /></td>
+                    <td className="px-5 py-3"><RagBadge rag={calculateRag({ lastLogin: a.created_at, onboardingComplete: a.onboarding_complete || a.onboarded, integrationsCount: 0 })} /></td>
                   </tr>
                 )
               })}

@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeft, Eye, Key, Pause, Trash2, Play, Save, ExternalLink,
-  CheckCircle2, XCircle, AlertTriangle, Upload, Sparkles, Users,
+  ArrowLeft, Eye, Pause, Trash2, Play, Save,
+  CheckCircle2, XCircle, AlertTriangle, Sparkles,
 } from 'lucide-react'
+import RagBadge from '@/components/admin/RagBadge'
+import CustomerIntelligencePanel from '@/components/admin/CustomerIntelligencePanel'
+import { calculateRag } from '@/lib/rag-score'
 
 function Badge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string }> = {
@@ -89,6 +92,15 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
           </button>
         </div>
       </div>
+
+      {/* Customer Intelligence */}
+      <CustomerIntelligencePanel
+        slug={slug}
+        type="schools"
+        account={account}
+        activity={activity}
+        rag={calculateRag({ lastLogin: account.created_at, onboardingComplete: account.onboarded, integrationsCount: 0 })}
+      />
 
       {/* Account Info */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
