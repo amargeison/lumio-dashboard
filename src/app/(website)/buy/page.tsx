@@ -475,23 +475,50 @@ export default function CompanyCheckoutPage() {
     setStep(s => s + 1)
   }
 
-  function handleComplete() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lumio_company_active', 'true')
-      localStorage.setItem('lumio_company_name', form.companyName)
-      localStorage.setItem('lumio_company_plan', selectedPlan)
-      localStorage.setItem('lumio_company_initials',
-        `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase())
-      localStorage.setItem('lumio_company_industry', form.industry)
-      localStorage.setItem('lumio_company_size', form.size)
-      // Clear all hasData flags so every page starts empty
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
-      keys.forEach(k => localStorage.removeItem(k))
-    }
-    if (slug && slug !== 'my-company') {
-      router.push(`/${slug}`)
-    } else {
-      console.error('[buy] No slug found after purchase — redirecting to login')
+  async function handleComplete() {
+    try {
+      // Create business + session via API
+      const res = await fetch('/api/workspace/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: form.companyName,
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          plan: selectedPlan,
+          industry: form.industry,
+          size: form.size,
+        }),
+      })
+      const data = await res.json()
+
+      if (typeof window !== 'undefined') {
+        if (data.session_token) localStorage.setItem('workspace_session_token', data.session_token)
+        localStorage.setItem('lumio_company_active', 'true')
+        localStorage.setItem('lumio_company_name', form.companyName)
+        localStorage.setItem('lumio_company_plan', selectedPlan)
+        localStorage.setItem('lumio_company_initials',
+          `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase())
+        localStorage.setItem('lumio_company_industry', form.industry)
+        localStorage.setItem('lumio_company_size', form.size)
+        // Clear all hasData flags so every page starts empty
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
+        keys.forEach(k => localStorage.removeItem(k))
+      }
+
+      const targetSlug = data.slug || slug
+      if (targetSlug && targetSlug !== 'my-company') {
+        router.push(`/${targetSlug}`)
+      } else {
+        router.push('/login')
+      }
+    } catch {
+      // Fallback: set localStorage and redirect anyway
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lumio_company_active', 'true')
+        localStorage.setItem('lumio_company_name', form.companyName)
+      }
       router.push('/login')
     }
   }

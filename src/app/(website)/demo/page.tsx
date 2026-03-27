@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   ArrowRight, Check, Play, Zap, Shield, Clock,
   Users, GitBranch, Star, ChevronDown, ChevronUp,
@@ -23,9 +24,15 @@ const FAQS = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DemoLandingPage() {
+  const searchParams = useSearchParams()
   const [showTrial, setShowTrial]       = useState(false)
   const [showTellMore, setShowTellMore] = useState(false)
   const [openFaq, setOpenFaq]           = useState<number | null>(null)
+
+  // Auto-open signup modal when linked from trial-ended page
+  useEffect(() => {
+    if (searchParams.get('signup') === 'true') setShowTrial(true)
+  }, [searchParams])
 
   return (
     <div style={{ backgroundColor: '#07080F', color: '#F9FAFB', minHeight: '100vh' }}>
