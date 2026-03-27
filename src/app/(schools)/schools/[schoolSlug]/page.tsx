@@ -471,7 +471,23 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     fetch(`/api/schools/${_slug}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setSchoolData(data) })
-      .catch(() => {/* non-fatal — modal falls back gracefully */})
+      .catch(() => {})
+      .finally(() => {
+        // If API didn't return data, build from localStorage (set during checkout)
+        setSchoolData(prev => {
+          if (prev) return prev
+          const storedName = localStorage.getItem(`lumio_school_${_slug}_name`)
+          if (!storedName) return prev
+          return {
+            name: storedName,
+            headteacher: null,
+            town: null,
+            ofsted_rating: null,
+            pupil_count: null,
+            staff_count: null,
+          }
+        })
+      })
 
     const key = `lumio_onboarded_${_slug}`
     if (!localStorage.getItem(key)) {
