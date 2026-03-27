@@ -394,7 +394,7 @@ export default function PersonalBanner() {
                 style={{ width: 32, height: 32, flexShrink: 0 }}
               >
                 <button disabled className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: '#4B5563', cursor: 'not-allowed' }}>
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#6B7280', cursor: 'not-allowed' }}>
                   <Mic size={15} strokeWidth={1.75} />
                 </button>
                 <span className="absolute pointer-events-none"

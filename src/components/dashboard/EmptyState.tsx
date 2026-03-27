@@ -296,8 +296,15 @@ export function useHasDashboardData(pageKey: string): boolean | null {
   const [has, setHas] = useState<boolean | null>(null)
 
   useEffect(() => {
-    // Fast path: localStorage says data exists
+    // Fast path 1: localStorage per-page flag
     if (localStorage.getItem(`lumio_dashboard_${pageKey}_hasData`) === 'true') {
+      setHas(true)
+      return
+    }
+
+    // Fast path 2: demo mode is active — sync per-page flags immediately
+    if (localStorage.getItem('lumio_demo_active') === 'true') {
+      ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
       setHas(true)
       return
     }
