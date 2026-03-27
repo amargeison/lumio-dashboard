@@ -7,6 +7,7 @@ import {
   TrendingUp, Activity, X, ChevronRight, Mail, Plus,
   ChevronUp, ChevronDown, GitBranch, Volume2,
 } from 'lucide-react'
+import SchoolBanner from '@/app/demo/schools/[schoolSlug]/components/SchoolBanner'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function CardHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+    <div className="flex items-center justify-between px-5 py-4">
       <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{title}</p>
       {action}
     </div>
@@ -670,8 +671,16 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   return (
     <div className="space-y-4">
 
-      {/* 1. Greeting banner */}
-      <SchoolGreetingBanner schoolName={schoolName} firstName={firstName} />
+      {/* 1. Greeting banner — full version with TTS, weather, clock */}
+      <SchoolBanner
+        schoolName={schoolName}
+        headteacher={ownerName || 'there'}
+        town={schoolData?.town || ''}
+        attendance={attendanceAvg}
+        staffIn={`${staffIn}/${STAFF_TODAY.length}`}
+        openConcerns={1}
+        activeWorkflows={23}
+      />
 
       {/* 2. Morning Roundup — full width */}
       <SchoolMorningRoundup />
@@ -754,7 +763,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         {/* Active workflows */}
         <Card>
           <CardHeader title="Today's Workflows" />
-          <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+          <div className="flex flex-col gap-1">
             {WORKFLOWS.map((wf, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <div className="flex-1 min-w-0">
@@ -772,7 +781,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader title="Staff Today" />
-              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+              <div className="flex flex-col gap-1">
                 {STAFF_TODAY.map((s, i) => (
                   <div key={i} className="flex items-center gap-2 px-4 py-2.5">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
@@ -789,7 +798,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             </Card>
             <Card>
               <CardHeader title="Today's Schedule" />
-              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+              <div className="flex flex-col gap-1">
                 {SCHEDULE.map((s, i) => {
                   const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
                   return (
@@ -806,7 +815,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             </Card>
             <Card>
               <CardHeader title="Compliance Tracker" />
-              <div className="divide-y" style={{ borderColor: '#0D0E14' }}>
+              <div className="flex flex-col gap-1">
                 {COMPLIANCE.map((c, i) => {
                   const icon = c.status === 'ok' ? <CheckCircle2 size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
                              : c.status === 'urgent' ? <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />

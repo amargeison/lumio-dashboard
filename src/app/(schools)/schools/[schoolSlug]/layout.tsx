@@ -48,7 +48,14 @@ export default function SchoolLayout({ children }: Props) {
   )
   useEffect(() => {
     const stored = localStorage.getItem(`lumio_school_${slug}_name`)
-    if (stored) setSchoolName(stored)
+    if (stored) { setSchoolName(stored); return }
+    // Fallback: fetch from API if localStorage is empty
+    fetch(`/api/schools/${slug}`).then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.name) {
+        setSchoolName(data.name)
+        localStorage.setItem(`lumio_school_${slug}_name`, data.name)
+      }
+    }).catch(() => {})
   }, [slug])
 
   const [initials, setInitials] = useState('SH')
