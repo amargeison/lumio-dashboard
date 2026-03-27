@@ -78,17 +78,15 @@ export async function POST(req: NextRequest) {
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
 
-    // Check if this user has a live workspace (returning paid user)
+    // Check if this user has a paid business workspace (returning paid user)
     let redirect_to: string | undefined
-    if (tenant.live_workspace_id) {
-      const { data: live } = await supabase
-        .from('demo_tenants')
+    if (tenant.business_id) {
+      const { data: biz } = await supabase
+        .from('businesses')
         .select('slug')
-        .eq('id', tenant.live_workspace_id)
+        .eq('id', tenant.business_id)
         .single()
-      if (live) redirect_to = `/workspace/${live.slug}`
-    } else if (tenant.workspace_type === 'live') {
-      redirect_to = `/workspace/${tenant.slug}`
+      if (biz) redirect_to = `/workspace/${biz.slug}`
     }
 
     return NextResponse.json({

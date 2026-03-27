@@ -24,21 +24,21 @@ export async function GET(req: NextRequest) {
 
   const { data: tenant } = await supabase
     .from('demo_tenants')
-    .select('status, expires_at, company_name, owner_name, logo_url, workspace_type, live_workspace_id')
+    .select('status, expires_at, company_name, owner_name, logo_url, workspace_type, business_id')
     .eq('id', session.tenant_id)
     .single()
 
   if (!tenant) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // If this trial has been converted, look up the live workspace slug
+  // If this trial has been converted, look up the business workspace slug
   let live_slug: string | null = null
-  if (tenant.live_workspace_id) {
-    const { data: live } = await supabase
-      .from('demo_tenants')
+  if (tenant.business_id) {
+    const { data: biz } = await supabase
+      .from('businesses')
       .select('slug')
-      .eq('id', tenant.live_workspace_id)
+      .eq('id', tenant.business_id)
       .single()
-    if (live) live_slug = live.slug
+    if (biz) live_slug = biz.slug
   }
 
   return NextResponse.json({ ...tenant, live_slug })
