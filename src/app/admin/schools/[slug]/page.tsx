@@ -58,7 +58,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
   }
 
   async function deleteAccount() {
-    if (confirmDelete !== account?.company_name) return
+    if (confirmDelete !== account?.name) return
     await fetch(`/api/admin/accounts/${slug}?type=schools`, { method: 'DELETE', headers: { 'x-admin-token': token } })
     router.replace('/admin/schools')
   }

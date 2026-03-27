@@ -48,26 +48,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   return NextResponse.json({ success: true })
 }
 
-// DELETE — hard delete account
+// DELETE — hard delete account + auth user
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   if (!await validateAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = getSupabase()
   const { slug } = await params
   const type = req.nextUrl.searchParams.get('type') || 'business'
 
+  let ownerEmail: string | null = null
+
   if (type === 'schools') {
-    const { data: school } = await supabase.from('schools').select('id').eq('slug', slug).maybeSingle()
+    const { data: school } = await supabase.from('schools').select('id, owner_email').eq('slug', slug).maybeSingle()
     if (school) {
+      ownerEmail = school.owner_email || null
       await supabase.from('school_users').delete().eq('school_id', school.id)
       await supabase.from('school_magic_links').delete().eq('school_id', school.id)
       await supabase.from('schools').delete().eq('id', school.id)
     }
   } else {
-    const { data: biz } = await supabase.from('businesses').select('id').eq('slug', slug).maybeSingle()
+    const { data: biz } = await supabase.from('businesses').select('id, owner_email').eq('slug', slug).maybeSingle()
     if (biz) {
+      ownerEmail = biz.owner_email || null
       await supabase.from('business_sessions').delete().eq('business_id', biz.id)
       await supabase.from('businesses').delete().eq('id', biz.id)
     }
+  }
+
+  // Clean up the Supabase Auth user so the email can be reused
+  if (ownerEmail) {
+    try {
+      const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+      const authUser = users.find(u => u.email === ownerEmail)
+      if (authUser) await supabase.auth.admin.deleteUser(authUser.id)
+    } catch { /* auth cleanup is best-effort */ }
   }
 
   await supabase.from('activity_log').delete().eq('account_slug', slug)
