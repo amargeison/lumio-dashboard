@@ -32,37 +32,37 @@ export default function ClearDemoBar() {
   return (
     <>
       <div
-        className="flex items-center justify-between px-4 py-2 text-xs"
-        style={{ backgroundColor: 'rgba(245,158,11,0.1)', borderBottom: '1px solid rgba(245,158,11,0.25)' }}
+        className="flex items-center justify-between px-4 py-2.5 text-xs mx-4 mt-4 rounded-lg"
+        style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', border: '1px solid rgba(139,92,246,0.2)' }}
       >
-        <span style={{ color: '#FBBF24' }}>
+        <span style={{ color: '#F9FAFB' }}>
           You&apos;re viewing demo data — clear it any time in Settings
         </span>
         <div className="flex items-center gap-3">
           <Link
             href="/settings"
             className="text-xs font-medium transition-colors"
-            style={{ color: 'rgba(251,191,36,0.7)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#FBBF24' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(251,191,36,0.7)' }}
+            style={{ color: 'rgba(249,250,251,0.6)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(249,250,251,0.6)' }}
           >
             Go to Settings →
           </Link>
           <button
             onClick={() => setShowConvert(true)}
             className="rounded-lg px-3 py-1 text-xs font-semibold transition-all"
-            style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#5EEAD4', border: '1px solid rgba(13,148,136,0.35)' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.35)' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.2)' }}
+            style={{ backgroundColor: 'rgba(13,148,136,0.3)', color: '#5EEAD4', border: '1px solid rgba(13,148,136,0.4)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.45)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.3)' }}
           >
             🚀 Go Live
           </button>
           <button
             onClick={handleClear}
             className="rounded-lg px-3 py-1 text-xs font-semibold transition-all"
-            style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.25)' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.15)' }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(249,250,251,0.7)', border: '1px solid rgba(255,255,255,0.12)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)' }}
           >
             ✕ Clear Demo Data
           </button>
