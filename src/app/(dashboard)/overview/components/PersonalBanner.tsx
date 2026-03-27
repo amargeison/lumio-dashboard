@@ -366,8 +366,7 @@ export default function PersonalBanner() {
       <div className="absolute right-40 bottom-0 w-40 h-40 bg-teal-500 rounded-full opacity-10 blur-2xl" />
 
       <div className="relative z-10 px-6 py-5">
-        {/* Top row: greeting left, weather+clock right */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
 
           {/* LEFT: greeting */}
           <div className="flex-1 min-w-0">
@@ -414,6 +413,22 @@ export default function PersonalBanner() {
             </div>
           </div>
 
+          {/* CENTRE: summary pills */}
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {[
+              { label: 'Meetings', value: data.todaySummary.meetings, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',    icon: '📅' },
+              { label: 'Tasks',    value: data.todaySummary.tasks,    color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
+              { label: 'Urgent',   value: data.todaySummary.urgent,   color: 'bg-red-500/20 text-red-300 border-red-500/30',        icon: '🔴' },
+              { label: 'Emails',   value: data.todaySummary.emails,   color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',     icon: '📧' },
+            ].map(item => (
+              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                <span className="text-base">{item.icon}</span>
+                <span className="text-lg font-black text-white">{item.value}</span>
+                <span className="text-xs opacity-70">{item.label}</span>
+              </div>
+            ))}
+          </div>
+
           {/* RIGHT: weather + clock */}
           <div className="flex items-start gap-3 flex-shrink-0">
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
@@ -427,22 +442,6 @@ export default function PersonalBanner() {
             <LiveClock />
           </div>
 
-        </div>
-
-        {/* Summary pills — separate row */}
-        <div className="flex items-center gap-2 flex-wrap mt-3">
-          {[
-            { label: 'Meetings', value: data.todaySummary.meetings, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',    icon: '📅' },
-            { label: 'Tasks',    value: data.todaySummary.tasks,    color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
-            { label: 'Urgent',   value: data.todaySummary.urgent,   color: 'bg-red-500/20 text-red-300 border-red-500/30',        icon: '🔴' },
-            { label: 'Emails',   value: data.todaySummary.emails,   color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',     icon: '📧' },
-          ].map(item => (
-            <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
-              <span className="text-base">{item.icon}</span>
-              <span className="text-lg font-black text-white">{item.value}</span>
-              <span className="text-xs opacity-70">{item.label}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

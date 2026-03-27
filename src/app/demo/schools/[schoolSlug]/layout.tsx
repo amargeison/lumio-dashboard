@@ -150,6 +150,11 @@ export default function DemoSchoolLayout({ children }: Props) {
         <header className="flex h-12 shrink-0 items-center gap-3 px-4 md:px-6" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#07080F' }}>
           <button className="md:hidden" onClick={() => setOpen(true)} style={{ color: '#9CA3AF' }}><Menu size={20} /></button>
           <div className="flex flex-1 items-center gap-2 min-w-0">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="hidden md:block opacity-80 hover:opacity-100 transition-opacity">
+              <img src="/lumio-transparent-new.png" alt="Lumio" width={80} height={22} />
+            </a>
+            <div className="hidden md:block h-4 w-px mx-1" style={{ backgroundColor: '#1F2937' }} />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>OP</div>
             <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>Oakridge Primary School</span>
           </div>
           <div className="flex items-center gap-3">
