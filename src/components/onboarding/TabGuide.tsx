@@ -3,52 +3,51 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ArrowRight, ArrowLeft, X } from 'lucide-react'
 
-interface Step {
-  title: string
-  body: string
-  target?: string // CSS selector for the element to highlight
-}
-
-const STEPS: Step[] = [
-  { title: 'Welcome', body: 'This is your Lumio portal. Everything your business needs, in one place.' },
-  { title: 'Navigation', body: 'Use the sidebar to navigate between departments.', target: 'aside' },
-  { title: 'Morning Briefing', body: 'Every morning, Lumio gives you a personalised briefing.', target: '[data-guide="banner"]' },
-  { title: 'Voice Commands', body: "Say 'Hey Lumio' to control the portal hands-free.", target: '[data-guide="mic"]' },
-  { title: 'Departments', body: 'Each department has its own workspace — HR, Finance, Operations and more.', target: 'nav' },
-  { title: 'Settings', body: 'Manage your team, data, and integrations in Settings.', target: '[data-guide="settings"]' },
-  { title: 'Get Started!', body: "You're all set. Let's go!" },
+const STEPS = [
+  { title: 'Welcome', body: 'This is your Lumio portal. Everything your business needs, in one place.', target: '' },
+  { title: 'Navigation', body: 'Use the sidebar to navigate between departments.', target: 'aside:not(.md\\:hidden)' },
+  { title: 'Morning Briefing', body: 'Every morning, Lumio gives you a personalised briefing.', target: 'main' },
+  { title: 'Voice Commands', body: "Say 'Hey Lumio' to control the portal hands-free.", target: '' },
+  { title: 'Departments', body: 'Each department has its own workspace — HR, Finance, Operations and more.', target: 'aside:not(.md\\:hidden) nav' },
+  { title: 'Settings', body: 'Manage your team, data, and integrations in Settings.', target: '' },
+  { title: 'Get Started!', body: "You're all set. Let's go!", target: '' },
 ]
 
-interface Props {
-  onComplete: () => void
-}
+const STORAGE_KEY = 'lumio_tabguide_step'
 
-export default function TabGuide({ onComplete }: Props) {
-  const [step, setStep] = useState(0)
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
+export default function TabGuide({ onComplete }: { onComplete: () => void }) {
+  const [step, setStep] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? Math.min(parseInt(saved) || 0, STEPS.length - 1) : 0
+  })
+  const [rect, setRect] = useState<DOMRect | null>(null)
 
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
 
-  const updatePosition = useCallback(() => {
-    if (!current.target) { setPos(null); return }
-    const el = document.querySelector(current.target)
-    if (el) {
-      const rect = el.getBoundingClientRect()
-      setPos({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
-    } else {
-      setPos(null)
-    }
+  const findTarget = useCallback(() => {
+    if (!current.target) { setRect(null); return }
+    try {
+      const el = document.querySelector(current.target)
+      if (el) setRect(el.getBoundingClientRect())
+      else setRect(null)
+    } catch { setRect(null) }
   }, [current.target])
 
   useEffect(() => {
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    return () => window.removeEventListener('resize', updatePosition)
-  }, [updatePosition])
+    findTarget()
+    const timer = setTimeout(findTarget, 100) // retry after render
+    window.addEventListener('resize', findTarget)
+    return () => { window.removeEventListener('resize', findTarget); clearTimeout(timer) }
+  }, [findTarget, step])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, String(step))
+  }, [step])
 
   function next() {
-    if (isLast) { onComplete(); return }
+    if (isLast) { localStorage.removeItem(STORAGE_KEY); onComplete(); return }
     setStep(s => s + 1)
   }
 
@@ -56,32 +55,42 @@ export default function TabGuide({ onComplete }: Props) {
     if (step > 0) setStep(s => s - 1)
   }
 
-  // Calculate tooltip position
-  const tooltipStyle: React.CSSProperties = pos
-    ? { position: 'fixed', top: pos.top + pos.height + 12, left: Math.max(16, Math.min(pos.left, window.innerWidth - 340)), zIndex: 300 }
-    : { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 300 }
+  function dismiss() {
+    localStorage.removeItem(STORAGE_KEY)
+    onComplete()
+  }
+
+  // Tooltip position: below the target if found, centred if not
+  let tooltipTop = '50%'
+  let tooltipLeft = '50%'
+  let tooltipTransform = 'translate(-50%, -50%)'
+
+  if (rect && typeof window !== 'undefined') {
+    const below = rect.bottom + 16
+    const maxLeft = window.innerWidth - 340
+    tooltipTop = `${Math.min(below, window.innerHeight - 200)}px`
+    tooltipLeft = `${Math.max(16, Math.min(rect.left, maxLeft))}px`
+    tooltipTransform = 'none'
+  }
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-[250]" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />
+      {/* Dark overlay */}
+      <div className="fixed inset-0 z-[250]" style={{ backgroundColor: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
 
-      {/* Spotlight */}
-      {pos && (
-        <div className="fixed z-[260] pointer-events-none" style={{
-          top: pos.top - 4, left: pos.left - 4,
-          width: pos.width + 8, height: pos.height + 8,
-          borderRadius: 12,
+      {/* Spotlight ring */}
+      {rect && (
+        <div className="fixed z-[255] pointer-events-none rounded-xl" style={{
+          top: rect.top - 6, left: rect.left - 6,
+          width: rect.width + 12, height: rect.height + 12,
           border: '2px solid #F5A623',
-          boxShadow: '0 0 0 4000px rgba(0,0,0,0.6), 0 0 20px rgba(245,166,35,0.3)',
+          boxShadow: '0 0 24px rgba(245,166,35,0.25)',
         }} />
       )}
 
-      {/* Tooltip */}
-      <div style={tooltipStyle} className="w-80 rounded-xl overflow-hidden shadow-2xl"
-        css-bg="#111318" >
-        <div style={{ backgroundColor: '#111318', border: '1px solid rgba(245,166,35,0.3)' }} className="rounded-xl">
-          {/* Header */}
+      {/* Tooltip card */}
+      <div className="fixed z-[260] w-80" style={{ top: tooltipTop, left: tooltipLeft, transform: tooltipTransform }}>
+        <div className="rounded-xl shadow-2xl" style={{ backgroundColor: '#0F1629', border: '1px solid rgba(245,166,35,0.3)' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>
@@ -89,15 +98,13 @@ export default function TabGuide({ onComplete }: Props) {
               </span>
               <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{current.title}</span>
             </div>
-            <button onClick={onComplete} style={{ color: '#4B5563' }}><X size={14} /></button>
+            <button onClick={dismiss} className="p-1 rounded hover:bg-white/5" style={{ color: '#6B7280' }}><X size={14} /></button>
           </div>
 
-          {/* Body */}
           <div className="px-4 py-4">
-            <p className="text-sm" style={{ color: '#D1D5DB' }}>{current.body}</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{current.body}</p>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #1F2937' }}>
             {step > 0 ? (
               <button onClick={back} className="flex items-center gap-1 text-xs font-medium" style={{ color: '#6B7280' }}>
@@ -105,7 +112,7 @@ export default function TabGuide({ onComplete }: Props) {
               </button>
             ) : <div />}
             <button onClick={next}
-              className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold"
+              className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold transition-opacity hover:opacity-90"
               style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
               {isLast ? 'Get Started!' : <>Next <ArrowRight size={12} /></>}
             </button>
