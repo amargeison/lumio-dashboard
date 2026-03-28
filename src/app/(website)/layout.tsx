@@ -16,13 +16,14 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
   { label: 'About',        href: '/about'    },
+  { label: 'Blog',         href: '/blog'     },
 ]
 
 const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
   { label: 'Pricing',  href: '/pricing'  },
   { label: 'About',    href: '/about'    },
-  { label: 'Blog',     href: '#'         },
+  { label: 'Blog',     href: '/blog'     },
   { label: 'Docs',     href: '#'         },
   { label: 'Status',   href: '#'         },
 ]
