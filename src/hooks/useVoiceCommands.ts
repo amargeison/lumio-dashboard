@@ -46,7 +46,7 @@ const COMMANDS: { patterns: RegExp[], action: string, response: (m: RegExpMatchA
 ]
 
 export function useVoiceCommands() {
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<any>(null)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [lastCommand, setLastCommand] = useState<VoiceCommandResult | null>(null)
