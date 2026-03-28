@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/emails/send'
+import { welcomePaidEmail } from '@/lib/emails/welcome-paid'
+import { logEmail } from '@/lib/emails/log'
 
 function getSupabase() {
   return createClient(
@@ -71,9 +74,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, slug: business.slug, session_token: null })
   }
 
+  // Send welcome email (fire-and-forget)
+  sendWelcomeEmail(business.id, business.slug, `${firstName || ''} ${lastName || ''}`.trim(), email).catch(console.error)
+
   return NextResponse.json({
     success: true,
     slug: business.slug,
     session_token: sessionToken,
   })
+}
+
+async function sendWelcomeEmail(id: string, slug: string, ownerName: string, ownerEmail: string) {
+  const firstName = ownerName?.split(' ')[0] || 'there'
+  const { error } = await sendEmail({
+    from: 'Lumio <hello@lumiocms.com>',
+    to: [ownerEmail],
+    subject: "You're live on Lumio — here's everything you need 🎉",
+    html: welcomePaidEmail({ name: firstName, slug }),
+  })
+  if (error) {
+    console.error('[workspace/buy] Welcome email failed:', error)
+    return
+  }
+  const supabase = getSupabase()
+  await supabase.from('businesses').update({ welcome_email_sent: true }).eq('id', id)
+  logEmail(id, 'welcome_paid', ownerEmail).catch(() => {})
 }
