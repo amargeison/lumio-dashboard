@@ -120,6 +120,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // Optimistic update — show the local blob URL immediately
+    const blobUrl = URL.createObjectURL(file)
+    setCompanyLogo(blobUrl)
+    // Save to Supabase in background
     const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
     const ext = file.name.split('.').pop() || 'png'
     try {
@@ -129,12 +133,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       )
       const path = `${slug}/logo.${ext}`
-      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      const { error } = await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      if (error) console.error('Logo upload error:', error)
       const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
       setCompanyLogo(publicUrl)
       localStorage.setItem('lumio_company_logo', publicUrl)
+      URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error('Logo upload failed:', err)
+      // Keep the blob URL showing — user at least sees their upload
     }
   }, [])
 

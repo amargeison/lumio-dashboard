@@ -69,16 +69,21 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    // Optimistic update — show local blob URL immediately
+    const blobUrl = URL.createObjectURL(file)
+    setLogoUrl(blobUrl)
     const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
     const ext = file.name.split('.').pop() || 'png'
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
       const path = `${slug}/logo.${ext}`
-      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      const { error } = await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      if (error) console.error('Logo upload error:', error)
       const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
       setLogoUrl(publicUrl)
       localStorage.setItem('lumio_company_logo', publicUrl)
+      URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
   }
 
@@ -287,20 +292,70 @@ const WORLD_ZONES = [
   { label: 'Tokyo',    tz: 'Asia/Tokyo'       },
 ]
 
+function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz, hour12: false })
+  const [h, m] = timeStr.split(':').map(Number)
+  const hourAngle = ((h % 12) + m / 60) * 30
+  const minuteAngle = m * 6
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
+        <line key={deg} x1="18" y1="4" x2="18" y2={deg % 90 === 0 ? '6' : '5'} stroke="rgba(255,255,255,0.3)" strokeWidth={deg % 90 === 0 ? '1.5' : '0.75'} transform={`rotate(${deg} 18 18)`} />
+      ))}
+      <line x1="18" y1="18" x2="18" y2="8" stroke="#F9FAFB" strokeWidth="1.5" strokeLinecap="round" transform={`rotate(${hourAngle} 18 18)`} />
+      <line x1="18" y1="18" x2="18" y2="5.5" stroke="#0D9488" strokeWidth="1" strokeLinecap="round" transform={`rotate(${minuteAngle} 18 18)`} />
+      <circle cx="18" cy="18" r="1.5" fill="#F9FAFB" />
+    </svg>
+  )
+}
+
 function WorldClock() {
   const [now, setNow] = useState(() => new Date())
+  const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('lumio_clock_mode') as 'digital' | 'analogue') || 'digital'
+    return 'digital'
+  })
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+
+  function toggleMode() {
+    const next = mode === 'digital' ? 'analogue' : 'digital'
+    setMode(next)
+    localStorage.setItem('lumio_clock_mode', next)
+  }
+
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3" style={{ minWidth: 160 }}>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-        {WORLD_ZONES.map(z => (
-          <div key={z.label} className="flex items-center gap-1.5">
-            <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
-            <span className="text-xs" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 relative" style={{ minWidth: 160 }}>
+      <button onClick={toggleMode} className="absolute top-2 right-2 rounded-md px-1.5 py-0.5 text-[9px] font-semibold transition-colors"
+        style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(167,139,250,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+        title={`Switch to ${mode === 'digital' ? 'analogue' : 'digital'}`}>
+        {mode === 'digital' ? '◷' : '123'}
+      </button>
+      {mode === 'digital' ? (
+        <>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+            {WORLD_ZONES.map(z => (
+              <div key={z.label} className="flex items-center gap-1.5">
+                <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+                <span className="text-xs" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+          <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-4 gap-2">
+            {WORLD_ZONES.map(z => (
+              <div key={z.label} className="flex flex-col items-center gap-1">
+                <MiniAnalogClock tz={z.tz} now={now} />
+                <span className="text-[9px] font-medium" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+        </>
+      )}
     </div>
   )
 }
@@ -973,7 +1028,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       {/* Demo data banner */}
       {demoDataActive && (
         <div className="flex items-center justify-between px-4 py-2.5 text-xs shrink-0 mx-4 mt-3"
-          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '0 0 50% 50% / 0 0 20px 20px', paddingBottom: 16 }}>
+          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '16px 16px 40% 40% / 16px 16px 40px 40px', boxShadow: '0 8px 32px rgba(13, 148, 136, 0.15)', paddingBottom: 16 }}>
           <span style={{ color: '#F9FAFB' }}>You&apos;re viewing demo data — clear it any time in Settings</span>
           <button onClick={() => setActiveDept('settings')} className="text-xs font-semibold transition-colors"
             style={{ color: 'rgba(249,250,251,0.6)' }}
