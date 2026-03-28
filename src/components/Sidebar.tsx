@@ -97,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const storedPinned = localStorage.getItem('lumio_sidebar_pinned')
     if (storedPinned === 'true') setPinned(true)
     const storedLogo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-    if (storedLogo && (storedLogo.startsWith('http') || storedLogo.startsWith('blob:'))) setCompanyLogo(storedLogo)
+    if (storedLogo && (storedLogo.startsWith('http') || storedLogo.startsWith('blob') || storedLogo.startsWith('/'))) setCompanyLogo(storedLogo)
     const storedName = localStorage.getItem('lumio_user_name')
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
@@ -198,7 +198,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             title="Upload company logo"
           >
             {companyLogo ? (
-              <Image src={companyLogo} alt="" fill style={{ objectFit: 'cover' }} />
+              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
             ) : (
               companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
             )}
@@ -310,7 +310,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               title="Upload company logo"
             >
               {companyLogo ? (
-                <Image src={companyLogo} alt="" fill style={{ objectFit: 'cover' }} />
+                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
               ) : (
                 companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
               )}

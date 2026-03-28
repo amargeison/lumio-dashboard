@@ -6,12 +6,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
+import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [initials, setInitials] = useState('AM')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -89,6 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           <button
+            onClick={() => setNotificationsOpen(o => !o)}
             className="relative flex items-center justify-center rounded-full transition-colors"
             style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
             onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
@@ -96,9 +99,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             aria-label="Notifications"
           >
             <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute rounded-full" style={{ top: 6, right: 6, width: 6, height: 6, backgroundColor: '#0D9488' }} />
+            <span className="absolute rounded-full flex items-center justify-center" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
           </button>
         </div>
+        {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
         <ClearDemoBar />
         <div className="p-4 md:p-6">
           {children}

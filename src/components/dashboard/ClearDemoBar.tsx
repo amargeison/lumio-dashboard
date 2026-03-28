@@ -30,7 +30,7 @@ export default function ClearDemoBar() {
   }
 
   function handleGoLive() {
-    router.push('/settings?tab=integrations')
+    router.push('/onboarding')
   }
 
   return (

@@ -9,15 +9,25 @@ import PipelineHealth from '@/components/crm/PipelineHealth'
 import ActivityFeed from '@/components/crm/ActivityFeed'
 import type { CRMDeal, CRMContact, CRMActivity, PipelineStage } from '@/lib/crm/types'
 
+function getCachedCRM(): { contacts: CRMContact[]; deals: CRMDeal[]; activities: CRMActivity[]; stages: PipelineStage[] } | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem('lumio_crm_cache')
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return null
+}
+
 export default function CRMDashboardPage() {
   const ws = useWorkspace()
+  const cached = getCachedCRM()
   const [brief, setBrief] = useState('')
   const [briefLoading, setBriefLoading] = useState(true)
-  const [contacts, setContacts] = useState<CRMContact[]>([])
-  const [deals, setDeals] = useState<CRMDeal[]>([])
-  const [activities, setActivities] = useState<CRMActivity[]>([])
-  const [stages, setStages] = useState<PipelineStage[]>([])
-  const [loading, setLoading] = useState(true)
+  const [contacts, setContacts] = useState<CRMContact[]>(cached?.contacts || [])
+  const [deals, setDeals] = useState<CRMDeal[]>(cached?.deals || [])
+  const [activities, setActivities] = useState<CRMActivity[]>(cached?.activities || [])
+  const [stages, setStages] = useState<PipelineStage[]>(cached?.stages || [])
+  const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState<string | null>(null)
 
   // Fetch CRM data
@@ -29,22 +39,22 @@ export default function CRMDashboardPage() {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
         const data = await getCRMData(ws!.id)
 
+        let result = data
         if (data.contacts.length === 0) {
           await seedDemoData(ws!.id)
-          const seeded = await getCRMData(ws!.id)
-          setContacts(seeded.contacts)
-          setDeals(seeded.deals)
-          setActivities(seeded.activities)
-          setStages(seeded.stages)
-        } else {
-          setContacts(data.contacts)
-          setDeals(data.deals)
-          setActivities(data.activities)
-          setStages(data.stages)
+          result = await getCRMData(ws!.id)
         }
+
+        setContacts(result.contacts)
+        setDeals(result.deals)
+        setActivities(result.activities)
+        setStages(result.stages)
+
+        // Cache for instant load next time
+        try { sessionStorage.setItem('lumio_crm_cache', JSON.stringify(result)) } catch {}
       } catch (e: any) {
         console.error('Failed to load CRM data:', e)
-        setError(e?.message || 'Failed to load CRM data')
+        if (!cached) setError(e?.message || 'Failed to load CRM data')
       } finally {
         setLoading(false)
       }
@@ -53,10 +63,10 @@ export default function CRMDashboardPage() {
     loadData()
   }, [ws?.id])
 
-  // Fetch ARIA brief
+  // Fetch ARIA brief (non-blocking — doesn't delay dashboard render)
   useEffect(() => {
     const token = localStorage.getItem('workspace_session_token')
-    if (!token) return
+    if (!token) { setBriefLoading(false); return }
 
     fetch('/api/crm/brief', {
       headers: { 'x-workspace-token': token },

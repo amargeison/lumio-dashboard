@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
+import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
@@ -1294,11 +1295,14 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
           <QuickActionsBar onAction={onAction} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <MorningRoundup />
             </div>
-            <div>
+            <div className="lg:col-span-1">
               <MeetingsToday />
+            </div>
+            <div className="lg:col-span-1">
+              <MorningAIPanel />
             </div>
           </div>
 
@@ -1336,9 +1340,6 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="lg:col-span-1">
-              <MorningAIPanel />
             </div>
           </div>
         </div>
@@ -1381,6 +1382,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(false)
+  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -1465,15 +1468,41 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       <Toast message={toast} />
 
       {/* Top-right: bell + avatar */}
-      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={() => setNotificationsOpen(o => !o)}
+          style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Volume2 size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
+          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setAvatarDropdownOpen(o => !o)}
+            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+            {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
+          </button>
+          {avatarDropdownOpen && (
+            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
+              <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                👤 Profile
+              </button>
+              <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                ⚙️ Settings
+              </button>
+              <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
+                🚪 Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
       {/* Onboarding */}
       {showOnboarding && (
