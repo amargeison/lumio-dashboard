@@ -96,21 +96,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (storedPlan) setPlanLabel(`${storedPlan.charAt(0).toUpperCase() + storedPlan.slice(1)} plan`)
     const storedPinned = localStorage.getItem('lumio_sidebar_pinned')
     if (storedPinned === 'true') setPinned(true)
-    const storedLogo = localStorage.getItem('lumio_company_logo')
+    const storedLogo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
     if (storedLogo) setCompanyLogo(storedLogo)
     const storedName = localStorage.getItem('lumio_user_name')
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
     if (storedEmail) setUserEmail(storedEmail)
-  }, [])
-
-  // Close avatar dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
+    // Listen for logo/name updates from other pages
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'lumio_company_logo' || e.key === 'workspace_company_logo') {
+        const logo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
+        if (logo) setCompanyLogo(logo)
+      }
+      if (e.key === 'lumio_company_name') setCompanyName(e.newValue || 'Lumio')
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
   const togglePin = useCallback(() => {
@@ -340,16 +341,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
           <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
-            <div className="flex items-center gap-2 py-3">
-              <button
-                onClick={() => setAvatarOpen(o => !o)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0"
-                style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-              >
-                {initials}
-              </button>
-              <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{userName || initials}</span>
-            </div>
             <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
               <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90}
                 style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
