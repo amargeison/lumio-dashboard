@@ -23,12 +23,9 @@ export default function CRMDashboardPage() {
   // Fetch CRM data
   useEffect(() => {
     if (!ws?.id) return
-    const token = localStorage.getItem('workspace_session_token')
-    if (!token) return
 
     async function loadData() {
       try {
-        // Seed demo data if needed, then fetch
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
         const data = await getCRMData(ws!.id)
 
@@ -90,6 +87,10 @@ export default function CRMDashboardPage() {
     })
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
+
+  // Wait for workspace to resolve — render nothing until we know who the user is
+  // (matches pattern used by HR, Accounts, Sales, and all other dashboard pages)
+  if (!ws) return null
 
   if (loading) {
     return (
