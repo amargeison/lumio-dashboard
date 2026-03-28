@@ -112,13 +112,13 @@ function CardHeader({ title, action }: { title: string; action?: React.ReactNode
 // ─── Greeting banner ─────────────────────────────────────────────────────────
 
 const SCHOOL_BG_GRADIENTS = [
-  'from-teal-950 via-emerald-900 to-green-950',
-  'from-slate-900 via-teal-950 to-emerald-900',
-  'from-emerald-950 via-teal-900 to-slate-900',
-  'from-gray-900 via-emerald-950 to-teal-900',
-  'from-teal-900 via-slate-900 to-emerald-950',
-  'from-emerald-900 via-gray-900 to-teal-950',
-  'from-green-950 via-teal-900 to-emerald-900',
+  'from-teal-950/80 via-emerald-950/90 to-cyan-950',
+  'from-emerald-950 via-teal-950/80 to-cyan-950/90',
+  'from-cyan-950 via-emerald-950/80 to-teal-950/90',
+  'from-teal-950/90 via-cyan-950 to-emerald-950/80',
+  'from-emerald-950/80 via-cyan-950/90 to-teal-950',
+  'from-cyan-950/90 via-teal-950 to-emerald-950/80',
+  'from-teal-950 via-emerald-950/90 to-cyan-950/80',
 ]
 
 const SCHOOL_QUOTES = [
@@ -129,16 +129,21 @@ const SCHOOL_QUOTES = [
   { text: "A good teacher can inspire hope and ignite the imagination.", author: "Brad Henry" },
 ]
 
-function SchoolGreetingBanner({ schoolName, firstName }: { schoolName: string; firstName?: string }) {
+function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { schoolName: string; firstName?: string; pupils?: number; staff?: number }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const bg = SCHOOL_BG_GRADIENTS[new Date().getDay()]
+  const [bg] = useState(() => SCHOOL_BG_GRADIENTS[new Date().getDay()])
   const [quote] = useState(() => SCHOOL_QUOTES[Math.floor(Math.random() * SCHOOL_QUOTES.length)])
+  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+
+  useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
   return (
-    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute -right-20 -top-20 w-80 h-80 bg-teal-600 rounded-full opacity-10 blur-3xl" />
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
@@ -149,20 +154,24 @@ function SchoolGreetingBanner({ schoolName, firstName }: { schoolName: string; f
             <p className="text-teal-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-teal-500/20 text-teal-300 border-teal-500/30 min-w-[70px]">
-              <span className="text-base">📊</span>
-              <span className="text-lg font-black text-white">{schoolName ? '94.3%' : '—'}</span>
-              <span className="text-xs opacity-70">Attendance</span>
-            </div>
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-red-500/20 text-red-300 border-red-500/30 min-w-[70px]">
-              <span className="text-base">🔴</span>
-              <span className="text-lg font-black text-white">1</span>
-              <span className="text-xs opacity-70">Concerns</span>
-            </div>
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border bg-purple-500/20 text-purple-300 border-purple-500/30 min-w-[70px]">
-              <span className="text-base">✅</span>
-              <span className="text-lg font-black text-white">23</span>
-              <span className="text-xs opacity-70">Workflows</span>
+            {[
+              { label: 'Pupils', value: pupils || 423, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { label: 'Staff', value: staff || 41, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { label: 'Alerts', value: 3, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Reports', value: 2, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+            ].map(item => (
+              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                <span className="text-base">{item.icon}</span>
+                <span className="text-lg font-black text-white">{item.value}</span>
+                <span className="text-xs opacity-70">{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-shrink-0">
+            <span className="text-3xl">{weather.icon}</span>
+            <div>
+              <div className="text-xl font-black text-white">{weather.temp}</div>
+              <div className="text-xs text-teal-300">{weather.condition}</div>
             </div>
           </div>
         </div>
@@ -173,12 +182,29 @@ function SchoolGreetingBanner({ schoolName, firstName }: { schoolName: string; f
 
 // ─── School Morning Roundup ──────────────────────────────────────────────────
 
-const SCHOOL_ROUNDUP_ITEMS = [
-  { id: 'attendance', icon: '📊', label: 'Attendance', count: 3, urgent: true, color: '#0D9488', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.2)', preview: ['2 pupils flagged for persistent absence review', 'Year 6 attendance 91.8% — below target', 'Reception 96.1% — highest today'] },
-  { id: 'safeguarding', icon: '🛡️', label: 'Safeguarding', count: 1, urgent: true, color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', preview: ['1 open concern logged 2 days ago — DSL sign-off required today'] },
-  { id: 'staff', icon: '👤', label: 'Staff', count: 2, urgent: false, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', preview: ['Mrs S. Okafor (SENCO) absent — cover arranged', 'M. Taylor DBS expired 10 Mar — renewal required'] },
-  { id: 'comms', icon: '📧', label: 'Communications', count: 4, urgent: false, color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', preview: ['Year 4 trip letter sent to 28 parents', 'Governor report draft ready for review'] },
-  { id: 'curriculum', icon: '📚', label: 'Curriculum', count: 1, urgent: false, color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)', preview: ['Year 6 SATs prep session at 10am — 28 pupils confirmed'] },
+const SCHOOL_DAY_ITEMS = [
+  { id: 'attendance', icon: '✅', label: 'Attendance', count: 3, urgent: true, color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)',
+    messages: [
+      { id: 'a1', from: 'Year 7', avatar: 'Y7', subject: '3 unexplained absences', preview: 'Students: Jamie Wilson, Priya Patel, Marcus Lee \u2014 no contact from parents yet.', time: '8:45am', urgent: true, read: false },
+    ]},
+  { id: 'safeguarding', icon: '🛡️', label: 'Safeguarding', count: 1, urgent: true, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
+    messages: [
+      { id: 's1', from: 'Mrs Davies (SENCO)', avatar: 'MD', subject: 'CP Case review due today', preview: 'Child Protection case for Student A requires review before end of day. TAC meeting scheduled 3pm.', time: '8:30am', urgent: true, read: false },
+    ]},
+  { id: 'send', icon: '📋', label: 'SEND Updates', count: 2, urgent: false, color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',
+    messages: [
+      { id: 'se1', from: 'SEND Team', avatar: 'ST', subject: 'EHC Plan review \u2014 deadline in 3 days', preview: 'Annual review for Student B EHC Plan is due Friday. Draft outcomes need sign-off from SENCO.', time: '9:00am', urgent: false, read: false },
+      { id: 'se2', from: 'SEND Team', avatar: 'ST', subject: 'New SEND referral received', preview: 'Class teacher has referred Year 5 student for assessment. Initial meeting to be scheduled.', time: 'Yesterday', urgent: false, read: true },
+    ]},
+  { id: 'staff', icon: '👥', label: 'Staff Updates', count: 2, urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
+    messages: [
+      { id: 'st1', from: 'HR System', avatar: 'HR', subject: 'Supply cover needed \u2014 Period 3 & 4', preview: 'Mr Thompson (Science) called in sick. Cover needed for Year 9 and Year 11 classes this afternoon.', time: '7:58am', urgent: false, read: false },
+      { id: 'st2', from: 'HR System', avatar: 'HR', subject: 'DBS renewal reminder', preview: '2 staff members have DBS checks expiring within 30 days. Action required before compliance deadline.', time: 'Yesterday', urgent: false, read: true },
+    ]},
+  { id: 'ofsted', icon: '🏫', label: 'Ofsted Readiness', count: 1, urgent: false, color: '#0D9488', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.2)',
+    messages: [
+      { id: 'o1', from: 'Compliance System', avatar: 'CS', subject: 'Online Safety audit due this week', preview: 'Annual online safety review must be completed and signed off by the headteacher before Friday.', time: '8:00am', urgent: false, read: false },
+    ]},
 ]
 
 function SchoolMorningRoundup() {
@@ -186,14 +212,11 @@ function SchoolMorningRoundup() {
   return (
     <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
-        <span className="flex items-center gap-1 text-xs" style={{ color: '#6B7280' }}>
-          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
-          Sample data
-        </span>
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 School Day Overview</h3>
+        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
       </div>
       <div className="space-y-2">
-        {SCHOOL_ROUNDUP_ITEMS.map(item => {
+        {SCHOOL_DAY_ITEMS.map(item => {
           const isOpen = expanded === item.id
           return (
             <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
@@ -209,11 +232,24 @@ function SchoolMorningRoundup() {
                 </div>
               </button>
               {isOpen && (
-                <div className="px-3 pb-3 space-y-1.5">
-                  {item.preview.map((p, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}>
-                      <span className="flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }}>→</span>
-                      {p}
+                <div className="px-3 pb-3 space-y-2">
+                  {item.messages.map(msg => (
+                    <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>{msg.avatar}</div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
+                              {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
+                            </div>
+                            <div className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{msg.subject}</div>
+                          </div>
+                        </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
                     </div>
                   ))}
                 </div>
@@ -671,18 +707,26 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   return (
     <div className="space-y-4">
 
-      {/* 1. Greeting banner — full version with TTS, weather, clock */}
-      <SchoolBanner
-        schoolName={schoolName}
-        headteacher={ownerName || 'there'}
-        town={schoolData?.town || ''}
-        attendance={attendanceAvg}
-        staffIn={`${staffIn}/${STAFF_TODAY.length}`}
-        openConcerns={1}
-        activeWorkflows={23}
-      />
+      {/* 1. Greeting banner */}
+      <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} />
 
-      {/* 2. Morning Roundup — full width */}
+      {/* 2. Quick actions */}
+      <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
+        <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+        {[
+          { label: 'New Concern', icon: '⚠️' },
+          { label: 'Register Class', icon: '✅' },
+          { label: 'Add Student', icon: '➕' },
+          { label: 'Staff Alert', icon: '🔔' },
+          { label: 'Ofsted Check', icon: '🏫' },
+        ].map(a => (
+          <button key={a.label} onClick={() => {}} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <span>{a.icon}</span>{a.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 3. Morning Roundup */}
       <SchoolMorningRoundup />
 
       {/* 3. Safeguarding alert */}
