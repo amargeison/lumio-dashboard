@@ -13,7 +13,7 @@ const RESERVED_SLUGS = new Set([
 const DASHBOARD_ROUTES = new Set([
   'hr', 'accounts', 'sales', 'crm', 'marketing', 'operations', 'it',
   'insights', 'school-office', 'workflows', 'strategy', 'trials',
-  'partners', 'support', 'success', 'settings',
+  'partners', 'support', 'success', 'settings', 'projects',
 ])
 
 export function middleware(request: NextRequest) {

@@ -152,18 +152,6 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           })}
         </nav>
         <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2 px-2.5 py-3" style={{ justifyContent: expanded ? 'flex-start' : 'center' }}>
-            <AvatarDropdown initials={initials} />
-            {expanded && (
-              <>
-                <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
-                <button className="relative flex items-center justify-center rounded-lg p-1.5" style={{ color: '#9CA3AF' }}>
-                  <Calendar size={16} strokeWidth={1.75} />
-                  <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
-                </button>
-              </>
-            )}
-          </div>
           {expanded && (
             <div className="pb-3">
               <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
@@ -198,10 +186,6 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
               })}
             </nav>
             <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
-              <div className="flex items-center gap-2 py-3">
-                <AvatarDropdown initials={initials} />
-                <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
-              </div>
               <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
                 <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
               </a>
@@ -398,6 +382,12 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
   return (
   <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      <style>{`@keyframes ripple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:0.12}100%{transform:translate(-50%,-50%) scale(3);opacity:0}}`}</style>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', borderRadius: 'inherit' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite', animationDelay: '1.5s' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite', animationDelay: '3s' }} />
+      </div>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
       <div className="relative z-10 px-6 py-5">
@@ -732,12 +722,14 @@ function VoiceSelector() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const wsToken = localStorage.getItem('workspace_session_token')
+      const demoToken = localStorage.getItem('demo_session_token')
       if (wsToken) headers['x-workspace-token'] = wsToken
+      else if (demoToken) headers['x-demo-token'] = demoToken
 
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ text: voice.sample, voice: voice.id }),
+        body: JSON.stringify({ text: voice.sample, voice_id: voice.id }),
       })
       if (!res.ok) throw new Error('TTS failed')
 
@@ -1186,6 +1178,17 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
+
+      {/* Top-right: bell + avatar */}
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Volume2 size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
+        </button>
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+          {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
+        </button>
+      </div>
 
       {/* Onboarding */}
       {showOnboarding && (

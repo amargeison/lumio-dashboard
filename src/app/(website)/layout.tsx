@@ -12,13 +12,14 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
   { label: 'Workflows',    href: '/product#workflows' },
   { label: 'Schools',      href: '/schools' },
-  { label: 'SSO & Rostering', href: '/schools/sso' },
   { label: 'CRM',          href: '/lumio-crm' },
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
   { label: 'About',        href: '/about'    },
   { label: 'Blog',         href: '/blog'     },
 ]
+
+const SCHOOLS_EXTRA_LINK = { label: 'SSO & Rostering', href: '/schools/sso' }
 
 const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
@@ -43,7 +44,10 @@ function Nav() {
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
 
-  const navLinks = NAV_LINKS
+  const baseLinks = isSchools
+    ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), SCHOOLS_EXTRA_LINK, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
+    : NAV_LINKS
+  const navLinks = baseLinks
     .filter(l => !(isSchools && l.label === 'CRM'))
     .map(l => {
       if (!isSchools) return l

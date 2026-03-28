@@ -97,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const storedPinned = localStorage.getItem('lumio_sidebar_pinned')
     if (storedPinned === 'true') setPinned(true)
     const storedLogo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-    if (storedLogo) setCompanyLogo(storedLogo)
+    if (storedLogo && (storedLogo.startsWith('http') || storedLogo.startsWith('blob:'))) setCompanyLogo(storedLogo)
     const storedName = localStorage.getItem('lumio_user_name')
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
