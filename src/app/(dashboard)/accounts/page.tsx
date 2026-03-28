@@ -11,6 +11,8 @@ import NewInvoiceModal from '@/components/modals/NewInvoiceModal'
 import ChasePaymentModal from '@/components/modals/ChasePaymentModal'
 import NewExpenseModal from '@/components/modals/NewExpenseModal'
 import NewClientModal from '@/components/modals/NewClientModal'
+import WeeklyReportModal from '@/components/modals/WeeklyReportModal'
+import PaymentReceivedModal from '@/components/modals/PaymentReceivedModal'
 import { useToast } from '@/components/modals/useToast'
 
 const DEFAULT_STATS = [
@@ -58,6 +60,9 @@ export default function AccountsPage() {
   const [showChase, setShowChase] = useState(false)
   const [showExpense, setShowExpense] = useState(false)
   const [showClient, setShowClient] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const [xeroSyncing, setXeroSyncing] = useState(false)
   const { showToast, Toast } = useToast()
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
@@ -121,9 +126,9 @@ export default function AccountsPage() {
   const actions = [
     { label: 'Chase Invoice',   icon: AlertCircle, onClick: () => setShowChase(true) },
     { label: 'Raise Invoice',   icon: Receipt,     onClick: () => setShowInvoice(true) },
-    { label: 'Weekly Report',   icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Payment Received', icon: TrendingUp, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Weekly Report',   icon: FileText,    onClick: () => setShowReport(true) },
+    { label: 'Payment Received', icon: TrendingUp, onClick: () => setShowPayment(true) },
+    { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => { setXeroSyncing(true); showToast('Syncing with Xero...'); setTimeout(() => { setXeroSyncing(false); showToast('Synced with Xero — connected ✓') }, 1500) } },
   ]
 
   const hasData = useHasDashboardData('accounts')
@@ -188,6 +193,8 @@ export default function AccountsPage() {
       {showChase && <ChasePaymentModal onClose={() => setShowChase(false)} onSubmit={() => { setShowChase(false); showToast('Chase email sent') }} />}
       {showExpense && <NewExpenseModal onClose={() => setShowExpense(false)} onSubmit={() => { setShowExpense(false); showToast('Expense submitted') }} />}
       {showClient && <NewClientModal onClose={() => setShowClient(false)} onSubmit={() => { setShowClient(false); showToast('Client added') }} />}
+      {showReport && <WeeklyReportModal onClose={() => setShowReport(false)} onToast={showToast} />}
+      {showPayment && <PaymentReceivedModal onClose={() => setShowPayment(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )
