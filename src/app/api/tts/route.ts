@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { text, voice } = await req.json()
+    const { text, voice, voice_id } = await req.json()
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 })
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
     // Paid users (workspaceToken) — no limit
 
-    const voiceId = voice || VOICE_ID
+    const voiceId = voice_id || voice || VOICE_ID
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,

@@ -436,11 +436,28 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
     } else if (action === 'SWITCH_TAB' || action === 'EXPAND_ROUNDUP' || action === 'OPEN_MODAL' || action === 'EMAIL_TEAM') {
       // These are handled by OverviewView via onVoiceCommand callback
       if (onVoiceCommand) onVoiceCommand(lastCommand)
-    } else if (action === 'CANCEL_NEXT_MEETING' || action === 'CANCEL_NAMED_MEETING') {
-      setTimeout(() => {
-        setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: payload || {} })
-        speak('I found your meeting. Would you like me to send a cancellation email?')
-      }, 1500)
+    } else if (action === 'CANCEL_NEXT_MEETING') {
+      const nextMeeting = MEETINGS.find(m => m.status === 'upcoming')
+      if (nextMeeting) {
+        setTimeout(() => {
+          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: nextMeeting } })
+          speak(`You have a ${nextMeeting.title} at ${nextMeeting.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
+        }, 1500)
+      } else {
+        speak("I couldn't find any upcoming meetings today.")
+      }
+    } else if (action === 'CANCEL_NAMED_MEETING') {
+      const name = payload?.meetingName?.toLowerCase() || ''
+      const found = MEETINGS.find(m => m.title.toLowerCase().includes(name))
+      if (found) {
+        setTimeout(() => {
+          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: found } })
+          speak(`I found ${found.title} at ${found.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
+        }, 1500)
+      } else {
+        const upcoming = MEETINGS.filter(m => m.status === 'upcoming').map(m => m.title).join(', ')
+        speak(`I couldn't find a meeting called ${payload?.meetingName}. Your upcoming meetings are: ${upcoming}`)
+      }
     } else if (action === 'CANCEL_MEETING_WITH_EMAIL' || action === 'CANCEL_MEETING_NO_EMAIL') {
       // Response already spoken
     } else if (action === 'SLACK_TEAM_MESSAGE') {
@@ -937,6 +954,7 @@ function VoiceSelector() {
 
     setPreviewing(voice.id)
     try {
+      console.log('[TTS Preview] calling with voice_id:', voice.id, 'text:', voice.sample)
       const wsToken = localStorage.getItem('workspace_session_token') || ''
       const demoToken = localStorage.getItem('demo_session_token') || ''
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -946,8 +964,9 @@ function VoiceSelector() {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ text: voice.sample, voice: voice.id }),
+        body: JSON.stringify({ text: voice.sample, voice_id: voice.id }),
       })
+      console.log('[TTS Preview] response status:', res.status)
       if (!res.ok) throw new Error('TTS failed')
 
       const buf = await res.arrayBuffer()
@@ -955,10 +974,11 @@ function VoiceSelector() {
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => { setPreviewing(null); URL.revokeObjectURL(url) }
-      audio.onerror = () => { setPreviewing(null); URL.revokeObjectURL(url) }
+      audio.onended = () => { setPreviewing(null); audioRef.current = null; URL.revokeObjectURL(url) }
+      audio.onerror = (e) => { console.error('[TTS Preview] audio error:', e); setPreviewing(null); URL.revokeObjectURL(url) }
       await audio.play()
-    } catch {
+    } catch (err) {
+      console.error('[TTS Preview] error:', err)
       setPreviewing(null)
     }
   }
