@@ -979,10 +979,25 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             router.replace('/trial-ended')
             return
           }
-          if (data.company_name) setCompany(data.company_name)
-          if (data.owner_name) setUserName(data.owner_name)
-          if (data.owner_email) setOwnerEmail(data.owner_email)
-          if (data.logo_url) setCompanyLogo(data.logo_url)
+          if (data.company_name) {
+            setCompany(data.company_name)
+            localStorage.setItem('workspace_company_name', data.company_name)
+            localStorage.setItem('lumio_company_name', data.company_name)
+          }
+          if (data.owner_name) {
+            setUserName(data.owner_name)
+            localStorage.setItem('workspace_user_name', data.owner_name)
+            localStorage.setItem('lumio_user_name', data.owner_name)
+          }
+          if (data.owner_email) {
+            setOwnerEmail(data.owner_email)
+            localStorage.setItem('lumio_user_email', data.owner_email)
+          }
+          if (data.logo_url) {
+            setCompanyLogo(data.logo_url)
+            localStorage.setItem('workspace_company_logo', data.logo_url)
+            localStorage.setItem('lumio_company_logo', data.logo_url)
+          }
           if (data.demo_data_active) setDemoDataActive(true)
           if (!data.onboarding_complete) setShowOnboarding(true)
         })

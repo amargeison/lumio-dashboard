@@ -11,8 +11,11 @@ export default function PortalLiveShortcut() {
     localStorage.setItem('workspace_session_token', 'dev-preview-mock-token')
     localStorage.setItem('workspace_slug', 'lumiodemo')
     localStorage.setItem('workspace_company_name', 'Lumio Demo Co')
+    localStorage.setItem('lumio_company_name', 'Lumio Demo Co')
     localStorage.setItem('workspace_user_name', 'Demo User')
+    localStorage.setItem('lumio_user_name', 'Demo User')
     localStorage.setItem('workspace_company_logo', '')
+    localStorage.setItem('lumio_company_logo', '')
     router.replace('/lumiodemo')
   }, [router])
 
