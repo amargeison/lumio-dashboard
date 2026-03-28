@@ -11,6 +11,7 @@ function getSupabase() {
 }
 
 export async function getCRMData(tenantId: string) {
+  console.log('[CRM] getCRMData called with tenantId:', tenantId)
   const supabase = getSupabase()
 
   try {
@@ -43,6 +44,10 @@ export async function getCRMData(tenantId: string) {
         .eq('tenant_id', tenantId)
         .order('position', { ascending: true }),
     ])
+
+    console.log('[CRM] query results — contacts:', contactsRes.data?.length ?? 'null', 'error:', contactsRes.error?.message ?? 'none',
+      '| deals:', dealsRes.data?.length ?? 'null', 'error:', dealsRes.error?.message ?? 'none',
+      '| stages:', stagesRes.data?.length ?? 'null', 'error:', stagesRes.error?.message ?? 'none')
 
     if (contactsRes.error) throw contactsRes.error
     if (dealsRes.error) throw dealsRes.error
@@ -261,6 +266,7 @@ export async function logActivity(tenantId: string, data: Partial<CRMActivity>) 
 }
 
 export async function seedDemoData(tenantId: string) {
+  console.log('[CRM] seedDemoData called with tenantId:', tenantId)
   const supabase = getSupabase()
 
   try {
@@ -292,6 +298,7 @@ export async function seedDemoData(tenantId: string) {
       .select()
 
     if (stagesError) throw stagesError
+    console.log('[CRM] seed — stages inserted:', stages?.length ?? 0)
 
     const stageMap = new Map<string, string>()
     for (const stage of stages!) {
@@ -407,6 +414,7 @@ export async function seedDemoData(tenantId: string) {
       .select()
 
     if (contactsError) throw contactsError
+    console.log('[CRM] seed — contacts inserted:', contacts?.length ?? 0)
 
     const contactMap = new Map<string, string>()
     for (const contact of contacts!) {

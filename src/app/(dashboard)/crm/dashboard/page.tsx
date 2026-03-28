@@ -88,13 +88,23 @@ export default function CRMDashboardPage() {
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
-  // Wait for workspace to resolve — render nothing until we know who the user is
-  // (matches pattern used by HR, Accounts, Sales, and all other dashboard pages)
-  if (!ws) return null
+  // Debug — shows workspace + data state (remove after confirming fix)
+  const debugInfo = `ws: ${ws?.id ?? 'null'} | loading: ${loading} | error: ${error ?? 'none'} | contacts: ${contacts.length} | deals: ${deals.length}`
+
+  // Wait for workspace to resolve
+  if (!ws) {
+    return (
+      <div style={{ color: '#6B7299', padding: 24, fontSize: 13 }}>
+        <p>Resolving workspace…</p>
+        <p style={{ marginTop: 8, fontSize: 11, color: '#3D4263' }}>{debugInfo}</p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
       <div className="space-y-6">
+        <div style={{ color: '#6B7299', fontSize: 11, padding: '8px 0' }}>{debugInfo}</div>
         <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
