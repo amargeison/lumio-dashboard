@@ -620,6 +620,149 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   )
 }
 
+// ─── Photo Frame ────────────────────────────────────────────────────────────
+
+function PhotoFrame() {
+  const [photos, setPhotos] = useState<string[]>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [intervalSecs, setIntervalSecs] = useState(5)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isPlaying && photos.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIdx(i => (i + 1) % photos.length)
+      }, intervalSecs * 1000)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [isPlaying, photos.length, intervalSecs])
+
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const url = ev.target?.result as string
+        setPhotos(prev => {
+          const next = [...prev, url].slice(-20)
+          localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+          return next
+        })
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  function removePhoto(idx: number) {
+    setPhotos(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+      if (currentIdx >= next.length) setCurrentIdx(Math.max(0, next.length - 1))
+      return next
+    })
+  }
+
+  function prev() { setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }
+  function next() { setCurrentIdx(i => (i + 1) % photos.length) }
+
+  return (
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 280 }}>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🖼️</span>
+          <span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {photos.length > 1 && (
+            <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg"
+              style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280', border: `1px solid ${isPlaying ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
+              {isPlaying ? '⏸ Pause' : '▶ Play'}
+            </button>
+          )}
+          <button onClick={() => fileInputRef.current?.click()} className="text-xs px-2 py-1 rounded-lg"
+            style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+            + Add Photo
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+        </div>
+      </div>
+
+      {photos.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 mx-4 mb-4 rounded-xl cursor-pointer"
+          style={{ border: '2px dashed #374151', backgroundColor: 'rgba(255,255,255,0.02)' }}
+          onClick={() => fileInputRef.current?.click()}>
+          <div className="text-4xl">📷</div>
+          <div className="text-sm font-medium" style={{ color: '#9CA3AF' }}>Add your photos</div>
+          <div className="text-xs text-center px-4" style={{ color: '#6B7280' }}>Upload from device, or connect Google Photos or iCloud below</div>
+          <div className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+            + Upload Photos
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 180 }}>
+          <img src={photos[currentIdx]} alt="Photo frame" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, transition: 'opacity 0.5s ease' }} />
+          {photos.length > 1 && (
+            <>
+              <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
+                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>‹</button>
+              <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
+                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>›</button>
+            </>
+          )}
+          {photos.length > 1 && photos.length <= 10 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {photos.map((_, i) => (
+                <button key={i} onClick={() => setCurrentIdx(i)}
+                  style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === currentIdx ? '#0D9488' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
+              ))}
+            </div>
+          )}
+          <button onClick={() => removePhoto(currentIdx)} className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs"
+            style={{ width: 22, height: 22, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>×</button>
+          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
+            {currentIdx + 1} / {photos.length}
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 pb-3 flex-shrink-0">
+        {photos.length > 1 && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>
+            {[3, 5, 10, 30].map(s => (
+              <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded"
+                style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280', border: `1px solid ${intervalSecs === s ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
+                {s}s
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button className="flex-1 text-xs py-1.5 rounded-lg flex items-center justify-center gap-1"
+            style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid #1F2937' }}
+            onClick={() => alert('Google Photos integration coming soon \u2014 connect in Settings \u2192 Integrations')}>
+            <span>📷</span> Google Photos
+          </button>
+          <button className="flex-1 text-xs py-1.5 rounded-lg flex items-center justify-center gap-1"
+            style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid #1F2937' }}
+            onClick={() => alert('iCloud integration coming soon \u2014 connect in Settings \u2192 Integrations')}>
+            <span>☁️</span> iCloud
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Morning Roundup ─────────────────────────────────────────────────────────
 
 const ROUNDUP_ITEMS = [
@@ -1464,7 +1607,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             <div className="lg:col-span-1">
               <MeetingsToday />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col gap-4">
+              <PhotoFrame />
               <MorningAIPanel />
             </div>
           </div>
