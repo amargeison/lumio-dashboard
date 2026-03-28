@@ -77,10 +77,10 @@ function Nav() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-0">
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-base font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap"
               style={{ color: '#9CA3AF' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
@@ -96,9 +96,9 @@ function Nav() {
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           <button onClick={() => setShowTypeModal(true)}
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
