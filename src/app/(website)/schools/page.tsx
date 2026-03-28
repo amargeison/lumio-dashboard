@@ -476,10 +476,12 @@ function HeroSection() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-12" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mt-16 pt-12" style={{ borderTop: '1px solid #1F2937' }}>
           {[
             { number: '8+ Hours', label: 'Saved per staff member, per week' },
             { number: '20 Roles', label: 'From admin to trust CEO, all covered' },
+            { number: '2 Platforms', label: 'Google Workspace & Microsoft 365 SSO' },
+            { number: '3 MIS Systems', label: 'Arbor, SIMS & Bromcom rostering' },
             { number: '2026 Ready', label: 'SEND White Paper & Ofsted 2025 compliant' },
             { number: '8am–6pm', label: 'Full wraparound childcare management' },
           ].map(stat => (
