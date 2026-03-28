@@ -458,7 +458,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -476,6 +476,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
   const { isListening, lastCommand, startListening, stopListening, pendingAction, setPendingAction } = useVoiceCommands()
 
   function handleBriefing() {
+    if (!ttsEnabled) return
     if (isPlaying) { stop(); return }
     const script = `${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
@@ -558,6 +559,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
+              {voiceCommandsEnabled && (
               <button
                 onClick={() => isListening ? stopListening() : startListening()}
                 title={isListening ? 'Listening...' : 'Voice command'}
@@ -571,6 +573,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
                 }}>
                 <Mic size={14} strokeWidth={1.75} />
               </button>
+              )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -1014,6 +1017,8 @@ function VoiceSelector() {
   })
   const [previewing, setPreviewing] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
+  const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
 
   function selectVoice(id: string) {
     setActiveVoice(id)
@@ -1065,6 +1070,30 @@ function VoiceSelector() {
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
             <p className="text-xs" style={{ color: '#6B7280' }}>Choose the voice for your AI morning briefing</p>
           </div>
+        </div>
+      </div>
+      <div className="px-5 pt-4 space-y-3">
+        {/* TTS Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+          <div>
+            <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🔊 Text to Speech</div>
+            <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>AI voice reads your morning briefing and responds to actions</div>
+          </div>
+          <button onClick={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} className="flex-shrink-0"
+            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: ttsOn ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: ttsOn ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+        {/* Voice Commands Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+          <div>
+            <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🎙️ Voice Commands</div>
+            <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice control — navigate, open forms, get briefings</div>
+          </div>
+          <button onClick={() => { const v = !vcOn; setVcOn(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} className="flex-shrink-0"
+            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: vcOn ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: vcOn ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
@@ -1387,7 +1416,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction }: { company: string; firstName?: string; onAction: (msg: string) => void }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
   const quickActionToasts: Record<string, string> = {
     'Send Email': 'Opening email composer...',
     'Send Slack': 'Opening Slack...',
@@ -1421,7 +1450,7 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1528,6 +1557,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [demoDataActive, setDemoDataActive] = useState(false)
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [ttsEnabled, setTtsEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -1693,7 +1724,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             </div>
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} />}
           </main>

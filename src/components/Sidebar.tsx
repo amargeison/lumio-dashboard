@@ -278,22 +278,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom section: logo */}
-        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          {expanded && (
-            <div className="pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image
-                  src="/lumio-transparent-new.png"
-                  alt="Lumio"
-                  width={180}
-                  height={90}
-                  style={{ width: '120px', height: 'auto', objectFit: 'contain' }}
-                />
-              </a>
-            </div>
-          )}
-        </div>
+        {/* Bottom logo — only show when expanded */}
+        {expanded && (
+          <div className="mt-auto shrink-0 flex items-center justify-center py-4 px-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full">
+              <img src="/lumio-transparent-new.png" alt="Lumio" style={{ width: '80%', maxWidth: 140, height: 'auto', opacity: 0.5, display: 'block' }} />
+            </a>
+          </div>
+        )}
       </aside>
 
       {/* Mobile sidebar — full overlay */}
@@ -340,10 +332,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               )
             })}
           </nav>
-          <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
-            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-              <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90}
-                style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
+          <div className="mt-auto shrink-0 flex items-center justify-center py-4 px-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full">
+              <img src="/lumio-transparent-new.png" alt="Lumio" style={{ width: '80%', maxWidth: 140, height: 'auto', opacity: 0.5, display: 'block' }} />
             </a>
           </div>
         </aside>
