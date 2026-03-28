@@ -1152,10 +1152,71 @@ function SchoolsFooter() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function SSOSyncSection() {
+  const integrations = [
+    { name: 'Google Workspace', status: 'Connected' },
+    { name: 'Microsoft 365', status: 'Connected' },
+    { name: 'Arbor', status: 'Syncing' },
+    { name: 'SIMS', status: 'Syncing' },
+    { name: 'Bromcom', status: 'Syncing' },
+  ]
+  return (
+    <section style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937' }} className="py-24">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#F9FAFB' }}>
+            Plug In. Switch On. Done.
+          </h2>
+          <p className="text-base md:text-lg mx-auto" style={{ color: '#9CA3AF', maxWidth: 680 }}>
+            Lumio is the only UK-first school management platform with built-in SSO and MIS sync. Your staff sign in with Google or Microsoft. Your pupil data flows in from your MIS automatically. No middleware. No extra cost.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          {/* Left — integration panel */}
+          <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-5" style={{ color: '#6B7280' }}>Integrations</p>
+            <div className="space-y-3">
+              {integrations.map(i => (
+                <div key={i.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937' }}>
+                  <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{i.name}</span>
+                  <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#0D9488' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488', display: 'inline-block', animation: i.status === 'Syncing' ? 'pulse 2s ease-in-out infinite' : 'none' }} />
+                    ✓ {i.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Right — bullet points */}
+          <div className="space-y-5 py-2">
+            {[
+              'Staff login with existing Google or Microsoft accounts',
+              'Pupil rolls, class lists and staff sync from your MIS daily',
+              'OneRoster certified — industry standard data exchange',
+              'Replaces MIS middleware costing £3,000–£8,000/year',
+            ].map(text => (
+              <div key={text} className="flex items-start gap-3">
+                <span className="flex items-center justify-center rounded-full shrink-0" style={{ width: 22, height: 22, backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', fontSize: 12 }}>✓</span>
+                <p className="text-sm" style={{ color: '#D1D5DB', lineHeight: 1.6 }}>{text}</p>
+              </div>
+            ))}
+            <div className="pt-4">
+              <Link href="/schools/product" className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                See how it works <ArrowRight size={15} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function SchoolsPage() {
   return (
     <>
       <HeroSection />
+      <SSOSyncSection />
       <FeaturesSection />
       <TestimonialsSection />
       <ComplianceSection />

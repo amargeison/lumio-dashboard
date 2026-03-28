@@ -163,6 +163,20 @@ function SchoolsLoginContent() {
           <span className="text-lg font-semibold" style={{ color: '#0D9488' }}>for Schools</span>
         </div>
 
+        {/* SSO trust banner */}
+        <div className="rounded-xl px-4 py-3 mb-4 flex items-center gap-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <span style={{ fontSize: 14 }}>🔐</span>
+          <div>
+            <p className="text-xs" style={{ color: '#D1D5DB', lineHeight: 1.5 }}>
+              Sign in with your school&apos;s Google Workspace or Microsoft 365 account — no new password needed
+            </p>
+            <div className="flex gap-2 mt-1.5">
+              <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>G Google Workspace</span>
+              <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>⊞ Microsoft 365</span>
+            </div>
+          </div>
+        </div>
+
         {/* Card */}
         <div
           className="rounded-2xl p-8"
