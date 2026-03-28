@@ -77,16 +77,36 @@ interface ModalShellProps {
 export default function ModalShell({ onClose, onSubmit, title, subtitle, icon: Icon, iconColor = '#0D9488', submitLabel, submitIcon: SubmitIcon, children }: ModalShellProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   async function handleSubmit() {
     setError(null)
     setLoading(true)
     try {
       await onSubmit()
+      setSuccess(true)
+      setTimeout(() => onClose(), 2000)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }}>
+        <div className="flex flex-col items-center gap-3 rounded-2xl px-12 py-10"
+          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}>
+            <X size={0} />{/* force import */}
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Done!</p>
+          <p className="text-xs" style={{ color: '#6B7280' }}>Closing automatically...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
