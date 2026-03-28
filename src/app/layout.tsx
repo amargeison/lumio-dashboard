@@ -17,7 +17,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} h-full antialiased`}>
+    <html lang="en" translate="no" className={`${geist.variable} h-full antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0D9488" />
@@ -27,6 +27,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/lumio-favicon-32.png" />
         <link rel="apple-touch-icon" href="/lumio-favicon-256.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="google" content="notranslate" />
       </head>
       <body className="h-full" style={{ backgroundColor: '#07080F' }}>
         {children}
