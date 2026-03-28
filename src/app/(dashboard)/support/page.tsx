@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus } from 'lucide-react'
+import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
+import CreateWikiModal from '@/components/modals/CreateWikiModal'
+import CreateFAQModal from '@/components/modals/CreateFAQModal'
 import { useToast } from '@/components/modals/useToast'
 
 const stats = [
@@ -44,6 +46,8 @@ const ops = [
 
 export default function SupportPage() {
   const [showTicket, setShowTicket] = useState(false)
+  const [showCreateWiki, setShowCreateWiki] = useState(false)
+  const [showCreateFAQ, setShowCreateFAQ] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -55,6 +59,8 @@ export default function SupportPage() {
     { label: 'Support Report', icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Call a School',  icon: Phone,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Book Meeting',   icon: CalendarPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Create Wiki',   icon: BookOpen,      onClick: () => setShowCreateWiki(true) },
+    { label: 'Create FAQ',    icon: HelpCircle,    onClick: () => setShowCreateFAQ(true) },
   ]
 
   const hasData = useHasDashboardData('support')
@@ -115,6 +121,8 @@ export default function SupportPage() {
         }
       />
       {showTicket && <NewSupportTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('Support ticket created') }} />}
+      {showCreateWiki && <CreateWikiModal onClose={() => setShowCreateWiki(false)} onToast={showToast} />}
+      {showCreateFAQ && <CreateFAQModal onClose={() => setShowCreateFAQ(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )

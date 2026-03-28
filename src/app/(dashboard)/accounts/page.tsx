@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw } from 'lucide-react'
+import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -13,6 +13,7 @@ import NewExpenseModal from '@/components/modals/NewExpenseModal'
 import NewClientModal from '@/components/modals/NewClientModal'
 import WeeklyReportModal from '@/components/modals/WeeklyReportModal'
 import PaymentReceivedModal from '@/components/modals/PaymentReceivedModal'
+import RunPayrollModal from '@/components/modals/RunPayrollModal'
 import { useToast } from '@/components/modals/useToast'
 
 const DEFAULT_STATS = [
@@ -63,6 +64,7 @@ export default function AccountsPage() {
   const [showReport, setShowReport] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
   const [xeroSyncing, setXeroSyncing] = useState(false)
+  const [showRunPayroll, setShowRunPayroll] = useState(false)
   const { showToast, Toast } = useToast()
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
@@ -129,6 +131,7 @@ export default function AccountsPage() {
     { label: 'Weekly Report',   icon: FileText,    onClick: () => setShowReport(true) },
     { label: 'Payment Received', icon: TrendingUp, onClick: () => setShowPayment(true) },
     { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => { setXeroSyncing(true); showToast('Syncing with Xero...'); setTimeout(() => { setXeroSyncing(false); showToast('Synced with Xero — connected ✓') }, 1500) } },
+    { label: 'Run Payroll',    icon: DollarSign,  onClick: () => setShowRunPayroll(true) },
   ]
 
   const hasData = useHasDashboardData('accounts')
@@ -195,6 +198,7 @@ export default function AccountsPage() {
       {showClient && <NewClientModal onClose={() => setShowClient(false)} onSubmit={() => { setShowClient(false); showToast('Client added') }} />}
       {showReport && <WeeklyReportModal onClose={() => setShowReport(false)} onToast={showToast} />}
       {showPayment && <PaymentReceivedModal onClose={() => setShowPayment(false)} onToast={showToast} />}
+      {showRunPayroll && <RunPayrollModal onClose={() => setShowRunPayroll(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )
