@@ -234,8 +234,12 @@ function StepPlan({ selected, onSelect }: { selected: string; onSelect: (id: str
 }
 
 // ─── Step 2: Company details ──────────────────────────────────────────────────
-function StepDetails({ form, setForm }: { form: Record<string, string>; setForm: (f: Record<string, string>) => void }) {
+function StepDetails({ form, setForm, logoFile, setLogoFile }: {
+  form: Record<string, string>; setForm: (f: Record<string, string>) => void
+  logoFile: File | null; setLogoFile: (f: File | null) => void
+}) {
   const set = (key: string) => (v: string) => setForm({ ...form, [key]: v })
+  const logoPreview = logoFile ? URL.createObjectURL(logoFile) : null
   return (
     <div className="flex flex-col gap-5 max-w-lg">
       <div>
@@ -246,6 +250,24 @@ function StepDetails({ form, setForm }: { form: Record<string, string>; setForm:
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <Input label="Company Name" value={form.companyName} onChange={set('companyName')} placeholder="e.g. Lumio Technologies Ltd" required />
+        </div>
+        {/* Logo upload */}
+        <div className="sm:col-span-2">
+          <label className="text-xs font-semibold mb-1.5 block" style={{ color: '#9CA3AF' }}>Company Logo (optional)</label>
+          <label className="flex items-center justify-center gap-3 rounded-xl p-4 cursor-pointer transition-colors"
+            style={{ border: '2px dashed #1F2937', backgroundColor: 'rgba(255,255,255,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo preview" className="h-10 rounded-lg" style={{ maxWidth: 120, objectFit: 'contain' }} />
+            ) : (
+              <>
+                <Upload size={16} style={{ color: '#6B7280' }} />
+                <span className="text-sm" style={{ color: '#6B7280' }}>Upload logo</span>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) setLogoFile(e.target.files[0]) }} />
+          </label>
         </div>
         <SelectField label="Industry" value={form.industry} onChange={set('industry')} required options={[
           { value: '', label: 'Select industry...' },
@@ -451,6 +473,7 @@ export default function CompanyCheckoutPage() {
     firstName: '', lastName: '', role: '', email: '', password: '',
     cardNumber: '', expiry: '', cvv: '', cardName: '', postcode: '', terms: '',
   })
+  const [logoFile, setLogoFile] = useState<File | null>(null)
 
   const plan = PLANS.find(p => p.id === selectedPlan) ?? PLANS[1]
 
@@ -508,6 +531,20 @@ export default function CompanyCheckoutPage() {
       }
 
       const targetSlug = data.slug || slug
+
+      // Upload logo if provided
+      if (logoFile && targetSlug) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+          const ext = logoFile.name.split('.').pop() || 'png'
+          const path = `${targetSlug}/logo.${ext}`
+          await supabase.storage.from('company-logos').upload(path, logoFile, { upsert: true })
+          const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
+          localStorage.setItem('lumio_company_logo', publicUrl)
+        } catch (err) { console.error('Logo upload failed:', err) }
+      }
+
       if (targetSlug && targetSlug !== 'my-company') {
         router.push(`/${targetSlug}`)
       } else {
@@ -566,7 +603,7 @@ export default function CompanyCheckoutPage() {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pb-12">
         {step === 0 && <StepPlan selected={selectedPlan} onSelect={setSelectedPlan} />}
-        {step === 1 && <StepDetails form={form} setForm={setForm} />}
+        {step === 1 && <StepDetails form={form} setForm={setForm} logoFile={logoFile} setLogoFile={setLogoFile} />}
         {step === 2 && <StepPayment plan={plan} onComplete={() => setStep(3)} />}
         {step === 3 && <StepBuilding companyName={form.companyName || 'Your Company'} slug={slug} onComplete={handleComplete} />}
 
