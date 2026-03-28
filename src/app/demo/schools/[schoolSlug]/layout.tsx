@@ -118,14 +118,10 @@ export default function DemoSchoolLayout({ children }: Props) {
           <div className="flex items-center gap-2 px-4 py-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>SH</div>
             <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>SH</span>
-            <button className="relative flex items-center justify-center rounded-lg p-1.5" style={{ color: '#9CA3AF' }}>
-              <Bell size={16} strokeWidth={1.75} />
-              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#EF4444' }} />
-            </button>
           </div>
-          <div className="px-4 pb-3">
-            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
-              <img src="/lumio-transparent-new.png" alt="Lumio" width={80} height={22} />
+          <div className="pb-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+              <img src="/lumio-transparent-new.png" alt="Lumio" width={120} height={33} />
             </a>
           </div>
         </div>
@@ -133,9 +129,18 @@ export default function DemoSchoolLayout({ children }: Props) {
 
       {/* Main */}
       <div className="flex flex-1 flex-col md:pl-[200px] overflow-hidden">
+        {/* Notifications bell — top-right of content area */}
+        <button
+          className="fixed z-40 hidden md:flex items-center justify-center rounded-full transition-colors"
+          style={{ top: 16, right: 16, width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+          aria-label="Notifications"
+        >
+          <Bell size={16} strokeWidth={1.75} />
+          <span className="absolute rounded-full" style={{ top: 8, right: 8, width: 6, height: 6, backgroundColor: '#EF4444' }} />
+        </button>
         {/* Demo banner */}
-        <div className="flex items-center justify-between gap-3 mx-4 mt-3 px-4 py-2.5 rounded-lg shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', border: '1px solid rgba(139,92,246,0.2)' }}>
+        <div className="flex items-center justify-between gap-3 mx-4 mt-3 px-4 py-2.5 shrink-0"
+          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '0 0 50% 50% / 0 0 20px 20px', paddingBottom: 16 }}>
           <div className="flex items-center gap-2 min-w-0">
             <Zap size={13} style={{ color: '#0D9488', flexShrink: 0 }} />
             <p className="text-xs truncate" style={{ color: '#F9FAFB' }}>

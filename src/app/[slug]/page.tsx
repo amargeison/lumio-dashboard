@@ -46,7 +46,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo, userInitials }: {
+function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo: initialLogo, userInitials }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void
   companyName?: string; companyLogo?: string; userInitials?: string
 }) {
@@ -54,7 +54,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const companyInitials = (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
+  const [logoUrl, setLogoUrl] = useState(initialLogo || null)
+  const [iconHover, setIconHover] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const expanded = pinned || hovered
 
   function togglePin() {
@@ -62,6 +65,22 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   }
   function handleMouseEnter() { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null }; setHovered(true) }
   function handleMouseLeave() { leaveTimer.current = setTimeout(() => setHovered(false), 400) }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
+    const ext = file.name.split('.').pop() || 'png'
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const path = `${slug}/logo.${ext}`
+      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
+      setLogoUrl(publicUrl)
+      localStorage.setItem('lumio_company_logo', publicUrl)
+    } catch (err) { console.error('Logo upload failed:', err) }
+  }
 
   return (
     <>
@@ -72,13 +91,27 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
-          {companyLogo && expanded ? (
-            <img src={companyLogo} alt={companyName || ''} style={{ maxWidth: 120, maxHeight: 36, objectFit: 'contain' }} className="rounded-md" />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>{companyInitials}</div>
-          )}
+          <button
+            onClick={() => fileRef.current?.click()}
+            onMouseEnter={() => setIconHover(true)}
+            onMouseLeave={() => setIconHover(false)}
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
+            style={{ backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
+            title="Upload company logo"
+          >
+            {logoUrl ? (
+              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              companyInitials
+            )}
+            {iconHover && (
+              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              </div>
+            )}
+          </button>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -126,9 +159,9 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             )}
           </div>
           {expanded && (
-            <div className="px-4 pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
+            <div className="pb-3">
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
               </a>
             </div>
           )}
@@ -163,8 +196,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
                 <AvatarDropdown initials={initials} />
                 <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
               </div>
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
               </a>
             </div>
           </aside>
@@ -939,8 +972,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
       {/* Demo data banner */}
       {demoDataActive && (
-        <div className="flex items-center justify-between px-4 py-2.5 text-xs shrink-0 mx-4 mt-3 rounded-lg"
-          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', border: '1px solid rgba(139,92,246,0.2)' }}>
+        <div className="flex items-center justify-between px-4 py-2.5 text-xs shrink-0 mx-4 mt-3"
+          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '0 0 50% 50% / 0 0 20px 20px', paddingBottom: 16 }}>
           <span style={{ color: '#F9FAFB' }}>You&apos;re viewing demo data — clear it any time in Settings</span>
           <button onClick={() => setActiveDept('settings')} className="text-xs font-semibold transition-colors"
             style={{ color: 'rgba(249,250,251,0.6)' }}

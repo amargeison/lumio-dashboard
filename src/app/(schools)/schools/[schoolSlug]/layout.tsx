@@ -125,26 +125,30 @@ export default function SchoolLayout({ children }: Props) {
           })}
         </nav>
 
-        {/* Sidebar bottom: avatar + bell + Lumio logo */}
+        {/* Sidebar bottom: avatar + Lumio logo */}
         <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
           <div className="flex items-center gap-2 px-4 py-3">
             <AvatarDropdown initials={initials} />
             <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
-            <button className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
-              style={{ color: '#9CA3AF' }} aria-label="Notifications">
-              <Bell size={16} strokeWidth={1.75} />
-              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#EF4444' }} />
-            </button>
           </div>
-          <div className="px-4 pb-3">
-            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
-              <img src="/lumio-transparent-new.png" alt="Lumio" width={80} height={22} />
+          <div className="pb-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+              <img src="/lumio-transparent-new.png" alt="Lumio" width={120} height={33} />
             </a>
           </div>
         </div>
       </aside>
 
       <div className="flex flex-1 flex-col md:pl-[200px] overflow-hidden">
+        {/* Notifications bell — top-right of content area */}
+        <button
+          className="fixed z-40 hidden md:flex items-center justify-center rounded-full transition-colors"
+          style={{ top: 16, right: 16, width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+          aria-label="Notifications"
+        >
+          <Bell size={16} strokeWidth={1.75} />
+          <span className="absolute rounded-full" style={{ top: 8, right: 8, width: 6, height: 6, backgroundColor: '#EF4444' }} />
+        </button>
         {/* Mobile menu bar */}
         <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           <button onClick={() => setOpen(true)} style={{ color: '#9CA3AF' }}><Menu size={18} /></button>

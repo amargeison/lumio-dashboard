@@ -32,8 +32,12 @@ export default function ClearDemoBar() {
   return (
     <>
       <div
-        className="flex items-center justify-between px-4 py-2.5 text-xs mx-4 mt-4 rounded-lg"
-        style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', border: '1px solid rgba(139,92,246,0.2)' }}
+        className="flex items-center justify-between px-4 py-2.5 text-xs mx-4 mt-4"
+        style={{
+          background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)',
+          borderRadius: '0 0 50% 50% / 0 0 20px 20px',
+          paddingBottom: 16,
+        }}
       >
         <span style={{ color: '#F9FAFB' }}>
           You&apos;re viewing demo data — clear it any time in Settings

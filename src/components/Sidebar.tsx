@@ -4,8 +4,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { X, Bell, Pin } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { X, Pin, Camera, LogOut, Settings as SettingsIcon, User } from 'lucide-react'
 import {
   LayoutDashboard,
   Users,
@@ -63,12 +63,20 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [companyName, setCompanyName] = useState('Lumio')
   const [initials, setInitials] = useState('AM')
   const [planLabel, setPlanLabel] = useState('Live workspace')
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
+  const [logoHover, setLogoHover] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const avatarRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_company_name')
@@ -79,6 +87,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (storedPlan) setPlanLabel(`${storedPlan.charAt(0).toUpperCase() + storedPlan.slice(1)} plan`)
     const storedPinned = localStorage.getItem('lumio_sidebar_pinned')
     if (storedPinned === 'true') setPinned(true)
+    const storedLogo = localStorage.getItem('lumio_company_logo')
+    if (storedLogo) setCompanyLogo(storedLogo)
+    const storedName = localStorage.getItem('lumio_user_name')
+    if (storedName) setUserName(storedName)
+    const storedEmail = localStorage.getItem('lumio_user_email')
+    if (storedEmail) setUserEmail(storedEmail)
+  }, [])
+
+  // Close avatar dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   const togglePin = useCallback(() => {
@@ -87,6 +110,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       localStorage.setItem('lumio_sidebar_pinned', String(next))
       return next
     })
+  }, [])
+
+  const handleSignOut = useCallback(() => {
+    localStorage.clear()
+    router.push('/login')
+  }, [router])
+
+  const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
+    const ext = file.name.split('.').pop() || 'png'
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
+      const path = `${slug}/logo.${ext}`
+      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
+      setCompanyLogo(publicUrl)
+      localStorage.setItem('lumio_company_logo', publicUrl)
+    } catch (err) {
+      console.error('Logo upload failed:', err)
+    }
   }, [])
 
   const expanded = pinned || hovered
@@ -120,14 +169,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Workspace identity — top */}
+        {/* Workspace identity — top (clickable logo uploader) */}
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0"
-            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            onMouseEnter={() => setLogoHover(true)}
+            onMouseLeave={() => setLogoHover(false)}
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
+            style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
+            title="Upload company logo"
           >
-            {companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-          </div>
+            {companyLogo ? (
+              <Image src={companyLogo} alt="" fill style={{ objectFit: 'cover' }} />
+            ) : (
+              companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+            )}
+            {logoHover && (
+              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <Camera size={14} />
+              </div>
+            )}
+          </button>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -198,40 +261,60 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom section: avatar + bell + logo */}
+        {/* Bottom section: avatar + logo */}
         <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2 px-2.5 py-3" style={{ justifyContent: expanded ? 'flex-start' : 'center' }}>
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0"
+          <div ref={avatarRef} className="relative px-2.5 py-3" style={{ display: 'flex', justifyContent: expanded ? 'flex-start' : 'center', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => setAvatarOpen(o => !o)}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
             >
               {initials}
-            </div>
+            </button>
             {expanded && (
-              <>
-                <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
-                <button
-                  className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
+              <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{userName || initials}</span>
+            )}
+            {/* Avatar dropdown */}
+            {avatarOpen && (
+              <div
+                className="absolute left-2 rounded-xl py-2 shadow-xl"
+                style={{ bottom: '100%', marginBottom: 8, width: 220, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 100 }}
+              >
+                <div className="px-4 py-2" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
+                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{userEmail || ''}</p>
+                </div>
+                <Link
+                  href="/settings"
+                  onClick={() => setAvatarOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
                   style={{ color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF' }}
-                  aria-label="Notifications"
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}
                 >
-                  <Bell size={16} strokeWidth={1.75} />
-                  <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
+                  <SettingsIcon size={14} /> Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
+                  style={{ color: '#EF4444' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                >
+                  <LogOut size={14} /> Sign out
                 </button>
-              </>
+              </div>
             )}
           </div>
           {expanded && (
-            <div className="px-4 pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+            <div className="pb-3">
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
                 <Image
                   src="/lumio-transparent-new.png"
                   alt="Lumio"
                   width={180}
                   height={90}
-                  style={{ width: '80px', height: 'auto', objectFit: 'contain' }}
+                  style={{ width: '120px', height: 'auto', objectFit: 'contain' }}
                 />
               </a>
             </div>
@@ -246,10 +329,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}
         >
           <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-              {companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
+              style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
+              title="Upload company logo"
+            >
+              {companyLogo ? (
+                <Image src={companyLogo} alt="" fill style={{ objectFit: 'cover' }} />
+              ) : (
+                companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+              )}
+            </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>
               <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
@@ -277,13 +368,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
           <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
             <div className="flex items-center gap-2 py-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0"
-                style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>{initials}</div>
-              <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+              <button
+                onClick={() => setAvatarOpen(o => !o)}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0"
+                style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+              >
+                {initials}
+              </button>
+              <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{userName || initials}</span>
             </div>
-            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
               <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90}
-                style={{ width: '80px', height: 'auto', objectFit: 'contain' }} />
+                style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
             </a>
           </div>
         </aside>
