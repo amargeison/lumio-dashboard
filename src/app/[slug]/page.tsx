@@ -461,15 +461,69 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
 // ─── Morning Roundup ─────────────────────────────────────────────────────────
 
 const ROUNDUP_ITEMS = [
-  { id: 'email', icon: '📧', label: 'Emails', count: 12, urgent: true, color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', preview: ['Invoice overdue from Bramble Hill', 'New trial signup — Just wow Inc', 'Stripe payment confirmed — Oakridge'] },
-  { id: 'slack', icon: '💬', label: 'Slack', count: 7, urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner'] },
-  { id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false, color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)', preview: ['2 connection requests', 'Post got 47 reactions'] },
-  { id: 'news', icon: '📰', label: 'Industry News', count: 3, urgent: false, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)', preview: ['UK SMB automation market up 34% YoY'] },
-  { id: 'notion', icon: '📋', label: 'Notion', count: 2, urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)', preview: ['Testing guide updated — 2 items resolved'] },
+  {
+    id: 'email', icon: '📧', label: 'Emails', count: 12, urgent: true,
+    color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',
+    messages: [
+      { id: 'e1', from: 'Tom Wright', avatar: 'TW', subject: 'Invoice overdue — INV-2026-041', preview: 'Hi, just chasing the invoice from last month — can you confirm when this will be settled?', time: '8:14am', urgent: true, read: false },
+      { id: 'e2', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal discussion — contract ends Apr 30', preview: 'We\u2019d like to discuss the terms for our renewal. Can we schedule a call this week?', time: '7:52am', urgent: true, read: false },
+      { id: 'e3', from: 'Stripe', avatar: 'ST', subject: 'Payment confirmed — \u00A34,800 from Oakridge', preview: 'Your payment of \u00A34,800.00 from Oakridge Schools Ltd has been processed successfully.', time: '7:31am', urgent: false, read: false },
+      { id: 'e4', from: 'Helen Park', avatar: 'HP', subject: 'Re: Lumio Pro demo — follow-up questions', preview: 'Thanks for the demo yesterday. We have a few questions about the safeguarding module...', time: 'Yesterday', urgent: false, read: true },
+      { id: 'e5', from: 'Dan Marsh', avatar: 'DM', subject: 'Q2 board pack — action needed', preview: 'Please review the attached slides before Friday\u2019s board meeting and send your comments.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'slack', icon: '💬', label: 'Slack', count: 7, urgent: false,
+    color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
+    messages: [
+      { id: 's1', from: 'Charlotte Davies', avatar: 'CD', subject: '#sales-pipeline', preview: 'Lead scored 87 in SA-02 — Arron, want me to move this to Proposal stage?', time: '9:02am', urgent: false, read: false, channel: '#sales-pipeline' },
+      { id: 's2', from: 'HR Bot', avatar: 'HR', subject: '#hr-alerts', preview: 'HR-01 workflow completed for new joiner Sophie Williams. Onboarding pack sent \u2713', time: '8:45am', urgent: false, read: false, channel: '#hr-alerts' },
+      { id: 's3', from: 'James Harlow', avatar: 'JH', subject: '#general', preview: 'Morning all — heads up, the Wimbledon client is pushing for a demo this Friday. Anyone free?', time: '8:30am', urgent: false, read: false, channel: '#general' },
+      { id: 's4', from: 'Rachel Davies', avatar: 'RD', subject: '#management', preview: 'Board pack is ready for review. Can someone sense-check the financial slides?', time: 'Yesterday', urgent: false, read: true, channel: '#management' },
+    ]
+  },
+  {
+    id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false,
+    color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)',
+    messages: [
+      { id: 'l1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Connection request', preview: 'Hi, I came across Lumio and would love to connect. We\u2019re looking for a school management solution.', time: '10:15am', urgent: false, read: false },
+      { id: 'l2', from: 'LinkedIn', avatar: 'LI', subject: 'Your post is gaining traction', preview: 'Your post about UK school automation got 47 reactions and 12 comments in the last 24 hours.', time: '9:30am', urgent: false, read: false },
+      { id: 'l3', from: 'Marcus Chen', avatar: 'MC', subject: 'Connection request', preview: 'Hi — I\u2019m the CTO at Meridian Trust. Interested to learn more about your SSO capabilities.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'news', icon: '📰', label: 'Industry News', count: 3, urgent: false,
+    color: '#FBBF24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)',
+    messages: [
+      { id: 'n1', from: 'TechCrunch', avatar: 'TC', subject: 'UK SMB automation market up 34% YoY', preview: 'New research shows UK small businesses are accelerating adoption of AI-powered workflow tools, with the market growing 34% year on year.', time: '8:00am', urgent: false, read: false },
+      { id: 'n2', from: 'Schools Week', avatar: 'SW', subject: 'SEND White Paper implementation update', preview: 'DfE confirms timeline for SEND White Paper reforms. Schools must comply with new EHCP digital requirements by September 2026.', time: '7:45am', urgent: false, read: false },
+      { id: 'n3', from: 'EdTech Magazine', avatar: 'EM', subject: 'Google Workspace for Education — new admin controls', preview: 'Google announces enhanced admin controls for Workspace for Education accounts, including new SSO policies.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'notion', icon: '📋', label: 'Notion', count: 2, urgent: false,
+    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
+    messages: [
+      { id: 'no1', from: 'Notion', avatar: 'NO', subject: 'Testing guide updated', preview: '2 items resolved in the QA testing guide. Sophie Williams marked "OTP flow" and "School registration" as complete.', time: '9:15am', urgent: false, read: false },
+      { id: 'no2', from: 'Notion', avatar: 'NO', subject: 'Q2 Roadmap — 3 items need review', preview: 'The Q2 product roadmap has 3 items flagged for your review before the Friday planning session.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
 ]
 
 function MorningRoundup() {
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [replied, setReplied] = useState<string[]>([])
+  const [replyText, setReplyText] = useState<Record<string, string>>({})
+  const [showReply, setShowReply] = useState<string | null>(null)
+
+  function handleReply(msgId: string) {
+    if (replyText[msgId]?.trim()) {
+      setReplied(r => [...r, msgId])
+      setShowReply(null)
+      setReplyText(t => ({ ...t, [msgId]: '' }))
+    }
+  }
+
   return (
     <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
@@ -481,6 +535,7 @@ function MorningRoundup() {
           const isOpen = expanded === item.id
           return (
             <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+              {/* Header row */}
               <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
                 <div className="flex items-center gap-2.5">
                   <span className="text-base">{item.icon}</span>
@@ -492,7 +547,89 @@ function MorningRoundup() {
                   <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
                 </div>
               </button>
-              {isOpen && (<div className="px-3 pb-3 space-y-1.5">{item.preview.map((p, idx) => (<div key={idx} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}><span className="flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }}>→</span>{p}</div>))}</div>)}
+
+              {/* Messages */}
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-2">
+                  {item.messages.map(msg => (
+                    <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
+                      {/* Message header */}
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>
+                            {msg.avatar}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
+                              {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
+                            </div>
+                            <div className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{msg.subject}</div>
+                          </div>
+                        </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                      </div>
+
+                      {/* Preview text */}
+                      <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
+
+                      {/* Action buttons */}
+                      {replied.includes(msg.id) ? (
+                        <span className="text-xs" style={{ color: '#0D9488' }}>✓ Replied</span>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => setShowReply(showReply === msg.id ? null : msg.id)}
+                            className="text-xs px-2.5 py-1 rounded-lg transition-colors"
+                            style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+                          >↩ Reply</button>
+                          <button
+                            className="text-xs px-2.5 py-1 rounded-lg"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}
+                          >→ Forward</button>
+                          {item.id === 'slack' && (
+                            <button
+                              className="text-xs px-2.5 py-1 rounded-lg"
+                              style={{ backgroundColor: 'rgba(192,132,252,0.15)', color: '#C084FC', border: '1px solid rgba(192,132,252,0.3)' }}
+                            >👍 Like</button>
+                          )}
+                          <button
+                            className="text-xs px-2.5 py-1 rounded-lg"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280', border: '1px solid rgba(255,255,255,0.1)' }}
+                          >📁 Move</button>
+                        </div>
+                      )}
+
+                      {/* Reply box */}
+                      {showReply === msg.id && (
+                        <div className="mt-2">
+                          <textarea
+                            value={replyText[msg.id] || ''}
+                            onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))}
+                            placeholder="Write your reply..."
+                            rows={2}
+                            className="w-full text-xs rounded-lg p-2 resize-none"
+                            style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}
+                          />
+                          <div className="flex gap-2 mt-1.5">
+                            <button
+                              onClick={() => handleReply(msg.id)}
+                              className="text-xs px-3 py-1 rounded-lg font-semibold"
+                              style={{ backgroundColor: '#0D9488', color: '#fff' }}
+                            >Send</button>
+                            <button
+                              onClick={() => setShowReply(null)}
+                              className="text-xs px-3 py-1 rounded-lg"
+                              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}
+                            >Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )
         })}
