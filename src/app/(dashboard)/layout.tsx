@@ -47,18 +47,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="min-h-screen transition-[padding] duration-250"
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
-        {/* Top-right: bell + avatar */}
-        <div className="fixed z-40 flex items-center gap-2" style={{ top: 16, right: 16 }}>
-          <button
-            className="flex items-center justify-center rounded-full transition-colors"
-            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
-            aria-label="Notifications"
-          >
-            <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute rounded-full" style={{ top: 8, right: 46, width: 6, height: 6, backgroundColor: '#0D9488' }} />
-          </button>
+        {/* Top-right: avatar + bell */}
+        <div className="fixed z-40 flex items-center gap-3" style={{ top: 16, right: 16 }}>
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}
@@ -98,6 +88,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             )}
           </div>
+          <button
+            className="relative flex items-center justify-center rounded-full transition-colors"
+            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
+            aria-label="Notifications"
+          >
+            <Bell size={16} strokeWidth={1.75} />
+            <span className="absolute rounded-full" style={{ top: 6, right: 6, width: 6, height: 6, backgroundColor: '#0D9488' }} />
+          </button>
         </div>
         <ClearDemoBar />
         <div className="p-4 md:p-6">
