@@ -18,6 +18,7 @@ export default function CRMDashboardPage() {
   const [activities, setActivities] = useState<CRMActivity[]>([])
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Fetch CRM data
   useEffect(() => {
@@ -44,8 +45,9 @@ export default function CRMDashboardPage() {
           setActivities(data.activities)
           setStages(data.stages)
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('Failed to load CRM data:', e)
+        setError(e?.message || 'Failed to load CRM data')
       } finally {
         setLoading(false)
       }
@@ -101,6 +103,24 @@ export default function CRMDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
           <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: '#0F1019', border: '1px solid #EF4444' }}>
+          <p className="text-sm font-semibold mb-2" style={{ color: '#EF4444' }}>Failed to load CRM data</p>
+          <p className="text-xs mb-4" style={{ color: '#6B7299' }}>{error}</p>
+          <button
+            onClick={() => { setError(null); setLoading(true); window.location.reload() }}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: '#8B5CF6', color: '#F1F3FA' }}
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
