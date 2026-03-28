@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/overview'
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/'
   const error = requestUrl.searchParams.get('error')
 
   if (error) {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(`/demo/${tenant.slug}`, requestUrl.origin))
       }
 
-      const destination = redirectTo.startsWith('/') ? redirectTo : '/overview'
+      const destination = redirectTo.startsWith('/') ? redirectTo : `/${tenant.slug}`
       const finalUrl = new URL(destination, requestUrl.origin)
       const redirectResponse = NextResponse.redirect(finalUrl)
       supabaseResponse.cookies.getAll().forEach(cookie => {

@@ -12,7 +12,7 @@ function LoginContent() {
   )
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/overview'
+  const redirectTo = searchParams.get('redirectTo') || '/'
   const message = searchParams.get('message')
   const error = searchParams.get('error')
   const type = searchParams.get('type')

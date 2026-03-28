@@ -51,74 +51,91 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   companyName?: string; companyLogo?: string; userInitials?: string
 }) {
   const initials = userInitials || (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const companyInitials = (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
+  const [hovered, setHovered] = useState(false)
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = pinned || hovered
 
-  const inner = (
-    <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
-      {SIDEBAR_ITEMS.map(item => {
-        const active = activeDept === item.id
-        return (
-          <button key={item.id}
-            onClick={() => { onSelect(item.id); onClose() }}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
-            style={{
-              backgroundColor: active ? 'rgba(13,148,136,0.12)' : 'transparent',
-              color: active ? '#0D9488' : '#9CA3AF',
-              borderLeft: active ? '2px solid #0D9488' : '2px solid transparent',
-            }}>
-            <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
-            <span className="truncate">{item.label}</span>
-          </button>
-        )
-      })}
-    </nav>
-  )
-
-  const topSection = (
-    <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
-      {companyLogo ? (
-        <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
-      ) : (
-        <div className="flex items-center justify-center rounded-lg text-xs font-bold"
-          style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
-          {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        {companyName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>}
-        <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Live workspace</p>
-      </div>
-    </div>
-  )
-
-  const bottomSection = (
-    <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-      <div className="flex items-center gap-2 px-4 py-3">
-        <AvatarDropdown initials={initials} />
-        <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
-        <button className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
-          style={{ color: '#9CA3AF' }} aria-label="Notifications">
-          <Calendar size={16} strokeWidth={1.75} />
-          <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
-        </button>
-      </div>
-      <div className="px-4 pb-3">
-        <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
-          <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90}
-            style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
-        </a>
-      </div>
-    </div>
-  )
+  function togglePin() {
+    setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
+  }
+  function handleMouseEnter() { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null }; setHovered(true) }
+  function handleMouseLeave() { leaveTimer.current = setTimeout(() => setHovered(false), 400) }
 
   return (
     <>
-      <aside className="hidden md:flex flex-col w-52 shrink-0"
-        style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
-        {topSection}
-        {inner}
-        {bottomSection}
+      {/* Desktop — collapsible */}
+      <aside
+        className="hidden md:flex flex-col shrink-0 overflow-hidden"
+        style={{ width: expanded ? 208 : 48, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
+          {companyLogo && expanded ? (
+            <img src={companyLogo} alt={companyName || ''} style={{ maxWidth: 120, maxHeight: 36, objectFit: 'contain' }} className="rounded-md" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>{companyInitials}</div>
+          )}
+          {expanded && (
+            <>
+              <div className="flex-1 min-w-0">
+                {companyName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>}
+                <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Live workspace</p>
+              </div>
+              <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} title={pinned ? 'Unpin' : 'Pin open'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+              </button>
+            </>
+          )}
+        </div>
+        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
+          {SIDEBAR_ITEMS.map(item => {
+            const active = activeDept === item.id
+            return (
+              <button key={item.id}
+                onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
+                className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
+                style={{
+                  backgroundColor: active ? 'rgba(13,148,136,0.12)' : 'transparent',
+                  color: active ? '#0D9488' : '#9CA3AF',
+                  borderLeft: active ? '2px solid #0D9488' : '2px solid transparent',
+                  paddingLeft: expanded ? 12 : 0,
+                  justifyContent: expanded ? 'flex-start' : 'center',
+                }}
+                title={expanded ? undefined : item.label}>
+                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                {expanded && <span className="truncate">{item.label}</span>}
+              </button>
+            )
+          })}
+        </nav>
+        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 px-2.5 py-3" style={{ justifyContent: expanded ? 'flex-start' : 'center' }}>
+            <AvatarDropdown initials={initials} />
+            {expanded && (
+              <>
+                <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+                <button className="relative flex items-center justify-center rounded-lg p-1.5" style={{ color: '#9CA3AF' }}>
+                  <Calendar size={16} strokeWidth={1.75} />
+                  <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#0D9488' }} />
+                </button>
+              </>
+            )}
+          </div>
+          {expanded && (
+            <div className="px-4 pb-3">
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
+              </a>
+            </div>
+          )}
+        </div>
       </aside>
 
+      {/* Mobile — full overlay */}
       {open && (
         <div className="md:hidden fixed inset-0 z-40 flex">
           <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
@@ -128,8 +145,28 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
               <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>NAVIGATION</span>
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
-            {inner}
-            {bottomSection}
+            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
+              {SIDEBAR_ITEMS.map(item => {
+                const active = activeDept === item.id
+                return (
+                  <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full"
+                    style={{ backgroundColor: active ? 'rgba(13,148,136,0.12)' : 'transparent', color: active ? '#0D9488' : '#9CA3AF' }}>
+                    <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                )
+              })}
+            </nav>
+            <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2 py-3">
+                <AvatarDropdown initials={initials} />
+                <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+              </div>
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 80, height: 'auto', objectFit: 'contain' }} />
+              </a>
+            </div>
           </aside>
         </div>
       )}
