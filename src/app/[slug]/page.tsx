@@ -274,6 +274,62 @@ const QUOTES = [
   { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
   { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
   { text: "Success is not final, failure is not fatal.", author: "Winston Churchill" },
+  { text: "Whatever you are, be a good one.", author: "Abraham Lincoln" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+  { text: "The harder I work, the luckier I get.", author: "Samuel Goldwyn" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "If you're going through hell, keep going.", author: "Winston Churchill" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "The mind is everything. What you think you become.", author: "Buddha" },
+  { text: "Either you run the day or the day runs you.", author: "Jim Rohn" },
+  { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+  { text: "Act as if what you do makes a difference. It does.", author: "William James" },
+  { text: "Success is walking from failure to failure with no loss of enthusiasm.", author: "Winston Churchill" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "It is never too late to be what you might have been.", author: "George Eliot" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+  { text: "Spread love everywhere you go. Let no one ever come to you without leaving happier.", author: "Mother Teresa" },
+  { text: "When you reach the end of your rope, tie a knot in it and hang on.", author: "Franklin D. Roosevelt" },
+  { text: "Always remember that you are absolutely unique. Just like everyone else.", author: "Margaret Mead" },
+  { text: "Don't judge each day by the harvest you reap but by the seeds that you plant.", author: "Robert Louis Stevenson" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "Tell me and I forget. Teach me and I remember. Involve me and I learn.", author: "Benjamin Franklin" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+  { text: "An unexamined life is not worth living.", author: "Socrates" },
+  { text: "Spread your wings and let the fairy in you fly.", author: "Anthony T. Hincks" },
+  { text: "When one door of happiness closes, another opens.", author: "Helen Keller" },
+  { text: "Life is not measured by the number of breaths we take, but by the moments that take our breath away.", author: "Maya Angelou" },
+  { text: "If life were predictable it would cease to be life, and be without flavor.", author: "Eleanor Roosevelt" },
+  { text: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
+  { text: "If you want to live a happy life, tie it to a goal, not to people or things.", author: "Albert Einstein" },
+  { text: "Never let the fear of striking out keep you from playing the game.", author: "Babe Ruth" },
+  { text: "Money and success don't change people; they merely amplify what is already there.", author: "Will Smith" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "Not how long, but how well you have lived is the main thing.", author: "Seneca" },
+  { text: "If life were easy, it wouldn't be life. It would be something else.", author: "Idowu Koyenikan" },
+  { text: "You only live once, but if you do it right, once is enough.", author: "Mae West" },
+  { text: "Live in the sunshine, swim the sea, drink the wild air.", author: "Ralph Waldo Emerson" },
+  { text: "Go confidently in the direction of your dreams. Live the life you have imagined.", author: "Henry David Thoreau" },
+  { text: "When you cease to dream you cease to live.", author: "Malcolm Forbes" },
+  { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
+  { text: "In this life we cannot do great things. We can only do small things with great love.", author: "Mother Teresa" },
+  { text: "Only a life lived for others is a life worthwhile.", author: "Albert Einstein" },
+  { text: "The purpose of our lives is to be happy.", author: "Dalai Lama" },
+  { text: "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.", author: "Dr. Seuss" },
+  { text: "Winning isn't everything, but wanting to win is.", author: "Vince Lombardi" },
+  { text: "You become what you believe.", author: "Oprah Winfrey" },
+  { text: "The two most important days in your life are the day you are born and the day you find out why.", author: "Mark Twain" },
+  { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein" },
+  { text: "Great minds discuss ideas; average minds discuss events; small minds discuss people.", author: "Eleanor Roosevelt" },
+  { text: "If you tell the truth, you don't have to remember anything.", author: "Mark Twain" },
+  { text: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
+  { text: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+  { text: "A successful man is one who can lay a firm foundation with the bricks others have thrown at him.", author: "David Brinkley" },
+  { text: "No one can make you feel inferior without your consent.", author: "Eleanor Roosevelt" },
 ]
 
 const DEFAULT_WORLD_ZONES = [
@@ -408,7 +464,11 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+  const [quote] = useState(() => {
+    const start = new Date(new Date().getFullYear(), 0, 1).getTime()
+    const dayOfYear = Math.floor((Date.now() - start) / 86400000)
+    return QUOTES[dayOfYear % QUOTES.length]
+  })
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
@@ -417,7 +477,20 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
-    speak(`${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`)
+    const script = `${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`
+    const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
+    let chunk = ''
+    const chunks: string[] = []
+    for (const s of sentences) {
+      if ((chunk + s).length > 480) {
+        if (chunk) chunks.push(chunk.trim())
+        chunk = s
+      } else {
+        chunk += s
+      }
+    }
+    if (chunk) chunks.push(chunk.trim())
+    if (chunks.length > 0) speak(chunks[0])
   }
 
   // Handle voice command actions
