@@ -573,7 +573,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand }: { company: strin
               </button>
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+            <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
