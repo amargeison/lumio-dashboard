@@ -13,13 +13,18 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake,
-  Database, RotateCcw, Upload,
+  Database, RotateCcw, Upload, Mail, MessageSquare, Phone,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
+import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
+import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
+import Insights from '@/app/(dashboard)/overview/components/Insights'
+import NotToMiss from '@/app/(dashboard)/overview/components/NotToMiss'
+import TeamPanel from '@/app/(dashboard)/overview/components/TeamPanel'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 
@@ -760,11 +765,11 @@ function MeetingsToday() {
 // ─── Quick Actions Bar ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { label: 'New Joiner', tooltip: 'Trigger the HR onboarding workflow', icon: UserPlus },
-  { label: 'New Customer', tooltip: 'Create a customer record and start welcome sequence', icon: Users },
-  { label: 'Chase Invoice', tooltip: 'Send payment reminders for overdue invoices', icon: Receipt },
-  { label: 'Support Ticket', tooltip: 'Open a new support ticket', icon: Headphones },
-  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Calendar },
+  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail },
+  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare },
+  { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone },
+  { label: 'Book Meeting', tooltip: 'Schedule a meeting or demo', icon: Calendar },
+  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Users },
 ]
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
@@ -1272,7 +1277,17 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction }: { company: string; firstName?: string; onAction: (label: string) => void }) {
+function OverviewView({ company, firstName, onAction }: { company: string; firstName?: string; onAction: (msg: string) => void }) {
+  const quickActionToasts: Record<string, string> = {
+    'Send Email': 'Opening email composer...',
+    'Send Slack': 'Opening Slack...',
+    'Phone Call': 'Logging a call...',
+    'Book Meeting': 'Opening calendar...',
+    'Team Events': 'Opening team events...',
+  }
+  function handleQuickAction(label: string) {
+    onAction(quickActionToasts[label] || label)
+  }
   const [tab, setTab] = useState<OverviewTab>('today')
   const wf = fakeNum(47, company, 'wf')
   const cu = fakeNum(181, company, 'cu')
@@ -1292,7 +1307,7 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
 
       {tab === 'today' ? (
         <div className="space-y-4">
-          <QuickActionsBar onAction={onAction} />
+          <QuickActionsBar onAction={handleQuickAction} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-1">
@@ -1343,6 +1358,16 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
             </div>
           </div>
         </div>
+      ) : tab === 'quick-wins' ? (
+        <QuickWins />
+      ) : tab === 'tasks' ? (
+        <DailyTasks />
+      ) : tab === 'insights' ? (
+        <Insights />
+      ) : tab === 'not-to-miss' ? (
+        <NotToMiss />
+      ) : tab === 'team' ? (
+        <TeamPanel />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
