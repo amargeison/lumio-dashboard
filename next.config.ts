@@ -4,6 +4,11 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'nrrympsgxsadiemzqwci.supabase.co' },
+    ],
+  },
   redirects: async () => [
     { source: '/sales-crm', destination: '/sales', permanent: true },
     { source: '/crm/:path*', destination: 'https://app.lumiocms.com/crm/:path*', permanent: false, has: [{ type: 'host', value: 'lumiocms.com' }] },
