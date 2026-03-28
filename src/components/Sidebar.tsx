@@ -34,7 +34,7 @@ const BASE_NAV_ITEMS: {
   badge: number | null
   accent?: string
 }[] = [
-  { label: 'Overview',          path: '/overview',    icon: LayoutDashboard, badge: null },
+  { label: 'Overview',          path: '',             icon: LayoutDashboard, badge: null },
   { label: 'Insights',          path: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
   { label: 'Partners',          path: '/partners',    icon: Handshake,       badge: null },
   { label: 'HR & People',       path: '/hr',          icon: Users,           badge: 3    },
@@ -57,7 +57,7 @@ function getNavItems() {
   const slug = typeof window !== 'undefined' ? (localStorage.getItem('lumio_workspace_slug') || '') : ''
   return BASE_NAV_ITEMS.map(item => ({
     ...item,
-    href: slug ? `/${slug}${item.path}` : item.path,
+    href: slug ? `/${slug}${item.path}` : (item.path || '/overview'),
   }))
 }
 
@@ -277,51 +277,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom section: avatar + logo */}
+        {/* Bottom section: logo */}
         <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          <div ref={avatarRef} className="relative px-2.5 py-3" style={{ display: 'flex', justifyContent: expanded ? 'flex-start' : 'center', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={() => setAvatarOpen(o => !o)}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-            >
-              {initials}
-            </button>
-            {expanded && (
-              <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{userName || initials}</span>
-            )}
-            {/* Avatar dropdown */}
-            {avatarOpen && (
-              <div
-                className="absolute left-2 rounded-xl py-2 shadow-xl"
-                style={{ bottom: '100%', marginBottom: 8, width: 220, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 100 }}
-              >
-                <div className="px-4 py-2" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
-                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{userEmail || ''}</p>
-                </div>
-                <Link
-                  href="/settings"
-                  onClick={() => setAvatarOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
-                  style={{ color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}
-                >
-                  <SettingsIcon size={14} /> Settings
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
-                  style={{ color: '#EF4444' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                >
-                  <LogOut size={14} /> Sign out
-                </button>
-              </div>
-            )}
-          </div>
           {expanded && (
             <div className="pb-3">
               <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
