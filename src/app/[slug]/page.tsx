@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
+import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
@@ -371,12 +372,31 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
+  const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
+
   function handleBriefing() {
     if (isPlaying) { stop(); return }
     speak(`${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`)
   }
 
+  // Handle voice command actions
+  useEffect(() => {
+    if (!lastCommand) return
+    const { action, response, command } = lastCommand
+    speak(response)
+    if (action === 'PLAY_BRIEFING') {
+      setTimeout(() => handleBriefing(), 1500)
+    } else if (action === 'STOP_AUDIO') {
+      stop()
+    } else if (action === 'NAVIGATE') {
+      const dept = command.match(/(hr|accounts|sales|crm|marketing|operations|support|insights|workflows|strategy|trials|partners)/i)?.[1]?.toLowerCase()
+      if (dept) setTimeout(() => window.location.href = `/${dept}`, 1500)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCommand])
+
   return (
+  <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
@@ -389,16 +409,19 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
-              <div className="relative overflow-hidden rounded-lg" title="Voice Commands coming soon" style={{ width: 32, height: 32, flexShrink: 0 }}>
-                <button disabled className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#6B7280', cursor: 'not-allowed' }}>
-                  <Mic size={15} strokeWidth={1.75} />
-                </button>
-                <span className="absolute pointer-events-none"
-                  style={{ top: 3, right: -9, transform: 'rotate(35deg)', backgroundColor: '#6C3FC5', color: '#fff', fontSize: 5, fontWeight: 700, letterSpacing: '0.03em', padding: '1px 10px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
-                  SOON
-                </span>
-              </div>
+              <button
+                onClick={() => isListening ? stopListening() : startListening()}
+                title={isListening ? 'Listening...' : 'Voice command'}
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{
+                  width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
+                  backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                  border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                  color: isListening ? '#EF4444' : '#F9FAFB',
+                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                }}>
+                <Mic size={14} strokeWidth={1.75} />
+              </button>
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -430,6 +453,18 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
         </div>
       </div>
     </div>
+    {isListening && (
+      <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        backgroundColor: '#111318', border: '1px solid #EF4444',
+        borderRadius: 999, padding: '8px 20px', zIndex: 50,
+        display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
+      }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
+        Listening... say a command
+      </div>
+    )}
+  </>
   )
 }
 
