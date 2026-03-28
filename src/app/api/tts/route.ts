@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// ElevenLabs voice ID for "Rachel" — warm, natural British female
-// Renamed as "Lumio" in the UI
-const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
+// Default ElevenLabs voice — "Dallin" (positive, inspiring & clear)
+const VOICE_ID = 'alFofuDn3cOwyoz1i44T'
 const MODEL_ID = 'eleven_turbo_v2_5'
 const TRIAL_DAILY_LIMIT = 5
 

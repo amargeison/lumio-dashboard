@@ -1,6 +1,44 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useSyncExternalStore } from 'react'
+
+const DEFAULT_VOICE_ID = 'alFofuDn3cOwyoz1i44T' // Dallin
+
+function getVoiceId(): string {
+  if (typeof window === 'undefined') return DEFAULT_VOICE_ID
+  return localStorage.getItem('lumio_tts_voice') || DEFAULT_VOICE_ID
+}
+
+// Subscribe to localStorage changes (cross-tab + same-tab)
+const voiceListeners = new Set<() => void>()
+let voiceSnapshot = typeof window !== 'undefined' ? getVoiceId() : DEFAULT_VOICE_ID
+
+function subscribeVoice(cb: () => void) {
+  voiceListeners.add(cb)
+  return () => { voiceListeners.delete(cb) }
+}
+function getVoiceSnapshot() { return voiceSnapshot }
+function getServerVoiceSnapshot() { return DEFAULT_VOICE_ID }
+
+if (typeof window !== 'undefined') {
+  // Listen for storage events (other tabs)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'lumio_tts_voice') {
+      voiceSnapshot = getVoiceId()
+      voiceListeners.forEach(cb => cb())
+    }
+  })
+
+  // Patch localStorage.setItem to detect same-tab changes
+  const origSetItem = localStorage.setItem.bind(localStorage)
+  localStorage.setItem = (key: string, value: string) => {
+    origSetItem(key, value)
+    if (key === 'lumio_tts_voice') {
+      voiceSnapshot = value || DEFAULT_VOICE_ID
+      voiceListeners.forEach(cb => cb())
+    }
+  }
+}
 
 // Simple hash for cache keys
 function hashText(text: string): string {
@@ -44,6 +82,7 @@ function fallbackSpeak(text: string, onEnd?: () => void) {
 }
 
 export function useElevenLabsTTS() {
+  const voiceId = useSyncExternalStore(subscribeVoice, getVoiceSnapshot, getServerVoiceSnapshot)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -110,7 +149,7 @@ export function useElevenLabsTTS() {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voice: voiceId }),
         signal: controller.signal,
       })
 

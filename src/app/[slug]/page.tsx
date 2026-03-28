@@ -667,6 +667,121 @@ function ComingSoonView({ dept }: { dept: DeptId }) {
   )
 }
 
+// ─── Voice Selector ─────────────────────────────────────────────────────────
+
+const VOICES = [
+  { id: 'alFofuDn3cOwyoz1i44T', name: 'Dallin', desc: 'Positive, inspiring & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
+  { id: 'Qe9WSybioZxssVEwlBSo', name: 'Vincent', desc: 'Calm British male — deep, relaxed and reassuring', sample: 'Good morning. Everything is under control.' },
+  { id: 'flHkNRp1BlvT73UL6gyz', name: 'Jessica', desc: 'The Villain — for those who like their briefings dramatic', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
+]
+
+function VoiceSelector() {
+  const [activeVoice, setActiveVoice] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('lumio_tts_voice') || 'alFofuDn3cOwyoz1i44T'
+    return 'alFofuDn3cOwyoz1i44T'
+  })
+  const [previewing, setPreviewing] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  function selectVoice(id: string) {
+    setActiveVoice(id)
+    localStorage.setItem('lumio_tts_voice', id)
+  }
+
+  async function preview(voice: typeof VOICES[0]) {
+    // Stop any current preview
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    if (previewing === voice.id) { setPreviewing(null); return }
+
+    setPreviewing(voice.id)
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      const wsToken = localStorage.getItem('workspace_session_token')
+      if (wsToken) headers['x-workspace-token'] = wsToken
+
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text: voice.sample, voice: voice.id }),
+      })
+      if (!res.ok) throw new Error('TTS failed')
+
+      const buf = await res.arrayBuffer()
+      const blob = new Blob([buf], { type: 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setPreviewing(null); URL.revokeObjectURL(url) }
+      audio.onerror = () => { setPreviewing(null); URL.revokeObjectURL(url) }
+      await audio.play()
+    } catch {
+      setPreviewing(null)
+    }
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🎙️</span>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>Choose the voice for your AI morning briefing</p>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
+        {VOICES.map(voice => {
+          const isActive = activeVoice === voice.id
+          const isPreviewing = previewing === voice.id
+          return (
+            <div
+              key={voice.id}
+              className="rounded-xl p-4 transition-colors"
+              style={{
+                backgroundColor: '#0A0B10',
+                border: isActive ? '1px solid #0D9488' : '1px solid #1F2937',
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
+                {isActive && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>
+                    ✓ Active
+                  </span>
+                )}
+              </div>
+              <p className="text-xs mb-4 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => preview(voice)}
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors"
+                  style={{
+                    backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)',
+                    color: isPreviewing ? '#A78BFA' : '#9CA3AF',
+                    border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937',
+                  }}
+                >
+                  {isPreviewing ? '■ Stop' : '▶ Preview'}
+                </button>
+                {!isActive && (
+                  <button
+                    onClick={() => selectVoice(voice.id)}
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+                  >
+                    Select
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Settings View ───────────────────────────────────────────────────────────
 
 function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
@@ -832,6 +947,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
           ))}
         </div>
       </div>
+
+      {/* Voice Assistant */}
+      <VoiceSelector />
 
       {/* Dev: Reset onboarding */}
       {isDev && (
