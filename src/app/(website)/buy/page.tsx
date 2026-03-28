@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Check, X, ArrowLeft, ArrowRight, Building2, CreditCard,
   Lock, Sparkles, Zap, Shield, Star, ChevronDown, Eye, EyeOff,
-  Loader2, Users, BarChart2, GitBranch, Globe, Layers
+  Loader2, Users, BarChart2, GitBranch, Globe, Layers, Upload
 } from 'lucide-react'
 
 // ─── Plans ─────────────────────────────────────────────────────────────────
