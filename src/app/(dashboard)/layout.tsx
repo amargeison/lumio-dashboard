@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
         {/* Top-right: avatar + bell */}
-        <div className="fixed z-40 flex items-center gap-3" style={{ top: 16, right: 16 }}>
+        <div className="fixed flex items-center gap-3" style={{ top: 12, right: 16, zIndex: 60 }}>
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}

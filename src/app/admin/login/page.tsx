@@ -18,9 +18,9 @@ export default function AdminLoginPage() {
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Invalid PIN'); setLoading(false); return }
     localStorage.setItem('admin_session_token', data.token)
-    localStorage.setItem('admin_name', data.name || '')
-    localStorage.setItem('admin_role', data.role || '')
-    localStorage.setItem('admin_email', 'admin@lumiocms.com')
+    localStorage.setItem('admin_name', data.name || 'Admin')
+    localStorage.setItem('admin_role', data.role || 'superadmin')
+    localStorage.setItem('admin_email', data.email || 'admin@lumiocms.com')
     router.replace('/admin')
   }
 

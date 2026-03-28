@@ -119,7 +119,7 @@ export default function SchoolsPricingPage() {
               <div className="flex items-baseline gap-1">
                 <span className="font-bold" style={{ color: '#C8960C', fontSize: 24, alignSelf: 'flex-start', marginTop: 10 }}>£</span>
                 <span className="font-black leading-none" style={{ color: '#F9FAFB', fontSize: 56, fontFamily: 'inherit' }}>{plan.price}</span>
-                <span className="text-sm ml-1" style={{ color: '#6B7280' }}>/year</span>
+                <span className="text-sm ml-1" style={{ color: '#6B7280' }}>/month</span>
               </div>
               <p className="text-sm leading-relaxed pb-4" style={{ color: '#9CA3AF', borderBottom: '1px solid #1F3460' }}>
                 {plan.desc}
