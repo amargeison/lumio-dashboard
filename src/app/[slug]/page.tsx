@@ -200,13 +200,13 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
 // ─── Greeting Banner ─────────────────────────────────────────────────────────
 
 const BG_GRADIENTS = [
-  'from-violet-950 via-purple-900 to-indigo-950',
-  'from-purple-950 via-violet-900 to-indigo-950',
-  'from-indigo-950 via-purple-900 to-violet-950',
-  'from-violet-950 via-indigo-900 to-purple-950',
-  'from-purple-950 via-indigo-900 to-violet-950',
-  'from-indigo-950 via-violet-900 to-purple-950',
-  'from-violet-950 via-purple-950 to-indigo-900',
+  'from-violet-950/80 via-purple-950/90 to-indigo-950',
+  'from-purple-950 via-violet-950/80 to-indigo-950/90',
+  'from-indigo-950 via-purple-950/80 to-violet-950/90',
+  'from-violet-950/90 via-indigo-950 to-purple-950/80',
+  'from-purple-950/80 via-indigo-950/90 to-violet-950',
+  'from-indigo-950/90 via-violet-950 to-purple-950/80',
+  'from-violet-950 via-purple-950/90 to-indigo-950/80',
 ]
 
 // ─── Fake data helpers (same as demo) ────────────────────────────────────────
@@ -270,12 +270,50 @@ const QUOTES = [
   { text: "Success is not final, failure is not fatal.", author: "Winston Churchill" },
 ]
 
-const WORLD_ZONES = [
+const DEFAULT_WORLD_ZONES = [
   { label: 'London',   tz: 'Europe/London'    },
   { label: 'New York', tz: 'America/New_York' },
   { label: 'Dubai',    tz: 'Asia/Dubai'       },
   { label: 'Tokyo',    tz: 'Asia/Tokyo'       },
 ]
+
+const ALL_TIMEZONES = [
+  { label: 'London', tz: 'Europe/London' },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai', tz: 'Asia/Dubai' },
+  { label: 'Tokyo', tz: 'Asia/Tokyo' },
+  { label: 'Sydney', tz: 'Australia/Sydney' },
+  { label: 'Los Angeles', tz: 'America/Los_Angeles' },
+  { label: 'Chicago', tz: 'America/Chicago' },
+  { label: 'Toronto', tz: 'America/Toronto' },
+  { label: 'Paris', tz: 'Europe/Paris' },
+  { label: 'Berlin', tz: 'Europe/Berlin' },
+  { label: 'Amsterdam', tz: 'Europe/Amsterdam' },
+  { label: 'Singapore', tz: 'Asia/Singapore' },
+  { label: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+  { label: 'Mumbai', tz: 'Asia/Kolkata' },
+  { label: 'S\u00e3o Paulo', tz: 'America/Sao_Paulo' },
+  { label: 'Mexico City', tz: 'America/Mexico_City' },
+  { label: 'Johannesburg', tz: 'Africa/Johannesburg' },
+  { label: 'Cairo', tz: 'Africa/Cairo' },
+  { label: 'Auckland', tz: 'Pacific/Auckland' },
+  { label: 'Riyadh', tz: 'Asia/Riyadh' },
+]
+
+function getStoredZones(): { label: string; tz: string }[] {
+  if (typeof window === 'undefined') return DEFAULT_WORLD_ZONES
+  try {
+    const stored = localStorage.getItem('lumio_world_zones')
+    if (stored) return JSON.parse(stored)
+  } catch {}
+  return DEFAULT_WORLD_ZONES
+}
+
+function getUserLocalTz(): { label: string; tz: string } {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const match = ALL_TIMEZONES.find(z => z.tz === tz)
+  return match || { label: tz.split('/').pop()?.replace(/_/g, ' ') || 'Local', tz }
+}
 
 function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
   const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz, hour12: false })
@@ -297,11 +335,18 @@ function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
 
 function WorldClock() {
   const [now, setNow] = useState(() => new Date())
+  const [zones, setZones] = useState(getStoredZones)
+  const localTz = getUserLocalTz()
   const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
     if (typeof window !== 'undefined') return (localStorage.getItem('lumio_clock_mode') as 'digital' | 'analogue') || 'digital'
     return 'digital'
   })
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+  useEffect(() => {
+    function onStorage(e: StorageEvent) { if (e.key === 'lumio_world_zones') setZones(getStoredZones()) }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   function toggleMode() {
     const next = mode === 'digital' ? 'analogue' : 'digital'
@@ -319,26 +364,32 @@ function WorldClock() {
       {mode === 'digital' ? (
         <>
           <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-            {WORLD_ZONES.map(z => (
-              <div key={z.label} className="flex items-center gap-1.5">
-                <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
-                <span className="text-xs" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
-              </div>
-            ))}
+            {zones.map(z => {
+              const isLocal = z.tz === localTz.tz
+              return (
+                <div key={z.label} className="flex items-center gap-1.5">
+                  <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+                  <span className="text-xs" style={{ color: isLocal ? '#FBBF24' : 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+                </div>
+              )
+            })}
           </div>
-          <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+          <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
         </>
       ) : (
         <>
           <div className="grid grid-cols-4 gap-2">
-            {WORLD_ZONES.map(z => (
-              <div key={z.label} className="flex flex-col items-center gap-1">
-                <MiniAnalogClock tz={z.tz} now={now} />
-                <span className="text-[9px] font-medium" style={{ color: 'rgba(167,139,250,0.6)' }}>{z.label}</span>
-              </div>
-            ))}
+            {zones.map(z => {
+              const isLocal = z.tz === localTz.tz
+              return (
+                <div key={z.label} className="flex flex-col items-center gap-1">
+                  <MiniAnalogClock tz={z.tz} now={now} />
+                  <span className="text-[9px] font-medium" style={{ color: isLocal ? '#FBBF24' : 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+                </div>
+              )
+            })}
           </div>
-          <div className="text-xs mt-1" style={{ color: 'rgba(167,139,250,0.4)' }}>World Clock</div>
+          <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
         </>
       )}
     </div>
@@ -382,12 +433,7 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
   return (
   <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
-      <style>{`@keyframes ripple{0%{transform:translate(-50%,-50%) scale(0.3);opacity:0.12}100%{transform:translate(-50%,-50%) scale(3);opacity:0}}`}</style>
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', borderRadius: 'inherit' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite', animationDelay: '1.5s' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '30%', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(13,148,136,0.3)', animation: 'ripple 5s ease-out infinite', animationDelay: '3s' }} />
-      </div>
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
       <div className="relative z-10 px-6 py-5">
@@ -506,6 +552,17 @@ const ROUNDUP_ITEMS = [
     messages: [
       { id: 'no1', from: 'Notion', avatar: 'NO', subject: 'Testing guide updated', preview: '2 items resolved in the QA testing guide. Sophie Williams marked "OTP flow" and "School registration" as complete.', time: '9:15am', urgent: false, read: false },
       { id: 'no2', from: 'Notion', avatar: 'NO', subject: 'Q2 Roadmap — 3 items need review', preview: 'The Q2 product roadmap has 3 items flagged for your review before the Friday planning session.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
+    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
+    messages: [
+      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Charlotte Davies.', time: '9:45am', urgent: false, read: false },
+      { id: 'h2', from: 'HubSpot CRM', avatar: 'HS', subject: 'New contact — Marcus Chen, Meridian Trust', preview: 'Marcus Chen (CTO, Meridian Trust) has been added as a new contact. Recommended action: schedule intro call.', time: '8:30am', urgent: false, read: false },
+      { id: 'h3', from: 'HubSpot', avatar: 'HS', subject: 'Email sequence — 3 contacts opened your email', preview: 'Your "School Digital Transformation" sequence had 3 opens and 1 click-through in the last 24 hours.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'h4', from: 'HubSpot', avatar: 'HS', subject: 'Task reminder — follow up with Wimbledon High', preview: 'You have an overdue task: follow up with James Harlow at Wimbledon High regarding the enterprise proposal.', time: 'Yesterday', urgent: true, read: false },
+      { id: 'h5', from: 'HubSpot', avatar: 'HS', subject: 'Monthly report ready — March 2026', preview: 'Your March CRM report is ready. Pipeline value: \u00A3775,100. Deals closed: 4. Win rate: 50%.', time: '2 days ago', urgent: false, read: true },
     ]
   },
 ]
@@ -857,16 +914,16 @@ function VoiceSelector() {
 
     setPreviewing(voice.id)
     try {
+      const wsToken = localStorage.getItem('workspace_session_token') || ''
+      const demoToken = localStorage.getItem('demo_session_token') || ''
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      const wsToken = localStorage.getItem('workspace_session_token')
-      const demoToken = localStorage.getItem('demo_session_token')
       if (wsToken) headers['x-workspace-token'] = wsToken
-      else if (demoToken) headers['x-demo-token'] = demoToken
+      if (demoToken) headers['x-demo-token'] = demoToken
 
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ text: voice.sample, voice_id: voice.id }),
+        body: JSON.stringify({ text: voice.sample, voice: voice.id }),
       })
       if (!res.ok) throw new Error('TTS failed')
 
@@ -941,6 +998,87 @@ function VoiceSelector() {
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Timezone Selector ──────────────────────────────────────────────────────
+
+function TimezoneSelector() {
+  const [zones, setZones] = useState(getStoredZones)
+  const [search, setSearch] = useState('')
+  const localTz = getUserLocalTz()
+
+  function toggleZone(zone: { label: string; tz: string }) {
+    const exists = zones.some(z => z.tz === zone.tz)
+    let next: { label: string; tz: string }[]
+    if (exists) {
+      next = zones.filter(z => z.tz !== zone.tz)
+    } else {
+      if (zones.length >= 4) return
+      next = [...zones, zone]
+    }
+    setZones(next)
+    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
+  }
+
+  const filtered = search
+    ? ALL_TIMEZONES.filter(z => z.label.toLowerCase().includes(search.toLowerCase()))
+    : ALL_TIMEZONES
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🕐</span>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>World Clock Timezones</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>Choose up to 4 timezones to display in your dashboard</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-5 space-y-3">
+        <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+          <span style={{ color: '#6B7280' }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search timezones..." className="text-sm bg-transparent outline-none flex-1" style={{ color: '#F9FAFB' }} />
+        </div>
+
+        {/* Local timezone */}
+        <div className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs" style={{ color: '#FBBF24' }}>📍</span>
+            <span className="text-sm font-medium" style={{ color: '#FBBF24' }}>{localTz.label}</span>
+            <span className="text-xs" style={{ color: 'rgba(251,191,36,0.6)' }}>Your timezone</span>
+          </div>
+        </div>
+
+        {/* Timezone list */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[280px] overflow-y-auto">
+          {filtered.map(zone => {
+            const isSelected = zones.some(z => z.tz === zone.tz)
+            return (
+              <button
+                key={zone.tz}
+                onClick={() => toggleZone(zone)}
+                disabled={!isSelected && zones.length >= 4}
+                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
+                style={{
+                  backgroundColor: isSelected ? 'rgba(13,148,136,0.08)' : '#0A0B10',
+                  border: isSelected ? '1px solid rgba(13,148,136,0.3)' : '1px solid #1F2937',
+                  opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
+                  cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <span className="text-sm" style={{ color: isSelected ? '#0D9488' : '#9CA3AF' }}>{zone.label}</span>
+                {isSelected && <span style={{ color: '#0D9488' }}>✓</span>}
+              </button>
+            )
+          })}
+        </div>
+
+        <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
       </div>
     </div>
   )
@@ -1115,6 +1253,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
       {/* Voice Assistant */}
       <VoiceSelector />
 
+      {/* World Clock Timezones */}
+      <TimezoneSelector />
+
       {/* Dev: Reset onboarding */}
       {isDev && (
         <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.2)' }}>
@@ -1146,7 +1287,6 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
   return (
     <div className="space-y-4">
       <PersonalBanner company={company} firstName={firstName} />
-      <MorningRoundup />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1154,8 +1294,16 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
           <QuickActionsBar onAction={onAction} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2">
+              <MorningRoundup />
+            </div>
+            <div>
               <MeetingsToday />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                 <EnhancedStatCard label="Active Workflows" value={String(wf)} icon={GitBranch} color="#0D9488"
                   pieData={[{label:'Running',value:32,color:'#0D9488'},{label:'Paused',value:9,color:'#F59E0B'},{label:'Draft',value:6,color:'#374151'}]}
