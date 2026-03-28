@@ -18,7 +18,7 @@ import {
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
-import { useVoiceCommands } from '@/hooks/useVoiceCommands'
+import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
 import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
@@ -402,7 +402,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName }: { company: string; firstName?: string }) {
+function PersonalBanner({ company, firstName, onVoiceCommand }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -413,7 +413,7 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
-  const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
+  const { isListening, lastCommand, startListening, stopListening, pendingAction, setPendingAction } = useVoiceCommands()
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -423,15 +423,32 @@ function PersonalBanner({ company, firstName }: { company: string; firstName?: s
   // Handle voice command actions
   useEffect(() => {
     if (!lastCommand) return
-    const { action, response, command } = lastCommand
+    const { action, response, payload } = lastCommand
     speak(response)
+
     if (action === 'PLAY_BRIEFING') {
-      setTimeout(() => handleBriefing(), 1500)
+      setTimeout(() => handleBriefing(), 1800)
     } else if (action === 'STOP_AUDIO') {
       stop()
     } else if (action === 'NAVIGATE') {
-      const dept = command.match(/(hr|accounts|sales|crm|marketing|operations|support|insights|workflows|strategy|trials|partners)/i)?.[1]?.toLowerCase()
+      const dept = payload?.dept?.toLowerCase()
       if (dept) setTimeout(() => window.location.href = `/${dept}`, 1500)
+    } else if (action === 'SWITCH_TAB' || action === 'EXPAND_ROUNDUP' || action === 'OPEN_MODAL' || action === 'EMAIL_TEAM') {
+      // These are handled by OverviewView via onVoiceCommand callback
+      if (onVoiceCommand) onVoiceCommand(lastCommand)
+    } else if (action === 'CANCEL_NEXT_MEETING' || action === 'CANCEL_NAMED_MEETING') {
+      setTimeout(() => {
+        setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: payload || {} })
+        speak('I found your meeting. Would you like me to send a cancellation email?')
+      }, 1500)
+    } else if (action === 'CANCEL_MEETING_WITH_EMAIL' || action === 'CANCEL_MEETING_NO_EMAIL') {
+      // Response already spoken
+    } else if (action === 'SLACK_TEAM_MESSAGE') {
+      setTimeout(() => setPendingAction({ type: 'AWAITING_SLACK_CHANNEL', data: { message: payload?.message || '' } }), 2000)
+    } else if (action === 'EXECUTE_SLACK_SEND') {
+      if (onVoiceCommand) onVoiceCommand(lastCommand)
+    } else if (action === 'BOOK_MEETING') {
+      if (onVoiceCommand) onVoiceCommand({ ...lastCommand, action: 'OPEN_MODAL', payload: { modal: 'ScheduleDemo' } })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastCommand])
@@ -1285,6 +1302,15 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
     'Book Meeting': 'Opening calendar...',
     'Team Events': 'Opening team events...',
   }
+
+  function handleVoiceCommand(cmd: VoiceCommandResult) {
+    if (cmd.action === 'SWITCH_TAB' && cmd.payload?.tab) setTab(cmd.payload.tab)
+    else if (cmd.action === 'OPEN_MODAL') onAction(`Opening ${cmd.payload?.modal || 'form'}...`)
+    else if (cmd.action === 'EXPAND_ROUNDUP') onAction(`Opening ${cmd.payload?.section || 'section'}...`)
+    else if (cmd.action === 'EMAIL_TEAM') onAction('Opening team email...')
+    else if (cmd.action === 'EXECUTE_SLACK_SEND') onAction(`Slack message sent to #${cmd.payload?.channel || 'general'} \u2713`)
+  }
+
   function handleQuickAction(label: string) {
     onAction(quickActionToasts[label] || label)
   }
@@ -1302,7 +1328,7 @@ function OverviewView({ company, firstName, onAction }: { company: string; first
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
