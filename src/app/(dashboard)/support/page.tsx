@@ -1,26 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Open Tickets',      value: '18',   trend: '+5%',  trendDir: 'up'   as const, trendGood: false, icon: Headphones,   sub: 'vs last week'   },
   { label: 'Avg Response Time', value: '2.4h', trend: '+0.3h',trendDir: 'up'   as const, trendGood: false, icon: Clock,        sub: 'vs last week'   },
   { label: 'CSAT Score',        value: '94%',  trend: '+2%',  trendDir: 'up'   as const, trendGood: true,  icon: Star,         sub: 'vs last month'  },
   { label: 'Resolved Today',    value: '12',   trend: '+4',   trendDir: 'up'   as const, trendGood: true,  icon: CheckCircle2, sub: 'vs yesterday'   },
-]
-
-const actions = [
-  { label: 'New Ticket',     icon: Plus          },
-  { label: 'Open Chat',      icon: MessageSquare },
-  { label: 'Create School',  icon: Building2     },
-  { label: 'Add User',       icon: UserPlus      },
-  { label: 'Send Update',    icon: Send          },
-  { label: 'Support Report', icon: FileText      },
-  { label: 'Call a School',  icon: Phone         },
-  { label: 'Book Meeting',   icon: CalendarPlus  },
 ]
 
 const tickets = [
@@ -51,6 +43,20 @@ const ops = [
 ]
 
 export default function SupportPage() {
+  const [showTicket, setShowTicket] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Ticket',     icon: Plus,          onClick: () => setShowTicket(true) },
+    { label: 'Open Chat',      icon: MessageSquare, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Create School',  icon: Building2,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Add User',       icon: UserPlus,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Send Update',    icon: Send,          onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Support Report', icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Call a School',  icon: Phone,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Book Meeting',   icon: CalendarPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('support')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="support"
@@ -108,6 +114,8 @@ export default function SupportPage() {
           </>
         }
       />
+      {showTicket && <NewSupportTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('Support ticket created') }} />}
+      <Toast />
     </PageShell>
   )
 }

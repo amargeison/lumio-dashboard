@@ -1,23 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewTrialModal from '@/components/modals/NewTrialModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Active Trials',           value: '23',  trend: '0',    trendDir: 'up'   as const, trendGood: true,  icon: FlaskConical, sub: 'vs last week'  },
   { label: 'Trials Ending This Week', value: '5',   trend: '+2',   trendDir: 'up'   as const, trendGood: false, icon: AlertCircle,  sub: 'need follow-up'},
   { label: 'Conversion Rate',         value: '62%', trend: '+5%',  trendDir: 'up'   as const, trendGood: true,  icon: TrendingUp,   sub: 'vs last quarter'},
   { label: 'Avg Trial Length',        value: '14d', trend: '0',    trendDir: 'up'   as const, trendGood: true,  icon: Clock,        sub: 'stable'        },
-]
-
-const actions = [
-  { label: 'New Trial',          icon: FlaskConical },
-  { label: 'Send Day 3 Email',   icon: Send         },
-  { label: 'Send Day 7 Email',   icon: Send         },
-  { label: 'Convert to Customer',icon: UserPlus     },
-  { label: 'End Trial',          icon: AlertCircle  },
 ]
 
 const trials = [
@@ -58,6 +53,17 @@ const opportunities = [
 ]
 
 export default function TrialsPage() {
+  const [showTrial, setShowTrial] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Trial',           icon: FlaskConical, onClick: () => setShowTrial(true) },
+    { label: 'Send Day 3 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Send Day 7 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Convert to Customer', icon: UserPlus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'End Trial',           icon: AlertCircle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('trials')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="trials"
@@ -107,6 +113,8 @@ export default function TrialsPage() {
           </>
         }
       />
+      {showTrial && <NewTrialModal onClose={() => setShowTrial(false)} onSubmit={() => { setShowTrial(false); showToast('Trial created') }} />}
+      <Toast />
     </PageShell>
   )
 }

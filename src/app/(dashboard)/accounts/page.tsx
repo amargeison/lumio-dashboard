@@ -7,20 +7,17 @@ import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
+import NewInvoiceModal from '@/components/modals/NewInvoiceModal'
+import ChasePaymentModal from '@/components/modals/ChasePaymentModal'
+import NewExpenseModal from '@/components/modals/NewExpenseModal'
+import NewClientModal from '@/components/modals/NewClientModal'
+import { useToast } from '@/components/modals/useToast'
 
 const DEFAULT_STATS = [
   { label: 'Outstanding Invoices', value: '£84,200', trend: '+£12k', trendDir: 'up'   as const, trendGood: false, icon: Receipt,    sub: 'vs last month' },
   { label: 'Overdue Amount',       value: '£23,400', trend: '+£8k',  trendDir: 'up'   as const, trendGood: false, icon: AlertCircle,sub: 'vs last month' },
   { label: 'Collected This Month', value: '£142,800',trend: '+18%',  trendDir: 'up'   as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month' },
   { label: 'Avg Days to Pay',      value: '28d',     trend: '\u22123d',   trendDir: 'down' as const, trendGood: true,  icon: Clock,      sub: 'vs last quarter'},
-]
-
-const actions = [
-  { label: 'Chase Invoice',  icon: AlertCircle },
-  { label: 'Raise Invoice',  icon: Receipt     },
-  { label: 'Weekly Report',  icon: FileText    },
-  { label: 'Payment Received',icon: TrendingUp },
-  { label: 'Xero Sync',      icon: RefreshCw   },
 ]
 
 const DEFAULT_INVOICES = [
@@ -57,6 +54,11 @@ function fmtGBP(n: number): string {
 
 export default function AccountsPage() {
   const workspace = useWorkspace()
+  const [showInvoice, setShowInvoice] = useState(false)
+  const [showChase, setShowChase] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
+  const [showClient, setShowClient] = useState(false)
+  const { showToast, Toast } = useToast()
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
   const [payments, setPayments] = useState(DEFAULT_PAYMENTS)
@@ -116,6 +118,14 @@ export default function AccountsPage() {
     })
   }, [workspace?.id])
 
+  const actions = [
+    { label: 'Chase Invoice',   icon: AlertCircle, onClick: () => setShowChase(true) },
+    { label: 'Raise Invoice',   icon: Receipt,     onClick: () => setShowInvoice(true) },
+    { label: 'Weekly Report',   icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Payment Received', icon: TrendingUp, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('accounts')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="accounts"
@@ -174,6 +184,11 @@ export default function AccountsPage() {
           </>
         }
       />
+      {showInvoice && <NewInvoiceModal onClose={() => setShowInvoice(false)} onSubmit={() => { setShowInvoice(false); showToast('Invoice created successfully') }} />}
+      {showChase && <ChasePaymentModal onClose={() => setShowChase(false)} onSubmit={() => { setShowChase(false); showToast('Chase email sent') }} />}
+      {showExpense && <NewExpenseModal onClose={() => setShowExpense(false)} onSubmit={() => { setShowExpense(false); showToast('Expense submitted') }} />}
+      {showClient && <NewClientModal onClose={() => setShowClient(false)} onSubmit={() => { setShowClient(false); showToast('Client added') }} />}
+      <Toast />
     </PageShell>
   )
 }

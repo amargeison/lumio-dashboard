@@ -1,23 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import { Users, Activity, Send, FileText, AlertCircle } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewCheckInModal from '@/components/modals/NewCheckInModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Total Customers', value: '181', trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
   { label: 'Green RAG',       value: '142', trend: '+5',  trendDir: 'up' as const, trendGood: true,  icon: Activity,    sub: 'healthy'       },
   { label: 'Amber RAG',       value: '31',  trend: '+2',  trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'at risk'       },
   { label: 'Red RAG',         value: '8',   trend: '+1',  trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'critical'      },
-]
-
-const actions = [
-  { label: 'RAG Check',       icon: Activity    },
-  { label: 'Start Recovery',  icon: AlertCircle },
-  { label: 'Send Check-in',   icon: Send        },
-  { label: 'Usage Report',    icon: FileText    },
-  { label: 'Health Report',   icon: FileText    },
 ]
 
 type RAG = 'green' | 'amber' | 'red'
@@ -73,6 +68,17 @@ const immediate = [
 ]
 
 export default function SuccessPage() {
+  const [showCheckIn, setShowCheckIn] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'RAG Check',       icon: Activity,    onClick: () => setShowCheckIn(true) },
+    { label: 'Start Recovery',  icon: AlertCircle, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Send Check-in',   icon: Send,        onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Usage Report',    icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Health Report',   icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('success')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="success"
@@ -122,6 +128,8 @@ export default function SuccessPage() {
           </SectionCard>
         }
       />
+      {showCheckIn && <NewCheckInModal onClose={() => setShowCheckIn(false)} onSubmit={() => { setShowCheckIn(false); showToast('Check-in submitted') }} />}
+      <Toast />
     </PageShell>
   )
 }

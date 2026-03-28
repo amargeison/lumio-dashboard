@@ -7,6 +7,12 @@ import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
+import NewLeadModal from '@/components/modals/NewLeadModal'
+import NewDealModal from '@/components/modals/NewDealModal'
+import LogCallModal from '@/components/modals/LogCallModal'
+import SendProposalModal from '@/components/modals/SendProposalModal'
+import ScheduleDemoModal from '@/components/modals/ScheduleDemoModal'
+import { useToast } from '@/components/modals/useToast'
 
 const STAGE_LABELS: Record<string, string> = {
   lead: 'Lead', qualified: 'Discovery', demo: 'Demo', proposal: 'Proposal',
@@ -18,15 +24,6 @@ const DEFAULT_STATS = [
   { label: 'Pipeline Value',   value: '£2.4M', trend: '+12%', trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
   { label: 'Win Rate (30d)',   value: '23%',   trend: '+3%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'deals closed won' },
   { label: 'Hot Leads',        value: '4',     trend: '+1',   trendDir: 'up' as const, trendGood: true,  icon: UserPlus,   sub: 'score ≥ 70/100'  },
-]
-
-const actions = [
-  { label: 'New Deal',         icon: TrendingUp   },
-  { label: 'Book Demo',        icon: Calendar     },
-  { label: 'Send Proposal',    icon: FileText     },
-  { label: 'Log Call',         icon: Phone        },
-  { label: 'New Lead',         icon: UserPlus     },
-  { label: 'Dept Insights',    icon: Sparkles     },
 ]
 
 const DEFAULT_DEALS = [
@@ -81,6 +78,21 @@ export default function SalesPage() {
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [deals, setDeals] = useState(DEFAULT_DEALS)
   const [highlights, setHighlights] = useState(DEFAULT_HIGHLIGHTS)
+  const [showLead, setShowLead] = useState(false)
+  const [showDeal, setShowDeal] = useState(false)
+  const [showCall, setShowCall] = useState(false)
+  const [showProposal, setShowProposal] = useState(false)
+  const [showDemo, setShowDemo] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Deal',       icon: TrendingUp, onClick: () => setShowDeal(true) },
+    { label: 'Book Demo',      icon: Calendar,   onClick: () => setShowDemo(true) },
+    { label: 'Send Proposal',  icon: FileText,   onClick: () => setShowProposal(true) },
+    { label: 'Log Call',       icon: Phone,      onClick: () => setShowCall(true) },
+    { label: 'New Lead',       icon: UserPlus,   onClick: () => setShowLead(true) },
+    { label: 'Dept Insights',  icon: Sparkles,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
 
   useEffect(() => {
     if (!workspace?.id) return
@@ -197,6 +209,12 @@ export default function SalesPage() {
           </>
         }
       />
+      {showLead && <NewLeadModal onClose={() => setShowLead(false)} onSubmit={() => { setShowLead(false); showToast('Lead added') }} />}
+      {showDeal && <NewDealModal onClose={() => setShowDeal(false)} onSubmit={() => { setShowDeal(false); showToast('Deal created') }} />}
+      {showCall && <LogCallModal onClose={() => setShowCall(false)} onSubmit={() => { setShowCall(false); showToast('Call logged') }} />}
+      {showProposal && <SendProposalModal onClose={() => setShowProposal(false)} onSubmit={() => { setShowProposal(false); showToast('Proposal sent') }} />}
+      {showDemo && <ScheduleDemoModal onClose={() => setShowDemo(false)} onSubmit={() => { setShowDemo(false); showToast('Demo scheduled') }} />}
+      <Toast />
     </PageShell>
   )
 }

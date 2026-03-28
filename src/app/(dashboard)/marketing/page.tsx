@@ -5,20 +5,14 @@ import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video } fr
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewCampaignModal from '@/components/modals/NewCampaignModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Social Posts This Month', value: '24',    trend: '+6%',  trendDir: 'up' as const, trendGood: true, icon: Megaphone,  sub: 'vs last month'  },
   { label: 'Email Open Rate',         value: '34.2%', trend: '+2.1%',trendDir: 'up' as const, trendGood: true, icon: Mail,       sub: 'vs last campaign'},
   { label: 'New Leads',               value: '47',    trend: '+12%', trendDir: 'up' as const, trendGood: true, icon: UserPlus,   sub: 'vs last month'  },
   { label: 'MQL Count',               value: '18',    trend: '+5',   trendDir: 'up' as const, trendGood: true, icon: TrendingUp, sub: 'this month'     },
-]
-
-const actions = [
-  { label: 'Create Post',       icon: Plus      },
-  { label: 'New Campaign',      icon: Megaphone },
-  { label: 'Generate Content',  icon: FileText  },
-  { label: 'Webinar Setup',     icon: Video     },
-  { label: 'Lead Report',       icon: TrendingUp},
 ]
 
 const content = [
@@ -71,6 +65,16 @@ export default function MarketingPage() {
   const [product,  setProduct]  = useState('All Products')
   const [district, setDistrict] = useState('All Districts')
   const [trust,    setTrust]    = useState('All Trusts')
+  const [showCampaign, setShowCampaign] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'Create Post',       icon: Plus,       onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'New Campaign',      icon: Megaphone,  onClick: () => setShowCampaign(true) },
+    { label: 'Generate Content',  icon: FileText,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Webinar Setup',     icon: Video,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Lead Report',       icon: TrendingUp, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
 
   const hasData = useHasDashboardData('marketing')
   if (hasData === null) return null
@@ -156,6 +160,8 @@ export default function MarketingPage() {
           </>
         }
       />
+      {showCampaign && <NewCampaignModal onClose={() => setShowCampaign(false)} onSubmit={() => { setShowCampaign(false); showToast('Campaign launched') }} />}
+      <Toast />
     </PageShell>
   )
 }

@@ -1,25 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewProjectModal from '@/components/modals/NewProjectModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Open Purchase Orders',    value: '14',     trend: '+3',   trendDir: 'up'   as const, trendGood: false, icon: Package,     sub: 'vs last week'   },
   { label: 'Low Stock Items',         value: '6',      trend: '+2',   trendDir: 'up'   as const, trendGood: false, icon: AlertCircle, sub: 'need restocking' },
   { label: 'Pending Deliveries',      value: '9',      trend: '+1',   trendDir: 'up'   as const, trendGood: false, icon: Truck,       sub: 'expected this week'},
   { label: 'Supplier Invoices Due',   value: '£28,400',trend: '+£4k', trendDir: 'up'   as const, trendGood: false, icon: Receipt,     sub: 'within 30 days'  },
-]
-
-const actions = [
-  { label: 'New Order',         icon: Plus           },
-  { label: 'Restock Alert',     icon: RefreshCw      },
-  { label: 'Supplier Contact',  icon: Phone          },
-  { label: 'Delivery Log',      icon: ClipboardList  },
-  { label: 'Stock Report',      icon: FileText       },
-  { label: 'Book Stock',        icon: PackagePlus    },
 ]
 
 const orders = [
@@ -53,6 +47,18 @@ const upcoming = [
 ]
 
 export default function OperationsPage() {
+  const [showProject, setShowProject] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Order',         icon: Plus,          onClick: () => setShowProject(true) },
+    { label: 'Restock Alert',     icon: RefreshCw,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Supplier Contact',  icon: Phone,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Delivery Log',      icon: ClipboardList, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Stock Report',      icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Book Stock',        icon: PackagePlus,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('operations')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="operations"
@@ -161,6 +167,8 @@ export default function OperationsPage() {
           </>
         }
       />
+      {showProject && <NewProjectModal onClose={() => setShowProject(false)} onSubmit={() => { setShowProject(false); showToast('Project created') }} />}
+      <Toast />
     </PageShell>
   )
 }

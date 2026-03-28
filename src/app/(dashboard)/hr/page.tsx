@@ -14,6 +14,7 @@ import RecruitmentModal,      { type RecruitmentData }      from '@/components/R
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
+import SendContractModal from '@/components/modals/SendContractModal'
 
 // ─── Default static data (fallback) ──────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export default function HRPage() {
   const [showOffboarding, setShowOffboarding] = useState(false)
   const [showRecruitment, setShowRecruitment] = useState(false)
   const [showPerfReview,  setShowPerfReview]  = useState(false)
+  const [showContract,    setShowContract]    = useState(false)
 
   const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
@@ -305,8 +307,8 @@ export default function HRPage() {
     { label: 'Recruitment',        icon: Briefcase,       onClick: () => setShowRecruitment(true) },
     { label: 'Performance Review', icon: ClipboardList,   onClick: () => setShowPerfReview(true)  },
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
-    { label: 'Send Contract',      icon: FileText  },
-    { label: 'Dept Insights',      icon: Star      },
+    { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
+    { label: 'Dept Insights',      icon: Star,           onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
   ]
 
   return (
@@ -415,6 +417,7 @@ export default function HRPage() {
       {showPerfReview && (
         <PerformanceReviewModal onClose={() => setShowPerfReview(false)} onSubmit={handlePerfReview} />
       )}
+      {showContract && <SendContractModal onClose={() => setShowContract(false)} onSubmit={() => { setShowContract(false); showToast('Contract sent') }} />}
       <Toast message={toast} />
     </PageShell>
   )

@@ -1,23 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import NewITTicketModal from '@/components/modals/NewITTicketModal'
+import { useToast } from '@/components/modals/useToast'
 
 const stats = [
   { label: 'Open IT Requests',       value: '12',  trend: '+3',  trendDir: 'up'   as const, trendGood: false, icon: Server,  sub: 'vs last week'   },
   { label: 'Pending Provisioning',   value: '5',   trend: '0',   trendDir: 'up'   as const, trendGood: true,  icon: Clock,   sub: 'stable'         },
   { label: 'Assets Registered',      value: '284', trend: '+8',  trendDir: 'up'   as const, trendGood: true,  icon: Monitor, sub: 'this quarter'   },
   { label: 'Licences Due Renewal',   value: '7',   trend: '+2',  trendDir: 'up'   as const, trendGood: false, icon: Key,     sub: 'within 60 days' },
-]
-
-const actions = [
-  { label: 'New IT Request',   icon: Plus      },
-  { label: 'Provision Account',icon: UserPlus  },
-  { label: 'Asset Register',   icon: Package   },
-  { label: 'Licence Renewal',  icon: RefreshCw },
-  { label: 'IT Report',        icon: FileText  },
 ]
 
 const requests = [
@@ -51,6 +46,17 @@ const licences = [
 ]
 
 export default function ITPage() {
+  const [showTicket, setShowTicket] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New IT Request',    icon: Plus,      onClick: () => setShowTicket(true) },
+    { label: 'Provision Account', icon: UserPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Asset Register',    icon: Package,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Licence Renewal',   icon: RefreshCw, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'IT Report',         icon: FileText,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
+
   const hasData = useHasDashboardData('it')
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="it"
@@ -102,6 +108,8 @@ export default function ITPage() {
           </>
         }
       />
+      {showTicket && <NewITTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('IT request created') }} />}
+      <Toast />
     </PageShell>
   )
 }

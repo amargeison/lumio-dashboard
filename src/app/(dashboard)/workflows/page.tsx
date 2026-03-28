@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { useToast } from '@/components/modals/useToast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,13 +17,6 @@ const stats = [
   { label: 'Active',             value: '38',   trend: '+3',   trendDir: 'up' as const, trendGood: true,  icon: Activity,    sub: 'currently live' },
   { label: 'Last 24hr Runs',     value: '312',  trend: '+28%', trendDir: 'up' as const, trendGood: true,  icon: Clock,       sub: 'vs prior day'   },
   { label: 'Errors',             value: '3',    trend: '+1',   trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'vs yesterday'   },
-]
-
-const actions = [
-  { label: 'New Workflow',  icon: Plus      },
-  { label: 'Run Now',       icon: Play      },
-  { label: 'View Logs',     icon: FileText  },
-  { label: 'Export Report', icon: Download  },
 ]
 
 // ─── HR wired workflows ───────────────────────────────────────────────────────
@@ -119,6 +113,14 @@ function RunButton({ status, onClick }: { status: RunStatus; onClick: () => void
 
 export default function WorkflowsPage() {
   const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Workflow',  icon: Plus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Run Now',       icon: Play,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'View Logs',     icon: FileText, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Export Report', icon: Download, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+  ]
 
   const hasData = useHasDashboardData('workflows')
   if (hasData === null) return null
@@ -225,6 +227,7 @@ export default function WorkflowsPage() {
           </>
         }
       />
+      <Toast />
     </PageShell>
   )
 }
