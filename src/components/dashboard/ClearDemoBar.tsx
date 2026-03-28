@@ -30,6 +30,22 @@ export default function ClearDemoBar() {
   }
 
   function handleGoLive() {
+    // Clear demo data from API
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      fetch('/api/onboarding/clear-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+      }).catch(() => {})
+    }
+    // Clear all demo localStorage keys
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
+      .forEach(k => localStorage.removeItem(k))
+    localStorage.setItem('lumio_demo_active', 'false')
+    // Clear CRM session cache
+    sessionStorage.removeItem('lumio_crm_cache')
+    // Navigate to onboarding
     router.push('/onboarding')
   }
 
