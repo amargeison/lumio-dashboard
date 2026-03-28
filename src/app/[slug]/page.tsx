@@ -215,13 +215,13 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
 // ─── Greeting Banner ─────────────────────────────────────────────────────────
 
 const BG_GRADIENTS = [
-  'from-teal-950 via-emerald-900 to-green-950',
-  'from-slate-900 via-teal-950 to-emerald-900',
-  'from-emerald-950 via-teal-900 to-slate-900',
-  'from-gray-900 via-emerald-950 to-teal-900',
-  'from-teal-900 via-slate-900 to-emerald-950',
-  'from-emerald-900 via-gray-900 to-teal-950',
-  'from-green-950 via-teal-900 to-emerald-900',
+  'from-violet-950 via-purple-900 to-indigo-950',
+  'from-purple-950 via-violet-900 to-indigo-950',
+  'from-indigo-950 via-purple-900 to-violet-950',
+  'from-violet-950 via-indigo-900 to-purple-950',
+  'from-purple-950 via-indigo-900 to-violet-950',
+  'from-indigo-950 via-violet-900 to-purple-950',
+  'from-violet-950 via-purple-950 to-indigo-900',
 ]
 
 // ─── Fake data helpers (same as demo) ────────────────────────────────────────
@@ -1075,7 +1075,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company}</span></p>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' && localStorage.getItem('lumio_company_name')) || slug}</span></p>
               </div>
             </div>
 
