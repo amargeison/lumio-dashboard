@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
       owner_name: `${firstName || ''} ${lastName || ''}`.trim() || null,
       status: 'active',
       plan: plan || 'growth',
-      industry: industry || null,
       onboarding_complete: false,
     })
     .select('id, slug')
