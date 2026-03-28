@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
       status: 'active',
       plan: plan || 'growth',
       industry: industry || null,
-      company_size: size || null,
       onboarding_complete: false,
     })
     .select('id, slug')
