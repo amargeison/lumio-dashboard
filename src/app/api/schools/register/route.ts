@@ -58,7 +58,10 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lumiocms.com'
 
-    // 3. Create school record
+    // 3. Extract email domain for SSO matching
+    const emailDomain = yourEmail.split('@')[1]?.toLowerCase() || null
+
+    // 4. Create school record
     const { data: school, error: schoolError } = await supabase
       .from('schools')
       .insert({
@@ -72,6 +75,7 @@ export async function POST(req: NextRequest) {
         postcode,
         headteacher: yourRole === 'headteacher' ? yourName : null,
         plan,
+        email_domain: emailDomain,
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         active: true,
         onboarded: false,

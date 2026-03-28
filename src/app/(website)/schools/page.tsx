@@ -339,6 +339,9 @@ function HeroSection() {
               </a>
             </div>
 
+            <p className="text-sm mb-2" style={{ color: '#6B7280' }}>
+              ✓ Sign in with Google Workspace &nbsp;&nbsp; ✓ Sign in with Microsoft 365
+            </p>
             <p className="text-sm" style={{ color: '#6B7280' }}>
               ✓ 14-day free trial &nbsp;·&nbsp; ✓ No credit card &nbsp;·&nbsp; ✓ GDPR compliant &nbsp;·&nbsp; ✓ UK data centres
             </p>
@@ -1039,6 +1042,9 @@ function FinalCTASection() {
             Book a Demo
           </a>
         </div>
+        <p className="text-sm mb-2" style={{ color: '#6B7280' }}>
+          ✓ Sign in with Google Workspace &nbsp;&nbsp; ✓ Sign in with Microsoft 365
+        </p>
         <p className="text-xs" style={{ color: '#4B5563' }}>
           Used by primary schools, secondary schools and multi-academy trusts · GDPR compliant · UK-based support
         </p>

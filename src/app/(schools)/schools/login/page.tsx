@@ -1,23 +1,60 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 
 type Step = 'email' | 'otp'
 
-export default function SchoolsLoginPage() {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
+
+function SchoolsLoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
+  const [ssoError, setSsoError] = useState('')
+
+  useEffect(() => {
+    const ssoErr = searchParams.get('sso_error')
+    const ssoEmail = searchParams.get('email')
+    if (ssoErr === 'no_school') {
+      setSsoError(
+        `We couldn't find a school registered with ${ssoEmail || 'this email'}. Start a free trial or contact your school admin.`
+      )
+    } else if (searchParams.get('error') === 'auth_failed') {
+      setSsoError('Sign-in failed. Please try again.')
+    }
+  }, [searchParams])
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [schoolName, setSchoolName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resent, setResent] = useState(false)
+  const [ssoLoading, setSsoLoading] = useState<'google' | 'azure' | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const code = digits.join('')
+
+  async function handleSSO(provider: 'google' | 'azure') {
+    setSsoLoading(provider)
+    setError('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        scopes: 'email profile',
+        redirectTo: `${window.location.origin}/auth/schools-callback`,
+      },
+    })
+    if (error) {
+      setError(error.message)
+      setSsoLoading(null)
+    }
+  }
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -140,6 +177,69 @@ export default function SchoolsLoginPage() {
                 <p className="text-sm" style={{ color: '#9CA3AF' }}>
                   Sign in to your school workspace
                 </p>
+              </div>
+
+              {/* SSO Buttons */}
+              <div className="space-y-3 mb-6">
+                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
+                  Sign in with your school account
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleSSO('google')}
+                  disabled={ssoLoading !== null}
+                  className="w-full flex items-center justify-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#1F2937',
+                    opacity: ssoLoading === 'google' ? 0.7 : 1,
+                    cursor: ssoLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 2.58 9 2.58z" fill="#EA4335"/>
+                  </svg>
+                  {ssoLoading === 'google' ? 'Redirecting…' : 'Continue with Google Workspace'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSSO('azure')}
+                  disabled={ssoLoading !== null}
+                  className="w-full flex items-center justify-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#1F2937',
+                    opacity: ssoLoading === 'azure' ? 0.7 : 1,
+                    cursor: ssoLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+                  </svg>
+                  {ssoLoading === 'azure' ? 'Redirecting…' : 'Continue with Microsoft 365'}
+                </button>
+              </div>
+
+              {ssoError && (
+                <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444' }}>
+                  {ssoError}{' '}
+                  <Link href="/schools/register" style={{ color: '#0D9488', fontWeight: 600 }}>
+                    Get started →
+                  </Link>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+                <span className="text-xs" style={{ color: '#6B7280' }}>or sign in with email</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
               </div>
 
               <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -299,5 +399,17 @@ export default function SchoolsLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SchoolsLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#07080F' }}>
+        <p style={{ color: '#6B7280' }}>Loading...</p>
+      </div>
+    }>
+      <SchoolsLoginContent />
+    </Suspense>
   )
 }
