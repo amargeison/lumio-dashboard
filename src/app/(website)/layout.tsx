@@ -90,10 +90,10 @@ function Nav() {
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
               {l.label}
-              {l.badge && (
+              {(l as any).badge && (
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
                   style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA', lineHeight: 1 }}>
-                  {l.badge}
+                  {(l as any).badge}
                 </span>
               )}
             </Link>
@@ -140,10 +140,10 @@ function Nav() {
             <Link key={l.label} href={l.href} onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
               {l.label}
-              {l.badge && (
+              {(l as any).badge && (
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
                   style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
-                  {l.badge}
+                  {(l as any).badge}
                 </span>
               )}
             </Link>
