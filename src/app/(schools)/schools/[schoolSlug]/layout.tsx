@@ -78,12 +78,13 @@ export default function SchoolLayout({ children }: Props) {
         className={['fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 md:translate-x-0', open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'].join(' ')}
         style={{ width: 200, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}
       >
-        <div className="flex shrink-0 items-center justify-between px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-1.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)' }}>
-              <Building2 size={12} color="white" />
-            </div>
-            <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Lumio <span style={{ color: '#0D9488' }}>Schools</span></span>
+        <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            {schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</p>
+            <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
           </div>
           <button className="md:hidden" onClick={() => setOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
         </div>
@@ -124,33 +125,31 @@ export default function SchoolLayout({ children }: Props) {
           })}
         </nav>
 
-        <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid #1F2937' }}>
-          <p className="text-xs font-semibold truncate" style={{ color: '#9CA3AF' }}>{schoolName}</p>
-          <p className="text-xs" style={{ color: '#4B5563' }}>{planLabel}</p>
+        {/* Sidebar bottom: avatar + bell + Lumio logo */}
+        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 px-4 py-3">
+            <AvatarDropdown initials={initials} />
+            <span className="flex-1 text-xs font-medium truncate" style={{ color: '#9CA3AF' }}>{initials}</span>
+            <button className="relative flex items-center justify-center rounded-lg p-1.5 transition-colors"
+              style={{ color: '#9CA3AF' }} aria-label="Notifications">
+              <Bell size={16} strokeWidth={1.75} />
+              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#EF4444' }} />
+            </button>
+          </div>
+          <div className="px-4 pb-3">
+            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity">
+              <img src="/lumio-transparent-new.png" alt="Lumio" width={80} height={22} />
+            </a>
+          </div>
         </div>
       </aside>
 
       <div className="flex flex-1 flex-col md:pl-[200px] overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center gap-3 px-4 md:px-6" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#07080F' }}>
-          <button className="md:hidden" onClick={() => setOpen(true)} style={{ color: '#9CA3AF' }}><Menu size={20} /></button>
-          <div className="flex flex-1 items-center gap-2 min-w-0">
-            <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="hidden md:block opacity-80 hover:opacity-100 transition-opacity">
-              <img src="/lumio-transparent-new.png" alt="Lumio" width={80} height={22} />
-            </a>
-            <div className="hidden md:block h-4 w-px mx-1" style={{ backgroundColor: '#1F2937' }} />
-            <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              {schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
-            <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="relative" style={{ color: '#9CA3AF' }}>
-              <Bell size={18} />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB', fontSize: 9 }}>3</span>
-            </button>
-            <AvatarDropdown initials={initials} />
-          </div>
-        </header>
+        {/* Mobile menu bar */}
+        <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          <button onClick={() => setOpen(true)} style={{ color: '#9CA3AF' }}><Menu size={18} /></button>
+          <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{schoolName}</span>
+        </div>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
