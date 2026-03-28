@@ -5,7 +5,7 @@ export const metadata = { title: 'Lumio Schools — Pricing' }
 const PLANS = [
   {
     name: 'Starter',
-    price: '599',
+    price: '299',
     desc: 'Everything a single school needs to automate attendance, safeguarding, and cover.',
     features: [
       'AI Morning Briefing',
@@ -23,7 +23,7 @@ const PLANS = [
   },
   {
     name: 'Growth',
-    price: '1,199',
+    price: '599',
     desc: 'Advanced insights and integrations for schools serious about data-led improvement.',
     features: [
       'Everything in Starter',
@@ -42,7 +42,7 @@ const PLANS = [
   },
   {
     name: 'Trust / Academies',
-    price: '2,499',
+    price: '1,499',
     desc: 'Cross-school visibility and trust-wide analytics for Multi-Academy Trusts.',
     features: [
       'Everything in Growth',
