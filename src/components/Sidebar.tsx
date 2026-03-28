@@ -27,31 +27,39 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-const navItems: {
+const BASE_NAV_ITEMS: {
   label: string
-  href: string
+  path: string
   icon: LucideIcon
   badge: number | null
   accent?: string
 }[] = [
-  { label: 'Overview',          href: '/overview',    icon: LayoutDashboard, badge: null },
-  { label: 'Insights',          href: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
-  { label: 'Partners',          href: '/partners',    icon: Handshake,       badge: null },
-  { label: 'HR & People',       href: '/hr',          icon: Users,           badge: 3    },
-  { label: 'Accounts',          href: '/accounts',    icon: Building2,       badge: null },
-  { label: 'Sales',             href: '/sales',       icon: TrendingUp,      badge: 12   },
-  { label: 'CRM',               href: '/crm',         icon: Database,        badge: null },
-  { label: 'Marketing',         href: '/marketing',   icon: Megaphone,       badge: null },
-  { label: 'Trials',            href: '/trials',      icon: FlaskConical,    badge: null },
-  { label: 'Operations',        href: '/operations',  icon: Package,         badge: null },
-  { label: 'Support',           href: '/support',     icon: Headphones,      badge: 5    },
-  { label: 'Success',           href: '/success',     icon: Activity,        badge: 2    },
-  { label: 'Strategy',          href: '/strategy',    icon: Target,          badge: null },
-  { label: 'IT & Systems',      href: '/it',          icon: Server,          badge: 1    },
-  { label: 'Projects',          href: '/projects',    icon: Layers,          badge: null },
-  { label: 'Workflows Library', href: '/workflows',   icon: GitBranch,       badge: null },
-  { label: 'Settings',          href: '/settings',    icon: Settings,        badge: null },
+  { label: 'Overview',          path: '/overview',    icon: LayoutDashboard, badge: null },
+  { label: 'Insights',          path: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
+  { label: 'Partners',          path: '/partners',    icon: Handshake,       badge: null },
+  { label: 'HR & People',       path: '/hr',          icon: Users,           badge: 3    },
+  { label: 'Accounts',          path: '/accounts',    icon: Building2,       badge: null },
+  { label: 'Sales',             path: '/sales',       icon: TrendingUp,      badge: 12   },
+  { label: 'CRM',               path: '/crm',         icon: Database,        badge: null },
+  { label: 'Marketing',         path: '/marketing',   icon: Megaphone,       badge: null },
+  { label: 'Trials',            path: '/trials',      icon: FlaskConical,    badge: null },
+  { label: 'Operations',        path: '/operations',  icon: Package,         badge: null },
+  { label: 'Support',           path: '/support',     icon: Headphones,      badge: 5    },
+  { label: 'Success',           path: '/success',     icon: Activity,        badge: 2    },
+  { label: 'Strategy',          path: '/strategy',    icon: Target,          badge: null },
+  { label: 'IT & Systems',      path: '/it',          icon: Server,          badge: 1    },
+  { label: 'Projects',          path: '/projects',    icon: Layers,          badge: null },
+  { label: 'Workflows Library', path: '/workflows',   icon: GitBranch,       badge: null },
+  { label: 'Settings',          path: '/settings',    icon: Settings,        badge: null },
 ]
+
+function getNavItems() {
+  const slug = typeof window !== 'undefined' ? (localStorage.getItem('lumio_workspace_slug') || '') : ''
+  return BASE_NAV_ITEMS.map(item => ({
+    ...item,
+    href: slug ? `/${slug}${item.path}` : item.path,
+  }))
+}
 
 const COLLAPSED_W = 48
 const EXPANDED_W = 200
@@ -64,6 +72,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const navItems = getNavItems()
   const [companyName, setCompanyName] = useState('Lumio')
   const [initials, setInitials] = useState('AM')
   const [planLabel, setPlanLabel] = useState('Live workspace')

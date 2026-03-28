@@ -11,6 +11,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
+    // Read slug from middleware cookie as fallback
+    const cookieSlug = document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+    if (cookieSlug) localStorage.setItem('lumio_workspace_slug', cookieSlug)
     function onStorage(e: StorageEvent) {
       if (e.key === 'lumio_sidebar_pinned') setPinned(e.newValue === 'true')
     }
