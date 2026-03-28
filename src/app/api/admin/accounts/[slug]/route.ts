@@ -60,12 +60,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
   let ownerEmail: string | null = null
 
   if (type === 'schools') {
-    const { data: school } = await supabase.from('schools').select('id, owner_email').eq('slug', slug).maybeSingle()
+    const { data: school } = await supabase.from('schools').select('id, email').eq('slug', slug).maybeSingle()
     if (!school) {
       console.error(`[admin/delete] School not found for slug: ${slug}`)
       return NextResponse.json({ error: 'School not found' }, { status: 404 })
     }
-    ownerEmail = school.owner_email || null
+    ownerEmail = school.email || null
     // Clean up related tables (best-effort — tables may not exist yet)
     await supabase.from('school_users').delete().eq('school_id', school.id).then(r => r.error && console.error('[admin/delete] school_users:', r.error.message))
     await supabase.from('school_magic_links').delete().eq('school_id', school.id).then(r => r.error && console.error('[admin/delete] school_magic_links:', r.error.message))
