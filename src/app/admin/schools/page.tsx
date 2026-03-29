@@ -27,8 +27,9 @@ export default function SchoolsListPage() {
   const [createError, setCreateError] = useState('')
   const [form, setForm] = useState({
     name: '',
+    slug: '',
     type: 'primary',
-    plan: 'starter',
+    plan: 'trial',
     adminName: '',
     adminEmail: '',
     adminRole: 'headteacher',
@@ -38,9 +39,12 @@ export default function SchoolsListPage() {
 
   function fetchAccounts() {
     fetch(`/api/admin/accounts?type=schools&search=${search}`, { headers: { 'x-admin-token': token } })
-      .then(r => r.ok ? r.json() : { accounts: [] })
+      .then(r => {
+        if (!r.ok) console.error('[admin/schools] fetch failed:', r.status)
+        return r.ok ? r.json() : { accounts: [] }
+      })
       .then(d => { setAccounts(d.accounts || []); setLoading(false) })
-      .catch(() => setLoading(false))
+      .catch(e => { console.error('[admin/schools] fetch error:', e); setLoading(false) })
   }
 
   useEffect(() => { fetchAccounts() }, [search])
@@ -61,7 +65,7 @@ export default function SchoolsListPage() {
         return
       }
       setShowCreate(false)
-      setForm({ name: '', type: 'primary', plan: 'starter', adminName: '', adminEmail: '', adminRole: 'headteacher' })
+      setForm({ name: '', slug: '', type: 'primary', plan: 'trial', adminName: '', adminEmail: '', adminRole: 'headteacher' })
       fetchAccounts()
     } catch {
       setCreateError('Something went wrong')
@@ -102,6 +106,11 @@ export default function SchoolsListPage() {
               <div>
                 <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>School name *</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required style={INPUT_STYLE} placeholder="Oakridge Primary School" />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>Slug (auto-generated if blank)</label>
+                <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} style={INPUT_STYLE} placeholder="oakridge-primary-school" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

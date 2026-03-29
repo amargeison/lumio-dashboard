@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
   if (type === 'schools') {
     let query = supabase.from('schools').select('id, name, slug, plan, workspace_type, active, trial_ends_at, created_at, admin_notes, onboarded, billing_type')
     if (search) query = query.ilike('name', `%${search}%`)
-    const { data } = await query.order('created_at', { ascending: false }).limit(100)
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(100)
+    if (error) console.error('[admin/accounts] schools query error:', error.message)
+    console.log('[admin/accounts] schools query returned', data?.length ?? 0, 'rows')
     return NextResponse.json({ accounts: data || [], type: 'schools' })
   }
 
@@ -39,14 +41,14 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase()
 
   try {
-    const { name, type: schoolType, plan, adminName, adminEmail, adminRole } = await req.json()
+    const { name, slug: customSlug, type: schoolType, plan, adminName, adminEmail, adminRole } = await req.json()
 
     if (!name || !adminEmail) {
       return NextResponse.json({ error: 'School name and admin email are required' }, { status: 400 })
     }
 
-    // Generate unique slug
-    let baseSlug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    // Generate unique slug (use custom if provided)
+    let baseSlug = (customSlug || name).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     let slug = baseSlug
     let counter = 2
     while (true) {
