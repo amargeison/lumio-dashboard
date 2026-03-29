@@ -2986,6 +2986,9 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
               <UserPlus size={11} /> Invite team
             </button>
+            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+              Clear Demo Data
+            </button>
             <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>
             <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
           </div>

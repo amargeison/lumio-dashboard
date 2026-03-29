@@ -18,6 +18,7 @@ import {
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
+import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
@@ -2151,19 +2152,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       )}
       {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
 
-      {/* Demo data banner */}
-      {demoDataActive && (
-        <div className="flex items-center justify-between px-4 py-2.5 text-xs shrink-0 mx-4 mt-3"
-          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '16px 16px 40% 40% / 16px 16px 40px 40px', boxShadow: '0 8px 32px rgba(13, 148, 136, 0.15)', paddingBottom: 16 }}>
-          <span style={{ color: '#F9FAFB' }}>You&apos;re viewing demo data — clear it any time in Settings</span>
-          <button onClick={() => setActiveDept('settings')} className="text-xs font-semibold transition-colors"
-            style={{ color: 'rgba(249,250,251,0.6)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(249,250,251,0.6)' }}>
-            Go to Settings →
-          </button>
-        </div>
-      )}
+      {/* Demo data bar — slim version with connections modal */}
+      {demoDataActive && <ClearDemoBar />}
 
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>

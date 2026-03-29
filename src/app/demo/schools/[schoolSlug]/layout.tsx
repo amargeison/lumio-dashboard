@@ -253,6 +253,9 @@ export default function DemoSchoolLayout({ children }: Props) {
               <button className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
                 <UserPlus size={11} /> Invite team
               </button>
+              <button onClick={clearSchoolDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+                Clear Demo Data
+              </button>
               <Link href="/schools/checkout" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                 Buy <ArrowRight size={11} className="inline" />
               </Link>
