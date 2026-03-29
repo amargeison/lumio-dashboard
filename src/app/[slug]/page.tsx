@@ -372,6 +372,22 @@ const QUOTES = [
   { text: "I never dreamed about success. I worked for it.", author: "Est\u00e9e Lauder" },
   { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
   { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
+  { text: "What seems to us as bitter trials are often blessings in disguise.", author: "Oscar Wilde" },
+  { text: "The distance between insanity and genius is measured only by success.", author: "Bruce Feirstein" },
+  { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+  { text: "Everything comes to him who hustles while he waits.", author: "Thomas Edison" },
+  { text: "If you really look closely, most overnight successes took a long time.", author: "Steve Jobs" },
+  { text: "The real test is not whether you avoid failure, because you won't.", author: "Barack Obama" },
+  { text: "Courage is not the absence of fear, but the triumph over it.", author: "Nelson Mandela" },
+  { text: "Only those who dare to fail greatly can ever achieve greatly.", author: "Robert F. Kennedy" },
+  { text: "Build your own dreams, or someone else will hire you to build theirs.", author: "Farrah Gray" },
+  { text: "Education costs money, but then so does ignorance.", author: "Claus Moser" },
+  { text: "The best revenge is massive success.", author: "Frank Sinatra" },
+  { text: "Every accomplishment starts with the decision to try.", author: "John F. Kennedy" },
+  { text: "Without hustle, talent will only carry you so far.", author: "Gary Vaynerchuk" },
+  { text: "The ones who are crazy enough to think they can change the world are the ones that do.", author: "Steve Jobs" },
+  { text: "It is during our darkest moments that we must focus to see the light.", author: "Aristotle" },
+  { text: "Knowing is not enough; we must apply. Wishing is not enough; we must do.", author: "Johann Wolfgang von Goethe" },
 ]
 
 const OPENING_LINES = [
