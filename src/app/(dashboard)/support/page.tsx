@@ -6,8 +6,8 @@ import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
-import CreateWikiModal from '@/components/modals/CreateWikiModal'
-import CreateFAQModal from '@/components/modals/CreateFAQModal'
+import WikiBuilderModal from '@/components/modals/WikiBuilderModal'
+import FAQBuilderModal from '@/components/modals/FAQBuilderModal'
 import { useToast } from '@/components/modals/useToast'
 
 const stats = [
@@ -122,8 +122,8 @@ export default function SupportPage() {
         }
       />
       {showTicket && <NewSupportTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('Support ticket created') }} />}
-      {showCreateWiki && <CreateWikiModal onClose={() => setShowCreateWiki(false)} onToast={showToast} />}
-      {showCreateFAQ && <CreateFAQModal onClose={() => setShowCreateFAQ(false)} onToast={showToast} />}
+      {showCreateWiki && <WikiBuilderModal onClose={() => setShowCreateWiki(false)} onToast={showToast} />}
+      {showCreateFAQ && <FAQBuilderModal onClose={() => setShowCreateFAQ(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )
