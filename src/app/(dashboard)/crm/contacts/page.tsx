@@ -1,28 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import ContactGrid from '@/components/crm/ContactGrid'
 import ContactDrawer from '@/components/crm/ContactDrawer'
 import AddContactModal from '@/components/crm/AddContactModal'
 import type { CRMContact } from '@/lib/crm/types'
 
 export default function ContactsPage() {
-  const ws = useWorkspace()
+  const workspaceId = useCRMWorkspaceId()
   const [contacts, setContacts] = useState<CRMContact[]>([])
   const [selectedContact, setSelectedContact] = useState<CRMContact | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ws?.id) return
+    if (!workspaceId) return
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
-        let data = await getCRMData(ws!.id)
+        let data = await getCRMData(workspaceId!)
         if (data.contacts.length === 0) {
-          await seedDemoData(ws!.id)
-          data = await getCRMData(ws!.id)
+          await seedDemoData(workspaceId!)
+          data = await getCRMData(workspaceId!)
         }
         setContacts(data.contacts)
       } catch (e) {
@@ -32,10 +32,10 @@ export default function ContactsPage() {
       }
     }
     load()
-  }, [ws?.id])
+  }, [workspaceId])
 
   async function handleSaveContact(contactData: Partial<CRMContact>) {
-    if (!ws?.id) return
+    if (!workspaceId) return
     try {
       const { createContact } = await import('@/lib/crm/actions')
       const newContact = await createContact(ws.id, contactData)
@@ -127,7 +127,7 @@ export default function ContactsPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleSaveContact}
-        tenantId={ws?.id || ''}
+        tenantId={workspaceId || ''}
       />
     </div>
   )

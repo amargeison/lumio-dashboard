@@ -1,27 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import KanbanBoard from '@/components/crm/KanbanBoard'
 import DealDNA from '@/components/crm/DealDNA'
 import type { CRMDeal, PipelineStage } from '@/lib/crm/types'
 
 export default function PipelinePage() {
-  const ws = useWorkspace()
+  const workspaceId = useCRMWorkspaceId()
   const [deals, setDeals] = useState<CRMDeal[]>([])
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [selectedDeal, setSelectedDeal] = useState<CRMDeal | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ws?.id) return
+    if (!workspaceId) return
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
-        let data = await getCRMData(ws!.id)
+        let data = await getCRMData(workspaceId!)
         if (data.contacts.length === 0) {
-          await seedDemoData(ws!.id)
-          data = await getCRMData(ws!.id)
+          await seedDemoData(workspaceId!)
+          data = await getCRMData(workspaceId!)
         }
         setDeals(data.deals)
         setStages(data.stages)
@@ -32,7 +32,7 @@ export default function PipelinePage() {
       }
     }
     load()
-  }, [ws?.id])
+  }, [workspaceId])
 
   async function handleDealMove(dealId: string, stageId: string) {
     // Optimistic update

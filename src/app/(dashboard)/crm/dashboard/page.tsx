@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import DashboardBrief from '@/components/crm/DashboardBrief'
 import KPIGrid from '@/components/crm/KPIGrid'
 import RevenueChart from '@/components/crm/RevenueChart'
@@ -27,27 +27,8 @@ function setCachedCRM(data: any) {
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() })) } catch {}
 }
 
-// Fallback workspace resolution — if useWorkspace returns null, try to resolve from session token directly
-function useFallbackWorkspaceId(): string | null {
-  const [id, setId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const token = localStorage.getItem('workspace_session_token')
-    if (!token) return
-
-    fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.id) setId(d.id) })
-      .catch(() => {})
-  }, [])
-
-  return id
-}
-
 export default function CRMDashboardPage() {
-  const ws = useWorkspace()
-  const fallbackId = useFallbackWorkspaceId()
-  const workspaceId = ws?.id || fallbackId
+  const workspaceId = useCRMWorkspaceId()
   const cached = getCachedCRM()
   const [brief, setBrief] = useState('')
   const [briefLoading, setBriefLoading] = useState(true)

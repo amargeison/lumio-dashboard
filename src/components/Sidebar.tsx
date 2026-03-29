@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { X, Pin, Camera, LogOut, Settings as SettingsIcon, User } from 'lucide-react'
