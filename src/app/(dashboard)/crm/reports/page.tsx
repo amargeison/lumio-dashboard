@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import ReportsGrid from '@/components/crm/ReportsGrid'
 import CompetitorScorecard from '@/components/crm/CompetitorScorecard'
 
 export default function ReportsPage() {
-  const ws = useWorkspace()
+  const workspaceId = useCRMWorkspaceId()
   const [stats, setStats] = useState({
     winRate: 0,
     forecast: 0,
@@ -16,14 +16,14 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ws?.id) return
+    if (!workspaceId) return
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
-        let data = await getCRMData(ws!.id)
+        let data = await getCRMData(workspaceId!)
         if (data.contacts.length === 0) {
-          await seedDemoData(ws!.id)
-          data = await getCRMData(ws!.id)
+          await seedDemoData(workspaceId!)
+          data = await getCRMData(workspaceId!)
         }
 
         const closedWon = data.deals.filter((d: any) => d.won === true)
@@ -50,7 +50,7 @@ export default function ReportsPage() {
       }
     }
     load()
-  }, [ws?.id])
+  }, [workspaceId])
 
   if (loading) {
     return (

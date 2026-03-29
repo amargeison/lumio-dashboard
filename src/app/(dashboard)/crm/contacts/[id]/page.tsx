@@ -2,24 +2,24 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import { ArrowLeft, Mail, Phone, MapPin, Linkedin, Building2, Calendar } from 'lucide-react'
 import type { CRMContact, CRMActivity } from '@/lib/crm/types'
 
 export default function ContactDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const ws = useWorkspace()
+  const workspaceId = useCRMWorkspaceId()
   const [contact, setContact] = useState<CRMContact | null>(null)
   const [activities, setActivities] = useState<CRMActivity[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ws?.id || !params.id) return
+    if (!workspaceId || !params.id) return
     async function load() {
       try {
         const { getCRMData } = await import('@/lib/crm/actions')
-        const data = await getCRMData(ws!.id)
+        const data = await getCRMData(workspaceId!)
         const found = data.contacts.find((c: CRMContact) => c.id === params.id)
         if (found) {
           setContact(found)
@@ -32,7 +32,7 @@ export default function ContactDetailPage() {
       }
     }
     load()
-  }, [ws?.id, params.id])
+  }, [workspaceId, params.id])
 
   if (loading) {
     return <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 400 }} />

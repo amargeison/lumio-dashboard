@@ -1,26 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWorkspace } from '@/hooks/useWorkspace'
+import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import ARIAChat from '@/components/crm/ARIAChat'
 import ARIAInsightsPanel from '@/components/crm/ARIAInsightsPanel'
 import type { ARIAInsight, CRMContext } from '@/lib/crm/types'
 
 export default function IntelligencePage() {
-  const ws = useWorkspace()
+  const workspaceId = useCRMWorkspaceId()
   const [insights, setInsights] = useState<ARIAInsight[]>([])
   const [crmContext, setCrmContext] = useState<CRMContext | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ws?.id) return
+    if (!workspaceId) return
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
-        let data = await getCRMData(ws!.id)
+        let data = await getCRMData(workspaceId!)
         if (data.contacts.length === 0) {
-          await seedDemoData(ws!.id)
-          data = await getCRMData(ws!.id)
+          await seedDemoData(workspaceId!)
+          data = await getCRMData(workspaceId!)
         }
 
         setInsights(data.insights)
@@ -44,7 +44,7 @@ export default function IntelligencePage() {
       }
     }
     load()
-  }, [ws?.id])
+  }, [workspaceId])
 
   const openDeals = crmContext?.deals.filter(d => !d.closed_at && d.won === null) || []
   const atRiskDeals = openDeals.filter(d => d.aria_score < 50)
@@ -82,7 +82,7 @@ export default function IntelligencePage() {
         {crmContext && (
           <ARIAChat
             crmContext={crmContext}
-            tenantId={ws?.id || ''}
+            tenantId={workspaceId || ''}
           />
         )}
       </div>

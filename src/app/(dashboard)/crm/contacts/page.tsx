@@ -38,7 +38,7 @@ export default function ContactsPage() {
     if (!workspaceId) return
     try {
       const { createContact } = await import('@/lib/crm/actions')
-      const newContact = await createContact(ws.id, contactData)
+      const newContact = await createContact(workspaceId!, contactData)
       if (newContact) {
         setContacts(prev => [newContact, ...prev])
       }
