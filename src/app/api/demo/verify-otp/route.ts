@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/emails/send'
+import { emailLayout, ctaButton } from '@/lib/emails/layout'
 
 function getSupabase() {
   return createClient(
@@ -99,6 +101,37 @@ export async function POST(req: NextRequest) {
           expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq('id', tenant.id)
+
+      // Send welcome email (fire-and-forget)
+      const firstName = (tenant.owner_name || '').split(' ')[0] || 'there'
+      sendEmail({
+        from: 'Lumio <hello@lumiocms.com>',
+        to: [email],
+        subject: 'Welcome to Lumio — your trial workspace is ready 🚀',
+        html: emailLayout({
+          preheader: 'Your 14-day free trial is ready. Here\'s what to do next.',
+          body: `
+<h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#ffffff;">Welcome to Lumio, ${firstName}!</h1>
+<p style="margin:0 0 28px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">Your 14-day free trial is ready. Here&rsquo;s what to do next:</p>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
+  <tr><td style="padding:12px 0;border-bottom:1px solid #1f2937;">
+    <span style="font-size:20px;margin-right:12px;vertical-align:middle;">🎯</span>
+    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Explore your dashboard</strong> &mdash; your demo data is already loaded</span>
+  </td></tr>
+  <tr><td style="padding:12px 0;border-bottom:1px solid #1f2937;">
+    <span style="font-size:20px;margin-right:12px;vertical-align:middle;">🎙️</span>
+    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Try the voice assistant</strong> &mdash; say &ldquo;Hi Lumio&rdquo; to get started</span>
+  </td></tr>
+  <tr><td style="padding:12px 0;">
+    <span style="font-size:20px;margin-right:12px;vertical-align:middle;">👥</span>
+    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Invite your team</strong> &mdash; the more the merrier</span>
+  </td></tr>
+</table>
+${ctaButton('Go to my workspace &rarr;', `https://lumiocms.com/demo/${tenant.slug}`)}
+<p style="margin:24px 0 0;font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">Your trial expires in 14 days. No credit card needed.</p>
+<p style="margin:8px 0 0;font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">Questions? Reply to this email or visit lumiocms.com</p>`,
+        }),
+      }).catch(err => console.error('[demo/verify-otp] Welcome email failed:', err))
     }
 
     // Create session token (30-day expiry)

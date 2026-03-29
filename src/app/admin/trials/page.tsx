@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { FlaskConical, Download, Search, Trash2, ExternalLink, Clock, Loader2 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-}
+// Uses /api/admin/trials with service role key via admin token auth
 
 interface Trial {
   id: string
@@ -55,13 +51,12 @@ export default function AdminTrialsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const supabase = getSupabase()
-        const now = new Date().toISOString()
         const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+        const res = await fetch('/api/admin/trials', { headers: { 'x-admin-token': token } })
+        if (!res.ok) { console.error('Admin trials fetch failed:', res.status); setLoading(false); return }
+        const data = await res.json()
 
-        // Business trials
-        const { data: demos } = await supabase.from('demo_tenants').select('*').order('created_at', { ascending: false })
-        const biz = (demos || []).map((d: any) => ({
+        const biz = (data.business || []).map((d: any) => ({
           id: d.id, company_name: d.company_name, slug: d.slug,
           owner_email: d.owner_email, created_at: d.created_at,
           expires_at: d.expires_at, status: d.status,
@@ -69,23 +64,17 @@ export default function AdminTrialsPage() {
         }))
         setBusinessTrials(biz)
 
-        // School trials
-        const { data: schools } = await supabase.from('schools').select('*').order('created_at', { ascending: false })
-        const sch = (schools || []).map((s: any) => ({
+        const sch = (data.schools || []).map((s: any) => ({
           id: s.id, name: s.name, slug: s.slug,
           email: s.email, created_at: s.created_at,
           expires_at: s.trial_ends_at, status: s.active ? 'active' : 'expired',
         }))
         setSchoolTrials(sch)
 
-        // Stats
         const allTrials = [...biz, ...sch]
-        const active = allTrials.filter(t => {
-          const s = statusLabel(t)
-          return s.text === 'Active'
-        }).length
-        const thisWeek = allTrials.filter(t => t.created_at > weekAgo).length
-        const converted = allTrials.filter(t => statusLabel(t).text === 'Converted').length
+        const active = allTrials.filter((t: Trial) => statusLabel(t).text === 'Active').length
+        const thisWeek = allTrials.filter((t: Trial) => t.created_at > weekAgo).length
+        const converted = allTrials.filter((t: Trial) => statusLabel(t).text === 'Converted').length
         const total = allTrials.length
         setStats({ active, thisWeek, converted, rate: total > 0 ? Math.round((converted / total) * 100) : 0 })
       } catch (e) {
@@ -95,31 +84,25 @@ export default function AdminTrialsPage() {
       }
     }
     load()
-  }, [])
+  }, [token])
 
   async function handleExtend(trial: Trial, type: 'business' | 'school') {
-    const supabase = getSupabase()
+    await fetch('/api/admin/trials', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify({ action: 'extend', id: trial.id, type }),
+    })
     const newExpiry = new Date((trial.expires_at ? new Date(trial.expires_at) : new Date()).getTime() + 14 * 86400000).toISOString()
-    if (type === 'business') {
-      await supabase.from('demo_tenants').update({ expires_at: newExpiry }).eq('id', trial.id)
-      setBusinessTrials(prev => prev.map(t => t.id === trial.id ? { ...t, expires_at: newExpiry } : t))
-    } else {
-      await supabase.from('schools').update({ trial_ends_at: newExpiry }).eq('id', trial.id)
-      setSchoolTrials(prev => prev.map(t => t.id === trial.id ? { ...t, expires_at: newExpiry } : t))
-    }
+    if (type === 'business') setBusinessTrials(prev => prev.map(t => t.id === trial.id ? { ...t, expires_at: newExpiry } : t))
+    else setSchoolTrials(prev => prev.map(t => t.id === trial.id ? { ...t, expires_at: newExpiry } : t))
   }
 
   async function handleDelete(id: string, type: 'business' | 'school') {
-    const supabase = getSupabase()
-    if (type === 'business') {
-      await supabase.from('demo_sessions').delete().eq('tenant_id', id)
-      await supabase.from('demo_tenants').delete().eq('id', id)
-      setBusinessTrials(prev => prev.filter(t => t.id !== id))
-    } else {
-      await supabase.from('school_users').delete().eq('school_id', id)
-      await supabase.from('schools').delete().eq('id', id)
-      setSchoolTrials(prev => prev.filter(t => t.id !== id))
-    }
+    await fetch('/api/admin/trials', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify({ action: 'delete', id, type }),
+    })
+    if (type === 'business') setBusinessTrials(prev => prev.filter(t => t.id !== id))
+    else setSchoolTrials(prev => prev.filter(t => t.id !== id))
     setConfirmDelete(null)
   }
 

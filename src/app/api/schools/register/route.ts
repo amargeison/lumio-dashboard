@@ -103,10 +103,10 @@ export async function POST(req: NextRequest) {
 
     // 5. Send welcome email
     const checklistItems = [
-      'Log your first absence',
-      'Set up your staff list',
-      'Configure your departments',
-      'Invite your team',
+      '🏫 Explore your school dashboard — demo data is loaded',
+      '🎙️ Try the voice assistant — say "Hi Lumio" for your morning briefing',
+      '👨‍🏫 Invite your staff — get your team set up',
+      '📋 Log your first absence and see workflows in action',
     ]
 
     await resend.emails.send({
