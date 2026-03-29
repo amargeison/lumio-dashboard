@@ -126,8 +126,8 @@ export default function SchoolLayout({ children }: Props) {
           {NAV.map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
-            const href = item.path === '' ? base : `${base}/${item.path}`
-            const isActive = item.path === '' ? pathname === base || pathname === `${base}/` : pathname.startsWith(`${base}/${item.path}`)
+            const href = item.path === '' ? base : item.path.startsWith('/') ? `${item.path}/${slug}` : `${base}/${item.path}`
+            const isActive = item.path === '' ? pathname === base || pathname === `${base}/` : item.path.startsWith('/') ? pathname.startsWith(item.path) : pathname.startsWith(`${base}/${item.path}`)
             const Icon = item.icon
             return (
               <div key={item.path || 'overview'}>
