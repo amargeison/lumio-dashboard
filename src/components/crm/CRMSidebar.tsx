@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
@@ -27,20 +27,33 @@ const navItems = [
   { label: 'Reports', href: '/crm/reports', icon: BarChart2 },
 ];
 
-const disabledItems = [
-  { label: 'Email', icon: Mail, tooltip: 'Coming soon' },
-  { label: 'Calendar', icon: Calendar, tooltip: 'Coming soon' },
-  { label: 'Settings', icon: Settings, tooltip: 'Coming soon' },
+const toolItems = [
+  { label: 'Email', icon: Mail, action: 'email' },
+  { label: 'Calendar', icon: Calendar, action: 'calendar' },
+  { label: 'Settings', icon: Settings, action: 'settings' },
 ];
 
 export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [initials, setInitials] = useState('LU');
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_company_initials');
     if (stored) setInitials(stored);
   }, []);
+
+  function handleToolAction(action: string) {
+    if (action === 'email') {
+      setToast('Opening email composer...');
+      setTimeout(() => setToast(null), 2000);
+    } else if (action === 'calendar') {
+      router.push('/settings');
+    } else if (action === 'settings') {
+      router.push('/settings');
+    }
+  }
 
   return (
     <aside
@@ -127,37 +140,39 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
           }}
         />
 
-        {/* Disabled items */}
-        {disabledItems.map((item) => {
+        {/* Tool items */}
+        {toolItems.map((item) => {
           const Icon = item.icon;
           return (
-            <div
+            <button
               key={item.label}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg"
-              title={item.tooltip}
+              onClick={() => handleToolAction(item.action)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left"
               style={{
-                color: '#3D4263',
+                color: '#6B7299',
                 fontSize: 14,
-                cursor: 'not-allowed',
+                cursor: 'pointer',
                 borderLeft: '3px solid transparent',
+                backgroundColor: 'transparent',
+                border: 'none',
+                transition: 'color 0.15s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#F1F3FA'; e.currentTarget.style.backgroundColor = '#1E2035' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#6B7299'; e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <Icon size={18} />
               <span>{item.label}</span>
-              <span
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 10,
-                  color: '#3D4263',
-                  fontStyle: 'italic',
-                }}
-              >
-                Soon
-              </span>
-            </div>
+            </button>
           );
         })}
       </nav>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#8B5CF6', color: '#F1F3FA', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+          {toast}
+        </div>
+      )}
 
       {/* User avatar */}
       <div className="px-5 py-4" style={{ borderTop: '1px solid #1E2035' }}>

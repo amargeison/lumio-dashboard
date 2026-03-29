@@ -9,17 +9,45 @@ import PipelineHealth from '@/components/crm/PipelineHealth'
 import ActivityFeed from '@/components/crm/ActivityFeed'
 import type { CRMDeal, CRMContact, CRMActivity, PipelineStage } from '@/lib/crm/types'
 
+const CACHE_KEY = 'lumio_crm_cache'
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 function getCachedCRM(): { contacts: CRMContact[]; deals: CRMDeal[]; activities: CRMActivity[]; stages: PipelineStage[] } | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = sessionStorage.getItem('lumio_crm_cache')
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return null
+    const raw = sessionStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const { data, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null }
+    return data
+  } catch { return null }
+}
+
+function setCachedCRM(data: any) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() })) } catch {}
+}
+
+// Fallback workspace resolution — if useWorkspace returns null, try to resolve from session token directly
+function useFallbackWorkspaceId(): string | null {
+  const [id, setId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+
+    fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.id) setId(d.id) })
+      .catch(() => {})
+  }, [])
+
+  return id
 }
 
 export default function CRMDashboardPage() {
   const ws = useWorkspace()
+  const fallbackId = useFallbackWorkspaceId()
+  const workspaceId = ws?.id || fallbackId
   const cached = getCachedCRM()
   const [brief, setBrief] = useState('')
   const [briefLoading, setBriefLoading] = useState(true)
@@ -32,26 +60,24 @@ export default function CRMDashboardPage() {
 
   // Fetch CRM data
   useEffect(() => {
-    if (!ws?.id) return
+    if (!workspaceId) return
 
     async function loadData() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
-        const data = await getCRMData(ws!.id)
+        const data = await getCRMData(workspaceId!)
 
         let result = data
         if (data.contacts.length === 0) {
-          await seedDemoData(ws!.id)
-          result = await getCRMData(ws!.id)
+          await seedDemoData(workspaceId!)
+          result = await getCRMData(workspaceId!)
         }
 
         setContacts(result.contacts)
         setDeals(result.deals)
         setActivities(result.activities)
         setStages(result.stages)
-
-        // Cache for instant load next time
-        try { sessionStorage.setItem('lumio_crm_cache', JSON.stringify(result)) } catch {}
+        setCachedCRM(result)
       } catch (e: any) {
         console.error('Failed to load CRM data:', e)
         if (!cached) setError(e?.message || 'Failed to load CRM data')
@@ -61,16 +87,14 @@ export default function CRMDashboardPage() {
     }
 
     loadData()
-  }, [ws?.id])
+  }, [workspaceId])
 
-  // Fetch ARIA brief (non-blocking — doesn't delay dashboard render)
+  // Fetch ARIA brief (non-blocking)
   useEffect(() => {
     const token = localStorage.getItem('workspace_session_token')
     if (!token) { setBriefLoading(false); return }
 
-    fetch('/api/crm/brief', {
-      headers: { 'x-workspace-token': token },
-    })
+    fetch('/api/crm/brief', { headers: { 'x-workspace-token': token } })
       .then(r => r.json())
       .then(d => setBrief(d.brief || 'Welcome to Lumio CRM. Add deals to see ARIA insights here.'))
       .catch(() => setBrief('Welcome to Lumio CRM. ARIA is ready to analyse your pipeline.'))
@@ -98,23 +122,27 @@ export default function CRMDashboardPage() {
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
-  // Debug — shows workspace + data state (remove after confirming fix)
-  const debugInfo = `ws: ${ws?.id ?? 'null'} | loading: ${loading} | error: ${error ?? 'none'} | contacts: ${contacts.length} | deals: ${deals.length}`
-
-  // Wait for workspace to resolve
-  if (!ws) {
+  // Skeleton loading state
+  if (!workspaceId && !cached) {
     return (
-      <div style={{ color: '#6B7299', padding: 24, fontSize: 13 }}>
-        <p>Resolving workspace…</p>
-        <p style={{ marginTop: 8, fontSize: 11, color: '#3D4263' }}>{debugInfo}</p>
+      <div className="space-y-6">
+        <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 120 }} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
+          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
+        </div>
       </div>
     )
   }
 
-  if (loading) {
+  if (loading && !cached) {
     return (
       <div className="space-y-6">
-        <div style={{ color: '#6B7299', fontSize: 11, padding: '8px 0' }}>{debugInfo}</div>
         <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
