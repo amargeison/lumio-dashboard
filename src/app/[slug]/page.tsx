@@ -12,7 +12,7 @@ import {
   UserPlus, X, Plus, Check,
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
-  Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake,
+  Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
   Database, RotateCcw, Upload, Mail, MessageSquare, Phone,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -744,14 +744,14 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
-              <button onClick={handleBriefing} title="Text-to-Speech" className="flex items-center justify-center rounded-lg transition-all"
+              <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
               {voiceCommandsEnabled && (
               <button
                 onClick={() => isListening ? stopListening() : startListening()}
-                title={isListening ? 'Listening...' : 'Voice command'}
+                title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
                 className="flex items-center justify-center rounded-lg transition-all"
                 style={{
                   width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
@@ -2086,8 +2086,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
         <button
           onClick={() => setNotificationsOpen(o => !o)}
+          title="Notifications"
           style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Volume2 size={16} strokeWidth={1.75} />
+          <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
         <div style={{ position: 'relative' }}>

@@ -29,15 +29,26 @@ function setCachedCRM(data: any) {
 
 export default function CRMDashboardPage() {
   const workspaceId = useCRMWorkspaceId()
-  const cached = getCachedCRM()
   const [brief, setBrief] = useState('')
   const [briefLoading, setBriefLoading] = useState(true)
-  const [contacts, setContacts] = useState<CRMContact[]>(cached?.contacts || [])
-  const [deals, setDeals] = useState<CRMDeal[]>(cached?.deals || [])
-  const [activities, setActivities] = useState<CRMActivity[]>(cached?.activities || [])
-  const [stages, setStages] = useState<PipelineStage[]>(cached?.stages || [])
-  const [loading, setLoading] = useState(!cached)
+  const [contacts, setContacts] = useState<CRMContact[]>([])
+  const [deals, setDeals] = useState<CRMDeal[]>([])
+  const [activities, setActivities] = useState<CRMActivity[]>([])
+  const [stages, setStages] = useState<PipelineStage[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Hydrate from sessionStorage cache after mount (avoids SSR mismatch)
+  useEffect(() => {
+    const cached = getCachedCRM()
+    if (cached) {
+      setContacts(cached.contacts)
+      setDeals(cached.deals)
+      setActivities(cached.activities)
+      setStages(cached.stages)
+      setLoading(false)
+    }
+  }, [])
 
   // Fetch CRM data
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function CRMDashboardPage() {
         setCachedCRM(result)
       } catch (e: any) {
         console.error('Failed to load CRM data:', e)
-        if (!cached) setError(e?.message || 'Failed to load CRM data')
+        setError(e?.message || 'Failed to load CRM data')
       } finally {
         setLoading(false)
       }
@@ -104,7 +115,7 @@ export default function CRMDashboardPage() {
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
   // Skeleton loading state
-  if (!workspaceId && !cached) {
+  if (!workspaceId && contacts.length === 0) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
@@ -121,7 +132,7 @@ export default function CRMDashboardPage() {
     )
   }
 
-  if (loading && !cached) {
+  if (loading && contacts.length === 0) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />

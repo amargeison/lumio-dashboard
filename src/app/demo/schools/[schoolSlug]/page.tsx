@@ -11,8 +11,6 @@ import {
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 
-import SchoolBanner from './components/SchoolBanner'
-
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
 const SCHOOL = { name: 'Oakridge Primary School', headteacher: 'Sarah Henderson', ofsted: 'Good', pupils: 423, staff: 41, town: 'Milton Keynes' }
@@ -342,11 +340,11 @@ function SchoolGreetingBanner() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName} {'\uD83D\uDC4B'}</h1>
-              <button onClick={handleBriefing} title="Text-to-Speech" className="flex items-center justify-center rounded-lg transition-all"
+              <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
-              <button onClick={() => isListening ? stopListening() : startListening()} title={isListening ? 'Listening...' : 'Voice command'}
+              <button onClick={() => isListening ? stopListening() : startListening()} title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
                 className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, cursor: 'pointer', backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)', border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isListening ? '#EF4444' : '#F9FAFB', animation: isListening ? 'pulse 1.5s infinite' : 'none' }}>
                 <Mic size={14} strokeWidth={1.75} />
@@ -427,18 +425,6 @@ export default function DemoSchoolOverviewPage() {
 
       {/* Greeting Banner (live-style) */}
       <SchoolGreetingBanner />
-
-      {/* Stats Banner (existing SchoolBanner component) */}
-      <SchoolBanner
-        schoolName={SCHOOL.name}
-        headteacher={SCHOOL.headteacher}
-        town={SCHOOL.town}
-        attendance={94}
-        staffIn="4/6"
-        openConcerns={1}
-        activeWorkflows={23}
-        weeksToSATs={7}
-      />
 
       {/* Safeguarding alert */}
       <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>

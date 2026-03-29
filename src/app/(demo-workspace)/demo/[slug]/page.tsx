@@ -932,7 +932,7 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
               {voiceCommandsEnabled && (
               <button
                 onClick={() => isListening ? stopListening() : startListening()}
-                title={isListening ? 'Listening...' : 'Voice command'}
+                title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
                 className="flex items-center justify-center rounded-lg transition-all"
                 style={{
                   width: 32, height: 32, flexShrink: 0, cursor: 'pointer',

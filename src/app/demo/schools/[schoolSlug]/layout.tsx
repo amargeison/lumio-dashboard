@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Sparkles, Building2, Users, BookOpen, Heart,
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
   Settings, Bell, Menu, X, Zap, GraduationCap, Sunrise, Network, Pin, LogOut,
+  Clock, ArrowRight,
 } from 'lucide-react'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
@@ -44,6 +45,7 @@ export default function DemoSchoolLayout({ children }: Props) {
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(true)
   const avatarRef = useRef<HTMLDivElement>(null)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -239,20 +241,25 @@ export default function DemoSchoolLayout({ children }: Props) {
         </div>
         {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
-        {/* Demo banner */}
-        <div className="flex items-center justify-between gap-3 mx-4 mt-3 px-4 py-2.5 shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1e1040 0%, #1a1050 40%, #0d3a3a 100%)', borderRadius: '0 0 50% 50% / 0 0 20px 20px', paddingBottom: 16 }}>
-          <div className="flex items-center gap-2 min-w-0">
-            <Zap size={13} style={{ color: '#0D9488', flexShrink: 0 }} />
-            <p className="text-xs truncate" style={{ color: '#F9FAFB' }}>
-              <span className="font-semibold">Trial workspace</span> · 14 days remaining · Demo data only
-            </p>
+        {/* Trial banner — teal bar matching business demo portal */}
+        {showUpgrade && (
+          <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <div className="flex items-center gap-2">
+              <Clock size={13} />
+              <span className="font-medium">Trial workspace — 14 days remaining</span>
+              <span className="hidden sm:inline opacity-75">· Demo data only</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
+                <UserPlus size={11} /> Invite team
+              </button>
+              <Link href="/schools/checkout" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                Buy <ArrowRight size={11} className="inline" />
+              </Link>
+              <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
+            </div>
           </div>
-          <Link href="/schools/checkout" className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            Buy Lumio
-          </Link>
-        </div>
+        )}
 
         {/* Mobile menu bar */}
         <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
