@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
+import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
@@ -553,7 +554,259 @@ function VoiceInput({ dept, company, onResult, onLoading, onError }: {
   )
 }
 
-function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wakeWordEnabled = true }: { company: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean }) {
+const OPENING_LINES = [
+  "Today is going to be a great day — here's your morning roundup.",
+  "Rise and shine! Let's see what today has in store for you.",
+  "Good things are coming today — let's get into it.",
+  "You've got this. Here's everything you need to hit the ground running.",
+  "Big things happen to people who start their day right — let's go.",
+  "Today's your day. Here's your morning roundup.",
+  "The best time to make things happen is right now — let's get started.",
+  "Another day, another opportunity. Here's what's on the agenda.",
+  "Morning! The world is ready for you — here's your briefing.",
+  "Let's make today count. Here's your roundup.",
+  "Great days start with great mornings — here's yours.",
+  "You showed up. That's already half the battle. Here's the rest.",
+  "Today has potential written all over it. Let's dig in.",
+  "Good morning! Here's your world for the day.",
+  "Every great day starts somewhere — let's start here.",
+  "The momentum starts now. Here's your morning briefing.",
+  "Today is full of possibility — let's see what we can do with it.",
+  "Morning energy activated. Here's your roundup.",
+  "Something good is going to happen today — here's your briefing.",
+  "Let's make this one count. Here's your morning roundup.",
+  "The day is yours — here's how it's shaping up.",
+  "Ready? Because today is ready for you. Here's your briefing.",
+  "A fresh day, a fresh start — here's your morning roundup.",
+  "Onwards and upwards. Here's what's waiting for you today.",
+  "Today is a blank page — let's write something good. Here's your roundup.",
+  "Good morning! Big things start with mornings like this.",
+  "You're already ahead just by starting. Here's your briefing.",
+  "The day is looking good — here's the rundown.",
+  "Morning! Let's make something happen today.",
+  "One day at a time, one great morning at a time — here's yours.",
+  "Today's going to be one of the good ones. Here's your roundup.",
+  "Fuel up and focus — here's your morning briefing.",
+  "The best version of today starts right now. Let's go.",
+  "Morning! Here's everything you need to own the day.",
+  "Good days are built one morning at a time — here's yours.",
+  "Today has your name on it. Here's the briefing.",
+  "Let's get into it — here's your morning roundup.",
+  "New day, new wins waiting to happen. Here's your briefing.",
+  "The day is already looking up — here's your roundup.",
+  "Morning! You've got everything you need to make today great.",
+  "Today is full of good things — here's where they start.",
+  "Eyes up, chin up, here's your morning roundup.",
+  "Today is ready when you are. Here's your briefing.",
+  "Good morning! Let's see what today is made of.",
+  "The best part of the day is right now — it's all uphill from here.",
+  "Today is going to surprise you in the best way. Here's your roundup.",
+  "Morning! Let's stack some wins today.",
+  "You've got a great day ahead — here's the proof.",
+  "Start strong, finish stronger — here's your morning briefing.",
+  "Good morning! Here's your launchpad for the day.",
+  "Today is one of those days — the good kind. Here's your roundup.",
+  "The momentum is yours — here's your morning briefing.",
+  "Morning! Everything you need is right here — let's go.",
+  "Today's going to be a good one — here's your roundup.",
+  "Let's build something great today — starting with this briefing.",
+  "Good morning! Here's your daily dose of let's get it.",
+  "The day ahead looks good from here — here's your roundup.",
+  "Morning! Here's your daily briefing — make it count.",
+  "Today is yours to shape — here's your morning roundup.",
+  "Good morning! The best moments of today are still ahead.",
+]
+
+const CLOSING_LINES = [
+  "Have an absolutely brilliant day \u2014 go make it count.",
+  "Now go get 'em. Today is yours.",
+  "That's your briefing \u2014 go be brilliant today.",
+  "Have a great day. You've already started it right.",
+  "Go make today one to remember.",
+  "Off you go \u2014 today has your name on it.",
+  "Have a fantastic day. The momentum starts now.",
+  "Go get 'em. Everything you need is right there.",
+  "Have a brilliant one. Big things happen to people who start their day like this.",
+  "That's everything \u2014 now go make it happen.",
+  "Have an amazing day. The best part is still ahead.",
+  "Go show them what you're made of today.",
+  "Have a great day \u2014 you're already ahead of the game.",
+  "Off you go. Make today brilliant.",
+  "That's your morning sorted \u2014 now go be outstanding.",
+  "Have a wonderful day. Every decision you make today matters.",
+  "Go get 'em \u2014 today is full of opportunity.",
+  "Have a brilliant day. The work you do makes a real difference.",
+  "That's the briefing done \u2014 now go do what you do best.",
+  "Have an incredible day. Make every hour count.",
+  "Go make today outstanding. You've already done the hard part.",
+  "Have a fantastic day \u2014 the best moments are still to come.",
+  "That's your briefing \u2014 go make today brilliant.",
+  "Off you go. Make today count.",
+  "Have a great one. You've got everything you need to crush it today.",
+  "Go get 'em. Today is going to be a good one.",
+  "Have a brilliant day \u2014 big things are coming.",
+  "That's everything \u2014 now go have the day you deserve.",
+  "Go be brilliant. Today is waiting for you.",
+  "Have an amazing day \u2014 every hour is an opportunity.",
+  "You're set. Go make today one to be proud of.",
+  "Have a great day \u2014 the work you're doing here genuinely matters.",
+  "Go get 'em. Make today brilliant.",
+  "That's your morning briefing \u2014 now go make today outstanding.",
+  "Have a wonderful day. You're exactly where you're supposed to be.",
+  "Go make today brilliant. The opportunities are there \u2014 go find them.",
+  "Have a fantastic day \u2014 you're already ahead just by being prepared.",
+  "Off you go. Today is going to be great.",
+  "Have a brilliant day \u2014 go show them what great looks like.",
+  "That's everything \u2014 go make today incredible.",
+  "Go get 'em. You've got this and then some.",
+  "Have a great day \u2014 the difference you make is real.",
+  "Go be outstanding. Today is waiting for you.",
+  "Have a brilliant one \u2014 the best work of your day is still ahead.",
+  "That's your briefing. Now go make today matter.",
+  "Have an amazing day \u2014 you're doing something truly important.",
+  "Go get 'em. Make every moment count today.",
+  "Have a fantastic day \u2014 you're ready and the world needs you.",
+  "Off you go \u2014 go make today one to remember.",
+  "Have a brilliant day. The impact you have is greater than you realise.",
+  "That's everything \u2014 now go be brilliant.",
+  "Go make today outstanding. You've got everything you need.",
+  "Have a great day \u2014 go show them what you're made of.",
+  "That's your morning briefing done. Now go have an absolutely brilliant day.",
+  "Go get 'em. Today's got your name written all over it.",
+  "Have a brilliant day \u2014 something good is going to happen today.",
+  "Off you go. Make it count.",
+  "Have a great day \u2014 the best version of today starts right now.",
+  "Go make something brilliant happen today. You've got this.",
+  "That's your briefing \u2014 now go out there and own the day.",
+]
+
+const DEFAULT_WORLD_ZONES = [
+  { label: 'London',   tz: 'Europe/London'    },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai',    tz: 'Asia/Dubai'       },
+  { label: 'Tokyo',    tz: 'Asia/Tokyo'       },
+]
+
+const ALL_TIMEZONES = [
+  { label: 'London', tz: 'Europe/London' },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai', tz: 'Asia/Dubai' },
+  { label: 'Tokyo', tz: 'Asia/Tokyo' },
+  { label: 'Sydney', tz: 'Australia/Sydney' },
+  { label: 'Los Angeles', tz: 'America/Los_Angeles' },
+  { label: 'Chicago', tz: 'America/Chicago' },
+  { label: 'Toronto', tz: 'America/Toronto' },
+  { label: 'Paris', tz: 'Europe/Paris' },
+  { label: 'Berlin', tz: 'Europe/Berlin' },
+  { label: 'Amsterdam', tz: 'Europe/Amsterdam' },
+  { label: 'Singapore', tz: 'Asia/Singapore' },
+  { label: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+  { label: 'Mumbai', tz: 'Asia/Kolkata' },
+  { label: 'S\u00e3o Paulo', tz: 'America/Sao_Paulo' },
+  { label: 'Mexico City', tz: 'America/Mexico_City' },
+  { label: 'Johannesburg', tz: 'Africa/Johannesburg' },
+  { label: 'Cairo', tz: 'Africa/Cairo' },
+  { label: 'Auckland', tz: 'Pacific/Auckland' },
+  { label: 'Riyadh', tz: 'Asia/Riyadh' },
+]
+
+function getStoredZones(): { label: string; tz: string }[] {
+  if (typeof window === 'undefined') return DEFAULT_WORLD_ZONES
+  try {
+    const stored = localStorage.getItem('lumio_world_zones')
+    if (stored) return JSON.parse(stored)
+  } catch {}
+  return DEFAULT_WORLD_ZONES
+}
+
+function getUserLocalTz(): { label: string; tz: string } {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const match = ALL_TIMEZONES.find(z => z.tz === tz)
+  return match || { label: tz.split('/').pop()?.replace(/_/g, ' ') || 'Local', tz }
+}
+
+function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz, hour12: false })
+  const [h, m] = timeStr.split(':').map(Number)
+  const hourAngle = ((h % 12) + m / 60) * 30
+  const minuteAngle = m * 6
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
+        <line key={deg} x1="18" y1="4" x2="18" y2={deg % 90 === 0 ? '6' : '5'} stroke="rgba(255,255,255,0.3)" strokeWidth={deg % 90 === 0 ? '1.5' : '0.75'} transform={`rotate(${deg} 18 18)`} />
+      ))}
+      <line x1="18" y1="18" x2="18" y2="8" stroke="#F9FAFB" strokeWidth="1.5" strokeLinecap="round" transform={`rotate(${hourAngle} 18 18)`} />
+      <line x1="18" y1="18" x2="18" y2="5.5" stroke="#0D9488" strokeWidth="1" strokeLinecap="round" transform={`rotate(${minuteAngle} 18 18)`} />
+      <circle cx="18" cy="18" r="1.5" fill="#F9FAFB" />
+    </svg>
+  )
+}
+
+function WorldClock() {
+  const [now, setNow] = useState(() => new Date())
+  const [zones, setZones] = useState(getStoredZones)
+  const localTz = getUserLocalTz()
+  const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('lumio_clock_mode') as 'digital' | 'analogue') || 'digital'
+    return 'digital'
+  })
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+  useEffect(() => {
+    function onStorage(e: StorageEvent) { if (e.key === 'lumio_world_zones') setZones(getStoredZones()) }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  function toggleMode() {
+    const next = mode === 'digital' ? 'analogue' : 'digital'
+    setMode(next)
+    localStorage.setItem('lumio_clock_mode', next)
+  }
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 relative" style={{ minWidth: 160 }}>
+      <button onClick={toggleMode} className="absolute top-2 right-2 rounded-md px-1.5 py-0.5 text-[9px] font-semibold transition-colors"
+        style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(167,139,250,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+        title={`Switch to ${mode === 'digital' ? 'analogue' : 'digital'}`}>
+        {mode === 'digital' ? '\u25f7' : '123'}
+      </button>
+      {mode === 'digital' ? (
+        <>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+            {zones.map(z => {
+              const isLocal = z.tz === localTz.tz
+              return (
+                <div key={z.label} className="flex items-center gap-1.5">
+                  <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+                  <span className="text-xs" style={{ color: isLocal ? '#FBBF24' : 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-4 gap-2">
+            {zones.map(z => {
+              const isLocal = z.tz === localTz.tz
+              return (
+                <div key={z.label} className="flex flex-col items-center gap-1">
+                  <MiniAnalogClock tz={z.tz} now={now} />
+                  <span className="text-[9px] font-medium" style={{ color: isLocal ? '#FBBF24' : 'rgba(167,139,250,0.6)' }}>{z.label}</span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wakeWordEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -578,17 +831,63 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
   const wakeActive = wakeWordEnabled && !showVoiceModal
   useWakeWord(openVoiceModal, wakeActive)
 
+  const { isListening, lastCommand, startListening, stopListening, pendingAction, setPendingAction } = useVoiceCommands()
+
   function handleBriefing() {
     if (isPlaying) { stop(); return }
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+    const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
+    const closingLine = CLOSING_LINES[dayOfYear % CLOSING_LINES.length]
     const script = buildDemoBriefingScript({
       companyName: company,
       meetings: DEMO_MEETINGS as unknown as { title: string; time: string; status: string }[],
       emailCount: 12,
       urgentCount: 2,
       workflowActionCount: 3,
+      openingLine,
+      closingLine,
     })
     speak(script)
   }
+
+  // Handle voice command actions
+  useEffect(() => {
+    if (!lastCommand) return
+    const { action, response, payload } = lastCommand
+    speak(response)
+
+    if (action === 'PLAY_BRIEFING') {
+      setTimeout(() => handleBriefing(), 1800)
+    } else if (action === 'STOP_AUDIO') {
+      stop()
+    } else if (action === 'NAVIGATE') {
+      const dept = payload?.dept?.toLowerCase()
+      if (dept) setTimeout(() => window.location.href = `/demo/${dept}`, 1500)
+    } else if (action === 'CANCEL_NEXT_MEETING') {
+      const nextMeeting = DEMO_MEETINGS.find(m => m.status === 'upcoming')
+      if (nextMeeting) {
+        setTimeout(() => {
+          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: nextMeeting } })
+          speak(`You have a ${nextMeeting.title} at ${nextMeeting.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
+        }, 1500)
+      } else {
+        speak("I couldn't find any upcoming meetings today.")
+      }
+    } else if (action === 'CANCEL_NAMED_MEETING') {
+      const name = payload?.meetingName?.toLowerCase() || ''
+      const found = DEMO_MEETINGS.find(m => m.title.toLowerCase().includes(name))
+      if (found) {
+        setTimeout(() => {
+          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: found } })
+          speak(`I found ${found.title} at ${found.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
+        }, 1500)
+      } else {
+        const upcoming = DEMO_MEETINGS.filter(m => m.status === 'upcoming').map(m => m.title).join(', ')
+        speak(`I couldn't find a meeting called ${payload?.meetingName}. Your upcoming meetings are: ${upcoming}`)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCommand])
 
   return (
     <>
@@ -624,6 +923,23 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
               </button>
 
               {/* Mic: Voice Commands */}
+              {voiceCommandsEnabled && (
+              <button
+                onClick={() => isListening ? stopListening() : startListening()}
+                title={isListening ? 'Listening...' : 'Voice command'}
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{
+                  width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
+                  backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                  border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                  color: isListening ? '#EF4444' : '#F9FAFB',
+                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                }}>
+                <Mic size={14} strokeWidth={1.75} />
+              </button>
+              )}
+
+              {/* Mic (demo voice modal) */}
               <button
                 onClick={openVoiceModal}
                 className="flex items-center justify-center rounded-lg transition-all"
@@ -682,8 +998,8 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
             ))}
           </div>
 
-          {/* RIGHT: weather */}
-          <div className="flex-shrink-0">
+          {/* RIGHT: weather + world clock */}
+          <div className="flex items-start gap-3 flex-shrink-0">
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
               <span className="text-3xl">⛅</span>
               <div>
@@ -692,12 +1008,25 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
                 <div className="text-xs text-purple-300/60">Demo City</div>
               </div>
             </div>
+            <WorldClock />
           </div>
 
         </div>
 
       </div>
     </div>
+
+    {isListening && (
+      <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        backgroundColor: '#111318', border: '1px solid #EF4444',
+        borderRadius: 999, padding: '8px 20px', zIndex: 50,
+        display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
+      }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
+        Listening... say a command
+      </div>
+    )}
 
       {showVoiceModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

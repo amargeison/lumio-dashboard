@@ -10,6 +10,8 @@ interface BriefingOptions {
   emailCount: number
   urgentCount: number
   workflowActionCount: number
+  openingLine?: string
+  closingLine?: string
 }
 
 function formatTime(t: string): string {
@@ -27,14 +29,20 @@ export function buildDemoBriefingScript({
   emailCount,
   urgentCount,
   workflowActionCount,
+  openingLine,
+  closingLine,
 }: BriefingOptions): string {
   const hour = new Date().getHours()
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
 
   const parts: string[] = []
 
-  parts.push(`Good ${timeOfDay}. Welcome to your Lumio demo workspace for ${companyName}.`)
-  parts.push(`Here's a quick rundown of your day.`)
+  if (openingLine) {
+    parts.push(`Good ${timeOfDay}. ${openingLine}`)
+  } else {
+    parts.push(`Good ${timeOfDay}. Welcome to your Lumio demo workspace for ${companyName}.`)
+    parts.push(`Here's a quick rundown of your day.`)
+  }
 
   // Meetings
   const upcoming = meetings.filter(m => m.status !== 'done')
@@ -66,7 +74,7 @@ export function buildDemoBriefingScript({
   }
 
   parts.push(`And finally — this is a live demo. Connect your real data and Lumio will brief you like this every morning.`)
-  parts.push(`Have a great day.`)
+  parts.push(closingLine || `Have a great day.`)
 
   return parts.join('  ')
 }

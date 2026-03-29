@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Volume2, Mic } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 
 const QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
@@ -254,6 +255,7 @@ interface Props {
 export default function SchoolBanner({ schoolName, headteacher, town, attendance, staffIn, openConcerns, activeWorkflows, weeksToSATs }: Props) {
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
   const { speak, stop, isPlaying } = useSpeech()
+  const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
   const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
 
   const now = new Date()
@@ -274,6 +276,16 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
   useEffect(() => {
     fetch('/api/home/weather').then(r => r.json()).then(d => setWeather(d)).catch(() => {})
   }, [])
+
+  // Handle voice command actions
+  useEffect(() => {
+    if (!lastCommand) return
+    const { action, response } = lastCommand
+    speak(response)
+    if (action === 'PLAY_BRIEFING') setTimeout(() => handleSpeak(), 1500)
+    else if (action === 'STOP_AUDIO') stop()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCommand])
 
   return (
     <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%)' }}>
@@ -304,26 +316,21 @@ export default function SchoolBanner({ schoolName, headteacher, town, attendance
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
 
-              {/* Mic — coming soon */}
-              <div
-                className="relative overflow-hidden rounded-lg"
-                title="Voice Commands coming soon"
-                style={{ width: 32, height: 32, flexShrink: 0 }}
+              {/* Mic — voice commands */}
+              <button
+                onClick={() => isListening ? stopListening() : startListening()}
+                title={isListening ? 'Listening...' : 'Voice command'}
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{
+                  width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
+                  backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                  border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                  color: isListening ? '#EF4444' : '#F9FAFB',
+                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                }}
               >
-                <button
-                  disabled
-                  className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: '#4B5563', cursor: 'not-allowed' }}
-                >
-                  <Mic size={15} strokeWidth={1.75} />
-                </button>
-                <span
-                  className="absolute pointer-events-none"
-                  style={{ top: 3, right: -9, transform: 'rotate(35deg)', backgroundColor: '#6C3FC5', color: '#fff', fontSize: 5, fontWeight: 700, letterSpacing: '0.03em', padding: '1px 10px', lineHeight: 1.4, whiteSpace: 'nowrap' }}
-                >
-                  SOON
-                </span>
-              </div>
+                <Mic size={14} strokeWidth={1.75} />
+              </button>
             </div>
 
             <p className="text-sm mb-1"  style={{ color: 'rgba(167,243,208,0.8)' }}>{dateStr}</p>

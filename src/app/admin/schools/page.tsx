@@ -37,14 +37,18 @@ export default function SchoolsListPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('admin_session_token') || '' : ''
 
+  const [fetchError, setFetchError] = useState('')
+
   function fetchAccounts() {
+    setFetchError('')
+    if (!token) { setFetchError('No admin token — please log in at /admin/login'); setLoading(false); return }
     fetch(`/api/admin/accounts?type=schools&search=${search}`, { headers: { 'x-admin-token': token } })
       .then(r => {
-        if (!r.ok) console.error('[admin/schools] fetch failed:', r.status)
+        if (!r.ok) { setFetchError(`API returned ${r.status}`); console.error('[admin/schools] fetch failed:', r.status) }
         return r.ok ? r.json() : { accounts: [] }
       })
       .then(d => { setAccounts(d.accounts || []); setLoading(false) })
-      .catch(e => { console.error('[admin/schools] fetch error:', e); setLoading(false) })
+      .catch(e => { setFetchError(e.message); console.error('[admin/schools] fetch error:', e); setLoading(false) })
   }
 
   useEffect(() => { fetchAccounts() }, [search])
@@ -191,7 +195,7 @@ export default function SchoolsListPage() {
           </tr></thead>
           <tbody>
             {loading ? <tr><td colSpan={6} className="px-5 py-8 text-center text-xs" style={{ color: '#6B7280' }}>Loading...</td></tr>
-            : accounts.length === 0 ? <tr><td colSpan={6} className="px-5 py-8 text-center text-xs" style={{ color: '#6B7280' }}>No schools found</td></tr>
+            : accounts.length === 0 ? <tr><td colSpan={6} className="px-5 py-8 text-center text-xs" style={{ color: '#6B7280' }}>{fetchError ? `Error: ${fetchError}` : 'No schools found'}</td></tr>
             : accounts.map(a => (
               <tr key={a.id} className="cursor-pointer hover:bg-white/[0.02]" style={{ borderBottom: '1px solid #1F2937' }}
                 onClick={() => window.location.href = `/admin/schools/${a.slug}`}>
