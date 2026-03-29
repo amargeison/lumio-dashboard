@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Building2, Users, BookOpen, Heart,
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
-  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, LogOut, DoorOpen,
+  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, LogOut, DoorOpen, Clock,
 } from 'lucide-react'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 
@@ -19,6 +19,7 @@ const NAV = [
   { section: 'Departments', path: 'school-office', label: 'School Office',          icon: Building2,       badge: null },
   { section: null,          path: 'hr-staff',      label: 'HR & Staff',             icon: Users,           badge: null },
   { section: null,          path: 'curriculum',    label: 'Curriculum',             icon: BookOpen,        badge: null },
+  { section: null,          path: 'timetable',     label: 'Timetable',              icon: Clock,           badge: null },
   { section: null,          path: 'students',      label: 'Students',               icon: GraduationCap,   badge: null },
   { section: null,          path: 'classes',       label: 'Classes',                icon: DoorOpen,        badge: null },
   { section: null,          path: 'send-dsl',      label: 'SEND & DSL',             icon: Heart,           badge: 2    },
@@ -30,6 +31,7 @@ const NAV = [
   { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
   { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
   { section: null,          path: 'reports',       label: 'Reports',                icon: FileText,        badge: null },
+  { section: null,          path: '/parent',       label: 'Parent Portal',          icon: Users,           badge: null },
   { section: null,          path: 'settings',      label: 'Settings',               icon: Settings,        badge: null },
 ]
 
