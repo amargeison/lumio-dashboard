@@ -570,51 +570,6 @@ function SchoolMorningRoundup() {
   )
 }
 
-// ─── School AI Summary Panel ─────────────────────────────────────────────────
-
-const SCHOOL_AI_HIGHLIGHTS = [
-  'Overall attendance today is 94.3% — Year 6 is lowest at 91.8%. Two pupils flagged for persistent absence review.',
-  '1 open safeguarding concern logged 2 days ago. DSL sign-off required before end of day.',
-  'Mrs S. Okafor (SENCO) absent — cover arranged. EHCP review at 11:30am still scheduled.',
-  'M. Taylor DBS expired 10 Mar. Renewal must be initiated this week.',
-  'Year 6 SATs prep session at 10am — all 28 registered pupils confirmed.',
-  'Parent consultation with J. Morris at 2pm. Behaviour log attached.',
-]
-
-function SchoolAIPanel() {
-  const [open, setOpen] = useState(true)
-  const now = new Date()
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
-  return (
-    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #0D9488' }}>
-      <button
-        className="flex w-full items-center justify-between px-5 py-4"
-        style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: open ? '1px solid rgba(13,148,136,0.3)' : undefined }}
-        onClick={() => setOpen(v => !v)}
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles size={14} style={{ color: '#0D9488' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
-          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{dayLabel}</span>
-        </div>
-        {open ? <ChevronUp size={14} style={{ color: '#0D9488' }} /> : <ChevronDown size={14} style={{ color: '#0D9488' }} />}
-      </button>
-      {open && (
-        <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '16rem' }}>
-          {SCHOOL_AI_HIGHLIGHTS.map((item, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#2DD4BF' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#99F6E4' }}>{item}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const DEPARTMENTS = [
