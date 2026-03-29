@@ -1048,6 +1048,16 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const firstName = ownerName ? ownerName.split(' ')[0] : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
+  const [activeTab, setActiveTab] = useState('today')
+  const TABS = [
+    { id: 'today', label: 'Today', icon: '📅' },
+    { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
+    { id: 'tasks', label: 'Daily Tasks', icon: '✅' },
+    { id: 'insights', label: 'Insights', icon: '📊' },
+    { id: 'dont-miss', label: "Don't Miss", icon: '🔴' },
+    { id: 'staff', label: 'Staff', icon: '👥' },
+  ]
+
   return (
     <div className="space-y-4">
 
@@ -1059,10 +1069,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
         {[
           { label: 'New Concern', icon: '⚠️' },
-          { label: 'Register Class', icon: '✅' },
-          { label: 'Add Student', icon: '➕' },
-          { label: 'Staff Alert', icon: '🔔' },
-          { label: 'Ofsted Check', icon: '🏫' },
+          { label: 'Log Absence', icon: '📋' },
+          { label: 'Parent Contact', icon: '📞' },
+          { label: 'Book Cover', icon: '📅' },
+          { label: 'New Admission', icon: '➕' },
+          { label: 'Run Report', icon: '📊' },
         ].map(a => (
           <button key={a.label} onClick={() => {}} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             <span>{a.icon}</span>{a.label}
@@ -1070,22 +1081,20 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         ))}
       </div>
 
-      {/* 3. Three-panel grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-        <div className="lg:col-span-1 flex flex-col">
-          <SchoolMorningRoundup />
-        </div>
-        <div className="lg:col-span-1 flex flex-col">
-          <SchoolMeetingsToday />
-        </div>
-        <div className="lg:col-span-1 flex flex-col gap-4">
-          <PhotoFrame />
-          <SchoolAIPanel />
+      {/* 3. Tab bar */}
+      <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+        <div className="flex items-center gap-0 min-w-max px-2">
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              style={{ borderBottomColor: activeTab === t.id ? '#0D9488' : 'transparent', color: activeTab === t.id ? '#2DD4BF' : '#6B7280', backgroundColor: activeTab === t.id ? 'rgba(13,148,136,0.05)' : 'transparent' }}>
+              <span className="text-base">{t.icon}</span>{t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 3. Safeguarding alert */}
-      <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+      {/* 4. Safeguarding alert — always visible */}
+      <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
         <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>1 open safeguarding concern</p>
@@ -1094,22 +1103,121 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <button className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
       </div>
 
-      {/* 4. Quick actions — above main content */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { label: 'Log Absence',     icon: Users,         color: '#0D9488' },
-          { label: 'New Concern',     icon: Shield,        color: '#EF4444' },
-          { label: 'Parent Contact',  icon: Phone,         color: '#6C3FC5' },
-          { label: 'Book Cover',      icon: Calendar,      color: '#F59E0B' },
-          { label: 'New Admission',   icon: UserPlus,      color: '#0D9488' },
-          { label: 'Run Report',      icon: FileText,      color: '#9CA3AF' },
-        ].map(({ label, icon: Icon, color }) => (
-          <button key={label} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-            <Icon size={14} style={{ color }} />{label}
-          </button>
-        ))}
-      </div>
+      {/* TAB: Today */}
+      {activeTab === 'today' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <div className="lg:col-span-1 flex flex-col"><SchoolMorningRoundup /></div>
+            <div className="lg:col-span-1 flex flex-col"><SchoolMeetingsToday /></div>
+            <div className="lg:col-span-1 flex flex-col gap-4"><PhotoFrame /><SchoolAIPanel /></div>
+          </div>
+        </>
+      )}
+
+      {/* TAB: Quick Wins */}
+      {activeTab === 'quick-wins' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h3>
+          <div className="space-y-2">
+            {[
+              { text: 'Take register for Year 4B — overdue', urgent: true },
+              { text: 'Sign off DSL concern logged 2 days ago', urgent: true },
+              { text: 'Chase 3 outstanding trip permission slips', urgent: false },
+              { text: 'Review EHCP draft for student review tomorrow', urgent: false },
+              { text: 'Send parent callback — missed call logged this morning', urgent: false },
+            ].map((w, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
+                <span className="text-sm flex-1" style={{ color: '#F9FAFB' }}>{w.text}</span>
+                {w.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Daily Tasks */}
+      {activeTab === 'tasks' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h3>
+          <div className="space-y-2">
+            {[
+              'Morning register check — all classes',
+              'Review attendance alerts',
+              'Check safeguarding log',
+              'Staff briefing notes',
+              'End of day behaviour summary',
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
+                <span className="text-sm" style={{ color: '#F9FAFB' }}>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Insights */}
+      {activeTab === 'insights' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>📊 Insights</h3>
+          <div className="space-y-3">
+            {[
+              { label: 'Attendance trend this week', value: '94.3% → 96.1%', color: '#22C55E', trend: '↑' },
+              { label: 'Behaviour incidents vs last week', value: '7 vs 12', color: '#0D9488', trend: '↓' },
+              { label: 'SEND review deadlines approaching', value: '3 this month', color: '#F59E0B', trend: '' },
+              { label: 'FSM uptake this term', value: '18.2%', color: '#A78BFA', trend: '' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <span className="text-sm" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                <span className="text-sm font-bold" style={{ color: s.color }}>{s.trend} {s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Don't Miss */}
+      {activeTab === 'dont-miss' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>🔴 Don't Miss</h3>
+          <div className="space-y-2">
+            {[
+              { text: 'EHCP annual review overdue — 2 students', level: 'critical' },
+              { text: 'DBS expiry — 1 staff member in 7 days', level: 'critical' },
+              { text: 'Ofsted data return due Friday', level: 'warning' },
+              { text: 'Year 6 SATs prep — resources not uploaded', level: 'warning' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${item.level === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, borderLeft: `3px solid ${item.level === 'critical' ? '#EF4444' : '#F59E0B'}` }}>
+                <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.text}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded ml-auto flex-shrink-0" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: item.level === 'critical' ? '#F87171' : '#FBBF24' }}>
+                  {item.level === 'critical' ? 'Critical' : 'Warning'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Staff */}
+      {activeTab === 'staff' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>👥 Staff Overview</h3>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {[
+              { label: 'Staff in today', value: '4 / 6', color: '#0D9488' },
+              { label: 'On cover', value: '1', color: '#F59E0B' },
+              { label: 'CPD due this term', value: '3 staff', color: '#A78BFA' },
+              { label: 'Reviews this week', value: '2', color: '#60A5FA' },
+            ].map(s => (
+              <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</p>
+                <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 5. Three-col grid: left (stats + cards) / right (AI panel) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
