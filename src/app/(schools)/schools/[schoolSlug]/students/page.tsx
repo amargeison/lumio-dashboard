@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
+import { AddStudentModal, StudentNoteModal, BehaviourLogModal } from '@/components/modals/SchoolModals'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -663,6 +664,12 @@ export default function StudentsPage() {
   const [yearFilter, setYearFilter] = useState('All Years')
   const [flagFilter, setFlagFilter] = useState<FilterKey>('all')
   const [selectedPupil, setSelectedPupil] = useState<Pupil | null>(null)
+  const [showAddStudent, setShowAddStudent] = useState(false)
+  const [showStudentNote, setShowStudentNote] = useState(false)
+  const [showBehaviourLog, setShowBehaviourLog] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
@@ -919,6 +926,11 @@ export default function StudentsPage() {
           onClose={() => setSelectedPupil(null)}
         />
       )}
+
+      {showAddStudent && <AddStudentModal onClose={() => setShowAddStudent(false)} onToast={showToast} />}
+      {showStudentNote && <StudentNoteModal onClose={() => setShowStudentNote(false)} onToast={showToast} />}
+      {showBehaviourLog && <BehaviourLogModal onClose={() => setShowBehaviourLog(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

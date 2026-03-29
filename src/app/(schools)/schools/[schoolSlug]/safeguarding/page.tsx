@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
+import { SafeguardingConcernModal, DSLReviewModal, StaffAlertModal } from '@/components/modals/SchoolModals'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -35,11 +36,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -90,6 +91,12 @@ const caseTimeline = [
 
 export default function SafeguardingPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showConcern, setShowConcern] = useState(false)
+  const [showDSLReview, setShowDSLReview] = useState(false)
+  const [showStaffAlert, setShowStaffAlert] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -131,11 +138,11 @@ export default function SafeguardingPage() {
 
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'Log Concern', icon: <AlertTriangle size={14} /> },
-        { label: 'DSL Review', icon: <FileSearch size={14} /> },
-        { label: 'MASH Referral', icon: <Phone size={14} /> },
-        { label: 'Staff Training', icon: <GraduationCap size={14} /> },
-        { label: 'KCSIE Compliance', icon: <Shield size={14} /> },
+        { label: 'Log Concern', icon: <AlertTriangle size={14} />, onClick: () => setShowConcern(true) },
+        { label: 'DSL Review', icon: <FileSearch size={14} />, onClick: () => setShowDSLReview(true) },
+        { label: 'MASH Referral', icon: <Phone size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Staff Training', icon: <GraduationCap size={14} />, onClick: () => setShowStaffAlert(true) },
+        { label: 'KCSIE Compliance', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
       ]} />
 
       {/* AI Highlights */}
@@ -254,6 +261,11 @@ export default function SafeguardingPage() {
           </table>
         </div>
       </div>
+
+      {showConcern && <SafeguardingConcernModal onClose={() => setShowConcern(false)} onToast={showToast} />}
+      {showDSLReview && <DSLReviewModal onClose={() => setShowDSLReview(false)} onToast={showToast} />}
+      {showStaffAlert && <StaffAlertModal onClose={() => setShowStaffAlert(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

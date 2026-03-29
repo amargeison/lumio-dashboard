@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
+import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -10,7 +11,7 @@ const HIGHLIGHTS = [
   'Budget on track — projected underspend of £18k by year end (July 2026)',
 ]
 
-const ACTIONS = [
+const ACTIONS_BASE = [
   { label: 'Approve Invoice', icon: <CheckCircle size={14} /> },
   { label: 'Budget Check', icon: <PieChart size={14} /> },
   { label: 'Raise PO', icon: <FileText size={14} /> },
@@ -91,11 +92,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -120,6 +121,12 @@ function budgetBarColor(pct: number) {
 
 export default function FinancePage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showInvoice, setShowInvoice] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
+  const [showBudget, setShowBudget] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -154,7 +161,13 @@ export default function FinancePage() {
       <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} />
+      <QuickActions actions={ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'Approve Invoice' ? () => setShowInvoice(true)
+          : a.label === 'Raise PO' ? () => setShowExpense(true)
+          : a.label === 'Budget Check' ? () => setShowBudget(true)
+          : () => showToast('Feature coming soon'),
+      }))} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -263,6 +276,11 @@ export default function FinancePage() {
           ))}
         </div>
       </div>
+
+      {showInvoice && <RaiseInvoiceModal onClose={() => setShowInvoice(false)} onToast={showToast} />}
+      {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
+      {showBudget && <BudgetReviewModal onClose={() => setShowBudget(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

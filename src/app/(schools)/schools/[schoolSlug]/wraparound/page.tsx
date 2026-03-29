@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
+import { RegisterSessionModal, PaymentLogModal, AddChildToClubModal } from '@/components/modals/SchoolModals'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -888,6 +889,9 @@ export default function WraparoundPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
+  const [showRegisterSession, setShowRegisterSession] = useState(false)
+  const [showPaymentLog, setShowPaymentLog] = useState(false)
+  const [showAddChild, setShowAddChild] = useState(false)
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -912,6 +916,9 @@ export default function WraparoundPage() {
   )
 
   function fireToast(action: string) {
+    if (action === 'Take register') { setShowRegisterSession(true); return }
+    if (action === 'Chase payment') { setShowPaymentLog(true); return }
+    if (action === 'Add booking') { setShowAddChild(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -964,6 +971,9 @@ export default function WraparoundPage() {
         {tab === 'settings' && <SettingsTab />}
       </div>
 
+      {showRegisterSession && <RegisterSessionModal onClose={() => setShowRegisterSession(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
+      {showPaymentLog && <PaymentLogModal onClose={() => setShowPaymentLog(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
+      {showAddChild && <AddChildToClubModal onClose={() => setShowAddChild(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
     </div>
   )

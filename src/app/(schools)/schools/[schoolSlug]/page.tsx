@@ -5,9 +5,10 @@ import {
   Users, Shield, Calendar, FileText, Phone, UserPlus,
   AlertTriangle, CheckCircle2, Clock, Loader2, Sparkles,
   TrendingUp, Activity, X, ChevronRight, Mail, Plus,
-  ChevronUp, ChevronDown, GitBranch, Volume2,
+  ChevronUp, ChevronDown, GitBranch, Volume2, Mic,
 } from 'lucide-react'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
+import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -422,6 +423,7 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => SCHOOL_BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useElevenLabsTTS()
+  const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
   const [quote, setQuote] = useState(SCHOOL_QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
@@ -440,6 +442,16 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
     if (chunks.length > 0) speak(chunks[0])
   }
 
+  // Handle voice command actions
+  useEffect(() => {
+    if (!lastCommand) return
+    const { action, response } = lastCommand
+    speak(response)
+    if (action === 'PLAY_BRIEFING') setTimeout(() => handleBriefing(), 1500)
+    else if (action === 'STOP_AUDIO') stop()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCommand])
+
   return (
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
       <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
@@ -453,6 +465,11 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
               <button onClick={handleBriefing} title="Text-to-Speech" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
+              </button>
+              <button onClick={() => isListening ? stopListening() : startListening()} title={isListening ? 'Listening...' : 'Voice command'}
+                className="flex items-center justify-center rounded-lg transition-all"
+                style={{ width: 32, height: 32, flexShrink: 0, cursor: 'pointer', backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)', border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isListening ? '#EF4444' : '#F9FAFB', animation: isListening ? 'pulse 1.5s infinite' : 'none' }}>
+                <Mic size={14} strokeWidth={1.75} />
               </button>
             </div>
             <p className="text-teal-300 text-sm mb-2">{date}</p>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { FileText, Calendar, Share2, Download, HelpCircle, Sparkles } from 'lucide-react'
+import { SchoolReportModal } from '@/components/modals/SchoolModals'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -35,11 +36,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -177,6 +178,10 @@ function ReportCard({ report, generating, onGenerate }: { report: Report; genera
 
 export default function ReportsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showReport, setShowReport] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -216,11 +221,11 @@ export default function ReportsPage() {
 
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'Generate Report', icon: <FileText size={14} /> },
-        { label: 'Schedule Report', icon: <Calendar size={14} /> },
-        { label: 'Share Report', icon: <Share2 size={14} /> },
-        { label: 'Export All', icon: <Download size={14} /> },
-        { label: 'Help', icon: <HelpCircle size={14} /> },
+        { label: 'Generate Report', icon: <FileText size={14} />, onClick: () => setShowReport(true) },
+        { label: 'Schedule Report', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Share Report', icon: <Share2 size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Export All', icon: <Download size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Help', icon: <HelpCircle size={14} />, onClick: () => showToast('Feature coming soon') },
       ]} />
 
       {/* AI Highlights */}
@@ -310,6 +315,9 @@ export default function ReportsPage() {
           })}
         </div>
       </div>
+
+      {showReport && <SchoolReportModal onClose={() => setShowReport(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

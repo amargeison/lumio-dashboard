@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
+import { NewEnquiryModal, OpenDayModal, SocialMediaPostModal } from '@/components/modals/SchoolModals'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -35,11 +36,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -93,6 +94,12 @@ const commsHistory = [
 
 export default function AdmissionsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showEnquiry, setShowEnquiry] = useState(false)
+  const [showOpenDay, setShowOpenDay] = useState(false)
+  const [showSocialMedia, setShowSocialMedia] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -126,11 +133,11 @@ export default function AdmissionsPage() {
 
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'New Enquiry', icon: <MessageSquare size={14} /> },
-        { label: 'Book School Trip', icon: <Calendar size={14} /> },
-        { label: 'Send Newsletter', icon: <Mail size={14} /> },
-        { label: 'Open Day', icon: <Users size={14} /> },
-        { label: 'Social Post', icon: <Share2 size={14} /> },
+        { label: 'New Enquiry', icon: <MessageSquare size={14} />, onClick: () => setShowEnquiry(true) },
+        { label: 'Book School Trip', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Send Newsletter', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Open Day', icon: <Users size={14} />, onClick: () => setShowOpenDay(true) },
+        { label: 'Social Post', icon: <Share2 size={14} />, onClick: () => setShowSocialMedia(true) },
       ]} />
 
       {/* AI Highlights */}
@@ -301,6 +308,11 @@ export default function AdmissionsPage() {
           </table>
         </div>
       </div>
+
+      {showEnquiry && <NewEnquiryModal onClose={() => setShowEnquiry(false)} onToast={showToast} />}
+      {showOpenDay && <OpenDayModal onClose={() => setShowOpenDay(false)} onToast={showToast} />}
+      {showSocialMedia && <SocialMediaPostModal onClose={() => setShowSocialMedia(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

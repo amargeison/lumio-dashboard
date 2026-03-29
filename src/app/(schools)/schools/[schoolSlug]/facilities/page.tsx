@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles } from 'lucide-react'
+import { MaintenanceRequestModal, RoomBookingModal } from '@/components/modals/SchoolModals'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -35,11 +36,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -96,6 +97,11 @@ const aiHighlights = [
 
 export default function FacilitiesPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showMaintenance, setShowMaintenance] = useState(false)
+  const [showRoomBooking, setShowRoomBooking] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -129,11 +135,11 @@ export default function FacilitiesPage() {
 
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'Log Maintenance', icon: <Wrench size={14} /> },
-        { label: 'Book Room', icon: <Calendar size={14} /> },
-        { label: 'Contractor Sign-in', icon: <UserCheck size={14} /> },
-        { label: 'H&S Check', icon: <Shield size={14} /> },
-        { label: 'Asset Register', icon: <Package size={14} /> },
+        { label: 'Log Maintenance', icon: <Wrench size={14} />, onClick: () => setShowMaintenance(true) },
+        { label: 'Book Room', icon: <Calendar size={14} />, onClick: () => setShowRoomBooking(true) },
+        { label: 'Contractor Sign-in', icon: <UserCheck size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'H&S Check', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Asset Register', icon: <Package size={14} />, onClick: () => showToast('Feature coming soon') },
       ]} />
 
       {/* AI Highlights */}
@@ -264,6 +270,10 @@ export default function FacilitiesPage() {
           ))}
         </div>
       </div>
+
+      {showMaintenance && <MaintenanceRequestModal onClose={() => setShowMaintenance(false)} onToast={showToast} />}
+      {showRoomBooking && <RoomBookingModal onClose={() => setShowRoomBooking(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }

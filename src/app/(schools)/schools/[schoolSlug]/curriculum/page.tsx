@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
+import { CreateLessonPlanModal, AssessmentTrackerModal, TimetableChangeModal } from '@/components/modals/SchoolModals'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -10,7 +11,7 @@ const HIGHLIGHTS = [
   'Book scrutiny scheduled next Tuesday — Year 3 and 4 teachers to prepare marked books',
 ]
 
-const ACTIONS = [
+const ACTIONS_BASE = [
   { label: 'Generate Lesson Plan', icon: <BookOpen size={14} /> },
   { label: 'Cover Work', icon: <FileText size={14} /> },
   { label: 'Parents Evening', icon: <Users size={14} /> },
@@ -91,11 +92,11 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
           style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
@@ -114,6 +115,12 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 
 export default function CurriculumPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showLessonPlan, setShowLessonPlan] = useState(false)
+  const [showAssessment, setShowAssessment] = useState(false)
+  const [showTimetable, setShowTimetable] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -148,7 +155,13 @@ export default function CurriculumPage() {
       <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} />
+      <QuickActions actions={ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'Generate Lesson Plan' ? () => setShowLessonPlan(true)
+          : a.label === 'Assessment Tracker' ? () => setShowAssessment(true)
+          : a.label === 'Report Writer' ? () => setShowTimetable(true)
+          : () => showToast('Feature coming soon'),
+      }))} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -261,6 +274,11 @@ export default function CurriculumPage() {
           ))}
         </div>
       </div>
+
+      {showLessonPlan && <CreateLessonPlanModal onClose={() => setShowLessonPlan(false)} onToast={showToast} />}
+      {showAssessment && <AssessmentTrackerModal onClose={() => setShowAssessment(false)} onToast={showToast} />}
+      {showTimetable && <TimetableChangeModal onClose={() => setShowTimetable(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }
