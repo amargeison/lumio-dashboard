@@ -30,7 +30,7 @@ export default function IntelligencePage() {
         const closedTotal = data.deals.filter((d: any) => d.closed_at || d.won !== null)
 
         setCrmContext({
-          userName: ws!.owner_name || 'there',
+          userName: (typeof window !== 'undefined' && localStorage.getItem('lumio_user_name')) || 'there',
           contacts: data.contacts,
           deals: data.deals,
           totalPipelineValue: openDeals.reduce((s: number, d: any) => s + (d.value || 0), 0),
