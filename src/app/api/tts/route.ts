@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
 
     const voiceId = voice_id || voice || VOICE_ID
 
+    console.log('[TTS] API key present:', !!process.env.ELEVENLABS_API_KEY, '| key prefix:', process.env.ELEVENLABS_API_KEY?.slice(0, 8))
+
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
       {
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const err = await response.text().catch(() => 'Unknown error')
       console.error('[TTS] ElevenLabs error:', response.status, err)
-      return NextResponse.json({ error: 'TTS failed' }, { status: 500 })
+      return NextResponse.json({ error: 'TTS failed', detail: err, status: response.status }, { status: 500 })
     }
 
     const audioBuffer = await response.arrayBuffer()
