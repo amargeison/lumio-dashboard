@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
-type Step = 'email' | 'otp'
+type Step = 'email' | 'otp' | 'pin'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,7 +38,27 @@ function SchoolsLoginContent() {
   const [ssoLoading, setSsoLoading] = useState<'google' | 'azure' | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  const [pinDigits, setPinDigits] = useState(['', '', '', '', '', ''])
+  const pinRefs = useRef<(HTMLInputElement | null)[]>([])
+
   const code = digits.join('')
+
+  async function handlePinVerify() {
+    const pin = pinDigits.join('')
+    if (pin.length < 6) return
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/auth/verify-pin', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pin, type: 'school' }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Invalid PIN'); setPinDigits(['', '', '', '', '', '']); setTimeout(() => pinRefs.current[0]?.focus(), 50); setLoading(false); return }
+      if (data.session_token) localStorage.setItem('school_session_token', data.session_token)
+      localStorage.setItem('lumio_school_name', data.school_name || '')
+      router.push(`/schools/${data.school_slug}`)
+    } catch { setError('Something went wrong'); setLoading(false) }
+  }
 
   async function handleSSO(provider: 'google' | 'azure') {
     setSsoLoading(provider)
@@ -76,9 +96,19 @@ function SchoolsLoginContent() {
         return
       }
       setSchoolName(data.school_name || '')
-      setDigits(['', '', '', '', '', ''])
-      setStep('otp')
-      setTimeout(() => inputRefs.current[0]?.focus(), 50)
+      // Check if user has PIN set
+      const pinCheck = await fetch('/api/auth/check-pin', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type: 'school' }),
+      }).then(r => r.json()).catch(() => ({ has_pin: false }))
+      if (pinCheck.has_pin) {
+        setStep('pin')
+        setTimeout(() => inputRefs.current[0]?.focus(), 50)
+      } else {
+        setDigits(['', '', '', '', '', ''])
+        setStep('otp')
+        setTimeout(() => inputRefs.current[0]?.focus(), 50)
+      }
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -305,6 +335,33 @@ function SchoolsLoginContent() {
                   {loading ? 'Sending code…' : 'Send code →'}
                 </button>
               </form>
+            </>
+          ) : step === 'pin' ? (
+            <>
+              <div className="mb-6">
+                <h1 className="text-xl font-bold mb-1.5" style={{ color: '#F9FAFB' }}>Enter your PIN</h1>
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>6-digit PIN for <span style={{ color: '#F9FAFB' }}>{email}</span></p>
+                {schoolName && <span className="inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488' }}>{schoolName}</span>}
+              </div>
+              <div className="flex justify-center gap-2 mb-4">
+                {pinDigits.map((d, i) => (
+                  <input key={i} ref={el => { pinRefs.current[i] = el }} type="password" inputMode="numeric" maxLength={1}
+                    value={d} onChange={e => { const c = e.target.value.replace(/\D/g, '').slice(-1); const n = [...pinDigits]; n[i] = c; setPinDigits(n); if (c && i < 5) pinRefs.current[i + 1]?.focus() }}
+                    onKeyDown={e => { if (e.key === 'Backspace' && !pinDigits[i] && i > 0) pinRefs.current[i - 1]?.focus() }}
+                    className="w-11 h-14 text-center text-xl font-bold rounded-xl" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#0D9488' }} onBlur={e => { e.currentTarget.style.borderColor = '#1F2937' }} />
+                ))}
+              </div>
+              {error && <p className="text-xs text-center mb-3" style={{ color: '#EF4444' }}>{error}</p>}
+              <button onClick={handlePinVerify} disabled={loading || pinDigits.join('').length < 6}
+                className="w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-40 mb-3"
+                style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}>
+                {loading ? 'Verifying…' : 'Sign in →'}
+              </button>
+              <button onClick={() => { setStep('otp'); setError(''); setDigits(['', '', '', '', '', '']); fetch('/api/schools/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }) }}
+                className="block mx-auto text-xs underline" style={{ color: '#6B7280' }}>
+                Use email code instead
+              </button>
             </>
           ) : (
             <>
