@@ -398,6 +398,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, comp
           {companyName && <span className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</span>}
         </div>
         {inner}
+        {/* Lumio logo — bottom of sidebar */}
+        <div className="mt-auto shrink-0 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
+          <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity pt-3" style={{ width: 'fit-content' }}>
+            <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
+          </a>
+        </div>
       </aside>
 
       {/* Mobile drawer overlay */}
@@ -2762,43 +2768,32 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <span className="hidden sm:inline opacity-75">· Demo data only · Auto-deleted after 14 days</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Upgrade <ArrowRight size={11} className="inline" /></Link>
+            <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
+              <UserPlus size={11} /> Invite team
+            </button>
+            <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>
             <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
           </div>
         </div>
       )}
 
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3 overflow-visible" style={{ backgroundColor: '#07080F', borderBottom: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Mobile hamburger */}
-          <button className="md:hidden p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
-          {/* Logo + company name */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Link href="/"><Image src="/lumio-logo-primary.png" alt="Lumio" width={120} height={60}
-              style={{ width: 60, height: 'auto', flexShrink: 0 }} className="rounded-md" /></Link>
-            <div className="hidden sm:block w-px h-5 shrink-0" style={{ backgroundColor: '#1F2937' }} />
-            <div className="min-w-0 hidden sm:block">
-              <div className="text-sm font-bold truncate">{company}</div>
-              <div className="text-xs" style={{ color: '#6B7280' }}>{isTrial ? 'Trial workspace' : 'Live workspace'}</div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: 'transparent', color: '#0D9488', border: '1px solid rgba(13,148,136,0.5)' }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.08)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0D9488' }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)' }}>
-            <UserPlus size={13} /> Invite team
-          </button>
-          {isTrial && (
-            <button onClick={() => setShowConvert(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold sm:text-sm sm:px-4" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-              <Zap size={12} /><span className="hidden sm:inline">Go Live</span><span className="sm:hidden">Go Live</span>
-            </button>
-          )}
-          <AvatarDropdown
-            initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-            onConvert={() => setShowConvert(true)}
-          />
-        </div>
-      </header>
+      {/* Mobile hamburger (no top header bar) */}
+      <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+        <button className="p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+        <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{company}</span>
+      </div>
+
+      {/* Top-right: bell + avatar (fixed, matching live portal) */}
+      <div style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Volume2 size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
+        </button>
+        <AvatarDropdown
+          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+          onConvert={() => setShowConvert(true)}
+        />
+      </div>
       {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
 
       {/* Body: sidebar + content */}
