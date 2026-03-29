@@ -286,6 +286,69 @@ const OPENING_LINES = [
   "Good morning! The best moments of today are still ahead.",
 ]
 
+const SCHOOL_CLOSING_LINES = [
+  "Have a brilliant day \u2014 you're making a difference to every child in that building.",
+  "Go get 'em. Today's going to be a great one.",
+  "Make today count \u2014 the kids are lucky to have you.",
+  "Have an amazing day. You've got everything you need to make it brilliant.",
+  "Now go make it happen. You've got this.",
+  "That's your briefing \u2014 go be brilliant today.",
+  "Have a fantastic day. Every lesson, every moment matters.",
+  "Off you go \u2014 today is going to be great.",
+  "You're ready. Go make today one to remember.",
+  "Have a wonderful day \u2014 the school is in great hands.",
+  "Go show them what great teaching looks like.",
+  "That's everything \u2014 now go have a brilliant day.",
+  "Make today amazing. You've already started it right.",
+  "Have a great day \u2014 the difference you make is enormous.",
+  "Go get 'em. Today's yours.",
+  "That's your morning sorted \u2014 now go be outstanding.",
+  "Have a brilliant one. Every child in that school is better off because you're there.",
+  "Go make today brilliant. You've got this.",
+  "That's the briefing done \u2014 now go do what you do best.",
+  "Have an incredible day. The work you do matters more than you know.",
+  "Off you go \u2014 make today one the kids will remember.",
+  "You're ready for today. Go make it count.",
+  "Have a great day \u2014 you're doing something that truly matters.",
+  "Go get 'em \u2014 today is full of possibility.",
+  "That's everything you need. Now go be brilliant.",
+  "Have a wonderful day \u2014 every moment you give is worth it.",
+  "Go make today outstanding. You've already done the hard part by showing up.",
+  "Have a fantastic day \u2014 the school is lucky to have you.",
+  "That's your briefing \u2014 go make today brilliant.",
+  "Off you go. Make today count for every child in that building.",
+  "Have a great one. You're changing lives \u2014 don't forget that.",
+  "Go get 'em. Today has your name on it.",
+  "Have a brilliant day \u2014 you make a difference every single day.",
+  "That's everything \u2014 now go have the day you deserve.",
+  "Go be brilliant. The school needs you at your best today.",
+  "Have an amazing day \u2014 every lesson is an opportunity.",
+  "You're set. Go make today one to be proud of.",
+  "Have a great day \u2014 the work you do here genuinely matters.",
+  "Go get 'em. Make today brilliant for every child you see.",
+  "That's your morning briefing \u2014 now go make today outstanding.",
+  "Have a wonderful day. You're exactly where you're needed.",
+  "Go make today brilliant. Every child is counting on people like you.",
+  "Have a fantastic day \u2014 you're already ahead just by being prepared.",
+  "Off you go. Today is going to be great.",
+  "Have a brilliant day \u2014 go show them what great looks like.",
+  "That's everything \u2014 go make today incredible.",
+  "Go get 'em. You've got this and then some.",
+  "Have a great day \u2014 the difference you make here is real.",
+  "Go be outstanding. Today is waiting for you.",
+  "Have a brilliant one \u2014 every child in that school is better for you being there.",
+  "That's your briefing. Now go make today matter.",
+  "Have an amazing day \u2014 you're doing something truly important.",
+  "Go get 'em. Make every moment count today.",
+  "Have a fantastic day \u2014 you're ready and the school needs you.",
+  "Off you go \u2014 go make today one to remember.",
+  "Have a brilliant day. The impact you have is greater than you realise.",
+  "That's everything \u2014 now go be brilliant.",
+  "Go make today outstanding. You've got everything you need.",
+  "Have a great day \u2014 go show them what you're made of.",
+  "That's your morning briefing done. Now go have an absolutely brilliant day.",
+]
+
 // ─── World Clock ────────────────────────────────────────────────────────────
 
 function SchoolWorldClock() {
@@ -434,7 +497,8 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
     if (isPlaying) { stop(); return }
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
-    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} Attendance is 96.2%. 1 safeguarding concern needs attention. 2 staff updates and an Ofsted check due this week.`
+    const closingLine = SCHOOL_CLOSING_LINES[dayOfYear % SCHOOL_CLOSING_LINES.length]
+    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} Attendance is 96.2%. 1 safeguarding concern needs attention. 2 staff updates and an Ofsted check due this week. ${closingLine}`
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''; const chunks: string[] = []
     for (const s of sentences) { if ((chunk + s).length > 480) { if (chunk) chunks.push(chunk.trim()); chunk = s } else { chunk += s } }

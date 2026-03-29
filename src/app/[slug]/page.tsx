@@ -453,6 +453,69 @@ const OPENING_LINES = [
   "Good morning! The best moments of today are still ahead.",
 ]
 
+const CLOSING_LINES = [
+  "Have an absolutely brilliant day \u2014 go make it count.",
+  "Now go get 'em. Today is yours.",
+  "That's your briefing \u2014 go be brilliant today.",
+  "Have a great day. You've already started it right.",
+  "Go make today one to remember.",
+  "Off you go \u2014 today has your name on it.",
+  "Have a fantastic day. The momentum starts now.",
+  "Go get 'em. Everything you need is right there.",
+  "Have a brilliant one. Big things happen to people who start their day like this.",
+  "That's everything \u2014 now go make it happen.",
+  "Have an amazing day. The best part is still ahead.",
+  "Go show them what you're made of today.",
+  "Have a great day \u2014 you're already ahead of the game.",
+  "Off you go. Make today brilliant.",
+  "That's your morning sorted \u2014 now go be outstanding.",
+  "Have a wonderful day. Every decision you make today matters.",
+  "Go get 'em \u2014 today is full of opportunity.",
+  "Have a brilliant day. The work you do makes a real difference.",
+  "That's the briefing done \u2014 now go do what you do best.",
+  "Have an incredible day. Make every hour count.",
+  "Go make today outstanding. You've already done the hard part.",
+  "Have a fantastic day \u2014 the best moments are still to come.",
+  "That's your briefing \u2014 go make today brilliant.",
+  "Off you go. Make today count.",
+  "Have a great one. You've got everything you need to crush it today.",
+  "Go get 'em. Today is going to be a good one.",
+  "Have a brilliant day \u2014 big things are coming.",
+  "That's everything \u2014 now go have the day you deserve.",
+  "Go be brilliant. Today is waiting for you.",
+  "Have an amazing day \u2014 every hour is an opportunity.",
+  "You're set. Go make today one to be proud of.",
+  "Have a great day \u2014 the work you're doing here genuinely matters.",
+  "Go get 'em. Make today brilliant.",
+  "That's your morning briefing \u2014 now go make today outstanding.",
+  "Have a wonderful day. You're exactly where you're supposed to be.",
+  "Go make today brilliant. The opportunities are there \u2014 go find them.",
+  "Have a fantastic day \u2014 you're already ahead just by being prepared.",
+  "Off you go. Today is going to be great.",
+  "Have a brilliant day \u2014 go show them what great looks like.",
+  "That's everything \u2014 go make today incredible.",
+  "Go get 'em. You've got this and then some.",
+  "Have a great day \u2014 the difference you make is real.",
+  "Go be outstanding. Today is waiting for you.",
+  "Have a brilliant one \u2014 the best work of your day is still ahead.",
+  "That's your briefing. Now go make today matter.",
+  "Have an amazing day \u2014 you're doing something truly important.",
+  "Go get 'em. Make every moment count today.",
+  "Have a fantastic day \u2014 you're ready and the world needs you.",
+  "Off you go \u2014 go make today one to remember.",
+  "Have a brilliant day. The impact you have is greater than you realise.",
+  "That's everything \u2014 now go be brilliant.",
+  "Go make today outstanding. You've got everything you need.",
+  "Have a great day \u2014 go show them what you're made of.",
+  "That's your morning briefing done. Now go have an absolutely brilliant day.",
+  "Go get 'em. Today's got your name written all over it.",
+  "Have a brilliant day \u2014 something good is going to happen today.",
+  "Off you go. Make it count.",
+  "Have a great day \u2014 the best version of today starts right now.",
+  "Go make something brilliant happen today. You've got this.",
+  "That's your briefing \u2014 now go out there and own the day.",
+]
+
 const DEFAULT_WORLD_ZONES = [
   { label: 'London',   tz: 'Europe/London'    },
   { label: 'New York', tz: 'America/New_York' },
@@ -603,7 +666,8 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     if (isPlaying) { stop(); return }
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
-    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`
+    const closingLine = CLOSING_LINES[dayOfYear % CLOSING_LINES.length]
+    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} You have 4 meetings today, 12 emails to review, and 2 workflows need attention. ${closingLine}`
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''
     const chunks: string[] = []
