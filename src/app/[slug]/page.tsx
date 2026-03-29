@@ -767,6 +767,25 @@ function PhotoFrame() {
 
 const ROUNDUP_ITEMS = [
   {
+    id: 'sms', icon: '📱', label: 'SMS / Text', count: 3, urgent: true,
+    color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
+    messages: [
+      { id: 't1', from: '+44 7700 900123', avatar: 'TW', subject: 'Urgent: Payment query', preview: 'Hi, this is Tom from Bramble Hill. Our payment bounced \u2014 can you call me urgently?', time: '8:05am', urgent: true, read: false },
+      { id: 't2', from: '+44 7700 900456', avatar: 'HC', subject: 'Demo confirmation', preview: 'Confirming our demo at 11am today. Looking forward to it!', time: '7:30am', urgent: false, read: false },
+      { id: 't3', from: '+44 7700 900789', avatar: 'RD', subject: 'Quick question', preview: 'Is Lumio GDPR compliant? Our IT team needs confirmation before sign-off.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'whatsapp', icon: '💬', label: 'WhatsApp Business', count: 4, urgent: false,
+    color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
+    messages: [
+      { id: 'w1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
+      { id: 'w2', from: 'James Harlow', avatar: 'JH', subject: 'Contract query', preview: 'Quick question on the contract terms \u2014 can we jump on a call this afternoon?', time: '8:45am', urgent: false, read: false },
+      { id: 'w3', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal reminder', preview: 'Our current contract ends next month. Looking forward to renewing with Lumio.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'w4', from: 'Dan Marsh', avatar: 'DM', subject: 'Invoice question', preview: 'Could you resend the latest invoice? Need it for our accounts team.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
     id: 'email', icon: '📧', label: 'Emails', count: 12, urgent: true,
     color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',
     messages: [
@@ -788,6 +807,25 @@ const ROUNDUP_ITEMS = [
     ]
   },
   {
+    id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
+    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
+    messages: [
+      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Charlotte Davies.', time: '9:45am', urgent: false, read: false },
+      { id: 'h2', from: 'HubSpot CRM', avatar: 'HS', subject: 'New contact — Marcus Chen, Meridian Trust', preview: 'Marcus Chen (CTO, Meridian Trust) has been added as a new contact. Recommended action: schedule intro call.', time: '8:30am', urgent: false, read: false },
+      { id: 'h3', from: 'HubSpot', avatar: 'HS', subject: 'Email sequence — 3 contacts opened your email', preview: 'Your "School Digital Transformation" sequence had 3 opens and 1 click-through in the last 24 hours.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'h4', from: 'HubSpot', avatar: 'HS', subject: 'Task reminder — follow up with Wimbledon High', preview: 'You have an overdue task: follow up with James Harlow at Wimbledon High regarding the enterprise proposal.', time: 'Yesterday', urgent: true, read: false },
+      { id: 'h5', from: 'HubSpot', avatar: 'HS', subject: 'Monthly report ready — March 2026', preview: 'Your March CRM report is ready. Pipeline value: \u00A3775,100. Deals closed: 4. Win rate: 50%.', time: '2 days ago', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'notion', icon: '📋', label: 'Notion', count: 2, urgent: false,
+    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
+    messages: [
+      { id: 'no1', from: 'Notion', avatar: 'NO', subject: 'Testing guide updated', preview: '2 items resolved in the QA testing guide. Sophie Williams marked "OTP flow" and "School registration" as complete.', time: '9:15am', urgent: false, read: false },
+      { id: 'no2', from: 'Notion', avatar: 'NO', subject: 'Q2 Roadmap — 3 items need review', preview: 'The Q2 product roadmap has 3 items flagged for your review before the Friday planning session.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
     id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false,
     color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)',
     messages: [
@@ -803,44 +841,6 @@ const ROUNDUP_ITEMS = [
       { id: 'n1', from: 'TechCrunch', avatar: 'TC', subject: 'UK SMB automation market up 34% YoY', preview: 'New research shows UK small businesses are accelerating adoption of AI-powered workflow tools, with the market growing 34% year on year.', time: '8:00am', urgent: false, read: false },
       { id: 'n2', from: 'Schools Week', avatar: 'SW', subject: 'SEND White Paper implementation update', preview: 'DfE confirms timeline for SEND White Paper reforms. Schools must comply with new EHCP digital requirements by September 2026.', time: '7:45am', urgent: false, read: false },
       { id: 'n3', from: 'EdTech Magazine', avatar: 'EM', subject: 'Google Workspace for Education — new admin controls', preview: 'Google announces enhanced admin controls for Workspace for Education accounts, including new SSO policies.', time: 'Yesterday', urgent: false, read: true },
-    ]
-  },
-  {
-    id: 'notion', icon: '📋', label: 'Notion', count: 2, urgent: false,
-    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
-    messages: [
-      { id: 'no1', from: 'Notion', avatar: 'NO', subject: 'Testing guide updated', preview: '2 items resolved in the QA testing guide. Sophie Williams marked "OTP flow" and "School registration" as complete.', time: '9:15am', urgent: false, read: false },
-      { id: 'no2', from: 'Notion', avatar: 'NO', subject: 'Q2 Roadmap — 3 items need review', preview: 'The Q2 product roadmap has 3 items flagged for your review before the Friday planning session.', time: 'Yesterday', urgent: false, read: true },
-    ]
-  },
-  {
-    id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
-    color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
-    messages: [
-      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Charlotte Davies.', time: '9:45am', urgent: false, read: false },
-      { id: 'h2', from: 'HubSpot CRM', avatar: 'HS', subject: 'New contact — Marcus Chen, Meridian Trust', preview: 'Marcus Chen (CTO, Meridian Trust) has been added as a new contact. Recommended action: schedule intro call.', time: '8:30am', urgent: false, read: false },
-      { id: 'h3', from: 'HubSpot', avatar: 'HS', subject: 'Email sequence — 3 contacts opened your email', preview: 'Your "School Digital Transformation" sequence had 3 opens and 1 click-through in the last 24 hours.', time: 'Yesterday', urgent: false, read: true },
-      { id: 'h4', from: 'HubSpot', avatar: 'HS', subject: 'Task reminder — follow up with Wimbledon High', preview: 'You have an overdue task: follow up with James Harlow at Wimbledon High regarding the enterprise proposal.', time: 'Yesterday', urgent: true, read: false },
-      { id: 'h5', from: 'HubSpot', avatar: 'HS', subject: 'Monthly report ready — March 2026', preview: 'Your March CRM report is ready. Pipeline value: \u00A3775,100. Deals closed: 4. Win rate: 50%.', time: '2 days ago', urgent: false, read: true },
-    ]
-  },
-  {
-    id: 'whatsapp', icon: '💬', label: 'WhatsApp Business', count: 4, urgent: false,
-    color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
-    messages: [
-      { id: 'w1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
-      { id: 'w2', from: 'James Harlow', avatar: 'JH', subject: 'Contract query', preview: 'Quick question on the contract terms \u2014 can we jump on a call this afternoon?', time: '8:45am', urgent: false, read: false },
-      { id: 'w3', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal reminder', preview: 'Our current contract ends next month. Looking forward to renewing with Lumio.', time: 'Yesterday', urgent: false, read: true },
-      { id: 'w4', from: 'Dan Marsh', avatar: 'DM', subject: 'Invoice question', preview: 'Could you resend the latest invoice? Need it for our accounts team.', time: 'Yesterday', urgent: false, read: true },
-    ]
-  },
-  {
-    id: 'sms', icon: '📱', label: 'SMS / Text', count: 3, urgent: true,
-    color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
-    messages: [
-      { id: 't1', from: '+44 7700 900123', avatar: 'TW', subject: 'Urgent: Payment query', preview: 'Hi, this is Tom from Bramble Hill. Our payment bounced \u2014 can you call me urgently?', time: '8:05am', urgent: true, read: false },
-      { id: 't2', from: '+44 7700 900456', avatar: 'HC', subject: 'Demo confirmation', preview: 'Confirming our demo at 11am today. Looking forward to it!', time: '7:30am', urgent: false, read: false },
-      { id: 't3', from: '+44 7700 900789', avatar: 'RD', subject: 'Quick question', preview: 'Is Lumio GDPR compliant? Our IT team needs confirmation before sign-off.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
 ]
