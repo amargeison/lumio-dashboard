@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle } from 'lucide-react'
+import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -61,6 +61,7 @@ export default function SupportPage() {
     { label: 'Book Meeting',   icon: CalendarPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Create Wiki',   icon: BookOpen,      onClick: () => setShowCreateWiki(true) },
     { label: 'Create FAQ',    icon: HelpCircle,    onClick: () => setShowCreateFAQ(true) },
+    { label: 'Admin Portal',  icon: Shield,        onClick: () => window.location.href = '/admin' },
   ]
 
   const hasData = useHasDashboardData('support')
