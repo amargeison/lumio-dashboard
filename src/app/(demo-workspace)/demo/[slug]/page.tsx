@@ -117,10 +117,10 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
   ],
   marketing:  [
     { label: 'New Campaign',   tooltip: 'Create a multi-step email or ad campaign',                        icon: Megaphone },
+    { label: 'Case Study',     tooltip: 'AI-powered case study builder — configure, research, draft, publish', icon: FileText },
     { label: 'Schedule Post',  tooltip: 'Queue a social post across LinkedIn, Twitter, and Instagram',     icon: Calendar  },
     { label: 'A/B Test',       tooltip: 'Set up an A/B test on email subject lines or ad copy',            icon: BarChart2 },
     { label: 'Email Blast',    tooltip: 'Send a one-off broadcast to a selected audience segment',         icon: Send      },
-    { label: 'UTM Builder',    tooltip: 'Generate tracked UTM links for your latest campaign',             icon: Target    },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Marketing',                       icon: BarChart3 },
   ],
   trials:     [

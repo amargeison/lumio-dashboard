@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles } from 'lucide-react'
+import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -57,6 +57,7 @@ export default function OperationsPage() {
     { label: 'Delivery Log',      icon: ClipboardList, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Stock Report',      icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Book Stock',        icon: PackagePlus,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Admin Portal',     icon: Shield,        onClick: () => window.location.href = '/admin' },
   ]
 
   const hasData = useHasDashboardData('operations')

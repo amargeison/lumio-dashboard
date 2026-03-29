@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle } from 'lucide-react'
+import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -62,6 +62,7 @@ export default function TrialsPage() {
     { label: 'Send Day 7 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Convert to Customer', icon: UserPlus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'End Trial',           icon: AlertCircle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Admin Portal',        icon: Shield,       onClick: () => window.location.href = '/admin' },
   ]
 
   const hasData = useHasDashboardData('trials')
