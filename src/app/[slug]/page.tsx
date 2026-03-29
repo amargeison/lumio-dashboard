@@ -841,7 +841,7 @@ function MorningRoundup() {
   }
 
   return (
-    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+    <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
         <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
@@ -989,7 +989,7 @@ const MEETINGS: { id: string; title: string; time: string; duration: string; att
 function MeetingsToday() {
   const live = MEETINGS.find(m => m.status === 'now')
   return (
-    <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+    <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 Meetings Today</h3>
         <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{MEETINGS.length} scheduled</span>
@@ -1600,11 +1600,11 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         <div className="space-y-4">
           <QuickActionsBar onAction={handleQuickAction} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <div className="lg:col-span-1 flex flex-col">
               <MorningRoundup />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col">
               <MeetingsToday />
             </div>
             <div className="lg:col-span-1 flex flex-col gap-4">
