@@ -585,12 +585,14 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
-  const [quote] = useState(() => {
+  const [quote, setQuote] = useState(QUOTES[0])
+  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+
+  useEffect(() => {
     const start = new Date(new Date().getFullYear(), 0, 1).getTime()
     const dayOfYear = Math.floor((Date.now() - start) / 86400000)
-    return QUOTES[dayOfYear % QUOTES.length]
-  })
-  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+    setQuote(QUOTES[dayOfYear % QUOTES.length])
+  }, [])
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
