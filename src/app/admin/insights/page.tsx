@@ -1,5 +1,5 @@
 'use client'
-
+// Admin Insights Dashboard — 10 sections with recharts
 import { useState } from 'react'
 import { Download, TrendingUp, TrendingDown, Users, Activity, Target, Shield, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts'
