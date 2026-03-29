@@ -9,8 +9,24 @@ export type VoiceCommandResult = {
 }
 
 function extractTime(text: string): string | null {
-  const match = text.match(/at (\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i)
+  const match = text.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i)
   return match ? match[1] : null
+}
+
+function extractPersonOrCompany(text: string): string | null {
+  const match = text.match(/(?:with|for) ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
+  return match ? match[1] : null
+}
+
+function detectIntent(text: string): string | null {
+  const t = text.toLowerCase()
+  if (/\b(cancel|reschedule|move|postpone|push back)\b/.test(t) && /\b(meeting|call|review|consultation|appointment)\b/.test(t)) return 'CANCEL_MEETING'
+  if (/\b(cancel|reschedule|move|postpone)\b/.test(t)) return 'CANCEL_MEETING'
+  if (/\b(book|schedule|set up|arrange)\b/.test(t) && /\b(meeting|call|review)\b/.test(t)) return 'BOOK_MEETING'
+  if (/\b(send|write|compose)\b/.test(t) && /\b(email|mail)\b/.test(t)) return 'EMAIL'
+  if (/\b(call|phone|ring)\b/.test(t)) return 'PHONE'
+  if (/\b(send|message)\b/.test(t) && /\b(slack)\b/.test(t)) return 'SLACK'
+  return null
 }
 
 function extractChannel(text: string): string {
@@ -157,17 +173,31 @@ const COMMANDS: { patterns: RegExp[], action: string, response: (m: RegExpMatchA
     response: () => 'You have 4 lessons, 2 meetings, and a governors briefing at 4pm today.',
   },
 
-  // ── MEETING ──────────────────────────────────────────────────────────────────
+  // ── MEETING CANCEL — broad patterns ──────────────────────────────────────────
   {
-    patterns: [/cancel my (\w+(?:\s+\w+)?) meeting/i, /cancel the (\w+(?:\s+\w+)?) meeting/i],
-    action: 'CANCEL_NAMED_MEETING',
-    response: (m) => `I'll look for your ${m[1]} meeting.`,
-    payload: (m) => ({ meetingName: m[1] })
+    patterns: [
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)\s*(?:meeting|call|review)?/i,
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|review) (?:at |for )(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i,
+    ],
+    action: 'CANCEL_MEETING_BY_TIME',
+    response: (m) => `Looking for your meeting at ${m[1]}...`,
+    payload: (m) => ({ time: m[1] })
   },
   {
-    patterns: [/cancel my (?:next )?meeting/i, /cancel (?:my )?upcoming meeting/i],
+    patterns: [
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|review|consultation) with (\w+(?:\s+\w+)?)/i,
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(\w+(?:\s+\w+)?) (?:meeting|call|review|consultation)/i,
+    ],
+    action: 'CANCEL_MEETING_BY_NAME',
+    response: (m) => `Looking for your ${m[1]} meeting...`,
+    payload: (m) => ({ query: m[1] })
+  },
+  {
+    patterns: [
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:next )?(?:meeting|call|review|consultation)/i,
+    ],
     action: 'CANCEL_NEXT_MEETING',
-    response: () => 'Let me find your next meeting.',
+    response: () => 'Which meeting would you like to cancel? You can tell me the time or the meeting name.',
   },
   {
     patterns: [/book (?:a )?(zoom|teams|google meet|microsoft teams) (?:meeting |call )?at (.+)/i, /schedule (?:a )?(zoom|teams|google meet) at (.+)/i],

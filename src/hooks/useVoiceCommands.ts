@@ -9,8 +9,25 @@ export type VoiceCommandResult = {
 }
 
 function extractTime(text: string): string | null {
-  const match = text.match(/at (\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i)
+  const match = text.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i)
   return match ? match[1] : null
+}
+
+function extractPersonOrCompany(text: string): string | null {
+  const match = text.match(/(?:with|for) ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
+  return match ? match[1] : null
+}
+
+// Keyword-based intent detection for fuzzy matching
+function detectIntent(text: string): string | null {
+  const t = text.toLowerCase()
+  if (/\b(cancel|reschedule|move|postpone|push back)\b/.test(t) && /\b(meeting|call|demo|standup|check.?in|catch.?up|appointment)\b/.test(t)) return 'CANCEL_MEETING'
+  if (/\b(cancel|reschedule|move|postpone)\b/.test(t) && !/meeting|call|demo/.test(t)) return 'CANCEL_MEETING'
+  if (/\b(book|schedule|set up|arrange|create)\b/.test(t) && /\b(meeting|call|demo|event)\b/.test(t)) return 'BOOK_MEETING'
+  if (/\b(send|write|compose|draft)\b/.test(t) && /\b(email|mail)\b/.test(t)) return 'EMAIL'
+  if (/\b(call|phone|ring|dial)\b/.test(t)) return 'PHONE'
+  if (/\b(send|message|post)\b/.test(t) && /\b(slack)\b/.test(t)) return 'SLACK'
+  return null
 }
 
 function extractMessage(text: string, keyword: string): string {
@@ -207,17 +224,32 @@ const COMMANDS: { patterns: RegExp[], action: string, response: (m: RegExpMatchA
     response: () => 'You have 12 emails, with some marked urgent.',
   },
 
-  // ── MEETING ──────────────────────────────────────────────────────────────────
+  // ── MEETING CANCEL — broad patterns ──────────────────────────────────────────
   {
-    patterns: [/cancel my (\w+(?:\s+\w+)?) meeting/i, /cancel the (\w+(?:\s+\w+)?) meeting/i],
-    action: 'CANCEL_NAMED_MEETING',
-    response: (m) => `I'll look for your ${m[1]} meeting. One moment.`,
-    payload: (m) => ({ meetingName: m[1] })
+    patterns: [
+      /(?:cancel|reschedule|move|postpone|push back) (?:my |the )?(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)\s*(?:meeting|call|demo)?/i,
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|demo) (?:at |for )(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i,
+    ],
+    action: 'CANCEL_MEETING_BY_TIME',
+    response: (m) => `Looking for your meeting at ${m[1]}...`,
+    payload: (m) => ({ time: m[1] })
   },
   {
-    patterns: [/cancel my (?:next )?meeting/i, /cancel (?:my )?upcoming meeting/i],
+    patterns: [
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|demo) with (\w+(?:\s+\w+)?)/i,
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(\w+(?:\s+\w+)?) (?:meeting|call|demo|standup|check.?in)/i,
+    ],
+    action: 'CANCEL_MEETING_BY_NAME',
+    response: (m) => `Looking for your ${m[1]} meeting...`,
+    payload: (m) => ({ query: m[1] })
+  },
+  {
+    patterns: [
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:next )?(?:meeting|call|demo)/i,
+      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:upcoming )?(?:meeting|call)/i,
+    ],
     action: 'CANCEL_NEXT_MEETING',
-    response: () => 'Let me find your next meeting.',
+    response: () => 'Which meeting would you like to cancel? You can tell me the time, person, or meeting name.',
   },
   {
     patterns: [/book (?:a )?(zoom|teams|google meet|microsoft teams) (?:meeting |call )?(?:for (?:my )?team )?at (.+)/i, /schedule (?:a )?(zoom|teams|google meet) (?:for (?:my )?team )?at (.+)/i],
@@ -262,13 +294,27 @@ export function useVoiceCommands() {
         setPendingAction(null)
         return { command: text, action: 'EXECUTE_SLACK_SEND', response: `Sending to #${channel}.`, payload: { ...pendingAction.data, channel } }
       }
+      if (pendingAction.type === 'AWAITING_CANCEL_DETAILS') {
+        // User is providing meeting details after a bare "cancel my meeting"
+        const time = extractTime(text)
+        const person = extractPersonOrCompany(text)
+        if (time) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } } }
+        if (person) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } } }
+        setPendingAction(null)
+        return { command: text, action: 'CANCEL_NEXT_MEETING', response: "I still couldn't identify the meeting. Try saying the time or the person's name." }
+      }
       if (pendingAction.type === 'AWAITING_CANCEL_CONFIRMATION') {
-        if (/yes|confirm|do it|go ahead/i.test(text)) {
+        if (/yes|confirm|do it|go ahead|send|sure/i.test(text)) {
+          const meeting = pendingAction.data.meeting
           setPendingAction(null)
-          return { command: text, action: 'CANCEL_MEETING_WITH_EMAIL', response: 'Meeting cancelled and email sent.', payload: pendingAction.data }
+          return { command: text, action: 'CANCEL_MEETING_WITH_EMAIL', response: `Done — cancellation sent${meeting?.attendees ? ' to ' + meeting.attendees[0] : ''} with a request to rebook. I'll remove it from your calendar.`, payload: pendingAction.data }
+        }
+        if (/no|don't|skip|leave it|nah/i.test(text)) {
+          setPendingAction(null)
+          return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: "OK, I'll leave it as is.", payload: pendingAction.data }
         }
         setPendingAction(null)
-        return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: 'Meeting cancelled. No email sent.', payload: pendingAction.data }
+        return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: "OK, no changes made.", payload: pendingAction.data }
       }
     }
 
@@ -281,6 +327,20 @@ export function useVoiceCommands() {
         }
       }
     }
+    // Fuzzy intent fallback before giving up
+    const intent = detectIntent(text)
+    if (intent === 'CANCEL_MEETING') {
+      const time = extractTime(text)
+      const person = extractPersonOrCompany(text)
+      if (time) return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } }
+      if (person) return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } }
+      return { command: text, action: 'CANCEL_NEXT_MEETING', response: 'Which meeting would you like to cancel? You can tell me the time, person, or meeting name.' }
+    }
+    if (intent === 'BOOK_MEETING') return { command: text, action: 'OPEN_MODAL', response: 'Opening the meeting scheduler.', payload: { modal: 'ScheduleDemo' } }
+    if (intent === 'EMAIL') return { command: text, action: 'OPEN_MODAL', response: 'Opening the email composer.', payload: { modal: 'SendEmail' } }
+    if (intent === 'PHONE') return { command: text, action: 'OPEN_MODAL', response: 'Opening the call log.', payload: { modal: 'LogCall' } }
+    if (intent === 'SLACK') return { command: text, action: 'SLACK_TEAM_MESSAGE', response: 'What would you like to send on Slack?', payload: { message: '' } }
+
     return { command: text, action: 'UNKNOWN', response: `I heard "${text.slice(0, 40)}" but I'm not sure what to do. Try saying "help" for a list of commands.` }
   }, [pendingAction])
 

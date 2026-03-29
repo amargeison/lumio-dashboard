@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Volume2, Mic, Check, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 
 const VOICES = [
   { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
@@ -69,9 +69,12 @@ function ConnectRow({ label, connected }: { label: string; connected: boolean })
       {connected ? (
         <span className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)' }}>Connected</span>
       ) : (
-        <button className="text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-          Connect <ExternalLink size={10} />
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs" style={{ color: '#6B7280' }}>Not connected</span>
+          <button onClick={() => alert('Connect in production — demo mode')} className="text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+            Connect <ExternalLink size={10} />
+          </button>
+        </div>
       )}
     </div>
   )
@@ -79,8 +82,7 @@ function ConnectRow({ label, connected }: { label: string; connected: boolean })
 
 export default function SchoolSettingsPage() {
   const [schoolName, setSchoolName] = useState('')
-  const [schoolType, setSchoolType] = useState('primary')
-  const [ofsted, setOfsted] = useState('Good')
+  const [plan, setPlan] = useState('Trial')
 
   // AI Briefing
   const [briefingEnabled, setBriefingEnabled] = useState(true)
@@ -104,6 +106,7 @@ export default function SchoolSettingsPage() {
   useEffect(() => {
     const name = localStorage.getItem('lumio_school_name') || ''
     setSchoolName(name)
+    setPlan(localStorage.getItem('lumio_school_plan') || 'Trial')
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'true') setVoiceEnabled(true)
     const v = localStorage.getItem('lumio_tts_voice')
@@ -158,30 +161,8 @@ export default function SchoolSettingsPage() {
 
       {/* Section 1 — School Details */}
       <Section title="School Details">
-        <div className="px-5 py-4 space-y-3">
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>School name</label>
-            <input value={schoolName} onChange={e => setSchoolName(e.target.value)} style={S} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>School type</label>
-              <select value={schoolType} onChange={e => setSchoolType(e.target.value)} style={S}>
-                {['Primary', 'Secondary', 'All-through', 'Special', 'Academy', 'Free School', 'Independent'].map(t => <option key={t} value={t.toLowerCase()}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>Ofsted rating</label>
-              <select value={ofsted} onChange={e => setOfsted(e.target.value)} style={S}>
-                {['Outstanding', 'Good', 'Requires Improvement', 'Inadequate', 'Not yet inspected'].map(r => <option key={r}>{r}</option>)}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>URN number</label>
-            <input style={S} placeholder="e.g. 123456" />
-          </div>
-        </div>
+        <Row label="School Name" value={schoolName || 'School'} />
+        <Row label="Plan" value={plan} />
         <Row label="Status" value="Active" isStatus />
       </Section>
 
@@ -264,22 +245,19 @@ export default function SchoolSettingsPage() {
 
       {/* Section 5 — SSO & Rostering */}
       <Section title="SSO & Rostering">
-        <ConnectRow label="Google Workspace SSO" connected={false} />
-        <ConnectRow label="Microsoft 365 SSO" connected={false} />
-        <ConnectRow label="Arbor MIS Sync" connected={false} />
-        <ConnectRow label="SIMS Sync" connected={false} />
-        <ConnectRow label="Bromcom Sync" connected={false} />
-        <ConnectRow label="OneRoster API" connected={false} />
+        <ConnectRow label="Google Workspace" connected={false} />
+        <ConnectRow label="Microsoft 365" connected={false} />
+        <ConnectRow label="Arbor" connected={false} />
+        <ConnectRow label="SIMS" connected={false} />
+        <ConnectRow label="Bromcom" connected={false} />
       </Section>
 
       {/* Section 6 — Integrations */}
       <Section title="Integrations">
         <ConnectRow label="ParentPay" connected={false} />
-        <ConnectRow label="Arbor" connected={false} />
-        <ConnectRow label="SchoolMoney" connected={false} />
         <ConnectRow label="Google Classroom" connected={false} />
-        <ConnectRow label="Microsoft Teams for Education" connected={false} />
-        <ConnectRow label="Bromcom" connected={false} />
+        <ConnectRow label="Teams for Education" connected={false} />
+        <ConnectRow label="SchoolMoney" connected={false} />
       </Section>
 
       {/* Section 7 — World Clock Timezones */}
@@ -310,7 +288,17 @@ export default function SchoolSettingsPage() {
         </div>
       </div>
 
-      {/* Section 8 — Dev Tools */}
+      {/* Section 8 — Login & Security */}
+      <Section title="Login & Security">
+        <Row label="Current method" value="Email OTP" />
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <button onClick={() => alert('PIN login setup — coming soon')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+            Set up PIN login
+          </button>
+        </div>
+      </Section>
+
+      {/* Section 9 — Dev Tools */}
       {isDev && (
         <Section title="Dev Tools">
           <div className="px-5 py-4">

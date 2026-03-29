@@ -1974,12 +1974,59 @@ function WorkflowsView({ company }: { company: string }) {
 
 function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company: string; wakeWordEnabled: boolean; onToggleWakeWord: (val: boolean) => void }) {
   const speechSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+  const isDev = typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_ENV') === 'dev'
+
+  const [briefingEnabled, setBriefingEnabled] = React.useState(() => localStorage.getItem('lumio_demo_biz_briefing') !== 'false')
+  const [includeRevenue, setIncludeRevenue] = React.useState(() => localStorage.getItem('lumio_demo_biz_inc_revenue') !== 'false')
+  const [includePipeline, setIncludePipeline] = React.useState(() => localStorage.getItem('lumio_demo_biz_inc_pipeline') !== 'false')
+  const [includeTeam, setIncludeTeam] = React.useState(() => localStorage.getItem('lumio_demo_biz_inc_team') !== 'false')
+  const [includeCalendar, setIncludeCalendar] = React.useState(() => localStorage.getItem('lumio_demo_biz_inc_calendar') !== 'false')
+  const [briefingTime, setBriefingTime] = React.useState(() => localStorage.getItem('lumio_demo_biz_briefing_time') || '8:00am')
+  const [demoDataActive, setDemoDataActive] = React.useState(() => localStorage.getItem('lumio_demo_active') === 'true')
+  const [toastMsg, setToastMsg] = React.useState<string | null>(null)
+
+  function showToast(msg: string) {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 2500)
+  }
+
+  function demoToggle(key: string, val: boolean, setter: (v: boolean) => void) {
+    setter(val)
+    localStorage.setItem(key, String(val))
+  }
+
+  const INTEGRATIONS = [
+    { name: 'Gmail / Outlook', desc: 'Connect your email' },
+    { name: 'Slack', desc: 'Team messaging' },
+    { name: 'Microsoft Teams', desc: 'Meetings & chat' },
+    { name: 'Xero', desc: 'Accounting & finance' },
+    { name: 'QuickBooks', desc: 'Bookkeeping' },
+    { name: 'Google Calendar', desc: 'Calendar sync' },
+    { name: 'Outlook Calendar', desc: 'Calendar sync' },
+    { name: 'BambooHR / Sage HR', desc: 'HR management' },
+  ]
+
   return (
     <div className="max-w-2xl space-y-6">
+
+      {/* Demo mode banner */}
+      <div className="flex items-center gap-3 rounded-xl px-5 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.3)' }}>
+        <span style={{ color: '#0D9488', flexShrink: 0, fontSize: 14 }}>&#x26A1;</span>
+        <p className="text-sm" style={{ color: '#D1D5DB' }}>
+          You're in demo mode — upgrade to save settings permanently
+        </p>
+      </div>
+
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed top-4 right-4 z-50 rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', border: '1px solid #374151' }}>
+          {toastMsg}
+        </div>
+      )}
+
+      {/* Workspace info card */}
       {[
-        { title: 'Workspace', fields: [['Company name', company], ['Workspace slug', company.toLowerCase().replace(/\s+/g,'-')], ['Plan', '14-day Trial']] },
-        { title: 'Notifications', fields: [['Slack channel', '#lumio-demo'], ['Email digests', 'Daily at 9am'], ['Alert threshold', 'P1 and P2 only']] },
-        { title: 'Integrations', fields: [['CRM sync', 'Salesforce (demo)'], ['Accounting', 'Xero (demo)'], ['HRMS', 'BambooHR (demo)']] },
+        { title: 'Workspace', fields: [['Company name', company], ['Workspace slug', company.toLowerCase().replace(/\s+/g,'-')], ['Plan', '14-day Trial'], ['Status', 'Active']] },
       ].map(section => (
         <div key={section.title} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -1989,12 +2036,113 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
             {section.fields.map(([label, value]) => (
               <div key={label} className="flex items-center justify-between px-5 py-3">
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
-                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{value}</span>
+                <span className="text-sm font-medium" style={{ color: label === 'Status' ? '#22C55E' : '#F9FAFB' }}>{value}</span>
               </div>
             ))}
           </div>
         </div>
       ))}
+
+      {/* Team card */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Members</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Import (drag & drop) */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data Import</p>
+        </div>
+        <div className="p-5">
+          <div
+            className="rounded-xl p-6 text-center cursor-pointer"
+            style={{ backgroundColor: '#0A0B10', border: '2px dashed #1F2937' }}
+            onClick={() => alert('Available in your live workspace')}
+          >
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop any files here — Lumio will sort them automatically</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>CSV, XLSX, DOCX, PDF, images</p>
+            <p className="text-xs mt-3 font-semibold" style={{ color: '#0D9488' }}>Available in your live workspace</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Demo Data (demo-specific) */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Demo Data</p>
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: demoDataActive ? 'rgba(245,166,35,0.15)' : 'rgba(34,197,94,0.15)', color: demoDataActive ? '#F5A623' : '#22C55E' }}>
+            {demoDataActive ? 'Active' : 'Off'}
+          </span>
+        </div>
+        <div className="px-5 py-4 space-y-2">
+          {demoDataActive ? (
+            <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false'); showToast('Demo data cleared') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+              Clear Demo Data
+            </button>
+          ) : (
+            <button onClick={() => { setDemoDataActive(true); localStorage.setItem('lumio_demo_active', 'true'); showToast('Demo data loaded') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+              Load Demo Data
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* AI Morning Briefing */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Briefing</p>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Enable Morning Briefing</p><p className="text-xs" style={{ color: '#6B7280' }}>AI-generated daily summary read aloud</p></div>
+            <div className="relative h-5 w-9 rounded-full cursor-pointer transition-colors" style={{ backgroundColor: briefingEnabled ? '#0D9488' : '#1F2937' }} onClick={() => demoToggle('lumio_demo_biz_briefing', !briefingEnabled, setBriefingEnabled)}>
+              <div className="absolute top-0.5 h-4 w-4 rounded-full transition-transform" style={{ backgroundColor: '#F9FAFB', transform: briefingEnabled ? 'translateX(16px)' : 'translateX(2px)' }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include revenue summary</span>
+            <div className="relative h-5 w-9 rounded-full cursor-pointer transition-colors" style={{ backgroundColor: includeRevenue ? '#0D9488' : '#1F2937' }} onClick={() => demoToggle('lumio_demo_biz_inc_revenue', !includeRevenue, setIncludeRevenue)}>
+              <div className="absolute top-0.5 h-4 w-4 rounded-full transition-transform" style={{ backgroundColor: '#F9FAFB', transform: includeRevenue ? 'translateX(16px)' : 'translateX(2px)' }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include pipeline updates</span>
+            <div className="relative h-5 w-9 rounded-full cursor-pointer transition-colors" style={{ backgroundColor: includePipeline ? '#0D9488' : '#1F2937' }} onClick={() => demoToggle('lumio_demo_biz_inc_pipeline', !includePipeline, setIncludePipeline)}>
+              <div className="absolute top-0.5 h-4 w-4 rounded-full transition-transform" style={{ backgroundColor: '#F9FAFB', transform: includePipeline ? 'translateX(16px)' : 'translateX(2px)' }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include team updates</span>
+            <div className="relative h-5 w-9 rounded-full cursor-pointer transition-colors" style={{ backgroundColor: includeTeam ? '#0D9488' : '#1F2937' }} onClick={() => demoToggle('lumio_demo_biz_inc_team', !includeTeam, setIncludeTeam)}>
+              <div className="absolute top-0.5 h-4 w-4 rounded-full transition-transform" style={{ backgroundColor: '#F9FAFB', transform: includeTeam ? 'translateX(16px)' : 'translateX(2px)' }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include today's calendar</span>
+            <div className="relative h-5 w-9 rounded-full cursor-pointer transition-colors" style={{ backgroundColor: includeCalendar ? '#0D9488' : '#1F2937' }} onClick={() => demoToggle('lumio_demo_biz_inc_calendar', !includeCalendar, setIncludeCalendar)}>
+              <div className="absolute top-0.5 h-4 w-4 rounded-full transition-transform" style={{ backgroundColor: '#F9FAFB', transform: includeCalendar ? 'translateX(16px)' : 'translateX(2px)' }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Briefing time</span>
+            <select value={briefingTime} onChange={e => { setBriefingTime(e.target.value); localStorage.setItem('lumio_demo_biz_briefing_time', e.target.value) }} style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none' }}>
+              <option>7:00am</option><option>7:30am</option><option>8:00am</option><option>8:30am</option><option>9:00am</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Voice & Accessibility */}
       {speechSupported && (
@@ -2021,7 +2169,74 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
         </div>
       )}
 
-      <p className="text-xs" style={{ color: '#4B5563' }}>Settings are read-only in demo mode. Connect your live workspace to configure.</p>
+      {/* Integrations */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
+          {INTEGRATIONS.map(integ => (
+            <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.name}</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p>
+              </div>
+              <button onClick={() => alert('Available in your live workspace')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                Connect
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Login & Security */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Login &amp; Security</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Email</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>demo@{company.toLowerCase().replace(/\s+/g,'')}.com</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Password</span>
+            <button onClick={() => alert('Available in your live workspace')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+              Change
+            </button>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Two-factor authentication</span>
+            <button onClick={() => alert('Available in your live workspace')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+              Enable
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Dev Tools */}
+      {isDev && (
+        <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.2)' }}>
+          <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>DEV TOOLS</p>
+          <div className="flex gap-2">
+            <button onClick={() => { localStorage.clear(); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+              Reset Onboarding
+            </button>
+            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_')).forEach(k => localStorage.removeItem(k)); showToast('Demo localStorage cleared') }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+              Clear Demo Keys
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Go Live CTA */}
+      <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.25)' }}>
+        <p className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>Ready to go live?</p>
+        <p className="text-xs mb-4" style={{ color: '#9CA3AF' }}>Upgrade to Lumio to keep your settings, connect integrations, and unlock the full platform.</p>
+        <a href="https://lumio.app" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>
+          Go Live
+        </a>
+      </div>
     </div>
   )
 }
