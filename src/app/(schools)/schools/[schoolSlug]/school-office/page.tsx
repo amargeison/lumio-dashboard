@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map } from 'lucide-react'
 import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal } from '@/components/modals/SchoolModals'
+import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 
 const HIGHLIGHTS = [
   '14 pupils marked absent today — 3 with no parent contact yet',
@@ -17,6 +18,7 @@ const ACTIONS_BASE = [
   { label: 'Send Communication', icon: <MessageSquare size={14} /> },
   { label: 'New Leaver', icon: <LogOut size={14} /> },
   { label: 'Trip Permission', icon: <Map size={14} /> },
+  { label: 'School Trips', icon: <Map size={14} /> },
 ]
 
 const STATS = [
@@ -112,6 +114,7 @@ export default function SchoolOfficePage() {
   const [showSchoolReport, setShowSchoolReport] = useState(false)
   const [showNewAdmission, setShowNewAdmission] = useState(false)
   const [showBookCover, setShowBookCover] = useState(false)
+  const [showTrips, setShowTrips] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -155,6 +158,7 @@ export default function SchoolOfficePage() {
         onClick: a.label === 'Log Absence' ? () => setShowLogAbsence(true)
           : a.label === 'New Admission' ? () => setShowNewAdmission(true)
           : a.label === 'Send Communication' ? () => setShowParentContact(true)
+          : a.label === 'School Trips' ? () => setShowTrips(true)
           : () => showToast('Feature coming soon'),
       }))} />
 
@@ -287,6 +291,7 @@ export default function SchoolOfficePage() {
       {showSchoolReport && <SchoolReportModal onClose={() => setShowSchoolReport(false)} onToast={showToast} />}
       {showNewAdmission && <NewAdmissionModal onClose={() => setShowNewAdmission(false)} onToast={showToast} />}
       {showBookCover && <BookCoverModal onClose={() => setShowBookCover(false)} onToast={showToast} />}
+      {showTrips && <SchoolTripsModal onClose={() => setShowTrips(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
