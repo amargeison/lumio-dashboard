@@ -1307,6 +1307,41 @@ export default function TrustDashboard() {
         </div>
       </div>
 
+      {/* Trust Actions */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+        {[
+          { label: 'Trust Report', icon: '📊' },
+          { label: 'Add School', icon: '🏫' },
+          { label: 'Message All Heads', icon: '📧' },
+          { label: 'Export Report', icon: '📄' },
+          { label: 'Trust Settings', icon: '⚙️' },
+        ].map(a => (
+          <button key={a.label} onClick={() => {}} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <span>{a.icon}</span>{a.label}
+          </button>
+        ))}
+      </div>
+
+      {/* AI Trust Morning Summary */}
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #0D9488' }}>
+        <div className="flex items-center gap-2 px-5 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.3)' }}>
+          <Zap size={13} style={{ color: '#0D9488' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Trust Morning Summary</span>
+        </div>
+        <div className="px-5 py-3 space-y-2" style={{ backgroundColor: '#0f0e17' }}>
+          {[
+            `Attendance across the trust is ${(SCHOOLS.reduce((s,sc)=>s+sc.attendance,0)/SCHOOLS.length).toFixed(1)}% today — ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).name} is lowest at ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).attendance}%`,
+            `${SCHOOLS.reduce((s,sc)=>s+sc.safeguardingCases,0)} open safeguarding concerns across the trust — ${SCHOOLS.filter(s=>s.safeguardingCases>0).length} schools affected`,
+            `${SCHOOLS.filter(s=>!s.scrCompliant).length > 0 ? SCHOOLS.filter(s=>!s.scrCompliant).map(s=>s.name).join(', ') + ' SCR non-compliant — action required' : 'All SCR checks compliant across the trust'}`,
+          ].map((item, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#99F6E4' }}>
+              <span className="flex-shrink-0 mt-0.5" style={{ color: '#0D9488' }}>•</span>{item}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* School pill nav */}
       <div className="flex flex-wrap gap-2">
         {SCHOOLS.map(s => (
