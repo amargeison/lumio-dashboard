@@ -699,27 +699,39 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     } else if (action === 'SWITCH_TAB' || action === 'EXPAND_ROUNDUP' || action === 'OPEN_MODAL' || action === 'EMAIL_TEAM') {
       // These are handled by OverviewView via onVoiceCommand callback
       if (onVoiceCommand) onVoiceCommand(lastCommand)
-    } else if (action === 'CANCEL_NEXT_MEETING') {
-      const nextMeeting = MEETINGS.find(m => m.status === 'upcoming')
-      if (nextMeeting) {
-        setTimeout(() => {
-          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: nextMeeting } })
-          speak(`You have a ${nextMeeting.title} at ${nextMeeting.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
-        }, 1500)
-      } else {
-        speak("I couldn't find any upcoming meetings today.")
-      }
-    } else if (action === 'CANCEL_NAMED_MEETING') {
-      const name = payload?.meetingName?.toLowerCase() || ''
-      const found = MEETINGS.find(m => m.title.toLowerCase().includes(name))
+    } else if (action === 'CANCEL_MEETING_BY_TIME') {
+      const timeQuery = payload?.time?.replace(/[^\d:]/g, '') || ''
+      const found = MEETINGS.find(m => m.time.includes(timeQuery) && m.status !== 'done')
       if (found) {
         setTimeout(() => {
           setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: found } })
-          speak(`I found ${found.title} at ${found.time}. Would you like me to cancel it? Say yes to cancel, or no to keep it.`)
-        }, 1500)
+          speak(`No problem \u2014 I've found your ${found.title} at ${found.time}${found.attendees?.[0] ? ' with ' + found.attendees[0] : ''}. Would you like me to send a cancellation email and suggest a new time?`)
+        }, 1000)
       } else {
-        const upcoming = MEETINGS.filter(m => m.status === 'upcoming').map(m => m.title).join(', ')
-        speak(`I couldn't find a meeting called ${payload?.meetingName}. Your upcoming meetings are: ${upcoming}`)
+        const list = MEETINGS.filter(m => m.status !== 'done').map(m => `${m.title} at ${m.time}`).join(', ')
+        speak(`I couldn't find a meeting at that time. Your meetings today are: ${list}. Which one?`)
+        setPendingAction({ type: 'AWAITING_CANCEL_DETAILS', data: {} })
+      }
+    } else if (action === 'CANCEL_MEETING_BY_NAME') {
+      const query = (payload?.query || '').toLowerCase()
+      const found = MEETINGS.find(m => m.title.toLowerCase().includes(query) || m.attendees?.some((a: string) => a.toLowerCase().includes(query)))
+      if (found) {
+        setTimeout(() => {
+          setPendingAction({ type: 'AWAITING_CANCEL_CONFIRMATION', data: { meeting: found } })
+          speak(`No problem \u2014 I've found your ${found.title} at ${found.time}${found.attendees?.[0] ? ' with ' + found.attendees[0] : ''}. Would you like me to send a cancellation email and suggest a new time?`)
+        }, 1000)
+      } else {
+        const list = MEETINGS.filter(m => m.status !== 'done').map(m => `${m.title} at ${m.time}`).join(', ')
+        speak(`I couldn't find that meeting. Your meetings today are: ${list}. Which one?`)
+        setPendingAction({ type: 'AWAITING_CANCEL_DETAILS', data: {} })
+      }
+    } else if (action === 'CANCEL_NEXT_MEETING') {
+      const list = MEETINGS.filter(m => m.status === 'upcoming').map(m => `${m.title} at ${m.time}`).join(', ')
+      if (list) {
+        speak(`Which meeting would you like to cancel? You have: ${list}`)
+        setPendingAction({ type: 'AWAITING_CANCEL_DETAILS', data: {} })
+      } else {
+        speak("I couldn't find any upcoming meetings today.")
       }
     } else if (action === 'CANCEL_MEETING_WITH_EMAIL' || action === 'CANCEL_MEETING_NO_EMAIL') {
       // Response already spoken

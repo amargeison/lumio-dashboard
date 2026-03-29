@@ -242,13 +242,25 @@ export function useSchoolVoiceCommands() {
         setPendingAction(null)
         return { command: text, action: 'EXECUTE_SLACK_SEND', response: `Sending to #${channel}.`, payload: { ...pendingAction.data, channel } }
       }
+      if (pendingAction.type === 'AWAITING_CANCEL_DETAILS') {
+        const time = extractTime(text)
+        const person = extractPersonOrCompany(text)
+        if (time) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } } }
+        if (person) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } } }
+        setPendingAction(null)
+        return { command: text, action: 'CANCEL_NEXT_MEETING', response: "I still couldn't identify the meeting. Try saying the time or the person's name." }
+      }
       if (pendingAction.type === 'AWAITING_CANCEL_CONFIRMATION') {
-        if (/yes|confirm|do it|go ahead/i.test(text)) {
+        if (/yes|confirm|do it|go ahead|send|sure/i.test(text)) {
           setPendingAction(null)
-          return { command: text, action: 'CANCEL_MEETING_WITH_EMAIL', response: 'Meeting cancelled and email sent.', payload: pendingAction.data }
+          return { command: text, action: 'CANCEL_MEETING_WITH_EMAIL', response: 'Done \u2014 cancellation sent and attendees notified. I\'ll remove it from your calendar.', payload: pendingAction.data }
+        }
+        if (/no|don't|skip|leave it|nah/i.test(text)) {
+          setPendingAction(null)
+          return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: "OK, I'll leave it as is.", payload: pendingAction.data }
         }
         setPendingAction(null)
-        return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: 'Meeting cancelled. No email sent.', payload: pendingAction.data }
+        return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: 'OK, no changes made.', payload: pendingAction.data }
       }
     }
 
@@ -261,6 +273,21 @@ export function useSchoolVoiceCommands() {
         }
       }
     }
+
+    // Fuzzy intent fallback
+    const intent = detectIntent(text)
+    if (intent === 'CANCEL_MEETING') {
+      const time = extractTime(text)
+      const person = extractPersonOrCompany(text)
+      if (time) return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } }
+      if (person) return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } }
+      return { command: text, action: 'CANCEL_NEXT_MEETING', response: 'Which meeting would you like to cancel? You can tell me the time or the meeting name.' }
+    }
+    if (intent === 'BOOK_MEETING') return { command: text, action: 'OPEN_MODAL', response: 'Opening the meeting scheduler.', payload: { modal: 'ScheduleDemo' } }
+    if (intent === 'EMAIL') return { command: text, action: 'EMAIL_TEAM', response: 'Opening the email composer.', payload: { message: '' } }
+    if (intent === 'PHONE') return { command: text, action: 'OPEN_MODAL', response: 'Logging a call.', payload: { modal: 'LogCall' } }
+    if (intent === 'SLACK') return { command: text, action: 'SLACK_TEAM_MESSAGE', response: 'What would you like to send on Slack?', payload: { message: '' } }
+
     return { command: text, action: 'UNKNOWN', response: `I heard "${text.slice(0, 40)}" but I'm not sure what to do. Try saying "help" for a list of commands.` }
   }, [pendingAction])
 
