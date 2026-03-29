@@ -497,6 +497,46 @@ function SchoolMeetingsToday() {
   )
 }
 
+// ─── World Clock ────────────────────────────────────────────────────────────
+
+const DEFAULT_ZONES = [
+  { label: 'London', tz: 'Europe/London' },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai', tz: 'Asia/Dubai' },
+  { label: 'Tokyo', tz: 'Asia/Tokyo' },
+]
+
+function SchoolWorldClock() {
+  const [now, setNow] = useState(() => new Date())
+  const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const zones = (() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('lumio_world_zones') : null
+      return stored ? JSON.parse(stored) : DEFAULT_ZONES
+    } catch { return DEFAULT_ZONES }
+  })()
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 relative" style={{ minWidth: 160 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+        {zones.map((z: { label: string; tz: string }) => (
+          <div key={z.label} className="flex items-center gap-1.5">
+            <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+            <span className="text-xs" style={{ color: z.tz === localTz ? '#FBBF24' : 'rgba(94,234,212,0.6)' }}>{z.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
+    </div>
+  )
+}
+
 // ─── Greeting Banner ────────────────────────────────────────────────────────
 
 const SCHOOL_BG_GRADIENTS = [
@@ -574,12 +614,15 @@ function SchoolBanner({ firstName, schoolName }: { firstName?: string; schoolNam
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-shrink-0">
-            <span className="text-3xl">{weather.icon}</span>
-            <div>
-              <div className="text-xl font-black text-white">{weather.temp}</div>
-              <div className="text-xs text-teal-300">{weather.condition}</div>
+          <div className="flex items-start gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+              <span className="text-3xl">{weather.icon}</span>
+              <div>
+                <div className="text-xl font-black text-white">{weather.temp}</div>
+                <div className="text-xs text-teal-300">{weather.condition}</div>
+              </div>
             </div>
+            <SchoolWorldClock />
           </div>
         </div>
       </div>
