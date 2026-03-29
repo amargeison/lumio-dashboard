@@ -807,6 +807,15 @@ const ROUNDUP_ITEMS = [
     ]
   },
   {
+    id: 'teams', icon: '🟣', label: 'Microsoft Teams', count: 3, urgent: false,
+    color: '#7B83EB', bg: 'rgba(123,131,235,0.08)', border: 'rgba(123,131,235,0.2)',
+    messages: [
+      { id: 'tm1', from: 'Charlotte Davies', avatar: 'CD', subject: 'Sales Standup', preview: 'Quick update \u2014 the Apex deal is moving to proposal stage. Can we review pricing before EOD?', time: '9:30am', urgent: false, read: false },
+      { id: 'tm2', from: 'Sophie Williams', avatar: 'SW', subject: 'Onboarding checklist', preview: 'Hi Arron, I\u2019ve completed the first 3 items on my onboarding checklist. Where do I find the IT setup guide?', time: '8:50am', urgent: false, read: false },
+      { id: 'tm3', from: 'James Okafor', avatar: 'JO', subject: 'Client feedback', preview: 'Just got off a call with Oakridge \u2014 they love the new safeguarding module. Might be worth a case study.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
     id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
     color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
     messages: [
