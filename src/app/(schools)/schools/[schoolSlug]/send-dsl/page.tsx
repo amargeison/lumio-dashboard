@@ -122,7 +122,10 @@ export default function SendDslPage() {
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
-    setHasData(localStorage.getItem(`lumio_${slug}_send-dsl_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_send-dsl_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [slug])
 
   if (hasData === null) return null

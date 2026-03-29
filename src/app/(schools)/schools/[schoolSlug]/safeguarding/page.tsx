@@ -102,7 +102,10 @@ export default function SafeguardingPage() {
     const pathname = window.location.pathname
     const slugMatch = pathname.match(/\/schools\/([^/]+)/)
     const slug = slugMatch?.[1] ?? 'school'
-    setHasData(localStorage.getItem(`lumio_${slug}_safeguarding_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_safeguarding_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [])
 
   if (hasData === null) return null

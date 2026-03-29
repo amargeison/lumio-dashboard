@@ -47,6 +47,7 @@ export function EmptyState({ title, description, uploads, pageName }: EmptyState
     showToast('Loading demo data...')
     await new Promise(r => setTimeout(r, 1200))
     localStorage.setItem(storageKey, 'true')
+    localStorage.setItem('lumio_schools_demo_loaded', 'true')
     window.location.reload()
   }
 

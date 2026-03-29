@@ -110,13 +110,16 @@ export default function SchoolsListPage() {
                   <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={INPUT_STYLE}>
                     <option value="primary">Primary</option>
                     <option value="secondary">Secondary</option>
+                    <option value="all-through">All-through</option>
                     <option value="special">Special</option>
+                    <option value="academy">Academy</option>
                     <option value="MAT">MAT</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-medium block mb-1.5" style={{ color: '#9CA3AF' }}>Plan</label>
                   <select value={form.plan} onChange={e => setForm(f => ({ ...f, plan: e.target.value }))} style={INPUT_STYLE}>
+                    <option value="trial">Trial</option>
                     <option value="starter">Starter</option>
                     <option value="school">School</option>
                     <option value="trust">Trust</option>
