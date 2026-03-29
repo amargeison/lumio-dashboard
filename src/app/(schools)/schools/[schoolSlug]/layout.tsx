@@ -29,6 +29,7 @@ const NAV = [
   { section: null,          path: 'safeguarding',  label: 'Safeguarding',           icon: Shield,          badge: 1    },
   { section: null,          path: 'wraparound',    label: 'Pre & After School',     icon: Sunrise,         badge: null },
   { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
+  { section: null,          path: 'ofsted',        label: 'Ofsted Mode',            icon: Shield,          badge: 'NEW' },
   { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
   { section: null,          path: 'reports',       label: 'Reports',                icon: FileText,        badge: null },
   { section: null,          path: '/parent',       label: 'Parent Portal',          icon: Users,           badge: null },

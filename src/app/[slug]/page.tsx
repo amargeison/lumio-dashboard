@@ -19,6 +19,7 @@ import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
+import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
@@ -1275,6 +1276,9 @@ const QUICK_ACTIONS = [
   { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone },
   { label: 'Book Meeting', tooltip: 'Schedule a meeting or demo', icon: Calendar },
   { label: 'Team Events', tooltip: 'Schedule a team event', icon: Users },
+  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt },
+  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar },
+  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle },
 ]
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
@@ -1877,12 +1881,22 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
 // ─── Overview View ───────────────────────────────────────────────────────────
 
 function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
+  const [showExpense, setShowExpense] = useState(false)
+  const [showHoliday, setShowHoliday] = useState(false)
+  const [showSickness, setShowSickness] = useState(false)
+
   const quickActionToasts: Record<string, string> = {
     'Send Email': 'Opening email composer...',
     'Send Slack': 'Opening Slack...',
     'Phone Call': 'Logging a call...',
     'Book Meeting': 'Opening calendar...',
     'Team Events': 'Opening team events...',
+  }
+
+  const quickActionModals: Record<string, () => void> = {
+    'Claim Expenses': () => setShowExpense(true),
+    'Book Holiday': () => setShowHoliday(true),
+    'Report Sickness': () => setShowSickness(true),
   }
 
   function handleVoiceCommand(cmd: VoiceCommandResult) {
@@ -1894,6 +1908,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
 
   function handleQuickAction(label: string) {
+    if (quickActionModals[label]) { quickActionModals[label](); return }
     onAction(quickActionToasts[label] || label)
   }
   const [tab, setTab] = useState<OverviewTab>('today')
@@ -1980,6 +1995,10 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       ) : (
         <TabPlaceholder tab={tab} />
       )}
+
+      {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
+      {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} />}
+      {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} />}
     </div>
   )
 }

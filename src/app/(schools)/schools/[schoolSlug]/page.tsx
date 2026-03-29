@@ -1080,6 +1080,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           { label: 'Book Cover', icon: '📅' },
           { label: 'New Admission', icon: '➕' },
           { label: 'Run Report', icon: '📊' },
+          { label: 'Claim Expenses', icon: '💰' },
+          { label: 'Request Leave', icon: '🏖️' },
+          { label: 'Report Staff Absence', icon: '🤒' },
         ].map(a => (
           <button key={a.label} onClick={() => {}} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             <span>{a.icon}</span>{a.label}
