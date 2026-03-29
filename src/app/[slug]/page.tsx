@@ -332,6 +332,69 @@ const QUOTES = [
   { text: "No one can make you feel inferior without your consent.", author: "Eleanor Roosevelt" },
 ]
 
+const OPENING_LINES = [
+  "Today is going to be a great day — here's your morning roundup.",
+  "Rise and shine! Let's see what today has in store for you.",
+  "Good things are coming today — let's get into it.",
+  "You've got this. Here's everything you need to hit the ground running.",
+  "Big things happen to people who start their day right — let's go.",
+  "Today's your day. Here's your morning roundup.",
+  "The best time to make things happen is right now — let's get started.",
+  "Another day, another opportunity. Here's what's on the agenda.",
+  "Morning! The world is ready for you — here's your briefing.",
+  "Let's make today count. Here's your roundup.",
+  "Great days start with great mornings — here's yours.",
+  "You showed up. That's already half the battle. Here's the rest.",
+  "Today has potential written all over it. Let's dig in.",
+  "Good morning! Here's your world for the day.",
+  "Every great day starts somewhere — let's start here.",
+  "The momentum starts now. Here's your morning briefing.",
+  "Today is full of possibility — let's see what we can do with it.",
+  "Morning energy activated. Here's your roundup.",
+  "Something good is going to happen today — here's your briefing.",
+  "Let's make this one count. Here's your morning roundup.",
+  "The day is yours — here's how it's shaping up.",
+  "Ready? Because today is ready for you. Here's your briefing.",
+  "A fresh day, a fresh start — here's your morning roundup.",
+  "Onwards and upwards. Here's what's waiting for you today.",
+  "Today is a blank page — let's write something good. Here's your roundup.",
+  "Good morning! Big things start with mornings like this.",
+  "You're already ahead just by starting. Here's your briefing.",
+  "The day is looking good — here's the rundown.",
+  "Morning! Let's make something happen today.",
+  "One day at a time, one great morning at a time — here's yours.",
+  "Today's going to be one of the good ones. Here's your roundup.",
+  "Fuel up and focus — here's your morning briefing.",
+  "The best version of today starts right now. Let's go.",
+  "Morning! Here's everything you need to own the day.",
+  "Good days are built one morning at a time — here's yours.",
+  "Today has your name on it. Here's the briefing.",
+  "Let's get into it — here's your morning roundup.",
+  "New day, new wins waiting to happen. Here's your briefing.",
+  "The day is already looking up — here's your roundup.",
+  "Morning! You've got everything you need to make today great.",
+  "Today is full of good things — here's where they start.",
+  "Eyes up, chin up, here's your morning roundup.",
+  "Today is ready when you are. Here's your briefing.",
+  "Good morning! Let's see what today is made of.",
+  "The best part of the day is right now — it's all uphill from here.",
+  "Today is going to surprise you in the best way. Here's your roundup.",
+  "Morning! Let's stack some wins today.",
+  "You've got a great day ahead — here's the proof.",
+  "Start strong, finish stronger — here's your morning briefing.",
+  "Good morning! Here's your launchpad for the day.",
+  "Today is one of those days — the good kind. Here's your roundup.",
+  "The momentum is yours — here's your morning briefing.",
+  "Morning! Everything you need is right here — let's go.",
+  "Today's going to be a good one — here's your roundup.",
+  "Let's build something great today — starting with this briefing.",
+  "Good morning! Here's your daily dose of let's get it.",
+  "The day ahead looks good from here — here's your roundup.",
+  "Morning! Here's your daily briefing — make it count.",
+  "Today is yours to shape — here's your morning roundup.",
+  "Good morning! The best moments of today are still ahead.",
+]
+
 const DEFAULT_WORLD_ZONES = [
   { label: 'London',   tz: 'Europe/London'    },
   { label: 'New York', tz: 'America/New_York' },
@@ -478,7 +541,9 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   function handleBriefing() {
     if (!ttsEnabled) return
     if (isPlaying) { stop(); return }
-    const script = `${greeting}, ${firstName || 'there'}. Welcome to your Lumio workspace. You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+    const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
+    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} You have 4 meetings today, 12 emails to review, and 2 workflows need attention.`
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''
     const chunks: string[] = []
