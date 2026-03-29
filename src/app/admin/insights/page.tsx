@@ -211,7 +211,7 @@ export default function InsightsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
               <XAxis dataKey="month" stroke="#6B7280" fontSize={11} />
               <YAxis stroke="#6B7280" fontSize={11} tickFormatter={v => `£${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, fontSize: 12, color: '#F9FAFB' }} formatter={(v: number) => [`£${v.toLocaleString()}`, 'MRR']} />
+              <Tooltip contentStyle={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, fontSize: 12, color: '#F9FAFB' }} formatter={(v: any) => [`£${Number(v).toLocaleString('en-GB')}`, 'MRR']} />
               <Line type="monotone" dataKey="mrr" stroke="#0D9488" strokeWidth={2} dot={{ fill: '#0D9488', r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
