@@ -824,6 +824,25 @@ const ROUNDUP_ITEMS = [
       { id: 'h5', from: 'HubSpot', avatar: 'HS', subject: 'Monthly report ready — March 2026', preview: 'Your March CRM report is ready. Pipeline value: \u00A3775,100. Deals closed: 4. Win rate: 50%.', time: '2 days ago', urgent: false, read: true },
     ]
   },
+  {
+    id: 'whatsapp', icon: '💬', label: 'WhatsApp Business', count: 4, urgent: false,
+    color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
+    messages: [
+      { id: 'w1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
+      { id: 'w2', from: 'James Harlow', avatar: 'JH', subject: 'Contract query', preview: 'Quick question on the contract terms \u2014 can we jump on a call this afternoon?', time: '8:45am', urgent: false, read: false },
+      { id: 'w3', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal reminder', preview: 'Our current contract ends next month. Looking forward to renewing with Lumio.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'w4', from: 'Dan Marsh', avatar: 'DM', subject: 'Invoice question', preview: 'Could you resend the latest invoice? Need it for our accounts team.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'sms', icon: '📱', label: 'SMS / Text', count: 3, urgent: true,
+    color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
+    messages: [
+      { id: 't1', from: '+44 7700 900123', avatar: 'TW', subject: 'Urgent: Payment query', preview: 'Hi, this is Tom from Bramble Hill. Our payment bounced \u2014 can you call me urgently?', time: '8:05am', urgent: true, read: false },
+      { id: 't2', from: '+44 7700 900456', avatar: 'HC', subject: 'Demo confirmation', preview: 'Confirming our demo at 11am today. Looking forward to it!', time: '7:30am', urgent: false, read: false },
+      { id: 't3', from: '+44 7700 900789', avatar: 'RD', subject: 'Quick question', preview: 'Is Lumio GDPR compliant? Our IT team needs confirmation before sign-off.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
 ]
 
 function MorningRoundup() {
@@ -867,6 +886,20 @@ function MorningRoundup() {
               {/* Messages */}
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
+                  {item.id === 'whatsapp' && (
+                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}>
+                      <span className="text-xs" style={{ color: '#25D366' }}>💬 Showing demo data — connect WhatsApp Business to see real messages</span>
+                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)' }}
+                        onClick={() => window.location.href = '/settings'}>Connect →</button>
+                    </div>
+                  )}
+                  {item.id === 'sms' && (
+                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                      <span className="text-xs" style={{ color: '#3B82F6' }}>📱 Showing demo data — connect Twilio SMS to see real messages</span>
+                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
+                        onClick={() => window.location.href = '/settings'}>Connect →</button>
+                    </div>
+                  )}
                   {item.messages.map(msg => (
                     <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
                       {/* Message header */}
