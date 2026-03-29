@@ -1190,15 +1190,15 @@ function ComingSoonView({ dept }: { dept: DeptId }) {
 // ─── Voice Selector ─────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: 'alFofuDn3cOwyoz1i44T', name: 'Dallin', desc: 'Positive, inspiring & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
-  { id: 'Qe9WSybioZxssVEwlBSo', name: 'Vincent', desc: 'Calm British male — deep, relaxed and reassuring', sample: 'Good morning. Everything is under control.' },
-  { id: 'flHkNRp1BlvT73UL6gyz', name: 'Jessica', desc: 'The Villain — for those who like their briefings dramatic', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
+  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady', sample: 'Good morning. Everything is under control.' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
 ]
 
 function VoiceSelector() {
   const [activeVoice, setActiveVoice] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('lumio_tts_voice') || 'alFofuDn3cOwyoz1i44T'
-    return 'alFofuDn3cOwyoz1i44T'
+    if (typeof window !== 'undefined') return localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM'
+    return '21m00Tcm4TlvDq8ikWAM'
   })
   const [previewing, setPreviewing] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
