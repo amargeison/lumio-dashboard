@@ -311,11 +311,11 @@ function HeroSection() {
               className="font-black leading-tight mb-5"
               style={{ color: '#F9FAFB', fontSize: 'clamp(1.875rem, 4vw, 3rem)' }}
             >
-              The School Platform Built for Every Role
+              The UK&apos;s first AI-native school platform
             </h1>
 
             <p className="text-xl leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
-              From the headteacher&apos;s office to the SENCO&apos;s desk — Lumio gives every member of your team the data, tools and time-saving workflows they need. All in one place.
+              Voice-powered briefings. Ofsted-ready reporting. SEND, safeguarding, attendance and staff management — all in one place. Built exclusively for UK schools.
             </p>
 
             <div className="flex items-center gap-4 flex-wrap mb-5">
@@ -1218,6 +1218,35 @@ export default function SchoolsPage() {
   return (
     <>
       <HeroSection />
+      {/* Feature Highlights */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>What makes Lumio different</h2>
+            <p className="text-sm" style={{ color: '#9CA3AF' }}>Features no other school platform has</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            {[
+              { emoji: '🎙️', label: 'Voice-powered morning briefing' },
+              { emoji: '🔍', label: 'Ofsted Inspection Mode' },
+              { emoji: '🏛️', label: 'MAT Trust Dashboard' },
+              { emoji: '👨‍👩‍👧', label: 'Parent Portal' },
+              { emoji: '🔒', label: 'Safeguarding & DSL' },
+              { emoji: '🔄', label: 'MIS Sync (Arbor/SIMS/Bromcom)' },
+            ].map(f => (
+              <div key={f.label} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <span className="text-2xl block mb-2">{f.emoji}</span>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{f.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center">
+            <Link href="/schools/features" className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: '#0D9488' }}>
+              See all features <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </section>
       <SSOSyncSection />
       <FeaturesSection />
       <TestimonialsSection />
