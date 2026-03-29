@@ -12,7 +12,7 @@ import {
   UserPlus, X, Plus, Send, Play, Check,
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
-  Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload,
+  Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload, Bell,
   Database, RotateCcw,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -897,7 +897,7 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
 
   return (
     <>
-    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl`}>
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
       <div className="absolute right-40 bottom-0 w-40 h-40 bg-teal-500 rounded-full opacity-10 blur-2xl" />
@@ -985,7 +985,7 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
               )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p className="text-purple-200/60 text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+            <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
           </div>
 
           {/* CENTRE: summary chips */}
@@ -2786,7 +2786,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {/* Top-right: bell + avatar (fixed, matching live portal) */}
       <div style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
         <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Volume2 size={16} strokeWidth={1.75} />
+          <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
         </button>
         <AvatarDropdown
