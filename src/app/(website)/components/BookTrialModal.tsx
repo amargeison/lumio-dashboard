@@ -167,7 +167,7 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
 
   // Close on Escape key
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') handleClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
@@ -371,6 +371,20 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
         </>
         )}
       </div>
+
+      {/* Confirm close dialog */}
+      {showConfirmClose && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="rounded-xl p-6 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 340 }}>
+            <p className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>Are you sure?</p>
+            <p className="text-xs mb-5" style={{ color: '#6B7280' }}>Your details will be lost.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setShowConfirmClose(false)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Cancel</button>
+              <button onClick={() => { sessionStorage.removeItem('lumio_trial_form'); onClose() }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Discard</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
