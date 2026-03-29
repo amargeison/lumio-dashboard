@@ -1376,6 +1376,68 @@ function ComingSoonView({ dept }: { dept: DeptId }) {
   )
 }
 
+// ─── Briefing Settings ──────────────────────────────────────────────────────
+
+function BriefingSettings() {
+  const [enabled, setEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_enabled') !== 'false' : true)
+  const [weather, setWeather] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_weather') !== 'false' : true)
+  const [meetings, setMeetings] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_meetings') !== 'false' : true)
+  const [urgent, setUrgent] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_urgent') !== 'false' : true)
+  const [time, setTime] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_time') || '8am' : '8am')
+
+  function toggle(key: string, val: boolean, setter: (v: boolean) => void) {
+    setter(!val)
+    localStorage.setItem(key, String(!val))
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🗣️</span>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Briefing</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>Configure what's included in your daily voice summary</p>
+          </div>
+        </div>
+      </div>
+      <div className="px-5 py-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Enable Morning Briefing</p><p className="text-xs" style={{ color: '#6B7280' }}>AI-generated daily summary read aloud</p></div>
+          <button onClick={() => toggle('lumio_briefing_enabled', enabled, setEnabled)} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: enabled ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: enabled ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Include weather in briefing</span>
+          <button onClick={() => toggle('lumio_briefing_weather', weather, setWeather)} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: weather ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: weather ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Include meetings in briefing</span>
+          <button onClick={() => toggle('lumio_briefing_meetings', meetings, setMeetings)} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: meetings ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: meetings ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Include urgent items in briefing</span>
+          <button onClick={() => toggle('lumio_briefing_urgent', urgent, setUrgent)} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: urgent ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: 3, left: urgent ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Briefing time</span>
+          <select value={time} onChange={e => { setTime(e.target.value); localStorage.setItem('lumio_briefing_time', e.target.value) }}
+            style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '6px 10px', fontSize: 13, outline: 'none' }}>
+            <option>6am</option><option>7am</option><option>8am</option><option>9am</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Voice Selector ─────────────────────────────────────────────────────────
 
 const VOICES = [
@@ -1768,6 +1830,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
           ))}
         </div>
       </div>
+
+      {/* AI Morning Briefing */}
+      <BriefingSettings />
 
       {/* Voice Assistant */}
       <VoiceSelector />
