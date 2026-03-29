@@ -16,10 +16,31 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
   const [resendCountdown, setResendCountdown] = useState(0)
   const [verified, setVerified] = useState(false)
   const [alreadyExists, setAlreadyExists] = useState<{ slug: string; companyName: string } | null>(null)
+  const [showConfirmClose, setShowConfirmClose] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  // Persist form state in sessionStorage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('lumio_trial_form')
+    if (saved) { try { setForm(f => ({ ...f, ...JSON.parse(saved) })) } catch {} }
+  }, [])
+
   function set(k: keyof typeof form, v: string | boolean) {
-    setForm(f => ({ ...f, [k]: v }))
+    setForm(f => {
+      const next = { ...f, [k]: v }
+      sessionStorage.setItem('lumio_trial_form', JSON.stringify({ name: next.name, email: next.email, company: next.company }))
+      return next
+    })
+  }
+
+  function handleClose() {
+    const hasContent = form.name || form.email || form.company
+    if (hasContent && step === 'form') {
+      setShowConfirmClose(true)
+    } else {
+      sessionStorage.removeItem('lumio_trial_form')
+      onClose()
+    }
   }
 
   // Countdown for resend
@@ -154,7 +175,6 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
 >
       <div className="w-full max-w-md rounded-2xl shadow-2xl"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -173,7 +193,7 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
                 : `We sent a 6-digit code to ${form.email}`}
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg transition-colors"
+          <button onClick={handleClose} className="p-1 rounded-lg transition-colors"
             style={{ color: '#6B7280' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#F9FAFB')}
             onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}>
