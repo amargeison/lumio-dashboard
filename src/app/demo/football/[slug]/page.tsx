@@ -23,7 +23,7 @@ import FootballActionModal from '@/components/modals/FootballActionModal'
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'squad' | 'tactics' | 'transfers'
+  | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'matchday' | 'training' | 'finance'
   | 'staff' | 'facilities' | 'settings'
