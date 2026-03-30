@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
+import FootballActionModal from '@/components/modals/FootballActionModal'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1090,6 +1091,271 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, ch
           {children}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Insights View (8 Role-Based Dashboards) ────────────────────────────────
+
+const ROLES = [
+  { id: 'dof', emoji: '👔', title: 'Director of Football', summary: 'Transfers & Squad' },
+  { id: 'chairman', emoji: '🧑‍💼', title: 'Chairman / CEO', summary: 'Finance & Strategy' },
+  { id: 'coach', emoji: '⚽', title: 'Head Coach', summary: 'Squad & Tactics' },
+  { id: 'medical', emoji: '🏥', title: 'Head of Medical', summary: 'Injuries & Load' },
+  { id: 'recruitment', emoji: '🔭', title: 'Head of Recruitment', summary: 'Targets & Scouts' },
+  { id: 'academy', emoji: '🎓', title: 'Academy Director', summary: 'Youth & EPPP' },
+  { id: 'analysis', emoji: '📊', title: 'Head of Analysis', summary: 'xG & Tactics' },
+  { id: 'commercial', emoji: '📣', title: 'Commercial Director', summary: 'Revenue & Sponsors' },
+]
+
+function InsightCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{label}</p>
+      <p className="text-2xl font-black" style={{ color: color || '#F9FAFB' }}>{value}</p>
+      {sub && <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{sub}</p>}
+    </div>
+  )
+}
+
+function InsightTable({ cols, rows }: { cols: string[]; rows: (string | React.ReactNode)[][] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+      <table className="w-full text-sm">
+        <thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>
+          {cols.map(c => <th key={c} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: '#6B7280' }}>{c}</th>)}
+        </tr></thead>
+        <tbody>{rows.map((row, i) => (
+          <tr key={i} style={{ borderBottom: i < rows.length - 1 ? '1px solid #1F2937' : 'none' }}>
+            {row.map((cell, j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : '#9CA3AF' }}>{cell}</td>)}
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
+}
+
+function InsightsView() {
+  const [role, setRole] = useState('dof')
+  const [range, setRange] = useState('season')
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Intelligence</h1>
+          <p className="text-xs" style={{ color: '#6B7280' }}>Everything your club needs to know — by role, by department, by moment</p>
+        </div>
+        <div className="flex gap-2">
+          {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['season', 'This Season']].map(([k, l]) => (
+            <button key={k} onClick={() => setRange(k)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: range === k ? '#C0392B' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Role Selector */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {ROLES.map(r => (
+          <button key={r.id} onClick={() => setRole(r.id)} className="rounded-xl p-4 text-left transition-all"
+            style={{ backgroundColor: role === r.id ? 'rgba(192,57,43,0.12)' : '#111318', border: role === r.id ? '2px solid #C0392B' : '1px solid #1F2937' }}>
+            <span className="text-2xl block mb-2">{r.emoji}</span>
+            <p className="text-sm font-bold" style={{ color: role === r.id ? '#F1C40F' : '#F9FAFB' }}>{r.title}</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>{r.summary}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* ── DIRECTOR OF FOOTBALL ── */}
+      {role === 'dof' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="League Position" value="8th" sub="Championship" color="#F1C40F" />
+          <InsightCard label="Squad Value" value="£34.2m" sub="↑ 12% vs start of season" color="#22C55E" />
+          <InsightCard label="Net Transfer Spend" value="-£2.1m" sub="Sales £4.8m · Purchases £6.9m" />
+          <InsightCard label="Window Closes" value="11 days" color="#EF4444" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Overview</p>
+            {[{ label: 'Fitness', values: [{ l: 'Fit', v: 21, c: '#22C55E' }, { l: 'Injured', v: 3, c: '#EF4444' }, { l: 'Suspended', v: 1, c: '#F59E0B' }] },
+              { label: 'Contracts', values: [{ l: 'Expiring', v: 8, c: '#EF4444' }, { l: 'Negotiating', v: 4, c: '#F59E0B' }, { l: 'Secure', v: 13, c: '#22C55E' }] },
+              { label: 'Age Profile', values: [{ l: 'U21', v: 6, c: '#22D3EE' }, { l: '21-25', v: 8, c: '#0D9488' }, { l: '26-30', v: 9, c: '#8B5CF6' }, { l: '30+', v: 2, c: '#6B7280' }] },
+            ].map(row => (
+              <div key={row.label} className="mb-3">
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{row.label}</p>
+                <div className="flex h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                  {row.values.map(v => <div key={v.l} style={{ width: `${(v.v / 25) * 100}%`, backgroundColor: v.c }} title={`${v.l}: ${v.v}`} />)}
+                </div>
+                <div className="flex gap-3 mt-1">{row.values.map(v => <span key={v.l} className="text-[10px]" style={{ color: v.c }}>{v.l}: {v.v}</span>)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Financial Snapshot</p>
+            {[{ l: 'Weekly Wage Bill', v: '£187,000', s: 'Budget: £200,000', pct: 94 }, { l: 'Transfer Budget Used', v: '£4.8m of £8m', s: '£3.2m remaining', pct: 60 }, { l: 'Commercial Revenue', v: '£2.1m', s: 'Target: £2.8m (75%)', pct: 75 }].map(f => (
+              <div key={f.l} className="mb-3">
+                <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{f.l}</span><span style={{ color: '#F9FAFB' }}>{f.v}</span></div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${f.pct}%`, backgroundColor: f.pct > 90 ? '#EF4444' : f.pct > 75 ? '#F59E0B' : '#22C55E' }} /></div>
+                <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.s}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <InsightTable cols={['Target', 'Position', 'Club', 'Value', 'Status', 'Agent', 'Deadline']}
+          rows={SCOUT_TARGETS.map(t => [t.name, t.position, t.club, t.value, <span key={t.name} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: t.status === 'Bid Submitted' ? 'rgba(239,68,68,0.12)' : t.status === 'Approached' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)', color: t.status === 'Bid Submitted' ? '#EF4444' : t.status === 'Approached' ? '#F59E0B' : '#6B7280' }}>{t.status}</span>, 'CAA Base', '11 days'])} />
+      </>}
+
+      {/* ── HEAD COACH ── */}
+      {role === 'coach' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Next Match" value="Saturday 3pm" sub="vs Bristol City (H)" color="#C0392B" />
+          <InsightCard label="Days to Match" value="4" />
+          <InsightCard label="Squad Available" value="21 / 25" sub="3 injured, 1 suspended" />
+          <InsightCard label="Last Result" value="W 2-1" sub="vs Riverside United" color="#22C55E" />
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
+          <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+            {SQUAD.map(p => (
+              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Form — Last 5</p>
+            <div className="flex gap-2">{RECENT_FORM.map((r, i) => (
+              <div key={i} className="flex-1 rounded-lg p-3 text-center" style={{ backgroundColor: r.result === 'W' ? 'rgba(34,197,94,0.08)' : r.result === 'D' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                <p className="text-lg font-black" style={{ color: r.result === 'W' ? '#22C55E' : r.result === 'D' ? '#F59E0B' : '#EF4444' }}>{r.result}</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{r.score}</p>
+                <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{r.opponent}</p>
+              </div>
+            ))}</div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Season Stats</p>
+            <div className="grid grid-cols-4 gap-2">{[{ l: 'xG For', v: '28.4', c: '#22C55E' }, { l: 'xG Against', v: '22.1', c: '#EF4444' }, { l: 'Possession', v: '52%' }, { l: 'Clean Sheets', v: '7' }].map(s => (
+              <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: s.c || '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+            ))}</div>
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Opposition — Bristol City</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div><p className="text-xs font-bold mb-2" style={{ color: '#C0392B' }}>THEIR THREATS</p>{['Top scorer: A. Wells (12 goals)', 'Set piece danger from corners', 'Fast counter-attack through right side'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>⚠️ {t}</p>)}</div>
+            <div><p className="text-xs font-bold mb-2" style={{ color: '#22C55E' }}>THEIR WEAKNESSES</p>{['Poor defending from crosses (12 goals conceded)', 'Slow build-up on left side', 'Vulnerable to high press (9.2 PPDA)'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>✅ {t}</p>)}</div>
+          </div>
+        </div>
+      </>}
+
+      {/* ── HEAD OF MEDICAL ── */}
+      {role === 'medical' && <>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <InsightCard label="Currently Injured" value="3" color="#EF4444" />
+          <InsightCard label="In Rehab" value="2" />
+          <InsightCard label="Returning This Week" value="1" color="#22C55E" />
+          <InsightCard label="Days Lost (Season)" value="47" />
+          <InsightCard label="Injury Cost Est." value="£284k" sub="Wages during absence" color="#F59E0B" />
+        </div>
+        <InsightTable cols={['Player', 'Injury', 'Phase', 'Injured', 'Expected Return', 'Missed', 'Physio']}
+          rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Dr. J. Williams'])} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>GPS Load — Last Session</p>
+          <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Distance', 'Hi-Speed', 'Sprints', 'Max Speed', 'Load'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+          <tbody>{GPS_DATA.map(g => <tr key={g.player} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{g.player}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.distance}km</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.hiSpeed}m</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.sprints}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.maxSpeed}km/h</td><td className="px-3 py-2"><span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: g.load === 'optimal' ? 'rgba(34,197,94,0.12)' : g.load === 'high' ? 'rgba(245,158,11,0.12)' : g.load === 'overload' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : g.load === 'overload' ? '#EF4444' : '#F59E0B' }}>{g.load}</span></td></tr>)}</tbody></table></div>
+        </div>
+      </>}
+
+      {/* ── HEAD OF RECRUITMENT ── */}
+      {role === 'recruitment' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Active Targets" value="5" />
+          <InsightCard label="Bid Submitted" value="1" color="#EF4444" />
+          <InsightCard label="Budget Remaining" value="£3.2m" color="#22C55E" />
+          <InsightCard label="Window Closes" value="11 days" color="#F59E0B" />
+        </div>
+        <InsightTable cols={['Player', 'Club', 'Age', 'Pos', 'Value', 'Contract', '⭐', 'Status']}
+          rows={SCOUT_TARGETS.map(t => [t.name, t.club, String(t.age), t.position, t.value, t.contract, '⭐'.repeat(t.rating), <span key={t.name} className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: t.status === 'Bid Submitted' ? 'rgba(239,68,68,0.12)' : t.status === 'Approached' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)', color: t.status === 'Bid Submitted' ? '#EF4444' : t.status === 'Approached' ? '#F59E0B' : '#6B7280' }}>{t.status}</span>])} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Scouting Activity This Month</p>
+          <div className="grid grid-cols-4 gap-3">{[{ l: 'Reports Submitted', v: '12' }, { l: 'Scouts Deployed', v: '4' }, { l: 'Countries Covered', v: '8' }, { l: 'Top Pick', v: 'André Costa ⭐⭐⭐⭐⭐' }].map(s => (
+            <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+          ))}</div>
+        </div>
+      </>}
+
+      {/* ── ACADEMY DIRECTOR ── */}
+      {role === 'academy' && <>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <InsightCard label="Academy Players" value="68" />
+          <InsightCard label="On Pathway" value="8" color="#22C55E" />
+          <InsightCard label="EPPP Compliance" value="94%" color="#F1C40F" />
+          <InsightCard label="Scholarships" value="6" />
+          <InsightCard label="Released" value="4" color="#EF4444" />
+        </div>
+        <InsightTable cols={['Player', 'Age', 'Position', 'Age Group', 'Dev. Rating', 'Pathway', 'Status']}
+          rows={ACADEMY_STANDOUTS.map(p => [p.name, String(p.age), p.position, p.ageGroup || 'U21', `${p.devRating || 82}/100`, p.pathway || 'Developing', <span key={p.name} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>Active</span>])} />
+      </>}
+
+      {/* ── HEAD OF ANALYSIS ── */}
+      {role === 'analysis' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="xG For" value="28.4" color="#22C55E" />
+          <InsightCard label="xG Against" value="22.1" color="#EF4444" />
+          <InsightCard label="Possession Avg" value="52%" />
+          <InsightCard label="PPDA" value="8.4" sub="Press intensity" />
+        </div>
+        <InsightTable cols={['Formation', 'Games', 'W', 'D', 'L', 'Win%', 'GF', 'GA', 'xG Diff']}
+          rows={[['4-3-3', '10', '6', '2', '2', '60%', '14', '9', '+4.2'], ['4-2-3-1', '6', '3', '1', '2', '50%', '8', '7', '+1.8'], ['3-5-2', '2', '1', '0', '1', '50%', '3', '3', '-0.4']]} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Set Piece Record</p>
+          <div className="grid grid-cols-4 gap-3">{[{ l: 'Corners/Game', v: '4.2' }, { l: 'Goals from Corners', v: '3 (8%)' }, { l: 'Penalties', v: '3/3 (100%)' }, { l: 'Set Pieces Conceded', v: '4 goals' }].map(s => (
+            <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+          ))}</div>
+        </div>
+      </>}
+
+      {/* ── COMMERCIAL DIRECTOR ── */}
+      {role === 'commercial' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Match Day Revenue" value="£1.4m" sub="Budget: £1.6m" />
+          <InsightCard label="Commercial Revenue" value="£2.1m" sub="Budget: £2.8m" />
+          <InsightCard label="Season Tickets" value="8,400" sub="of 9,000 (93%)" color="#22C55E" />
+          <InsightCard label="Fan Sentiment" value="72/100" />
+        </div>
+        <InsightTable cols={['Sponsor', 'Deal Value', 'Contract End', 'Deliverables', 'Status']}
+          rows={[['MK Insurance', '£400k/yr', 'Jun 2027', '12/14 complete', <span key="1" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>On Track</span>], ['Apex Motors', '£250k/yr', 'Jun 2026', '8/10 complete', <span key="2" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>On Track</span>], ['LocalBrew Co', '£80k/yr', 'Dec 2025', '3/6 complete', <span key="3" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>Behind</span>]]} />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Social & Digital</p>
+            {[{ l: 'Total Followers', v: '284,000' }, { l: 'Engagement Rate', v: '4.2%' }, { l: 'Shirt Sales', v: '4,200 (↑10%)' }].map(s => <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>)}
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Attendance</p>
+            {[{ l: 'Average', v: '16,200 / 24,000 (68%)' }, { l: 'Hospitality', v: '89% sold' }, { l: 'Next Match Projected', v: '18,500' }].map(s => <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>)}
+          </div>
+        </div>
+      </>}
+
+      {/* ── CHAIRMAN / CEO ── */}
+      {role === 'chairman' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Total Revenue (YTD)" value="£8.2m" sub="Budget: £9.4m (87%)" />
+          <InsightCard label="Wage/Revenue Ratio" value="62%" sub="PSR limit: 70%" color={62 > 65 ? '#F59E0B' : '#22C55E'} />
+          <InsightCard label="Net Spend" value="-£2.1m" sub="FFP position: Safe" color="#22C55E" />
+          <InsightCard label="Board Meeting" value="Thu 2pm" sub="3 agenda items" />
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board Agenda Items</p>
+          {['Martinez contract renewal — £22k/week proposed, agent wants £28k', 'Academy EPPP Cat 2 re-assessment — due May, compliance at 94%', 'Commercial pipeline — 3 new sponsor conversations active, 1 near close'].map((item, i) => (
+            <div key={i} className="flex gap-3 py-2"><span className="text-xs font-bold shrink-0" style={{ color: '#C0392B' }}>{i + 1}.</span><p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p></div>
+          ))}
+        </div>
+      </>}
     </div>
   )
 }
@@ -2864,6 +3130,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             </div>
 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} />}
+            {activeDept === 'insights' && <InsightsView />}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView />}
             {activeDept === 'transfers' && <TransfersView />}
