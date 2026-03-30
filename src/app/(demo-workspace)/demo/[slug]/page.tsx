@@ -1347,10 +1347,16 @@ function DemoMorningAIPanel() {
   )
 }
 
+const DEMO_DEFAULT_PHOTOS = [
+  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop',
+]
+
 function DemoPhotoFrame() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<string[]>(() => {
-    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; return s ? JSON.parse(s) : [] } catch { return [] }
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); if (p.length > 0) return p }; return DEMO_DEFAULT_PHOTOS } catch { return DEMO_DEFAULT_PHOTOS }
   })
   const [idx, setIdx] = useState(0)
   useEffect(() => { if (photos.length > 1) { const t = setInterval(() => setIdx(i => (i + 1) % photos.length), 5000); return () => clearInterval(t) } }, [photos.length])

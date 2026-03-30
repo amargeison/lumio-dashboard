@@ -826,9 +826,9 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800',
+  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop',
 ]
 
 // Photos stored in localStorage only — never persisted to server or committed to repo
@@ -837,8 +837,7 @@ function PhotoFrame() {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
       if (saved) { const parsed = JSON.parse(saved); if (parsed.length > 0) return parsed }
-      if (typeof window !== 'undefined' && (localStorage.getItem('lumio_demo_active') === 'true' || localStorage.getItem('lumio_demo_loaded') === 'true')) return DEMO_PHOTOS
-      return []
+      return DEMO_PHOTOS
     } catch { return [] }
   })
   const [currentIdx, setCurrentIdx] = useState(0)
