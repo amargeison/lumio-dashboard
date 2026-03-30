@@ -985,6 +985,7 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
 }
 
 function TabContent({ tab }: { tab: OverviewTab }) {
+  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'>('today')
   if (tab === 'today') return null // handled separately
 
   if (tab === 'quick-wins') return (
@@ -1100,42 +1101,160 @@ function TabContent({ tab }: { tab: OverviewTab }) {
 
   if (tab === 'staff') return (
     <div className="space-y-5">
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>In Today</p></div>
-        {[
-          { name: 'Marcus Reid', role: 'Head Coach', loc: 'Training ground, 9am-6pm', status: 'in' },
-          { name: 'Jamie Clarke', role: 'Assistant Manager', loc: 'Training ground', status: 'in' },
-          { name: 'Dr Sarah Phillips', role: 'Club Doctor', loc: 'Medical centre, 8am-5pm', status: 'in' },
-          { name: 'Pete Morrison', role: 'Head Physio', loc: 'Medical centre, 8am-6pm', status: 'in' },
-          { name: 'Dave Thompson', role: 'Head of Recruitment', loc: 'Office + scout trip tomorrow', status: 'in' },
-          { name: 'Ian Brooks', role: 'Academy Director', loc: 'Academy building', status: 'in' },
-        ].map(s => (
-          <div key={s.name} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: '#22C55E20', color: '#22C55E' }}>{s.name.split(' ').map(w => w[0]).join('')}</div>
-            <div className="flex-1 min-w-0"><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{s.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{s.role} · {s.loc}</p></div>
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>In</span>
+      {/* Sub-tab pills */}
+      <div className="flex gap-2">
+        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
+          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
+            style={{ backgroundColor: activeStaffTab === t.id ? '#C0392B' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ═══ STAFF TODAY ═══ */}
+      {activeStaffTab === 'today' && <>
+        <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>12 staff · 2 away · 0 alerts</p></div>
+        <div className="flex gap-1 flex-wrap">
+          {['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Scouting', 'Academy'].map(f => (
+            <button key={f} className="px-3 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor: f === 'All' ? '#C0392B' : 'rgba(255,255,255,0.05)', color: f === 'All' ? '#fff' : '#6B7280' }}>{f}</button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {[
+            { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#C0392B' },
+            { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#C0392B' },
+            { name: 'Dr Sarah Phillips', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Pete Morrison', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Dave Thompson', role: 'Head of Recruitment', dept: 'Scouting', status: 'In today', location: 'Office + scout trip tomorrow', rel: 'Direct report', color: '#F39C12' },
+            { name: 'Ian Brooks', role: 'Academy Director', dept: 'Academy', status: 'In today', location: 'Academy building', rel: 'Direct report', color: '#27AE60' },
+            { name: 'Steve Walsh', role: 'Chief Scout', dept: 'Scouting', status: 'Away', location: 'Valencia scouting trip', rel: 'Scouting dept', color: '#F39C12' },
+            { name: 'Lisa Chen', role: 'Sports Scientist', dept: 'Performance', status: 'Away', location: 'Conference — back Thursday', rel: 'Performance dept', color: '#8E44AD' },
+            { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', status: 'In today', location: 'Analysis suite', rel: 'Analytics dept', color: '#8E44AD' },
+            { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', status: 'Away', location: 'UEFA Pro Licence course Mon-Wed', rel: 'Coaching dept', color: '#C0392B' },
+            { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept', color: '#8E44AD' },
+            { name: 'Mark Evans', role: 'Scout', dept: 'Scouting', status: 'In today', location: 'Office', rel: 'Scouting dept', color: '#F39C12' },
+          ].map(m => (
+            <div key={m.name} className="rounded-2xl p-4 cursor-pointer transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: m.status === 'In today' ? '#22C55E' : '#F59E0B', borderColor: '#111318' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2"><span className="font-bold text-sm truncate" style={{ color: '#E5E7EB' }}>{m.name}</span></div>
+                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p>
+                  <div className="flex gap-1 mt-1"><span className="text-xs font-medium" style={{ color: m.status === 'In today' ? '#4ADE80' : '#FBBF24' }}>{m.status}</span><span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{m.rel}</span></div>
+                  <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{m.location}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Staff Events</p>
+          {['Board meeting Thursday 2pm', 'Staff reviews: Clarke, Morrison — end of month', 'New analyst starts Monday'].map(e => (
+            <p key={e} className="text-xs py-1" style={{ color: '#D1D5DB' }}>📅 {e}</p>
+          ))}
+        </div>
+      </>}
+
+      {/* ═══ ORG CHART ═══ */}
+      {activeStaffTab === 'orgchart' && (
+        <div>
+          <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Club Organisation</h2>
+          <div className="flex justify-center mb-8">
+            <div className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #7F8C8D' }}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(127,140,141,0.2)', color: '#7F8C8D' }}>RB</div>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+              <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Chairman</p>
+            </div>
           </div>
-        ))}
-      </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Out Today</p></div>
-        {[
-          { name: 'Steve Walsh', role: 'Chief Scout', loc: 'Away — Valencia scouting trip', status: 'out' },
-          { name: 'Lisa Chen', role: 'Sports Scientist', loc: 'Conference — back Thursday', status: 'out' },
-        ].map(s => (
-          <div key={s.name} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: '#6B728020', color: '#6B7280' }}>{s.name.split(' ').map(w => w[0]).join('')}</div>
-            <div className="flex-1"><p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>{s.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{s.role} · {s.loc}</p></div>
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(107,114,128,0.12)', color: '#6B7280' }}>Out</span>
+          <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
+          <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '40%' }} /></div>
+          <div className="flex justify-center gap-6 mb-4">
+            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Marcus Reid', role: 'Head Coach', color: '#C0392B' }].map(m => (
+              <div key={m.name} className="flex flex-col items-center">
+                <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
+                <div className="rounded-xl p-3 text-center cursor-pointer w-44" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                  <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
+                  <p className="text-[10px] truncate" style={{ color: m.color }}>{m.role}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Staff Events</p>
-        {['Board meeting Thursday 2pm', 'Staff reviews: Clarke, Morrison — end of month', 'New analyst starts Monday'].map(e => (
-          <p key={e} className="text-xs py-1" style={{ color: '#D1D5DB' }}>📅 {e}</p>
-        ))}
-      </div>
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3 pl-4">
+            {[
+              { name: 'David Hughes', role: 'Asst Manager', color: '#C0392B' },
+              { name: 'Alan Cooper', role: 'GK Coach', color: '#C0392B' },
+              { name: 'Tom Wallace', role: 'Fitness Coach', color: '#8E44AD' },
+              { name: 'Lisa Chen', role: 'Sports Scientist', color: '#8E44AD' },
+              { name: 'Emma Clark', role: 'Analyst', color: '#8E44AD' },
+              { name: 'Dr Sarah Phillips', role: 'Club Doctor', color: '#2980B9' },
+              { name: 'Pete Morrison', role: 'Head Physio', color: '#2980B9' },
+              { name: 'Steve Walsh', role: 'Chief Scout', color: '#F39C12' },
+              { name: 'Ian Brooks', role: 'Academy Director', color: '#27AE60' },
+            ].map(m => (
+              <div key={m.name} className="rounded-xl p-3 text-center cursor-pointer" style={{ backgroundColor: '#0A0B10', border: `1px solid ${m.color}40` }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                <p className="text-xs font-medium truncate" style={{ color: '#D1D5DB' }}>{m.name}</p>
+                <p className="text-[10px] truncate" style={{ color: m.color }}>{m.role}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 justify-center mt-6 flex-wrap">
+            {[['#C0392B','Coaching'],['#2980B9','Medical'],['#F39C12','Scouting'],['#27AE60','Academy'],['#8E44AD','Performance']].map(([c,l]) => (
+              <div key={l} className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />{l}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CLUB INFO ═══ */}
+      {activeStaffTab === 'clubinfo' && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Info</h2>
+          <div>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Documents</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { icon: '📋', title: 'Staff Code of Conduct', desc: 'Professional standards and disciplinary procedures' },
+                { icon: '🏥', title: 'Medical & Welfare', desc: 'Player medical confidentiality and treatment protocols' },
+                { icon: '🔒', title: 'Data & GDPR', desc: 'Player data handling and scouting database compliance' },
+                { icon: '💰', title: 'Expenses & Travel', desc: 'Away trips, scouting travel and meal allowances' },
+                { icon: '🎓', title: 'Coaching & CPD', desc: 'UEFA licence requirements and CPD policy' },
+                { icon: '🤝', title: 'Agent Policy', desc: 'FA regulations on agent contacts and disclosure' },
+                { icon: '📱', title: 'Media & Social', desc: 'What staff can post and player privacy rules' },
+                { icon: '👔', title: 'Employment', desc: 'Staff contracts, notice periods and exit procedures' },
+              ].map(p => (
+                <div key={p.title} className="rounded-xl p-4 cursor-pointer transition-all hover:border-[#C0392B]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <span className="text-2xl block mb-2">{p.icon}</span>
+                  <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{p.title}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
+              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+                <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+              {[['Chairman','Robert Blackwell'],['Director of Football','Dave Thompson'],['Head Coach','Marcus Reid'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
+                <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming This Month</p>
+            {[['🎂','Pete Morrison','Birthday 3 Apr'],['🎉','David Hughes','5 year club anniversary 8 Apr'],['🎂','Emma Clark','Birthday 22 Apr']].map(([icon,name,event]) => (
+              <p key={name} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {name} — {event}</p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 
