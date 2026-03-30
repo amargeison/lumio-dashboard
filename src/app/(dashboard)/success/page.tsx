@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Activity, Send, FileText, AlertCircle } from 'lucide-react'
+import { Users, Activity, Send, FileText, AlertCircle, BarChart2 } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
-import NewCheckInModal from '@/components/modals/NewCheckInModal'
+import { RAGCheckModal, StartRecoveryModal, SendCheckInModal, UsageReportModal, HealthReportModal, AtRiskReportModal } from '@/components/modals/SuccessModals'
 import { useToast } from '@/components/modals/useToast'
 
 const stats = [
@@ -68,15 +68,21 @@ const immediate = [
 ]
 
 export default function SuccessPage() {
+  const [showRAG, setShowRAG] = useState(false)
+  const [showRecovery, setShowRecovery] = useState(false)
   const [showCheckIn, setShowCheckIn] = useState(false)
+  const [showUsage, setShowUsage] = useState(false)
+  const [showHealth, setShowHealth] = useState(false)
+  const [showAtRisk, setShowAtRisk] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
-    { label: 'RAG Check',       icon: Activity,    onClick: () => setShowCheckIn(true) },
-    { label: 'Start Recovery',  icon: AlertCircle, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Send Check-in',   icon: Send,        onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Usage Report',    icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Health Report',   icon: FileText,    onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'RAG Check',       icon: Activity,    onClick: () => setShowRAG(true) },
+    { label: 'Start Recovery',  icon: AlertCircle, onClick: () => setShowRecovery(true) },
+    { label: 'Send Check-in',   icon: Send,        onClick: () => setShowCheckIn(true) },
+    { label: 'Usage Report',    icon: FileText,    onClick: () => setShowUsage(true) },
+    { label: 'Health Report',   icon: FileText,    onClick: () => setShowHealth(true) },
+    { label: 'At-Risk Report',  icon: BarChart2,   onClick: () => setShowAtRisk(true) },
   ]
 
   const hasData = useHasDashboardData('success')
@@ -128,7 +134,12 @@ export default function SuccessPage() {
           </SectionCard>
         }
       />
-      {showCheckIn && <NewCheckInModal onClose={() => setShowCheckIn(false)} onSubmit={() => { setShowCheckIn(false); showToast('Check-in submitted') }} />}
+      {showRAG && <RAGCheckModal onClose={() => setShowRAG(false)} onToast={showToast} />}
+      {showRecovery && <StartRecoveryModal onClose={() => setShowRecovery(false)} onToast={showToast} />}
+      {showCheckIn && <SendCheckInModal onClose={() => setShowCheckIn(false)} onToast={showToast} />}
+      {showUsage && <UsageReportModal onClose={() => setShowUsage(false)} onToast={showToast} />}
+      {showHealth && <HealthReportModal onClose={() => setShowHealth(false)} onToast={showToast} />}
+      {showAtRisk && <AtRiskReportModal onClose={() => setShowAtRisk(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )

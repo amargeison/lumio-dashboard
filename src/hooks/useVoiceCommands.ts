@@ -57,7 +57,7 @@ export function useVoiceCommands() {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [lastCommand, setLastCommand] = useState<VoiceCommandResult | null>(null)
-  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState<{ type: string; data?: any } | null>(null)
 
   const processCommand = useCallback((text: string): VoiceCommandResult => {
     for (const cmd of COMMANDS) {
