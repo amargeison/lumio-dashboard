@@ -3000,72 +3000,266 @@ function PartnersView({ company }: { company: string }) {
 }
 
 function StrategyView({ company }: { company: string }) {
-  const rows = [
+  const [tab, setTab] = useState<'overview'|'signals'|'jobs'>('overview')
+  const [strengthFilter, setStrengthFilter] = useState('All')
+  const [competitorFilter, setCompetitorFilter] = useState('All')
+  const [expandedSignal, setExpandedSignal] = useState<string|null>(null)
+  const [expandedJob, setExpandedJob] = useState<string|null>(null)
+  const [scanning, setScanning] = useState(false)
+
+  const COMP_ROWS = [
     { feature: 'All-in-one platform',          lumio: '✅', hubspot: '✅', pipedrive: '⚠️', monday: '✅' },
     { feature: 'Built-in workflow automation', lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '⚠️' },
     { feature: 'CRM & Sales pipeline',         lumio: '✅', hubspot: '✅', pipedrive: '✅', monday: '✅' },
     { feature: 'HR & People management',       lumio: '✅', hubspot: '❌', pipedrive: '❌', monday: '⚠️' },
-    { feature: 'SMB pricing (<£200/mo)',        lumio: '✅', hubspot: '❌', pipedrive: '✅', monday: '⚠️' },
+    { feature: 'Partner management',           lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '❌' },
+    { feature: 'AI Insights dashboard',        lumio: '✅', hubspot: '⚠️', pipedrive: '❌', monday: '⚠️' },
+    { feature: 'SMB pricing (<£200/mo)',       lumio: '✅', hubspot: '❌', pipedrive: '✅', monday: '⚠️' },
     { feature: 'Setup in under 30 min',        lumio: '✅', hubspot: '❌', pipedrive: '⚠️', monday: '⚠️' },
   ]
-  const competitors = [
-    { name: 'HubSpot',    emoji: '🟠', threat: 92, overlap: 78, summary: 'Raised Professional tier 18% in March 2026. Targeting SMBs with a new growth hire.' },
-    { name: 'Pipedrive',  emoji: '🟢', threat: 64, overlap: 61, summary: 'Campaigns module now GA. Published a Zendesk migration guide targeting SMB switchers.' },
-    { name: 'monday.com', emoji: '🔴', threat: 71, overlap: 54, summary: 'Raised $400M, hiring 3 ML engineers for NLP automation. Long-term threat.' },
+
+  const COMPETITORS = [
+    { id:'hubspot',   name:'HubSpot',    emoji:'🟠', category:'CRM + Marketing Automation', threat:78, overlap:85, momentum:62, pricing:24, signalCount:14, lastDate:'2 days ago', summary:'Raised Professional tier 18% in Jan 2026. AI copilot still enterprise-gated. Losing SMB reviews to simpler tools.', lastSignal:'Pricing page changed — Professional tier up 18%' },
+    { id:'pipedrive', name:'Pipedrive',   emoji:'🟢', category:'Sales CRM',                 threat:61, overlap:72, momentum:74, pricing:58, signalCount:9,  lastDate:'5 days ago', summary:'Aggressively targeting Zendesk customers with a migration guide. Launched Campaigns module — entering marketing automation.', lastSignal:'Published "Switch from Zendesk" migration guide' },
+    { id:'monday',    name:'monday.com',  emoji:'🔴', category:'Work OS + CRM',              threat:55, overlap:68, momentum:81, pricing:46, signalCount:11, lastDate:'1 week ago', summary:'Monday CRM growing fast — 3 ML engineers hired in 6 weeks. Strong G2 momentum. No SMB-specific automation library.', lastSignal:'3 ML engineer hires posted in 6 weeks' },
+    { id:'zapier',    name:'Zapier',      emoji:'⚡', category:'Automation Platform',         threat:47, overlap:91, momentum:53, pricing:42, signalCount:7,  lastDate:'3 days ago', summary:'Task-based pricing is a growing complaint on G2. "Too expensive for small teams" appearing in 34% of negative reviews.', lastSignal:'G2 review surge — 11 new "too expensive" reviews' },
   ]
+
+  const SIGNALS = [
+    { id:'s1',  comp:'HubSpot',    type:'💰', strength:'Critical' as const, title:'HubSpot Professional tier raised 18% — £320/mo → £378/mo',                     detail:'Pricing page hash changed on 14 Mar 2026. Professional (5 seats) now £378/mo. No announcement. Existing customers grandfathered for 90 days.', opp:91, threat:12, date:'14 Mar 2026', source:'Pricing page monitor',   action:'Update positioning to call out the gap. Add a "Lumio vs HubSpot pricing" page.' },
+    { id:'s2',  comp:'Zapier',     type:'⭐', strength:'Critical' as const, title:'G2 review surge — 11 "too expensive for small teams" reviews in 10 days',        detail:'Trustpilot and G2 both showing a spike. Common themes: task limits, confusing pricing, no industry-specific templates.',                       opp:88, threat:8,  date:'11 Mar 2026', source:'G2 + Trustpilot monitor', action:'Create a "Switch from Zapier" landing page. Offer free migration of existing Zaps.' },
+    { id:'s3',  comp:'Pipedrive',  type:'📝', strength:'High' as const,     title:'Pipedrive published "How to switch from Zendesk in 48 hours"',                   detail:'Full migration guide targeting Zendesk customers — CSV import, workflow mapping, agent setup.',                                                   opp:74, threat:41, date:'9 Mar 2026',  source:'RSS blog monitor',       action:'Publish a counter-guide. Position Lumio\'s 150 workflows as what Pipedrive can\'t offer.' },
+    { id:'s4',  comp:'monday.com', type:'👥', strength:'High' as const,     title:'3 ML Engineers hired — natural language workflow builder inbound',                detail:'Three ML Engineer roles posted Jan–Feb 2026, all citing "automation intelligence" and "natural language task creation".',                         opp:45, threat:72, date:'5 Mar 2026',  source:'LinkedIn job monitor',   action:'Accelerate your own AI workflow builder. Establish the "AI-native automation for SMBs" narrative now.' },
+    { id:'s5',  comp:'HubSpot',    type:'🎤', strength:'High' as const,     title:'INBOUND 2026 talk: "The AI CRM — what\'s next for HubSpot"',                     detail:'Session abstract published. Speaker is HubSpot VP Product. Keywords: conversational automation, AI deal scoring.',                                opp:38, threat:68, date:'3 Mar 2026',  source:'Conference monitor',     action:'Monitor INBOUND session for specifics. Prepare counter-positioning for AI deal scoring.' },
+    { id:'s6',  comp:'Pipedrive',  type:'🚀', strength:'High' as const,     title:'Pipedrive Campaigns GA — now a direct email marketing competitor',               detail:'Campaigns module exited beta. Includes email sequences, list segmentation, and basic A/B testing.',                                              opp:42, threat:58, date:'28 Feb 2026', source:'ProductHunt + RSS',      action:'Position Lumio Marketing workflows as more powerful — 150 cross-department automations vs single-channel email.' },
+    { id:'s7',  comp:'HubSpot',    type:'⭐', strength:'Medium' as const,   title:'Capterra: "too complex for a 20-person company" theme increasing',               detail:'Capterra review analysis shows "complex" appearing in 28% of 2-3 star reviews — up from 19%.',                                                  opp:79, threat:5,  date:'25 Feb 2026', source:'Capterra monitor',       action:'Lean into simplicity messaging. "Set up in a day, not a quarter" is a direct wedge.' },
+    { id:'s8',  comp:'monday.com', type:'💵', strength:'Medium' as const,   title:'monday.com secondary offering — $400M raised to fund AI expansion',              detail:'Filed with SEC on 20 Feb. CFO mentions "doubling down on AI automation capabilities".',                                                        opp:22, threat:61, date:'21 Feb 2026', source:'SEC filing monitor',     action:'No immediate action — 12–18 month signal. Confirms monday.com is a long-term threat.' },
+    { id:'s9',  comp:'Zapier',     type:'📜', strength:'Medium' as const,   title:'Patent filed: "Dynamic workflow orchestration with context-aware AI routing"',   detail:'USPTO application filed Feb 2026. Claims cover AI-driven step routing based on historical execution data.',                                     opp:15, threat:34, date:'18 Feb 2026', source:'USPTO patent monitor',   action:'Flag to legal team. Low risk but worth monitoring.' },
+    { id:'s10', comp:'Pipedrive',  type:'👥', strength:'Medium' as const,   title:'VP of Partnerships hired — channel program expansion incoming',                  detail:'LinkedIn shows VP Partnerships start date 1 Mar 2026. Previous role: head of channel at Salesforce SMB.',                                        opp:31, threat:42, date:'14 Feb 2026', source:'LinkedIn job monitor',   action:'Accelerate Lumio\'s own partner program before Pipedrive locks in key agency relationships.' },
+    { id:'s11', comp:'HubSpot',    type:'📝', strength:'Low' as const,      title:'HubSpot blog: "How SMBs can use AI without a data team"',                        detail:'Content targeting SMB segment directly — unusual for HubSpot who typically produces enterprise content.',                                        opp:55, threat:18, date:'10 Feb 2026', source:'RSS blog monitor',       action:'Publish a better version. Own the "AI automation for SMBs" content category.' },
+    { id:'s12', comp:'monday.com', type:'🚀', strength:'Low' as const,      title:'monday.com App Store: 12 new integrations published',                            detail:'Xero, QuickBooks, Sage, Freshdesk, Intercom, Zendesk and 6 others added to monday\'s integration marketplace.',                                 opp:28, threat:25, date:'5 Feb 2026',  source:'Changelog monitor',      action:'Ensure Lumio\'s native integrations are positioned clearly. "Native" vs "App Store bolt-on".' },
+  ]
+
+  const JOBS = [
+    { comp:'HubSpot',    emoji:'🟠', roles:[{title:'Staff ML Engineer — Automation Intelligence',count:2,signal:'Building AI-powered workflow suggestions. Direct competitor to Lumio\'s AI workflow engine.',timeline:'9–12 months'},{title:'Sr. PM — AI Copilot',count:1,signal:'AI copilot moving beyond beta — will push into Professional tier, Lumio\'s direct market.',timeline:'6–9 months'},{title:'Growth Lead — SMB Segment',count:1,signal:'HubSpot explicitly targeting SMBs with a dedicated growth hire.',timeline:'Immediate'}] },
+    { comp:'Pipedrive',  emoji:'🟢', roles:[{title:'VP of Partnerships',count:1,signal:'Channel program building. Expect Pipedrive-certified agencies by Q3 2026.',timeline:'Q3 2026'},{title:'Email Marketing Engineer',count:2,signal:'Campaigns module incomplete. Two engineers = sequence builder, A/B testing incoming.',timeline:'4–6 months'},{title:'CSM (SMB)',count:3,signal:'Scaling customer success for SMBs post-Campaigns launch.',timeline:'Immediate'}] },
+    { comp:'monday.com', emoji:'🔴', roles:[{title:'ML Engineer — NLP Automation',count:3,signal:'Natural language workflow creation. "Describe what you want" → monday builds the workflow.',timeline:'9–15 months'},{title:'Sr. PM — monday CRM',count:1,signal:'CRM module treated as first-class product. Dedicated PM accelerates roadmap significantly.',timeline:'6–9 months'},{title:'Enterprise AE',count:8,signal:'Moving upmarket. Enterprise AE hiring at this volume = repackaged Enterprise tier incoming.',timeline:'Happening now'}] },
+    { comp:'Zapier',     emoji:'⚡', roles:[{title:'Head of Pricing Strategy',count:1,signal:'New Head of Pricing = pricing model change coming. Task-based model under pressure.',timeline:'6–9 months'},{title:'Template Library PM',count:1,signal:'Zapier knows its template library is weak vs Lumio\'s 150 workflows. This PM will close the gap.',timeline:'3–6 months'}] },
+  ]
+
+  const STR_CFG: Record<string, { color: string; bg: string; border: string }> = {
+    Critical: { color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)' },
+    High:     { color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)' },
+    Medium:   { color: '#6C3FC5', bg: 'rgba(108,63,197,0.08)', border: 'rgba(108,63,197,0.25)' },
+    Low:      { color: '#6B7280', bg: 'rgba(107,114,128,0.06)', border: 'rgba(107,114,128,0.15)' },
+  }
+
+  const filteredSignals = SIGNALS.filter(s => {
+    if (strengthFilter !== 'All' && s.strength !== strengthFilter) return false
+    if (competitorFilter !== 'All' && s.comp !== competitorFilter) return false
+    return true
+  })
+
+  function ScoreRing({ score, color, label: lbl }: { score: number; color: string; label: string }) {
+    const r = 20, circ = 2 * Math.PI * r, dash = (score / 100) * circ
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <div className="relative">
+          <svg width={52} height={52} className="-rotate-90"><circle cx={26} cy={26} r={r} fill="none" stroke="#1F2937" strokeWidth={4} /><circle cx={26} cy={26} r={r} fill="none" stroke={color} strokeWidth={4} strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" /></svg>
+          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color }}>{score}</span>
+        </div>
+        <span className="text-[10px] text-center leading-tight" style={{ color: '#6B7280' }}>{lbl}</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Strategy — Competitor Watch</h2>
-        <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Demo competitive intelligence for {company}</p>
-      </div>
-
-      {/* Product Comparison */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Product Comparison</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-widest w-44" style={{ color: '#4B5563' }}>Feature</th>
-                {[['Lumio','#0D9488'],['HubSpot','#F97316'],['Pipedrive','#22C55E'],['monday.com','#EF4444']].map(([n,c]) => (
-                  <th key={n} className="px-4 py-3 text-xs font-semibold text-center" style={{ color: c }}>{n}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => (
-                <tr key={row.feature} style={{ borderBottom: '1px solid #1F2937' }}>
-                  <td className="px-5 py-3 text-xs" style={{ color: '#9CA3AF' }}>{row.feature}</td>
-                  <td className="px-4 py-3 text-center text-sm">{row.lumio}</td>
-                  <td className="px-4 py-3 text-center text-sm">{row.hubspot}</td>
-                  <td className="px-4 py-3 text-center text-sm">{row.pipedrive}</td>
-                  <td className="px-4 py-3 text-center text-sm">{row.monday}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Competitor cards */}
-      {competitors.map(c => (
-        <div key={c.name} className="flex items-start gap-4 rounded-xl px-5 py-4"
-          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <span className="text-2xl">{c.emoji}</span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{c.name}</p>
-              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
-                Threat {c.threat}
-              </span>
+    <div className="space-y-0">
+      {/* Header */}
+      <div style={{ borderBottom: '1px solid #1F2937' }} className="px-1 py-5">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1"><Target size={16} style={{ color: '#F87171' }} /><span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>Competitor Intelligence</span></div>
+            <h1 className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>Competitor Watch</h1>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}><Clock size={14} /> Last scan: Today at 06:00</span>
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}>🔴 {SIGNALS.filter(s => s.strength === 'Critical').length} critical signals</span>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{c.summary}</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors" style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>Export PDF</button>
+            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors" style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}><BarChart3 size={16} /> Comparison Matrix</button>
+            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors" style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}><Sparkles size={16} /> Intelligence Brief</button>
+            <button onClick={() => { setScanning(true); setTimeout(() => setScanning(false), 3200) }} disabled={scanning} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors" style={{ backgroundColor: '#EF4444', color: '#fff', opacity: scanning ? 0.6 : 1 }}><RotateCcw size={16} className={scanning ? 'animate-spin' : ''} />{scanning ? 'Scanning…' : 'Run Full Scan'}</button>
           </div>
         </div>
-      ))}
+        {/* Tabs */}
+        <div className="flex gap-0 mt-5" style={{ borderBottom: '1px solid #1F2937', marginBottom: '-1px' }}>
+          {([{ id: 'overview' as const, label: 'Competitor Overview' }, { id: 'signals' as const, label: `Signal Feed (${SIGNALS.length})` }, { id: 'jobs' as const, label: 'Job Intelligence' }]).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors" style={{ borderBottomColor: tab === t.id ? '#F87171' : 'transparent', color: tab === t.id ? '#F9FAFB' : '#6B7280' }}>{t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="py-6">
+        {/* ── Overview ── */}
+        {tab === 'overview' && (
+          <div className="space-y-6">
+            {/* Product Comparison */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-base font-semibold" style={{ color: '#F9FAFB' }}>Product Comparison</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>How Lumio stacks up against key competitors across core feature areas</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>
+                    <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-widest w-44" style={{ color: '#4B5563' }}>Feature</th>
+                    {[{n:'Lumio',c:'#0D9488'},{n:'HubSpot',c:'#F97316'},{n:'Pipedrive',c:'#22C55E'},{n:'monday.com',c:'#EF4444'}].map(h => <th key={h.n} className="px-4 py-3 text-xs font-semibold text-center" style={{ color: h.c }}>{h.n}</th>)}
+                  </tr></thead>
+                  <tbody>{COMP_ROWS.map(row => (
+                    <tr key={row.feature} className="hover:bg-white/[0.02] transition-colors" style={{ borderBottom: '1px solid #1F2937' }}>
+                      <td className="px-5 py-3 text-xs" style={{ color: '#9CA3AF' }}>{row.feature}</td>
+                      <td className="px-4 py-3 text-center text-sm">{row.lumio}</td>
+                      <td className="px-4 py-3 text-center text-sm">{row.hubspot}</td>
+                      <td className="px-4 py-3 text-center text-sm">{row.pipedrive}</td>
+                      <td className="px-4 py-3 text-center text-sm">{row.monday}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <div className="flex items-center gap-4 px-5 py-3" style={{ borderTop: '1px solid #1F2937' }}>
+                <span className="text-xs" style={{ color: '#4B5563' }}>✅ Full support</span>
+                <span className="text-xs" style={{ color: '#4B5563' }}>⚠️ Partial / add-on</span>
+                <span className="text-xs" style={{ color: '#4B5563' }}>❌ Not available</span>
+              </div>
+            </div>
+
+            {/* Competitor cards */}
+            <div className="space-y-4">
+              {COMPETITORS.map(comp => (
+                <div key={comp.id} className="rounded-xl overflow-hidden hover:border-[#374151] transition-colors" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="p-5">
+                    <div className="flex items-start gap-4 flex-wrap">
+                      <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        <span className="text-3xl">{comp.emoji}</span>
+                        <div>
+                          <p className="font-bold" style={{ color: '#F9FAFB' }}>{comp.name}</p>
+                          <p className="text-xs" style={{ color: '#6B7280' }}>{comp.category}</p>
+                          <div className="flex items-center gap-1.5 mt-1"><span className="text-[10px]" style={{ color: '#6B7280' }}>{comp.signalCount} signals</span><span className="text-[10px]" style={{ color: '#374151' }}>·</span><span className="text-[10px]" style={{ color: '#6B7280' }}>Last: {comp.lastDate}</span></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-5 flex-wrap">
+                        <ScoreRing score={comp.threat}   color="#EF4444" label="Threat" />
+                        <ScoreRing score={comp.overlap}  color="#F59E0B" label="Overlap" />
+                        <ScoreRing score={comp.momentum} color="#6C3FC5" label="Momentum" />
+                        <ScoreRing score={comp.pricing}  color="#0D9488" label="Price Comp." />
+                      </div>
+                      <button onClick={() => { setTab('signals'); setCompetitorFilter(comp.name) }} className="px-3 py-1.5 rounded-lg text-xs transition-colors ml-auto" style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>View signals →</button>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <div className="rounded-lg p-3" style={{ backgroundColor: '#07080F' }}><div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>Summary</div><p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{comp.summary}</p></div>
+                      <div className="rounded-lg p-3" style={{ backgroundColor: '#07080F' }}><div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>Latest signal</div><p className="text-xs" style={{ color: '#F9FAFB' }}>{comp.lastSignal}</p><p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{comp.lastDate}</p></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* Legend */}
+              <div className="flex flex-wrap gap-6 px-2 pt-2">
+                {[{l:'Threat — how much damage they could do if they execute',c:'#EF4444'},{l:'Overlap — how much of your market they address',c:'#F59E0B'},{l:'Momentum — how fast they\'re moving right now',c:'#6C3FC5'},{l:'Price Comp. — how price-competitive vs Lumio (higher = cheaper)',c:'#0D9488'}].map(x => (
+                  <div key={x.l} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: x.c }} /><span className="text-[11px]" style={{ color: '#6B7280' }}>{x.l}</span></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Signal Feed ── */}
+        {tab === 'signals' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              <span className="text-xs" style={{ color: '#6B7280' }}>Filter:</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {['All','Critical','High','Medium','Low'].map(s => (
+                  <button key={s} onClick={() => setStrengthFilter(s)} className="px-3 py-1 rounded-full text-xs font-medium transition-colors" style={{ backgroundColor: strengthFilter === s ? (STR_CFG[s]?.bg || '#1F2937') : 'transparent', color: strengthFilter === s ? (STR_CFG[s]?.color || '#F9FAFB') : '#6B7280', border: `1px solid ${strengthFilter === s ? (STR_CFG[s]?.border || '#374151') : '#1F2937'}` }}>{s}</button>
+                ))}
+              </div>
+              <div className="flex gap-1.5 flex-wrap ml-2">
+                {['All',...COMPETITORS.map(c => c.name)].map(c => (
+                  <button key={c} onClick={() => setCompetitorFilter(c)} className="px-3 py-1 rounded-full text-xs transition-colors" style={{ backgroundColor: competitorFilter === c ? '#1F2937' : 'transparent', color: competitorFilter === c ? '#F9FAFB' : '#6B7280', border: `1px solid ${competitorFilter === c ? '#374151' : '#1F2937'}` }}>{c}</button>
+                ))}
+              </div>
+              <span className="ml-auto text-xs" style={{ color: '#6B7280' }}>{filteredSignals.length} signals</span>
+            </div>
+            {filteredSignals.map(sig => {
+              const cfg = STR_CFG[sig.strength]; const isOpen = expandedSignal === sig.id
+              return (
+                <div key={sig.id} className="rounded-xl overflow-hidden transition-all" style={{ backgroundColor: '#111318', border: `1px solid ${isOpen ? cfg.border : '#1F2937'}` }}>
+                  <button className="w-full text-left p-4" onClick={() => setExpandedSignal(isOpen ? null : sig.id)}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg flex-shrink-0 mt-0.5">{sig.type}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}>{sig.strength}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{sig.comp}</span><span className="text-xs" style={{ color: '#374151' }}>·</span><span className="text-xs" style={{ color: '#6B7280' }}>{sig.date}</span><span className="text-xs" style={{ color: '#374151' }}>·</span><span className="text-xs" style={{ color: '#6B7280' }}>{sig.source}</span>
+                        </div>
+                        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{sig.title}</p>
+                        {!isOpen && <p className="text-xs mt-1 line-clamp-1" style={{ color: '#6B7280' }}>{sig.detail}</p>}
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right"><div className="text-[10px]" style={{ color: '#6B7280' }}>Opportunity</div><div className="text-sm font-bold" style={{ color: '#0D9488' }}>{sig.opp}</div></div>
+                        <div className="text-right"><div className="text-[10px]" style={{ color: '#6B7280' }}>Threat</div><div className="text-sm font-bold" style={{ color: '#EF4444' }}>{sig.threat}</div></div>
+                      </div>
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 space-y-3 pt-4" style={{ borderTop: '1px solid #1F2937' }}>
+                      <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{sig.detail}</p>
+                      <div className="rounded-lg p-3" style={{ backgroundColor: '#07080F', borderLeft: `3px solid ${cfg.color}` }}>
+                        <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>Recommended action</div>
+                        <p className="text-sm leading-relaxed" style={{ color: '#F9FAFB' }}>{sig.action}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ── Job Intelligence ── */}
+        {tab === 'jobs' && (
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: '#6B7280' }}>Job postings are the #1 leading indicator of what a competitor is building next. Here&apos;s what each hiring pattern signals.</p>
+            {JOBS.map(j => {
+              const isOpen = expandedJob === j.comp
+              return (
+                <div key={j.comp} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <button className="w-full text-left p-5 flex items-center gap-3" onClick={() => setExpandedJob(isOpen ? null : j.comp)}>
+                    <span className="text-2xl">{j.emoji}</span>
+                    <div className="flex-1"><p className="font-semibold" style={{ color: '#F9FAFB' }}>{j.comp}</p><p className="text-xs" style={{ color: '#6B7280' }}>{j.roles.length} active hiring signals</p></div>
+                    <div className="flex gap-1.5">{j.roles.map((_,i) => <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F59E0B', opacity: 0.7 }} />)}</div>
+                    <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ color: '#6B7280' }} />
+                  </button>
+                  {isOpen && (
+                    <div style={{ borderTop: '1px solid #1F2937' }}>
+                      {j.roles.map((role, i) => (
+                        <div key={i} className={`p-5 ${i < j.roles.length - 1 ? 'border-b' : ''}`} style={{ borderColor: '#1F2937' }}>
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{role.title}</p>{role.count > 1 && <p className="text-xs" style={{ color: '#F59E0B' }}>{role.count} open roles</p>}</div>
+                            <span className="text-xs px-2 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{role.timeline}</span>
+                          </div>
+                          <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{role.signal}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
