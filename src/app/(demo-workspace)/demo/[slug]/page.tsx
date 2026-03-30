@@ -22,6 +22,7 @@ import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import DeptAISummary from '@/components/DeptAISummary'
 import CRMViewV2 from '@/components/demo/CRMView'
 import OverviewActionModal from '@/components/demo/OverviewActionModal'
+import ProjectsView from '@/components/demo/ProjectsView'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
@@ -1883,19 +1884,20 @@ function HRView({ company }: { company: string }) {
   const probations = [{name:fakeName(company,4),date:'24 Mar 2026',manager:fakeName(company,12)},{name:fakeName(company,5),date:'24 Mar 2026',manager:fakeName(company,13)},{name:fakeName(company,1),date:'3 Apr 2026',manager:fakeName(company,13)}]
   return (
     <div className="space-y-4">
-      {/* VIEW toggle bar */}
-      <div className="flex items-center gap-1 self-start rounded-lg px-2 py-1" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }}>
-        <span className="pr-1 text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>View</span>
-        {[
-          { icon: '▤', title: 'Table view', active: true },
-          { icon: '📊', title: 'Chart view', active: false },
-          { icon: '📈', title: 'Timeline view', active: false },
-        ].map(v => (
-          <button key={v.title} title={v.title} className="flex h-7 w-7 items-center justify-center rounded-md transition-colors text-xs"
-            style={{ backgroundColor: v.active ? '#1F2937' : 'transparent', color: v.active ? '#0D9488' : '#4B5563' }}>
-            {v.icon}
-          </button>
-        ))}
+      {/* VIEW toggle — top right */}
+      <div className="flex items-center justify-end">
+        <div className="flex items-center gap-0.5 rounded-lg px-2 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+          {[
+            { icon: '▤', title: 'Table view', active: true },
+            { icon: '📊', title: 'Chart view', active: false },
+            { icon: '📈', title: 'Timeline view', active: false },
+          ].map(v => (
+            <button key={v.title} title={v.title} className="flex items-center justify-center rounded transition-opacity"
+              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.5, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
+              {v.icon}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -3988,7 +3990,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'success' && activeDept !== 'it' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'success' && activeDept !== 'it' && activeDept !== 'projects' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
@@ -4018,6 +4020,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             {!demoCleared && activeDept === 'workflows'  && <WorkflowsView  company={company} />}
             {!demoCleared && activeDept === 'partners'   && <PartnersView   company={company} />}
             {!demoCleared && activeDept === 'strategy'   && <StrategyView   company={company} />}
+            {!demoCleared && activeDept === 'projects'   && <ProjectsView />}
             {activeDept === 'settings'   && <SettingsView   company={company} wakeWordEnabled={wakeWordEnabled} onToggleWakeWord={toggleWakeWord} />}
           </main>
 
