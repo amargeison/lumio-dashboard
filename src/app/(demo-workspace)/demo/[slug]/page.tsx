@@ -401,7 +401,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, comp
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
         <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           {companyLogo ? (
-            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" />
+            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
           ) : (
             <div className="flex items-center justify-center rounded-lg text-xs font-bold"
               style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
@@ -3771,6 +3771,10 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (!data) { setWorkspaceStatus('trial'); return }
+          if (data.logo_url && !companyLogo) {
+            setCompanyLogo(data.logo_url)
+            localStorage.setItem('demo_company_logo', data.logo_url)
+          }
           if (data.status === 'converted') {
             if (data.live_slug) { router.replace(`/${data.live_slug}`); return }
             setWorkspaceStatus('converted')

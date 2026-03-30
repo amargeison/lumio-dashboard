@@ -197,7 +197,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             title="Upload company logo"
           >
             {companyLogo ? (
-              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
+              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
             ) : (
               companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
             )}
@@ -301,7 +301,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               title="Upload company logo"
             >
               {companyLogo ? (
-                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
+                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
               ) : (
                 companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
               )}
