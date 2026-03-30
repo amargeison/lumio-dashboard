@@ -1886,23 +1886,6 @@ function HRView({ company }: { company: string }) {
   const probations = [{name:fakeName(company,4),date:'24 Mar 2026',manager:fakeName(company,12)},{name:fakeName(company,5),date:'24 Mar 2026',manager:fakeName(company,13)},{name:fakeName(company,1),date:'3 Apr 2026',manager:fakeName(company,13)}]
   return (
     <div className="space-y-4">
-      {/* Header row with VIEW toggle */}
-      <div className="flex items-center justify-between -mt-2">
-        <div />
-        <div className="flex items-center gap-0.5 rounded-lg px-1.5 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}>
-          {[
-            { icon: '☰', title: 'Table view', active: true },
-            { icon: '◫', title: 'Card view', active: false },
-            { icon: '▥', title: 'Timeline view', active: false },
-          ].map(v => (
-            <button key={v.title} title={v.title} className="flex items-center justify-center rounded transition-opacity"
-              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.4, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
-              {v.icon}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Employees" value={String(emp)} icon={Users} color="#0D9488"
@@ -3940,8 +3923,19 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{company}</span>
       </div>
 
-      {/* Top-right: bell + avatar (fixed, matching live portal) */}
-      <div style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Top-right: view toggle + bell + avatar (fixed, matching live portal) */}
+      <div style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 16, zIndex: 60, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {[
+            { icon: '▤', title: 'Table view', active: true },
+            { icon: '📊', title: 'Chart view', active: false },
+            { icon: '📈', title: 'Timeline view', active: false },
+          ].map(v => (
+            <button key={v.title} title={v.title} style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', opacity: v.active ? 1 : 0.5, color: v.active ? '#0D9488' : '#6B7280', fontSize: 13, borderRadius: 4 }}>
+              {v.icon}
+            </button>
+          ))}
+        </div>
         <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />

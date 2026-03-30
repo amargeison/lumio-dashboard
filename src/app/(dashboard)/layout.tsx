@@ -49,8 +49,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="min-h-screen transition-[padding] duration-250"
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
-        {/* Top-right: avatar + bell */}
+        {/* Top-right: view toggle + avatar + bell */}
         <div className="fixed flex items-center gap-3" style={{ top: 12, right: 16, zIndex: 60 }}>
+          <div className="flex items-center gap-0.5 mr-1">
+            {[
+              { icon: '▤', title: 'Table view', active: true },
+              { icon: '📊', title: 'Chart view', active: false },
+              { icon: '📈', title: 'Timeline view', active: false },
+            ].map(v => (
+              <button key={v.title} title={v.title} className="flex items-center justify-center rounded transition-opacity"
+                style={{ width: 24, height: 24, opacity: v.active ? 1 : 0.5, color: v.active ? '#0D9488' : '#6B7280', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer' }}>
+                {v.icon}
+              </button>
+            ))}
+          </div>
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}
