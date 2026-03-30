@@ -859,7 +859,7 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
   // Handle voice command actions
   useEffect(() => {
     if (!lastCommand) return
-    const { action, response, payload } = lastCommand
+    const { action, response, payload } = lastCommand as any
     speak(response)
 
     if (action === 'PLAY_BRIEFING') {
