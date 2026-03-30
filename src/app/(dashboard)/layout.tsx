@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="min-h-screen transition-[padding] duration-250"
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
-        {/* Top-right: avatar + bell */}
-        <div className="fixed flex items-center gap-3" style={{ top: 12, right: 24, zIndex: 60 }}>
+        {/* Top header row: avatar + bell */}
+        <div className="flex items-center justify-end gap-3 px-4 py-2 md:px-6">
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}
