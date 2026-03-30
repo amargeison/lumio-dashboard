@@ -964,23 +964,172 @@ function WFStatusBadge({ status }: { status: WFStatus }) {
 
 // ─── Tab Content Placeholder ────────────────────────────────────────────────
 
-function TabPlaceholder({ tab }: { tab: OverviewTab }) {
-  const labels: Record<OverviewTab, { title: string; icon: string; desc: string }> = {
-    'today': { title: 'Today', icon: '🏠', desc: '' },
-    'quick-wins': { title: 'Quick Wins', icon: '⚡', desc: 'Your highest-impact actions today — team sheet, press prep, key calls.' },
-    'match-week': { title: 'Match Week', icon: '⚽', desc: 'Full match-week planner with fixtures, training schedule, and team news.' },
-    'insights': { title: 'Insights', icon: '📊', desc: 'AI-powered performance data, xG analysis, and squad fitness trends.' },
-    'dont-miss': { title: "Don't Miss", icon: '🔴', desc: 'Critical items: contract deadlines, injury returns, transfer windows.' },
-    'staff': { title: 'Staff', icon: '👥', desc: 'Coaching team availability, meeting schedules, and staff updates.' },
-  }
-  const { title, icon, desc } = labels[tab]
+function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' | '🟢'; title: string; desc: string; action: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-3xl" style={{ backgroundColor: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.2)' }}>{icon}</div>
-      <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{title}</h3>
-      <p className="text-sm max-w-xs" style={{ color: '#9CA3AF' }}>{desc || 'Coming soon.'}</p>
+    <div className="flex items-start gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <span className="text-lg mt-0.5">{priority}</span>
+      <div className="flex-1 min-w-0"><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{title}</p><p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{desc}</p></div>
+      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>{action}</button>
     </div>
   )
+}
+
+function TabContent({ tab }: { tab: OverviewTab }) {
+  if (tab === 'today') return null // handled separately
+
+  if (tab === 'quick-wins') return (
+    <div className="space-y-3">
+      <QWItem priority="🔴" title="Tyler James contract — expires June" desc="No offer made yet. Board approval needed. Player could leave on free." action="Open Contract" />
+      <QWItem priority="🔴" title="GPS flags Okafor as overloaded" desc="3 consecutive high-load sessions. Rest recommended before Saturday." action="View Load" />
+      <QWItem priority="🟡" title="Agent for Diallo called twice" desc="Transfer interest from Championship rivals. Call back today." action="Log Call" />
+      <QWItem priority="🟡" title="Press conference prep — 2pm today" desc="AI notes ready but manager hasn't reviewed." action="View Prep" />
+      <QWItem priority="🟡" title="Tyler James eligible for first team squad" desc="Academy standout — include in squad for Saturday?" action="Add to Squad" />
+      <QWItem priority="🟢" title="Scout report on target overdue" desc="Report on Martinez (Valencia B) assigned to Clarke, 3 days overdue." action="Chase Scout" />
+      <QWItem priority="🟢" title="EPPP quarterly report — 80% complete" desc="Submission due Friday. Academy director needs to finalise." action="Complete Report" />
+      <QWItem priority="🟢" title="Kit sponsor deliverables" desc="2 social posts owed this month, 0 delivered." action="Schedule Posts" />
+    </div>
+  )
+
+  if (tab === 'match-week') return (
+    <div className="space-y-5">
+      {/* Match Card */}
+      <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #922B21, #C0392B)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <p className="text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>CHAMPIONSHIP · MATCHDAY 19</p>
+        <div className="flex items-center justify-center gap-6">
+          <div><p className="text-lg font-black text-white">Oakridge FC</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Home</p></div>
+          <div className="text-2xl font-black" style={{ color: '#F1C40F' }}>vs</div>
+          <div><p className="text-lg font-black text-white">Bristol City</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Away</p></div>
+        </div>
+        <p className="text-sm mt-3 font-semibold text-white">Saturday 3:00pm · Bet365 Stadium</p>
+        <p className="text-xs mt-1" style={{ color: '#F1C40F' }}>3 days · 14 hours remaining</p>
+      </div>
+      {/* Preparation Timeline */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Match Week Preparation</p>
+        {[
+          { day: 'Mon', status: '✅', tasks: 'Recovery session, opposition video sent to squad' },
+          { day: 'Tue', status: '✅', tasks: 'Tactical training, set piece work' },
+          { day: 'Wed', status: '🔄', tasks: 'Press conference 2pm, training 10am (TODAY)' },
+          { day: 'Thu', status: '⬜', tasks: 'Final preparation session, team meeting' },
+          { day: 'Fri', status: '⬜', tasks: "Travel/rest day, captain's meeting" },
+          { day: 'Sat', status: '⬜', tasks: 'MATCH DAY' },
+        ].map(d => (
+          <div key={d.day} className="flex items-center gap-3 py-2">
+            <span className="text-sm w-8 font-bold" style={{ color: '#C0392B' }}>{d.day}</span>
+            <span className="text-sm w-6">{d.status}</span>
+            <span className="text-xs flex-1" style={{ color: d.status === '⬜' ? '#6B7280' : '#D1D5DB', fontWeight: d.status === '🔄' ? 700 : 400 }}>{d.tasks}</span>
+          </div>
+        ))}
+      </div>
+      {/* Squad Availability */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
+        <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+          {SQUAD.map(p => (
+            <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+              <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+              <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Weather */}
+      <div className="rounded-xl p-4 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <span className="text-3xl">🌧️</span>
+        <div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Saturday 3pm — 12°C, Light rain</p><p className="text-xs" style={{ color: '#6B7280' }}>Wind 15mph NW · Pitch: Good</p></div>
+      </div>
+    </div>
+  )
+
+  if (tab === 'insights') return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        {[{ l: 'League Position', v: '8th', c: '#F1C40F' }, { l: 'Squad Value', v: '£34.2m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£3.2m', c: '#C0392B' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'WWDLW', c: '#22C55E' }].map(s => (
+          <div key={s.l} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p>
+            <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{ emoji: '🟢', dept: 'Medical', status: '21 fit — healthy', color: '#22C55E' }, { emoji: '🟡', dept: 'Transfers', status: '2 targets, window 11 days', color: '#F59E0B' }, { emoji: '🔴', dept: 'Contracts', status: '3 expiring, no offers', color: '#EF4444' }, { emoji: '🟢', dept: 'Academy', status: 'EPPP 94% compliant', color: '#22C55E' }].map(d => (
+          <div key={d.dept} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${d.color}33` }}>
+            <div className="flex items-center gap-2 mb-1"><span>{d.emoji}</span><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{d.dept}</p></div>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>{d.status}</p>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Metrics</p>
+        <div className="grid grid-cols-2 gap-2">{[{ l: 'Top Scorer', v: 'Marcus Webb — 12 goals' }, { l: 'Clean Sheet Rate', v: '39% (7/18)' }, { l: 'Wage Budget Used', v: '91% (£187k/wk)' }, { l: 'Academy Ready', v: '2 players' }, { l: 'Fan NPS', v: '72/100' }, { l: 'Position Trend', v: '11→10→9→8→8' }].map(m => (
+          <div key={m.l} className="flex justify-between py-1.5 px-2 rounded" style={{ backgroundColor: '#0A0B10' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{m.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{m.v}</span></div>
+        ))}</div>
+      </div>
+    </div>
+  )
+
+  if (tab === 'dont-miss') return (
+    <div className="space-y-5">
+      {[
+        { level: '🔴 URGENT', items: ['Transfer deadline: 11 days remaining — Diallo bid not yet submitted. Rivals circling.', 'Tyler James contract expires June — no renewal offer. Player could leave on free.', 'Work permit application for Santos — deadline Friday or signing falls through.'] },
+        { level: '🟡 THIS WEEK', items: ['Mensah fitness: scan results back Thursday — decide if available Saturday.', 'Board meeting Thursday: DoF presentation on winter window activity required.', 'Kit manufacturer deadline: squad numbers and names for new kit by Friday.', 'FA registration: loan player window closes 5pm Thursday.'] },
+        { level: '🟢 THIS MONTH', items: ['Pre-season friendlies: 3 venues need confirming by month end.', 'Academy scholarship decisions: 4 players need contracts or release by 30th.', 'Annual accounts submission: finance team needs commercial data by 28th.'] },
+      ].map(group => (
+        <div key={group.level}>
+          <p className="text-xs font-bold mb-2" style={{ color: group.level.includes('URGENT') ? '#EF4444' : group.level.includes('WEEK') ? '#F59E0B' : '#22C55E' }}>{group.level}</p>
+          <div className="space-y-2">{group.items.map((item, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-xs mt-0.5">{group.level.includes('URGENT') ? '🔴' : group.level.includes('WEEK') ? '🟡' : '🟢'}</span>
+              <p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p>
+            </div>
+          ))}</div>
+        </div>
+      ))}
+    </div>
+  )
+
+  if (tab === 'staff') return (
+    <div className="space-y-5">
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>In Today</p></div>
+        {[
+          { name: 'Marcus Reid', role: 'Head Coach', loc: 'Training ground, 9am-6pm', status: 'in' },
+          { name: 'Jamie Clarke', role: 'Assistant Manager', loc: 'Training ground', status: 'in' },
+          { name: 'Dr Sarah Phillips', role: 'Club Doctor', loc: 'Medical centre, 8am-5pm', status: 'in' },
+          { name: 'Pete Morrison', role: 'Head Physio', loc: 'Medical centre, 8am-6pm', status: 'in' },
+          { name: 'Dave Thompson', role: 'Head of Recruitment', loc: 'Office + scout trip tomorrow', status: 'in' },
+          { name: 'Ian Brooks', role: 'Academy Director', loc: 'Academy building', status: 'in' },
+        ].map(s => (
+          <div key={s.name} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: '#22C55E20', color: '#22C55E' }}>{s.name.split(' ').map(w => w[0]).join('')}</div>
+            <div className="flex-1 min-w-0"><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{s.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{s.role} · {s.loc}</p></div>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>In</span>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Out Today</p></div>
+        {[
+          { name: 'Steve Walsh', role: 'Chief Scout', loc: 'Away — Valencia scouting trip', status: 'out' },
+          { name: 'Lisa Chen', role: 'Sports Scientist', loc: 'Conference — back Thursday', status: 'out' },
+        ].map(s => (
+          <div key={s.name} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: '#6B728020', color: '#6B7280' }}>{s.name.split(' ').map(w => w[0]).join('')}</div>
+            <div className="flex-1"><p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>{s.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{s.role} · {s.loc}</p></div>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(107,114,128,0.12)', color: '#6B7280' }}>Out</span>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Staff Events</p>
+        {['Board meeting Thursday 2pm', 'Staff reviews: Clarke, Morrison — end of month', 'New analyst starts Monday'].map(e => (
+          <p key={e} className="text-xs py-1" style={{ color: '#D1D5DB' }}>📅 {e}</p>
+        ))}
+      </div>
+    </div>
+  )
+
+  return null
 }
 
 // ─── Overview View ──────────────────────────────────────────────────────────
@@ -1043,7 +1192,7 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
           </div>
         </div>
       ) : (
-        <TabPlaceholder tab={tab} />
+        <TabContent tab={tab} />
       )}
     </div>
   )
