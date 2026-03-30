@@ -2895,35 +2895,10 @@ function InviteModal({ slug, company, userName, onClose }: { slug: string; compa
   )
 }
 
-// ─── Onboarding Modal ─────────────────────────────────────────────────────────
-
-const PICKER_DEPTS = SIDEBAR_ITEMS.filter(d => d.id !== 'settings')
+// ─── Welcome Screen ──────────────────────────────────────────────────────────
 
 function DeptPickerModal({ onComplete }: { onComplete: (depts: string[]) => void }) {
-  const [selected, setSelected] = useState<string[]>([])
-  const [saving, setSaving]     = useState(false)
-
-  function toggle(id: string) {
-    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
-  }
-
-  async function handleStart() {
-    setSaving(true)
-    localStorage.setItem('demo_onboarded', 'true')
-    localStorage.setItem('demo_focus_depts', JSON.stringify(selected))
-    // Non-blocking save to Supabase
-    const token = localStorage.getItem('demo_session_token')
-    if (token) {
-      fetch('/api/demo/update-onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_token: token, selected_departments: selected }),
-      }).catch(() => {})
-    }
-    onComplete(selected)
-  }
-
-  function handleSkip() {
+  function handleGetStarted() {
     localStorage.setItem('demo_onboarded', 'true')
     localStorage.setItem('demo_focus_depts', JSON.stringify([]))
     const token = localStorage.getItem('demo_session_token')
@@ -2938,73 +2913,46 @@ function DeptPickerModal({ onComplete }: { onComplete: (depts: string[]) => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.88)' }}>
-      <div className="w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col"
-        style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxHeight: '92vh' }}>
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10,10,20,0.98)', zIndex: 9999 }}>
+      <div className="w-full flex flex-col items-center text-center" style={{ maxWidth: 500 }}>
+        {/* Logo */}
+        <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={60} style={{ width: 140, height: 'auto', objectFit: 'contain', marginBottom: 32 }} />
 
-        {/* Header */}
-        <div className="flex items-start justify-between px-8 pt-8 pb-4 shrink-0">
-          <div>
-            <div className="text-xs font-semibold tracking-widest mb-2" style={{ color: '#0D9488' }}>LUMIO DEMO</div>
-            <h2 className="text-2xl font-black" style={{ color: '#F9FAFB' }}>What matters most to you?</h2>
-            <p className="text-sm mt-2 max-w-sm" style={{ color: '#9CA3AF' }}>
-              We&apos;ll highlight the most relevant parts of Lumio. Leave blank to explore everything.
-            </p>
-          </div>
-          <button onClick={handleSkip} className="text-sm ml-6 mt-1 shrink-0 transition-colors"
-            style={{ color: '#4B5563' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#9CA3AF')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#4B5563')}>
-            Skip
-          </button>
+        {/* Heading */}
+        <h1 className="text-3xl font-black mb-2" style={{ color: '#F9FAFB' }}>Welcome to Lumio</h1>
+        <p className="text-base mb-8" style={{ color: '#9CA3AF' }}>Let&apos;s get your workspace set up in 2 minutes</p>
+
+        {/* Video cards */}
+        <div className="grid grid-cols-2 gap-4 w-full mb-8">
+          {[
+            { title: 'Getting Started with Lumio', sub: '2 min intro' },
+            { title: 'Getting the Most Out of Lumio', sub: '2 min tips & tricks' },
+          ].map(v => (
+            <button key={v.title} onClick={() => console.log(`Play: ${v.title}`)}
+              className="rounded-xl p-5 text-left transition-all hover:brightness-110"
+              style={{ backgroundColor: '#1a1a2e', border: '1px solid #2a2a4e' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: '#F59E0B' }}>
+                <Play size={16} style={{ color: '#0f0f1a', marginLeft: 2 }} />
+              </div>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{v.title}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{v.sub}</p>
+            </button>
+          ))}
         </div>
 
-        {/* Department grid */}
-        <div className="flex-1 overflow-y-auto px-8 pb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {PICKER_DEPTS.map(dept => {
-              const active = selected.includes(dept.id)
-              const Icon = dept.icon
-              return (
-                <button key={dept.id} onClick={() => toggle(dept.id)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
-                  style={{
-                    backgroundColor: active ? 'rgba(13,148,136,0.08)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${active ? 'rgba(13,148,136,0.5)' : '#1F2937'}`,
-                  }}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: active ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.04)' }}>
-                    <Icon size={16} style={{ color: active ? '#0D9488' : '#6B7280' }} />
-                  </div>
-                  <span className="text-sm font-medium leading-tight" style={{ color: active ? '#F9FAFB' : '#9CA3AF' }}>
-                    {dept.label}
-                  </span>
-                  {active && (
-                    <div className="ml-auto shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: '#0D9488' }}>
-                      <Check size={10} color="#fff" />
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+        {/* Divider */}
+        <div className="flex items-center gap-3 w-full mb-8">
+          <div className="flex-1 h-px" style={{ backgroundColor: '#2a2a4e' }} />
+          <span className="text-xs shrink-0" style={{ color: '#6B7280' }}>Ready to set up your workspace?</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: '#2a2a4e' }} />
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-8 py-5 shrink-0"
-          style={{ borderTop: '1px solid #1F2937' }}>
-          <p className="text-xs" style={{ color: '#4B5563' }}>
-            {selected.length === 0
-              ? 'All departments shown at full brightness'
-              : `${selected.length} department${selected.length !== 1 ? 's' : ''} selected`}
-          </p>
-          <button onClick={handleStart} disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: saving ? 0.6 : 1 }}>
-            Start exploring <ArrowRight size={15} />
-          </button>
-        </div>
+        {/* CTA */}
+        <button onClick={handleGetStarted}
+          className="w-full py-4 rounded-xl text-base font-bold transition-opacity hover:opacity-90"
+          style={{ backgroundColor: '#F59E0B', color: '#0f0f1a' }}>
+          Get Started →
+        </button>
       </div>
     </div>
   )
