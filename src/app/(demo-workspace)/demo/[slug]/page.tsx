@@ -13,7 +13,7 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload, Bell,
-  Database, RotateCcw,
+  Database, RotateCcw, Mail, MessageSquare, Phone,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -67,14 +67,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
 
 const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React.ElementType }[]> = {
   overview:   [
-    { label: 'New Joiner',        tooltip: 'Trigger the HR onboarding workflow for a new team member',     icon: UserPlus    },
-    { label: 'New Customer',      tooltip: 'Create a customer record and start the welcome sequence',      icon: Users       },
-    { label: 'New Trial',         tooltip: 'Provision a new 14-day demo workspace',                       icon: FlaskConical },
-    { label: 'Chase Invoice',     tooltip: 'Send a payment reminder for all overdue invoices',             icon: Receipt     },
-    { label: 'Support Ticket',    tooltip: 'Open a new support ticket and assign it to the queue',         icon: Headphones  },
-    { label: 'Create Wiki',       tooltip: 'Create a new internal wiki page or knowledge base article',    icon: FileText    },
-    { label: 'Team Events',       tooltip: 'Schedule a team event or all-hands meeting',                   icon: Calendar    },
-    { label: 'Competitor Watch',  tooltip: 'Log a competitor update and notify the strategy team',         icon: BarChart3   },
+    { label: 'Send Email',        tooltip: 'Open the email composer',                                      icon: Mail        },
+    { label: 'Send Slack',        tooltip: 'Send a message on Slack',                                      icon: MessageSquare },
+    { label: 'Phone Call',        tooltip: 'Log a phone call',                                             icon: Phone       },
+    { label: 'Book Meeting',      tooltip: 'Schedule a meeting or demo',                                   icon: Calendar    },
+    { label: 'Team Events',       tooltip: 'Schedule a team event',                                        icon: Users       },
+    { label: 'Claim Expenses',    tooltip: 'Submit an expense claim',                                      icon: Receipt     },
+    { label: 'Book Holiday',      tooltip: 'Request annual leave',                                         icon: Calendar    },
+    { label: 'Report Sickness',   tooltip: 'Report an absence',                                            icon: AlertCircle },
   ],
   insights:   [
     { label: 'Export Report',    tooltip: 'Download the current view as a PDF or CSV',                     icon: FileText  },
@@ -84,14 +84,15 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Dept Insights',    tooltip: 'View AI-generated insights for Insights',                       icon: BarChart3 },
   ],
   hr:         [
-    { label: 'New Joiner',         tooltip: 'Trigger the full onboarding workflow for a new hire',         icon: UserPlus  },
+    { label: 'New Starter',        tooltip: 'Trigger the full onboarding workflow for a new hire',         icon: UserPlus  },
     { label: 'Leave Request',      tooltip: 'Submit or approve a leave request for a team member',         icon: Calendar  },
-    { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',        icon: FileText  },
-    { label: 'Performance Review', tooltip: 'Initiate a performance review cycle for selected employees',  icon: Star      },
-    { label: 'Update Org Chart',   tooltip: 'Sync the org chart with the latest team structure',           icon: GitBranch },
+    { label: 'Offboarding',        tooltip: 'Start the offboarding process for a departing employee',      icon: Users     },
     { label: 'Recruitment',        tooltip: 'Post a new role and trigger the recruitment workflow',         icon: Users     },
+    { label: 'Performance Review', tooltip: 'Initiate a performance review cycle for selected employees',  icon: Star      },
     { label: 'Company Events',     tooltip: 'Plan and notify team of an upcoming company event',           icon: Megaphone },
+    { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',       icon: FileText  },
     { label: 'Dept Insights',      tooltip: 'View AI-generated insights for HR & People',                  icon: BarChart3 },
+    { label: 'Book Contractor',    tooltip: 'Book a contractor or temp worker for a project',              icon: Users     },
   ],
   accounts:   [
     { label: 'Chase Invoice',   tooltip: 'Send payment reminders for all overdue invoices',                icon: Receipt   },
@@ -1196,11 +1197,15 @@ function DemoMeetingsToday() {
 // ─── Morning Roundup panel ────────────────────────────────────────────────────
 
 const ROUNDUP_ITEMS = [
-  { id: 'email',    icon: '📧', label: 'Emails',        count: 12, urgent: true,  color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',   border: 'rgba(96,165,250,0.2)',   preview: ['Invoice overdue from Bramble Hill', 'New trial signup — Just wow Inc', 'Stripe payment confirmed — Oakridge'] },
-  { id: 'slack',    icon: '💬', label: 'Slack',         count: 7,  urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)',  border: 'rgba(192,132,252,0.2)',  preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner'] },
-  { id: 'linkedin', icon: '💼', label: 'LinkedIn',      count: 4,  urgent: false, color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)',   border: 'rgba(45,212,191,0.2)',   preview: ['2 connection requests', 'Post got 47 reactions'] },
-  { id: 'news',     icon: '📰', label: 'Industry News', count: 3,  urgent: false, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)',   border: 'rgba(251,191,36,0.2)',   preview: ['UK SMB automation market up 34% YoY'] },
-  { id: 'notion',   icon: '📋', label: 'Notion',        count: 2,  urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.2)',   preview: ['Testing guide updated — 2 items resolved'] },
+  { id: 'sms',      icon: '📱', label: 'SMS / Text',          count: 3,  urgent: true,  color: '#3B82F6', bg: 'rgba(59,130,246,0.08)',   border: 'rgba(59,130,246,0.2)',   preview: ['Urgent: Payment query from Tom at Bramble Hill', 'Demo confirmation for 11am today', 'GDPR compliance question from prospect'] },
+  { id: 'whatsapp', icon: '💬', label: 'WhatsApp Business',   count: 4,  urgent: false, color: '#25D366', bg: 'rgba(37,211,102,0.08)',  border: 'rgba(37,211,102,0.2)',  preview: ['Sarah Mitchell: follow-up on demo call', 'James Harlow: contract query', 'Apex Consulting: renewal reminder', 'Dan Marsh: invoice question'] },
+  { id: 'email',    icon: '📧', label: 'Emails',              count: 12, urgent: true,  color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',   border: 'rgba(96,165,250,0.2)',   preview: ['Invoice overdue — INV-2026-041', 'Renewal discussion — Apex contract ends Apr 30', 'Stripe payment confirmed — £4,800 from Oakridge'] },
+  { id: 'slack',    icon: '💬', label: 'Slack',               count: 7,  urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)',  border: 'rgba(192,132,252,0.2)',  preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner Sophie Williams', 'James: Wimbledon client wants a demo Friday'] },
+  { id: 'teams',    icon: '🟣', label: 'Microsoft Teams',     count: 3,  urgent: false, color: '#7B83EB', bg: 'rgba(123,131,235,0.08)', border: 'rgba(123,131,235,0.2)', preview: ['Sales Standup — Apex moving to proposal', 'Sophie: onboarding checklist progress', 'James: Oakridge loves the safeguarding module'] },
+  { id: 'hubspot',  icon: '🟠', label: 'HubSpot',             count: 5,  urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.2)',   preview: ['Deal update — Apex moved to Negotiation', 'New contact — Marcus Chen, Meridian Trust', 'Email sequence: 3 opens, 1 click-through'] },
+  { id: 'notion',   icon: '📋', label: 'Notion',              count: 2,  urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.2)',   preview: ['Testing guide updated — 2 items resolved', 'Q2 Roadmap — 3 items need review'] },
+  { id: 'linkedin', icon: '💼', label: 'LinkedIn',            count: 4,  urgent: false, color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)',   border: 'rgba(45,212,191,0.2)',   preview: ['2 connection requests', 'Post got 47 reactions and 12 comments'] },
+  { id: 'news',     icon: '📰', label: 'Industry News',       count: 3,  urgent: false, color: '#FBBF24', bg: 'rgba(251,191,36,0.08)',   border: 'rgba(251,191,36,0.2)',   preview: ['UK SMB automation market up 34% YoY', 'SEND White Paper implementation update', 'Google Workspace — new admin controls'] },
 ]
 
 function DemoMorningRoundup() {
@@ -1872,6 +1877,27 @@ function HRView({ company }: { company: string }) {
   return (
     <div className="space-y-4">
       <DeptAISummary dept="hr" portal="business" />
+
+      {/* AI Workflow Launcher */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="group flex flex-col gap-3 rounded-xl p-5 transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Megaphone className="w-4 h-4" style={{ color: '#2DD4BF' }} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#2DD4BF' }} />
+              <span className="text-xs font-mono" style={{ color: '#2DD4BF' }}>HR-EVENTS-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold" style={{ color: '#F9FAFB' }}>Company Events — Team Events Researcher</div>
+            <div className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>Describe your event, headcount, and budget — get ranked venue recommendations with ratings, prices, and a ready-to-send enquiry email.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto" style={{ color: '#2DD4BF' }}>Launch workflow →</div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Employees" value={String(emp)} icon={Users} color="#0D9488"
           pieData={[{label:'Full-time',value:Math.round(emp*.8),color:'#0D9488'},{label:'Part-time',value:Math.round(emp*.12),color:'#6C3FC5'},{label:'Contractor',value:Math.round(emp*.08),color:'#374151'}]}
