@@ -72,7 +72,7 @@ export default function OperationsPage() {
   />
 
   return (
-    <PageShell>
+    <PageShell title="Operations" subtitle="Workflows, supply chain and process management">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}

@@ -629,7 +629,7 @@ export default function PartnersPage() {
   const isHardcodedActive = activeAdded === null
 
   return (
-    <PageShell>
+    <PageShell title="Partners" subtitle="Partner relationships, referrals and co-selling">
       {/* Tab bar */}
       <div className="flex items-center gap-1.5 flex-wrap rounded-xl p-3"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

@@ -147,7 +147,7 @@ export default function AccountsPage() {
   />
 
   return (
-    <PageShell>
+    <PageShell title="Accounts" subtitle="Invoicing, payroll, expenses and financial reporting">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}

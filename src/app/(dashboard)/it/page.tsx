@@ -69,7 +69,7 @@ export default function ITPage() {
   />
 
   return (
-    <PageShell>
+    <PageShell title="IT & Systems" subtitle="Infrastructure, security and system management">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}

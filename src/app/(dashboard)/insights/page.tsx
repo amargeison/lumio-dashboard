@@ -629,7 +629,7 @@ export default function InsightsPage() {
   const activeFilters = [region, country, product, district, trust].filter((v) => !v.startsWith('All'))
 
   return (
-    <PageShell>
+    <PageShell title="Insights" subtitle="Analytics, reporting and performance data">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>

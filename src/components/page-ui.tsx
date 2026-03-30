@@ -275,8 +275,18 @@ export function PanelItem({ title, sub, badge, extra }: {
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
-export function PageShell({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-6">{children}</div>
+export function PageShell({ children, title, subtitle }: { children: React.ReactNode; title?: string; subtitle?: string }) {
+  return (
+    <div className="flex flex-col gap-6">
+      {title && (
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{title}</h1>
+          {subtitle && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{subtitle}</p>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
 }
 
 export function TwoCol({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {

@@ -94,7 +94,7 @@ export default function MarketingPage() {
                      district !== 'All Districts' || trust !== 'All Trusts'
 
   return (
-    <PageShell>
+    <PageShell title="Marketing" subtitle="Campaigns, content, leads and brand">
       {/* Global filter bar */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl px-5 py-4"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
