@@ -20,6 +20,7 @@ import { useWakeWord } from '@/hooks/useWakeWord'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import DeptAISummary from '@/components/DeptAISummary'
+import CRMViewV2 from '@/components/demo/CRMView'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
@@ -2124,7 +2125,9 @@ function SalesView({ company }: { company: string }) {
   )
 }
 
-function CRMView({ company }: { company: string }) {
+function CRMView({ company }: { company: string }) { return <CRMViewV2 company={company} /> }
+
+function _OldCRMView({ company }: { company: string }) {
   const [crmTab, setCrmTab] = useState<'dashboard'|'pipeline'|'contacts'|'intelligence'|'reports'>('dashboard')
   const customers = fakeNum(171, company, 'crmtotal')
   const mrr = fakeNum(28400, company, 'crmrr')

@@ -1,0 +1,514 @@
+'use client'
+
+import { useState } from 'react'
+import { AlertCircle, Sparkles, Phone, Mail, Calendar as CalendarIcon, Video } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts'
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function seed(s: string) { let h = 0; for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0 }; return Math.abs(h) }
+function fakeNum(base: number, co: string, key: string) { return base + (seed(co + key) % Math.max(1, Math.round(base * 0.3))) }
+const FIRST_NAMES = ['Sophie','James','Charlotte','Marcus','Emily','Oliver','Priya','Tom','Amara','Liam','Fatima','Ben','Nadia','Chris','Yuki','Daniel']
+const LAST_NAMES = ['Williams','Okafor','Davies','Reid','Chen','Brennan','Kapoor','Ashworth','Diallo','Tanaka','Petrov','Gallagher','Morgan','Evans','Clarke','Hassan']
+const COMPANY_NAMES = ['Apex Consulting','Oakridge Schools','Crestview Academy','Pinebrook Primary','Bramble Hill Trust','Sterling & Co','Northern Digital','Greenfield Ltd','Metro Logistics','Atlas Ventures','Cedar Education','Bright Futures MAT','Sapphire HR','Quantum Analytics','Peak Performance','Valley Tech','Summit Advisory','Harbour Media','Crown Finance','Pacific Solutions']
+function fakeName(co: string, i: number) { return `${FIRST_NAMES[seed(co+'fn'+i)%FIRST_NAMES.length]} ${LAST_NAMES[seed(co+'ln'+i)%LAST_NAMES.length]}` }
+function fakeCompany(co: string, i: number) { return COMPANY_NAMES[seed(co+'co'+i)%COMPANY_NAMES.length] }
+
+const CRM_BG = '#0F1019'
+const CRM_BORDER = '#1E2035'
+const CRM_CARD = '#121320'
+const PURPLE = '#8B5CF6'
+const TEAL = '#22D3EE'
+
+function CRMPanel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`rounded-xl ${className}`} style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>{children}</div>
+}
+
+function CRMPanelHeader({ children }: { children: React.ReactNode }) {
+  return <div className="px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{children}</div>
+}
+
+// Custom tooltip for recharts
+function CRMTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: '#1a1a2e', border: '1px solid #2a2a4e', color: '#F1F3FA' }}>
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} style={{ color: p.color || p.fill }}>{p.name}: {typeof p.value === 'number' && p.value > 1000 ? `£${p.value.toLocaleString()}` : p.value}{typeof p.value === 'number' && p.value <= 100 && p.name?.includes('Rate') ? '%' : ''}</p>
+      ))}
+    </div>
+  )
+}
+
+// ─── Main Component ─────────────────────────────────────────────────────────
+
+export default function CRMView({ company }: { company: string }) {
+  const [crmTab, setCrmTab] = useState<'dashboard' | 'pipeline' | 'contacts' | 'intelligence' | 'reports'>('dashboard')
+  const [contactFilter, setContactFilter] = useState('All')
+
+  const pipelineValue = fakeNum(128003, company, 'crmPipe')
+  const openDeals = fakeNum(34, company, 'crmDeals2')
+  const winRate = fakeNum(28, company, 'crmWr2')
+  const avgDealSize = Math.round(pipelineValue / Math.max(1, openDeals))
+  const revenueThisMonth = fakeNum(42800, company, 'crmRev')
+
+  const deals = Array.from({ length: 12 }, (_, i) => ({
+    name: fakeCompany(company, i + 30),
+    contact: fakeName(company, i + 30),
+    value: fakeNum(4000, company, 'cd2' + i) * (i % 5 + 1),
+    stage: ['Discovery', 'Discovery', 'Qualified', 'Proposal', 'Proposal', 'Negotiation', 'Negotiation', 'Verbal Yes', 'Discovery', 'Qualified', 'Proposal', 'Closed Won'][i],
+    score: [82, 55, 74, 91, 87, 68, 72, 94, 48, 66, 83, 100][i],
+    days: [3, 5, 7, 12, 22, 18, 8, 2, 1, 9, 15, 0][i],
+    owner: fakeName(company, i + 60).split(' ')[0],
+    lastActivity: ['Called today', 'Email yesterday', 'Demo last week', 'Proposal sent', 'Follow-up due', 'Meeting booked', 'Email sent', 'Contract review', 'Intro call', 'Qualified', 'Pricing sent', 'Won'][i],
+    probability: [30, 15, 45, 70, 65, 55, 50, 90, 20, 40, 60, 100][i],
+  }))
+
+  const contacts = Array.from({ length: 9 }, (_, i) => ({
+    name: fakeName(company, i + 40),
+    email: `${fakeName(company, i + 40).toLowerCase().replace(' ', '.')}@${fakeCompany(company, i + 40).toLowerCase().replace(/\s/g, '')}.com`,
+    company: fakeCompany(company, i + 40),
+    role: ['CEO', 'Head of Sales', 'CTO', 'Marketing Director', 'COO', 'VP Engineering', 'CFO', 'Head of Ops', 'MD'][i],
+    status: (['live', 'live', 'bounced', 'live', 'unknown', 'live', 'live', 'live', 'bounced'] as const)[i],
+    score: [92, 88, 45, 76, 0, 81, 70, 64, 33][i],
+    heat: (['hot', 'hot', 'cold', 'warm', 'atrisk', 'warm', 'warm', 'cold', 'atrisk'] as const)[i],
+    lastContact: ['Today', 'Yesterday', '18 days ago', '3 days ago', 'Never', '5 days ago', 'Today', '21 days ago', '14 days ago'][i],
+  }))
+
+  const STAGES = [
+    { name: 'Discovery', color: '#6B7280', count: deals.filter(d => d.stage === 'Discovery').length, value: deals.filter(d => d.stage === 'Discovery').reduce((s, d) => s + d.value, 0) },
+    { name: 'Qualified', color: '#3B82F6', count: deals.filter(d => d.stage === 'Qualified').length, value: deals.filter(d => d.stage === 'Qualified').reduce((s, d) => s + d.value, 0) },
+    { name: 'Proposal', color: '#8B5CF6', count: deals.filter(d => d.stage === 'Proposal').length, value: deals.filter(d => d.stage === 'Proposal').reduce((s, d) => s + d.value, 0) },
+    { name: 'Negotiation', color: '#F59E0B', count: deals.filter(d => d.stage === 'Negotiation').length, value: deals.filter(d => d.stage === 'Negotiation').reduce((s, d) => s + d.value, 0) },
+    { name: 'Verbal Yes', color: '#22C55E', count: deals.filter(d => d.stage === 'Verbal Yes').length, value: deals.filter(d => d.stage === 'Verbal Yes').reduce((s, d) => s + d.value, 0) },
+  ]
+
+  const churnRiskAccounts = [{ name: fakeCompany(company, 20), reason: 'No login in 42 days', risk: 91 }, { name: fakeCompany(company, 21), reason: 'Support tickets × 4', risk: 78 }, { name: fakeCompany(company, 22), reason: 'Downgrade request sent', risk: 65 }]
+  const renewals = [{ name: fakeCompany(company, 23), due: 'Apr 12', arr: `£${fakeNum(14800, company, 'ren1').toLocaleString()}`, health: 'Critical' as const }, { name: fakeCompany(company, 24), due: 'Apr 18', arr: `£${fakeNum(33400, company, 'ren2').toLocaleString()}`, health: 'At Risk' as const }, { name: fakeCompany(company, 25), due: 'May 2', arr: `£${fakeNum(76000, company, 'ren3').toLocaleString()}`, health: 'Healthy' as const }]
+
+  // Chart data
+  const revenueData = [{ month: 'Jan', actual: 34200, target: 38000 }, { month: 'Feb', actual: 38900, target: 40000 }, { month: 'Mar', actual: 42800, target: 42000 }, { month: 'Apr', actual: 41200, target: 44000 }, { month: 'May', actual: 46300, target: 46000 }, { month: 'Jun', actual: 44800, target: 48000 }]
+  const winLossData = [{ name: 'Price', value: 28, color: '#EF4444' }, { name: 'Competitor', value: 22, color: '#F59E0B' }, { name: 'Timing', value: 18, color: '#6B7280' }, { name: 'No Budget', value: 16, color: '#3B82F6' }, { name: 'Won', value: 16, color: '#22C55E' }]
+  const velocityData = [{ month: 'Jan', days: 24 }, { month: 'Feb', days: 22 }, { month: 'Mar', days: 19 }, { month: 'Apr', days: 18 }, { month: 'May', days: 16 }, { month: 'Jun', days: 14 }]
+  const leadSourceData = [{ source: 'Referral', pct: 34 }, { source: 'Inbound', pct: 24 }, { source: 'LinkedIn', pct: 18 }, { source: 'Partner', pct: 14 }, { source: 'Cold', pct: 10 }]
+
+  const filteredContacts = contactFilter === 'All' ? contacts : contacts.filter(c => {
+    if (contactFilter === 'Hot') return c.heat === 'hot'
+    if (contactFilter === 'Warm') return c.heat === 'warm'
+    if (contactFilter === 'Cold') return c.heat === 'cold'
+    if (contactFilter === 'At Risk') return c.heat === 'atrisk'
+    if (contactFilter === 'Not Contacted 14d+') return c.lastContact.includes('days') && parseInt(c.lastContact) >= 14
+    return true
+  })
+
+  const heatIcon = (h: string) => h === 'hot' ? '🔴' : h === 'warm' ? '🟡' : h === 'cold' ? '🔵' : '⚠️'
+  const heatLabel = (h: string) => h === 'hot' ? 'Hot' : h === 'warm' ? 'Warm' : h === 'cold' ? 'Cold' : 'At Risk'
+
+  return (
+    <div className="space-y-4">
+      {/* CRM Sub-navigation */}
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>
+        {([['dashboard', 'Dashboard'], ['pipeline', 'Pipeline'], ['contacts', 'Contacts'], ['intelligence', 'ARIA Intelligence'], ['reports', 'Reports']] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setCrmTab(id)} className="px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{ borderBottomColor: crmTab === id ? PURPLE : 'transparent', color: crmTab === id ? '#A78BFA' : '#6B7280', backgroundColor: crmTab === id ? 'rgba(139,92,246,0.05)' : 'transparent' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ════════ DASHBOARD ════════ */}
+      {crmTab === 'dashboard' && (
+        <div className="space-y-4">
+          {/* ARIA Brief */}
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg,#0F1019,#1a1035)', border: `1px solid ${CRM_BORDER}` }}>
+            <div className="flex items-center gap-2 mb-2"><Sparkles size={14} style={{ color: '#A78BFA' }} /><span className="text-xs font-semibold" style={{ color: '#A78BFA' }}>ARIA Daily Brief</span></div>
+            <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>Your pipeline is strong — £{pipelineValue.toLocaleString()} across {openDeals} open deals. {fakeCompany(company, 37)} is your highest-scoring opportunity at 94%. Two deals stalled 18+ days in Negotiation — schedule follow-ups. Win rate trending up at {winRate}%.</p>
+          </div>
+
+          {/* 6 KPI stat cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            {[
+              { l: 'Pipeline Value', v: `£${pipelineValue.toLocaleString()}`, c: PURPLE },
+              { l: 'Open Deals', v: String(openDeals), c: '#3B82F6' },
+              { l: 'Win Rate 30d', v: `${winRate}%`, c: '#22C55E' },
+              { l: 'Avg Deal Size', v: `£${avgDealSize.toLocaleString()}`, c: '#F59E0B' },
+              { l: 'Avg Sales Cycle', v: '18d', c: '#06B6D4' },
+              { l: 'Revenue This Month', v: `£${revenueThisMonth.toLocaleString()}`, c: '#10B981' },
+            ].map(k => (
+              <CRMPanel key={k.l} className="p-4">
+                <p className="text-[10px] mb-1" style={{ color: '#6B7299' }}>{k.l}</p>
+                <p className="text-lg font-black" style={{ background: `linear-gradient(135deg,${k.c},${TEAL})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{k.v}</p>
+              </CRMPanel>
+            ))}
+          </div>
+
+          {/* Charts Row 1: Revenue vs Target | Pipeline by Stage | Win/Loss */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Revenue vs Target</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={revenueData} barGap={2}>
+                  <XAxis dataKey="month" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `£${v / 1000}k`} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Bar dataKey="actual" name="Actual" fill={PURPLE} radius={[3, 3, 0, 0]} barSize={14} />
+                  <Bar dataKey="target" name="Target" fill="#1E2035" radius={[3, 3, 0, 0]} barSize={14} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Pipeline by Stage</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={STAGES} layout="vertical" barSize={18}>
+                  <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `£${v / 1000}k`} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={75} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Bar dataKey="value" name="Value" radius={[0, 4, 4, 0]}>
+                    {STAGES.map((s, i) => <Cell key={i} fill={s.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Win/Loss Reasons</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={winLossData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                    {winLossData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip content={<CRMTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-2 justify-center mt-1">
+                {winLossData.map(d => (
+                  <span key={d.name} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />{d.name} {d.value}%
+                  </span>
+                ))}
+              </div>
+            </CRMPanel>
+          </div>
+
+          {/* Charts Row 2: Velocity + Lead Source */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Deal Velocity Trend</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={velocityData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
+                  <XAxis dataKey="month" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Line type="monotone" dataKey="days" name="Avg Days" stroke={PURPLE} strokeWidth={2} dot={{ fill: PURPLE, r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lead Source Breakdown</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={leadSourceData} layout="vertical" barSize={16}>
+                  <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Bar dataKey="pct" name="%" fill="#06B6D4" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+          </div>
+
+          {/* Bottom Row: Activity Today + Top 5 Deals */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-4" style={{ color: '#F1F3FA' }}>Activity Today</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: <Phone size={14} />, label: 'Calls Logged', value: '8', trend: '+3 vs yesterday', color: '#3B82F6' },
+                  { icon: <Mail size={14} />, label: 'Emails Sent', value: '23', trend: '+8 vs yesterday', color: PURPLE },
+                  { icon: <CalendarIcon size={14} />, label: 'Meetings Booked', value: '4', trend: '+1 vs yesterday', color: '#F59E0B' },
+                  { icon: <Video size={14} />, label: 'Demos Completed', value: '2', trend: 'On target', color: '#22C55E' },
+                ].map(a => (
+                  <div key={a.label} className="rounded-lg p-3" style={{ background: CRM_CARD }}>
+                    <div className="flex items-center gap-2 mb-1" style={{ color: a.color }}>{a.icon}<span className="text-xs">{a.label}</span></div>
+                    <p className="text-lg font-black" style={{ color: '#F1F3FA' }}>{a.value}</p>
+                    <p className="text-[10px]" style={{ color: '#6B7299' }}>{a.trend}</p>
+                  </div>
+                ))}
+              </div>
+            </CRMPanel>
+
+            <CRMPanel>
+              <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Top 5 Deals</p></CRMPanelHeader>
+              <table className="w-full text-xs">
+                <thead><tr style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{['Company', 'Value', 'Stage', 'Prob', 'Owner', 'Days'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold" style={{ color: '#6B7299' }}>{h}</th>)}</tr></thead>
+                <tbody>{deals.filter(d => d.stage !== 'Closed Won').sort((a, b) => b.score - a.score).slice(0, 5).map(d => (
+                  <tr key={d.name} style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>
+                    <td className="px-4 py-2.5 font-medium" style={{ color: '#F1F3FA' }}>{d.name}</td>
+                    <td className="px-4 py-2.5" style={{ color: '#A78BFA' }}>£{d.value.toLocaleString()}</td>
+                    <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-[10px]" style={{ backgroundColor: `${STAGES.find(s => s.name === d.stage)?.color || '#6B7280'}1a`, color: STAGES.find(s => s.name === d.stage)?.color }}>{d.stage}</span></td>
+                    <td className="px-4 py-2.5" style={{ color: d.probability >= 70 ? '#22C55E' : d.probability >= 40 ? '#F59E0B' : '#EF4444' }}>{d.probability}%</td>
+                    <td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{d.owner}</td>
+                    <td className="px-4 py-2.5" style={{ color: d.days > 14 ? '#EF4444' : '#6B7299' }}>{d.days}d</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </CRMPanel>
+          </div>
+
+          {/* Churn + Renewals */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CRMPanel>
+              <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Churn Risk Alerts</p></CRMPanelHeader>
+              {churnRiskAccounts.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < churnRiskAccounts.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} /><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>{r.reason}</p></div><span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}%</span></div>))}
+            </CRMPanel>
+            <CRMPanel>
+              <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Upcoming Renewals</p></CRMPanelHeader>
+              {renewals.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < renewals.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>Due {r.due} · {r.arr}</p></div><span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span></div>))}
+            </CRMPanel>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ PIPELINE ════════ */}
+      {crmTab === 'pipeline' && (
+        <div className="space-y-4">
+          {/* Stage conversion funnel */}
+          <CRMPanel className="px-5 py-3">
+            <div className="flex items-center gap-1">
+              {STAGES.map((s, i) => (
+                <div key={s.name} className="flex items-center gap-1 flex-1">
+                  <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: s.color, opacity: 1 - i * 0.15 }} />
+                  {i < STAGES.length - 1 && <span className="text-[9px] shrink-0 px-1" style={{ color: '#6B7299' }}>{Math.round(100 - i * 18)}%</span>}
+                </div>
+              ))}
+            </div>
+          </CRMPanel>
+          <p className="text-sm" style={{ color: '#6B7299' }}>{deals.filter(d => d.stage !== 'Closed Won').length} active deals · £{deals.filter(d => d.stage !== 'Closed Won').reduce((s, d) => s + d.value, 0).toLocaleString()} in pipeline</p>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {STAGES.map(stage => (
+              <div key={stage.name} className="rounded-xl shrink-0" style={{ width: 260, background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
+                    <span className="text-xs font-semibold" style={{ color: '#F1F3FA' }}>{stage.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${stage.color}1a`, color: stage.color }}>{stage.count}</span>
+                  </div>
+                  <span className="text-xs font-bold" style={{ color: '#6B7299' }}>£{(stage.value / 1000).toFixed(0)}k</span>
+                </div>
+                <div className="p-3 space-y-2">
+                  {deals.filter(d => d.stage === stage.name).map(d => {
+                    const borderColor = d.days < 7 ? '#22C55E' : d.days < 14 ? '#F59E0B' : '#EF4444'
+                    return (
+                      <div key={d.name} className="rounded-lg p-3" style={{ background: CRM_CARD, borderLeft: `3px solid ${borderColor}` }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold truncate" style={{ color: '#F1F3FA' }}>{d.name}</p>
+                          <span className="text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shrink-0" style={{ backgroundColor: `${PURPLE}20`, color: '#A78BFA' }}>{d.owner[0]}</span>
+                        </div>
+                        <p className="text-xs" style={{ color: '#A78BFA' }}>£{d.value.toLocaleString()}</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-[10px]" style={{ color: '#6B7299' }}>{d.days}d · {d.lastActivity}</span>
+                          <span className="text-[10px] font-bold" style={{ color: d.score >= 80 ? '#10B981' : d.score >= 60 ? PURPLE : '#EF4444' }}>ARIA {d.score}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ════════ CONTACTS ════════ */}
+      {crmTab === 'contacts' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm" style={{ color: '#6B7299' }}>{contacts.length} contacts · {contacts.filter(c => c.status === 'live').length} verified</p>
+          </div>
+          {/* Filter chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {['All', 'Hot', 'Warm', 'Cold', 'At Risk', 'Not Contacted 14d+'].map(f => (
+              <button key={f} onClick={() => setContactFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{ backgroundColor: contactFilter === f ? `${PURPLE}1f` : CRM_BG, color: contactFilter === f ? '#A78BFA' : '#6B7299', border: contactFilter === f ? `1px solid ${PURPLE}33` : `1px solid ${CRM_BORDER}` }}>
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredContacts.map(c => {
+              const sc = c.status === 'live' ? '#10B981' : c.status === 'bounced' ? '#EF4444' : '#6B7299'
+              return (
+                <CRMPanel key={c.name} className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#1E2035', color: '#A78BFA' }}>{c.name.split(' ').map(w => w[0]).join('')}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5"><p className="text-sm font-semibold truncate" style={{ color: '#F1F3FA' }}>{c.name}</p><span title={heatLabel(c.heat)}>{heatIcon(c.heat)}</span></div>
+                      <p className="text-xs truncate" style={{ color: '#6B7299' }}>{c.role}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs truncate mb-1" style={{ color: '#6B7299' }}>{c.company}</p>
+                  <p className="text-xs truncate mb-1" style={{ color: '#6B7299' }}>{c.email}</p>
+                  <p className="text-[10px] mb-2" style={{ color: '#4B5563' }}>Last contact: {c.lastContact}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sc }} /><span className="text-[10px]" style={{ color: sc }}>{c.status}</span></div>
+                    {c.score > 0 && <span className="text-[10px] font-bold" style={{ color: '#A78BFA' }}>ARIA {c.score}</span>}
+                  </div>
+                </CRMPanel>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ════════ INTELLIGENCE ════════ */}
+      {crmTab === 'intelligence' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4" style={{ minHeight: 450 }}>
+            {/* Insights panel */}
+            <CRMPanel className="p-5">
+              <div className="flex items-center gap-2 mb-4"><Sparkles size={14} style={{ color: '#A78BFA' }} /><span className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>ARIA Insights</span></div>
+              <div className="space-y-3">
+                {[
+                  { icon: '🎯', title: 'Pipeline at risk', desc: `£${Math.round(pipelineValue * 0.15).toLocaleString()} at risk — 2 deals stalled in Negotiation`, color: '#EF4444' },
+                  { icon: '📈', title: 'Win rate improving', desc: `${winRate}% this quarter, up from ${winRate - 4}% last quarter`, color: '#22C55E' },
+                  { icon: '⚡', title: 'Quick win available', desc: `${fakeCompany(company, 37)} (ARIA 94) — ready for close call`, color: PURPLE },
+                  { icon: '⏰', title: 'Follow-up needed', desc: `${fakeCompany(company, 33)} — 18 days with no activity`, color: '#F59E0B' },
+                ].map(insight => (
+                  <div key={insight.title} className="rounded-lg p-3" style={{ background: CRM_CARD, borderLeft: `3px solid ${insight.color}` }}>
+                    <p className="text-xs font-semibold" style={{ color: '#F1F3FA' }}>{insight.icon} {insight.title}</p>
+                    <p className="text-[10px] mt-1" style={{ color: '#6B7299' }}>{insight.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CRM_BORDER}` }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: '#6B7299' }}>Pipeline Stats</p>
+                {[{ l: 'Win Rate', v: `${winRate}%` }, { l: 'At Risk Value', v: `£${Math.round(pipelineValue * 0.15).toLocaleString()}` }, { l: 'Forecast', v: `£${Math.round(pipelineValue * 0.35).toLocaleString()}` }].map(s => (
+                  <div key={s.l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7299' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F1F3FA' }}>{s.v}</span></div>
+                ))}
+              </div>
+            </CRMPanel>
+            {/* ARIA Chat */}
+            <CRMPanel className="flex flex-col">
+              <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><Sparkles size={14} style={{ color: '#A78BFA' }} /><span className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>ARIA Assistant</span><span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>AI</span></div>
+              <div className="flex-1 p-5 space-y-4">
+                <div className="flex gap-3"><div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg,${PURPLE},${TEAL})` }}><Sparkles size={12} color="#fff" /></div><div className="rounded-xl p-3 max-w-[80%]" style={{ background: CRM_CARD }}><p className="text-xs" style={{ color: '#D1D5DB' }}>Hi! I&apos;m ARIA, your AI pipeline assistant. I can analyse deals, suggest next actions, forecast revenue, and identify risks.</p></div></div>
+                <div className="flex gap-3 justify-end"><div className="rounded-xl p-3 max-w-[80%]" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)' }}><p className="text-xs" style={{ color: '#E0D4FC' }}>Which deals are most likely to close this month?</p></div></div>
+                <div className="flex gap-3"><div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg,${PURPLE},${TEAL})` }}><Sparkles size={12} color="#fff" /></div><div className="rounded-xl p-3 max-w-[80%]" style={{ background: CRM_CARD }}><p className="text-xs" style={{ color: '#D1D5DB' }}>Top 3: <strong>{fakeCompany(company, 37)}</strong> (94%), <strong>{fakeCompany(company, 32)}</strong> (91%), <strong>{fakeCompany(company, 34)}</strong> (87%). I recommend scheduling close calls this week.</p></div></div>
+              </div>
+              {/* Suggested prompts */}
+              <div className="px-5 py-2 flex gap-2 flex-wrap">
+                {['Which deals are at risk?', 'Forecast this quarter', 'Who needs follow-up?', 'Show pipeline health', 'Best lead sources'].map(p => (
+                  <span key={p} className="text-[10px] px-2.5 py-1 rounded-full cursor-pointer" style={{ background: `${PURPLE}12`, color: '#A78BFA', border: `1px solid ${PURPLE}25` }}>{p}</span>
+                ))}
+              </div>
+              <div className="px-5 py-3 flex gap-2" style={{ borderTop: `1px solid ${CRM_BORDER}` }}><input className="flex-1 rounded-lg px-3 py-2 text-sm outline-none" style={{ background: CRM_CARD, border: `1px solid ${CRM_BORDER}`, color: '#F1F3FA' }} placeholder="Ask ARIA about your pipeline..." disabled /><button className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: PURPLE, color: '#fff' }}>Send</button></div>
+            </CRMPanel>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ REPORTS ════════ */}
+      {crmTab === 'reports' && (
+        <div className="space-y-4">
+          {/* Summary KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[{ l: 'Win Rate', v: `${winRate}%`, d: `vs ${winRate - 4}% last quarter`, c: '#22C55E' }, { l: 'Revenue Forecast', v: `£${Math.round(pipelineValue * 0.35).toLocaleString()}`, d: 'weighted pipeline', c: PURPLE }, { l: 'Avg Deal Velocity', v: '14 days', d: 'avg time in pipeline', c: '#3B82F6' }, { l: 'Value Saved by ARIA', v: '£381k', d: 'ghost deals flagged', c: '#F59E0B' }].map(s => (
+              <CRMPanel key={s.l} className="p-4">
+                <p className="text-xs mb-1" style={{ color: '#6B7299' }}>{s.l}</p>
+                <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: '#6B7299' }}>{s.d}</p>
+              </CRMPanel>
+            ))}
+          </div>
+
+          {/* Rep Performance + Lead Source ROI */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CRMPanel>
+              <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Rep Performance</p></CRMPanelHeader>
+              <table className="w-full text-xs">
+                <thead><tr style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{['Rep', 'Closed £', 'Win Rate', 'Deals Open', 'Avg Size'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold" style={{ color: '#6B7299' }}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {[
+                    { name: 'Sophie Williams', closed: '£28,400', wr: '34%', open: 8, avg: '£4,200' },
+                    { name: 'James Okafor', closed: '£22,100', wr: '28%', open: 6, avg: '£3,800' },
+                    { name: 'Charlotte Davies', closed: '£31,600', wr: '41%', open: 5, avg: '£5,100' },
+                    { name: 'Marcus Reid', closed: '£18,900', wr: '22%', open: 9, avg: '£2,900' },
+                  ].map(r => (
+                    <tr key={r.name} style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>
+                      <td className="px-4 py-2.5 font-medium" style={{ color: '#F1F3FA' }}>{r.name}</td>
+                      <td className="px-4 py-2.5" style={{ color: '#A78BFA' }}>{r.closed}</td>
+                      <td className="px-4 py-2.5" style={{ color: '#22C55E' }}>{r.wr}</td>
+                      <td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.open}</td>
+                      <td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.avg}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CRMPanel>
+
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lead Source ROI</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={[{ source: 'Referral', rate: 42 }, { source: 'Inbound', rate: 28 }, { source: 'LinkedIn', rate: 18 }, { source: 'Partner', rate: 34 }, { source: 'Cold', rate: 8 }]} layout="vertical" barSize={16}>
+                  <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Bar dataKey="rate" name="Conv Rate" fill="#22C55E" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+          </div>
+
+          {/* Sales Forecast + Lost Deal Analysis + Competitor Scorecard */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Sales Forecast (90 Days)</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={[{ w: 'W1', committed: 42000, bestCase: 52000, pipeline: 78000 }, { w: 'W4', committed: 48000, bestCase: 62000, pipeline: 85000 }, { w: 'W8', committed: 55000, bestCase: 74000, pipeline: 92000 }, { w: 'W12', committed: 62000, bestCase: 88000, pipeline: 98000 }]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
+                  <XAxis dataKey="w" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `£${v / 1000}k`} />
+                  <Tooltip content={<CRMTooltip />} />
+                  <Line type="monotone" dataKey="committed" name="Committed" stroke="#22C55E" strokeWidth={2} dot={{ fill: '#22C55E', r: 3 }} />
+                  <Line type="monotone" dataKey="bestCase" name="Best Case" stroke={PURPLE} strokeWidth={2} strokeDasharray="5 5" dot={{ fill: PURPLE, r: 3 }} />
+                  <Line type="monotone" dataKey="pipeline" name="Pipeline" stroke="#6B7299" strokeWidth={1} strokeDasharray="3 3" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CRMPanel>
+
+            <CRMPanel className="p-5">
+              <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lost Deal Analysis</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={[{ name: 'Price', value: 8 }, { name: 'Competitor', value: 6 }, { name: 'Timing', value: 5 }, { name: 'No Budget', value: 4 }, { name: 'No Response', value: 3 }]} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                    {['#EF4444', '#F59E0B', '#6B7280', '#3B82F6', '#8B5CF6'].map((c, i) => <Cell key={i} fill={c} />)}
+                  </Pie>
+                  <Tooltip content={<CRMTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[{ n: 'Price', c: '#EF4444', v: 8 }, { n: 'Competitor', c: '#F59E0B', v: 6 }, { n: 'Timing', c: '#6B7280', v: 5 }, { n: 'No Budget', c: '#3B82F6', v: 4 }, { n: 'No Response', c: '#8B5CF6', v: 3 }].map(d => (
+                  <span key={d.n} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.c }} />{d.n} ({d.v})</span>
+                ))}
+              </div>
+            </CRMPanel>
+          </div>
+
+          {/* Competitor Scorecard */}
+          <CRMPanel>
+            <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Competitor Scorecard</p></CRMPanelHeader>
+            <table className="w-full text-xs">
+              <thead><tr style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{['Feature', 'Lumio CRM', 'HubSpot', 'Pipedrive', 'Salesforce'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold" style={{ color: '#6B7299' }}>{h}</th>)}</tr></thead>
+              <tbody>{[{ f: 'AI Deal Scoring', l: '✅ ARIA', h: '❌', p: '❌', s: '⚠️ Einstein $$' }, { f: 'Auto-enrichment', l: '✅ Built-in', h: '⚠️ Add-on', p: '❌', s: '⚠️ Add-on' }, { f: 'Pipeline AI Chat', l: '✅ ARIA Chat', h: '❌', p: '❌', s: '❌' }, { f: 'Ghost Deal Detection', l: '✅', h: '❌', p: '❌', s: '❌' }, { f: 'Price (per seat)', l: '✅ Included', h: '⚠️ £45+', p: '⚠️ £15+', s: '⚠️ £60+' }].map(r => (
+                <tr key={r.f} style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><td className="px-4 py-2.5 font-medium" style={{ color: '#F1F3FA' }}>{r.f}</td><td className="px-4 py-2.5" style={{ color: '#22C55E' }}>{r.l}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.h}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.p}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.s}</td></tr>
+              ))}</tbody>
+            </table>
+          </CRMPanel>
+        </div>
+      )}
+    </div>
+  )
+}
