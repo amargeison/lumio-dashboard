@@ -132,37 +132,31 @@ function DfEView() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <SectionCard title="Quick Links">
+        <div className="flex flex-col gap-1 p-3">
+          <Link href="/dfe"
+            className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <span>View Full NELI Dashboard</span>
+            <ExternalLink size={14} />
+          </Link>
+          <p className="px-1 pt-3 text-xs" style={{ color: '#9CA3AF' }}>
+            The full DfE NELI dashboard shows month-by-month data across all 7 metric groups, AI insights, and engagement snapshots for AY 2025/26.
+          </p>
+        </div>
+      </SectionCard>
       <DfEAIPanel />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SectionCard title="Programme Highlights">
-            <div className="flex flex-col">
-              {highlights.map((h, i) => (
-                <div key={h.label} className="flex items-center justify-between px-5 py-3"
-                  style={{ borderBottom: i < highlights.length - 1 ? '1px solid #1F2937' : undefined }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>{h.label}</span>
-                  <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{h.value}</span>
-                </div>
-              ))}
+      <SectionCard title="Programme Highlights">
+        <div className="flex flex-col">
+          {highlights.map((h, i) => (
+            <div key={h.label} className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: i < highlights.length - 1 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-sm" style={{ color: '#9CA3AF' }}>{h.label}</span>
+              <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{h.value}</span>
             </div>
-          </SectionCard>
+          ))}
         </div>
-        <div>
-          <SectionCard title="Quick Links">
-            <div className="flex flex-col gap-1 p-3">
-              <Link href="/dfe"
-                className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors"
-                style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-                <span>View Full NELI Dashboard</span>
-                <ExternalLink size={14} />
-              </Link>
-              <p className="px-1 pt-3 text-xs" style={{ color: '#9CA3AF' }}>
-                The full DfE NELI dashboard shows month-by-month data across all 7 metric groups, AI insights, and engagement snapshots for AY 2025/26.
-              </p>
-            </div>
-          </SectionCard>
-        </div>
-      </div>
+      </SectionCard>
     </div>
   )
 }
@@ -633,7 +627,6 @@ export default function PartnersPage() {
 
   return (
     <PageShell title="Partners" subtitle="Partner relationships, referrals and co-selling">
-      <DeptAISummary dept="partners" portal="business" />
       <QuickActions items={[{ label: 'Dept Insights', icon: Star, onClick: () => setShowAIInsights(true) }]} />
       {/* Tab bar */}
       <div className="flex items-center gap-1.5 flex-wrap rounded-xl p-3"
@@ -702,6 +695,7 @@ export default function PartnersPage() {
         )}
       </div>
 
+      <DeptAISummary dept="partners" portal="business" />
       {/* Partner views */}
       {isHardcodedActive && hardcoded === 'DfE'                  && <DfEView />}
       {isHardcodedActive && hardcoded === 'Really Great Reading'  && <RGRView />}
