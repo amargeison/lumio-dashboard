@@ -45,10 +45,10 @@ const leads = [
   { name: 'Yasmin Patel',  company: 'Helix Education',   score: '54',  badge: 'Pending'},
 ]
 
-const COUNTRIES  = ['All Countries',  'England', 'Wales', 'Scotland', 'N. Ireland']
+const COUNTRIES  = ['All Countries',  'Worldwide', 'United Kingdom', 'United States', 'Europe', 'Asia Pacific', 'Middle East', 'Rest of World']
 const PRODUCTS   = ['All Products',   'Lumio Core', 'Lumio Pro', 'Lumio Lite']
-const DISTRICTS  = ['All Districts',  'Oxfordshire', 'Manchester', 'West Yorkshire', 'Cardiff', 'Edinburgh', 'Suffolk', 'Norfolk', 'West Midlands', 'North Yorkshire', 'Bristol', 'Merseyside']
-const TRUSTS     = ['All Trusts',     'Greenfield MAT', 'Bramble Hill Trust', 'Independent', 'Oakridge MAT', 'Whitestone MAT', 'Riverdale MAT', 'Starling Trust', 'Torchbearer MAT']
+const REGIONS    = ['All Regions',    'Oxfordshire', 'Manchester', 'West Yorkshire', 'Cardiff', 'Edinburgh', 'Suffolk', 'Norfolk', 'West Midlands', 'North Yorkshire', 'Bristol', 'Merseyside']
+const ORGS       = ['All Organisations', 'Greenfield MAT', 'Bramble Hill Trust', 'Independent', 'Oakridge MAT', 'Whitestone MAT', 'Riverdale MAT', 'Starling Trust', 'Torchbearer MAT']
 
 function FilterSelect({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
   return (
@@ -66,8 +66,8 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 export default function MarketingPage() {
   const [country,  setCountry]  = useState('All Countries')
   const [product,  setProduct]  = useState('All Products')
-  const [district, setDistrict] = useState('All Districts')
-  const [trust,    setTrust]    = useState('All Trusts')
+  const [region,   setRegion]   = useState('All Regions')
+  const [org,      setOrg]      = useState('All Organisations')
   const [showCampaign, setShowCampaign] = useState(false)
   const [showCaseStudy, setShowCaseStudy] = useState(false)
   const [showCreatePost, setShowCreatePost] = useState(false)
@@ -98,37 +98,30 @@ export default function MarketingPage() {
   />
 
   const isFiltered = country !== 'All Countries' || product !== 'All Products' ||
-                     district !== 'All Districts' || trust !== 'All Trusts'
+                     region !== 'All Regions' || org !== 'All Organisations'
 
   return (
-    <PageShell title="Marketing" subtitle="Campaigns, content, leads and brand">
-      {/* Global filter bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl px-5 py-4"
-        style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <span className="text-xs font-semibold uppercase tracking-widest mr-1" style={{ color: '#9CA3AF' }}>Filter by</span>
-        <FilterSelect options={COUNTRIES}  value={country}  onChange={setCountry}  />
-        <FilterSelect options={PRODUCTS}   value={product}  onChange={setProduct}  />
-        <FilterSelect options={DISTRICTS}  value={district} onChange={setDistrict} />
-        <FilterSelect options={TRUSTS}     value={trust}    onChange={setTrust}    />
-        {isFiltered && (
-          <>
-            <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
-              style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#0D9488' }}>
-              Filtered view
-            </span>
+    <PageShell title="Marketing" subtitle="Campaigns, content, leads and brand"
+      action={
+        <div className="flex items-center gap-2 flex-wrap">
+          <FilterSelect options={COUNTRIES}  value={country}  onChange={setCountry}  />
+          <FilterSelect options={PRODUCTS}   value={product}  onChange={setProduct}  />
+          <FilterSelect options={REGIONS}    value={region}   onChange={setRegion}   />
+          <FilterSelect options={ORGS}       value={org}      onChange={setOrg}      />
+          {isFiltered && (
             <button
-              onClick={() => { setCountry('All Countries'); setProduct('All Products'); setDistrict('All Districts'); setTrust('All Trusts') }}
-              className="text-xs" style={{ color: '#9CA3AF' }}
+              onClick={() => { setCountry('All Countries'); setProduct('All Products'); setRegion('All Regions'); setOrg('All Organisations') }}
+              className="text-xs px-2 py-1 rounded-lg" style={{ color: '#9CA3AF', border: '1px solid #374151' }}
             >
               Clear
             </button>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      }>
 
       {isFiltered && (
         <p className="text-xs px-1" style={{ color: '#9CA3AF' }}>
-          Showing data filtered by: {[country, product, district, trust].filter((v) => !v.startsWith('All')).join(' · ')}
+          Showing data filtered by: {[country, product, region, org].filter((v) => !v.startsWith('All')).join(' · ')}
         </p>
       )}
 

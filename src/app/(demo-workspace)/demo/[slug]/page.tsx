@@ -2308,46 +2308,86 @@ function _OldCRMView({ company }: { company: string }) {
 }
 
 function MarketingView({ company }: { company: string }) {
-  return <div className="space-y-4"><DeptAISummary dept="marketing" portal="business" /><PlaceholderView
-    title="Active Campaigns"
-    stats={[
-      { label:'Email Open Rate', value:`${fakeNum(42,company,'or')}%`, color:'#0D9488', icon:Send,
-        pieData:[{label:'Opened',value:42,color:'#0D9488'},{label:'Unopened',value:58,color:'#374151'}],
-        barData:[{label:'Jan',value:38,color:'#0D9488'},{label:'Feb',value:40,color:'#0D9488'},{label:'Mar',value:42,color:'#0F766E'}] },
-      { label:'Leads from Marketing', value:String(fakeNum(124,company,'ml')), color:'#6C3FC5', icon:Target,
-        pieData:[{label:'Email',value:45,color:'#6C3FC5'},{label:'LinkedIn',value:30,color:'#A78BFA'},{label:'SEO',value:15,color:'#7C3AED'},{label:'Paid',value:10,color:'#374151'}],
-        barData:[{label:'Jan',value:95,color:'#6C3FC5'},{label:'Feb',value:108,color:'#6C3FC5'},{label:'Mar',value:124,color:'#7C3AED'}] },
-      { label:'Conversion Rate', value:`${fakeNum(8,company,'cr')}%`, color:'#F59E0B', icon:TrendingUp,
-        pieData:[{label:'Converted',value:8,color:'#22C55E'},{label:'Dropped',value:92,color:'#374151'}],
-        barData:[{label:'Q3',value:6,color:'#F59E0B'},{label:'Q4',value:7,color:'#F59E0B'},{label:'Q1',value:8,color:'#D97706'}] },
-    ]}
-    cols={['Campaign','Sent','Open Rate','Clicks','Status']}
-    rows={[
-      ['Q1 Product Launch Email','2,840','44%','312','Active'],
-      ['LinkedIn Lead Gen — Edu','—','—','891 impressions','Active'],
-      ['Trial Nurture Sequence','456','38%','89','Active'],
-      ['Webinar Follow-up','1,240','52%','208','Completed'],
-      ['Competitor Win-back','312','29%','44','Paused'],
-    ]} /></div>
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <StatCard label="Email Open Rate" value={`${fakeNum(42,company,'or')}%`} icon={Send} color="#0D9488"
+          pieData={[{label:'Opened',value:42,color:'#0D9488'},{label:'Unopened',value:58,color:'#374151'}]}
+          barData={[{label:'Jan',value:38,color:'#0D9488'},{label:'Feb',value:40,color:'#0D9488'},{label:'Mar',value:42,color:'#0F766E'}]} />
+        <StatCard label="Leads from Marketing" value={String(fakeNum(124,company,'ml'))} icon={Target} color="#6C3FC5"
+          pieData={[{label:'Email',value:45,color:'#6C3FC5'},{label:'LinkedIn',value:30,color:'#A78BFA'},{label:'SEO',value:15,color:'#7C3AED'},{label:'Paid',value:10,color:'#374151'}]}
+          barData={[{label:'Jan',value:95,color:'#6C3FC5'},{label:'Feb',value:108,color:'#6C3FC5'},{label:'Mar',value:124,color:'#7C3AED'}]} />
+        <StatCard label="Conversion Rate" value={`${fakeNum(8,company,'cr')}%`} icon={TrendingUp} color="#F59E0B"
+          pieData={[{label:'Converted',value:8,color:'#22C55E'},{label:'Dropped',value:92,color:'#374151'}]}
+          barData={[{label:'Q3',value:6,color:'#F59E0B'},{label:'Q4',value:7,color:'#F59E0B'},{label:'Q1',value:8,color:'#D97706'}]} />
+      </div>
+      <DeptAISummary dept="marketing" portal="business" />
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[{l:'Create Post',i:Send},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3}].map(a=>(
+            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Campaigns</p></div>
+        <table className="w-full text-sm">
+          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Campaign','Sent','Open Rate','Clicks','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+          <tbody>{[
+            ['Q1 Product Launch Email','2,840','44%','312','Active'],
+            ['LinkedIn Lead Gen — Edu','—','—','891 impressions','Active'],
+            ['Trial Nurture Sequence','456','38%','89','Active'],
+            ['Webinar Follow-up','1,240','52%','208','Completed'],
+            ['Competitor Win-back','312','29%','44','Paused'],
+          ].map((r,i)=>(
+            <tr key={i} style={{borderBottom:i<4?'1px solid #111318':undefined}}>
+              {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':c==='Completed'?'rgba(34,197,94,0.1)':'rgba(245,158,11,0.1)',color:c==='Active'?'#0D9488':c==='Completed'?'#22C55E':'#F59E0B'}}>{c}</span>:c}</td>))}
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 function TrialsView({ company }: { company: string }) {
   const active = fakeNum(23,company,'tr'), converting = fakeNum(8,company,'cv')
-  return <div className="space-y-4"><DeptAISummary dept="trials" portal="business" /><PlaceholderView
-    title="Active Trial Workspaces"
-    stats={[
-      { label:'Active Trials', value:String(active), color:'#6C3FC5', icon:FlaskConical,
-        pieData:[{label:'Week 1',value:8,color:'#6C3FC5'},{label:'Week 2',value:9,color:'#A78BFA'},{label:'Expiring',value:6,color:'#EF4444'}],
-        barData:[{label:'Jan',value:18,color:'#6C3FC5'},{label:'Feb',value:20,color:'#6C3FC5'},{label:'Mar',value:active,color:'#7C3AED'}] },
-      { label:'Converting Soon', value:String(converting), color:'#22C55E', icon:TrendingUp,
-        pieData:[{label:'Hot',value:5,color:'#22C55E'},{label:'Warm',value:3,color:'#F59E0B'}],
-        barData:[{label:'Wk1',value:2,color:'#22C55E'},{label:'Wk2',value:4,color:'#22C55E'},{label:'Wk3',value:6,color:'#22C55E'},{label:'Wk4',value:converting,color:'#0D9488'}] },
-      { label:'Trial Conversion Rate', value:`${fakeNum(34,company,'tcr')}%`, color:'#0D9488', icon:Star,
-        pieData:[{label:'Converted',value:34,color:'#0D9488'},{label:'Expired',value:66,color:'#374151'}],
-        barData:[{label:'Q3',value:28,color:'#0D9488'},{label:'Q4',value:31,color:'#0D9488'},{label:'Q1',value:34,color:'#0F766E'}] },
-    ]}
-    cols={['Company','Started','Days Left','Dept Focus','Status']}
-    rows={Array.from({length:6},(_,i)=>[fakeCompany(company,i+30),['14 Mar','10 Mar','8 Mar','5 Mar','2 Mar','28 Feb'][i],['12','8','6','3','1','Expiring today'][i],['HR, Sales','All','Finance, Ops','Sales','HR','All'][i],['Active','Active','Active','Active','Expiring','Expiring'][i]])} /></div>
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <StatCard label="Active Trials" value={String(active)} icon={FlaskConical} color="#6C3FC5"
+          pieData={[{label:'Week 1',value:8,color:'#6C3FC5'},{label:'Week 2',value:9,color:'#A78BFA'},{label:'Expiring',value:6,color:'#EF4444'}]}
+          barData={[{label:'Jan',value:18,color:'#6C3FC5'},{label:'Feb',value:20,color:'#6C3FC5'},{label:'Mar',value:active,color:'#7C3AED'}]} />
+        <StatCard label="Converting Soon" value={String(converting)} icon={TrendingUp} color="#22C55E"
+          pieData={[{label:'Hot',value:5,color:'#22C55E'},{label:'Warm',value:3,color:'#F59E0B'}]}
+          barData={[{label:'Wk1',value:2,color:'#22C55E'},{label:'Wk2',value:4,color:'#22C55E'},{label:'Wk3',value:6,color:'#22C55E'},{label:'Wk4',value:converting,color:'#0D9488'}]} />
+        <StatCard label="Trial Conversion Rate" value={`${fakeNum(34,company,'tcr')}%`} icon={Star} color="#0D9488"
+          pieData={[{label:'Converted',value:34,color:'#0D9488'},{label:'Expired',value:66,color:'#374151'}]}
+          barData={[{label:'Q3',value:28,color:'#0D9488'},{label:'Q4',value:31,color:'#0D9488'},{label:'Q1',value:34,color:'#0F766E'}]} />
+      </div>
+      <DeptAISummary dept="trials" portal="business" />
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[{l:'New Trial',i:FlaskConical},{l:'Send Demo',i:Play},{l:'Extend Trial',i:Clock},{l:'Convert to Paid',i:DollarSign},{l:'Offboard Trial',i:X},{l:'Dept Insights',i:BarChart3}].map(a=>(
+            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Trial Workspaces</p></div>
+        <table className="w-full text-sm">
+          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Started','Days Left','Dept Focus','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+          <tbody>{Array.from({length:6},(_,i)=>[fakeCompany(company,i+30),['14 Mar','10 Mar','8 Mar','5 Mar','2 Mar','28 Feb'][i],['12','8','6','3','1','Expiring today'][i],['HR, Sales','All','Finance, Ops','Sales','HR','All'][i],['Active','Active','Active','Active','Expiring','Expiring'][i]]).map((r,i)=>(
+            <tr key={i} style={{borderBottom:i<5?'1px solid #111318':undefined}}>
+              {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':'rgba(239,68,68,0.1)',color:c==='Active'?'#0D9488':'#EF4444'}}>{c}</span>:c}</td>))}
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 function OpsView({ company }: { company: string }) {
@@ -3722,7 +3762,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
