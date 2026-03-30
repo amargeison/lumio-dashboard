@@ -360,7 +360,7 @@ export default function CRMView({ company }: { company: string }) {
           </div>
           {/* Filter chips */}
           <div className="flex items-center gap-2 flex-wrap">
-            {CONTACT_FILTERS.map(f => (
+            {['All', 'Hot', 'Warm', 'Cold', 'At Risk', 'Not Contacted 14d+'].map(f => (
               <button key={f} onClick={() => setContactFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                 style={{ backgroundColor: contactFilter === f ? `${PURPLE}1f` : CRM_BG, color: contactFilter === f ? '#A78BFA' : '#6B7299', border: contactFilter === f ? `1px solid ${PURPLE}33` : `1px solid ${CRM_BORDER}` }}>
                 {f}
@@ -430,7 +430,7 @@ export default function CRMView({ company }: { company: string }) {
               </div>
               {/* Suggested prompts */}
               <div className="px-5 py-2 flex gap-2 flex-wrap">
-                {PROMPT_CHIPS.map(p => (
+                {['Which deals are at risk?', 'Forecast this quarter', 'Who needs follow-up?', 'Show pipeline health', 'Best lead sources'].map(p => (
                   <span key={p} className="text-[10px] px-2.5 py-1 rounded-full cursor-pointer" style={{ background: `${PURPLE}12`, color: '#A78BFA', border: `1px solid ${PURPLE}25` }}>{p}</span>
                 ))}
               </div>
@@ -461,7 +461,12 @@ export default function CRMView({ company }: { company: string }) {
               <table className="w-full text-xs">
                 <thead><tr style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{['Rep', 'Closed £', 'Win Rate', 'Deals Open', 'Avg Size'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold" style={{ color: '#6B7299' }}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {REP_DATA.map(r => (
+                  {[
+                    { name: 'Sophie Williams', closed: '£28,400', wr: '34%', open: 8, avg: '£4,200' },
+                    { name: 'James Okafor', closed: '£22,100', wr: '28%', open: 6, avg: '£3,800' },
+                    { name: 'Charlotte Davies', closed: '£31,600', wr: '41%', open: 5, avg: '£5,100' },
+                    { name: 'Marcus Reid', closed: '£18,900', wr: '22%', open: 9, avg: '£2,900' },
+                  ].map(r => (
                     <tr key={r.name} style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>
                       <td className="px-4 py-2.5 font-medium" style={{ color: '#F1F3FA' }}>{r.name}</td>
                       <td className="px-4 py-2.5" style={{ color: '#A78BFA' }}>{r.closed}</td>
@@ -477,7 +482,7 @@ export default function CRMView({ company }: { company: string }) {
             <CRMPanel className="p-5">
               <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lead Source ROI</p>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={LEAD_ROI_DATA} layout="vertical" barSize={16}>
+                <BarChart data={[{ source: 'Referral', rate: 42 }, { source: 'Inbound', rate: 28 }, { source: 'LinkedIn', rate: 18 }, { source: 'Partner', rate: 34 }, { source: 'Cold', rate: 8 }]} layout="vertical" barSize={16}>
                   <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
                   <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
                   <Tooltip content={<CRMTooltip />} />
@@ -492,7 +497,7 @@ export default function CRMView({ company }: { company: string }) {
             <CRMPanel className="p-5">
               <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Sales Forecast (90 Days)</p>
               <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={FORECAST_DATA}>
+                <LineChart data={[{ w: 'W1', committed: 42000, bestCase: 52000, pipeline: 78000 }, { w: 'W4', committed: 48000, bestCase: 62000, pipeline: 85000 }, { w: 'W8', committed: 55000, bestCase: 74000, pipeline: 92000 }, { w: 'W12', committed: 62000, bestCase: 88000, pipeline: 98000 }]}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
                   <XAxis dataKey="w" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `£${v / 1000}k`} />
@@ -508,8 +513,8 @@ export default function CRMView({ company }: { company: string }) {
               <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lost Deal Analysis</p>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
-                  <Pie data={LOST_DEAL_DATA} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
-                    {LOST_DEAL_COLORS.map((c, i) => <Cell key={i} fill={c} />)}
+                  <Pie data={[{ name: 'Price', value: 8 }, { name: 'Competitor', value: 6 }, { name: 'Timing', value: 5 }, { name: 'No Budget', value: 4 }, { name: 'No Response', value: 3 }]} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                    {['#EF4444', '#F59E0B', '#6B7280', '#3B82F6', '#8B5CF6'].map((c, i) => <Cell key={i} fill={c} />)}
                   </Pie>
                   <Tooltip content={<CRMTooltip />} />
                 </PieChart>
@@ -527,7 +532,7 @@ export default function CRMView({ company }: { company: string }) {
             <CRMPanelHeader><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Competitor Scorecard</p></CRMPanelHeader>
             <table className="w-full text-xs">
               <thead><tr style={{ borderBottom: `1px solid ${CRM_BORDER}` }}>{['Feature', 'Lumio CRM', 'HubSpot', 'Pipedrive', 'Salesforce'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold" style={{ color: '#6B7299' }}>{h}</th>)}</tr></thead>
-              <tbody>{COMPETITOR_ROWS.map(r => (
+              <tbody>{[{ f: 'AI Deal Scoring', l: '✅ ARIA', h: '❌', p: '❌', s: '⚠️ Einstein $$' }, { f: 'Auto-enrichment', l: '✅ Built-in', h: '⚠️ Add-on', p: '❌', s: '⚠️ Add-on' }, { f: 'Pipeline AI Chat', l: '✅ ARIA Chat', h: '❌', p: '❌', s: '❌' }, { f: 'Ghost Deal Detection', l: '✅', h: '❌', p: '❌', s: '❌' }, { f: 'Price (per seat)', l: '✅ Included', h: '⚠️ £45+', p: '⚠️ £15+', s: '⚠️ £60+' }].map(r => (
                 <tr key={r.f} style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><td className="px-4 py-2.5 font-medium" style={{ color: '#F1F3FA' }}>{r.f}</td><td className="px-4 py-2.5" style={{ color: '#22C55E' }}>{r.l}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.h}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.p}</td><td className="px-4 py-2.5" style={{ color: '#6B7299' }}>{r.s}</td></tr>
               ))}</tbody>
             </table>
