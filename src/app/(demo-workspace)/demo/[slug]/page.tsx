@@ -1935,7 +1935,7 @@ function HRView({ company }: { company: string }) {
             { label: 'Dept Insights', icon: BarChart3 },
           ].map(a => (
             <button key={a.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
-              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #7c3aed', color: '#7c3aed' } : { backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}

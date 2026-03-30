@@ -238,6 +238,13 @@ function Overview() {
         <StatCard label="Backlog Items" value={String(BACKLOG.length)} sub="3 prioritised" color="#F59E0B" />
       </div>
 
+      {/* Quick Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{l:'New Task',i:Plus},{l:'Sprint Planning',i:Target},{l:'Risk Review',i:AlertTriangle},{l:'OKR Update',i:CheckCircle},{l:'Capacity Check',i:Users},{l:'Dept Insights',i:Star}].map(a=>(
+          <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+        ))}
+      </div>
+
       {/* Projects summary */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
         <div className="flex items-center justify-between px-5 py-3" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>
