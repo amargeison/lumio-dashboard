@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star } from 'lucide-react'
+import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -78,6 +78,7 @@ export default function MarketingPage() {
 
   const actions = [
     { label: 'Create Post',       icon: Plus,       onClick: () => setShowCreatePost(true) },
+    { label: 'Book Event',        icon: CalendarHeart, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'New Campaign',      icon: Megaphone,  onClick: () => setShowCampaign(true) },
     { label: 'Case Study',        icon: FileText,   onClick: () => setShowCaseStudy(true) },
     { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
@@ -133,6 +134,26 @@ export default function MarketingPage() {
       <DeptAISummary dept="marketing" portal="business" />
 
       <QuickActions items={actions} />
+
+      {/* Marketing Events Workflow Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all">
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <CalendarHeart className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-EVENTS-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Marketing Events — Event Planner & Promoter</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Describe your event type, audience, and goals — get a full event plan with venue options, promotional copy, and a ready-to-send invite sequence.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow →</div>
+        </div>
+      </div>
 
       <TwoCol
         main={
