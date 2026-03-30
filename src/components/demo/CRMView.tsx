@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, memo } from 'react'
 import { AlertCircle, Sparkles, Phone, Mail, Calendar as CalendarIcon, Video } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts'
 
@@ -61,6 +61,9 @@ const COMPETITOR_ROWS = [{ f: 'AI Deal Scoring', l: '✅ ARIA', h: '❌', p: '�
 const CRM_TABS = [['dashboard', 'Dashboard'], ['pipeline', 'Pipeline'], ['contacts', 'Contacts'], ['intelligence', 'ARIA Intelligence'], ['reports', 'Reports']] as const
 const CONTACT_FILTERS = ['All', 'Hot', 'Warm', 'Cold', 'At Risk', 'Not Contacted 14d+']
 const PROMPT_CHIPS = ['Which deals are at risk?', 'Forecast this quarter', 'Who needs follow-up?', 'Show pipeline health', 'Best lead sources']
+const heatIcon = (h: string) => h === 'hot' ? '🔴' : h === 'warm' ? '🟡' : h === 'cold' ? '🔵' : '⚠️'
+const heatLabel = (h: string) => h === 'hot' ? 'Hot' : h === 'warm' ? 'Warm' : h === 'cold' ? 'Cold' : 'At Risk'
+
 
 // ─── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -76,7 +79,7 @@ function CRMSkeleton() {
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-export default function CRMView({ company }: { company: string }) {
+function CRMViewInner({ company }: { company: string }) {
   const [crmTab, setCrmTab] = useState<'dashboard' | 'pipeline' | 'contacts' | 'intelligence' | 'reports'>('dashboard')
   const [contactFilter, setContactFilter] = useState('All')
   const [ready, setReady] = useState(false)
@@ -121,17 +124,14 @@ export default function CRMView({ company }: { company: string }) {
 
   const churnRiskAccounts = useMemo(() => [{ name: fakeCompany(company, 20), reason: 'No login in 42 days', risk: 91 }, { name: fakeCompany(company, 21), reason: 'Support tickets × 4', risk: 78 }, { name: fakeCompany(company, 22), reason: 'Downgrade request sent', risk: 65 }], [company])
   const renewals = useMemo(() => [{ name: fakeCompany(company, 23), due: 'Apr 12', arr: `£${fakeNum(14800, company, 'ren1').toLocaleString()}`, health: 'Critical' as const }, { name: fakeCompany(company, 24), due: 'Apr 18', arr: `£${fakeNum(33400, company, 'ren2').toLocaleString()}`, health: 'At Risk' as const }, { name: fakeCompany(company, 25), due: 'May 2', arr: `£${fakeNum(76000, company, 'ren3').toLocaleString()}`, health: 'Healthy' as const }], [company])
-  const filteredContacts = contactFilter === 'All' ? contacts : contacts.filter(c => {
+  const filteredContacts = useMemo(() => contactFilter === 'All' ? contacts : contacts.filter(c => {
     if (contactFilter === 'Hot') return c.heat === 'hot'
     if (contactFilter === 'Warm') return c.heat === 'warm'
     if (contactFilter === 'Cold') return c.heat === 'cold'
     if (contactFilter === 'At Risk') return c.heat === 'atrisk'
     if (contactFilter === 'Not Contacted 14d+') return c.lastContact.includes('days') && parseInt(c.lastContact) >= 14
     return true
-  })
-
-  const heatIcon = (h: string) => h === 'hot' ? '🔴' : h === 'warm' ? '🟡' : h === 'cold' ? '🔵' : '⚠️'
-  const heatLabel = (h: string) => h === 'hot' ? 'Hot' : h === 'warm' ? 'Warm' : h === 'cold' ? 'Cold' : 'At Risk'
+  }), [contactFilter, contacts])
 
   if (!ready) return <CRMSkeleton />
 
@@ -515,8 +515,8 @@ export default function CRMView({ company }: { company: string }) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-2 justify-center">
-                {[{ n: 'Price', c: '#EF4444', v: 8 }, { n: 'Competitor', c: '#F59E0B', v: 6 }, { n: 'Timing', c: '#6B7280', v: 5 }, { n: 'No Budget', c: '#3B82F6', v: 4 }, { n: 'No Response', c: '#8B5CF6', v: 3 }].map(d => (
-                  <span key={d.n} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.c }} />{d.n} ({d.v})</span>
+                {LOST_DEAL_DATA.map((d, i) => (
+                  <span key={d.name} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: LOST_DEAL_COLORS[i] }} />{d.name} ({d.value})</span>
                 ))}
               </div>
             </CRMPanel>
@@ -537,3 +537,5 @@ export default function CRMView({ company }: { company: string }) {
     </div>
   )
 }
+
+export default memo(CRMViewInner)
