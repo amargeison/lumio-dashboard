@@ -2058,7 +2058,6 @@ function SalesView({ company }: { company: string }) {
   const deals = Array.from({length:8},(_,i)=>({name:fakeCompany(company,i+10),value:`£${(fakeNum(12000,company,'d'+i)*(i+1)/2).toLocaleString()}`,stage:['Discovery','Proposal','Negotiation','Verbal Yes','Discovery','Closed Won','Proposal','Discovery'][i],owner:fakeName(company,20+i),lastActivity:['Today','Yesterday','2 days ago','Today','3 days ago','1 week ago','Today','Yesterday'][i],score:[72,88,91,94,45,100,67,55][i]}))
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="sales" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Open Deals" value={String(leads)} icon={Users} color="#6C3FC5"
           pieData={[{label:'Hot',value:8,color:'#EF4444'},{label:'Warm',value:16,color:'#F59E0B'},{label:'Cold',value:10,color:'#374151'}]}
@@ -2073,6 +2072,7 @@ function SalesView({ company }: { company: string }) {
           pieData={[{label:'Hot',value:8,color:'#EF4444'},{label:'Warm',value:16,color:'#F59E0B'}]}
           barData={[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:6,color:'#EF4444'},{label:'Mar',value:8,color:'#DC2626'}]} />
       </div>
+      <DeptAISummary dept="sales" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Deal Pipeline</p></div>
@@ -2128,7 +2128,6 @@ function CRMView({ company }: { company: string }) {
   ]
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="crm" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <StatCard label="Total Customers" value={String(customers)} icon={Database} color="#0D9488"
           pieData={[{label:'Healthy',value:132,color:'#22C55E'},{label:'At Risk',value:29,color:'#F59E0B'},{label:'Critical',value:10,color:'#EF4444'}]}
@@ -2140,7 +2139,7 @@ function CRMView({ company }: { company: string }) {
           pieData={[{label:'Promoters',value:nps,color:'#22C55E'},{label:'Passives',value:22,color:'#F59E0B'},{label:'Detractors',value:11,color:'#EF4444'}]}
           barData={[{label:'Q3\'25',value:55,color:'#F59E0B'},{label:'Q4\'25',value:63,color:'#F59E0B'},{label:'Q1\'26',value:nps,color:'#D97706'}]} />
       </div>
-
+      <DeptAISummary dept="crm" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Churn risk */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -2223,7 +2222,6 @@ function OpsView({ company }: { company: string }) {
   const poList = Array.from({length:5},(_,i)=>({po:`PO-2026-${88-i}`,supplier:['Acme Office Supplies','TechPro Direct','PrintWave Ltd','CloudLicence Group','Ergonomics Now'][i],value:`£${fakeNum(3000,company,'pov'+i).toLocaleString()}`,status:['In Transit','Delivered','Pending','Delivered','Overdue'][i]}))
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="operations" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Open Purchase Orders" value={String(orders)} icon={Package} color="#F59E0B"
           pieData={[{label:'In Transit',value:5,color:'#0D9488'},{label:'Pending',value:6,color:'#F59E0B'},{label:'Overdue',value:3,color:'#EF4444'}]}
@@ -2238,6 +2236,7 @@ function OpsView({ company }: { company: string }) {
           pieData={[{label:'This week',value:60,color:'#EF4444'},{label:'This month',value:30,color:'#F59E0B'},{label:'Next month',value:10,color:'#22C55E'}]}
           barData={[{label:'Jan',value:24000,color:'#6C3FC5'},{label:'Feb',value:26000,color:'#6C3FC5'},{label:'Mar',value:inv,color:'#7C3AED'}]} />
       </div>
+      <DeptAISummary dept="operations" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Purchase Orders</p></div>
@@ -2287,7 +2286,6 @@ function SupportView({ company }: { company: string }) {
   ]
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="support" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Open Tickets" value={String(tk)} icon={Headphones} color="#EF4444"
           pieData={[{label:'P1',value:2,color:'#EF4444'},{label:'P2',value:6,color:'#F59E0B'},{label:'P3',value:10,color:'#374151'}]}
@@ -2302,6 +2300,7 @@ function SupportView({ company }: { company: string }) {
           pieData={[{label:'P1',value:1,color:'#EF4444'},{label:'P2',value:3,color:'#F59E0B'},{label:'P3',value:2,color:'#374151'}]}
           barData={[{label:'Mon',value:5,color:'#0D9488'},{label:'Tue',value:7,color:'#0D9488'},{label:'Wed',value:6,color:'#0F766E'}]} />
       </div>
+      <DeptAISummary dept="support" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Helpdesk Queue</p></div>
@@ -2348,7 +2347,6 @@ function SuccessView({ company }: { company: string }) {
   const accounts = Array.from({length:6},(_,i)=>({name:fakeCompany(company,i+50),score:[42,78,91,34,88,62][i],qbr:['Apr 2','Apr 15','May 1','Mar 28','Apr 8','May 12'][i],renewal:['Jun','Aug','Oct','May','Sep','Jul'][i],csm:fakeName(company,i+8).split(' ')[0],rag:(['red','amber','green','red','green','amber'] as const)[i]}))
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="success" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#0D9488"
           pieData={[{label:'Green',value:Math.round(cu*.65),color:'#22C55E'},{label:'Amber',value:Math.round(cu*.22),color:'#F59E0B'},{label:'Red',value:Math.round(cu*.13),color:'#EF4444'}]}
@@ -2363,6 +2361,7 @@ function SuccessView({ company }: { company: string }) {
           pieData={[{label:'Churn risk',value:12,color:'#EF4444'},{label:'No contact',value:11,color:'#7F1D1D'}]}
           barData={[{label:'Jan',value:20,color:'#EF4444'},{label:'Feb',value:22,color:'#EF4444'},{label:'Mar',value:Math.round(cu*.13),color:'#DC2626'}]} />
       </div>
+      <DeptAISummary dept="success" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Account Health Overview</p></div>
@@ -2403,7 +2402,6 @@ function ITView({ company }: { company: string }) {
   ]
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="it" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Open IT Requests" value={String(ir)} icon={Headphones} color="#F59E0B"
           pieData={[{label:'Software',value:6,color:'#F59E0B'},{label:'Hardware',value:3,color:'#EF4444'},{label:'Access',value:3,color:'#374151'}]}
@@ -2418,6 +2416,7 @@ function ITView({ company }: { company: string }) {
           pieData={[{label:'This month',value:2,color:'#EF4444'},{label:'Next month',value:2,color:'#F59E0B'}]}
           barData={[{label:'Jan',value:1,color:'#EF4444'},{label:'Feb',value:3,color:'#EF4444'},{label:'Mar',value:4,color:'#DC2626'}]} />
       </div>
+      <DeptAISummary dept="it" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>IT Request Queue</p></div>
