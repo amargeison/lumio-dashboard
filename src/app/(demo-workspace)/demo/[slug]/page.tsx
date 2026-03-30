@@ -2094,11 +2094,11 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
         </div>
         <div className="px-5 py-4 space-y-2">
           {demoDataActive ? (
-            <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false'); showToast('Demo data cleared') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <button onClick={() => setShowClearConfirm(true)} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
               Clear Demo Data
             </button>
           ) : (
-            <button onClick={() => { setDemoDataActive(true); localStorage.setItem('lumio_demo_active', 'true'); showToast('Demo data loaded') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+            <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); showToast('Demo data loaded') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
               Load Demo Data
             </button>
           )}
@@ -2814,6 +2814,9 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const isTrial = workspaceStatus !== 'converted'
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showInvite, setShowInvite]   = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showDataConnections, setShowDataConnections] = useState(false)
+  const [demoCleared, setDemoCleared] = useState(() => typeof window !== 'undefined' && localStorage.getItem(`lumio_demo_cleared_${slug}`) === 'true')
   const [showOnboarding, setShowOnboarding]   = useState(false)
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
@@ -3033,6 +3036,86 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       </div>
       {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
 
+      {/* Clear Demo Data confirmation */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 400 }}>
+            <p className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Clear all demo data?</p>
+            <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>This will remove all sample data and reset the workspace. Your account details will be kept.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Cancel</button>
+              <button onClick={() => {
+                setDemoDataActive(false); setDemoCleared(true); setShowClearConfirm(false)
+                localStorage.setItem('lumio_demo_active', 'false')
+                localStorage.setItem(`lumio_demo_cleared_${slug}`, 'true')
+                Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k))
+                setShowDataConnections(true)
+              }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Yes, clear all data</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Connections Modal */}
+      {showDataConnections && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between px-6 py-4 sticky top-0" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937', zIndex: 10 }}>
+              <div><p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Set up your workspace</p><p className="text-xs" style={{ color: '#9CA3AF' }}>Connect your tools and import your data to get started</p></div>
+              <button onClick={() => setShowDataConnections(false)} className="rounded-lg p-1.5 hover:bg-white/5" style={{ color: '#9CA3AF' }}><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Connect integrations</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { emoji: '📧', name: 'Google Workspace', desc: 'Email, Calendar, Drive' },
+                    { emoji: '💬', name: 'Slack', desc: 'Messages & notifications' },
+                    { emoji: '📊', name: 'HubSpot', desc: 'CRM and contacts' },
+                    { emoji: '📱', name: 'WhatsApp Business', desc: 'Customer messages' },
+                    { emoji: '💼', name: 'LinkedIn', desc: 'Professional network' },
+                    { emoji: '📝', name: 'Notion', desc: 'Docs and wikis' },
+                    { emoji: '🎯', name: 'Microsoft Teams', desc: 'Communications' },
+                    { emoji: '📈', name: 'Xero / QuickBooks', desc: 'Accounts & finance' },
+                    { emoji: '🛒', name: 'Shopify', desc: 'E-commerce data' },
+                    { emoji: '📅', name: 'Outlook', desc: 'Email and calendar' },
+                  ].map(i => (
+                    <div key={i.name} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+                      <span className="text-xl">{i.emoji}</span>
+                      <div className="flex-1 min-w-0"><p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{i.name}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{i.desc}</p></div>
+                      <button className="px-2.5 py-1 rounded-lg text-[10px] font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }} onClick={() => fireToast(`${i.name} — available in your live workspace`)}>Connect</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Import your data</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Upload CSV (contacts, customers)', 'Upload spreadsheet (finances)', 'Import from URL', 'Add manually'].map(l => (
+                    <div key={l} className="flex items-center justify-center gap-2 rounded-xl p-4 cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fireToast('Data import — available in your live workspace')}>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{l}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.2)' }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: '#F5A623' }}>Or start with demo data</p>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Want to explore with sample data first?</p>
+                <button onClick={() => {
+                  setDemoDataActive(true); setDemoCleared(false); setShowDataConnections(false)
+                  localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`)
+                  const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']
+                  ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true'))
+                  fireToast('Demo data reloaded')
+                }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+                  Reload Demo Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} companyName={company} companyLogo={companyLogo} />
@@ -3049,23 +3132,36 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
-            {activeDept === 'overview'    && <OverviewView   company={company} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
-            {activeDept === 'insights'   && <InsightsView   company={company} />}
-            {activeDept === 'hr'         && <HRView         company={company} />}
-            {activeDept === 'accounts'   && <AccountsView   company={company} />}
-            {activeDept === 'sales'      && <SalesView      company={company} />}
-            {activeDept === 'crm'        && <CRMView        company={company} />}
-            {activeDept === 'marketing'  && <MarketingView  company={company} />}
-            {activeDept === 'trials'     && <TrialsView     company={company} />}
-            {activeDept === 'operations' && <OpsView        company={company} />}
-            {activeDept === 'support'    && <SupportView    company={company} />}
-            {activeDept === 'success'    && <SuccessView    company={company} />}
-            {activeDept === 'it'         && <ITView         company={company} />}
-            {activeDept === 'workflows'  && <WorkflowsView  company={company} />}
-            {activeDept === 'partners'   && <PartnersView   company={company} />}
-            {activeDept === 'strategy'   && <StrategyView   company={company} />}
+            {/* Empty state when demo data is cleared */}
+            {demoCleared && activeDept !== 'settings' && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-3xl" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>📊</div>
+                <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No data yet</h2>
+                <p className="text-sm mb-6 max-w-sm" style={{ color: '#9CA3AF' }}>Connect your integrations or import your data to see your {activeDept === 'overview' ? 'dashboard' : activeDept} come to life.</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDataConnections(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Connect your tools →</button>
+                  <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); fireToast('Demo data loaded') }} className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>Load demo data</button>
+                </div>
+              </div>
+            )}
+
+            {!demoCleared && activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
+            {!demoCleared && activeDept === 'insights'   && <InsightsView   company={company} />}
+            {!demoCleared && activeDept === 'hr'         && <HRView         company={company} />}
+            {!demoCleared && activeDept === 'accounts'   && <AccountsView   company={company} />}
+            {!demoCleared && activeDept === 'sales'      && <SalesView      company={company} />}
+            {!demoCleared && activeDept === 'crm'        && <CRMView        company={company} />}
+            {!demoCleared && activeDept === 'marketing'  && <MarketingView  company={company} />}
+            {!demoCleared && activeDept === 'trials'     && <TrialsView     company={company} />}
+            {!demoCleared && activeDept === 'operations' && <OpsView        company={company} />}
+            {!demoCleared && activeDept === 'support'    && <SupportView    company={company} />}
+            {!demoCleared && activeDept === 'success'    && <SuccessView    company={company} />}
+            {!demoCleared && activeDept === 'it'         && <ITView         company={company} />}
+            {!demoCleared && activeDept === 'workflows'  && <WorkflowsView  company={company} />}
+            {!demoCleared && activeDept === 'partners'   && <PartnersView   company={company} />}
+            {!demoCleared && activeDept === 'strategy'   && <StrategyView   company={company} />}
             {activeDept === 'settings'   && <SettingsView   company={company} wakeWordEnabled={wakeWordEnabled} onToggleWakeWord={toggleWakeWord} />}
           </main>
 
