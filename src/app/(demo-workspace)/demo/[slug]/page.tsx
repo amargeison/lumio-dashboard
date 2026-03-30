@@ -1708,30 +1708,69 @@ function HRView({ company }: { company: string }) {
 
 function AccountsView({ company }: { company: string }) {
   const overdue = fakeNum(7,company,'ov'), arr = fakeNum(504000,company,'arr'), cost = fakeNum(82000,company,'cost')
-  return <PlaceholderView
-    title="Outstanding Invoices"
-    stats={[
-      { label:'Overdue Invoices', value:String(overdue), color:'#EF4444', icon:AlertCircle,
-        pieData:[{label:'0-30d',value:3,color:'#F59E0B'},{label:'30-60d',value:2,color:'#EF4444'},{label:'60d+',value:2,color:'#7F1D1D'}],
-        barData:[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:6,color:'#EF4444'},{label:'Mar',value:overdue,color:'#DC2626'}] },
-      { label:'Annual Revenue', value:`£${(arr/1000).toFixed(0)}k`, color:'#22C55E', icon:TrendingUp,
-        pieData:[{label:'Subscriptions',value:85,color:'#22C55E'},{label:'Services',value:10,color:'#0D9488'},{label:'One-off',value:5,color:'#374151'}],
-        barData:[{label:'Q2\'25',value:115000,color:'#22C55E'},{label:'Q3\'25',value:124000,color:'#22C55E'},{label:'Q4\'25',value:130000,color:'#22C55E'},{label:'Q1\'26',value:arr/4,color:'#0D9488'}] },
-      { label:'Operating Costs', value:`£${(cost/1000).toFixed(0)}k`, color:'#F59E0B', icon:Receipt,
-        pieData:[{label:'Staff',value:60,color:'#F59E0B'},{label:'Infra',value:20,color:'#EF4444'},{label:'Marketing',value:12,color:'#6C3FC5'},{label:'Other',value:8,color:'#374151'}],
-        barData:[{label:'Jan',value:78000,color:'#F59E0B'},{label:'Feb',value:80000,color:'#F59E0B'},{label:'Mar',value:cost,color:'#D97706'}] },
-    ]}
-    cols={['Customer','Amount','Due Date','Status']}
-    rows={Array.from({length:6},(_,i)=>[fakeCompany(company,i+20),`£${fakeNum(3200,company,'inv'+i).toLocaleString()}`,['14 Mar','22 Mar','31 Mar','07 Apr','15 Apr','28 Apr'][i],['Overdue 14d','Due today','Due in 8d','Sent','Sent','Draft'][i]])} />
+  const invoices = Array.from({length:6},(_,i)=>({company:fakeCompany(company,i+20),amount:`£${fakeNum(3200,company,'inv'+i).toLocaleString()}`,due:['14 Mar','22 Mar','31 Mar','07 Apr','15 Apr','28 Apr'][i],daysOverdue:['14d overdue','Due today','','','',''][i],status:['Overdue','Due today','Due in 8d','Sent','Sent','Draft'][i]}))
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Outstanding Invoices" value={String(overdue)} icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'0-30d',value:3,color:'#F59E0B'},{label:'30-60d',value:2,color:'#EF4444'},{label:'60d+',value:2,color:'#7F1D1D'}]}
+          barData={[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:6,color:'#EF4444'},{label:'Mar',value:overdue,color:'#DC2626'}]} />
+        <StatCard label="Overdue Amount" value="£18,400" icon={DollarSign} color="#EF4444"
+          pieData={[{label:'0-30d',value:8400,color:'#F59E0B'},{label:'30-60d',value:6200,color:'#EF4444'},{label:'60d+',value:3800,color:'#7F1D1D'}]}
+          barData={[{label:'Jan',value:12000,color:'#EF4444'},{label:'Feb',value:15000,color:'#EF4444'},{label:'Mar',value:18400,color:'#DC2626'}]} />
+        <StatCard label="Collected This Month" value="£42,800" icon={TrendingUp} color="#22C55E"
+          pieData={[{label:'Subscriptions',value:85,color:'#22C55E'},{label:'Services',value:10,color:'#0D9488'},{label:'One-off',value:5,color:'#374151'}]}
+          barData={[{label:'Jan',value:38000,color:'#22C55E'},{label:'Feb',value:41000,color:'#22C55E'},{label:'Mar',value:42800,color:'#0D9488'}]} />
+        <StatCard label="Avg Days to Pay" value="18" icon={Clock} color="#F59E0B"
+          pieData={[{label:'<14d',value:45,color:'#22C55E'},{label:'14-30d',value:35,color:'#F59E0B'},{label:'>30d',value:20,color:'#EF4444'}]}
+          barData={[{label:'Jan',value:22,color:'#F59E0B'},{label:'Feb',value:20,color:'#F59E0B'},{label:'Mar',value:18,color:'#D97706'}]} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Invoice Queue</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Amount','Due Date','Days Overdue','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{invoices.map((inv,i)=>(
+              <tr key={i} style={{borderBottom:i<invoices.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{inv.company}</td>
+                <td className="px-5 py-3" style={{color:'#9CA3AF'}}>{inv.amount}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#6B7280'}}>{inv.due}</td>
+                <td className="px-5 py-3 text-xs" style={{color:inv.daysOverdue?'#EF4444':'#6B7280'}}>{inv.daysOverdue||'—'}</td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:inv.status==='Overdue'?'rgba(239,68,68,0.1)':inv.status==='Due today'?'rgba(245,158,11,0.1)':'rgba(13,148,136,0.1)',color:inv.status==='Overdue'?'#EF4444':inv.status==='Due today'?'#F59E0B':'#0D9488'}}>{inv.status}</span></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Payments</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:fakeCompany(company,30),amount:'£4,200',date:'Today'},{name:fakeCompany(company,31),amount:'£8,900',date:'Yesterday'},{name:fakeCompany(company,32),amount:'£2,100',date:'2 days ago'}].map((p,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{p.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{p.date}</p></div><span className="text-xs font-bold" style={{color:'#22C55E'}}>{p.amount}</span></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Weekly Revenue</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{week:'This week',amount:'£12,400',vs:'+8%'},{week:'Last week',amount:'£11,500',vs:'+3%'},{week:'2 weeks ago',amount:'£11,200',vs:'+1%'}].map((w,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><span className="text-sm" style={{color:'#F9FAFB'}}>{w.week}</span><div className="flex items-center gap-2"><span className="text-xs font-bold" style={{color:'#F9FAFB'}}>{w.amount}</span><span className="text-xs" style={{color:'#22C55E'}}>{w.vs}</span></div></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function SalesView({ company }: { company: string }) {
   const leads = fakeNum(34,company,'leads'), pipe = fakeNum(128000,company,'pipe'), wr = fakeNum(28,company,'wr')
-  const deals = Array.from({length:6},(_,i)=>({name:fakeCompany(company,i+10),value:`£${(fakeNum(12000,company,'d'+i)*(i+1)/2).toLocaleString()}`,stage:['Discovery','Proposal','Negotiation','Verbal Yes','Discovery','Closed Won'][i],score:[72,88,91,94,45,100][i]}))
+  const deals = Array.from({length:8},(_,i)=>({name:fakeCompany(company,i+10),value:`£${(fakeNum(12000,company,'d'+i)*(i+1)/2).toLocaleString()}`,stage:['Discovery','Proposal','Negotiation','Verbal Yes','Discovery','Closed Won','Proposal','Discovery'][i],owner:fakeName(company,20+i),lastActivity:['Today','Yesterday','2 days ago','Today','3 days ago','1 week ago','Today','Yesterday'][i],score:[72,88,91,94,45,100,67,55][i]}))
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatCard label="Active Leads" value={String(leads)} icon={Users} color="#6C3FC5"
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Open Deals" value={String(leads)} icon={Users} color="#6C3FC5"
           pieData={[{label:'Hot',value:8,color:'#EF4444'},{label:'Warm',value:16,color:'#F59E0B'},{label:'Cold',value:10,color:'#374151'}]}
           barData={[{label:'Inbound',value:18,color:'#6C3FC5'},{label:'Outbound',value:10,color:'#A78BFA'},{label:'Referral',value:6,color:'#7C3AED'}]} />
         <StatCard label="Pipeline Value" value={`£${pipe.toLocaleString()}`} icon={TrendingUp} color="#0D9488"
@@ -1996,6 +2035,9 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
   const [includeCalendar, setIncludeCalendar] = React.useState(() => localStorage.getItem('lumio_demo_biz_inc_calendar') !== 'false')
   const [briefingTime, setBriefingTime] = React.useState(() => localStorage.getItem('lumio_demo_biz_briefing_time') || '8:00am')
   const [demoDataActive, setDemoDataActive] = React.useState(() => localStorage.getItem('lumio_demo_active') === 'true')
+  const [showClearConfirm, setShowClearConfirm] = React.useState(false)
+  const [showDataConnections, setShowDataConnections] = React.useState(false)
+  const [demoCleared, setDemoCleared] = React.useState(false)
   const [toastMsg, setToastMsg] = React.useState<string | null>(null)
 
   function showToast(msg: string) {
@@ -2105,7 +2147,7 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
               Clear Demo Data
             </button>
           ) : (
-            <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); showToast('Demo data loaded') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+            <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); showToast('Demo data loaded') }} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
               Load Demo Data
             </button>
           )}
@@ -2823,7 +2865,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showInvite, setShowInvite]   = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [showDataConnections, setShowDataConnections] = useState(false)
-  const [demoCleared, setDemoCleared] = useState(() => typeof window !== 'undefined' && localStorage.getItem(`lumio_demo_cleared_${slug}`) === 'true')
+  const [demoCleared, setDemoCleared] = useState(() => typeof window !== 'undefined' && localStorage.getItem(`lumio_demo_cleared`) === 'true')
   const [showOnboarding, setShowOnboarding]   = useState(false)
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
@@ -3054,7 +3096,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button onClick={() => {
                 setDemoDataActive(false); setDemoCleared(true); setShowClearConfirm(false)
                 localStorage.setItem('lumio_demo_active', 'false')
-                localStorage.setItem(`lumio_demo_cleared_${slug}`, 'true')
+                localStorage.setItem(`lumio_demo_cleared`, 'true')
                 Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k))
                 setShowDataConnections(true)
               }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Yes, clear all data</button>
@@ -3110,7 +3152,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
                 <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Want to explore with sample data first?</p>
                 <button onClick={() => {
                   setDemoDataActive(true); setDemoCleared(false); setShowDataConnections(false)
-                  localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`)
+                  localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared`)
                   const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']
                   ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true'))
                   fireToast('Demo data reloaded')
@@ -3149,7 +3191,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
                 <p className="text-sm mb-6 max-w-sm" style={{ color: '#9CA3AF' }}>Connect your integrations or import your data to see your {activeDept === 'overview' ? 'dashboard' : activeDept} come to life.</p>
                 <div className="flex gap-3">
                   <button onClick={() => setShowDataConnections(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Connect your tools →</button>
-                  <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared_${slug}`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); fireToast('Demo data loaded') }} className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>Load demo data</button>
+                  <button onClick={() => { setDemoDataActive(true); setDemoCleared(false); localStorage.setItem('lumio_demo_active', 'true'); localStorage.removeItem(`lumio_demo_cleared`); const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']; ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true')); fireToast('Demo data loaded') }} className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>Load demo data</button>
                 </div>
               </div>
             )}
