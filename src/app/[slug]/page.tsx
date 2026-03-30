@@ -583,7 +583,7 @@ function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
 }
 
 function WorldClock() {
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState(() => typeof window !== 'undefined' ? new Date() : new Date(0))
   const [zones, setZones] = useState(getStoredZones)
   const localTz = getUserLocalTz()
   const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
@@ -646,10 +646,17 @@ function WorldClock() {
 }
 
 function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
+  const [hour, setHour] = useState(12)
+  const [greeting, setGreeting] = useState('Good afternoon')
+  const [date, setDate] = useState('')
+  const [bg, setBg] = useState(BG_GRADIENTS[0])
+  useEffect(() => {
+    const h = new Date().getHours()
+    setHour(h)
+    setGreeting(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
+    setDate(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+    setBg(BG_GRADIENTS[new Date().getDay()])
+  }, [])
   const { speak, stop, isPlaying } = useSpeech()
   const [quote, setQuote] = useState(QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
@@ -1333,10 +1340,13 @@ const MORNING_HIGHLIGHTS = [
 
 function MorningAIPanel() {
   const [open, setOpen] = useState(true)
-  const now = new Date()
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
+  const [dayLabel, setDayLabel] = useState('')
+  useEffect(() => {
+    const now = new Date()
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    setDayLabel(`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`)
+  }, [])
   return (
     <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
       <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
