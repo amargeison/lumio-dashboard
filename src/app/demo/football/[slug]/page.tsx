@@ -2755,6 +2755,18 @@ function TrainingView() {
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Session planning, GPS load monitoring, and recovery schedules.</p>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Session Plan', icon: Clipboard },
+          { label: 'Load Report', icon: BarChart3 },
+          { label: 'Recovery Schedule', icon: Heart },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Today's Session" value="10:00" icon={Clock} color="#C0392B" />
         <StatCard label="Session Type" value="Tactical" icon={Clipboard} color="#3B82F6" />
@@ -2836,17 +2848,6 @@ function TrainingView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Session Plan', icon: Clipboard },
-          { label: 'Load Report', icon: BarChart3 },
-          { label: 'Recovery Schedule', icon: Heart },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2858,6 +2859,18 @@ function FinanceView() {
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Club Finance</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Revenue, expenditure, wage bill, transfer budgets, and contract management.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Budget Overview', icon: DollarSign },
+          { label: 'Wage Report', icon: FileText },
+          { label: 'Revenue Dashboard', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -2930,17 +2943,6 @@ function FinanceView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Budget Overview', icon: DollarSign },
-          { label: 'Wage Report', icon: FileText },
-          { label: 'Revenue Dashboard', icon: BarChart3 },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2951,6 +2953,18 @@ function StaffView() {
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Staff Management</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Coaching staff, medical team, scouts, and administrative personnel.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Staff Directory', icon: Users },
+          { label: 'Leave Calendar', icon: Calendar },
+          { label: 'Recruitment', icon: UserPlus },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -3024,17 +3038,6 @@ function StaffView() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Staff Directory', icon: Users },
-          { label: 'Leave Calendar', icon: Calendar },
-          { label: 'Recruitment', icon: UserPlus },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -3045,6 +3048,18 @@ function FacilitiesView() {
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Facilities</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Stadium, training ground, pitch maintenance, and infrastructure management.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Pitch Report', icon: FileText },
+          { label: 'Maintenance Log', icon: Clipboard },
+          { label: 'Booking Schedule', icon: Calendar },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -3113,17 +3128,6 @@ function FacilitiesView() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Pitch Report', icon: FileText },
-          { label: 'Maintenance Log', icon: Clipboard },
-          { label: 'Booking Schedule', icon: Calendar },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
