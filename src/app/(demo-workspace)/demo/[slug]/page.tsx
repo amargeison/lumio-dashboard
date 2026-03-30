@@ -13,7 +13,7 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload, Bell,
-  Database, RotateCcw, Mail, MessageSquare, Phone,
+  Database, RotateCcw, Mail, MessageSquare, Phone, FolderKanban,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -34,7 +34,7 @@ import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 type RAG      = 'green' | 'amber' | 'red'
 type ChartMode = 'number' | 'bar' | 'pie'
-type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy'
+type DeptId   = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy' | 'projects'
 
 interface ChartDatum { label: string; value: number; color: string }
 
@@ -42,7 +42,7 @@ interface ChartDatum { label: string; value: number; color: string }
 
 const DEPARTMENTS = [
   'Overview', 'Insights', 'Partners', 'HR & People', 'Accounts', 'Strategy',
-  'Trials', 'Sales', 'CRM', 'Marketing', 'Operations', 'Support',
+  'Trials', 'Sales', 'CRM', 'Marketing', 'Projects', 'Operations', 'Support',
   'Success', 'IT & Systems', 'Workflows Library',
 ]
 
@@ -57,6 +57,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'sales',      label: 'Sales',              icon: TrendingUp  },
   { id: 'crm',        label: 'CRM',                icon: Database    },
   { id: 'marketing',  label: 'Marketing',          icon: Megaphone   },
+  { id: 'projects',   label: 'Projects',           icon: FolderKanban},
   { id: 'operations', label: 'Operations',         icon: Package     },
   { id: 'support',    label: 'Support',            icon: Headphones  },
   { id: 'success',    label: 'Success',            icon: Award       },
@@ -182,6 +183,9 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
   ],
   strategy:   [
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Strategy',                        icon: BarChart3 },
+  ],
+  projects:   [
+    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Projects',                        icon: BarChart3 },
   ],
 }
 
@@ -3040,6 +3044,10 @@ const DEPT_INSIGHTS: Record<DeptId, { metric: string; value: string; trend: stri
   strategy:   [
     { metric: 'Competitor signals',   value: '14',    trend: '+3',    insight: 'Three new signals detected this week. HubSpot pricing change and monday.com hiring activity flagged as high priority.' },
     { metric: 'Threat score avg',     value: '6.2',   trend: '+0.4',  insight: 'Slight increase in aggregate threat score. Monitor HubSpot SMB push closely over next 30 days.' },
+  ],
+  projects:   [
+    { metric: 'Active projects',      value: '12',    trend: '+2',    insight: 'Two new projects kicked off this month. Resource allocation looks healthy across all active workstreams.' },
+    { metric: 'On-track rate',        value: '83%',   trend: '+5%',   insight: 'Project health improved after weekly stand-up automation was rolled out. Two previously amber projects now green.' },
   ],
 }
 

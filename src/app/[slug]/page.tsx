@@ -13,7 +13,7 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
-  Database, RotateCcw, Upload, Mail, MessageSquare, Phone,
+  Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -32,7 +32,7 @@ import TabGuide from '@/components/onboarding/TabGuide'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy'
+type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy' | 'projects'
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = [
   { id: 'overview',    label: 'Overview',          icon: Home        },
@@ -45,6 +45,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'sales',      label: 'Sales',              icon: TrendingUp  },
   { id: 'crm',        label: 'CRM',                icon: Database    },
   { id: 'marketing',  label: 'Marketing',          icon: Megaphone   },
+  { id: 'projects',   label: 'Projects',           icon: FolderKanban},
   { id: 'operations', label: 'Operations',         icon: Package     },
   { id: 'support',    label: 'Support',            icon: Headphones  },
   { id: 'success',    label: 'Success',            icon: Award       },
