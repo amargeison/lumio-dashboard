@@ -7,7 +7,7 @@ const RESERVED_SLUGS = new Set([
   'terms', 'privacy', 'cookies', 'support', 'success', 'settings',
   'workflows', 'strategy', 'trials', 'partners', 'buy', 'book-demo',
   'hr', 'accounts', 'sales', 'crm', 'marketing', 'operations', 'it',
-  'insights', 'school-office', 'offline', 'admin', 'blog',
+  'insights', 'school-office', 'offline', 'admin', 'blog', 'football',
 ])
 
 const DASHBOARD_ROUTES = new Set([
