@@ -27,6 +27,7 @@ import RecruitmentModal,      { type RecruitmentData }      from '@/components/R
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 import ConvertModal from '@/app/(demo-workspace)/components/ConvertModal'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
+import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -930,23 +931,6 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
               </button>
 
               {/* Mic: Voice Commands */}
-              {voiceCommandsEnabled && (
-              <button
-                onClick={() => isListening ? stopListening() : startListening()}
-                title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
-                className="flex items-center justify-center rounded-lg transition-all"
-                style={{
-                  width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
-                  backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                  border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                  color: isListening ? '#EF4444' : '#F9FAFB',
-                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
-                }}>
-                <Mic size={14} strokeWidth={1.75} />
-              </button>
-              )}
-
-              {/* Mic (demo voice modal) */}
               <button
                 onClick={openVoiceModal}
                 className="flex items-center justify-center rounded-lg transition-all"
@@ -3225,6 +3209,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [focusDepts, setFocusDepts]           = useState<string[]>([])
   const [toast, setToast]                     = useState<string | null>(null)
   const [showConvert, setShowConvert]         = useState(false)
+  const [showWelcome, setShowWelcome]         = useState(false)
+  const [showGettingStarted, setShowGettingStarted] = useState(false)
   const [wakeWordEnabled, setWakeWordEnabled] = useState(() => {
     if (typeof window === 'undefined') return true
     const stored = localStorage.getItem('lumio_wake_word_enabled')
@@ -3279,6 +3265,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
     if (!isPreview && !onboarded) setShowOnboarding(true)
     else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
+
+    // Show welcome overlay on first visit
+    if (!isPreview && !localStorage.getItem(`lumio_demo_welcomed_${slug}`)) {
+      setShowWelcome(true)
+    }
 
     // Sync company name to lumio_ keys for sidebar
     if (name && name !== 'Your Company') {
@@ -3392,6 +3383,46 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {showRecruitment  && <RecruitmentModal        onClose={() => setShowRecruitment(false)}  onSubmit={handleDemoRecruitment}  />}
       {showPerfReview   && <PerformanceReviewModal  onClose={() => setShowPerfReview(false)}   onSubmit={handleDemoPerfReview}   />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
+
+      {/* Welcome overlay */}
+      {showWelcome && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 500, padding: '2rem' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚡</div>
+            <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
+            <p style={{ color: '#aaa', marginBottom: '2rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem', cursor: 'pointer' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.2rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 'bold', marginBottom: 4 }}>Getting Started with Lumio</div>
+                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min intro</div>
+              </div>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem', cursor: 'pointer' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.2rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 'bold', marginBottom: 4 }}>Getting the Most Out of Lumio</div>
+                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min tips & tricks</div>
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #333', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
+            </div>
+            <button onClick={() => { localStorage.setItem(`lumio_demo_welcomed_${slug}`, 'true'); setShowWelcome(false) }}
+              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 8, fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>
+              Get Started →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Getting Started Tour */}
+      {showGettingStarted && (
+        <GettingStartedModal
+          companyName={company}
+          ownerEmail={localStorage.getItem('demo_user_email') || ''}
+          sessionToken={localStorage.getItem('demo_session_token') || ''}
+          onComplete={() => { setShowGettingStarted(false); localStorage.setItem('demo_getting_started_done', 'true') }}
+        />
+      )}
 
       {/* Trial banner — hidden for converted/paid workspaces */}
       {showUpgrade && isTrial && (
