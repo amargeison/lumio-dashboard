@@ -4,6 +4,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
 import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -126,6 +127,7 @@ export default function FinancePage() {
   const [showExpense, setShowExpense] = useState(false)
   const [showBudget, setShowBudget] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -162,6 +164,10 @@ export default function FinancePage() {
       </div>
 
       <DeptAISummary dept="finance-school" portal="schools" />
+
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />
@@ -287,6 +293,7 @@ export default function FinancePage() {
       {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
       {showBudget && <BudgetReviewModal onClose={() => setShowBudget(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="finance-school" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

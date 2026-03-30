@@ -4,6 +4,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
 import { RegisterSessionModal, PaymentLogModal, AddChildToClubModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -893,6 +894,7 @@ export default function WraparoundPage() {
   const [showRegisterSession, setShowRegisterSession] = useState(false)
   const [showPaymentLog, setShowPaymentLog] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -939,6 +941,10 @@ export default function WraparoundPage() {
 
       <DeptAISummary dept="wraparound" portal="schools" />
 
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
+
       {/* AI highlights */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
         <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
@@ -981,6 +987,7 @@ export default function WraparoundPage() {
       {showPaymentLog && <PaymentLogModal onClose={() => setShowPaymentLog(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
       {showAddChild && <AddChildToClubModal onClose={() => setShowAddChild(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="wraparound" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

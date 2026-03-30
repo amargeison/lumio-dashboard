@@ -6,6 +6,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, FileText, User, ClipboardList, TrendingDown } from 'lucide-react'
 import { AddSENDRecordModal, SafeguardingConcernModal, EHCPReviewModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'Open safeguarding concern SG-2026-047 — DSL review is overdue by 2 days',
@@ -119,6 +120,7 @@ export default function SendDslPage() {
   const [showSafeguarding, setShowSafeguarding] = useState(false)
   const [showEHCP, setShowEHCP] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -153,6 +155,10 @@ export default function SendDslPage() {
       </div>
 
       <DeptAISummary dept="send-dsl" portal="schools" />
+
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
 
       {/* White Paper link */}
       <Link href={`/schools/${slug}/send-dsl/white-paper`}
@@ -317,6 +323,7 @@ export default function SendDslPage() {
       {showSafeguarding && <SafeguardingConcernModal onClose={() => setShowSafeguarding(false)} onToast={showToast} />}
       {showEHCP && <EHCPReviewModal onClose={() => setShowEHCP(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="send-dsl" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

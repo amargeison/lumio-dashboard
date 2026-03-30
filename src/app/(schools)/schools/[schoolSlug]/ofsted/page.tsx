@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity } from 'lucide-react'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,7 @@ export default function OfstedModePage() {
   ])
   const [newObs, setNewObs] = useState('')
   const [toast, setToast] = useState('')
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_ofsted_mode')
@@ -179,6 +181,9 @@ export default function OfstedModePage() {
     return (
       <div className="space-y-6">
         <DeptAISummary dept="ofsted" portal="schools" />
+        <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+          📊 Insights
+        </button>
         <div className="text-center py-16">
           <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Ofsted Inspection Mode</h1>
@@ -205,6 +210,7 @@ export default function OfstedModePage() {
             </div>
           </div>
         </div>
+        <AIInsightsReport dept="ofsted" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       </div>
     )
   }

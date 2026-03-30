@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, Minus, Users, DollarSign, BookOpen,
@@ -1275,6 +1276,7 @@ export default function TrustDashboard() {
   ]} />
 
   const [tab, setTab] = useState('exec')
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const ActiveTab = TABS.find(t=>t.id===tab)!.component
 
   const redCount = SCHOOLS.filter(s=>s.ragOverall==='red').length
@@ -1309,6 +1311,10 @@ export default function TrustDashboard() {
       </div>
 
       <DeptAISummary dept="trust" portal="schools" />
+
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
 
       {/* Trust Actions */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -1365,6 +1371,7 @@ export default function TrustDashboard() {
         </div>
         <ActiveTab />
       </div>
+      <AIInsightsReport dept="trust" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

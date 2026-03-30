@@ -4,6 +4,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
 import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -122,6 +123,7 @@ export default function CurriculumPage() {
   const [showAssessment, setShowAssessment] = useState(false)
   const [showReportWriter, setShowReportWriter] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -158,6 +160,10 @@ export default function CurriculumPage() {
       </div>
 
       <DeptAISummary dept="curriculum" portal="schools" />
+
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />
@@ -291,6 +297,7 @@ export default function CurriculumPage() {
       {showAssessment && <AssessmentTrackerModal onClose={() => setShowAssessment(false)} />}
       {showReportWriter && <ReportWriterModal onClose={() => setShowReportWriter(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="curriculum" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }
