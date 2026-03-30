@@ -1932,18 +1932,22 @@ function OpsView({ company }: { company: string }) {
   const poList = Array.from({length:5},(_,i)=>({po:`PO-2026-${88-i}`,supplier:['Acme Office Supplies','TechPro Direct','PrintWave Ltd','CloudLicence Group','Ergonomics Now'][i],value:`£${fakeNum(3000,company,'pov'+i).toLocaleString()}`,status:['In Transit','Delivered','Pending','Delivered','Overdue'][i]}))
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Open Purchase Orders" value={String(orders)} icon={Package} color="#F59E0B"
           pieData={[{label:'In Transit',value:5,color:'#0D9488'},{label:'Pending',value:6,color:'#F59E0B'},{label:'Overdue',value:3,color:'#EF4444'}]}
           barData={[{label:'Jan',value:10,color:'#F59E0B'},{label:'Feb',value:12,color:'#F59E0B'},{label:'Mar',value:orders,color:'#D97706'}]} />
         <StatCard label="Low Stock Items" value={String(ls)} icon={AlertCircle} color="#EF4444"
           pieData={[{label:'Critical',value:2,color:'#EF4444'},{label:'Low',value:4,color:'#F59E0B'}]}
           barData={[{label:'Week 1',value:3,color:'#EF4444'},{label:'Week 2',value:4,color:'#EF4444'},{label:'Week 3',value:5,color:'#EF4444'},{label:'Week 4',value:ls,color:'#DC2626'}]} />
+        <StatCard label="Pending Deliveries" value="4" icon={Clock} color="#0D9488"
+          pieData={[{label:'Today',value:1,color:'#0D9488'},{label:'This week',value:2,color:'#22C55E'},{label:'Next week',value:1,color:'#374151'}]}
+          barData={[{label:'Jan',value:6,color:'#0D9488'},{label:'Feb',value:5,color:'#0D9488'},{label:'Mar',value:4,color:'#0F766E'}]} />
         <StatCard label="Supplier Invoices Due" value={`£${inv.toLocaleString()}`} icon={Receipt} color="#6C3FC5"
           pieData={[{label:'This week',value:60,color:'#EF4444'},{label:'This month',value:30,color:'#F59E0B'},{label:'Next month',value:10,color:'#22C55E'}]}
           barData={[{label:'Jan',value:24000,color:'#6C3FC5'},{label:'Feb',value:26000,color:'#6C3FC5'},{label:'Mar',value:inv,color:'#7C3AED'}]} />
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Purchase Orders</p></div>
         <table className="w-full text-sm">
           <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['PO #','Supplier','Value','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
@@ -1957,69 +1961,206 @@ function OpsView({ company }: { company: string }) {
           ))}</tbody>
         </table>
       </div>
+      <div className="space-y-4">
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Low Stock Alerts</p></div>
+          <div className="divide-y" style={{borderColor:'#1F2937'}}>
+            {[{item:'A4 Paper (White)',stock:'2 boxes',level:'Critical'},{item:'Printer Toner (Black)',stock:'1 unit',level:'Critical'},{item:'Hand Sanitiser',stock:'4 bottles',level:'Low'},{item:'USB-C Chargers',stock:'1 unit',level:'Low'}].map((s,i)=>(
+              <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{s.item}</p><p className="text-xs" style={{color:'#6B7280'}}>{s.stock} remaining</p></div><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:s.level==='Critical'?'rgba(239,68,68,0.1)':'rgba(245,158,11,0.1)',color:s.level==='Critical'?'#EF4444':'#F59E0B'}}>{s.level}</span></div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Deliveries</p></div>
+          <div className="divide-y" style={{borderColor:'#1F2937'}}>
+            {[{supplier:'TechPro Direct',date:'Tomorrow',items:'3 items'},{supplier:'Acme Office Supplies',date:'Fri 21 Mar',items:'5 items'},{supplier:'CloudLicence Group',date:'Mon 24 Mar',items:'1 licence renewal'}].map((d,i)=>(
+              <div key={i} className="px-5 py-3"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{d.supplier}</p><p className="text-xs" style={{color:'#6B7280'}}>{d.date} · {d.items}</p></div>
+            ))}
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
   )
 }
 
 function SupportView({ company }: { company: string }) {
-  return <PlaceholderView
-    title="Open Support Tickets"
-    stats={[
-      { label:'Open Tickets', value:String(fakeNum(18,company,'tk')), color:'#EF4444', icon:Headphones,
-        pieData:[{label:'P1',value:2,color:'#EF4444'},{label:'P2',value:6,color:'#F59E0B'},{label:'P3',value:10,color:'#374151'}],
-        barData:[{label:'Mon',value:4,color:'#EF4444'},{label:'Tue',value:6,color:'#EF4444'},{label:'Wed',value:5,color:'#EF4444'},{label:'Thu',value:7,color:'#EF4444'},{label:'Fri',value:3,color:'#EF4444'}] },
-      { label:'Avg Resolution Time', value:`${fakeNum(4,company,'rt')}h`, color:'#F59E0B', icon:Clock,
-        pieData:[{label:'<2h',value:30,color:'#22C55E'},{label:'2-8h',value:50,color:'#F59E0B'},{label:'>8h',value:20,color:'#EF4444'}],
-        barData:[{label:'Jan',value:5,color:'#F59E0B'},{label:'Feb',value:4,color:'#F59E0B'},{label:'Mar',value:4,color:'#D97706'}] },
-      { label:'CSAT Score', value:`${fakeNum(91,company,'cs')}%`, color:'#22C55E', icon:Star,
-        pieData:[{label:'Happy',value:91,color:'#22C55E'},{label:'Neutral',value:6,color:'#F59E0B'},{label:'Unhappy',value:3,color:'#EF4444'}],
-        barData:[{label:'Q3',value:88,color:'#22C55E'},{label:'Q4',value:90,color:'#22C55E'},{label:'Q1',value:91,color:'#0D9488'}] },
-    ]}
-    cols={['Ticket','Customer','Priority','Assigned To','Status']}
-    rows={[
-      ['TKT-2891 — Login issue',fakeCompany(company,40),'P1','Alex T.','Open — 2h'],
-      ['TKT-2889 — Export fails',fakeCompany(company,41),'P2','Priya K.','In Progress'],
-      ['TKT-2884 — Data import',fakeCompany(company,42),'P2','James W.','Waiting customer'],
-      ['TKT-2881 — Billing query',fakeCompany(company,43),'P3','Rachel S.','Open'],
-      ['TKT-2878 — SSO config',fakeCompany(company,44),'P2','Oliver B.','In Progress'],
-    ]} />
+  const tk = fakeNum(18,company,'tk')
+  const tickets = [
+    {id:'TKT-2891',subject:'Login issue',customer:fakeCompany(company,40),priority:'P1',assigned:'Alex T.',age:'2h',status:'Open'},
+    {id:'TKT-2889',subject:'Export fails',customer:fakeCompany(company,41),priority:'P2',assigned:'Priya K.',age:'6h',status:'In Progress'},
+    {id:'TKT-2884',subject:'Data import',customer:fakeCompany(company,42),priority:'P2',assigned:'James W.',age:'1d',status:'Waiting'},
+    {id:'TKT-2881',subject:'Billing query',customer:fakeCompany(company,43),priority:'P3',assigned:'Rachel S.',age:'2d',status:'Open'},
+    {id:'TKT-2878',subject:'SSO config',customer:fakeCompany(company,44),priority:'P2',assigned:'Oliver B.',age:'3d',status:'In Progress'},
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Open Tickets" value={String(tk)} icon={Headphones} color="#EF4444"
+          pieData={[{label:'P1',value:2,color:'#EF4444'},{label:'P2',value:6,color:'#F59E0B'},{label:'P3',value:10,color:'#374151'}]}
+          barData={[{label:'Mon',value:4,color:'#EF4444'},{label:'Tue',value:6,color:'#EF4444'},{label:'Wed',value:5,color:'#EF4444'},{label:'Thu',value:7,color:'#EF4444'},{label:'Fri',value:3,color:'#EF4444'}]} />
+        <StatCard label="Avg Response Time" value="4h" icon={Clock} color="#F59E0B"
+          pieData={[{label:'<2h',value:30,color:'#22C55E'},{label:'2-8h',value:50,color:'#F59E0B'},{label:'>8h',value:20,color:'#EF4444'}]}
+          barData={[{label:'Jan',value:5,color:'#F59E0B'},{label:'Feb',value:4,color:'#F59E0B'},{label:'Mar',value:4,color:'#D97706'}]} />
+        <StatCard label="CSAT Score" value="91%" icon={Star} color="#22C55E"
+          pieData={[{label:'Happy',value:91,color:'#22C55E'},{label:'Neutral',value:6,color:'#F59E0B'},{label:'Unhappy',value:3,color:'#EF4444'}]}
+          barData={[{label:'Q3',value:88,color:'#22C55E'},{label:'Q4',value:90,color:'#22C55E'},{label:'Q1',value:91,color:'#0D9488'}]} />
+        <StatCard label="Resolved Today" value="6" icon={CheckCircle2} color="#0D9488"
+          pieData={[{label:'P1',value:1,color:'#EF4444'},{label:'P2',value:3,color:'#F59E0B'},{label:'P3',value:2,color:'#374151'}]}
+          barData={[{label:'Mon',value:5,color:'#0D9488'},{label:'Tue',value:7,color:'#0D9488'},{label:'Wed',value:6,color:'#0F766E'}]} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Helpdesk Queue</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Ticket #','Subject','Customer','Priority','Assigned','Age','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{tickets.map((t,i)=>(
+              <tr key={i} style={{borderBottom:i<tickets.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-mono text-xs" style={{color:'#9CA3AF'}}>{t.id}</td>
+                <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{t.subject}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{t.customer}</td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:t.priority==='P1'?'rgba(239,68,68,0.1)':'rgba(245,158,11,0.1)',color:t.priority==='P1'?'#EF4444':'#F59E0B'}}>{t.priority}</span></td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{t.assigned}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#6B7280'}}>{t.age}</td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{t.status}</span></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Live Chat — Active</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:fakeName(company,30),topic:'Billing question',wait:'2 min',agent:'Rachel S.'},{name:fakeName(company,31),topic:'Feature request',wait:'5 min',agent:'Alex T.'}].map((c,i)=>(
+                <div key={i} className="px-5 py-3"><div className="flex items-center justify-between mb-1"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{c.name}</p><span className="text-xs" style={{color:'#22C55E'}}>Live</span></div><p className="text-xs" style={{color:'#6B7280'}}>{c.topic} · {c.agent} · {c.wait}</p></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Operations Today</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{label:'Tickets created',value:'8'},{label:'Resolved',value:'6'},{label:'Avg first response',value:'12 min'},{label:'Escalations',value:'1'}].map((s,i)=>(
+                <div key={i} className="px-5 py-2.5 flex items-center justify-between"><span className="text-xs" style={{color:'#9CA3AF'}}>{s.label}</span><span className="text-xs font-bold" style={{color:'#F9FAFB'}}>{s.value}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function SuccessView({ company }: { company: string }) {
   const cu = fakeNum(181,company,'cu')
-  return <PlaceholderView
-    title="Account Health Overview"
-    stats={[
-      { label:'At-Risk Accounts', value:String(Math.round(cu*.17)), color:'#F59E0B', icon:AlertCircle,
-        pieData:[{label:'Declining usage',value:15,color:'#F59E0B'},{label:'Overdue renewal',value:8,color:'#EF4444'},{label:'Low NPS',value:8,color:'#374151'}],
-        barData:[{label:'Jan',value:28,color:'#F59E0B'},{label:'Feb',value:31,color:'#F59E0B'},{label:'Mar',value:Math.round(cu*.17),color:'#D97706'}] },
-      { label:'Renewals This Month', value:String(fakeNum(14,company,'rn')), color:'#0D9488', icon:TrendingUp,
-        pieData:[{label:'Renewing',value:11,color:'#0D9488'},{label:'At risk',value:3,color:'#EF4444'}],
-        barData:[{label:'Jan',value:10,color:'#0D9488'},{label:'Feb',value:12,color:'#0D9488'},{label:'Mar',value:14,color:'#0F766E'}] },
-      { label:'Expansion Revenue', value:`£${fakeNum(12000,company,'er').toLocaleString()}`, color:'#22C55E', icon:Award,
-        pieData:[{label:'Upsells',value:70,color:'#22C55E'},{label:'Add-ons',value:30,color:'#0D9488'}],
-        barData:[{label:'Q3',value:8000,color:'#22C55E'},{label:'Q4',value:10000,color:'#22C55E'},{label:'Q1',value:12000,color:'#0D9488'}] },
-    ]}
-    cols={['Account','Health Score','Next QBR','Renewal','CSM']}
-    rows={Array.from({length:6},(_,i)=>[fakeCompany(company,i+50),`${[42,78,91,34,88,62][i]}/100`,['Apr 2','Apr 15','May 1','Mar 28','Apr 8','May 12'][i],['Jun','Aug','Oct','May','Sep','Jul'][i],fakeName(company,i+8).split(' ')[0]])} />
+  const accounts = Array.from({length:6},(_,i)=>({name:fakeCompany(company,i+50),score:[42,78,91,34,88,62][i],qbr:['Apr 2','Apr 15','May 1','Mar 28','Apr 8','May 12'][i],renewal:['Jun','Aug','Oct','May','Sep','Jul'][i],csm:fakeName(company,i+8).split(' ')[0],rag:(['red','amber','green','red','green','amber'] as const)[i]}))
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total Customers" value={String(cu)} icon={Users} color="#0D9488"
+          pieData={[{label:'Green',value:Math.round(cu*.65),color:'#22C55E'},{label:'Amber',value:Math.round(cu*.22),color:'#F59E0B'},{label:'Red',value:Math.round(cu*.13),color:'#EF4444'}]}
+          barData={[{label:'Jan',value:168,color:'#0D9488'},{label:'Feb',value:174,color:'#0D9488'},{label:'Mar',value:cu,color:'#0F766E'}]} />
+        <StatCard label="Green RAG" value={String(Math.round(cu*.65))} icon={CheckCircle2} color="#22C55E"
+          pieData={[{label:'Green',value:65,color:'#22C55E'},{label:'Other',value:35,color:'#374151'}]}
+          barData={[{label:'Jan',value:108,color:'#22C55E'},{label:'Feb',value:112,color:'#22C55E'},{label:'Mar',value:Math.round(cu*.65),color:'#0D9488'}]} />
+        <StatCard label="Amber RAG" value={String(Math.round(cu*.22))} icon={AlertCircle} color="#F59E0B"
+          pieData={[{label:'Declining usage',value:15,color:'#F59E0B'},{label:'Overdue renewal',value:8,color:'#EF4444'},{label:'Low NPS',value:8,color:'#374151'}]}
+          barData={[{label:'Jan',value:28,color:'#F59E0B'},{label:'Feb',value:31,color:'#F59E0B'},{label:'Mar',value:Math.round(cu*.22),color:'#D97706'}]} />
+        <StatCard label="Red RAG" value={String(Math.round(cu*.13))} icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'Churn risk',value:12,color:'#EF4444'},{label:'No contact',value:11,color:'#7F1D1D'}]}
+          barData={[{label:'Jan',value:20,color:'#EF4444'},{label:'Feb',value:22,color:'#EF4444'},{label:'Mar',value:Math.round(cu*.13),color:'#DC2626'}]} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Account Health Overview</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Account','Health','Next QBR','Renewal','CSM','RAG'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{accounts.map((a,i)=>{const rc=a.rag==='green'?'#22C55E':a.rag==='amber'?'#F59E0B':'#EF4444';return(
+              <tr key={i} style={{borderBottom:i<accounts.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{a.name}</td>
+                <td className="px-5 py-3 text-xs font-bold" style={{color:a.score>=70?'#22C55E':a.score>=50?'#F59E0B':'#EF4444'}}>{a.score}/100</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{a.qbr}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{a.renewal}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{a.csm}</td>
+                <td className="px-5 py-3"><div className="w-3 h-3 rounded-full" style={{backgroundColor:rc}} /></td>
+              </tr>)})}</tbody>
+          </table>
+        </div>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Immediate Action Required</p></div>
+          <div className="divide-y" style={{borderColor:'#1F2937'}}>
+            {accounts.filter(a=>a.rag==='red').map((a,i)=>(
+              <div key={i} className="px-5 py-3"><div className="flex items-center gap-2 mb-1"><AlertCircle size={12} style={{color:'#EF4444'}} /><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{a.name}</p></div><p className="text-xs" style={{color:'#9CA3AF'}}>Health {a.score}/100 · Renewal {a.renewal} · Needs QBR by {a.qbr}</p></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function ITView({ company }: { company: string }) {
-  return <PlaceholderView
-    title="Device & Access Inventory"
-    stats={[
-      { label:'Managed Devices', value:String(fakeNum(184,company,'dv')), color:'#0D9488', icon:Monitor,
-        pieData:[{label:'MacOS',value:60,color:'#0D9488'},{label:'Windows',value:30,color:'#6C3FC5'},{label:'Linux',value:10,color:'#374151'}],
-        barData:[{label:'Q3',value:160,color:'#0D9488'},{label:'Q4',value:172,color:'#0D9488'},{label:'Q1',value:184,color:'#0F766E'}] },
-      { label:'Open IT Requests', value:String(fakeNum(12,company,'ir')), color:'#F59E0B', icon:Package,
-        pieData:[{label:'Software',value:6,color:'#F59E0B'},{label:'Hardware',value:3,color:'#EF4444'},{label:'Access',value:3,color:'#374151'}],
-        barData:[{label:'Mon',value:3,color:'#F59E0B'},{label:'Tue',value:4,color:'#F59E0B'},{label:'Wed',value:5,color:'#F59E0B'},{label:'Thu',value:4,color:'#F59E0B'}] },
-      { label:'Security Alerts', value:String(fakeNum(3,company,'sa')), color:'#EF4444', icon:AlertCircle,
-        pieData:[{label:'Critical',value:1,color:'#EF4444'},{label:'Warning',value:2,color:'#F59E0B'}],
-        barData:[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:4,color:'#EF4444'},{label:'Mar',value:3,color:'#DC2626'}] },
-    ]}
-    cols={['Name','Device','OS','Last Seen','Status']}
-    rows={Array.from({length:5},(_,i)=>[fakeName(company,i+15),['MacBook Pro 14"','MacBook Air M2','Dell XPS 15','MacBook Pro 16"','Lenovo ThinkPad'][i],['macOS 14','macOS 14','Windows 11','macOS 14','Ubuntu 22'][i],['5 min ago','12 min ago','1 hr ago','Just now','3 hr ago'][i],['Online','Online','Online','Online','Offline'][i]])} />
+  const ir = fakeNum(12,company,'ir')
+  const requests = [
+    {id:'IT-0412',type:'Software',employee:fakeName(company,15),priority:'P2',status:'Open',age:'2h'},
+    {id:'IT-0410',type:'Access',employee:fakeName(company,16),priority:'P1',status:'In Progress',age:'4h'},
+    {id:'IT-0408',type:'Hardware',employee:fakeName(company,17),priority:'P3',status:'Open',age:'1d'},
+    {id:'IT-0405',type:'Software',employee:fakeName(company,18),priority:'P2',status:'Waiting',age:'2d'},
+    {id:'IT-0402',type:'Access',employee:fakeName(company,19),priority:'P3',status:'Open',age:'3d'},
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Open IT Requests" value={String(ir)} icon={Headphones} color="#F59E0B"
+          pieData={[{label:'Software',value:6,color:'#F59E0B'},{label:'Hardware',value:3,color:'#EF4444'},{label:'Access',value:3,color:'#374151'}]}
+          barData={[{label:'Mon',value:3,color:'#F59E0B'},{label:'Tue',value:4,color:'#F59E0B'},{label:'Wed',value:5,color:'#F59E0B'},{label:'Thu',value:4,color:'#F59E0B'}]} />
+        <StatCard label="Pending Provisioning" value="3" icon={Package} color="#6C3FC5"
+          pieData={[{label:'Laptop',value:2,color:'#6C3FC5'},{label:'Software',value:1,color:'#A78BFA'}]}
+          barData={[{label:'Jan',value:5,color:'#6C3FC5'},{label:'Feb',value:4,color:'#6C3FC5'},{label:'Mar',value:3,color:'#7C3AED'}]} />
+        <StatCard label="Assets Registered" value="184" icon={Monitor} color="#0D9488"
+          pieData={[{label:'MacOS',value:60,color:'#0D9488'},{label:'Windows',value:30,color:'#6C3FC5'},{label:'Linux',value:10,color:'#374151'}]}
+          barData={[{label:'Q3',value:160,color:'#0D9488'},{label:'Q4',value:172,color:'#0D9488'},{label:'Q1',value:184,color:'#0F766E'}]} />
+        <StatCard label="Licences Due Renewal" value="4" icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'This month',value:2,color:'#EF4444'},{label:'Next month',value:2,color:'#F59E0B'}]}
+          barData={[{label:'Jan',value:1,color:'#EF4444'},{label:'Feb',value:3,color:'#EF4444'},{label:'Mar',value:4,color:'#DC2626'}]} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>IT Request Queue</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Request #','Type','Employee','Priority','Status','Age'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{requests.map((r,i)=>(
+              <tr key={i} style={{borderBottom:i<requests.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-mono text-xs" style={{color:'#9CA3AF'}}>{r.id}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#F9FAFB'}}>{r.type}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{r.employee}</td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:r.priority==='P1'?'rgba(239,68,68,0.1)':'rgba(245,158,11,0.1)',color:r.priority==='P1'?'#EF4444':'#F59E0B'}}>{r.priority}</span></td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{r.status}</span></td>
+                <td className="px-5 py-3 text-xs" style={{color:'#6B7280'}}>{r.age}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Pending Provisioning</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:fakeName(company,6),item:'MacBook Pro 14"',start:'07 Apr'},{name:fakeName(company,7),item:'Dell Monitor 27"',start:'07 Apr'},{name:fakeName(company,2),item:'Adobe Creative Suite',start:'17 Mar'}].map((p,i)=>(
+                <div key={i} className="px-5 py-3"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{p.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{p.item} · Start: {p.start}</p></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Licence Renewals Due</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{licence:'Slack Business+',due:'31 Mar',cost:'£3,200/yr'},{licence:'Figma Organisation',due:'15 Apr',cost:'£1,800/yr'},{licence:'GitHub Enterprise',due:'30 Apr',cost:'£4,500/yr'}].map((l,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{l.licence}</p><p className="text-xs" style={{color:'#6B7280'}}>Due: {l.due}</p></div><span className="text-xs font-bold" style={{color:'#F59E0B'}}>{l.cost}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function WorkflowsView({ company }: { company: string }) {
