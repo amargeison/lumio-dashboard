@@ -136,9 +136,9 @@ const SQUAD: Player[] = [
 ]
 
 const INJURIES = [
-  { player: 'Diego Martinez', type: 'Hamstring strain (Grade 2)', expectedReturn: '14 Apr 2026', phase: 'Rehab — jogging' },
-  { player: "Sean O'Brien", type: 'Ankle ligament damage', expectedReturn: '21 Apr 2026', phase: 'Boot — non-weight bearing' },
-  { player: 'Lucas Santos', type: 'Knee cartilage irritation', expectedReturn: '7 Apr 2026', phase: 'Light training' },
+  { player: 'Diego Martinez', type: 'Hamstring strain (Grade 2)', expectedReturn: '14 Apr 2026', phase: 'Rehab — jogging', since: '12 Mar 2026', matchesMissed: 4 },
+  { player: "Sean O'Brien", type: 'Ankle ligament damage', expectedReturn: '21 Apr 2026', phase: 'Boot — non-weight bearing', since: '8 Mar 2026', matchesMissed: 5 },
+  { player: 'Lucas Santos', type: 'Knee cartilage irritation', expectedReturn: '7 Apr 2026', phase: 'Light training', since: '22 Mar 2026', matchesMissed: 2 },
 ]
 
 const TRANSFER_TARGETS = [
@@ -1040,12 +1040,13 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
 
 // ─── Placeholder Department View ────────────────────────────────────────────
 
-function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, children }: {
+function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, onActionClick, children }: {
   title: string
   subtitle: string
   stats: { label: string; value: string; icon: React.ElementType; color: string }[]
   highlights: string[]
   actionButtons?: { label: string; icon: React.ElementType }[]
+  onActionClick?: (label: string) => void
   children?: React.ReactNode
 }) {
   return (
@@ -1079,7 +1080,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, ch
       {actionButtons && actionButtons.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           {actionButtons.map((a, i) => (
-            <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <button key={i} onClick={() => onActionClick?.(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}
@@ -1558,7 +1559,7 @@ function SquadView() {
 
 // ─── Tactics View ───────────────────────────────────────────────────────────
 
-function TacticsView() {
+function TacticsView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   return (
     <PlaceholderView
       title="Tactics & Formation"
@@ -1581,6 +1582,7 @@ function TacticsView() {
         { label: 'Set Piece Planner', icon: Target },
         { label: 'Video Analysis', icon: Video },
       ]}
+      onActionClick={onActionClick}
     >
       <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
         <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Formations Used</p>
@@ -1611,7 +1613,7 @@ function TacticsView() {
 
 // ─── Transfers View (with Multi-Step Researcher) ────────────────────────────
 
-function TransfersView() {
+function TransfersView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   const [researchStep, setResearchStep] = useState(1)
 
   const RESEARCH_TARGETS = [
@@ -3079,10 +3081,34 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [activeAction, setActiveAction] = useState<string | null>(null)
 
   function fireToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
+  }
+
+  const LABEL_TO_ACTION: Record<string, string> = {
+    'Team Sheet': 'team-sheet', 'Log Injury': 'log-injury', 'Scout Report': 'scout-report',
+    'Board Report': 'board-report', 'Training Plan': 'training-plan', 'Press Conf': 'press-conference',
+    'Book Video Room': 'video-analysis', 'Opposition Report': 'match-prep', 'Set Piece Planner': 'set-pieces',
+    'Video Analysis': 'video-analysis', 'Submit Bid': 'submit-bid', 'New Target': 'add-target',
+    'Rehab Plan': 'return-to-play', 'Fitness Report': 'load-report',
+    'New Report': 'scout-report', 'Watchlist': 'add-target', 'Trip Planner': 'travel-booking',
+    'Development Plan': 'development-plan', 'Match Report': 'match-report',
+    'Player Comparison': 'market-value', 'Heat Maps': 'load-report', 'Video Clips': 'video-analysis',
+    'Press Brief': 'press-conference', 'Social Post': 'social-post', 'Media Schedule': 'interview-request',
+    'Session Plan': 'training-plan', 'Load Report': 'load-report', 'Recovery Schedule': 'recovery-session',
+    'Budget Overview': 'board-report', 'Wage Report': 'renewal', 'Revenue Dashboard': 'sponsor-report',
+    'Operations Checklist': 'compliance-check', 'Match Prep': 'match-prep', 'Set Pieces': 'set-pieces',
+    'Recovery Session': 'recovery-session', 'Formation Builder': 'team-sheet',
+    'Ticketing': 'travel-booking', 'Pitch Report': 'compliance-check',
+  }
+
+  function handleActionClick(label: string) {
+    const actionId = LABEL_TO_ACTION[label]
+    if (actionId) setActiveAction(actionId)
+    else fireToast(`${label} — coming soon`)
   }
 
   useEffect(() => {
@@ -3129,7 +3155,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             </div>
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
             {activeDept === 'insights' && <InsightsView />}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView />}
@@ -3148,6 +3174,14 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           </main>
         </div>
       </div>
+
+      {activeAction && (
+        <FootballActionModal
+          actionId={activeAction}
+          onClose={() => setActiveAction(null)}
+          onToast={fireToast}
+        />
+      )}
     </div>
   )
 }
