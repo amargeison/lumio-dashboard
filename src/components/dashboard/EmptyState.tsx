@@ -129,10 +129,10 @@ export function DashboardEmptyState({
     const token = localStorage.getItem('workspace_session_token')
     if (token) {
       try {
-        await fetch('/api/import/staff', {
+        await fetch('/api/import/data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
-          body: JSON.stringify({ rows: mapped }),
+          body: JSON.stringify({ key: importKey, rows: mapped, columns: Object.keys(allRows[0]) }),
         })
       } catch { /* continue with localStorage fallback */ }
     }
@@ -144,6 +144,45 @@ export function DashboardEmptyState({
     localStorage.setItem(storageKey(), 'true')
     ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     window.location.reload()
+  }
+
+  const TEMPLATES: Record<string, string> = {
+    people: 'Name,Email,Role,Department,Phone,Start Date\nJohn Smith,john@company.com,Manager,Sales,07700 900001,2026-01-15',
+    org: 'Name,Email,Role,Department,Manager\nJohn Smith,john@company.com,CEO,Executive,',
+    pipeline: 'Company,Deal Value,Stage,Owner,Close Date\nAcme Corp,15000,Proposal,Sophie Williams,2026-04-30',
+    accounts: 'Company Name,ARR,Contract Value,Contract End,Status\nAcme Corp,24000,24000,2026-12-31,Active',
+    revenue: 'Month,Revenue,Target\n2026-01,34200,38000',
+    campaigns: 'Campaign Name,Platform,Sent,Open Rate,Clicks,Status\nQ1 Launch,Email,2840,44%,312,Active',
+    leads: 'Name,Company,Email,Source,Score,Status\nRachel Fox,Lakewood Academy,rachel@lakewood.com,Webinar,94,Hot',
+    tickets: 'Ticket ID,Company,Issue,Priority,Status,Created\nTKT-001,Acme Corp,Login issue,P1,Open,2026-03-20',
+    health: 'Company,ARR,Health Score,CSM,Last Contact,Risk\nAcme Corp,24000,82,Sophie Williams,2026-03-20,Low',
+    contacts: 'Name,Company,Email,Phone,Role,Stage\nJohn Smith,Acme Corp,john@acme.com,07700 900001,CEO,Customer',
+    processes: 'Process Name,Department,Owner,Status,Last Updated\nInvoice Approval,Finance,George Harrison,Active,2026-03-15',
+    systems: 'System Name,Type,Owner,Status,Licence Expiry\nSlack,SaaS,IT,Active,2026-12-31',
+    assets: 'Asset Name,Type,Assigned To,Status,Purchase Date\nMacBook Pro 14,Laptop,John Smith,Active,2025-06-15',
+    projects: 'Project Name,Code,Status,Priority,Deadline,Budget\nNew Website,WEB,In Progress,High,2026-06-30,50000',
+    tasks: 'Task,Project,Priority,Assignee,Points,Status\nDesign homepage,WEB,High,Sophie Williams,5,In Progress',
+    partners: 'Partner Name,Type,Status,Contact,Revenue Share\nAcme Partners,Reseller,Active,John Smith,15%',
+    deals: 'Partner,Deal,Value,Status,Close Date\nAcme Partners,Enterprise Deal,45000,Negotiation,2026-05-30',
+    competitors: 'Competitor,Product,Strength,Weakness,Market Share\nHubSpot,CRM,Brand recognition,Expensive,28%',
+    faq: 'Question,Answer,Category,Published\nHow do I reset my password?,Go to Settings > Security,Account,Yes',
+    data: 'Name,Value,Category,Date\nMetric 1,100,Revenue,2026-03-01',
+    metrics: 'Metric,Value,Target,Period\nMRR,28400,30000,2026-03',
+    team: 'Name,Email,Role,Department,Phone,Start Date\nJohn Smith,john@company.com,Manager,Sales,07700 900001,2026-01-15',
+    trials: 'Company,Contact,Email,Start Date,Status\nAcme Corp,John Smith,john@acme.com,2026-03-15,Active',
+    onboarding: 'Company,Step,Status,Completed Date\nAcme Corp,Welcome Email,Complete,2026-03-15',
+    renewals: 'Company,ARR,Renewal Date,Health,CSM\nAcme Corp,24000,2026-06-30,Green,Sophie Williams',
+  }
+
+  function downloadTemplate(key: string) {
+    const csv = TEMPLATES[key] || `Column1,Column2,Column3\nSample,Data,Here`
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `lumio-${key}-template.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function clearDemoData() {
@@ -228,15 +267,26 @@ export function DashboardEmptyState({
                   if (files && files.length > 0) handleFile(btn.key, files[0])
                 }}
               />
-              <button
-                onClick={() => fileRefs.current[btn.key]?.click()}
-                className="flex items-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all text-left"
-                style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.backgroundColor = `${accentColor}0A` }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.backgroundColor = '#111318' }}>
-                <Upload size={14} style={{ color: accentColor, flexShrink: 0 }} />
-                {btn.label}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fileRefs.current[btn.key]?.click()}
+                  className="flex items-center gap-2 flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-all text-left"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.backgroundColor = `${accentColor}0A` }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.backgroundColor = '#111318' }}>
+                  <Upload size={14} style={{ color: accentColor, flexShrink: 0 }} />
+                  {btn.label}
+                </button>
+                <button
+                  onClick={() => downloadTemplate(btn.key)}
+                  className="shrink-0 text-xs px-2 py-1 rounded-lg transition-colors"
+                  style={{ color: '#4B5563', border: '1px solid #1F2937' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = accentColor }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#4B5563' }}
+                  title={`Download ${btn.key} CSV template`}>
+                  ↓ Template
+                </button>
+              </div>
             </div>
           ))}
 
