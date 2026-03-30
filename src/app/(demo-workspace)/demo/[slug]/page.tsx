@@ -2343,22 +2343,42 @@ function MarketingView({ company }: { company: string }) {
           <div className="text-xs font-medium mt-auto" style={{ color: '#2DD4BF' }}>Launch workflow →</div>
         </div>
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Campaigns</p></div>
-        <table className="w-full text-sm">
-          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Campaign','Sent','Open Rate','Clicks','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
-          <tbody>{[
-            ['Q1 Product Launch Email','2,840','44%','312','Active'],
-            ['LinkedIn Lead Gen — Edu','—','—','891 impressions','Active'],
-            ['Trial Nurture Sequence','456','38%','89','Active'],
-            ['Webinar Follow-up','1,240','52%','208','Completed'],
-            ['Competitor Win-back','312','29%','44','Paused'],
-          ].map((r,i)=>(
-            <tr key={i} style={{borderBottom:i<4?'1px solid #111318':undefined}}>
-              {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':c==='Completed'?'rgba(34,197,94,0.1)':'rgba(245,158,11,0.1)',color:c==='Active'?'#0D9488':c==='Completed'?'#22C55E':'#F59E0B'}}>{c}</span>:c}</td>))}
-            </tr>
-          ))}</tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Content Queue</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Campaign','Sent','Open Rate','Clicks','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{[
+              ['Q1 Product Launch Email','2,840','44%','312','Active'],
+              ['LinkedIn Lead Gen — Edu','—','—','891 impressions','Active'],
+              ['Trial Nurture Sequence','456','38%','89','Active'],
+              ['Webinar Follow-up','1,240','52%','208','Completed'],
+              ['Competitor Win-back','312','29%','44','Paused'],
+            ].map((r,i)=>(
+              <tr key={i} style={{borderBottom:i<4?'1px solid #111318':undefined}}>
+                {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':c==='Completed'?'rgba(34,197,94,0.1)':'rgba(245,158,11,0.1)',color:c==='Active'?'#0D9488':c==='Completed'?'#22C55E':'#F59E0B'}}>{c}</span>:c}</td>))}
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Campaign Performance</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:'Q1 EdTech Nurture',sent:'3,240',open:'36.4%',ctr:'8.2%',status:'Complete',sc:'#22C55E'},{name:'Trial Follow-up Flow',sent:'412',open:'44.1%',ctr:'12.8%',status:'Active',sc:'#0D9488'},{name:'Renewal Reminder',sent:'87',open:'61.2%',ctr:'28.4%',status:'Active',sc:'#0D9488'},{name:'March Product Update',sent:'—',open:'—',ctr:'—',status:'Scheduled',sc:'#F59E0B'}].map((c,i)=>(
+                <div key={i} className="px-5 py-3"><div className="flex items-center justify-between mb-1"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{c.name}</p><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:`${c.sc}1a`,color:c.sc}}>{c.status}</span></div><p className="text-xs" style={{color:'#6B7280'}}>Sent: {c.sent} · Open: {c.open} · CTR: {c.ctr}</p></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Top Leads by Score</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:'Rachel Fox',company:'Lakewood Academy',score:94,source:'Webinar'},{name:'James Harlow',company:'Fernview College',score:88,source:'Inbound'},{name:'Sarah Mitchell',company:'Torchbearer Trust',score:82,source:'LinkedIn'},{name:'Dan Marsh',company:'Brightfields MAT',score:76,source:'Referral'},{name:'Marcus Chen',company:'Starling Schools',score:71,source:'Cold'}].map((l,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{l.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{l.company} · {l.source}</p></div><span className="text-xs font-bold px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{l.score}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -2457,7 +2477,7 @@ function OpsView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New PO',i:Package},{l:'Update Stock',i:BarChart3},{l:'Process Order',i:ArrowRight},{l:'Supplier Invoice',i:Receipt},{l:'Stock Alert',i:AlertCircle},{l:'Create Wiki',i:FileText},{l:'Create FAQ',i:Hash},{l:'Dept Insights',i:BarChart3}].map(a=>(
+          {[{l:'Raise PO',i:Package},{l:'Update Stock',i:BarChart3},{l:'Supplier Invoice',i:Receipt},{l:'New Order',i:Plus},{l:'Restock Alert',i:AlertCircle},{l:'Supplier Contact',i:Handshake},{l:'Delivery Log',i:FileText},{l:'Stock Report',i:FileText},{l:'Book Stock',i:Package},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3}].map(a=>(
             <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
