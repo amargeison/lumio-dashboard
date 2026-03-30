@@ -7,11 +7,7 @@ import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
-import NewLeadModal from '@/components/modals/NewLeadModal'
-import NewDealModal from '@/components/modals/NewDealModal'
-import LogCallModal from '@/components/modals/LogCallModal'
-import SendProposalModal from '@/components/modals/SendProposalModal'
-import ScheduleDemoModal from '@/components/modals/ScheduleDemoModal'
+import { NewDealModal, BookDemoModal, SendProposalModal, LogCallModal, NewLeadModal, DeptInsightsModal, GenerateLeadsModal } from '@/components/modals/SalesModals'
 import { useToast } from '@/components/modals/useToast'
 
 const STAGE_LABELS: Record<string, string> = {
@@ -83,6 +79,8 @@ export default function SalesPage() {
   const [showCall, setShowCall] = useState(false)
   const [showProposal, setShowProposal] = useState(false)
   const [showDemo, setShowDemo] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
+  const [showGenLeads, setShowGenLeads] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -91,7 +89,8 @@ export default function SalesPage() {
     { label: 'Send Proposal',  icon: FileText,   onClick: () => setShowProposal(true) },
     { label: 'Log Call',       icon: Phone,      onClick: () => setShowCall(true) },
     { label: 'New Lead',       icon: UserPlus,   onClick: () => setShowLead(true) },
-    { label: 'Dept Insights',  icon: Sparkles,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Dept Insights',  icon: Sparkles,   onClick: () => setShowInsights(true) },
+    { label: 'Generate Leads', icon: UserPlus,   onClick: () => setShowGenLeads(true) },
   ]
 
   useEffect(() => {
@@ -209,11 +208,13 @@ export default function SalesPage() {
           </>
         }
       />
-      {showLead && <NewLeadModal onClose={() => setShowLead(false)} onSubmit={() => { setShowLead(false); showToast('Lead added') }} />}
-      {showDeal && <NewDealModal onClose={() => setShowDeal(false)} onSubmit={() => { setShowDeal(false); showToast('Deal created') }} />}
-      {showCall && <LogCallModal onClose={() => setShowCall(false)} onSubmit={() => { setShowCall(false); showToast('Call logged') }} />}
-      {showProposal && <SendProposalModal onClose={() => setShowProposal(false)} onSubmit={() => { setShowProposal(false); showToast('Proposal sent') }} />}
-      {showDemo && <ScheduleDemoModal onClose={() => setShowDemo(false)} onSubmit={() => { setShowDemo(false); showToast('Demo scheduled') }} />}
+      {showLead && <NewLeadModal onClose={() => setShowLead(false)} onToast={showToast} />}
+      {showDeal && <NewDealModal onClose={() => setShowDeal(false)} onToast={showToast} />}
+      {showCall && <LogCallModal onClose={() => setShowCall(false)} onToast={showToast} />}
+      {showProposal && <SendProposalModal onClose={() => setShowProposal(false)} onToast={showToast} />}
+      {showDemo && <BookDemoModal onClose={() => setShowDemo(false)} onToast={showToast} />}
+      {showInsights && <DeptInsightsModal onClose={() => setShowInsights(false)} onToast={showToast} />}
+      {showGenLeads && <GenerateLeadsModal onClose={() => setShowGenLeads(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )
