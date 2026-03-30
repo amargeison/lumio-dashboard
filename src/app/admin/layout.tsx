@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/businesses', label: 'Businesses', icon: Building2 },
   { href: '/admin/schools', label: 'Schools', icon: GraduationCap },
+  { href: '/admin/football', label: 'Football', icon: Activity },
   { href: '/admin/trials', label: 'Trials', icon: FlaskConical },
   { href: '/admin/insights', label: 'Insights', icon: Sparkles },
   { href: '/admin/activity-log', label: 'Activity Log', icon: Activity },
