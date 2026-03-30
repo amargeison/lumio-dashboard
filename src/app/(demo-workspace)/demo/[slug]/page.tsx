@@ -2681,7 +2681,7 @@ function ITView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New Device',i:Monitor},{l:'Software Request',i:Package},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'System Update',i:ArrowRight},{l:'Dept Insights',i:BarChart3}].map(a=>(
+          {[{l:'New IT Request',i:Plus},{l:'Provision Account',i:UserPlus},{l:'Asset Register',i:Package},{l:'Licence Renewal',i:RotateCcw},{l:'IT Report',i:FileText},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'Dept Insights',i:Sparkles}].map(a=>(
             <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Star } from 'lucide-react'
+import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Shield, AlertTriangle, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -53,12 +53,14 @@ export default function ITPage() {
   const { showToast, Toast } = useToast()
 
   const actions = [
-    { label: 'New IT Request',    icon: Plus,      onClick: () => setShowTicket(true) },
-    { label: 'Provision Account', icon: UserPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Asset Register',    icon: Package,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Licence Renewal',   icon: RefreshCw, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'IT Report',         icon: FileText,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Dept Insights',    icon: Star,      onClick: () => setShowAIInsights(true) },
+    { label: 'New IT Request',    icon: Plus,           onClick: () => setShowTicket(true) },
+    { label: 'Provision Account', icon: UserPlus,       onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Asset Register',    icon: Package,        onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Licence Renewal',   icon: RefreshCw,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'IT Report',         icon: FileText,       onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Access Review',     icon: Shield,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Security Alert',    icon: AlertTriangle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Dept Insights',    icon: Sparkles,       onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('it')
