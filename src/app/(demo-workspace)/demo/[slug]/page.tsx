@@ -1922,6 +1922,7 @@ function HRView({ company }: { company: string }) {
             { label: 'Performance Review', icon: Star },
             { label: 'Company Events', icon: Calendar },
             { label: 'Send Contract', icon: FileText },
+            { label: 'Book Contractor', icon: Handshake },
             { label: 'Dept Insights', icon: BarChart3 },
           ].map(a => (
             <button key={a.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
