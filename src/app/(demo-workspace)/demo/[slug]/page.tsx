@@ -1884,16 +1884,17 @@ function HRView({ company }: { company: string }) {
   const probations = [{name:fakeName(company,4),date:'24 Mar 2026',manager:fakeName(company,12)},{name:fakeName(company,5),date:'24 Mar 2026',manager:fakeName(company,13)},{name:fakeName(company,1),date:'3 Apr 2026',manager:fakeName(company,13)}]
   return (
     <div className="space-y-4">
-      {/* VIEW toggle — top right */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-0.5 rounded-lg px-2 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+      {/* Header row with VIEW toggle */}
+      <div className="flex items-center justify-between -mt-2">
+        <div />
+        <div className="flex items-center gap-0.5 rounded-lg px-1.5 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}>
           {[
-            { icon: '▤', title: 'Table view', active: true },
-            { icon: '📊', title: 'Chart view', active: false },
-            { icon: '📈', title: 'Timeline view', active: false },
+            { icon: '☰', title: 'Table view', active: true },
+            { icon: '◫', title: 'Card view', active: false },
+            { icon: '▥', title: 'Timeline view', active: false },
           ].map(v => (
             <button key={v.title} title={v.title} className="flex items-center justify-center rounded transition-opacity"
-              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.5, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
+              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.4, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
               {v.icon}
             </button>
           ))}

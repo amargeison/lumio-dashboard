@@ -320,14 +320,14 @@ export default function HRPage() {
   return (
     <PageShell title="HR & People" subtitle="People management, hiring, onboarding and team workflows"
       action={
-        <div className="flex items-center gap-0.5 rounded-lg px-2 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="flex items-center gap-0.5 rounded-lg px-1.5 py-1" style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}>
           {[
-            { icon: '▤', title: 'Table view', active: true },
-            { icon: '📊', title: 'Chart view', active: false },
-            { icon: '📈', title: 'Timeline view', active: false },
+            { icon: '☰', title: 'Table view', active: true },
+            { icon: '◫', title: 'Card view', active: false },
+            { icon: '▥', title: 'Timeline view', active: false },
           ].map(v => (
             <button key={v.title} title={v.title} className="flex items-center justify-center rounded transition-opacity"
-              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.5, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
+              style={{ width: 28, height: 28, opacity: v.active ? 1 : 0.4, color: v.active ? '#0D9488' : '#6B7280', fontSize: 14 }}>
               {v.icon}
             </button>
           ))}
