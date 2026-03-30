@@ -95,8 +95,8 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Performance Review', tooltip: 'Initiate a performance review cycle for selected employees',  icon: Star      },
     { label: 'Company Events',     tooltip: 'Plan and notify team of an upcoming company event',           icon: Megaphone },
     { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',       icon: FileText  },
-    { label: 'Dept Insights',      tooltip: 'View AI-generated insights for HR & People',                  icon: BarChart3 },
     { label: 'Book Contractor',    tooltip: 'Book a contractor or temp worker for a project',              icon: Users     },
+    { label: 'Dept Insights',      tooltip: 'View AI-generated insights for HR & People',                  icon: BarChart3 },
   ],
   accounts:   [
     { label: 'Chase Invoice',     tooltip: 'Send payment reminders for all overdue invoices',              icon: Receipt     },
