@@ -66,12 +66,83 @@ export function DashboardEmptyState({
     setTimeout(() => setToast(''), 3500)
   }
 
+  const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([])
+  const [previewCols, setPreviewCols] = useState<string[]>([])
+  const [allRows, setAllRows] = useState<Record<string, string>[]>([])
+  const [importKey, setImportKey] = useState('')
+
   async function handleFile(key: string, file: File) {
-    showToast(`Uploading ${file.name}...`)
-    await new Promise(r => setTimeout(r, 2000))
-    showToast('Data imported successfully! Loading your portal...')
-    await new Promise(r => setTimeout(r, 700))
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (!ext || !['csv', 'xlsx', 'xls'].includes(ext)) {
+      showToast('Please upload an Excel (.xlsx) or CSV file')
+      return
+    }
+
+    showToast(`Parsing ${file.name}...`)
+    try {
+      const XLSX = await import('xlsx')
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' })
+
+      if (!rows.length) {
+        showToast('Your file appears to be empty')
+        return
+      }
+
+      const cols = Object.keys(rows[0])
+      const hasName = cols.some(c => /name/i.test(c))
+      if (!hasName) {
+        showToast("We couldn't find a Name column — please check your file")
+        return
+      }
+
+      setPreviewCols(cols.slice(0, 6))
+      setPreviewRows(rows.slice(0, 5))
+      setAllRows(rows)
+      setImportKey(key)
+    } catch {
+      showToast('Failed to parse file — please check the format')
+    }
+  }
+
+  async function confirmImport() {
+    showToast(`Importing ${allRows.length} records...`)
+    const cols = Object.keys(allRows[0])
+    const nameCol = cols.find(c => /^name$/i.test(c)) || cols.find(c => /name/i.test(c)) || cols[0]
+    const emailCol = cols.find(c => /email/i.test(c))
+    const roleCol = cols.find(c => /role|title|position|job/i.test(c))
+    const deptCol = cols.find(c => /dept|department/i.test(c))
+    const phoneCol = cols.find(c => /phone|tel|mobile/i.test(c))
+    const dateCol = cols.find(c => /start|date|joined/i.test(c))
+
+    const mapped = allRows.map(r => ({
+      name: r[nameCol] || '',
+      email: emailCol ? r[emailCol] : undefined,
+      role: roleCol ? r[roleCol] : undefined,
+      department: deptCol ? r[deptCol] : undefined,
+      phone: phoneCol ? r[phoneCol] : undefined,
+      start_date: dateCol ? r[dateCol] : undefined,
+    }))
+
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/import/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+          body: JSON.stringify({ rows: mapped }),
+        })
+      } catch { /* continue with localStorage fallback */ }
+    }
+
+    showToast(`✓ ${allRows.length} staff members imported successfully`)
+    setPreviewRows([])
+    setAllRows([])
+    await new Promise(r => setTimeout(r, 1000))
     localStorage.setItem(storageKey(), 'true')
+    ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     window.location.reload()
   }
 
@@ -269,6 +340,45 @@ export function DashboardEmptyState({
                 className="flex-1 rounded-xl py-2.5 text-sm font-medium"
                 style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import preview modal */}
+      {previewRows.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <div className="rounded-2xl p-6 w-full max-w-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>Preview Import</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{allRows.length} rows found · Showing first 5</p>
+              </div>
+              <button onClick={() => { setPreviewRows([]); setAllRows([]) }} style={{ color: '#6B7280' }}><X size={16} /></button>
+            </div>
+            <div className="overflow-x-auto mb-4 rounded-lg" style={{ border: '1px solid #1F2937' }}>
+              <table className="w-full text-xs">
+                <thead><tr style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B10' }}>
+                  {previewCols.map(c => <th key={c} className="text-left px-3 py-2 font-semibold" style={{ color: '#6B7280' }}>{c}</th>)}
+                </tr></thead>
+                <tbody>{previewRows.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>
+                    {previewCols.map(c => <td key={c} className="px-3 py-2" style={{ color: '#D1D5DB' }}>{String(r[c] || '')}</td>)}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={confirmImport}
+                className="flex-1 rounded-xl py-2.5 text-sm font-semibold"
+                style={{ backgroundColor: accentColor, color: '#F9FAFB' }}>
+                Import {allRows.length} Records
+              </button>
+              <button onClick={() => { setPreviewRows([]); setAllRows([]) }}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium"
+                style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
+                Cancel
               </button>
             </div>
           </div>
