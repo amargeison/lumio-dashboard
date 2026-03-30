@@ -1,295 +1,54 @@
 'use client'
 import { useRef, useState, useCallback } from 'react'
 
-export type VoiceCommandResult = {
+export type SchoolVoiceCommandResult = {
   command: string
   action: string
   response: string
-  payload?: Record<string, any>
+  data?: Record<string, any>
 }
 
-function extractTime(text: string): string | null {
-  const match = text.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i)
-  return match ? match[1] : null
-}
-
-function extractPersonOrCompany(text: string): string | null {
-  const match = text.match(/(?:with|for) ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
-  return match ? match[1] : null
-}
-
-function detectIntent(text: string): string | null {
-  const t = text.toLowerCase()
-  if (/\b(cancel|reschedule|move|postpone|push back)\b/.test(t) && /\b(meeting|call|review|consultation|appointment)\b/.test(t)) return 'CANCEL_MEETING'
-  if (/\b(cancel|reschedule|move|postpone)\b/.test(t)) return 'CANCEL_MEETING'
-  if (/\b(book|schedule|set up|arrange)\b/.test(t) && /\b(meeting|call|review)\b/.test(t)) return 'BOOK_MEETING'
-  if (/\b(send|write|compose)\b/.test(t) && /\b(email|mail)\b/.test(t)) return 'EMAIL'
-  if (/\b(call|phone|ring)\b/.test(t)) return 'PHONE'
-  if (/\b(send|message)\b/.test(t) && /\b(slack)\b/.test(t)) return 'SLACK'
+function extractName(text: string, prefixes: string[]): string | null {
+  const lower = text.toLowerCase()
+  for (const p of prefixes) {
+    const idx = lower.indexOf(p)
+    if (idx >= 0) { const w = text.slice(idx + p.length).trim().split(/[\s,.!?]/)[0]; if (w.length > 1) return w.charAt(0).toUpperCase() + w.slice(1) }
+  }
   return null
 }
 
-function extractChannel(text: string): string {
-  const match = text.match(/(?:to |in |channel )?#?([a-z0-9-_]+)(?:\s|$)/i)
-  return match ? match[1].toLowerCase() : 'general'
-}
-
-function extractPlatform(text: string): string {
-  if (/zoom/i.test(text)) return 'Zoom'
-  if (/teams/i.test(text)) return 'Microsoft Teams'
-  if (/google meet|google/i.test(text)) return 'Google Meet'
-  return 'Teams'
-}
-
-const COMMANDS: { patterns: RegExp[], action: string, response: (m: RegExpMatchArray, full: string) => string, payload?: (m: RegExpMatchArray, full: string) => Record<string, any> }[] = [
-
-  // ── NAVIGATION ──────────────────────────────────────────────────────────────
-  {
-    patterns: [/go to (school.office|hr|hr.staff|staff|finance|reports|safeguarding|students|send|curriculum|facilities|admissions|workflows|settings|trust|wraparound|insights)/i, /open (school.office|hr|hr.staff|staff|finance|reports|safeguarding|students|send|curriculum|facilities|admissions|workflows|settings|trust|wraparound|insights)/i],
-    action: 'NAVIGATE',
-    response: (m) => `Navigating to ${m[1]}.`,
-    payload: (m) => {
-      let dept = m[1].toLowerCase().replace(/\s+/g, '-')
-      if (dept === 'staff' || dept === 'hr') dept = 'hr-staff'
-      if (dept === 'school-office' || dept === 'school.office') dept = 'school-office'
-      if (dept === 'send') dept = 'send-dsl'
-      return { dept }
-    }
-  },
-  {
-    patterns: [/check attendance/i, /show attendance/i],
-    action: 'NAVIGATE',
-    response: () => 'Opening attendance.',
-    payload: () => ({ dept: 'students' })
-  },
-  {
-    patterns: [/show send pupils/i, /show send/i, /show ehcp/i],
-    action: 'NAVIGATE',
-    response: () => 'Opening SEND & DSL.',
-    payload: () => ({ dept: 'send-dsl' })
-  },
-
-  // ── ROUNDUP ─────────────────────────────────────────────────────────────────
-  {
-    patterns: [/show (?:my )?alerts?/i, /any alerts?/i, /urgent alerts?/i],
-    action: 'EXPAND_ROUNDUP',
-    response: () => 'Opening alerts.',
-    payload: () => ({ section: 'alerts' })
-  },
-  {
-    patterns: [/show (?:my )?emails?/i, /check (?:my )?emails?/i],
-    action: 'EXPAND_ROUNDUP',
-    response: () => 'Opening your emails.',
-    payload: () => ({ section: 'email' })
-  },
-  {
-    patterns: [/show (?:my )?mis/i, /check mis/i, /mis updates?/i],
-    action: 'EXPAND_ROUNDUP',
-    response: () => 'Opening MIS updates.',
-    payload: () => ({ section: 'mis' })
-  },
-  {
-    patterns: [/show polic(?:y|ies)/i, /policy updates?/i],
-    action: 'EXPAND_ROUNDUP',
-    response: () => 'Opening policy updates.',
-    payload: () => ({ section: 'policy' })
-  },
-
-  // ── MODALS — SCHOOL ─────────────────────────────────────────────────────────
-  {
-    patterns: [/new safeguarding/i, /safeguarding alert/i, /log (?:a )?concern/i, /raise (?:a )?concern/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening a new safeguarding concern.',
-    payload: () => ({ modal: 'SafeguardingAlert' })
-  },
-  {
-    patterns: [/new pupil/i, /add (?:a )?pupil/i, /add (?:a )?student/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening the new pupil form.',
-    payload: () => ({ modal: 'NewPupil' })
-  },
-  {
-    patterns: [/new exclusion/i, /log (?:an )?exclusion/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening a new exclusion form.',
-    payload: () => ({ modal: 'NewExclusion' })
-  },
-  {
-    patterns: [/new incident/i, /log (?:an )?incident/i, /report (?:an )?incident/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening a new incident form.',
-    payload: () => ({ modal: 'NewIncident' })
-  },
-  {
-    patterns: [/staff leave/i, /(?:request|book) staff leave/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening a staff leave request.',
-    payload: () => ({ modal: 'StaffLeave' })
-  },
-  {
-    patterns: [/ofsted check/i, /ofsted readiness/i, /check ofsted/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening the Ofsted readiness check.',
-    payload: () => ({ modal: 'OfstedCheck' })
-  },
-  {
-    patterns: [/send (?:a )?report/i, /new report/i, /generate (?:a )?report/i],
-    action: 'OPEN_MODAL',
-    response: () => 'Opening the report builder.',
-    payload: () => ({ modal: 'SendReport' })
-  },
-
-  // ── BRIEFING ────────────────────────────────────────────────────────────────
-  {
-    patterns: [/play.*brief/i, /morning brief/i, /afternoon brief/i, /start brief/i, /give me (?:my )?briefing/i],
-    action: 'PLAY_BRIEFING',
-    response: () => 'Starting your briefing now.',
-  },
-  {
-    patterns: [/stop/i, /pause/i, /quiet/i, /shut up/i, /silence/i],
-    action: 'STOP_AUDIO',
-    response: () => 'Stopping.',
-  },
-
-  // ── INFO ─────────────────────────────────────────────────────────────────────
-  {
-    patterns: [/what(?:'s| is) (?:the )?(?:current )?time/i, /what time is it/i],
-    action: 'TELL_TIME',
-    response: () => `It's ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.`,
-  },
-  {
-    patterns: [/how many pupils?(?:\s+today)?/i, /pupil count/i, /how many students?/i],
-    action: 'PUPIL_COUNT',
-    response: () => "You have 847 pupils on roll. Today's attendance is 96.2%.",
-  },
-  {
-    patterns: [/any urgent alerts?/i, /urgent safeguarding/i, /safeguarding alerts?/i],
-    action: 'ALERT_COUNT',
-    response: () => 'You have 3 urgent safeguarding alerts that need attention.',
-  },
-  {
-    patterns: [/today'?s? schedule/i, /what'?s? on today/i, /my schedule/i],
-    action: 'SCHEDULE',
-    response: () => 'You have 4 lessons, 2 meetings, and a governors briefing at 4pm today.',
-  },
-
-  // ── MEETING CANCEL — broad patterns ──────────────────────────────────────────
-  {
-    patterns: [
-      /(?:cancel|reschedule|move|postpone) (?:my |the )?(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)\s*(?:meeting|call|review)?/i,
-      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|review) (?:at |for )(\d{1,2}(?::\d{2})?\s*(?:am|pm|o'?clock)?)/i,
-    ],
-    action: 'CANCEL_MEETING_BY_TIME',
-    response: (m) => `Looking for your meeting at ${m[1]}...`,
-    payload: (m) => ({ time: m[1] })
-  },
-  {
-    patterns: [
-      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:meeting|call|review|consultation) with (\w+(?:\s+\w+)?)/i,
-      /(?:cancel|reschedule|move|postpone) (?:my |the )?(\w+(?:\s+\w+)?) (?:meeting|call|review|consultation)/i,
-    ],
-    action: 'CANCEL_MEETING_BY_NAME',
-    response: (m) => `Looking for your ${m[1]} meeting...`,
-    payload: (m) => ({ query: m[1] })
-  },
-  {
-    patterns: [
-      /(?:cancel|reschedule|move|postpone) (?:my |the )?(?:next )?(?:meeting|call|review|consultation)/i,
-    ],
-    action: 'CANCEL_NEXT_MEETING',
-    response: () => 'Which meeting would you like to cancel? You can tell me the time or the meeting name.',
-  },
-  {
-    patterns: [/book (?:a )?(zoom|teams|google meet|microsoft teams) (?:meeting |call )?at (.+)/i, /schedule (?:a )?(zoom|teams|google meet) at (.+)/i],
-    action: 'BOOK_MEETING',
-    response: (_m, full) => `Opening a ${extractPlatform(full)} booking for ${extractTime(full) || 'the time you mentioned'}.`,
-    payload: (_m, full) => ({ platform: extractPlatform(full), time: extractTime(full) })
-  },
-
-  // ── SLACK / EMAIL ────────────────────────────────────────────────────────────
-  {
-    patterns: [/send (?:my )?team (?:this message |a message )?on slack[: ]+(.+)/i, /slack (?:my )?team[: ]+(.+)/i],
-    action: 'SLACK_TEAM_MESSAGE',
-    response: () => `I have your message. Which Slack channel should I send to?`,
-    payload: (m) => ({ message: m[1] })
-  },
-  {
-    patterns: [/email (?:my )?team[: ]+(.+)/i, /send (?:my )?team an email[: ]+(.+)/i],
-    action: 'EMAIL_TEAM',
-    response: () => `Opening a team email with your message.`,
-    payload: (m) => ({ message: m[1] })
-  },
-
-  // ── HELP ─────────────────────────────────────────────────────────────────────
-  {
-    patterns: [/help/i, /what can you do/i, /(?:list )?commands/i],
-    action: 'HELP',
-    response: () => `You can say: play my briefing, new safeguarding alert, log a concern, add a pupil, go to students, check attendance, show alerts, how many pupils today, today's schedule, cancel my meeting, book a Teams call, or stop.`,
-  },
+const COMMANDS: { patterns: RegExp[]; action: string; response: (m: RegExpMatchArray, t: string) => string; data?: (m: RegExpMatchArray, t: string) => Record<string, any> }[] = [
+  { patterns: [/play.*brief/i, /morning brief/i, /start brief/i], action: 'PLAY_BRIEFING', response: () => 'Starting your morning briefing now.' },
+  { patterns: [/^stop$/i, /^pause$/i], action: 'STOP_AUDIO', response: () => 'Stopping.' },
+  { patterns: [/i'?m ill/i, /i'?m sick/i, /i'?m not well/i, /report sick/i, /i can'?t come in/i], action: 'REPORT_SICK', response: () => "I'll log your absence and notify the cover coordinator." },
+  { patterns: [/log.*concern/i, /safeguarding concern/i, /raise.*concern/i], action: 'LOG_CONCERN', response: () => 'Opening the safeguarding concern form.' },
+  { patterns: [/take.*register/i, /register for (\w+)/i, /class register/i], action: 'TAKE_REGISTER', response: (_m, t) => { const c = extractName(t, ['for ', 'register ']); return c ? `Opening register for ${c}.` : 'Opening the class register.' }, data: (_m, t) => ({ className: extractName(t, ['for ', 'register ']) }) },
+  { patterns: [/book cover/i, /cover for (\w+)/i, /need cover/i, /arrange cover/i], action: 'BOOK_COVER', response: (_m, t) => { const c = extractName(t, ['for ']); return c ? `Opening cover booking for ${c}.` : 'Opening the cover booking form.' }, data: (_m, t) => ({ className: extractName(t, ['for ']) }) },
+  { patterns: [/parent contact/i, /contact parent/i, /message parent/i], action: 'PARENT_CONTACT', response: (_m, t) => { const n = extractName(t, ['for ', 'about ']); return n ? `Opening parent contact for ${n}.` : 'Opening parent contact form.' }, data: (_m, t) => ({ pupilName: extractName(t, ['for ', 'about ']) }) },
+  { patterns: [/staff alert/i, /send.*staff/i, /alert staff/i], action: 'STAFF_ALERT', response: () => 'Opening staff alert form.' },
+  { patterns: [/check attendance/i, /attendance today/i, /what.*attendance/i], action: 'CHECK_ATTENDANCE', response: () => 'Today\'s attendance is 96.2% across all year groups. Year 6 is lowest at 91.8%.' },
+  { patterns: [/ehcp review/i, /ehcp for (\w+)/i], action: 'EHCP_REVIEW', response: (_m, t) => { const n = extractName(t, ['for ']); return n ? `Opening EHCP review for ${n}.` : 'Opening EHCP review form.' }, data: (_m, t) => ({ pupilName: extractName(t, ['for ']) }) },
+  { patterns: [/log absence/i, /pupil absent/i, /report absence/i], action: 'LOG_ABSENCE', response: () => 'Opening the absence logging form.' },
+  { patterns: [/book holiday/i, /request leave/i, /time off/i], action: 'BOOK_HOLIDAY', response: () => 'Opening the leave request form.' },
+  { patterns: [/what.*time/i], action: 'TELL_TIME', response: () => `It's ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.` },
+  { patterns: [/help/i, /what can you do/i, /commands/i], action: 'HELP', response: () => "You can say: play my briefing, I'm ill today, log a concern, take register, book cover, check attendance, parent contact, or EHCP review." },
 ]
 
 export function useSchoolVoiceCommands() {
   const recognitionRef = useRef<any>(null)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
-  const [lastCommand, setLastCommand] = useState<VoiceCommandResult | null>(null)
-  const [pendingAction, setPendingAction] = useState<{ type: string, data: Record<string, any> } | null>(null)
+  const [lastCommand, setLastCommand] = useState<SchoolVoiceCommandResult | null>(null)
 
-  const processCommand = useCallback((text: string): VoiceCommandResult | null => {
-    if (pendingAction) {
-      if (pendingAction.type === 'AWAITING_SLACK_CHANNEL') {
-        const channel = extractChannel(text)
-        setPendingAction(null)
-        return { command: text, action: 'EXECUTE_SLACK_SEND', response: `Sending to #${channel}.`, payload: { ...pendingAction.data, channel } }
-      }
-      if (pendingAction.type === 'AWAITING_CANCEL_DETAILS') {
-        const time = extractTime(text)
-        const person = extractPersonOrCompany(text)
-        if (time) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } } }
-        if (person) { setPendingAction(null); return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } } }
-        setPendingAction(null)
-        return { command: text, action: 'CANCEL_NEXT_MEETING', response: "I still couldn't identify the meeting. Try saying the time or the person's name." }
-      }
-      if (pendingAction.type === 'AWAITING_CANCEL_CONFIRMATION') {
-        if (/yes|confirm|do it|go ahead|send|sure/i.test(text)) {
-          setPendingAction(null)
-          return { command: text, action: 'CANCEL_MEETING_WITH_EMAIL', response: 'Done \u2014 cancellation sent and attendees notified. I\'ll remove it from your calendar.', payload: pendingAction.data }
-        }
-        if (/no|don't|skip|leave it|nah/i.test(text)) {
-          setPendingAction(null)
-          return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: "OK, I'll leave it as is.", payload: pendingAction.data }
-        }
-        setPendingAction(null)
-        return { command: text, action: 'CANCEL_MEETING_NO_EMAIL', response: 'OK, no changes made.', payload: pendingAction.data }
-      }
-    }
-
+  const processCommand = useCallback((text: string): SchoolVoiceCommandResult => {
     for (const cmd of COMMANDS) {
       for (const pattern of cmd.patterns) {
         const match = text.match(pattern)
-        if (match) {
-          const payload = cmd.payload ? cmd.payload(match, text) : {}
-          return { command: text, action: cmd.action, response: cmd.response(match, text), payload }
-        }
+        if (match) return { command: text, action: cmd.action, response: cmd.response(match, text), data: cmd.data?.(match, text) }
       }
     }
-
-    // Fuzzy intent fallback
-    const intent = detectIntent(text)
-    if (intent === 'CANCEL_MEETING') {
-      const time = extractTime(text)
-      const person = extractPersonOrCompany(text)
-      if (time) return { command: text, action: 'CANCEL_MEETING_BY_TIME', response: `Looking for your meeting at ${time}...`, payload: { time } }
-      if (person) return { command: text, action: 'CANCEL_MEETING_BY_NAME', response: `Looking for your meeting with ${person}...`, payload: { query: person } }
-      return { command: text, action: 'CANCEL_NEXT_MEETING', response: 'Which meeting would you like to cancel? You can tell me the time or the meeting name.' }
-    }
-    if (intent === 'BOOK_MEETING') return { command: text, action: 'OPEN_MODAL', response: 'Opening the meeting scheduler.', payload: { modal: 'ScheduleDemo' } }
-    if (intent === 'EMAIL') return { command: text, action: 'EMAIL_TEAM', response: 'Opening the email composer.', payload: { message: '' } }
-    if (intent === 'PHONE') return { command: text, action: 'OPEN_MODAL', response: 'Logging a call.', payload: { modal: 'LogCall' } }
-    if (intent === 'SLACK') return { command: text, action: 'SLACK_TEAM_MESSAGE', response: 'What would you like to send on Slack?', payload: { message: '' } }
-
-    return { command: text, action: 'UNKNOWN', response: `I heard "${text.slice(0, 40)}" but I'm not sure what to do. Try saying "help" for a list of commands.` }
-  }, [pendingAction])
+    return { command: text, action: 'UNKNOWN', response: `I heard "${text}" but I'm not sure what to do. Say "help" for available commands.` }
+  }, [])
 
   const startListening = useCallback(() => {
     if (typeof window === 'undefined') return
@@ -300,12 +59,7 @@ export function useSchoolVoiceCommands() {
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
-    recognition.onresult = (e: any) => {
-      const text = e.results[0][0].transcript
-      setTranscript(text)
-      const result = processCommand(text)
-      if (result) setLastCommand(result)
-    }
+    recognition.onresult = (e: any) => { const text = e.results[0][0].transcript; setTranscript(text); setLastCommand(processCommand(text)) }
     recognition.onend = () => setIsListening(false)
     recognition.onerror = () => setIsListening(false)
     recognitionRef.current = recognition
@@ -313,10 +67,7 @@ export function useSchoolVoiceCommands() {
     setIsListening(true)
   }, [processCommand])
 
-  const stopListening = useCallback(() => {
-    recognitionRef.current?.stop()
-    setIsListening(false)
-  }, [])
+  const stopListening = useCallback(() => { recognitionRef.current?.stop(); setIsListening(false) }, [])
 
-  return { isListening, transcript, lastCommand, startListening, stopListening, pendingAction, setPendingAction }
+  return { isListening, transcript, lastCommand, startListening, stopListening }
 }
