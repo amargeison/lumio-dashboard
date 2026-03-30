@@ -2551,6 +2551,14 @@ function SuccessView({ company }: { company: string }) {
           barData={[{label:'Jan',value:20,color:'#EF4444'},{label:'Feb',value:22,color:'#EF4444'},{label:'Mar',value:Math.round(cu*.13),color:'#DC2626'}]} />
       </div>
       <DeptAISummary dept="success" portal="business" />
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[{l:'Health Check',i:Star},{l:'QBR Prep',i:Calendar},{l:'Churn Alert',i:AlertCircle},{l:'NPS Survey',i:Send},{l:'Expansion Opp',i:TrendingUp},{l:'Dept Insights',i:BarChart3}].map(a=>(
+            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Account Health Overview</p></div>
@@ -3786,7 +3794,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'it' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'success' && activeDept !== 'it' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
