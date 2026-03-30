@@ -1779,20 +1779,44 @@ function SalesView({ company }: { company: string }) {
         <StatCard label="Win Rate" value={`${wr}%`} icon={Star} color="#F59E0B"
           pieData={[{label:'Won',value:wr,color:'#22C55E'},{label:'Lost',value:100-wr,color:'#374151'}]}
           barData={[{label:'Q3\'25',value:24,color:'#F59E0B'},{label:'Q4\'25',value:26,color:'#F59E0B'},{label:'Q1\'26',value:wr,color:'#D97706'}]} />
+        <StatCard label="Hot Leads" value="8" icon={Target} color="#EF4444"
+          pieData={[{label:'Hot',value:8,color:'#EF4444'},{label:'Warm',value:16,color:'#F59E0B'}]}
+          barData={[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:6,color:'#EF4444'},{label:'Mar',value:8,color:'#DC2626'}]} />
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Pipeline</p></div>
-        <table className="w-full text-sm">
-          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Value','Stage','AI Score'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
-          <tbody>{deals.map((d,i)=>(
-            <tr key={i} style={{borderBottom:i<deals.length-1?'1px solid #111318':undefined}}>
-              <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{d.name}</td>
-              <td className="px-5 py-3" style={{color:'#9CA3AF'}}>{d.value}</td>
-              <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:d.stage==='Closed Won'?'rgba(34,197,94,0.12)':'rgba(13,148,136,0.1)',color:d.stage==='Closed Won'?'#22C55E':'#0D9488'}}>{d.stage}</span></td>
-              <td className="px-5 py-3"><div className="flex items-center gap-2"><div className="w-16 h-1.5 rounded-full overflow-hidden" style={{backgroundColor:'#1F2937'}}><div className="h-full rounded-full" style={{width:`${d.score}%`,backgroundColor:d.score>=80?'#22C55E':d.score>=60?'#F59E0B':'#EF4444'}} /></div><span className="text-xs" style={{color:'#9CA3AF'}}>{d.score}</span></div></td>
-            </tr>
-          ))}</tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Deal Pipeline</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Stage','Value','Owner','Last Activity'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{deals.map((d,i)=>(
+              <tr key={i} style={{borderBottom:i<deals.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{d.name}</td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:d.stage==='Closed Won'?'rgba(34,197,94,0.12)':'rgba(13,148,136,0.1)',color:d.stage==='Closed Won'?'#22C55E':'#0D9488'}}>{d.stage}</span></td>
+                <td className="px-5 py-3" style={{color:'#9CA3AF'}}>{d.value}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{d.owner}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#6B7280'}}>{d.lastActivity}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Hot Leads</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:fakeCompany(company,60),score:94,source:'Inbound — website demo'},{name:fakeCompany(company,61),score:88,source:'Referral — partner intro'},{name:fakeCompany(company,62),score:82,source:'Outbound — LinkedIn'}].map((l,i)=>(
+                <div key={i} className="px-5 py-3"><div className="flex items-center justify-between mb-1"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{l.name}</p><span className="text-xs font-bold" style={{color:'#EF4444'}}>{l.score}%</span></div><p className="text-xs" style={{color:'#6B7280'}}>{l.source}</p></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Outreach Sequences</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:'Cold Outbound — Q1',sent:245,replied:18,meetings:4},{name:'Referral Follow-up',sent:32,replied:12,meetings:6},{name:'Lapsed Trial Win-back',sent:89,replied:7,meetings:2}].map((s,i)=>(
+                <div key={i} className="px-5 py-3"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{s.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{s.sent} sent · {s.replied} replied · {s.meetings} meetings</p></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
