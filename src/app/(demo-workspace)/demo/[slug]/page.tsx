@@ -2881,67 +2881,6 @@ function InviteModal({ slug, company, userName, onClose }: { slug: string; compa
 
 // ─── Welcome Screen ──────────────────────────────────────────────────────────
 
-function DeptPickerModal({ onComplete }: { onComplete: (depts: string[]) => void }) {
-  function handleGetStarted() {
-    localStorage.setItem('demo_onboarded', 'true')
-    localStorage.setItem('demo_focus_depts', JSON.stringify([]))
-    const token = localStorage.getItem('demo_session_token')
-    if (token) {
-      fetch('/api/demo/update-onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_token: token, selected_departments: [] }),
-      }).catch(() => {})
-    }
-    onComplete([])
-  }
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10,10,20,0.98)', zIndex: 9999 }}>
-      <div className="w-full flex flex-col items-center text-center" style={{ maxWidth: 500 }}>
-        {/* Logo */}
-        <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={60} style={{ width: 140, height: 'auto', objectFit: 'contain', marginBottom: 32 }} />
-
-        {/* Heading */}
-        <h1 className="text-3xl font-black mb-2" style={{ color: '#F9FAFB' }}>Welcome to Lumio</h1>
-        <p className="text-base mb-8" style={{ color: '#9CA3AF' }}>Let&apos;s get your workspace set up in 2 minutes</p>
-
-        {/* Video cards */}
-        <div className="grid grid-cols-2 gap-4 w-full mb-8">
-          {[
-            { title: 'Getting Started with Lumio', sub: '2 min intro' },
-            { title: 'Getting the Most Out of Lumio', sub: '2 min tips & tricks' },
-          ].map(v => (
-            <button key={v.title} onClick={() => console.log(`Play: ${v.title}`)}
-              className="rounded-xl p-5 text-left transition-all hover:brightness-110"
-              style={{ backgroundColor: '#1a1a2e', border: '1px solid #2a2a4e' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: '#F59E0B' }}>
-                <Play size={16} style={{ color: '#0f0f1a', marginLeft: 2 }} />
-              </div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{v.title}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{v.sub}</p>
-            </button>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 w-full mb-8">
-          <div className="flex-1 h-px" style={{ backgroundColor: '#2a2a4e' }} />
-          <span className="text-xs shrink-0" style={{ color: '#6B7280' }}>Ready to set up your workspace?</span>
-          <div className="flex-1 h-px" style={{ backgroundColor: '#2a2a4e' }} />
-        </div>
-
-        {/* CTA */}
-        <button onClick={handleGetStarted}
-          className="w-full py-4 rounded-xl text-base font-bold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: '#F59E0B', color: '#0f0f1a' }}>
-          Get Started →
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Department Insights Modal ────────────────────────────────────────────────
 
 const DEPT_INSIGHTS: Record<DeptId, { metric: string; value: string; trend: string; insight: string }[]> = {
@@ -3198,7 +3137,6 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showDataConnections, setShowDataConnections] = useState(false)
   const [demoCleared, setDemoCleared] = useState(() => typeof window !== 'undefined' && localStorage.getItem(`lumio_demo_cleared`) === 'true')
   const [demoDataActive, setDemoDataActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
-  const [showOnboarding, setShowOnboarding]   = useState(false)
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
   const [showNewJoiner,    setShowNewJoiner]    = useState(false)
@@ -3263,12 +3201,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true'))
     }
 
-    if (!isPreview && !onboarded) setShowOnboarding(true)
-    else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
-
-    // Show welcome overlay on first visit
+    // Show welcome overlay on first visit (replaces old DeptPickerModal)
     if (!isPreview && !localStorage.getItem(`lumio_demo_welcomed_${slug}`)) {
       setShowWelcome(true)
+    } else if (!isPreview && !tipsCompleted) {
+      setShowCoachMarks(true)
     }
 
     // Sync company name to lumio_ keys for sidebar
@@ -3374,7 +3311,6 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
 
       <Toast message={toast} />
-      {showOnboarding && <DeptPickerModal onComplete={(depts) => { setFocusDepts(depts); setShowOnboarding(false); setShowCoachMarks(true) }} />}
       {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
       {showDeptInsights && <DeptInsightsModal dept={activeDept} onClose={() => setShowDeptInsights(false)} />}
       {showNewJoiner    && <NewJoinerModal          onClose={() => setShowNewJoiner(false)}    onSubmit={handleDemoNewJoiner}    />}
@@ -3387,27 +3323,35 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {/* Welcome overlay */}
       {showWelcome && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', maxWidth: 500, padding: '2rem' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚡</div>
-            <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
-            <p style={{ color: '#aaa', marginBottom: '2rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
+          <div style={{ textAlign: 'center', maxWidth: 520, padding: '2rem', width: '100%' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
+            <h1 style={{ color: 'white', fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
+            <p style={{ color: '#aaa', marginBottom: '2.5rem', fontSize: '1rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem', cursor: 'pointer' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.2rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 'bold', marginBottom: 4 }}>Getting Started with Lumio</div>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting Started with Lumio</div>
                 <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min intro</div>
               </div>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem', cursor: 'pointer' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.2rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 'bold', marginBottom: 4 }}>Getting the Most Out of Lumio</div>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting the Most Out of Lumio</div>
                 <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min tips & tricks</div>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #333', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
+            <div style={{ borderTop: '1px solid #2a2a3e', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
+              <p style={{ color: '#555', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
             </div>
-            <button onClick={() => { localStorage.setItem(`lumio_demo_welcomed_${slug}`, 'true'); setShowWelcome(false) }}
-              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 8, fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>
+            <button onClick={() => {
+              localStorage.setItem(`lumio_demo_welcomed_${slug}`, 'true')
+              localStorage.setItem('demo_onboarded', 'true')
+              localStorage.setItem('demo_focus_depts', JSON.stringify([]))
+              setShowWelcome(false)
+              setShowCoachMarks(true)
+            }}
+              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 10, fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em' }}>
               Get Started →
             </button>
           </div>
