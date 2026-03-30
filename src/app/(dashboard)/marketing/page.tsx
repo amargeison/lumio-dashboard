@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video } from 'lucide-react'
+import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import CaseStudyModal from '@/components/modals/CaseStudyModal'
@@ -72,6 +73,7 @@ export default function MarketingPage() {
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [showWebinar, setShowWebinar] = useState(false)
   const [showLeadReport, setShowLeadReport] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -80,6 +82,7 @@ export default function MarketingPage() {
     { label: 'Case Study',        icon: FileText,   onClick: () => setShowCaseStudy(true) },
     { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
     { label: 'Lead Report',       icon: TrendingUp, onClick: () => setShowLeadReport(true) },
+    { label: 'Dept Insights',    icon: Star,       onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('marketing')
@@ -172,6 +175,7 @@ export default function MarketingPage() {
       {showCreatePost && <CreatePostModal onClose={() => setShowCreatePost(false)} onToast={showToast} />}
       {showWebinar && <WebinarSetupModal onClose={() => setShowWebinar(false)} onToast={showToast} />}
       {showLeadReport && <LeadReportModal onClose={() => setShowLeadReport(false)} onToast={showToast} />}
+      <AIInsightsReport dept="marketing" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )

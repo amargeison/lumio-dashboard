@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
+import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles, BarChart3 } from 'lucide-react'
 import { NewEnquiryModal, OpenDayModal, SocialMediaPostModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -131,10 +131,6 @@ export default function AdmissionsPage() {
 
       <DeptAISummary dept="admissions" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
-      </button>
-
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Applications" value="47" sub="2026 entry" />
@@ -150,6 +146,7 @@ export default function AdmissionsPage() {
         { label: 'Send Newsletter', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Open Day', icon: <Users size={14} />, onClick: () => setShowOpenDay(true) },
         { label: 'Social Post', icon: <Share2 size={14} />, onClick: () => setShowSocialMedia(true) },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
       {/* AI Highlights */}

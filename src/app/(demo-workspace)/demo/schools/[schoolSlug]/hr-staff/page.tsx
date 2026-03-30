@@ -1,9 +1,10 @@
 'use client'
 import React, { useState } from 'react'
-import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText } from 'lucide-react'
+import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'M. Taylor DBS expired 10 March — urgent renewal needed before next classroom contact',
@@ -18,6 +19,7 @@ const ACTIONS = [
   { label: 'New Staff Member', icon: <UserPlus size={14} /> },
   { label: 'DBS Check', icon: <Shield size={14} /> },
   { label: 'Performance Review', icon: <FileText size={14} /> },
+  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
 ]
 
 const STATS = [
@@ -135,9 +137,11 @@ function statusBadge(status: string) {
 export default function DemoHRStaffPage() {
   const hasData = useHasSchoolData('hr-staff')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="hr-staff" title="No HR & staff data yet" description="Upload your staff roster, contracts and absence records to activate HR & Staff." uploads={[{ key: 'hr-staff', label: 'Upload Staff Roster (CSV)' }]} />
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -262,6 +266,7 @@ export default function DemoHRStaffPage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="hr-staff" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield } from 'lucide-react'
+import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield, Star } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewTrialModal from '@/components/modals/NewTrialModal'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { useToast } from '@/components/modals/useToast'
 
 const stats = [
@@ -54,6 +56,7 @@ const opportunities = [
 
 export default function TrialsPage() {
   const [showTrial, setShowTrial] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -63,6 +66,7 @@ export default function TrialsPage() {
     { label: 'Convert to Customer', icon: UserPlus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'End Trial',           icon: AlertCircle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Admin Portal',        icon: Shield,       onClick: () => window.location.href = '/admin' },
+    { label: 'Dept Insights',      icon: Star,         onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('trials')
@@ -78,6 +82,7 @@ export default function TrialsPage() {
 
   return (
     <PageShell title="Trials" subtitle="Trial management, conversions and pipeline">
+      <DeptAISummary dept="trials" portal="business" />
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -115,6 +120,7 @@ export default function TrialsPage() {
         }
       />
       {showTrial && <NewTrialModal onClose={() => setShowTrial(false)} onSubmit={() => { setShowTrial(false); showToast('Trial created') }} />}
+      <AIInsightsReport dept="trials" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )

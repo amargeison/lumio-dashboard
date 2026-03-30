@@ -6,10 +6,12 @@ import { createBrowserClient } from '@supabase/ssr'
 import {
   TrendingUp, Users, BookOpen, Mail, ExternalLink, Building2,
   Calendar, User, Plus, X, Upload, FileText, Loader2,
-  Sparkles, ChevronDown, ChevronUp,
+  Sparkles, ChevronDown, ChevronUp, Star,
 } from 'lucide-react'
-import { StatCard, Badge, SectionCard, PageShell } from '@/components/page-ui'
+import { StatCard, Badge, SectionCard, PageShell, QuickActions } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
@@ -586,6 +588,7 @@ export default function PartnersPage() {
   const [added, setAdded]           = useState<AddedPartner[]>([])
   const [activeAdded, setActiveAdded] = useState<string | null>(null)
   const [showModal, setShowModal]   = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const [loading, setLoading]       = useState(true)
 
   useEffect(() => {
@@ -630,6 +633,8 @@ export default function PartnersPage() {
 
   return (
     <PageShell title="Partners" subtitle="Partner relationships, referrals and co-selling">
+      <DeptAISummary dept="partners" portal="business" />
+      <QuickActions items={[{ label: 'Dept Insights', icon: Star, onClick: () => setShowAIInsights(true) }]} />
       {/* Tab bar */}
       <div className="flex items-center gap-1.5 flex-wrap rounded-xl p-3"
         style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -709,6 +714,7 @@ export default function PartnersPage() {
       {showModal && (
         <AddPartnerModal onClose={() => setShowModal(false)} onSaved={handleSaved} />
       )}
+      <AIInsightsReport dept="partners" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </PageShell>
   )
 }

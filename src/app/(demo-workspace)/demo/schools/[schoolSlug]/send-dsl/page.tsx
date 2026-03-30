@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import {
   Sparkles, AlertTriangle, FileText, User, ClipboardList, TrendingDown,
   Shield, BookOpen, Users, ChevronRight, CheckCircle, XCircle, Clock,
-  AlertCircle, Activity, Building, Laptop, GraduationCap, FolderOpen
+  AlertCircle, Activity, Building, Laptop, GraduationCap, FolderOpen, BarChart3
 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
@@ -998,6 +999,7 @@ const QUICK_ACTIONS = [
   { label: 'Pupil Passport', icon: <User size={14} /> },
   { label: 'Intervention Log', icon: <ClipboardList size={14} /> },
   { label: 'Attendance Concern', icon: <TrendingDown size={14} /> },
+  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
 ]
 
 export default function DemoSendDslPage() {
@@ -1007,12 +1009,14 @@ export default function DemoSendDslPage() {
   const [sendTab, setSendTab] = useState('overview')
   const [dslTab, setDslTab] = useState('overview')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   const slugMatch = pathname.match(/\/demo\/schools\/([^/]+)/)
   const slug = slugMatch?.[1] ?? 'oakridge-primary'
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="send-dsl" title="No SEND & DSL data yet" description="Upload your SEND register and DSL log to activate SEND & DSL." uploads={[{ key: 'send-dsl', label: 'Upload SEND Register (CSV)' }]} />
 
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -1135,6 +1139,7 @@ export default function DemoSendDslPage() {
       </Card>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="send-dsl" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

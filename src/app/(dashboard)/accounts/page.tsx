@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign } from 'lucide-react'
+import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
@@ -66,6 +67,7 @@ export default function AccountsPage() {
   const [showPayment, setShowPayment] = useState(false)
   const [xeroSyncing, setXeroSyncing] = useState(false)
   const [showRunPayroll, setShowRunPayroll] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
@@ -133,6 +135,7 @@ export default function AccountsPage() {
     { label: 'Payment Received', icon: TrendingUp, onClick: () => setShowPayment(true) },
     { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => { setXeroSyncing(true); showToast('Syncing with Xero...'); setTimeout(() => { setXeroSyncing(false); showToast('Synced with Xero — connected ✓') }, 1500) } },
     { label: 'Run Payroll',    icon: DollarSign,  onClick: () => setShowRunPayroll(true) },
+    { label: 'Dept Insights', icon: Star,        onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('accounts')
@@ -201,6 +204,7 @@ export default function AccountsPage() {
       {showReport && <WeeklyReportModal onClose={() => setShowReport(false)} onToast={showToast} />}
       {showPayment && <PaymentReceivedModal onClose={() => setShowPayment(false)} onToast={showToast} />}
       {showRunPayroll && <RunPayrollModal onClose={() => setShowRunPayroll(false)} onToast={showToast} />}
+      <AIInsightsReport dept="accounts" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )

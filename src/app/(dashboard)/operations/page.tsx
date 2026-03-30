@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles, Shield } from 'lucide-react'
+import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles, Shield, Star } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewProjectModal from '@/components/modals/NewProjectModal'
@@ -49,6 +50,7 @@ const upcoming = [
 
 export default function OperationsPage() {
   const [showProject, setShowProject] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -59,6 +61,7 @@ export default function OperationsPage() {
     { label: 'Stock Report',      icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Book Stock',        icon: PackagePlus,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Admin Portal',     icon: Shield,        onClick: () => window.location.href = '/admin' },
+    { label: 'Dept Insights',   icon: Star,          onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('operations')
@@ -171,6 +174,7 @@ export default function OperationsPage() {
         }
       />
       {showProject && <NewProjectModal onClose={() => setShowProject(false)} onSubmit={() => { setShowProject(false); showToast('Project created') }} />}
+      <AIInsightsReport dept="operations" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )

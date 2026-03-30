@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity } from 'lucide-react'
+import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity, BarChart3 } from 'lucide-react'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -181,8 +181,11 @@ export default function OfstedModePage() {
     return (
       <div className="space-y-6">
         <DeptAISummary dept="ofsted" portal="schools" />
-        <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-          📊 Insights
+        <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
+          <BarChart3 size={14} />Dept Insights
         </button>
         <div className="text-center py-16">
           <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>

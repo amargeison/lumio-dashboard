@@ -1,9 +1,10 @@
 'use client'
 import React, { useState } from 'react'
-import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
+import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -890,6 +891,7 @@ export default function WraparoundPage() {
   const hasData = useHasSchoolData('wraparound')
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="wraparound" title="No wraparound data yet" description="Upload your breakfast and after school club data to activate Pre & After School." uploads={[{ key: 'wraparound', label: 'Upload Club Register (CSV)' }]} />
 
@@ -909,6 +911,17 @@ export default function WraparoundPage() {
       </div>
 
       <DeptAISummary dept="wraparound" portal="schools" />
+
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setShowInsights(true)}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
+          <BarChart3 size={14} />Dept Insights
+        </button>
+      </div>
 
       {/* AI highlights */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
@@ -949,6 +962,7 @@ export default function WraparoundPage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="wraparound" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

@@ -1,9 +1,10 @@
 'use client'
 import React, { useState } from 'react'
-import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
+import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -18,6 +19,7 @@ const ACTIONS = [
   { label: 'Parents Evening', icon: <Users size={14} /> },
   { label: 'Assessment Tracker', icon: <ClipboardList size={14} /> },
   { label: 'Report Writer', icon: <PenLine size={14} /> },
+  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
 ]
 
 const STATS = [
@@ -129,9 +131,11 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 export default function DemoCurriculumPage() {
   const hasData = useHasSchoolData('curriculum')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="curriculum" title="No curriculum data yet" description="Upload your curriculum plans and assessment data to activate Curriculum." uploads={[{ key: 'curriculum', label: 'Upload Curriculum Data (CSV)' }]} />
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -264,6 +268,7 @@ export default function DemoCurriculumPage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="curriculum" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

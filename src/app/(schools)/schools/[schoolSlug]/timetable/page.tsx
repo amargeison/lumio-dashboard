@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X } from 'lucide-react'
+import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3 } from 'lucide-react'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const SUBJECTS = [
   { name: 'Maths', color: '#3B82F6' },
@@ -84,6 +86,7 @@ export default function TimetablePage() {
   const [selectedRoom, setSelectedRoom] = useState(ROOMS[0])
   const [showNewLesson, setShowNewLesson] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showInsights, setShowInsights] = useState(false)
   const [newLesson, setNewLesson] = useState({ className: '', subject: SUBJECTS[0].name, teacher: TEACHERS[0], room: ROOMS[0], day: DAYS[0], periodId: 'p1' })
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -172,6 +175,8 @@ export default function TimetablePage() {
         </div>
       </div>
 
+      <DeptAISummary dept="timetable" portal="schools" />
+
       {/* Quick Actions */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none">
         {[
@@ -180,6 +185,7 @@ export default function TimetablePage() {
           { label: 'Room Finder', icon: Search, onClick: () => showToast('Room finder coming soon') },
           { label: 'Print Timetable', icon: Printer, onClick: () => showToast('Preparing print view...') },
           { label: 'Export to PDF', icon: FileText, onClick: () => showToast('Exporting PDF...') },
+          { label: 'Dept Insights', icon: BarChart3, onClick: () => setShowInsights(true) },
         ].map(a => (
           <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
@@ -280,6 +286,7 @@ export default function TimetablePage() {
       )}
 
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="timetable" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

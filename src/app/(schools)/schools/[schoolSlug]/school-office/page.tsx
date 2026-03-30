@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench } from 'lucide-react'
+import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3 } from 'lucide-react'
 import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal } from '@/components/modals/SchoolModals'
 import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/SchoolOfficeModals'
@@ -164,7 +164,7 @@ export default function SchoolOfficePage() {
       <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS_BASE.map(a => ({
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
         ...a,
         onClick: a.label === 'Log Absence' ? () => setShowLogAbsence(true)
           : a.label === 'New Admission' ? () => setShowNewAdmission(true)
@@ -173,10 +173,7 @@ export default function SchoolOfficePage() {
           : a.label === 'Log Incident' ? () => setShowIncident(true)
           : a.label === 'Log Maintenance' ? () => setShowMaintenance(true)
           : () => showToast('Feature coming soon'),
-      }))} />
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90 mt-2" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
-      </button>
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       <DeptAISummary dept="school-office" portal="schools" />
 

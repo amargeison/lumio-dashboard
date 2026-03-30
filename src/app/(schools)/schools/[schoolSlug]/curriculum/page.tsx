@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
+import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3 } from 'lucide-react'
 import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -161,15 +161,11 @@ export default function CurriculumPage() {
 
       <DeptAISummary dept="curriculum" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
-      </button>
-
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS_BASE.map(a => ({
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
         ...a,
         onClick: a.label === 'Generate Lesson Plan' ? () => setShowLessonPlan(true)
           : a.label === 'Cover Work' ? () => setShowCoverWork(true)
@@ -177,7 +173,7 @@ export default function CurriculumPage() {
           : a.label === 'Assessment Tracker' ? () => setShowAssessment(true)
           : a.label === 'Report Writer' ? () => setShowReportWriter(true)
           : () => showToast('Feature coming soon'),
-      }))} />
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
+import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles, BarChart3 } from 'lucide-react'
 import { SafeguardingConcernModal, DSLReviewModal, StaffAlertModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -136,10 +136,6 @@ export default function SafeguardingPage() {
 
       <DeptAISummary dept="safeguarding" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
-      </button>
-
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Open Cases" value="1" sub="Review overdue" color="#EF4444" />
@@ -155,6 +151,7 @@ export default function SafeguardingPage() {
         { label: 'MASH Referral', icon: <Phone size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Staff Training', icon: <GraduationCap size={14} />, onClick: () => setShowStaffAlert(true) },
         { label: 'KCSIE Compliance', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
       {/* AI Highlights */}

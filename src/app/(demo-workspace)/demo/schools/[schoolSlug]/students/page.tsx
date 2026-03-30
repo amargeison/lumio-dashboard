@@ -1,12 +1,13 @@
 'use client'
 import React, { useState, useMemo } from 'react'
 import { usePathname } from 'next/navigation'
-import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
+import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import LanguageScreenApp from '@/components/LanguageScreenApp'
 import PupilOverview from '@/components/PupilOverview'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -636,6 +637,7 @@ export default function StudentsPage() {
   const [assessing, setAssessing] = useState<Pupil | null>(null)
   const [assessPickerPupil, setAssessPickerPupil] = useState<Pupil | null>(null)
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -687,6 +689,17 @@ export default function StudentsPage() {
             <p className="text-2xl font-black mt-1" style={{ color: s.color }}>{s.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setShowInsights(true)}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
+          <BarChart3 size={14} />Dept Insights
+        </button>
       </div>
 
       {/* View mode selector */}
@@ -947,6 +960,7 @@ export default function StudentsPage() {
           {toast}
         </div>
       )}
+      <AIInsightsReport dept="students" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

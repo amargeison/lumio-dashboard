@@ -1,9 +1,10 @@
 'use client'
 import React, { useState } from 'react'
-import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
+import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -18,6 +19,7 @@ const ACTIONS = [
   { label: 'Raise PO', icon: <FileText size={14} /> },
   { label: 'Grant Update', icon: <TrendingUp size={14} /> },
   { label: 'Payroll Change', icon: <Users size={14} /> },
+  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
 ]
 
 const STATS = [
@@ -135,9 +137,11 @@ function budgetBarColor(pct: number) {
 export default function DemoFinancePage() {
   const hasData = useHasSchoolData('finance')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="finance" title="No finance data yet" description="Upload your budget, invoices and spend data to activate Finance." uploads={[{ key: 'finance', label: 'Upload Finance Data (CSV)' }]} />
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -266,6 +270,7 @@ export default function DemoFinancePage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="finance" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

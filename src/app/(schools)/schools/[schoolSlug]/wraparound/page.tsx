@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
+import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone, BarChart3 } from 'lucide-react'
 import { RegisterSessionModal, PaymentLogModal, AddChildToClubModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -941,8 +941,11 @@ export default function WraparoundPage() {
 
       <DeptAISummary dept="wraparound" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+        style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
+        <BarChart3 size={14} />Dept Insights
       </button>
 
       {/* AI highlights */}

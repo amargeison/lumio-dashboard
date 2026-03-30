@@ -4,9 +4,10 @@ import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, Minus, Users, DollarSign, BookOpen,
   Shield, Heart, Building2, Wrench, FileText, Star, Zap, BarChart2,
-  Phone, Clock, AlertCircle, Award, Globe
+  Phone, Clock, AlertCircle, Award, Globe, BarChart3
 } from 'lucide-react'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 type RAG = 'green' | 'amber' | 'red' | 'blue'
@@ -1255,6 +1256,7 @@ const TABS = [
 
 export default function TrustDashboard() {
   const [tab, setTab] = useState('exec')
+  const [showInsights, setShowInsights] = useState(false)
   const ActiveTab = TABS.find(t=>t.id===tab)!.component
 
   const redCount = SCHOOLS.filter(s=>s.ragOverall==='red').length
@@ -1290,6 +1292,17 @@ export default function TrustDashboard() {
 
       <DeptAISummary dept="trust" portal="schools" />
 
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setShowInsights(true)}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
+          <BarChart3 size={14} />Dept Insights
+        </button>
+      </div>
+
       {/* School pill nav */}
       <div className="flex flex-wrap gap-2">
         {SCHOOLS.map(s => (
@@ -1310,6 +1323,7 @@ export default function TrustDashboard() {
         </div>
         <ActiveTab />
       </div>
+      <AIInsightsReport dept="trust" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

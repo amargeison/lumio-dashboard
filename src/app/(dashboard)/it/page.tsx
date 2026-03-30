@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText } from 'lucide-react'
+import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Star } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewITTicketModal from '@/components/modals/NewITTicketModal'
@@ -48,6 +49,7 @@ const licences = [
 
 export default function ITPage() {
   const [showTicket, setShowTicket] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -56,6 +58,7 @@ export default function ITPage() {
     { label: 'Asset Register',    icon: Package,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Licence Renewal',   icon: RefreshCw, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'IT Report',         icon: FileText,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Dept Insights',    icon: Star,      onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('it')
@@ -111,6 +114,7 @@ export default function ITPage() {
         }
       />
       {showTicket && <NewITTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('IT request created') }} />}
+      <AIInsightsReport dept="it" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )

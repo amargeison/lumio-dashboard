@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
+import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -105,10 +106,12 @@ const caseTimeline = [
 export default function DemoSafeguardingPage() {
   const hasData = useHasSchoolData('safeguarding')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="safeguarding" title="No safeguarding data yet" description="Upload your safeguarding log and concern records to activate Safeguarding." uploads={[{ key: 'safeguarding', label: 'Upload Safeguarding Log (CSV)' }]} />
 
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -147,6 +150,7 @@ export default function DemoSafeguardingPage() {
           { label: 'MASH Referral', icon: <Phone size={14} /> },
           { label: 'Staff Training', icon: <GraduationCap size={14} /> },
           { label: 'KCSIE Compliance', icon: <Shield size={14} /> },
+          { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
         ]}
       />
 
@@ -268,6 +272,7 @@ export default function DemoSafeguardingPage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="safeguarding" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

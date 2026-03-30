@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles } from 'lucide-react'
+import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles, BarChart3 } from 'lucide-react'
 import { MaintenanceRequestModal, RoomBookingModal } from '@/components/modals/SchoolModals'
 import BookContractorModal from '@/components/modals/BookContractorModal'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -101,6 +103,7 @@ export default function FacilitiesPage() {
   const [showMaintenance, setShowMaintenance] = useState(false)
   const [showRoomBooking, setShowRoomBooking] = useState(false)
   const [showContractor, setShowContractor] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -130,6 +133,8 @@ export default function FacilitiesPage() {
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Maintenance jobs, compliance certificates, room bookings and contractor access</p>
       </div>
 
+      <DeptAISummary dept="facilities" portal="schools" />
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Open Jobs" value="4" sub="Maintenance" color="#F59E0B" />
@@ -145,6 +150,7 @@ export default function FacilitiesPage() {
         { label: 'Book Contractor', icon: <UserCheck size={14} />, onClick: () => setShowContractor(true) },
         { label: 'H&S Check', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Asset Register', icon: <Package size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
       ]} />
 
       {/* AI Highlights */}
@@ -280,6 +286,7 @@ export default function FacilitiesPage() {
       {showRoomBooking && <RoomBookingModal onClose={() => setShowRoomBooking(false)} onToast={showToast} />}
       {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="facilities" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

@@ -7,7 +7,7 @@ import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, Minus, Users, DollarSign, BookOpen,
   Shield, Heart, Building2, Wrench, FileText, Star, Zap, BarChart2,
-  Phone, Clock, AlertCircle, Award, Globe
+  Phone, Clock, AlertCircle, Award, Globe, BarChart3
 } from 'lucide-react'
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
@@ -1312,8 +1312,11 @@ export default function TrustDashboard() {
 
       <DeptAISummary dept="trust" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+        style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
+        <BarChart3 size={14} />Dept Insights
       </button>
 
       {/* Trust Actions */}

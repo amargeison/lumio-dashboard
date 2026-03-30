@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
+import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users, BarChart3 } from 'lucide-react'
 import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -165,21 +165,17 @@ export default function FinancePage() {
 
       <DeptAISummary dept="finance-school" portal="schools" />
 
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-        📊 Insights
-      </button>
-
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS_BASE.map(a => ({
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
         ...a,
         onClick: a.label === 'Approve Invoice' ? () => setShowInvoice(true)
           : a.label === 'Raise PO' ? () => setShowExpense(true)
           : a.label === 'Budget Check' ? () => setShowBudget(true)
           : () => showToast('Feature coming soon'),
-      }))} />
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

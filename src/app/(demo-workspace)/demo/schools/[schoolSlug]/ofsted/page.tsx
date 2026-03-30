@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity } from 'lucide-react'
+import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity, BarChart3 } from 'lucide-react'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,7 @@ export default function OfstedModePage() {
   ])
   const [newObs, setNewObs] = useState('')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_ofsted_mode')
@@ -179,6 +181,16 @@ export default function OfstedModePage() {
     return (
       <div className="space-y-6">
         <DeptAISummary dept="ofsted" portal="schools" />
+        {/* Quick actions */}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setShowInsights(true)}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
+            <BarChart3 size={14} />Dept Insights
+          </button>
+        </div>
         <div className="text-center py-16">
           <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Ofsted Inspection Mode</h1>
@@ -205,6 +217,7 @@ export default function OfstedModePage() {
             </div>
           </div>
         </div>
+        <AIInsightsReport dept="ofsted" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
       </div>
     )
   }
@@ -421,6 +434,7 @@ export default function OfstedModePage() {
           {toast}
         </div>
       )}
+      <AIInsightsReport dept="ofsted" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

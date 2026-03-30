@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
+import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles, BarChart3 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -108,10 +109,12 @@ const commsHistory = [
 export default function DemoAdmissionsPage() {
   const hasData = useHasSchoolData('admissions')
   const [toast, setToast] = useState('')
+  const [showInsights, setShowInsights] = useState(false)
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="admissions" title="No admissions data yet" description="Upload your admissions register and enquiry data to activate Admissions." uploads={[{ key: 'admissions', label: 'Upload Admissions Data (CSV)' }]} />
 
   function fireToast(action: string) {
+    if (action === 'Dept Insights') { setShowInsights(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -143,6 +146,7 @@ export default function DemoAdmissionsPage() {
           { label: 'Send Newsletter', icon: <Mail size={14} /> },
           { label: 'Open Day', icon: <Users size={14} /> },
           { label: 'Social Post', icon: <Share2 size={14} /> },
+          { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
         ]}
       />
 
@@ -316,6 +320,7 @@ export default function DemoAdmissionsPage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="admissions" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
-import { Sparkles, ClipboardList, UserPlus, Eye, Calendar } from 'lucide-react'
+import { Sparkles, ClipboardList, UserPlus, Eye, Calendar, BarChart3 } from 'lucide-react'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { RegisterClassModal, AddPupilToClassModal, TimetableChangeModal } from '@/components/modals/SchoolModals'
 
 const HIGHLIGHTS = [
@@ -15,6 +17,7 @@ const ACTIONS = [
   { label: 'Add Pupil to Class', icon: <UserPlus size={14} /> },
   { label: 'Class Overview', icon: <Eye size={14} /> },
   { label: 'Timetable Change', icon: <Calendar size={14} /> },
+  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
 ]
 
 const CLASSES = [
@@ -51,6 +54,7 @@ export default function ClassesPage() {
   const [showRegister, setShowRegister] = useState(false)
   const [showAddPupil, setShowAddPupil] = useState(false)
   const [showTimetable, setShowTimetable] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -58,6 +62,7 @@ export default function ClassesPage() {
     if (label === 'Register Class') setShowRegister(true)
     else if (label === 'Add Pupil to Class') setShowAddPupil(true)
     else if (label === 'Timetable Change') setShowTimetable(true)
+    else if (label === 'Dept Insights') setShowInsights(true)
     else showToast('Feature coming soon')
   }
 
@@ -67,6 +72,8 @@ export default function ClassesPage() {
         <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Classes</h1>
         <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Manage timetables, registers and class groups</p>
       </div>
+
+      <DeptAISummary dept="classes" portal="schools" />
 
       {/* AI Highlights */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -161,6 +168,7 @@ export default function ClassesPage() {
       {showAddPupil && <AddPupilToClassModal onClose={() => setShowAddPupil(false)} onToast={showToast} />}
       {showTimetable && <TimetableChangeModal onClose={() => setShowTimetable(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="classes" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

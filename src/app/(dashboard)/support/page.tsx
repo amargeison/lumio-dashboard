@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
@@ -49,6 +50,7 @@ export default function SupportPage() {
   const [showTicket, setShowTicket] = useState(false)
   const [showCreateWiki, setShowCreateWiki] = useState(false)
   const [showCreateFAQ, setShowCreateFAQ] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -63,6 +65,7 @@ export default function SupportPage() {
     { label: 'Create Wiki',   icon: BookOpen,      onClick: () => setShowCreateWiki(true) },
     { label: 'Create FAQ',    icon: HelpCircle,    onClick: () => setShowCreateFAQ(true) },
     { label: 'Admin Portal',  icon: Shield,        onClick: () => window.location.href = '/admin' },
+    { label: 'Dept Insights', icon: Star,         onClick: () => setShowAIInsights(true) },
   ]
 
   const hasData = useHasDashboardData('support')
@@ -126,6 +129,7 @@ export default function SupportPage() {
       {showTicket && <NewSupportTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('Support ticket created') }} />}
       {showCreateWiki && <WikiBuilderModal onClose={() => setShowCreateWiki(false)} onToast={showToast} />}
       {showCreateFAQ && <FAQBuilderModal onClose={() => setShowCreateFAQ(false)} onToast={showToast} />}
+      <AIInsightsReport dept="support" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
     </PageShell>
   )
