@@ -6,6 +6,7 @@ import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionMod
 import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/SchoolOfficeModals'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   '14 pupils marked absent today — 3 with no parent contact yet',
@@ -119,6 +120,7 @@ export default function SchoolOfficePage() {
   const [showNewAdmission, setShowNewAdmission] = useState(false)
   const [showBookCover, setShowBookCover] = useState(false)
   const [showTrips, setShowTrips] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
   const [showIncident, setShowIncident] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -172,6 +174,9 @@ export default function SchoolOfficePage() {
           : a.label === 'Log Maintenance' ? () => setShowMaintenance(true)
           : () => showToast('Feature coming soon'),
       }))} />
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-90 mt-2" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+        📊 Insights
+      </button>
 
       <DeptAISummary dept="school-office" portal="schools" />
 
@@ -307,6 +312,7 @@ export default function SchoolOfficePage() {
       {showTrips && <SchoolTripsModal onClose={() => setShowTrips(false)} onToast={showToast} />}
       {showIncident && <LogIncidentModal onClose={() => setShowIncident(false)} />}
       {showMaintenance && <LogMaintenanceModal onClose={() => setShowMaintenance(false)} />}
+      <AIInsightsReport dept="school-office" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )

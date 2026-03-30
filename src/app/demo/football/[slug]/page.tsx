@@ -20,6 +20,7 @@ import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -3627,6 +3628,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -3702,7 +3704,16 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
             {activeDept === 'insights' && <InsightsView />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && <DeptAISummary dept={activeDept} portal="football" />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && (
+              <>
+                <DeptAISummary dept={activeDept} portal="football" />
+                <div className="mb-2">
+                  <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+                    📊 Insights
+                  </button>
+                </div>
+              </>
+            )}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
@@ -3733,6 +3744,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           onToast={fireToast}
         />
       )}
+      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }
