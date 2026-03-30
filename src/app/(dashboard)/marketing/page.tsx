@@ -5,8 +5,8 @@ import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video } fr
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
-import NewCampaignModal from '@/components/modals/NewCampaignModal'
 import CaseStudyModal from '@/components/modals/CaseStudyModal'
+import { CreatePostModal, NewCampaignModal as CampaignBuilderModal, WebinarSetupModal, LeadReportModal } from '@/components/modals/MarketingModals'
 import { useToast } from '@/components/modals/useToast'
 
 const stats = [
@@ -68,14 +68,17 @@ export default function MarketingPage() {
   const [trust,    setTrust]    = useState('All Trusts')
   const [showCampaign, setShowCampaign] = useState(false)
   const [showCaseStudy, setShowCaseStudy] = useState(false)
+  const [showCreatePost, setShowCreatePost] = useState(false)
+  const [showWebinar, setShowWebinar] = useState(false)
+  const [showLeadReport, setShowLeadReport] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
-    { label: 'Create Post',       icon: Plus,       onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Create Post',       icon: Plus,       onClick: () => setShowCreatePost(true) },
     { label: 'New Campaign',      icon: Megaphone,  onClick: () => setShowCampaign(true) },
     { label: 'Case Study',        icon: FileText,   onClick: () => setShowCaseStudy(true) },
-    { label: 'Webinar Setup',     icon: Video,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Lead Report',       icon: TrendingUp, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
+    { label: 'Lead Report',       icon: TrendingUp, onClick: () => setShowLeadReport(true) },
   ]
 
   const hasData = useHasDashboardData('marketing')
@@ -162,8 +165,11 @@ export default function MarketingPage() {
           </>
         }
       />
-      {showCampaign && <NewCampaignModal onClose={() => setShowCampaign(false)} onSubmit={() => { setShowCampaign(false); showToast('Campaign launched') }} />}
+      {showCampaign && <CampaignBuilderModal onClose={() => setShowCampaign(false)} onToast={showToast} />}
       {showCaseStudy && <CaseStudyModal onClose={() => setShowCaseStudy(false)} onSubmit={() => showToast('Case study saved to Marketing Library')} />}
+      {showCreatePost && <CreatePostModal onClose={() => setShowCreatePost(false)} onToast={showToast} />}
+      {showWebinar && <WebinarSetupModal onClose={() => setShowWebinar(false)} onToast={showToast} />}
+      {showLeadReport && <LeadReportModal onClose={() => setShowLeadReport(false)} onToast={showToast} />}
       <Toast />
     </PageShell>
   )
