@@ -2361,18 +2361,26 @@ function TrialsView({ company }: { company: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Active Trials" value={String(active)} icon={FlaskConical} color="#6C3FC5"
-          pieData={[{label:'Week 1',value:8,color:'#6C3FC5'},{label:'Week 2',value:9,color:'#A78BFA'},{label:'Expiring',value:6,color:'#EF4444'}]}
-          barData={[{label:'Jan',value:18,color:'#6C3FC5'},{label:'Feb',value:20,color:'#6C3FC5'},{label:'Mar',value:active,color:'#7C3AED'}]} />
-        <StatCard label="Trials Ending This Week" value="5" icon={AlertCircle} color="#EF4444"
-          pieData={[{label:'High eng.',value:2,color:'#22C55E'},{label:'Med eng.',value:1,color:'#F59E0B'},{label:'Low eng.',value:2,color:'#EF4444'}]}
-          barData={[{label:'Wk-2',value:3,color:'#EF4444'},{label:'Wk-1',value:4,color:'#EF4444'},{label:'This',value:5,color:'#DC2626'}]} />
-        <StatCard label="Conversion Rate" value="62%" icon={TrendingUp} color="#22C55E"
-          pieData={[{label:'Converted',value:62,color:'#22C55E'},{label:'Expired',value:38,color:'#374151'}]}
-          barData={[{label:'Q3',value:54,color:'#22C55E'},{label:'Q4',value:58,color:'#22C55E'},{label:'Q1',value:62,color:'#0D9488'}]} />
-        <StatCard label="Avg Trial Length" value="14d" icon={Clock} color="#0D9488"
-          pieData={[{label:'<7d',value:15,color:'#0D9488'},{label:'7-14d',value:55,color:'#22C55E'},{label:'>14d',value:30,color:'#F59E0B'}]}
-          barData={[{label:'Q3',value:16,color:'#0D9488'},{label:'Q4',value:15,color:'#0D9488'},{label:'Q1',value:14,color:'#0F766E'}]} />
+        {[
+          { label: 'Active Trials', value: String(active), trend: '+3 this week', icon: FlaskConical, color: '#6C3FC5' },
+          { label: 'Trials Ending This Week', value: '5', trend: '+2 vs last week', icon: AlertCircle, color: '#EF4444' },
+          { label: 'Conversion Rate', value: '62%', trend: '+4% vs last quarter', icon: TrendingUp, color: '#22C55E' },
+          { label: 'Avg Trial Length', value: '14d', trend: '-2d vs last quarter', icon: Clock, color: '#0D9488' },
+        ].map(s => {
+          const SIcon = s.icon
+          return (
+            <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                  <span className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{s.value}</span>
+                  <span className="text-xs mt-1" style={{ color: '#10B981' }}>{s.trend}</span>
+                </div>
+                <SIcon size={18} style={{ color: '#6B7299' }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
       <DeptAISummary dept="trials" portal="business" />
       <div>
