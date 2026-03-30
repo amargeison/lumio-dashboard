@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# user-uploaded images — prevent accidental commits
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+!public/lumio*
+!public/dfe*
+!public/NELI*
+!public/images.png
+!public/telted*

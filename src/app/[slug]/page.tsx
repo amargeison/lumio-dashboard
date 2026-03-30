@@ -831,6 +831,7 @@ const DEMO_PHOTOS = [
   'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800',
 ]
 
+// Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame() {
   const [photos, setPhotos] = useState<string[]>(() => {
     try {

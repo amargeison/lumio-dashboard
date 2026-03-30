@@ -379,6 +379,7 @@ const SCHOOL_DEMO_PHOTOS = [
   'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800',
 ]
 
+// Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame() {
   const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); if (p.length > 0) return p } if (typeof window !== 'undefined' && localStorage.getItem('lumio_schools_demo_loaded') === 'true') return SCHOOL_DEMO_PHOTOS; return [] } catch { return [] } })
   const [currentIdx, setCurrentIdx] = useState(0)
