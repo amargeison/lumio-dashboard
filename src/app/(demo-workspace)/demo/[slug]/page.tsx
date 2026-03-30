@@ -21,6 +21,7 @@ import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceComma
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import DeptAISummary from '@/components/DeptAISummary'
 import CRMViewV2 from '@/components/demo/CRMView'
+import OverviewActionModal from '@/components/demo/OverviewActionModal'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
 import OffboardingModal,      { type OffboardingData }      from '@/components/OffboardingModal'
@@ -3351,6 +3352,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [demoDataActive, setDemoDataActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
+  const [overviewAction, setOverviewAction] = useState<string | null>(null)
   const [showNewJoiner,    setShowNewJoiner]    = useState(false)
   const [showLeaveRequest, setShowLeaveRequest] = useState(false)
   const [showOffboarding,  setShowOffboarding]  = useState(false)
@@ -3474,9 +3476,12 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     }
   }
 
+  const OVERVIEW_ACTIONS = ['Send Email','Send Slack','Phone Call','Book Meeting','Team Events','Claim Expenses','Book Holiday','Report Sickness']
+
   function fireToast(label: string = '') {
+    if (OVERVIEW_ACTIONS.includes(label)) { setOverviewAction(label);                        return }
     if (label === 'Dept Insights')     { setShowDeptInsights(true);                         return }
-    if (label === 'New Joiner')        { setShowNewJoiner(true);                             return }
+    if (label === 'New Joiner' || label === 'New Starter') { setShowNewJoiner(true);        return }
     if (label === 'Leave Request')     { setShowLeaveRequest(true);                          return }
     if (label === 'Offboarding')       { setShowOffboarding(true);                           return }
     if (label === 'Recruitment')       { setShowRecruitment(true);                           return }
@@ -3531,6 +3536,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       {showRecruitment  && <RecruitmentModal        onClose={() => setShowRecruitment(false)}  onSubmit={handleDemoRecruitment}  />}
       {showPerfReview   && <PerformanceReviewModal  onClose={() => setShowPerfReview(false)}   onSubmit={handleDemoPerfReview}   />}
       {showInvite && <InviteModal slug={slug} company={company} userName={userName} onClose={() => setShowInvite(false)} />}
+      {overviewAction && <OverviewActionModal action={overviewAction} onClose={() => setOverviewAction(null)} onToast={(msg) => { setOverviewAction(null); setToast(msg); setTimeout(() => setToast(null), 3000) }} />}
 
       {/* Welcome overlay */}
       {showWelcome && (
