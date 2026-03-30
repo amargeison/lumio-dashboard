@@ -1656,10 +1656,12 @@ function InsightsView({ company }: { company: string }) {
 
 function HRView({ company }: { company: string }) {
   const emp = fakeNum(187,company,'emp'), ob = fakeNum(8,company,'ob'), lv = fakeNum(14,company,'lv')
-  const starters = Array.from({length:5},(_,i)=>({name:fakeName(company,i),role:['Customer Success Manager','Sales Development Rep','Frontend Developer','Marketing Executive','Support Specialist'][i],progress:[75,90,30,25,100][i]}))
+  const starters = [{name:fakeName(company,0),role:'Customer Success Manager',start:'10 Mar 2026',day:'Day 11',progress:75},{name:fakeName(company,1),role:'Sales Development Rep',start:'03 Mar 2026',day:'Day 18',progress:90},{name:fakeName(company,2),role:'Frontend Developer',start:'17 Mar 2026',day:'Day 4',progress:30},{name:fakeName(company,3),role:'Marketing Executive',start:'17 Mar 2026',day:'Day 4',progress:25},{name:fakeName(company,4),role:'Support Specialist',start:'24 Feb 2026',day:'Day 25',progress:100},{name:fakeName(company,5),role:'Account Executive',start:'24 Feb 2026',day:'Day 25',progress:100},{name:fakeName(company,6),role:'Data Analyst',start:'21 Apr 2026',day:'Pending',progress:0},{name:fakeName(company,7),role:'Head of Partnerships',start:'07 Apr 2026',day:'Pending',progress:0}]
+  const leaveReqs = [{name:fakeName(company,8),type:'Annual Leave',dates:'28 Mar – 1 Apr',days:'5 days'},{name:fakeName(company,9),type:'Sick Leave',dates:'21 Mar',days:'1 day'},{name:fakeName(company,10),type:'Annual Leave',dates:'7–11 Apr',days:'5 days'},{name:fakeName(company,11),type:'Parental',dates:'1 May – 31 Jul',days:'3 months'}]
+  const probations = [{name:fakeName(company,4),date:'24 Mar 2026',manager:fakeName(company,12)},{name:fakeName(company,5),date:'24 Mar 2026',manager:fakeName(company,13)},{name:fakeName(company,1),date:'3 Apr 2026',manager:fakeName(company,13)}]
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Employees" value={String(emp)} icon={Users} color="#0D9488"
           pieData={[{label:'Full-time',value:Math.round(emp*.8),color:'#0D9488'},{label:'Part-time',value:Math.round(emp*.12),color:'#6C3FC5'},{label:'Contractor',value:Math.round(emp*.08),color:'#374151'}]}
           barData={[{label:'Eng',value:42,color:'#0D9488'},{label:'Sales',value:38,color:'#6C3FC5'},{label:'CS',value:35,color:'#22C55E'},{label:'Mktg',value:28,color:'#F59E0B'},{label:'Ops',value:44,color:'#EF4444'}]} />
@@ -1669,31 +1671,36 @@ function HRView({ company }: { company: string }) {
         <StatCard label="Leave Requests" value={String(lv)} icon={Calendar} color="#F59E0B"
           pieData={[{label:'Annual',value:8,color:'#F59E0B'},{label:'Sick',value:4,color:'#EF4444'},{label:'Other',value:2,color:'#374151'}]}
           barData={[{label:'Mon',value:2,color:'#F59E0B'},{label:'Tue',value:3,color:'#F59E0B'},{label:'Wed',value:4,color:'#F59E0B'},{label:'Thu',value:3,color:'#F59E0B'},{label:'Fri',value:2,color:'#F59E0B'}]} />
+        <StatCard label="Overdue Reviews" value="3" icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'Overdue',value:3,color:'#EF4444'},{label:'On time',value:12,color:'#22C55E'}]}
+          barData={[{label:'Jan',value:0,color:'#22C55E'},{label:'Feb',value:1,color:'#F59E0B'},{label:'Mar',value:3,color:'#EF4444'}]} />
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>New Starter Tracker</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>New Starter Onboarding Tracker</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Name','Role','Start Date','Day','Progress','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{starters.map((s,i)=>{const sl=s.progress===100?'Complete':s.progress===0?'Pending':'Onboarding';const sc=s.progress===100?'#22C55E':s.progress===0?'#6B7280':'#0D9488';return(
+              <tr key={i} style={{borderBottom:i<starters.length-1?'1px solid #111318':undefined}}>
+                <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{s.name}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{s.role}</td>
+                <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{s.start}</td>
+                <td className="px-5 py-3 text-xs" style={{color:s.day==='Pending'?'#6B7280':'#F9FAFB'}}>{s.day}</td>
+                <td className="px-5 py-3"><div className="flex items-center gap-2"><div className="w-16 h-1.5 rounded-full overflow-hidden" style={{backgroundColor:'#1F2937'}}><div className="h-full rounded-full" style={{width:`${s.progress}%`,backgroundColor:s.progress===100?'#22C55E':s.progress>50?'#0D9488':'#F59E0B'}} /></div><span className="text-xs" style={{color:'#9CA3AF'}}>{s.progress}%</span></div></td>
+                <td className="px-5 py-3"><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:`${sc}1a`,color:sc}}>{sl}</span></td>
+              </tr>)})}</tbody>
+          </table>
         </div>
-        <table className="w-full text-sm">
-          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Name','Role','Progress','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
-          <tbody>{starters.map((s,i)=>(
-            <tr key={i} style={{borderBottom:i<starters.length-1?'1px solid #111318':undefined}}>
-              <td className="px-5 py-3 font-medium" style={{color:'#F9FAFB'}}>{s.name}</td>
-              <td className="px-5 py-3 text-xs" style={{color:'#9CA3AF'}}>{s.role}</td>
-              <td className="px-5 py-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{backgroundColor:'#1F2937'}}>
-                    <div className="h-full rounded-full" style={{width:`${s.progress}%`,backgroundColor:s.progress===100?'#22C55E':s.progress>50?'#0D9488':'#F59E0B'}} />
-                  </div>
-                  <span className="text-xs" style={{color:'#9CA3AF'}}>{s.progress}%</span>
-                </div>
-              </td>
-              <td className="px-5 py-3">
-                <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:s.progress===100?'rgba(34,197,94,0.1)':'rgba(13,148,136,0.1)',color:s.progress===100?'#22C55E':'#0D9488'}}>{s.progress===100?'Complete':'Onboarding'}</span>
-              </td>
-            </tr>
-          ))}</tbody>
-        </table>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Leave Requests — Pending Approval</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>{leaveReqs.map((r,i)=>(<div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{r.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{r.type} · {r.dates}</p></div><div className="flex items-center gap-2 shrink-0"><span className="text-xs" style={{color:'#9CA3AF'}}>{r.days}</span><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'rgba(245,158,11,0.1)',color:'#F59E0B'}}>Pending</span></div></div>))}</div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Probation Reviews</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>{probations.map((p,i)=>(<div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{p.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{p.date}</p></div><div className="flex items-center gap-2 shrink-0"><span className="text-xs" style={{color:'#6B7280'}}>Manager: {p.manager}</span><span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'rgba(59,130,246,0.1)',color:'#3B82F6'}}>In Review</span></div></div>))}</div>
+          </div>
+        </div>
       </div>
     </div>
   )
