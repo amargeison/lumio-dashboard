@@ -2482,6 +2482,14 @@ function SupportView({ company }: { company: string }) {
           barData={[{label:'Mon',value:5,color:'#0D9488'},{label:'Tue',value:7,color:'#0D9488'},{label:'Wed',value:6,color:'#0F766E'}]} />
       </div>
       <DeptAISummary dept="support" portal="business" />
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[{l:'New Ticket',i:Headphones},{l:'Assign Agent',i:Users},{l:'Escalate',i:AlertCircle},{l:'SLA Report',i:FileText},{l:'Canned Response',i:Send},{l:'Dept Insights',i:BarChart3}].map(a=>(
+            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Helpdesk Queue</p></div>
@@ -2598,6 +2606,14 @@ function ITView({ company }: { company: string }) {
           barData={[{label:'Jan',value:1,color:'#EF4444'},{label:'Feb',value:3,color:'#EF4444'},{label:'Mar',value:4,color:'#DC2626'}]} />
       </div>
       <DeptAISummary dept="it" portal="business" />
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[{l:'New Device',i:Monitor},{l:'Software Request',i:Package},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'System Update',i:ArrowRight},{l:'Dept Insights',i:BarChart3}].map(a=>(
+            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>IT Request Queue</p></div>
@@ -3770,7 +3786,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'it' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
