@@ -5,6 +5,7 @@ import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangl
 import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal } from '@/components/modals/SchoolModals'
 import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/SchoolOfficeModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   '14 pupils marked absent today — 3 with no parent contact yet',
@@ -171,6 +172,8 @@ export default function SchoolOfficePage() {
           : a.label === 'Log Maintenance' ? () => setShowMaintenance(true)
           : () => showToast('Feature coming soon'),
       }))} />
+
+      <DeptAISummary dept="school-office" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

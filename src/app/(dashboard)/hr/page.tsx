@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles, Briefcase, ClipboardList, Calendar } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
 import LeaveRequestModal,     { type LeaveRequestData }     from '@/components/LeaveRequestModal'
@@ -103,6 +105,7 @@ export default function HRPage() {
   const [showPerfReview,  setShowPerfReview]  = useState(false)
   const [showContract,    setShowContract]    = useState(false)
   const [showContractor,  setShowContractor]  = useState(false)
+  const [showAIInsights,  setShowAIInsights]  = useState(false)
 
   const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
@@ -310,7 +313,7 @@ export default function HRPage() {
     { label: 'Performance Review', icon: ClipboardList,   onClick: () => setShowPerfReview(true)  },
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
-    { label: 'Dept Insights',      icon: Star,           onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Dept Insights',      icon: Star,           onClick: () => setShowAIInsights(true) },
     { label: 'Book Contractor',    icon: Briefcase,      onClick: () => setShowContractor(true) },
   ]
 
@@ -321,6 +324,8 @@ export default function HRPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+
+      <DeptAISummary dept="hr" portal="business" />
 
       <QuickActions items={actions} />
 
@@ -422,6 +427,7 @@ export default function HRPage() {
       )}
       {showContract && <SendContractModal onClose={() => setShowContract(false)} onSubmit={() => { setShowContract(false); showToast('Contract sent') }} />}
       {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
+      <AIInsightsReport dept="hr" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast message={toast} />
     </PageShell>
   )

@@ -19,6 +19,7 @@ import {
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -3701,6 +3702,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
             {activeDept === 'insights' && <InsightsView />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && <DeptAISummary dept={activeDept} portal="football" />}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
