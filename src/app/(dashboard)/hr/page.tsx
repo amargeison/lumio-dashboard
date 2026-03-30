@@ -313,8 +313,8 @@ export default function HRPage() {
     { label: 'Performance Review', icon: ClipboardList,   onClick: () => setShowPerfReview(true)  },
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
-    { label: 'Dept Insights',      icon: Star,           onClick: () => setShowAIInsights(true) },
     { label: 'Book Contractor',    icon: Briefcase,      onClick: () => setShowContractor(true) },
+    { label: 'Dept Insights',      icon: Star,           onClick: () => setShowAIInsights(true) },
   ]
 
   return (
