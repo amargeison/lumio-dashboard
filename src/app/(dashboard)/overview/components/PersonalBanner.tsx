@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Volume2, Mic } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import { useWakeWord } from '@/hooks/useWakeWord'
+import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import { buildBriefingScript, type BriefingData, type ActionedItem } from '@/lib/buildBriefingScript'
 
 const WEATHER_ICONS: Record<string, string> = {
@@ -340,6 +342,19 @@ export default function PersonalBanner() {
   const [bgGradient] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
   const [quote] = useState(() => { try { return getRandomQuote() } catch { return QUOTES[0] } })
+  const [showVoiceModal, setShowVoiceModal] = useState(false)
+  const [wakeFlash, setWakeFlash] = useState(false)
+  const [wakeWordEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
+
+  const openVoiceModal = useCallback(() => {
+    setWakeFlash(true)
+    setTimeout(() => setWakeFlash(false), 600)
+    setShowVoiceModal(true)
+  }, [])
+
+  const wakeActive = wakeWordEnabled && !showVoiceModal
+  useWakeWord(openVoiceModal, wakeActive)
+  useVoiceCommands()
 
   useEffect(() => {
     const fallback: BriefingData = { ...INITIAL_DATA, greeting: getGreeting('Arron'), date: formatDate() }
@@ -388,20 +403,32 @@ export default function PersonalBanner() {
               >
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
-              <div
-                className="relative overflow-hidden rounded-lg"
-                title="Voice Commands coming soon"
-                style={{ width: 32, height: 32, flexShrink: 0 }}
+              <button
+                onClick={openVoiceModal}
+                className="flex items-center justify-center rounded-lg transition-all"
+                title="Voice Commands — say 'Hi Lumio' or tap the mic"
+                style={{
+                  width: 32, height: 32, flexShrink: 0,
+                  backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)',
+                  border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`,
+                  color: '#A78BFA',
+                  transition: 'background-color 0.3s, border-color 0.3s',
+                }}
               >
-                <button disabled className="flex items-center justify-center w-full h-full rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#6B7280', cursor: 'not-allowed' }}>
-                  <Mic size={15} strokeWidth={1.75} />
-                </button>
-                <span className="absolute pointer-events-none"
-                  style={{ top: 3, right: -9, transform: 'rotate(35deg)', backgroundColor: '#6C3FC5', color: '#fff', fontSize: 5, fontWeight: 700, letterSpacing: '0.03em', padding: '1px 10px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
-                  SOON
+                <Mic size={15} strokeWidth={1.75} />
+              </button>
+              {wakeWordEnabled && (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium select-none"
+                  style={{
+                    backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)',
+                    color: showVoiceModal ? '#4ADE80' : '#A78BFA',
+                    border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}`,
+                  }}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA', animation: 'pulse 2s ease-in-out infinite' }} />
+                  {showVoiceModal ? 'Listening\u2026' : 'Wake word active'}
                 </span>
-              </div>
+              )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{data.date}</p>
             {/* Daily quote */}
