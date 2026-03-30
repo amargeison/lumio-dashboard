@@ -2549,7 +2549,7 @@ function SupportView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New Ticket',i:Headphones},{l:'Assign Agent',i:Users},{l:'Escalate',i:AlertCircle},{l:'SLA Report',i:FileText},{l:'Canned Response',i:Send},{l:'Dept Insights',i:BarChart3}].map(a=>(
+          {[{l:'New Ticket',i:Plus},{l:'Open Chat',i:Send},{l:'Create School',i:Home},{l:'Add User',i:UserPlus},{l:'Send Update',i:Send},{l:'Support Report',i:FileText},{l:'Call a School',i:Phone},{l:'Book Meeting',i:Calendar},{l:'Create Wiki',i:FileText},{l:'Create FAQ',i:Hash},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3}].map(a=>(
             <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
