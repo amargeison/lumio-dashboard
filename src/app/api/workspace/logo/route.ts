@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
+
+export async function POST(req: NextRequest) {
+  const supabase = getSupabase()
+  const token = req.headers.get('x-workspace-token')
+  if (!token) return NextResponse.json({ error: 'No token' }, { status: 401 })
+
+  const { data: session } = await supabase
+    .from('business_sessions')
+    .select('business_id')
+    .eq('token', token)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+
+  if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('slug')
+    .eq('id', session.business_id)
+    .single()
+
+  if (!business) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+
+  const formData = await req.formData()
+  const file = formData.get('logo') as File | null
+  if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
+
+  // Validate
+  const maxSize = 2 * 1024 * 1024 // 2MB
+  if (file.size > maxSize) return NextResponse.json({ error: 'File too large (max 2MB)' }, { status: 400 })
+
+  const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp']
+  if (!validTypes.includes(file.type)) return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+
+  const ext = file.name.split('.').pop() || 'png'
+  const path = `${business.slug}/logo.${ext}`
+
+  // Upload to Supabase Storage
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const { error: uploadError } = await supabase.storage
+    .from('logos')
+    .upload(path, buffer, { contentType: file.type, upsert: true })
+
+  if (uploadError) {
+    console.error('[workspace/logo] Upload failed:', uploadError)
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+  }
+
+  // Get public URL
+  const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path)
+  const logoUrl = urlData.publicUrl
+
+  // Save to businesses table
+  const { error: updateError } = await supabase
+    .from('businesses')
+    .update({ logo_url: logoUrl })
+    .eq('id', session.business_id)
+
+  if (updateError) {
+    console.error('[workspace/logo] Update failed:', updateError)
+    return NextResponse.json({ error: 'Failed to save logo' }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, logo_url: logoUrl })
+}
