@@ -44,15 +44,25 @@ export async function POST(req: NextRequest) {
   const ext = file.name.split('.').pop() || 'png'
   const path = `${business.slug}/logo.${ext}`
 
-  // Upload to Supabase Storage
+  // Upload to Supabase Storage (auto-create bucket if missing)
   const buffer = Buffer.from(await file.arrayBuffer())
-  const { error: uploadError } = await supabase.storage
+  let { error: uploadError } = await supabase.storage
     .from('logos')
     .upload(path, buffer, { contentType: file.type, upsert: true })
 
+  // If bucket doesn't exist, create it and retry
+  if (uploadError && (uploadError.message?.includes('not found') || uploadError.message?.includes('does not exist') || (uploadError as any).statusCode === '404')) {
+    console.log('[workspace/logo] Bucket not found, creating...')
+    await supabase.storage.createBucket('logos', { public: true })
+    const retry = await supabase.storage
+      .from('logos')
+      .upload(path, buffer, { contentType: file.type, upsert: true })
+    uploadError = retry.error
+  }
+
   if (uploadError) {
-    console.error('[workspace/logo] Upload failed:', uploadError)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+    console.error('[workspace/logo] Upload failed:', JSON.stringify(uploadError))
+    return NextResponse.json({ error: 'Upload failed', detail: uploadError.message }, { status: 500 })
   }
 
   // Get public URL

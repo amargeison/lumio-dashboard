@@ -2133,8 +2133,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
+      {/* Demo data bar — slim version with connections modal */}
+      {demoDataActive && <ClearDemoBar />}
+
       {/* Top-right: bell + avatar */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'fixed', top: demoDataActive ? 52 : 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8, transition: 'top 0.2s ease' }}>
         <button
           onClick={() => setNotificationsOpen(o => !o)}
           title="Notifications"
@@ -2181,9 +2184,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         />
       )}
       {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
-
-      {/* Demo data bar — slim version with connections modal */}
-      {demoDataActive && <ClearDemoBar />}
 
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
