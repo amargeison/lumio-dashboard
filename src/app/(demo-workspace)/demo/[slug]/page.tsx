@@ -2860,8 +2860,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   }, [isPreview])
 
   useEffect(() => {
-    const name           = localStorage.getItem('demo_company_name') || (isPreview ? 'Preview' : 'Your Company')
-    const user           = localStorage.getItem('demo_user_name') || ''
+    const name           = localStorage.getItem('demo_company_name') || localStorage.getItem('lumio_company_name') || (isPreview ? 'Preview' : slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+    const user           = localStorage.getItem('demo_user_name') || localStorage.getItem('lumio_user_name') || ''
     const logo           = localStorage.getItem('demo_company_logo') || ''
     const created        = localStorage.getItem('demo_created_at')
     const onboarded      = localStorage.getItem('demo_onboarded')
@@ -2869,10 +2869,24 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     const depts          = JSON.parse(localStorage.getItem('demo_focus_depts') || '[]') as string[]
     setCompany(name); setUserName(user); setCompanyLogo(logo); setFocusDepts(depts)
     if (created) setDaysLeft(Math.max(0, 14 - Math.floor((Date.now() - parseInt(created)) / 86400000)))
+
+    // First visit: set demo data active and show onboarding
+    if (!localStorage.getItem('lumio_demo_active')) {
+      localStorage.setItem('lumio_demo_active', 'true')
+      const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
+      ALL.forEach(p => localStorage.setItem(`lumio_dashboard_${p}_hasData`, 'true'))
+    }
+
     if (!isPreview && !onboarded) setShowOnboarding(true)
     else if (!isPreview && !tipsCompleted) setShowCoachMarks(true)
 
-    // Legacy slug redirect: if URL has an old random-suffix slug, redirect to the clean slug
+    // Sync company name to lumio_ keys for sidebar
+    if (name && name !== 'Your Company') {
+      localStorage.setItem('lumio_company_name', name)
+      localStorage.setItem('workspace_company_name', name)
+    }
+
+    // Legacy slug redirect
     const storedSlug = localStorage.getItem('demo_company_slug')
     if (storedSlug && storedSlug !== slug && slug.startsWith(storedSlug.replace(/\d+$/, ''))) {
       router.replace(`/demo/${storedSlug}`)
@@ -2884,13 +2898,9 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       fetch('/api/demo/status', { headers: { 'x-demo-token': sessionToken } })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          if (!data) return
+          if (!data) { setWorkspaceStatus('trial'); return }
           if (data.status === 'converted') {
-            // Redirect converted users to their live workspace
-            if (data.live_slug) {
-              router.replace(`/${data.live_slug}`)
-              return
-            }
+            if (data.live_slug) { router.replace(`/${data.live_slug}`); return }
             setWorkspaceStatus('converted')
             setShowUpgrade(false)
           } else if (data.status === 'deleted' || (data.expires_at && new Date(data.expires_at) < new Date())) {
@@ -2904,7 +2914,10 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             }
           }
         })
-        .catch(() => {})
+        .catch(() => { setWorkspaceStatus('trial') })
+    } else {
+      // No session token — still show the portal with demo data (preview mode)
+      setWorkspaceStatus('trial')
     }
   }, [])
 
