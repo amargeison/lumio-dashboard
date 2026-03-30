@@ -381,7 +381,7 @@ const SCHOOL_DEMO_PHOTOS = [
 
 // Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); if (p.length > 0) return p }; return SCHOOL_DEMO_PHOTOS } catch { return SCHOOL_DEMO_PHOTOS } })
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); const valid = p.filter((u: string) => u.startsWith('http') || u.startsWith('blob:')); if (valid.length > 0) return valid }; return SCHOOL_DEMO_PHOTOS } catch { return SCHOOL_DEMO_PHOTOS } })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
@@ -1119,7 +1119,23 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col"><SchoolMorningRoundup /></div>
             <div className="lg:col-span-1 flex flex-col"><SchoolMeetingsToday /></div>
-            <div className="lg:col-span-1 flex flex-col gap-4"><PhotoFrame /><SchoolAIPanel /></div>
+            <div className="lg:col-span-1 flex flex-col gap-4">
+              <PhotoFrame />
+              <SchoolAIPanel />
+              {/* Staff Today */}
+              <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>👥 Staff Today</h3>
+                <div className="space-y-1">
+                  {STAFF_TODAY.map((s, i) => (
+                    <div key={i} className="flex items-center gap-2 py-2">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{s.name.split(' ').slice(-1)[0][0]}</div>
+                      <div className="flex-1 min-w-0"><p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p></div>
+                      <StaffBadge status={s.status} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </>
       )}
@@ -1229,12 +1245,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       )}
 
-      {/* 5. Three-col grid: left (stats + cards) / right (AI panel) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* LEFT — col-span-2 */}
-        <div className="lg:col-span-2 space-y-4">
-
-          {/* Stats row */}
+      {/* Stats row */}
+      <div className="space-y-4">
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
               { label: 'Attendance today',  value: `${attendanceAvg}%`,         sub: '7-year group avg',      color: ragColor(attendanceAvg), icon: Activity   },
@@ -1294,70 +1306,27 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </Card>
       </div>
 
-          {/* Three row: Staff / Schedule / Compliance */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card>
-              <CardHeader title="Staff Today" />
-              <div className="flex flex-col gap-1">
-                {STAFF_TODAY.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 px-4 py-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
-                      {s.name.split(' ').slice(-1)[0][0]}
+          {/* Compliance Tracker */}
+          <Card>
+            <CardHeader title="Compliance Tracker" />
+            <div className="flex flex-col gap-1">
+              {COMPLIANCE.map((c, i) => {
+                const icon = c.status === 'ok' ? <CheckCircle2 size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
+                           : c.status === 'urgent' ? <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
+                           : <Clock size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />
+                return (
+                  <div key={i} className="flex gap-3 px-4 py-3">
+                    {icon}
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium" style={{ color: c.status === 'urgent' ? '#F9FAFB' : '#D1D5DB' }}>{c.item}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{c.detail}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>{s.role}</p>
-                    </div>
-                    <StaffBadge status={s.status} />
                   </div>
-                ))}
-              </div>
-            </Card>
-            <Card>
-              <CardHeader title="Today's Schedule" />
-              <div className="flex flex-col gap-1">
-                {SCHEDULE.map((s, i) => {
-                  const colors: Record<string, string> = { admin: '#9CA3AF', academic: '#0D9488', meeting: '#6C3FC5', parent: '#F59E0B' }
-                  return (
-                    <div key={i} className="flex gap-3 px-4 py-3">
-                      <span className="text-xs shrink-0 mt-0.5 w-14" style={{ color: '#6B7280' }}>{s.time}</span>
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{s.event}</p>
-                        <div className="h-1 w-12 rounded-full mt-1.5" style={{ backgroundColor: colors[s.type] ?? '#9CA3AF' }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-            <Card>
-              <CardHeader title="Compliance Tracker" />
-              <div className="flex flex-col gap-1">
-                {COMPLIANCE.map((c, i) => {
-                  const icon = c.status === 'ok' ? <CheckCircle2 size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
-                             : c.status === 'urgent' ? <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
-                             : <Clock size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />
-                  return (
-                    <div key={i} className="flex gap-3 px-4 py-3">
-                      {icon}
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium" style={{ color: c.status === 'urgent' ? '#F9FAFB' : '#D1D5DB' }}>{c.item}</p>
-                        <p className="text-xs" style={{ color: '#6B7280' }}>{c.detail}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          </div>
-
-        </div>{/* end LEFT col-span-2 */}
-
-        {/* RIGHT — AI Morning Summary */}
-        <div className="lg:col-span-1">
-          <SchoolAIPanel />
-        </div>
-      </div>{/* end 3-col grid */}
+                )
+              })}
+            </div>
+          </Card>
+      </div>
 
       {/* ── Onboarding modal ────────────────────────────────────── */}
       {showOnboarding && schoolData && (

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get('search') || ''
 
   if (type === 'schools') {
-    let query = supabase.from('schools').select('id, name, slug, plan, workspace_type, active, trial_ends_at, created_at, admin_notes, onboarded, billing_type')
+    let query = supabase.from('schools').select('*')
     if (search) query = query.ilike('name', `%${search}%`)
     const { data, error } = await query.order('created_at', { ascending: false }).limit(100)
     if (error) console.error('[admin/accounts] schools query error:', error.message)
