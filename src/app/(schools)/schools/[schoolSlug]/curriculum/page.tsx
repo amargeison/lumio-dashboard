@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
-import { CreateLessonPlanModal, AssessmentTrackerModal, TimetableChangeModal } from '@/components/modals/SchoolModals'
+import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -116,8 +116,10 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 export default function CurriculumPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [showLessonPlan, setShowLessonPlan] = useState(false)
+  const [showCoverWork, setShowCoverWork] = useState(false)
+  const [showParentsEvening, setShowParentsEvening] = useState(false)
   const [showAssessment, setShowAssessment] = useState(false)
-  const [showTimetable, setShowTimetable] = useState(false)
+  const [showReportWriter, setShowReportWriter] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -161,8 +163,10 @@ export default function CurriculumPage() {
       <QuickActions actions={ACTIONS_BASE.map(a => ({
         ...a,
         onClick: a.label === 'Generate Lesson Plan' ? () => setShowLessonPlan(true)
+          : a.label === 'Cover Work' ? () => setShowCoverWork(true)
+          : a.label === 'Parents Evening' ? () => setShowParentsEvening(true)
           : a.label === 'Assessment Tracker' ? () => setShowAssessment(true)
-          : a.label === 'Report Writer' ? () => setShowTimetable(true)
+          : a.label === 'Report Writer' ? () => setShowReportWriter(true)
           : () => showToast('Feature coming soon'),
       }))} />
 
@@ -278,9 +282,11 @@ export default function CurriculumPage() {
         </div>
       </div>
 
-      {showLessonPlan && <CreateLessonPlanModal onClose={() => setShowLessonPlan(false)} onToast={showToast} />}
-      {showAssessment && <AssessmentTrackerModal onClose={() => setShowAssessment(false)} onToast={showToast} />}
-      {showTimetable && <TimetableChangeModal onClose={() => setShowTimetable(false)} onToast={showToast} />}
+      {showLessonPlan && <LessonPlanModal onClose={() => setShowLessonPlan(false)} />}
+      {showCoverWork && <CoverWorkModal onClose={() => setShowCoverWork(false)} />}
+      {showParentsEvening && <ParentsEveningModal onClose={() => setShowParentsEvening(false)} />}
+      {showAssessment && <AssessmentTrackerModal onClose={() => setShowAssessment(false)} />}
+      {showReportWriter && <ReportWriterModal onClose={() => setShowReportWriter(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
