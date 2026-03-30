@@ -3948,7 +3948,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       </div>
 
       {/* Top-right: bell + avatar (fixed) */}
-      <div style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 24, zIndex: 60, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="hidden md:flex" style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8, paddingRight: 16 }}>
         <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
