@@ -3572,7 +3572,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
