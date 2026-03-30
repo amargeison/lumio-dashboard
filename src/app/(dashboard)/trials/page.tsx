@@ -60,7 +60,7 @@ export default function TrialsPage() {
   const { showToast, Toast } = useToast()
 
   const actions = [
-    { label: 'Admin Portal',        icon: Shield,       onClick: () => window.location.href = '/admin' },
+    { label: 'Admin Portal',        icon: Shield,       onClick: () => window.open('/admin', '_blank') },
     { label: 'New Trial',           icon: FlaskConical, onClick: () => setShowTrial(true) },
     { label: 'Extend Trial',        icon: Calendar,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Convert to Customer', icon: UserPlus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },

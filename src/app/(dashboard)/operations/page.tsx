@@ -63,7 +63,7 @@ export default function OperationsPage() {
     { label: 'Delivery Log',      icon: ClipboardList, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Stock Report',      icon: FileText,      onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Book Stock',        icon: PackagePlus,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Admin Portal',     icon: Shield,        onClick: () => window.location.href = '/admin' },
+    { label: 'Admin Portal',     icon: Shield,        onClick: () => window.open('/admin', '_blank') },
     { label: 'Dept Insights',   icon: Star,          onClick: () => setShowAIInsights(true) },
   ]
 

@@ -64,7 +64,7 @@ export default function SupportPage() {
     { label: 'Book Meeting',   icon: CalendarPlus,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Create Wiki',   icon: BookOpen,      onClick: () => setShowCreateWiki(true) },
     { label: 'Create FAQ',    icon: HelpCircle,    onClick: () => setShowCreateFAQ(true) },
-    { label: 'Admin Portal',  icon: Shield,        onClick: () => window.location.href = '/admin' },
+    { label: 'Admin Portal',  icon: Shield,        onClick: () => window.open('/admin', '_blank') },
     { label: 'Dept Insights', icon: Star,         onClick: () => setShowAIInsights(true) },
   ]
 
