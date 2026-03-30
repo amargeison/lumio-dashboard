@@ -25,7 +25,7 @@ import FootballActionModal from '@/components/modals/FootballActionModal'
 type DeptId =
   | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
-  | 'media' | 'matchday' | 'training' | 'finance'
+  | 'media' | 'social' | 'matchday' | 'training' | 'finance'
   | 'staff' | 'facilities' | 'settings'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
@@ -64,6 +64,7 @@ const BG_GRADIENTS = [
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
+  { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
@@ -72,6 +73,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'Departments' },
   { id: 'analytics',   label: 'Analytics',      icon: BarChart3,      section: 'Departments' },
   { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
+  { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
   { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
   { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
@@ -2980,6 +2982,131 @@ const VOICES = [
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear' },
 ]
 
+// ─── Social Media View ──────────────────────────────────────────────────────
+
+const SOCIAL_MENTIONS = [
+  { user: '@OakridgeFan92', content: 'Great performance from Oakridge FC last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+  { user: '@SportsBlogger', content: 'Hearing Oakridge FC are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Oakridge! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
+  { user: '@ChampionshipNews', content: 'Oakridge FC move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+  { user: '@TacticsBoard', content: 'Thompson\'s pass map vs Riverside was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
+  { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
+  { user: '@YouthFootball', content: 'Tyler James (17) training with Oakridge first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+  { user: '@TransferWatch', content: 'Oakridge FC have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+]
+
+const SOCIAL_PLATFORMS = [
+  { name: 'X / Twitter', emoji: '🐦', followers: '124k', growth: '+840', engagement: '5.1%', bestTime: '12:30pm' },
+  { name: 'Instagram', emoji: '📸', followers: '89k', growth: '+620', engagement: '4.8%', bestTime: '6:00pm' },
+  { name: 'Facebook', emoji: '📘', followers: '42k', growth: '+180', engagement: '2.1%', bestTime: '9:00am' },
+  { name: 'YouTube', emoji: '▶️', followers: '18k', growth: '+340', engagement: '6.2%', bestTime: '2:00pm' },
+  { name: 'LinkedIn', emoji: '💼', followers: '8k', growth: '+90', engagement: '3.4%', bestTime: '8:00am' },
+  { name: 'TikTok', emoji: '🎵', followers: '3k', growth: '+420', engagement: '8.7%', bestTime: '7:00pm' },
+]
+
+const SOCIAL_CALENDAR = [
+  { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
+  { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
+  { day: 'Wed', time: '12pm', content: 'Player spotlight — Santos', platforms: 'All' },
+  { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
+  { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
+  { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
+  { day: 'Sun', time: '11am', content: 'Highlights + report', platforms: 'All' },
+]
+
+function SocialMediaView() {
+  const [platform, setPlatform] = useState(0)
+  const [sentimentFilter, setSentimentFilter] = useState<string>('all')
+  const [socToast, setSocToast] = useState<string | null>(null)
+  function socAction(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
+
+  const filtered = sentimentFilter === 'all' ? SOCIAL_MENTIONS : SOCIAL_MENTIONS.filter(m => m.sentiment === sentimentFilter)
+  const p = SOCIAL_PLATFORMS[platform]
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Oakridge FC</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }].map(a => (
+          <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Total Followers" value="284k" icon={Users} color="#C0392B" />
+        <StatCard label="Engagement Rate" value="4.2%" icon={Activity} color="#22C55E" />
+        <StatCard label="Mentions Today" value="847" icon={MessageSquare} color="#8B5CF6" />
+        <StatCard label="Sentiment Score" value="72/100" icon={Heart} color="#F1C40F" />
+      </div>
+
+      {/* Platform Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {SOCIAL_PLATFORMS.map((sp, i) => (
+          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#C0392B' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
+            {sp.emoji} {sp.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Platform Stats */}
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.emoji} {p.name}</p>
+          {[{ l: 'Followers', v: p.followers }, { l: 'Weekly Growth', v: p.growth }, { l: 'Engagement', v: p.engagement }, { l: 'Best Post Time', v: p.bestTime }].map(s => (
+            <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>
+          ))}
+        </div>
+
+        {/* Mentions Feed */}
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Mentions</p>
+            <div className="flex gap-1">{['all', 'positive', 'neutral', 'negative'].map(f => (
+              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#C0392B' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
+            ))}</div>
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {filtered.map((m, i) => (
+              <div key={i} className="px-5 py-3 flex gap-3" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #1F2937' : undefined }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{m.user[1].toUpperCase()}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs"><span className="font-bold" style={{ color: '#F9FAFB' }}>{m.user}</span> <span style={{ color: '#6B7280' }}>· {m.time}</span></p>
+                  <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>{m.content}</p>
+                  <div className="flex items-center gap-3 mt-1"><span className="text-[10px]" style={{ color: '#6B7280' }}>❤️ {m.likes}</span><span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: m.sentiment === 'positive' ? 'rgba(34,197,94,0.12)' : m.sentiment === 'negative' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: m.sentiment === 'positive' ? '#22C55E' : m.sentiment === 'negative' ? '#EF4444' : '#F59E0B' }}>{m.sentiment}</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sentiment + Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Sentiment Analysis</p>
+          {[{ l: 'Positive', v: 68, c: '#22C55E' }, { l: 'Neutral', v: 22, c: '#F59E0B' }, { l: 'Negative', v: 10, c: '#EF4444' }].map(s => (
+            <div key={s.l} className="mb-2"><div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{s.l}</span><span style={{ color: s.c }}>{s.v}%</span></div><div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${s.v}%`, backgroundColor: s.c }} /></div></div>
+          ))}
+        </div>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Content Calendar</p></div>
+          {SOCIAL_CALENDAR.map((c, i) => (
+            <div key={i} className="flex items-center gap-3 px-5 py-2.5" style={{ borderBottom: i < SOCIAL_CALENDAR.length - 1 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs font-bold w-8" style={{ color: '#C0392B' }}>{c.day}</span>
+              <span className="text-xs w-10" style={{ color: '#6B7280' }}>{c.time}</span>
+              <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{c.content}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{c.platforms}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+    </div>
+  )
+}
+
 function SettingsView() {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
@@ -3219,6 +3346,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {activeDept === 'analytics' && <AnalyticsView />}
             {activeDept === 'media' && <MediaView />}
+            {activeDept === 'social' && <SocialMediaView />}
             {activeDept === 'matchday' && <MatchdayView />}
             {activeDept === 'training' && <TrainingView />}
             {activeDept === 'finance' && <FinanceView />}
