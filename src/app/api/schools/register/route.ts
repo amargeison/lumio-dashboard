@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -11,7 +11,6 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const {
       schoolName,
@@ -109,58 +108,57 @@ export async function POST(req: NextRequest) {
       '📋 Log your first absence and see workflows in action',
     ]
 
-    await resend.emails.send({
-      from: 'Lumio for Schools <schools@lumiocms.com>',
-      to: [yourEmail],
-      subject: `Welcome to Lumio, ${schoolName}!`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family:-apple-system,Arial,sans-serif;background:#050508;color:#fff;margin:0;padding:0;">
-          <div style="max-width:600px;margin:40px auto;background:#0D1117;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#0D9488,#0F766E);padding:32px;">
-              <div style="font-size:22px;font-weight:900;letter-spacing:0.05em;color:white;">Lumio for Schools</div>
-              <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${schoolName}</div>
-            </div>
-            <!-- Body -->
-            <div style="padding:40px 32px;">
-              <h2 style="color:white;margin:0 0 8px;font-size:24px;">Welcome to Lumio, ${schoolName}! 🎉</h2>
-              <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 32px;">
-                Hi ${yourName}, your school portal is set up and ready to go. Here's how to get started:
-              </p>
-              <!-- Checklist -->
-              <div style="background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:12px;padding:24px;margin-bottom:32px;">
-                <p style="color:#0D9488;font-size:12px;font-weight:700;letter-spacing:0.1em;margin:0 0 16px;">GETTING STARTED</p>
-                ${checklistItems.map(item => `
-                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                    <div style="width:20px;height:20px;background:rgba(13,148,136,0.2);border-radius:50%;border:2px solid #0D9488;flex-shrink:0;"></div>
-                    <span style="color:rgba(255,255,255,0.8);font-size:14px;">${item}</span>
-                  </div>
-                `).join('')}
+    try {
+      const { error: welcomeErr } = await sendEmail({
+        from: 'Lumio for Schools <schools@lumiocms.com>',
+        to: [yourEmail],
+        subject: `Welcome to Lumio, ${schoolName}!`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <body style="font-family:-apple-system,Arial,sans-serif;background:#050508;color:#fff;margin:0;padding:0;">
+            <div style="max-width:600px;margin:40px auto;background:#0D1117;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+              <div style="background:linear-gradient(135deg,#0D9488,#0F766E);padding:32px;">
+                <div style="font-size:22px;font-weight:900;letter-spacing:0.05em;color:white;">Lumio for Schools</div>
+                <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${schoolName}</div>
               </div>
-              <!-- CTA -->
-              <a href="${appUrl}/schools/${slug}" style="display:block;text-align:center;background:linear-gradient(135deg,#0D9488,#0F766E);color:white;text-decoration:none;padding:16px 24px;border-radius:12px;font-weight:700;font-size:16px;margin-bottom:24px;">
-                Go to your portal →
-              </a>
-              <!-- Trial reminder -->
-              <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;">
-                <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0;">
-                  14-day free trial · No credit card needed · Cancel anytime
+              <div style="padding:40px 32px;">
+                <h2 style="color:white;margin:0 0 8px;font-size:24px;">Welcome to Lumio, ${schoolName}! 🎉</h2>
+                <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 32px;">
+                  Hi ${yourName}, your school portal is set up and ready to go. Here's how to get started:
+                </p>
+                <div style="background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:12px;padding:24px;margin-bottom:32px;">
+                  <p style="color:#0D9488;font-size:12px;font-weight:700;letter-spacing:0.1em;margin:0 0 16px;">GETTING STARTED</p>
+                  ${checklistItems.map(item => `
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                      <div style="width:20px;height:20px;background:rgba(13,148,136,0.2);border-radius:50%;border:2px solid #0D9488;flex-shrink:0;"></div>
+                      <span style="color:rgba(255,255,255,0.8);font-size:14px;">${item}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <a href="${appUrl}/schools/${slug}" style="display:block;text-align:center;background:linear-gradient(135deg,#0D9488,#0F766E);color:white;text-decoration:none;padding:16px 24px;border-radius:12px;font-weight:700;font-size:16px;margin-bottom:24px;">
+                  Go to your portal →
+                </a>
+                <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                  <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0;">
+                    14-day free trial · No credit card needed · Cancel anytime
+                  </p>
+                </div>
+              </div>
+              <div style="padding:16px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+                <p style="color:rgba(255,255,255,0.2);font-size:11px;margin:0;text-align:center;">
+                  Lumio Ltd · lumiocms.com · GDPR compliant · UK data centres
                 </p>
               </div>
             </div>
-            <!-- Footer -->
-            <div style="padding:16px 32px;border-top:1px solid rgba(255,255,255,0.06);">
-              <p style="color:rgba(255,255,255,0.2);font-size:11px;margin:0;text-align:center;">
-                Lumio Ltd · lumiocms.com · GDPR compliant · UK data centres
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-    })
+          </body>
+          </html>
+        `,
+      })
+      if (welcomeErr) console.error('[schools/register] Welcome email failed:', welcomeErr)
+    } catch (welcomeErr) {
+      console.error('[schools/register] Welcome email error:', welcomeErr)
+    }
 
     // 6. Generate OTP and store in school_magic_links
     const code = Math.floor(100000 + Math.random() * 900000).toString()
@@ -187,7 +185,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send OTP email
-    await resend.emails.send({
+    await sendEmail({
       from: 'Lumio for Schools <schools@lumiocms.com>',
       to: [yourEmail],
       subject: `Your Lumio for Schools sign-in code: ${code}`,

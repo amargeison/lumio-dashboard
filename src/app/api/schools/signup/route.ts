@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -11,7 +11,6 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const { email } = await req.json()
     if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate sign-in code' }, { status: 500 })
     }
 
-    await resend.emails.send({
+    await sendEmail({
       from: 'Lumio for Schools <schools@lumiocms.com>',
       to: [email],
       subject: `Your Lumio for Schools sign-in code: ${code}`,
