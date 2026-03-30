@@ -19,7 +19,10 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Blog',         href: '/blog'     },
 ]
 
-const SCHOOLS_EXTRA_LINK = { label: 'SSO & Rostering', href: '/schools/sso' }
+const SCHOOLS_EXTRA_LINKS = [
+  { label: 'Features', href: '/schools/features' },
+  { label: 'SSO & Rostering', href: '/schools/sso' },
+]
 
 const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
@@ -45,7 +48,7 @@ function Nav() {
   const isSchools = pathname?.startsWith('/schools') ?? false
 
   const baseLinks = isSchools
-    ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), SCHOOLS_EXTRA_LINK, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
+    ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
     : NAV_LINKS
   const navLinks = baseLinks
     .filter(l => !(isSchools && l.label === 'CRM'))
