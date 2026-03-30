@@ -3947,17 +3947,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{company}</span>
       </div>
 
-      {/* Top-right: bell + avatar (fixed) */}
-      <div className="hidden md:flex" style={{ position: 'fixed', top: showUpgrade && isTrial ? 52 : 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8, paddingRight: 16 }}>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
-        </button>
-        <AvatarDropdown
-          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-          onConvert={() => setShowConvert(true)}
-        />
-      </div>
+      {/* bell + avatar rendered inline in header row below */}
       {showConvert && <ConvertModal onClose={() => setShowConvert(false)} />}
 
       {/* Clear Demo Data confirmation */}
@@ -4052,8 +4042,21 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
                 <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>
               </div>
-              {/* Mobile invite */}
-              <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
+              <div className="flex items-center gap-2" style={{ paddingRight: 24 }}>
+                {/* Mobile invite */}
+                <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
+                {/* Bell + avatar (desktop) */}
+                <div className="hidden md:flex items-center gap-2">
+                  <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+                    <Bell size={16} strokeWidth={1.75} />
+                    <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
+                  </button>
+                  <AvatarDropdown
+                    initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+                    onConvert={() => setShowConvert(true)}
+                  />
+                </div>
+              </div>
             </div>
 
             {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && activeDept !== 'marketing' && activeDept !== 'trials' && activeDept !== 'operations' && activeDept !== 'support' && activeDept !== 'success' && activeDept !== 'it' && activeDept !== 'projects' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
