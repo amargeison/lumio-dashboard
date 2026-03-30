@@ -1058,12 +1058,30 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
   onActionClick?: (label: string) => void
   children?: React.ReactNode
 }) {
+  const [toast, setToast] = useState<string | null>(null)
+  function handleAction(label: string) {
+    if (onActionClick) { onActionClick(label); return }
+    setToast(`${label} — opening workflow...`)
+    setTimeout(() => setToast(null), 2500)
+  }
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>{title}</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>{subtitle}</p>
       </div>
+
+      {/* Quick Actions — always at the top */}
+      {actionButtons && actionButtons.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {actionButtons.map((a, i) => (
+            <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+              <a.icon size={12} />{a.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {stats.map((s, i) => (
@@ -1086,21 +1104,13 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         </div>
       </div>
 
-      {actionButtons && actionButtons.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {actionButtons.map((a, i) => (
-            <button key={i} onClick={() => onActionClick?.(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
-              <a.icon size={12} />{a.label}
-            </button>
-          ))}
-        </div>
-      )}
-
       {children && (
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           {children}
         </div>
       )}
+
+      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{toast}</div>}
     </div>
   )
 }
@@ -1394,11 +1404,22 @@ function SquadView() {
   const topAssists = [...SQUAD].sort((a, b) => b.assists - a.assists)[0]
   const topRated = [...SQUAD].sort((a, b) => b.lastRating - a.lastRating)[0]
 
+  const [sqToast, setSqToast] = useState<string | null>(null)
+  function sqAction(l: string) { setSqToast(`${l} — opening workflow...`); setTimeout(() => setSqToast(null), 2500) }
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Management</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Full squad overview, contracts, fitness, and availability.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }].map(a => (
+          <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -1798,11 +1819,22 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
 // ─── Medical View ───────────────────────────────────────────────────────────
 
 function MedicalView() {
+  const [medToast, setMedToast] = useState<string | null>(null)
+  function medAction(l: string) { setMedToast(`${l} — opening workflow...`); setTimeout(() => setMedToast(null), 2500) }
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Medical Centre</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Injury tracking, rehabilitation, GPS load monitoring, and return-to-play pipeline.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }].map(a => (
+          <button key={a.l} onClick={() => medAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -2177,11 +2209,22 @@ function AnalyticsView() {
 
   const currentFormation = MATCH_FORMATIONS[selectedMatch]
 
+  const [anToast, setAnToast] = useState<string | null>(null)
+  function anAction(l: string) { setAnToast(`${l} — opening workflow...`); setTimeout(() => setAnToast(null), 2500) }
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Performance Analytics</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>xG, formations, match stats, and AI-powered analysis.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
