@@ -5,6 +5,7 @@ export type VoiceCommandResult = {
   command: string
   action: string
   response: string
+  payload?: Record<string, any>
   data?: Record<string, any>
 }
 

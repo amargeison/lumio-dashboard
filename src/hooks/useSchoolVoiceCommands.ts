@@ -5,6 +5,7 @@ export type SchoolVoiceCommandResult = {
   command: string
   action: string
   response: string
+  payload?: Record<string, any>
   data?: Record<string, any>
 }
 
