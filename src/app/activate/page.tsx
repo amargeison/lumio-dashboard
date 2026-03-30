@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
-export default function ActivatePage() {
+function ActivateContent() {
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token')
@@ -118,5 +118,13 @@ export default function ActivatePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ActivatePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#07080F' }}><div className="text-center"><Loader2 size={48} className="animate-spin mx-auto mb-4" style={{ color: '#0D9488' }} /><p style={{ color: '#F9FAFB' }}>Activating your account...</p></div></div>}>
+      <ActivateContent />
+    </Suspense>
   )
 }
