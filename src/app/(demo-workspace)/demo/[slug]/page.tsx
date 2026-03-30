@@ -132,12 +132,14 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Marketing',                       icon: BarChart3 },
   ],
   trials:     [
-    { label: 'New Trial',      tooltip: 'Provision a new 14-day trial workspace for a prospect',          icon: FlaskConical },
-    { label: 'Send Demo',      tooltip: 'Send a personalised demo link to a lead',                        icon: Play      },
-    { label: 'Extend Trial',   tooltip: 'Add 7 more days to an active trial workspace',                   icon: Clock     },
-    { label: 'Convert to Paid',tooltip: 'Trigger the upgrade workflow and remove trial restrictions',      icon: DollarSign},
-    { label: 'Offboard Trial', tooltip: 'Safely expire and delete a trial workspace and all its data',    icon: X         },
-    { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Trials',                          icon: BarChart3 },
+    { label: 'Admin Portal',        tooltip: 'Open the admin portal to manage trial workspaces',              icon: Users       },
+    { label: 'New Trial',           tooltip: 'Provision a new 14-day trial workspace for a prospect',         icon: FlaskConical},
+    { label: 'Extend Trial',        tooltip: 'Add 7 more days to an active trial workspace',                  icon: Clock       },
+    { label: 'Convert to Customer', tooltip: 'Trigger the upgrade workflow and remove trial restrictions',     icon: UserPlus    },
+    { label: 'End Trial',           tooltip: 'Safely expire and delete a trial workspace and all its data',   icon: AlertCircle },
+    { label: 'Send Day 3 Email',    tooltip: 'Send the Day 3 check-in email to active trials',                icon: Send        },
+    { label: 'Send Day 7 Email',    tooltip: 'Send the Day 7 engagement email to active trials',              icon: Send        },
+    { label: 'Dept Insights',       tooltip: 'View AI-generated insights for Trials',                         icon: BarChart3   },
   ],
   operations: [
     { label: 'New PO',         tooltip: 'Raise a new purchase order and send to a supplier',              icon: Package   },
@@ -2358,36 +2360,59 @@ function TrialsView({ company }: { company: string }) {
   const active = fakeNum(23,company,'tr'), converting = fakeNum(8,company,'cv')
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Active Trials" value={String(active)} icon={FlaskConical} color="#6C3FC5"
           pieData={[{label:'Week 1',value:8,color:'#6C3FC5'},{label:'Week 2',value:9,color:'#A78BFA'},{label:'Expiring',value:6,color:'#EF4444'}]}
           barData={[{label:'Jan',value:18,color:'#6C3FC5'},{label:'Feb',value:20,color:'#6C3FC5'},{label:'Mar',value:active,color:'#7C3AED'}]} />
-        <StatCard label="Converting Soon" value={String(converting)} icon={TrendingUp} color="#22C55E"
-          pieData={[{label:'Hot',value:5,color:'#22C55E'},{label:'Warm',value:3,color:'#F59E0B'}]}
-          barData={[{label:'Wk1',value:2,color:'#22C55E'},{label:'Wk2',value:4,color:'#22C55E'},{label:'Wk3',value:6,color:'#22C55E'},{label:'Wk4',value:converting,color:'#0D9488'}]} />
-        <StatCard label="Trial Conversion Rate" value={`${fakeNum(34,company,'tcr')}%`} icon={Star} color="#0D9488"
-          pieData={[{label:'Converted',value:34,color:'#0D9488'},{label:'Expired',value:66,color:'#374151'}]}
-          barData={[{label:'Q3',value:28,color:'#0D9488'},{label:'Q4',value:31,color:'#0D9488'},{label:'Q1',value:34,color:'#0F766E'}]} />
+        <StatCard label="Trials Ending This Week" value="5" icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'High eng.',value:2,color:'#22C55E'},{label:'Med eng.',value:1,color:'#F59E0B'},{label:'Low eng.',value:2,color:'#EF4444'}]}
+          barData={[{label:'Wk-2',value:3,color:'#EF4444'},{label:'Wk-1',value:4,color:'#EF4444'},{label:'This',value:5,color:'#DC2626'}]} />
+        <StatCard label="Conversion Rate" value="62%" icon={TrendingUp} color="#22C55E"
+          pieData={[{label:'Converted',value:62,color:'#22C55E'},{label:'Expired',value:38,color:'#374151'}]}
+          barData={[{label:'Q3',value:54,color:'#22C55E'},{label:'Q4',value:58,color:'#22C55E'},{label:'Q1',value:62,color:'#0D9488'}]} />
+        <StatCard label="Avg Trial Length" value="14d" icon={Clock} color="#0D9488"
+          pieData={[{label:'<7d',value:15,color:'#0D9488'},{label:'7-14d',value:55,color:'#22C55E'},{label:'>14d',value:30,color:'#F59E0B'}]}
+          barData={[{label:'Q3',value:16,color:'#0D9488'},{label:'Q4',value:15,color:'#0D9488'},{label:'Q1',value:14,color:'#0F766E'}]} />
       </div>
       <DeptAISummary dept="trials" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New Trial',i:FlaskConical},{l:'Send Demo',i:Play},{l:'Extend Trial',i:Clock},{l:'Convert to Paid',i:DollarSign},{l:'Offboard Trial',i:X},{l:'Dept Insights',i:BarChart3}].map(a=>(
+          {[{l:'Admin Portal',i:Users},{l:'New Trial',i:FlaskConical},{l:'Extend Trial',i:Clock},{l:'Convert to Customer',i:UserPlus},{l:'End Trial',i:AlertCircle},{l:'Send Day 3 Email',i:Send},{l:'Send Day 7 Email',i:Send},{l:'Dept Insights',i:BarChart3}].map(a=>(
             <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Trial Workspaces</p></div>
-        <table className="w-full text-sm">
-          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Started','Days Left','Dept Focus','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
-          <tbody>{Array.from({length:6},(_,i)=>[fakeCompany(company,i+30),['14 Mar','10 Mar','8 Mar','5 Mar','2 Mar','28 Feb'][i],['12','8','6','3','1','Expiring today'][i],['HR, Sales','All','Finance, Ops','Sales','HR','All'][i],['Active','Active','Active','Active','Expiring','Expiring'][i]]).map((r,i)=>(
-            <tr key={i} style={{borderBottom:i<5?'1px solid #111318':undefined}}>
-              {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':'rgba(239,68,68,0.1)',color:c==='Active'?'#0D9488':'#EF4444'}}>{c}</span>:c}</td>))}
-            </tr>
-          ))}</tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Trial Workspaces</p></div>
+          <table className="w-full text-sm">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Company','Started','Days Left','Dept Focus','Status'].map(h=><th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>{Array.from({length:6},(_,i)=>[fakeCompany(company,i+30),['14 Mar','10 Mar','8 Mar','5 Mar','2 Mar','28 Feb'][i],['12','8','6','3','1','Expiring today'][i],['HR, Sales','All','Finance, Ops','Sales','HR','All'][i],['Active','Active','Active','Active','Expiring','Expiring'][i]]).map((r,i)=>(
+              <tr key={i} style={{borderBottom:i<5?'1px solid #111318':undefined}}>
+                {r.map((c,j)=>(<td key={j} className="px-5 py-3" style={{color:j===0?'#F9FAFB':'#9CA3AF'}}>{j===4?<span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:c==='Active'?'rgba(13,148,136,0.1)':'rgba(239,68,68,0.1)',color:c==='Active'?'#0D9488':'#EF4444'}}>{c}</span>:c}</td>))}
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Trials Ending Soon</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:'Starling Schools',contact:'Maria Olsen',days:'2 days',eng:'High'},{name:'Northpoint Primary',contact:'Jake Burns',days:'4 days',eng:'Medium'},{name:'Helix Education',contact:'Priya Shah',days:'4 days',eng:'Low'},{name:'Calibre Learning',contact:'Owen James',days:'1 day',eng:'High'}].map((t,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{t.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{t.contact} · Ends in {t.days}</p><p className="text-xs" style={{color:'#6B7280'}}>Engagement: {t.eng}</p></div><span className="text-xs px-2 py-0.5 rounded shrink-0" style={{backgroundColor:'rgba(239,68,68,0.1)',color:'#EF4444'}}>Ending</span></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Conversion Opportunities</p></div>
+            <div className="divide-y" style={{borderColor:'#1F2937'}}>
+              {[{name:'Lakewood Academy',reason:'High engagement, Day 13',badge:'Active',bc:'rgba(13,148,136,0.1)',c:'#0D9488'},{name:'Torchbearer Trust',reason:'Demo attended, Day 6',badge:'Active',bc:'rgba(13,148,136,0.1)',c:'#0D9488'},{name:'Calibre Learning',reason:'Day 29 — ready to convert',badge:'Ending',bc:'rgba(239,68,68,0.1)',c:'#EF4444'},{name:'Apex Tutors',reason:'Convert call booked',badge:'Converted',bc:'rgba(13,148,136,0.1)',c:'#0D9488'}].map((o,i)=>(
+                <div key={i} className="px-5 py-3 flex items-center justify-between"><div><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{o.name}</p><p className="text-xs" style={{color:'#6B7280'}}>{o.reason}</p></div><span className="text-xs px-2 py-0.5 rounded shrink-0" style={{backgroundColor:o.bc,color:o.c}}>{o.badge}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

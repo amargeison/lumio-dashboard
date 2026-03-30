@@ -60,12 +60,13 @@ export default function TrialsPage() {
   const { showToast, Toast } = useToast()
 
   const actions = [
+    { label: 'Admin Portal',        icon: Shield,       onClick: () => window.location.href = '/admin' },
     { label: 'New Trial',           icon: FlaskConical, onClick: () => setShowTrial(true) },
-    { label: 'Send Day 3 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Send Day 7 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Extend Trial',        icon: Calendar,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Convert to Customer', icon: UserPlus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'End Trial',           icon: AlertCircle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
-    { label: 'Admin Portal',        icon: Shield,       onClick: () => window.location.href = '/admin' },
+    { label: 'Send Day 3 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Send Day 7 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Dept Insights',      icon: Star,         onClick: () => setShowAIInsights(true) },
   ]
 
@@ -82,12 +83,12 @@ export default function TrialsPage() {
 
   return (
     <PageShell title="Trials" subtitle="Trial management, conversions and pipeline">
-      <DeptAISummary dept="trials" portal="business" />
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="trials" portal="business" />
 
       <QuickActions items={actions} />
 
