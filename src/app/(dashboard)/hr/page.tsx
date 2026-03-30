@@ -15,6 +15,7 @@ import PerformanceReviewModal, { type PerformanceReviewData } from '@/components
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import SendContractModal from '@/components/modals/SendContractModal'
+import BookContractorModal from '@/components/modals/BookContractorModal'
 
 // ─── Default static data (fallback) ──────────────────────────────────────────
 
@@ -101,6 +102,7 @@ export default function HRPage() {
   const [showRecruitment, setShowRecruitment] = useState(false)
   const [showPerfReview,  setShowPerfReview]  = useState(false)
   const [showContract,    setShowContract]    = useState(false)
+  const [showContractor,  setShowContractor]  = useState(false)
 
   const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
@@ -309,6 +311,7 @@ export default function HRPage() {
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
     { label: 'Dept Insights',      icon: Star,           onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Book Contractor',    icon: Briefcase,      onClick: () => setShowContractor(true) },
   ]
 
   return (
@@ -418,6 +421,7 @@ export default function HRPage() {
         <PerformanceReviewModal onClose={() => setShowPerfReview(false)} onSubmit={handlePerfReview} />
       )}
       {showContract && <SendContractModal onClose={() => setShowContract(false)} onSubmit={() => { setShowContract(false); showToast('Contract sent') }} />}
+      {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
       <Toast message={toast} />
     </PageShell>
   )
