@@ -7,7 +7,34 @@ import KPIGrid from '@/components/crm/KPIGrid'
 import RevenueChart from '@/components/crm/RevenueChart'
 import PipelineHealth from '@/components/crm/PipelineHealth'
 import ActivityFeed from '@/components/crm/ActivityFeed'
+import { Phone, Mail, Calendar as CalendarIcon, Video, AlertCircle } from 'lucide-react'
+import { PieChart, Pie, Cell, LineChart, Line, CartesianGrid, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { CRMDeal, CRMContact, CRMActivity, PipelineStage } from '@/lib/crm/types'
+
+// ─── Static chart data (module-level, never recreated) ──────────────────────
+
+const WIN_LOSS_DATA = [{ name: 'Price', value: 28, color: '#EF4444' }, { name: 'Competitor', value: 22, color: '#F59E0B' }, { name: 'Timing', value: 18, color: '#6B7280' }, { name: 'No Budget', value: 16, color: '#3B82F6' }, { name: 'Won', value: 16, color: '#22C55E' }]
+const VELOCITY_DATA = [{ month: 'Jan', days: 24 }, { month: 'Feb', days: 22 }, { month: 'Mar', days: 19 }, { month: 'Apr', days: 18 }, { month: 'May', days: 16 }, { month: 'Jun', days: 14 }]
+const LEAD_SOURCE_DATA = [{ source: 'Referral', pct: 34 }, { source: 'Inbound', pct: 24 }, { source: 'LinkedIn', pct: 18 }, { source: 'Partner', pct: 14 }, { source: 'Cold', pct: 10 }]
+const CHURN_ACCOUNTS = [{ name: 'Apex Consulting', reason: 'No login in 42 days', risk: 91 }, { name: 'Oakridge Schools', reason: 'Support tickets × 4', risk: 78 }, { name: 'Pinebrook Primary', reason: 'Downgrade request sent', risk: 65 }]
+const RENEWALS = [{ name: 'Sterling & Co', due: 'Apr 12', arr: '£14,800', health: 'Critical' as const }, { name: 'Northern Digital', due: 'Apr 18', arr: '£33,400', health: 'At Risk' as const }, { name: 'Metro Logistics', due: 'May 2', arr: '£76,000', health: 'Healthy' as const }]
+
+const CRM_BG = '#0F1019'
+const CRM_BORDER = '#1E2035'
+const CRM_CARD = '#121320'
+const PURPLE = '#8B5CF6'
+
+function CRMTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: '#1a1a2e', border: '1px solid #2a2a4e', color: '#F1F3FA' }}>
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} style={{ color: p.color || p.fill }}>{p.name}: {typeof p.value === 'number' && p.value > 1000 ? `£${p.value.toLocaleString()}` : p.value}</p>
+      ))}
+    </div>
+  )
+}
 
 const CACHE_KEY = 'lumio_crm_cache'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
@@ -185,22 +212,89 @@ export default function CRMDashboardPage() {
         pipelineValue={pipelineValue}
         openDeals={openDeals.length}
         winRate={winRate}
+        avgDealSize={openDeals.length > 0 ? Math.round(pipelineValue / openDeals.length) : 0}
+        revenueThisMonth={closedWon.reduce((s, d) => s + (d.value || 0), 0) || 42800}
         ariaAccuracy={91}
       />
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RevenueChart />
-        <PipelineHealth stages={stageData} />
+      {/* Charts row 1: Revenue vs Target | Pipeline | Win/Loss */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <RevenueChart />
+        </div>
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <PipelineHealth stages={stageData} />
+        </div>
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Win/Loss Reasons</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={WIN_LOSS_DATA} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                {WIN_LOSS_DATA.map((d, i) => <Cell key={i} fill={d.color} />)}
+              </Pie>
+              <Tooltip content={<CRMTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap gap-2 justify-center mt-1">
+            {WIN_LOSS_DATA.map(d => (
+              <span key={d.name} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}>
+                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />{d.name} {d.value}%
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Activity + Top Deals row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActivityFeed activities={activities.slice(0, 8)} />
+      {/* Charts row 2: Velocity + Lead Source */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Deal Velocity Trend</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={VELOCITY_DATA}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
+              <XAxis dataKey="month" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CRMTooltip />} />
+              <Line type="monotone" dataKey="days" name="Avg Days" stroke={PURPLE} strokeWidth={2} dot={{ fill: PURPLE, r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lead Source Breakdown</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={LEAD_SOURCE_DATA} layout="vertical" barSize={16}>
+              <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+              <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
+              <Tooltip content={<CRMTooltip />} />
+              <Bar dataKey="pct" name="%" fill="#06B6D4" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Activity Today + Top Deals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-4" style={{ color: '#F1F3FA' }}>Activity Today</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: <Phone size={14} />, label: 'Calls Logged', value: '8', trend: '+3 vs yesterday', color: '#3B82F6' },
+              { icon: <Mail size={14} />, label: 'Emails Sent', value: '23', trend: '+8 vs yesterday', color: PURPLE },
+              { icon: <CalendarIcon size={14} />, label: 'Meetings Booked', value: '4', trend: '+1 vs yesterday', color: '#F59E0B' },
+              { icon: <Video size={14} />, label: 'Demos Completed', value: '2', trend: 'On target', color: '#22C55E' },
+            ].map(a => (
+              <div key={a.label} className="rounded-lg p-3" style={{ background: CRM_CARD }}>
+                <div className="flex items-center gap-2 mb-1" style={{ color: a.color }}>{a.icon}<span className="text-xs">{a.label}</span></div>
+                <p className="text-lg font-black" style={{ color: '#F1F3FA' }}>{a.value}</p>
+                <p className="text-[10px]" style={{ color: '#6B7299' }}>{a.trend}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Top Deals by ARIA Score */}
-        <div className="rounded-xl p-6" style={{ background: '#0F1019', border: '1px solid #1E2035' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#F1F3FA' }}>Top Deals by ARIA Score</h3>
+        <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Top 5 Deals</p>
           <div className="space-y-3">
             {topDeals.map(deal => (
               <div key={deal.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#121320' }}>
@@ -241,6 +335,21 @@ export default function CRMDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Churn Risk + Renewals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl overflow-hidden" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <div className="px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Churn Risk Alerts</p></div>
+          {CHURN_ACCOUNTS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < CHURN_ACCOUNTS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} /><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>{r.reason}</p></div><span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}%</span></div>))}
+        </div>
+        <div className="rounded-xl overflow-hidden" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <div className="px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Upcoming Renewals</p></div>
+          {RENEWALS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < RENEWALS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>Due {r.due} · {r.arr}</p></div><span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span></div>))}
+        </div>
+      </div>
+
+      {/* Activity Feed */}
+      <ActivityFeed activities={activities.slice(0, 8)} />
     </div>
   )
 }

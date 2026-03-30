@@ -1,19 +1,21 @@
 'use client';
 
-import { PoundSterling, Briefcase, TrendingUp, Brain } from 'lucide-react';
+import { PoundSterling, Briefcase, TrendingUp, Brain, BarChart3, DollarSign } from 'lucide-react';
 
 interface KPIGridProps {
   pipelineValue: number;
   openDeals: number;
   winRate: number;
   ariaAccuracy: number;
+  avgDealSize?: number;
+  revenueThisMonth?: number;
 }
 
 const formatCurrency = (value: number) => {
   return '£' + value.toLocaleString('en-GB');
 };
 
-export default function KPIGrid({ pipelineValue, openDeals, winRate, ariaAccuracy }: KPIGridProps) {
+export default function KPIGrid({ pipelineValue, openDeals, winRate, ariaAccuracy, avgDealSize, revenueThisMonth }: KPIGridProps) {
   const cards = [
     {
       label: 'Pipeline Value',
@@ -28,11 +30,23 @@ export default function KPIGrid({ pipelineValue, openDeals, winRate, ariaAccurac
       icon: Briefcase,
     },
     {
-      label: 'Win Rate',
+      label: 'Win Rate 30d',
       value: `${winRate}%`,
-      delta: '+12% vs last month',
+      delta: '+4% vs last month',
       icon: TrendingUp,
     },
+    ...(avgDealSize != null ? [{
+      label: 'Avg Deal Size',
+      value: formatCurrency(avgDealSize),
+      delta: '+8% vs last month',
+      icon: BarChart3,
+    }] : []),
+    ...(revenueThisMonth != null ? [{
+      label: 'Revenue This Month',
+      value: formatCurrency(revenueThisMonth),
+      delta: '+15% vs last month',
+      icon: DollarSign,
+    }] : []),
     {
       label: 'ARIA Accuracy',
       value: `${ariaAccuracy}%`,
@@ -45,10 +59,10 @@ export default function KPIGrid({ pipelineValue, openDeals, winRate, ariaAccurac
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 16,
+        gridTemplateColumns: `repeat(${cards.length}, 1fr)`,
+        gap: 12,
       }}
-      className="max-[768px]:!grid-cols-2"
+      className="max-[1024px]:!grid-cols-3 max-[768px]:!grid-cols-2"
     >
       {cards.map((card) => {
         const Icon = card.icon;
