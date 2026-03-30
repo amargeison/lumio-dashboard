@@ -20,22 +20,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 })
   }
 
-  // Create session — look up first admin user or use generated UUID
+  // Create session
   const supabase = getSupabase()
   const { data: admin } = await supabase.from('admin_users').select('id, name, email, role').limit(1).maybeSingle()
-  const adminId = admin?.id || crypto.randomUUID()
 
   const token = crypto.randomUUID()
-  const { error: sessionError } = await supabase.from('admin_sessions').insert({
-    token,
-    admin_id: adminId,
-    email: admin?.email || 'admin@lumiocms.com',
-    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-  })
+  const adminEmail = admin?.email || 'admin@lumiocms.com'
 
-  if (sessionError) {
-    console.error('[admin/verify-pin] Session insert error:', sessionError)
-    return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
+  // Try inserting session — if admin_users has rows use their ID, otherwise create without FK
+  let sessionCreated = false
+  if (admin?.id) {
+    const { error } = await supabase.from('admin_sessions').insert({
+      token, admin_id: admin.id, email: adminEmail,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+    if (!error) sessionCreated = true
+    else console.error('[admin/verify-pin] Session insert with admin_id error:', error.message)
+  }
+
+  // Fallback: try without admin_id FK, or with a text ID
+  if (!sessionCreated) {
+    const fallbackId = crypto.randomUUID()
+    // First ensure we have an admin_users row
+    await supabase.from('admin_users').upsert({
+      id: fallbackId, name: 'Admin', email: adminEmail, role: 'superadmin',
+    }, { onConflict: 'email' }).select().maybeSingle()
+
+    const { data: newAdmin } = await supabase.from('admin_users').select('id').eq('email', adminEmail).maybeSingle()
+    const { error: retryError } = await supabase.from('admin_sessions').insert({
+      token, admin_id: newAdmin?.id || fallbackId, email: adminEmail,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+    if (retryError) {
+      console.error('[admin/verify-pin] Session insert retry error:', retryError.message)
+      return NextResponse.json({ error: `Session creation failed: ${retryError.message}` }, { status: 500 })
+    }
   }
 
   return NextResponse.json({
@@ -43,6 +62,6 @@ export async function POST(req: NextRequest) {
     token,
     name: admin?.name || 'Admin',
     role: admin?.role || 'superadmin',
-    email: admin?.email || 'admin@lumiocms.com',
+    email: adminEmail,
   })
 }

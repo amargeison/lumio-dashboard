@@ -23,9 +23,7 @@ export async function GET(req: NextRequest) {
     .from('admin_users')
     .select('id, name, email, role')
     .eq('id', session.admin_id)
-    .single()
+    .maybeSingle()
 
-  if (!admin) return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
-
-  return NextResponse.json(admin)
+  return NextResponse.json(admin || { id: session.admin_id, name: 'Admin', email: session.email, role: 'superadmin' })
 }
