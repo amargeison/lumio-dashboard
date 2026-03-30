@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, FileText, User, ClipboardList, TrendingDown } from 'lucide-react'
 import { AddSENDRecordModal, SafeguardingConcernModal, EHCPReviewModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   'Open safeguarding concern SG-2026-047 — DSL review is overdue by 2 days',
@@ -150,6 +151,8 @@ export default function SendDslPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>SEND & DSL</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Safeguarding, SEND register, EHCP reviews and attendance concerns</p>
       </div>
+
+      <DeptAISummary dept="send-dsl" portal="schools" />
 
       {/* White Paper link */}
       <Link href={`/schools/${slug}/send-dsl/white-paper`}

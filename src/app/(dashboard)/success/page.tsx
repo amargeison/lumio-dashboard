@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Users, Activity, Send, FileText, AlertCircle, BarChart2 } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { RAGCheckModal, StartRecoveryModal, SendCheckInModal, UsageReportModal, HealthReportModal, AtRiskReportModal } from '@/components/modals/SuccessModals'
@@ -108,6 +109,7 @@ export default function SuccessPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="success" portal="business" />
 
       <QuickActions items={actions} />
 

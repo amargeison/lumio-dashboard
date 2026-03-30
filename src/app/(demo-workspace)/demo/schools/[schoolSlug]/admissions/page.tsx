@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -122,6 +123,8 @@ export default function DemoAdmissionsPage() {
         <h1 className="text-2xl font-black" style={{ color: '#F9FAFB' }}>Admissions</h1>
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Applications pipeline, open days, waiting list and parent communications</p>
       </div>
+
+      <DeptAISummary dept="admissions" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

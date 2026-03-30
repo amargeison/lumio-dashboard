@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewITTicketModal from '@/components/modals/NewITTicketModal'
@@ -75,6 +76,7 @@ export default function ITPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="it" portal="business" />
 
       <QuickActions items={actions} />
 

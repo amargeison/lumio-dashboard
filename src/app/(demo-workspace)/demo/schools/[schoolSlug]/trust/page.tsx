@@ -6,6 +6,7 @@ import {
   Shield, Heart, Building2, Wrench, FileText, Star, Zap, BarChart2,
   Phone, Clock, AlertCircle, Award, Globe
 } from 'lucide-react'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 type RAG = 'green' | 'amber' | 'red' | 'blue'
@@ -1286,6 +1287,8 @@ export default function TrustDashboard() {
           <span className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}><Clock size={12}/>{new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</span>
         </div>
       </div>
+
+      <DeptAISummary dept="trust" portal="schools" />
 
       {/* School pill nav */}
       <div className="flex flex-wrap gap-2">

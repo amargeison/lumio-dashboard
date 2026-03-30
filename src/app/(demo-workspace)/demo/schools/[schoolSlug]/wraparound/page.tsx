@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -906,6 +907,8 @@ export default function WraparoundPage() {
           Wraparound childcare · Breakfast club · After school club · HAF holiday provision
         </p>
       </div>
+
+      <DeptAISummary dept="wraparound" portal="schools" />
 
       {/* AI highlights */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
 import { SafeguardingConcernModal, DSLReviewModal, StaffAlertModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -130,6 +131,8 @@ export default function SafeguardingPage() {
           Confidential — DSL access only
         </div>
       </div>
+
+      <DeptAISummary dept="safeguarding" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

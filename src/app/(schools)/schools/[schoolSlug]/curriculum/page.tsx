@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine } from 'lucide-react'
 import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
@@ -155,6 +156,8 @@ export default function CurriculumPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Curriculum</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Lesson plans, assessments, parents evening and curriculum events</p>
       </div>
+
+      <DeptAISummary dept="curriculum" portal="schools" />
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />

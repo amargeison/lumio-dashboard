@@ -9,6 +9,7 @@ import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
 import { NewDealModal, BookDemoModal, SendProposalModal, LogCallModal, NewLeadModal, DeptInsightsModal, GenerateLeadsModal } from '@/components/modals/SalesModals'
 import { useToast } from '@/components/modals/useToast'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const STAGE_LABELS: Record<string, string> = {
   lead: 'Lead', qualified: 'Discovery', demo: 'Demo', proposal: 'Proposal',
@@ -154,6 +155,8 @@ export default function SalesPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+
+      <DeptAISummary dept="sales" portal="business" />
 
       <QuickActions items={actions} />
 

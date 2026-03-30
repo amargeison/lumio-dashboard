@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
 import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -159,6 +160,8 @@ export default function FinancePage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Budget overview, invoice approval, grants and financial deadlines</p>
       </div>
+
+      <DeptAISummary dept="finance-school" portal="schools" />
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />

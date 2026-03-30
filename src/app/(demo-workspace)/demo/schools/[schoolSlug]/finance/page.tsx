@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -147,6 +148,8 @@ export default function DemoFinancePage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Budget overview, invoice approval, grants and financial deadlines</p>
       </div>
+
+      <DeptAISummary dept="finance-school" portal="schools" />
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />

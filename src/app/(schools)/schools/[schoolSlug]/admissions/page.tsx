@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles } from 'lucide-react'
 import { NewEnquiryModal, OpenDayModal, SocialMediaPostModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -125,6 +126,8 @@ export default function AdmissionsPage() {
         <h1 className="text-2xl font-black" style={{ color: '#F9FAFB' }}>Admissions</h1>
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Applications pipeline, open days, waiting list and parent communications</p>
       </div>
+
+      <DeptAISummary dept="admissions" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

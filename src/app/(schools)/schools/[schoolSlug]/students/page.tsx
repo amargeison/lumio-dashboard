@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star } from 'lucide-react'
 import { AddStudentModal, StudentNoteModal, BehaviourLogModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -728,6 +729,8 @@ export default function StudentsPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Students</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>All pupils · Profiles, SEND, safeguarding, attendance and contacts</p>
       </div>
+
+      <DeptAISummary dept="students" portal="schools" />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

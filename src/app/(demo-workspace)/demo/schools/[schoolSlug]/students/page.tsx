@@ -6,6 +6,7 @@ import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 import LanguageScreenApp from '@/components/LanguageScreenApp'
 import PupilOverview from '@/components/PupilOverview'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -669,6 +670,8 @@ export default function StudentsPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Students</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>All pupils · Profiles, SEND, safeguarding, attendance and contacts</p>
       </div>
+
+      <DeptAISummary dept="students" portal="schools" />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

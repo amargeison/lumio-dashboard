@@ -8,6 +8,7 @@ import {
   AlertCircle, Activity, Building, Laptop, GraduationCap, FolderOpen
 } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
@@ -1023,6 +1024,8 @@ export default function DemoSendDslPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>SEND & DSL</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>SEND register, EHCP pipeline, ISP tracker, safeguarding and KCSIE compliance</p>
       </div>
+
+      <DeptAISummary dept="send-dsl" portal="schools" />
 
       {/* White Paper link */}
       <Link href={`/demo/schools/${slug}/send-dsl/white-paper`}

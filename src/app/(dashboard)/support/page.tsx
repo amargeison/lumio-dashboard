@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
@@ -82,6 +83,7 @@ export default function SupportPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="support" portal="business" />
 
       <QuickActions items={actions} />
 

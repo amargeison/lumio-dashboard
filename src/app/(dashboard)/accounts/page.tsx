@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useWorkspace } from '@/hooks/useWorkspace'
@@ -153,6 +154,7 @@ export default function AccountsPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="accounts" portal="business" />
 
       <QuickActions items={actions} />
 

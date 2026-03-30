@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, BookOpen, HelpCircle, Sparkles, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewProjectModal from '@/components/modals/NewProjectModal'
@@ -78,6 +79,7 @@ export default function OperationsPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="operations" portal="business" />
 
       <QuickActions items={actions} />
 

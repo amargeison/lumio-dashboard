@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -126,6 +127,8 @@ export default function DemoSafeguardingPage() {
           Confidential — DSL access only
         </div>
       </div>
+
+      <DeptAISummary dept="safeguarding" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

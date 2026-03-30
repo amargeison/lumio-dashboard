@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import CaseStudyModal from '@/components/modals/CaseStudyModal'
@@ -133,6 +134,7 @@ export default function MarketingPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
+      <DeptAISummary dept="marketing" portal="business" />
 
       <QuickActions items={actions} />
 

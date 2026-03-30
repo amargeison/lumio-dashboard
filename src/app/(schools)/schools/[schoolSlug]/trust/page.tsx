@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown, Minus, Users, DollarSign, BookOpen,
@@ -1306,6 +1307,8 @@ export default function TrustDashboard() {
           <span className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}><Clock size={12}/>{new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</span>
         </div>
       </div>
+
+      <DeptAISummary dept="trust" portal="schools" />
 
       {/* Trust Actions */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">

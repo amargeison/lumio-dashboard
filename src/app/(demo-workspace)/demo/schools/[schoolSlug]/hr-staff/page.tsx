@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import DeptAISummary from '@/components/DeptAISummary'
 
 const HIGHLIGHTS = [
   'M. Taylor DBS expired 10 March — urgent renewal needed before next classroom contact',
@@ -147,6 +148,8 @@ export default function DemoHRStaffPage() {
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>HR & Staff</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Staff attendance, cover, DBS compliance and professional development</p>
       </div>
+
+      <DeptAISummary dept="hr-staff" portal="schools" />
 
       {/* AI Highlights */}
       <AIHighlights items={HIGHLIGHTS} />

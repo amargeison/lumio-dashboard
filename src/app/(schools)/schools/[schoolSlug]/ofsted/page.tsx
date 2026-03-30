@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity } from 'lucide-react'
+import DeptAISummary from '@/components/DeptAISummary'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -177,6 +178,7 @@ export default function OfstedModePage() {
   if (!activated && !showActivateModal) {
     return (
       <div className="space-y-6">
+        <DeptAISummary dept="ofsted" portal="schools" />
         <div className="text-center py-16">
           <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Ofsted Inspection Mode</h1>
