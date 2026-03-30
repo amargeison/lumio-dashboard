@@ -188,6 +188,15 @@ const CONTRACT_DATA = [
   { player: "Sean O'Brien", position: 'LW', weeklyWage: '£20,000', end: 'Jun 2027', status: 'Signed' as const, agent: 'Wasserman' },
 ]
 
+// ─── Academy Standouts ─────────────────────────────────────────────────────
+
+const ACADEMY_STANDOUTS = [
+  { name: 'Tyler James', age: 17, position: 'AMF', ageGroup: 'U18', devRating: '9.1', pathway: 'First Team Ready' },
+  { name: 'Luca Ferreira', age: 16, position: 'CB', ageGroup: 'U18', devRating: '8.4', pathway: 'Pathway' },
+  { name: 'Kai Thompson', age: 15, position: 'ST', ageGroup: 'U16', devRating: '8.8', pathway: 'Developing' },
+  { name: 'Remi Santos', age: 18, position: 'CM', ageGroup: 'U23', devRating: '9.3', pathway: 'First Team Ready' },
+]
+
 // ─── Match Formations ───────────────────────────────────────────────────────
 
 const MATCH_FORMATIONS = [
@@ -1645,6 +1654,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         { label: 'Scout Network', icon: Eye },
         { label: 'Board Approval', icon: Briefcase },
       ]}
+      onActionClick={onActionClick}
     >
       {/* Multi-step Researcher */}
       <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -2089,7 +2099,7 @@ function ScoutingView() {
 
 // ─── Academy View ───────────────────────────────────────────────────────────
 
-function AcademyView() {
+function AcademyView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   return (
     <PlaceholderView
       title="Academy"
@@ -2112,6 +2122,7 @@ function AcademyView() {
         { label: 'Development Plan', icon: FileText },
         { label: 'Scholarship Offers', icon: GraduationCap },
       ]}
+      onActionClick={onActionClick}
     >
       <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
         <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Standout Academy Players</p>
@@ -3158,11 +3169,11 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
             {activeDept === 'insights' && <InsightsView />}
             {activeDept === 'squad' && <SquadView />}
-            {activeDept === 'tactics' && <TacticsView />}
-            {activeDept === 'transfers' && <TransfersView />}
+            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {activeDept === 'medical' && <MedicalView />}
             {activeDept === 'scouting' && <ScoutingView />}
-            {activeDept === 'academy' && <AcademyView />}
+            {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {activeDept === 'analytics' && <AnalyticsView />}
             {activeDept === 'media' && <MediaView />}
             {activeDept === 'matchday' && <MatchdayView />}
