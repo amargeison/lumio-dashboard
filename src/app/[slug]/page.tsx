@@ -37,19 +37,19 @@ type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'm
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = [
   { id: 'overview',    label: 'Overview',          icon: Home        },
   { id: 'insights',   label: 'Insights',           icon: BarChart3   },
+  { id: 'partners',   label: 'Partners',           icon: Handshake   },
   { id: 'hr',         label: 'HR & People',        icon: Users       },
   { id: 'accounts',   label: 'Accounts',           icon: Receipt     },
+  { id: 'strategy',   label: 'Strategy',           icon: Target      },
+  { id: 'trials',     label: 'Trials',             icon: FlaskConical},
   { id: 'sales',      label: 'Sales',              icon: TrendingUp  },
   { id: 'crm',        label: 'CRM',                icon: Database    },
   { id: 'marketing',  label: 'Marketing',          icon: Megaphone   },
-  { id: 'trials',     label: 'Trials',             icon: FlaskConical},
   { id: 'operations', label: 'Operations',         icon: Package     },
   { id: 'support',    label: 'Support',            icon: Headphones  },
   { id: 'success',    label: 'Success',            icon: Award       },
   { id: 'it',         label: 'IT & Systems',       icon: Monitor     },
   { id: 'workflows',  label: 'Workflows Library',  icon: GitBranch   },
-  { id: 'partners',   label: 'Partners',           icon: Handshake   },
-  { id: 'strategy',   label: 'Strategy',           icon: Target      },
   { id: 'settings',   label: 'Settings',           icon: Settings    },
 ]
 
