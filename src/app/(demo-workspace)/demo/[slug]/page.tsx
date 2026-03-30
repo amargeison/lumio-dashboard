@@ -2315,24 +2315,49 @@ function _OldCRMView({ company }: { company: string }) {
 function MarketingView({ company }: { company: string }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatCard label="Email Open Rate" value={`${fakeNum(42,company,'or')}%`} icon={Send} color="#0D9488"
-          pieData={[{label:'Opened',value:42,color:'#0D9488'},{label:'Unopened',value:58,color:'#374151'}]}
-          barData={[{label:'Jan',value:38,color:'#0D9488'},{label:'Feb',value:40,color:'#0D9488'},{label:'Mar',value:42,color:'#0F766E'}]} />
-        <StatCard label="Leads from Marketing" value={String(fakeNum(124,company,'ml'))} icon={Target} color="#6C3FC5"
-          pieData={[{label:'Email',value:45,color:'#6C3FC5'},{label:'LinkedIn',value:30,color:'#A78BFA'},{label:'SEO',value:15,color:'#7C3AED'},{label:'Paid',value:10,color:'#374151'}]}
-          barData={[{label:'Jan',value:95,color:'#6C3FC5'},{label:'Feb',value:108,color:'#6C3FC5'},{label:'Mar',value:124,color:'#7C3AED'}]} />
-        <StatCard label="Conversion Rate" value={`${fakeNum(8,company,'cr')}%`} icon={TrendingUp} color="#F59E0B"
-          pieData={[{label:'Converted',value:8,color:'#22C55E'},{label:'Dropped',value:92,color:'#374151'}]}
-          barData={[{label:'Q3',value:6,color:'#F59E0B'},{label:'Q4',value:7,color:'#F59E0B'},{label:'Q1',value:8,color:'#D97706'}]} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Social Posts This Month', value: '24', trend: '+6% vs last month', icon: Send },
+          { label: 'Email Open Rate', value: '34.2%', trend: '+2.1% vs last campaign', icon: Megaphone },
+          { label: 'New Leads', value: '47', trend: '+12% vs last month', icon: Target },
+          { label: 'MQL Count', value: '18', trend: '+5 this month', icon: TrendingUp },
+        ].map(s => {
+          const SIcon = s.icon
+          return (
+            <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                  <span className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{s.value}</span>
+                  <span className="text-xs mt-1" style={{ color: '#10B981' }}>{s.trend}</span>
+                </div>
+                <SIcon size={18} style={{ color: '#6B7299' }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
       <DeptAISummary dept="marketing" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Create Post',i:Send},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3}].map(a=>(
+          {[{l:'Create Post',i:Send},{l:'Book Event',i:Calendar},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3}].map(a=>(
             <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
+        </div>
+      </div>
+      {/* Marketing Events Workflow Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="group flex flex-col gap-3 rounded-xl p-5 transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}><Megaphone className="w-4 h-4" style={{ color: '#2DD4BF' }} /></div>
+            <div className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" style={{ color: '#2DD4BF' }} /><span className="text-xs font-mono" style={{ color: '#2DD4BF' }}>MKT-EVENTS-01</span></div>
+          </div>
+          <div>
+            <div className="font-semibold" style={{ color: '#F9FAFB' }}>Marketing Events — Event Planner & Promoter</div>
+            <div className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>Describe your event type, audience, and goals — get a full event plan with venue options, promotional copy, and a ready-to-send invite sequence.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto" style={{ color: '#2DD4BF' }}>Launch workflow →</div>
         </div>
       </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
