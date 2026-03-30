@@ -1876,7 +1876,61 @@ function HRView({ company }: { company: string }) {
   const probations = [{name:fakeName(company,4),date:'24 Mar 2026',manager:fakeName(company,12)},{name:fakeName(company,5),date:'24 Mar 2026',manager:fakeName(company,13)},{name:fakeName(company,1),date:'3 Apr 2026',manager:fakeName(company,13)}]
   return (
     <div className="space-y-4">
+      {/* VIEW toggle bar */}
+      <div className="flex items-center gap-1 self-start rounded-lg px-2 py-1" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }}>
+        <span className="pr-1 text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>View</span>
+        {[
+          { icon: '▤', title: 'Table view', active: true },
+          { icon: '📊', title: 'Chart view', active: false },
+          { icon: '📈', title: 'Timeline view', active: false },
+        ].map(v => (
+          <button key={v.title} title={v.title} className="flex h-7 w-7 items-center justify-center rounded-md transition-colors text-xs"
+            style={{ backgroundColor: v.active ? '#1F2937' : 'transparent', color: v.active ? '#0D9488' : '#4B5563' }}>
+            {v.icon}
+          </button>
+        ))}
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total Employees" value={String(emp)} icon={Users} color="#0D9488"
+          pieData={[{label:'Full-time',value:Math.round(emp*.8),color:'#0D9488'},{label:'Part-time',value:Math.round(emp*.12),color:'#6C3FC5'},{label:'Contractor',value:Math.round(emp*.08),color:'#374151'}]}
+          barData={[{label:'Eng',value:42,color:'#0D9488'},{label:'Sales',value:38,color:'#6C3FC5'},{label:'CS',value:35,color:'#22C55E'},{label:'Mktg',value:28,color:'#F59E0B'},{label:'Ops',value:44,color:'#EF4444'}]} />
+        <StatCard label="Active Onboardings" value={String(ob)} icon={CheckCircle2} color="#22C55E"
+          pieData={[{label:'On track',value:6,color:'#22C55E'},{label:'Behind',value:2,color:'#EF4444'}]}
+          barData={[{label:'Wk1',value:3,color:'#22C55E'},{label:'Wk2',value:5,color:'#22C55E'},{label:'Wk3',value:7,color:'#22C55E'},{label:'Wk4',value:ob,color:'#0D9488'}]} />
+        <StatCard label="Leave Requests" value={String(lv)} icon={Calendar} color="#F59E0B"
+          pieData={[{label:'Annual',value:8,color:'#F59E0B'},{label:'Sick',value:4,color:'#EF4444'},{label:'Other',value:2,color:'#374151'}]}
+          barData={[{label:'Mon',value:2,color:'#F59E0B'},{label:'Tue',value:3,color:'#F59E0B'},{label:'Wed',value:4,color:'#F59E0B'},{label:'Thu',value:3,color:'#F59E0B'},{label:'Fri',value:2,color:'#F59E0B'}]} />
+        <StatCard label="Overdue Reviews" value="3" icon={AlertCircle} color="#EF4444"
+          pieData={[{label:'Overdue',value:3,color:'#EF4444'},{label:'On time',value:12,color:'#22C55E'}]}
+          barData={[{label:'Jan',value:0,color:'#22C55E'},{label:'Feb',value:1,color:'#F59E0B'},{label:'Mar',value:3,color:'#EF4444'}]} />
+      </div>
+
+      {/* AI Summary */}
       <DeptAISummary dept="hr" portal="business" />
+
+      {/* Quick Actions label — actions are in the QuickActionsBar above */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4B5563' }}>Quick Actions</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { label: 'New Starter', icon: UserPlus },
+            { label: 'Leave Request', icon: FileText },
+            { label: 'Offboarding', icon: Users },
+            { label: 'Recruitment', icon: Handshake },
+            { label: 'Performance Review', icon: Star },
+            { label: 'Company Events', icon: Calendar },
+            { label: 'Send Contract', icon: FileText },
+            { label: 'Dept Insights', icon: BarChart3 },
+          ].map(a => (
+            <button key={a.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #7c3aed', color: '#7c3aed' } : { backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+              <a.icon size={12} />{a.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* AI Workflow Launcher */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1898,20 +1952,7 @@ function HRView({ company }: { company: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Employees" value={String(emp)} icon={Users} color="#0D9488"
-          pieData={[{label:'Full-time',value:Math.round(emp*.8),color:'#0D9488'},{label:'Part-time',value:Math.round(emp*.12),color:'#6C3FC5'},{label:'Contractor',value:Math.round(emp*.08),color:'#374151'}]}
-          barData={[{label:'Eng',value:42,color:'#0D9488'},{label:'Sales',value:38,color:'#6C3FC5'},{label:'CS',value:35,color:'#22C55E'},{label:'Mktg',value:28,color:'#F59E0B'},{label:'Ops',value:44,color:'#EF4444'}]} />
-        <StatCard label="Active Onboardings" value={String(ob)} icon={CheckCircle2} color="#22C55E"
-          pieData={[{label:'On track',value:6,color:'#22C55E'},{label:'Behind',value:2,color:'#EF4444'}]}
-          barData={[{label:'Wk1',value:3,color:'#22C55E'},{label:'Wk2',value:5,color:'#22C55E'},{label:'Wk3',value:7,color:'#22C55E'},{label:'Wk4',value:ob,color:'#0D9488'}]} />
-        <StatCard label="Leave Requests" value={String(lv)} icon={Calendar} color="#F59E0B"
-          pieData={[{label:'Annual',value:8,color:'#F59E0B'},{label:'Sick',value:4,color:'#EF4444'},{label:'Other',value:2,color:'#374151'}]}
-          barData={[{label:'Mon',value:2,color:'#F59E0B'},{label:'Tue',value:3,color:'#F59E0B'},{label:'Wed',value:4,color:'#F59E0B'},{label:'Thu',value:3,color:'#F59E0B'},{label:'Fri',value:2,color:'#F59E0B'}]} />
-        <StatCard label="Overdue Reviews" value="3" icon={AlertCircle} color="#EF4444"
-          pieData={[{label:'Overdue',value:3,color:'#EF4444'},{label:'On time',value:12,color:'#22C55E'}]}
-          barData={[{label:'Jan',value:0,color:'#22C55E'},{label:'Feb',value:1,color:'#F59E0B'},{label:'Mar',value:3,color:'#EF4444'}]} />
-      </div>
+      {/* Onboarding Tracker + Leave Requests */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>New Starter Onboarding Tracker</p></div>
