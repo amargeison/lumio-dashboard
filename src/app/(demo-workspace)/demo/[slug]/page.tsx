@@ -95,12 +95,13 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Book Contractor',    tooltip: 'Book a contractor or temp worker for a project',              icon: Users     },
   ],
   accounts:   [
-    { label: 'Chase Invoice',   tooltip: 'Send payment reminders for all overdue invoices',                icon: Receipt   },
-    { label: 'New Invoice',     tooltip: 'Create and send a new invoice to a customer',                    icon: DollarSign},
-    { label: 'Credit Note',     tooltip: 'Issue a credit note against an existing invoice',                icon: FileText  },
-    { label: 'Expense Report',  tooltip: 'Submit or approve an expense report',                            icon: BarChart2 },
-    { label: 'Bank Reconcile',  tooltip: 'Trigger the automated bank reconciliation workflow',             icon: CheckCircle2 },
-    { label: 'Dept Insights',   tooltip: 'View AI-generated insights for Accounts',                       icon: BarChart3 },
+    { label: 'Chase Invoice',     tooltip: 'Send payment reminders for all overdue invoices',              icon: Receipt     },
+    { label: 'Raise Invoice',     tooltip: 'Create and send a new invoice to a customer',                 icon: DollarSign  },
+    { label: 'Weekly Report',     tooltip: 'Generate the weekly finance summary report',                   icon: FileText    },
+    { label: 'Payment Received',  tooltip: 'Log a payment received against an invoice',                   icon: DollarSign  },
+    { label: 'Xero Sync',         tooltip: 'Trigger a manual sync with Xero accounting',                  icon: RotateCcw   },
+    { label: 'Run Payroll',       tooltip: 'Process this month\'s payroll run',                            icon: Zap         },
+    { label: 'Dept Insights',     tooltip: 'View AI-generated insights for Accounts',                     icon: BarChart3   },
   ],
   sales:      [
     { label: 'New Deal',       tooltip: 'Add a new deal and start the qualification workflow',             icon: TrendingUp},
@@ -1990,7 +1991,6 @@ function AccountsView({ company }: { company: string }) {
   const invoices = Array.from({length:6},(_,i)=>({company:fakeCompany(company,i+20),amount:`£${fakeNum(3200,company,'inv'+i).toLocaleString()}`,due:['14 Mar','22 Mar','31 Mar','07 Apr','15 Apr','28 Apr'][i],daysOverdue:['14d overdue','Due today','','','',''][i],status:['Overdue','Due today','Due in 8d','Sent','Sent','Draft'][i]}))
   return (
     <div className="space-y-4">
-      <DeptAISummary dept="accounts" portal="business" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Outstanding Invoices" value={String(overdue)} icon={AlertCircle} color="#EF4444"
           pieData={[{label:'0-30d',value:3,color:'#F59E0B'},{label:'30-60d',value:2,color:'#EF4444'},{label:'60d+',value:2,color:'#7F1D1D'}]}
@@ -2005,6 +2005,7 @@ function AccountsView({ company }: { company: string }) {
           pieData={[{label:'<14d',value:45,color:'#22C55E'},{label:'14-30d',value:35,color:'#F59E0B'},{label:'>30d',value:20,color:'#EF4444'}]}
           barData={[{label:'Jan',value:22,color:'#F59E0B'},{label:'Feb',value:20,color:'#F59E0B'},{label:'Mar',value:18,color:'#D97706'}]} />
       </div>
+      <DeptAISummary dept="accounts" portal="business" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Invoice Queue</p></div>
