@@ -26,6 +26,7 @@ type DeptId =
   | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'finance'
+  | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
@@ -72,10 +73,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
   { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'Departments' },
   { id: 'analytics',   label: 'Analytics',      icon: BarChart3,      section: 'Departments' },
+  { id: 'dynamics',    label: 'Dynamics',       icon: Heart,          section: 'Departments' },
   { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
   { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
   { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
   { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
+  { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
+  { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
+  { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
@@ -3256,6 +3261,211 @@ function SocialMediaView() {
   )
 }
 
+function DynamicsView() {
+  const [socToast, setSocToast] = useState<string | null>(null)
+  function action(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
+
+  const PLAYER_HAPPINESS = [
+    { name: 'Marcus Webb', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
+    { name: 'Jordan Ellis', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
+    { name: 'Lucas Santos', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
+    { name: 'Ryan Thompson', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
+    { name: 'Danny Okafor', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
+    { name: 'Kenji Nakamura', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
+    { name: 'Chris Walsh', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Dressing Room Intelligence</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Squad harmony, morale and player wellbeing</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-xs" style={{ color: '#6B7280' }}>DRESSING ROOM ATMOSPHERE</p>
+          <p className="text-4xl font-black my-2" style={{ color: '#F1C40F' }}>74<span className="text-lg">/100</span></p>
+          <p className="text-xs" style={{ color: '#22C55E' }}>Good — ↑3 from last week</p>
+          <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'linear-gradient(90deg, #EF4444, #F59E0B, #22C55E)' }}><div className="h-full" style={{ width: '74%', backgroundColor: 'transparent' }} /></div>
+        </div>
+        <div className="lg:col-span-2 grid grid-cols-2 gap-3">
+          {[{ l: 'Squad Cohesion', v: 78, s: '🟢' }, { l: 'Manager Trust', v: 82, s: '🟢' }, { l: 'Playing Time Satisfaction', v: 61, s: '🟡' }, { l: 'Training Happiness', v: 71, s: '🟢' }].map(p => (
+            <div key={p.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{p.l}</p>
+              <p className="text-xl font-black" style={{ color: p.v >= 70 ? '#22C55E' : p.v >= 50 ? '#F59E0B' : '#EF4444' }}>{p.v}/100 {p.s}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Player Happiness</p></div>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player','Overall','Morale','Training','Playing Time','Contract','Form','Risk'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{PLAYER_HAPPINESS.map(p => {
+          function sc(v: number) { return v >= 8 ? '#22C55E' : v >= 5 ? '#F59E0B' : '#EF4444' }
+          return <tr key={p.name} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>{[p.overall,p.morale,p.training,p.playingTime,p.contract,p.form].map((v,i) => <td key={i} className="px-3 py-2 font-bold" style={{ color: sc(v) }}>{v}</td>)}<td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: p.risk === 'High' ? 'rgba(239,68,68,0.12)' : p.risk === 'Medium' ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: p.risk === 'High' ? '#EF4444' : p.risk === 'Medium' ? '#F59E0B' : '#22C55E' }}>{p.risk}</span></td></tr>
+        })}</tbody></table>
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Disciplinary Log (Last 30 Days)</p>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player','Offence','Date','Punishment','Status'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[{ p: 'Marcus Webb', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Danny Okafor', o: 'Missed training', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Kenji Nakamura', o: 'Red card reaction', d: '22 Mar', pun: 'Fine: £1,000', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
+      </div>
+
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+    </div>
+  )
+}
+
+function PSRView() {
+  const [purchaseSlider, setPurchaseSlider] = useState(0)
+  const [saleSlider, setSaleSlider] = useState(0)
+  const baseLoss = 20.7
+  const projected = baseLoss + purchaseSlider - saleSlider
+  const [psrToast, setPsrToast] = useState<string | null>(null)
+  function psrAction(l: string) { setPsrToast(`${l} — generating...`); setTimeout(() => setPsrToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance & Profit & Sustainability Rules</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Championship PSR limit: £39m loss over 3 rolling years</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }].map(a => (
+          <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '2px solid #F59E0B' }}>
+        <p className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>PSR STATUS: ⚠️ MONITOR</p>
+        <div className="flex items-center gap-6"><div><p className="text-3xl font-black" style={{ color: '#F9FAFB' }}>£{projected.toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>3-year rolling loss</p></div><div><p className="text-3xl font-black" style={{ color: '#22C55E' }}>£{(39 - projected).toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>Headroom remaining</p></div><div className="flex-1"><div className="h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${(projected / 39) * 100}%`, backgroundColor: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }} /></div><p className="text-[10px] text-right mt-0.5" style={{ color: '#6B7280' }}>£39m limit</p></div></div>
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <table className="w-full text-sm"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['Year','Revenue','Expenditure','Net P&L','Deductions','PSR Figure'].map(h => <th key={h} className="text-left px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[['2023/24','£42.1m','£54.3m','-£12.2m','-£4.1m','-£8.1m'],['2024/25','£46.8m','£57.2m','-£10.4m','-£3.8m','-£6.6m'],['2025/26*','£51.2m','£61.1m','-£9.9m','-£3.9m','-£6.0m']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : c.startsWith('-') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}<tr style={{ backgroundColor: '#0A0B10' }}><td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>TOTAL</td><td colSpan={3} /><td /><td className="px-4 py-3 font-bold" style={{ color: '#22C55E' }}>-£20.7m ✅</td></tr></tbody></table>
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[{ l: 'Match Day', v: '£8.2m', b: '£8.5m' },{ l: 'Broadcasting', v: '£22.4m', b: '£22.0m' },{ l: 'Commercial', v: '£12.1m', b: '£14.0m' },{ l: 'Weekly Wages', v: '£187k', b: '£200k limit' }].map(r => (
+          <div key={r.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{r.l}</p><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{r.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>Budget: {r.b}</p></div>
+        ))}
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>What-If PSR Calculator</p>
+        <div className="grid grid-cols-2 gap-6">
+          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#C0392B' }} /></div>
+          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Sale: £{saleSlider}m</p><input type="range" min={0} max={20} step={0.5} value={saleSlider} onChange={e => setSaleSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#22C55E' }} /></div>
+        </div>
+        <div className="mt-4 rounded-lg p-3 text-center" style={{ backgroundColor: projected > 30 ? 'rgba(239,68,68,0.08)' : projected > 20 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${projected > 30 ? 'rgba(239,68,68,0.3)' : projected > 20 ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}` }}>
+          <p className="text-sm font-bold" style={{ color: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }}>Projected PSR: -£{projected.toFixed(1)}m of £39m limit — {projected > 39 ? '❌ BREACH' : projected > 30 ? '⚠️ AT RISK' : '✅ SAFE'}</p>
+        </div>
+      </div>
+
+      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{psrToast}</div>}
+    </div>
+  )
+}
+
+function SquadPlannerView() {
+  const [season, setSeason] = useState<'current' | 'next' | 'after'>('current')
+  const [spToast, setSpToast] = useState<string | null>(null)
+  function spAction(l: string) { setSpToast(`${l} — opening...`); setTimeout(() => setSpToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Planner</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Plan your squad for this season, next season and beyond</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }].map(a => (
+          <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        {[{ k: 'current' as const, l: '2025/26 — Current' },{ k: 'next' as const, l: '2026/27 — Next' },{ k: 'after' as const, l: '2027/28 — After' }].map(s => (
+          <button key={s.k} onClick={() => setSeason(s.k)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: season === s.k ? '#C0392B' : '#111318', color: '#F9FAFB', border: season === s.k ? 'none' : '1px solid #1F2937' }}>{s.l}</button>
+        ))}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <table className="w-full text-xs"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['#','Player','Pos','Age','Contract','Value','Status'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{SQUAD.map((p, i) => {
+          const expiring = p.contractExpiry.includes('2025') || p.contractExpiry.includes('2026')
+          const leaving = season !== 'current' && p.contractExpiry.includes('2025')
+          return <tr key={i} style={{ borderBottom: '1px solid #1F2937', opacity: leaving ? 0.3 : 1, textDecoration: leaving ? 'line-through' : 'none' }}>
+            <td className="px-3 py-2" style={{ color: '#6B7280' }}>{p.number}</td>
+            <td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{p.position}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{season === 'current' ? p.age : season === 'next' ? p.age + 1 : p.age + 2}</td>
+            <td className="px-3 py-2" style={{ color: expiring ? '#EF4444' : '#9CA3AF' }}>{p.contractExpiry}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{p.marketValue}</td>
+            <td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: leaving ? 'rgba(239,68,68,0.12)' : expiring ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: leaving ? '#EF4444' : expiring ? '#F59E0B' : '#22C55E' }}>{leaving ? 'Leaving' : expiring ? 'Expiring' : 'Secure'}</span></td>
+          </tr>
+        })}</tbody></table>
+      </div>
+
+      {season !== 'current' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #F59E0B' }}>
+          <p className="text-sm font-bold mb-2" style={{ color: '#F59E0B' }}>Positions Needing Recruitment</p>
+          <div className="flex gap-3">{['RB', 'CM', 'ST'].map(pos => <span key={pos} className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>{pos} — Recruit Needed</span>)}</div>
+        </div>
+      )}
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Academy Pipeline</p>
+        {ACADEMY_STANDOUTS.map(p => <div key={p.name} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#F9FAFB' }}>{p.name} — {p.position}</span><span className="text-xs" style={{ color: '#F1C40F' }}>Ready: {p.pathway === 'First Team Ready' ? 'Now' : '2027'}</span></div>)}
+      </div>
+
+      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{spToast}</div>}
+    </div>
+  )
+}
+
+function ClubProfileView() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#C0392B' }}>⚽</div>
+        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Oakridge FC</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL Championship · Founded 1887</p></div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
+          <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F1C40F' }}>🏆 Honours</p>
+          {['League One title: 2019/20','League Two title: 2015/16','FA Cup Semi-finals: 1978, 1994','League Cup QF: 2021'].map(h => <p key={h} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{h}</p>)}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</p>
+          {[{ l: 'Training Ground', v: '⭐⭐⭐⭐ Cat 1' },{ l: 'Stadium', v: '⭐⭐⭐ Championship' },{ l: 'Academy', v: '⭐⭐⭐⭐ EPPP Cat 2' },{ l: 'Medical Centre', v: '⭐⭐⭐⭐' }].map(f => <div key={f.l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#9CA3AF' }}>{f.l}</span><span className="text-xs" style={{ color: '#F1C40F' }}>{f.v}</span></div>)}
+        </div>
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
+        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'Oakridge FC Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Recent League History</p></div>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Season','Division','Position','Pts'].map(h => <th key={h} className="text-left px-4 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[['2025/26','Championship','8th','—'],['2024/25','Championship','14th','58'],['2023/24','Championship','11th','62'],['2022/23','League One','1st 🏆','92'],['2021/22','League One','4th','78']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? '#F9FAFB' : c.includes('🏆') ? '#F1C40F' : '#9CA3AF' }}>{c}</td>)}</tr>)}</tbody></table>
+      </div>
+    </div>
+  )
+}
+
 function SettingsView() {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
@@ -3501,6 +3711,10 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'finance' && <FinanceView />}
             {activeDept === 'staff' && <StaffView />}
             {activeDept === 'facilities' && <FacilitiesView />}
+            {activeDept === 'dynamics' && <DynamicsView />}
+            {activeDept === 'psr' && <PSRView />}
+            {activeDept === 'squad-planner' && <SquadPlannerView />}
+            {activeDept === 'club-profile' && <ClubProfileView />}
             {activeDept === 'settings' && <SettingsView />}
           </main>
         </div>
