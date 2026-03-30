@@ -2697,6 +2697,20 @@ function MatchdayView() {
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Matchday logistics, team sheet, ticketing, and operational checklists.</p>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Team Sheet', icon: Clipboard },
+          { label: 'Operations Checklist', icon: CheckCircle2 },
+          { label: 'Ticketing', icon: FileText },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Next Match" value="Sat 4 Apr" icon={Calendar} color="#C0392B" />
         <StatCard label="Kick Off" value="15:00" icon={Clock} color="#3B82F6" />
@@ -2754,19 +2768,6 @@ function MatchdayView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Team Sheet', icon: Clipboard },
-          { label: 'Operations Checklist', icon: CheckCircle2 },
-          { label: 'Ticketing', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }

@@ -2175,6 +2175,20 @@ function ScoutingView() {
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Scout reports, watchlists, recruitment pipeline, and target tracking.</p>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'New Report', icon: FileText },
+          { label: 'Watchlist', icon: Star },
+          { label: 'Trip Planner', icon: MapPin },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Scouts Active" value="4" icon={Eye} color="#C0392B" />
         <StatCard label="Reports This Month" value="12" icon={FileText} color="#3B82F6" />
@@ -2282,19 +2296,6 @@ function ScoutingView() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'New Report', icon: FileText },
-          { label: 'Watchlist', icon: Star },
-          { label: 'Trip Planner', icon: MapPin },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2584,6 +2585,20 @@ function MediaView() {
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Press conferences, media requests, social media, and public relations.</p>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Press Brief', icon: FileText },
+          { label: 'Social Post', icon: MessageSquare },
+          { label: 'Media Schedule', icon: Calendar },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Press Conf Today" value="2pm" icon={Newspaper} color="#8B5CF6" />
         <StatCard label="Media Requests" value="4" icon={MessageSquare} color="#3B82F6" />
@@ -2670,19 +2685,6 @@ function MediaView() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Press Brief', icon: FileText },
-          { label: 'Social Post', icon: MessageSquare },
-          { label: 'Media Schedule', icon: Calendar },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2693,6 +2695,20 @@ function MatchdayView() {
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Match Day Operations</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Matchday logistics, team sheet, ticketing, and operational checklists.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Team Sheet', icon: Clipboard },
+          { label: 'Operations Checklist', icon: CheckCircle2 },
+          { label: 'Ticketing', icon: FileText },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -2752,19 +2768,6 @@ function MatchdayView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Team Sheet', icon: Clipboard },
-          { label: 'Operations Checklist', icon: CheckCircle2 },
-          { label: 'Ticketing', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
