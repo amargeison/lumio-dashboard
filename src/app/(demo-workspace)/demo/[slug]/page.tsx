@@ -2125,63 +2125,180 @@ function SalesView({ company }: { company: string }) {
 }
 
 function CRMView({ company }: { company: string }) {
+  const [crmTab, setCrmTab] = useState<'dashboard'|'pipeline'|'contacts'|'intelligence'|'reports'>('dashboard')
   const customers = fakeNum(171, company, 'crmtotal')
   const mrr = fakeNum(28400, company, 'crmrr')
   const nps = fakeNum(67, company, 'crmnps')
-  const churnRiskAccounts = [
-    { name: fakeCompany(company, 20), reason: 'No login in 42 days',    risk: 91 },
-    { name: fakeCompany(company, 21), reason: 'Support tickets × 4',    risk: 78 },
-    { name: fakeCompany(company, 22), reason: 'Downgrade request sent', risk: 65 },
-  ]
-  const renewals = [
-    { name: fakeCompany(company, 23), due: 'Apr 12', arr: `£${fakeNum(14800, company, 'ren1').toLocaleString()}`, health: 'Critical' },
-    { name: fakeCompany(company, 24), due: 'Apr 18', arr: `£${fakeNum(33400, company, 'ren2').toLocaleString()}`, health: 'At Risk'  },
-    { name: fakeCompany(company, 25), due: 'May 2',  arr: `£${fakeNum(76000, company, 'ren3').toLocaleString()}`, health: 'Healthy'  },
-  ]
+  const pipelineValue = fakeNum(128000, company, 'crmPipe')
+  const openDeals = fakeNum(18, company, 'crmDeals')
+  const winRate = fakeNum(34, company, 'crmWr')
+
+  const deals = Array.from({length:8},(_,i)=>({name:fakeCompany(company,i+30),contact:fakeName(company,i+30),value:fakeNum(8000,company,'cd'+i)*(i+1),stage:['Discovery','Qualified','Proposal','Negotiation','Verbal Yes','Discovery','Proposal','Closed Won'][i],score:[82,74,91,68,94,55,87,100][i],days:[3,7,12,18,2,5,22,0][i]}))
+
+  const contacts = Array.from({length:6},(_,i)=>({name:fakeName(company,i+40),email:`${fakeName(company,i+40).toLowerCase().replace(' ','.')}@${fakeCompany(company,i+40).toLowerCase().replace(/\s/g,'')}.com`,company:fakeCompany(company,i+40),role:['CEO','Head of Sales','CTO','Marketing Director','COO','VP Engineering'][i],status:(['live','live','bounced','live','unknown','live'] as const)[i],score:[92,88,45,76,0,81][i]}))
+
+  const churnRiskAccounts = [{name:fakeCompany(company,20),reason:'No login in 42 days',risk:91},{name:fakeCompany(company,21),reason:'Support tickets × 4',risk:78},{name:fakeCompany(company,22),reason:'Downgrade request sent',risk:65}]
+  const renewals = [{name:fakeCompany(company,23),due:'Apr 12',arr:`£${fakeNum(14800,company,'ren1').toLocaleString()}`,health:'Critical'},{name:fakeCompany(company,24),due:'Apr 18',arr:`£${fakeNum(33400,company,'ren2').toLocaleString()}`,health:'At Risk'},{name:fakeCompany(company,25),due:'May 2',arr:`£${fakeNum(76000,company,'ren3').toLocaleString()}`,health:'Healthy'}]
+
+  const STAGES = [{name:'Discovery',color:'#6B7280',count:4,value:24000},{name:'Qualified',color:'#3B82F6',count:3,value:32000},{name:'Proposal',color:'#8B5CF6',count:4,value:38000},{name:'Negotiation',color:'#F59E0B',count:2,value:22000},{name:'Verbal Yes',color:'#22C55E',count:1,value:12000}]
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatCard label="Total Customers" value={String(customers)} icon={Database} color="#0D9488"
-          pieData={[{label:'Healthy',value:132,color:'#22C55E'},{label:'At Risk',value:29,color:'#F59E0B'},{label:'Critical',value:10,color:'#EF4444'}]}
-          barData={[{label:'Jan',value:155,color:'#0D9488'},{label:'Feb',value:163,color:'#0D9488'},{label:'Mar',value:customers,color:'#0F766E'}]} />
-        <StatCard label="MRR" value={`£${mrr.toLocaleString()}`} icon={TrendingUp} color="#6C3FC5"
-          pieData={[{label:'Core',value:45,color:'#6C3FC5'},{label:'Pro',value:38,color:'#A78BFA'},{label:'Lite',value:17,color:'#7C3AED'}]}
-          barData={[{label:'Jan',value:26000,color:'#6C3FC5'},{label:'Feb',value:27200,color:'#6C3FC5'},{label:'Mar',value:mrr,color:'#7C3AED'}]} />
-        <StatCard label="NPS Score" value={String(nps)} icon={Star} color="#F59E0B"
-          pieData={[{label:'Promoters',value:nps,color:'#22C55E'},{label:'Passives',value:22,color:'#F59E0B'},{label:'Detractors',value:11,color:'#EF4444'}]}
-          barData={[{label:'Q3\'25',value:55,color:'#F59E0B'},{label:'Q4\'25',value:63,color:'#F59E0B'},{label:'Q1\'26',value:nps,color:'#D97706'}]} />
+      {/* CRM Sub-navigation */}
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none" style={{borderBottom:'1px solid #1F2937'}}>
+        {([['dashboard','Dashboard'],['pipeline','Pipeline'],['contacts','Contacts'],['intelligence','ARIA Intelligence'],['reports','Reports']] as const).map(([id,label])=>(
+          <button key={id} onClick={()=>setCrmTab(id)} className="px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap" style={{borderBottomColor:crmTab===id?'#8B5CF6':'transparent',color:crmTab===id?'#A78BFA':'#6B7280',backgroundColor:crmTab===id?'rgba(139,92,246,0.05)':'transparent'}}>{label}</button>
+        ))}
       </div>
-      <DeptAISummary dept="crm" portal="business" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Churn risk */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Churn Risk Alerts</p></div>
-          {churnRiskAccounts.map((r, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < churnRiskAccounts.length - 1 ? '1px solid #1F2937' : undefined }}>
-              <AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{r.name}</p>
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>{r.reason}</p>
-              </div>
-              <span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}% risk</span>
-            </div>
-          ))}
-        </div>
 
-        {/* Renewals */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Renewals</p></div>
-          {renewals.map((r, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < renewals.length - 1 ? '1px solid #1F2937' : undefined }}>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{r.name}</p>
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>Due {r.due} · {r.arr} ARR</p>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span>
+      {/* ──── DASHBOARD TAB ──── */}
+      {crmTab==='dashboard'&&<div className="space-y-4">
+        {/* ARIA Brief */}
+        <div className="rounded-xl p-5" style={{background:'linear-gradient(135deg,#0F1019,#1a1035)',border:'1px solid #1E2035'}}>
+          <div className="flex items-center gap-2 mb-2"><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-xs font-semibold" style={{color:'#A78BFA'}}>ARIA Daily Brief</span></div>
+          <p className="text-sm leading-relaxed" style={{color:'#D1D5DB'}}>Your pipeline is strong this week — £{pipelineValue.toLocaleString()} across {openDeals} open deals. {fakeCompany(company,30)} is your highest-scoring opportunity at 94%. Two deals have been in Negotiation for 18+ days — consider scheduling follow-ups. Win rate is trending up at {winRate}%.</p>
+        </div>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[{l:'Pipeline Value',v:`£${pipelineValue.toLocaleString()}`,c:'#8B5CF6'},{l:'Open Deals',v:String(openDeals),c:'#3B82F6'},{l:'Win Rate',v:`${winRate}%`,c:'#22C55E'},{l:'ARIA Accuracy',v:'91%',c:'#F59E0B'}].map(k=>(
+            <div key={k.l} className="rounded-xl p-4" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+              <p className="text-xs mb-1" style={{color:'#6B7299'}}>{k.l}</p>
+              <p className="text-xl font-black" style={{background:`linear-gradient(135deg,${k.c},#22D3EE)`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{k.v}</p>
             </div>
           ))}
         </div>
-      </div>
+        {/* Pipeline Health + Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+            <p className="text-sm font-semibold mb-4" style={{color:'#F1F3FA'}}>Pipeline Health</p>
+            <div className="space-y-3">{STAGES.map(s=>(<div key={s.name} className="flex items-center gap-3"><span className="text-xs w-20 shrink-0" style={{color:'#6B7299'}}>{s.name}</span><div className="flex-1 h-6 rounded-lg overflow-hidden" style={{backgroundColor:'#1E2035'}}><div className="h-full rounded-lg flex items-center px-2" style={{width:`${Math.min(100,(s.value/40000)*100)}%`,backgroundColor:s.color}}><span className="text-[10px] font-bold text-white">{s.count} · £{(s.value/1000).toFixed(0)}k</span></div></div></div>))}</div>
+          </div>
+          <div className="rounded-xl p-5" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+            <p className="text-sm font-semibold mb-4" style={{color:'#F1F3FA'}}>Top Deals by ARIA Score</p>
+            <div className="space-y-2">{deals.filter(d=>d.stage!=='Closed Won').sort((a,b)=>b.score-a.score).slice(0,5).map(d=>(
+              <div key={d.name} className="flex items-center gap-3 p-2.5 rounded-lg" style={{background:'#121320'}}>
+                <svg width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="none" stroke="#1E2035" strokeWidth="3"/><circle cx="18" cy="18" r="14" fill="none" stroke={d.score>=80?'#10B981':d.score>=60?'#8B5CF6':'#EF4444'} strokeWidth="3" strokeDasharray={`${(d.score/100)*87.96} 87.96`} strokeLinecap="round" transform="rotate(-90 18 18)"/><text x="18" y="18" textAnchor="middle" dominantBaseline="central" fill="#F1F3FA" fontSize="10" fontWeight="600">{d.score}</text></svg>
+                <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{color:'#F1F3FA'}}>{d.name}</p><p className="text-xs" style={{color:'#6B7299'}}>{d.contact}</p></div>
+                <span className="text-sm font-semibold shrink-0" style={{background:'linear-gradient(135deg,#8B5CF6,#22D3EE)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>£{d.value.toLocaleString()}</span>
+              </div>
+            ))}</div>
+          </div>
+        </div>
+        {/* Churn + Renewals */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl overflow-hidden" style={{backgroundColor:'#0F1019',border:'1px solid #1E2035'}}>
+            <div className="px-5 py-4" style={{borderBottom:'1px solid #1E2035'}}><p className="text-sm font-semibold" style={{color:'#F1F3FA'}}>Churn Risk Alerts</p></div>
+            {churnRiskAccounts.map((r,i)=>(<div key={i} className="flex items-center gap-3 px-5 py-3" style={{borderBottom:i<churnRiskAccounts.length-1?'1px solid #1E2035':undefined}}><AlertCircle size={14} style={{color:'#EF4444',flexShrink:0}}/><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{color:'#F1F3FA'}}>{r.name}</p><p className="text-xs" style={{color:'#6B7299'}}>{r.reason}</p></div><span className="text-xs font-bold shrink-0" style={{color:r.risk>=80?'#EF4444':'#F59E0B'}}>{r.risk}%</span></div>))}
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{backgroundColor:'#0F1019',border:'1px solid #1E2035'}}>
+            <div className="px-5 py-4" style={{borderBottom:'1px solid #1E2035'}}><p className="text-sm font-semibold" style={{color:'#F1F3FA'}}>Upcoming Renewals</p></div>
+            {renewals.map((r,i)=>(<div key={i} className="flex items-center gap-3 px-5 py-3" style={{borderBottom:i<renewals.length-1?'1px solid #1E2035':undefined}}><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{color:'#F1F3FA'}}>{r.name}</p><p className="text-xs" style={{color:'#6B7299'}}>Due {r.due} · {r.arr}</p></div><span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{backgroundColor:r.health==='Healthy'?'rgba(34,197,94,0.1)':r.health==='At Risk'?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)',color:r.health==='Healthy'?'#22C55E':r.health==='At Risk'?'#F59E0B':'#EF4444'}}>{r.health}</span></div>))}
+          </div>
+        </div>
+      </div>}
+
+      {/* ──── PIPELINE TAB ──── */}
+      {crmTab==='pipeline'&&<div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm" style={{color:'#6B7299'}}>{deals.filter(d=>d.stage!=='Closed Won').length} active deals · £{deals.filter(d=>d.stage!=='Closed Won').reduce((s,d)=>s+d.value,0).toLocaleString()} in pipeline</p>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {STAGES.map(stage=>(
+            <div key={stage.name} className="rounded-xl p-4 shrink-0" style={{width:240,background:'#0F1019',border:'1px solid #1E2035'}}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor:stage.color}}/><span className="text-xs font-semibold" style={{color:'#F1F3FA'}}>{stage.name}</span></div>
+                <span className="text-xs" style={{color:'#6B7299'}}>£{(stage.value/1000).toFixed(0)}k</span>
+              </div>
+              <div className="space-y-2">{deals.filter(d=>d.stage===stage.name).map(d=>(
+                <div key={d.name} className="rounded-lg p-3" style={{background:'#121320',border:'1px solid #1E2035'}}>
+                  <p className="text-xs font-semibold truncate" style={{color:'#F1F3FA'}}>{d.name}</p>
+                  <p className="text-[10px]" style={{color:'#6B7299'}}>{d.contact} · £{d.value.toLocaleString()}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[10px]" style={{color:'#6B7299'}}>{d.days}d in stage</span>
+                    <span className="text-[10px] font-bold" style={{color:d.score>=80?'#10B981':d.score>=60?'#8B5CF6':'#EF4444'}}>ARIA {d.score}</span>
+                  </div>
+                </div>
+              ))}</div>
+            </div>
+          ))}
+        </div>
+      </div>}
+
+      {/* ──── CONTACTS TAB ──── */}
+      {crmTab==='contacts'&&<div className="space-y-4">
+        <p className="text-sm" style={{color:'#6B7299'}}>{contacts.length} contacts · {contacts.filter(c=>c.status==='live').length} verified</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {contacts.map(c=>{const sc=c.status==='live'?'#10B981':c.status==='bounced'?'#EF4444':'#6B7299';return(
+            <div key={c.name} className="rounded-xl p-4" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold" style={{background:'#1E2035',color:'#A78BFA'}}>{c.name.split(' ').map(w=>w[0]).join('')}</div>
+                <div className="min-w-0"><p className="text-sm font-semibold truncate" style={{color:'#F1F3FA'}}>{c.name}</p><p className="text-xs truncate" style={{color:'#6B7299'}}>{c.role}</p></div>
+              </div>
+              <p className="text-xs truncate mb-1" style={{color:'#6B7299'}}>{c.company}</p>
+              <p className="text-xs truncate mb-2" style={{color:'#6B7299'}}>{c.email}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor:sc}}/><span className="text-[10px]" style={{color:sc}}>{c.status}</span></div>
+                {c.score>0&&<span className="text-[10px] font-bold" style={{color:'#A78BFA'}}>ARIA {c.score}</span>}
+              </div>
+            </div>
+          )})}
+        </div>
+      </div>}
+
+      {/* ──── INTELLIGENCE TAB ──── */}
+      {crmTab==='intelligence'&&<div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4" style={{minHeight:400}}>
+          {/* Insights panel */}
+          <div className="rounded-xl p-5" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+            <div className="flex items-center gap-2 mb-4"><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-sm font-semibold" style={{color:'#F1F3FA'}}>ARIA Insights</span></div>
+            <div className="space-y-3">
+              {[{icon:'🎯',title:'Pipeline at risk',desc:`£${Math.round(pipelineValue*0.15).toLocaleString()} at risk — 2 deals stalled in Negotiation`,color:'#EF4444'},{icon:'📈',title:'Win rate improving',desc:`${winRate}% this quarter, up from ${winRate-4}% last quarter`,color:'#22C55E'},{icon:'⚡',title:'Quick win available',desc:`${fakeCompany(company,30)} (ARIA 94) — ready for close call`,color:'#8B5CF6'},{icon:'⏰',title:'Follow-up needed',desc:`${fakeCompany(company,33)} — 18 days with no activity`,color:'#F59E0B'}].map(insight=>(
+                <div key={insight.title} className="rounded-lg p-3" style={{background:'#121320',borderLeft:`3px solid ${insight.color}`}}>
+                  <p className="text-xs font-semibold" style={{color:'#F1F3FA'}}>{insight.icon} {insight.title}</p>
+                  <p className="text-[10px] mt-1" style={{color:'#6B7299'}}>{insight.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4" style={{borderTop:'1px solid #1E2035'}}>
+              <p className="text-xs font-semibold mb-2" style={{color:'#6B7299'}}>Pipeline Stats</p>
+              {[{l:'Win Rate',v:`${winRate}%`},{l:'At Risk Value',v:`£${Math.round(pipelineValue*0.15).toLocaleString()}`},{l:'Forecast',v:`£${Math.round(pipelineValue*0.35).toLocaleString()}`}].map(s=>(
+                <div key={s.l} className="flex justify-between py-1"><span className="text-xs" style={{color:'#6B7299'}}>{s.l}</span><span className="text-xs font-bold" style={{color:'#F1F3FA'}}>{s.v}</span></div>
+              ))}
+            </div>
+          </div>
+          {/* ARIA Chat */}
+          <div className="rounded-xl flex flex-col" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+            <div className="flex items-center gap-2 px-5 py-4" style={{borderBottom:'1px solid #1E2035'}}><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-sm font-semibold" style={{color:'#F1F3FA'}}>ARIA Assistant</span><span className="text-xs px-2 py-0.5 rounded-full" style={{backgroundColor:'rgba(139,92,246,0.15)',color:'#A78BFA'}}>AI</span></div>
+            <div className="flex-1 p-5 space-y-4">
+              <div className="flex gap-3"><div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{background:'linear-gradient(135deg,#8B5CF6,#22D3EE)'}}><Sparkles size={12} color="#fff"/></div><div className="rounded-xl p-3 max-w-[80%]" style={{background:'#121320'}}><p className="text-xs" style={{color:'#D1D5DB'}}>Hi! I&apos;m ARIA, your AI pipeline assistant. I can analyse deals, suggest next actions, forecast revenue, and identify risks. What would you like to know?</p></div></div>
+              <div className="flex gap-3 justify-end"><div className="rounded-xl p-3 max-w-[80%]" style={{background:'rgba(139,92,246,0.12)',border:'1px solid rgba(139,92,246,0.25)'}}><p className="text-xs" style={{color:'#E0D4FC'}}>Which deals are most likely to close this month?</p></div></div>
+              <div className="flex gap-3"><div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{background:'linear-gradient(135deg,#8B5CF6,#22D3EE)'}}><Sparkles size={12} color="#fff"/></div><div className="rounded-xl p-3 max-w-[80%]" style={{background:'#121320'}}><p className="text-xs" style={{color:'#D1D5DB'}}>Based on ARIA scores, your top 3 most likely to close are: <strong>{fakeCompany(company,34)}</strong> (94%), <strong>{fakeCompany(company,30)}</strong> (91%), and <strong>{fakeCompany(company,36)}</strong> (87%). Combined value: £{(fakeNum(8000,company,'cd4')*5+fakeNum(8000,company,'cd0')+fakeNum(8000,company,'cd6')*7).toLocaleString()}. I recommend scheduling close calls for all three this week.</p></div></div>
+            </div>
+            <div className="px-5 py-3 flex gap-2" style={{borderTop:'1px solid #1E2035'}}><input className="flex-1 rounded-lg px-3 py-2 text-sm outline-none" style={{background:'#121320',border:'1px solid #1E2035',color:'#F1F3FA'}} placeholder="Ask ARIA about your pipeline..." disabled/><button className="px-4 py-2 rounded-lg text-xs font-semibold" style={{background:'#8B5CF6',color:'#fff'}}>Send</button></div>
+          </div>
+        </div>
+      </div>}
+
+      {/* ──── REPORTS TAB ──── */}
+      {crmTab==='reports'&&<div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[{l:'Win Rate',v:`${winRate}%`,d:'vs 30% last quarter',c:'#22C55E'},{l:'Revenue Forecast',v:`£${Math.round(pipelineValue*0.35).toLocaleString()}`,d:'weighted pipeline',c:'#8B5CF6'},{l:'Avg Deal Velocity',v:'14 days',d:'avg time in pipeline',c:'#3B82F6'},{l:'Value Saved by ARIA',v:'£381k',d:'ghost deals flagged',c:'#F59E0B'}].map(s=>(
+            <div key={s.l} className="rounded-xl p-4" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+              <p className="text-xs mb-1" style={{color:'#6B7299'}}>{s.l}</p>
+              <p className="text-xl font-black" style={{color:s.c}}>{s.v}</p>
+              <p className="text-[10px] mt-0.5" style={{color:'#6B7299'}}>{s.d}</p>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{background:'#0F1019',border:'1px solid #1E2035'}}>
+          <p className="text-sm font-semibold mb-4" style={{color:'#F1F3FA'}}>Competitor Scorecard</p>
+          <table className="w-full text-xs"><thead><tr style={{borderBottom:'1px solid #1E2035'}}>{['Feature','Lumio CRM','HubSpot','Pipedrive','Salesforce'].map(h=><th key={h} className="text-left px-3 py-2 font-semibold" style={{color:'#6B7299'}}>{h}</th>)}</tr></thead>
+            <tbody>{[{f:'AI Deal Scoring',l:'✅ ARIA',h:'❌',p:'❌',s:'⚠️ Einstein $$'},{f:'Auto-enrichment',l:'✅ Built-in',h:'⚠️ Add-on',p:'❌',s:'⚠️ Add-on'},{f:'Pipeline AI Chat',l:'✅ ARIA Chat',h:'❌',p:'❌',s:'❌'},{f:'Ghost Deal Detection',l:'✅',h:'❌',p:'❌',s:'❌'},{f:'Price (per seat)',l:'✅ Included',h:'⚠️ £45+',p:'⚠️ £15+',s:'⚠️ £60+'}].map(r=>(
+              <tr key={r.f} style={{borderBottom:'1px solid #1E2035'}}><td className="px-3 py-2 font-medium" style={{color:'#F1F3FA'}}>{r.f}</td><td className="px-3 py-2" style={{color:'#22C55E'}}>{r.l}</td><td className="px-3 py-2" style={{color:'#6B7299'}}>{r.h}</td><td className="px-3 py-2" style={{color:'#6B7299'}}>{r.p}</td><td className="px-3 py-2" style={{color:'#6B7299'}}>{r.s}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>}
     </div>
   )
 }
@@ -3596,7 +3713,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
             </div>
 
-            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
+            {activeDept !== 'overview' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'sales' && activeDept !== 'crm' && !demoCleared && <div className="mb-4"><QuickActionsBar dept={activeDept} onAction={fireToast} /></div>}
 
             {/* Empty state when demo data is cleared */}
             {demoCleared && activeDept !== 'settings' && (
