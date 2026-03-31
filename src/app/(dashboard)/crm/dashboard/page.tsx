@@ -64,6 +64,8 @@ export default function CRMDashboardPage() {
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
+  const hasData = contacts.length > 0 || deals.length > 0
 
   // Hydrate from sessionStorage cache after mount (avoids SSR mismatch)
   useEffect(() => {
@@ -214,35 +216,41 @@ export default function CRMDashboardPage() {
         openDeals={openDeals.length}
         winRate={winRate}
         avgDealSize={openDeals.length > 0 ? Math.round(pipelineValue / openDeals.length) : 0}
-        revenueThisMonth={closedWon.reduce((s, d) => s + (d.value || 0), 0) || 42800}
-        ariaAccuracy={91}
+        revenueThisMonth={closedWon.reduce((s, d) => s + (d.value || 0), 0)}
+        ariaAccuracy={hasData ? 91 : 0}
       />
 
       {/* Charts row 1: Revenue vs Target | Pipeline | Win/Loss */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
-          <RevenueChart />
+          {hasData ? <RevenueChart /> : <div className="flex flex-col items-center justify-center py-8"><p className="text-sm" style={{ color: '#6B7299' }}>No data yet</p></div>}
         </div>
         <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <PipelineHealth stages={stageData} />
         </div>
         <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Win/Loss Reasons</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie data={WIN_LOSS_DATA} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
-                {WIN_LOSS_DATA.map((d, i) => <Cell key={i} fill={d.color} />)}
-              </Pie>
-              <Tooltip content={<CRMTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-2 justify-center mt-1">
-            {WIN_LOSS_DATA.map(d => (
-              <span key={d.name} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}>
-                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />{d.name} {d.value}%
-              </span>
-            ))}
-          </div>
+          {hasData ? (
+            <>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={WIN_LOSS_DATA} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                    {WIN_LOSS_DATA.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip content={<CRMTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-2 justify-center mt-1">
+                {WIN_LOSS_DATA.map(d => (
+                  <span key={d.name} className="flex items-center gap-1 text-[10px]" style={{ color: '#6B7299' }}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />{d.name} {d.value}%
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center" style={{ height: 180 }}><p className="text-sm" style={{ color: '#6B7299' }}>No data yet</p></div>
+          )}
         </div>
       </div>
 
@@ -250,26 +258,34 @@ export default function CRMDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Deal Velocity Trend</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={VELOCITY_DATA}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
-              <XAxis dataKey="month" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CRMTooltip />} />
-              <Line type="monotone" dataKey="days" name="Avg Days" stroke={PURPLE} strokeWidth={2} dot={{ fill: PURPLE, r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasData ? (
+            <ResponsiveContainer width="100%" height={160}>
+              <LineChart data={VELOCITY_DATA}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E2035" />
+                <XAxis dataKey="month" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CRMTooltip />} />
+                <Line type="monotone" dataKey="days" name="Avg Days" stroke={PURPLE} strokeWidth={2} dot={{ fill: PURPLE, r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center" style={{ height: 160 }}><p className="text-sm" style={{ color: '#6B7299' }}>No data yet</p></div>
+          )}
         </div>
         <div className="rounded-xl p-5" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <p className="text-sm font-semibold mb-3" style={{ color: '#F1F3FA' }}>Lead Source Breakdown</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={LEAD_SOURCE_DATA} layout="vertical" barSize={16}>
-              <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-              <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
-              <Tooltip content={<CRMTooltip />} />
-              <Bar dataKey="pct" name="%" fill="#06B6D4" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {hasData ? (
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={LEAD_SOURCE_DATA} layout="vertical" barSize={16}>
+                <XAxis type="number" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                <YAxis type="category" dataKey="source" tick={{ fill: '#6B7299', fontSize: 10 }} axisLine={false} tickLine={false} width={65} />
+                <Tooltip content={<CRMTooltip />} />
+                <Bar dataKey="pct" name="%" fill="#06B6D4" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center" style={{ height: 160 }}><p className="text-sm" style={{ color: '#6B7299' }}>No data yet</p></div>
+          )}
         </div>
       </div>
 
@@ -279,10 +295,10 @@ export default function CRMDashboardPage() {
           <p className="text-sm font-semibold mb-4" style={{ color: '#F1F3FA' }}>Activity Today</p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: <Phone size={14} />, label: 'Calls Logged', value: '8', trend: '+3 vs yesterday', color: '#3B82F6' },
-              { icon: <Mail size={14} />, label: 'Emails Sent', value: '23', trend: '+8 vs yesterday', color: PURPLE },
-              { icon: <CalendarIcon size={14} />, label: 'Meetings Booked', value: '4', trend: '+1 vs yesterday', color: '#F59E0B' },
-              { icon: <Video size={14} />, label: 'Demos Completed', value: '2', trend: 'On target', color: '#22C55E' },
+              { icon: <Phone size={14} />, label: 'Calls Logged', value: hasData ? '8' : '0', trend: hasData ? '+3 vs yesterday' : 'No data yet', color: '#3B82F6' },
+              { icon: <Mail size={14} />, label: 'Emails Sent', value: hasData ? '23' : '0', trend: hasData ? '+8 vs yesterday' : 'No data yet', color: PURPLE },
+              { icon: <CalendarIcon size={14} />, label: 'Meetings Booked', value: hasData ? '4' : '0', trend: hasData ? '+1 vs yesterday' : 'No data yet', color: '#F59E0B' },
+              { icon: <Video size={14} />, label: 'Demos Completed', value: hasData ? '2' : '0', trend: hasData ? 'On target' : 'No data yet', color: '#22C55E' },
             ].map(a => (
               <div key={a.label} className="rounded-lg p-3" style={{ background: CRM_CARD }}>
                 <div className="flex items-center gap-2 mb-1" style={{ color: a.color }}>{a.icon}<span className="text-xs">{a.label}</span></div>
@@ -299,35 +315,18 @@ export default function CRMDashboardPage() {
           <div className="space-y-3">
             {topDeals.map(deal => (
               <div key={deal.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#121320' }}>
-                {/* Score ring */}
                 <div className="shrink-0">
                   <svg width="36" height="36" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="14" fill="none" stroke="#1E2035" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="14" fill="none"
-                      stroke={deal.aria_score >= 80 ? '#10B981' : deal.aria_score >= 60 ? '#8B5CF6' : '#EF4444'}
-                      strokeWidth="3"
-                      strokeDasharray={`${(deal.aria_score / 100) * 87.96} 87.96`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                    <text x="18" y="18" textAnchor="middle" dominantBaseline="central"
-                      fill="#F1F3FA" fontSize="10" fontWeight="600">
-                      {deal.aria_score}
-                    </text>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke={deal.aria_score >= 80 ? '#10B981' : deal.aria_score >= 60 ? '#8B5CF6' : '#EF4444'} strokeWidth="3" strokeDasharray={`${(deal.aria_score / 100) * 87.96} 87.96`} strokeLinecap="round" transform="rotate(-90 18 18)" />
+                    <text x="18" y="18" textAnchor="middle" dominantBaseline="central" fill="#F1F3FA" fontSize="10" fontWeight="600">{deal.aria_score}</text>
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{deal.title}</p>
                   <p className="text-xs" style={{ color: '#6B7299' }}>{deal.contact_name || 'No contact'}</p>
                 </div>
-                <span className="text-sm font-semibold shrink-0" style={{
-                  background: 'linear-gradient(135deg, #8B5CF6, #22D3EE)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  £{(deal.value || 0).toLocaleString()}
-                </span>
+                <span className="text-sm font-semibold shrink-0" style={{ background: 'linear-gradient(135deg, #8B5CF6, #22D3EE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>£{(deal.value || 0).toLocaleString()}</span>
               </div>
             ))}
             {topDeals.length === 0 && (
@@ -341,11 +340,11 @@ export default function CRMDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl overflow-hidden" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <div className="px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Churn Risk Alerts</p></div>
-          {CHURN_ACCOUNTS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < CHURN_ACCOUNTS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} /><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>{r.reason}</p></div><span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}%</span></div>))}
+          {hasData ? CHURN_ACCOUNTS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < CHURN_ACCOUNTS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><AlertCircle size={14} style={{ color: '#EF4444', flexShrink: 0 }} /><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>{r.reason}</p></div><span className="text-xs font-bold shrink-0" style={{ color: r.risk >= 80 ? '#EF4444' : '#F59E0B' }}>{r.risk}%</span></div>)) : <p className="px-5 py-6 text-sm text-center" style={{ color: '#6B7299' }}>No churn alerts</p>}
         </div>
         <div className="rounded-xl overflow-hidden" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
           <div className="px-5 py-4" style={{ borderBottom: `1px solid ${CRM_BORDER}` }}><p className="text-sm font-semibold" style={{ color: '#F1F3FA' }}>Upcoming Renewals</p></div>
-          {RENEWALS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < RENEWALS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>Due {r.due} · {r.arr}</p></div><span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span></div>))}
+          {hasData ? RENEWALS.map((r, i) => (<div key={i} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: i < RENEWALS.length - 1 ? `1px solid ${CRM_BORDER}` : undefined }}><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F1F3FA' }}>{r.name}</p><p className="text-xs" style={{ color: '#6B7299' }}>Due {r.due} · {r.arr}</p></div><span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: r.health === 'Healthy' ? 'rgba(34,197,94,0.1)' : r.health === 'At Risk' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)', color: r.health === 'Healthy' ? '#22C55E' : r.health === 'At Risk' ? '#F59E0B' : '#EF4444' }}>{r.health}</span></div>)) : <p className="px-5 py-6 text-sm text-center" style={{ color: '#6B7299' }}>No upcoming renewals</p>}
         </div>
       </div>
 

@@ -134,14 +134,17 @@ export default function ContactsPage() {
           </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No contacts yet</h2>
           <p className="text-sm mb-8 leading-relaxed" style={{ color: '#9CA3AF' }}>
-            Import your contacts via CSV, connect your CRM, or add your first contact manually.
+            Discover contacts with AI, import via CSV, or add your first contact manually.
           </p>
           <div className="flex flex-col gap-3 w-full">
             <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>
               Add your first contact
             </button>
+            <a href="/crm/companies" className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', textDecoration: 'none' }}>
+              Find contacts via Company Discovery
+            </a>
             <a href="/settings" className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', textDecoration: 'none' }}>
-              Import contacts via Settings
+              Import from CSV
             </a>
           </div>
         </div>

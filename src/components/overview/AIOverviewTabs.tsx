@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil } from 'lucide-react'
+import { EmployeeProfileCard, ProfileModal, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -768,66 +769,9 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
           {/* Org Chart */}
           {subTab === 'org' && <OrgChart items={items} ctx={ctx} statusColor={statusColor} />}
 
-          {/* Team Info */}
+          {/* Team Info — Sticker cards */}
           {subTab === 'info' && (
-            <div className="space-y-4">
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Company Overview</p>
-                </div>
-                <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-                  {[
-                    ['Company', ctx.company || 'My Company'],
-                    ['Your Role', ctx.role || 'Manager'],
-                    ['Team Size', `${items.length} members`],
-                    ['Departments', Object.keys(departments).join(', ') || 'General'],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex items-center justify-between px-5 py-3">
-                      <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
-                      <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team Status Summary</p>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-5">
-                  {(['available', 'in-meeting', 'busy', 'away'] as const).map(status => {
-                    const count = items.filter(m => m.status === status).length
-                    return (
-                      <div key={status} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                        <p className="text-lg font-bold" style={{ color: statusColor[status] }}>{count}</p>
-                        <p className="text-xs" style={{ color: '#6B7280' }}>{statusLabel[status]}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {items.some(m => m.needsAttention) && (
-                <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                    <p className="text-sm font-semibold" style={{ color: '#F59E0B' }}>Needs Attention</p>
-                  </div>
-                  <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-                    {items.filter(m => m.needsAttention).map(m => (
-                      <div key={m.id} className="flex items-center justify-between px-5 py-3">
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.name}</p>
-                          <p className="text-xs" style={{ color: '#F59E0B' }}>{m.attentionNote}</p>
-                        </div>
-                        <button onClick={() => onAction?.(`Opening Slack DM with ${m.name}...`)} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 inline-flex items-center gap-1" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-                          <MessageSquare size={10} />Message
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <TeamInfoCards importedStaff={importedStaff} items={items} ctx={ctx} onAction={onAction} />
           )}
         </>
       )}

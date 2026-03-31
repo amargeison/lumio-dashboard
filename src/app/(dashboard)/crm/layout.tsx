@@ -31,8 +31,8 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    /* Pull up over the parent dashboard layout header bar */
-    <div className="flex -mx-4 -mt-14 md:-mx-6 md:-mt-14" style={{ minHeight: 'calc(100vh - 0px)' }}>
+    /* Pull up over the parent dashboard layout header + padding to fill entire viewport */
+    <div className="flex -mx-4 -mt-[52px] -mb-4 md:-mx-6 md:-mt-[52px] md:-mb-6" style={{ minHeight: '100vh' }}>
       <CRMSidebar />
       <main className="flex-1 overflow-x-hidden min-w-0" style={{ backgroundColor: '#0F1019' }}>
         {/* Avatar + bell row — top-right of CRM content */}
