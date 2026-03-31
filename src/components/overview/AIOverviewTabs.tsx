@@ -548,10 +548,12 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
   return root
 }
 
-function nodeToStaffRecord(node: OrgNode): StaffRecord {
+function nodeToStaffRecord(node: OrgNode, currentUserEmail?: string): StaffRecord {
   const parts = node.name.split(' ')
   // Preserve real email for photo lookup — node.id is the email for imported staff
-  const email = node.id.includes('@') && !node.id.endsWith('@staff') ? node.id : undefined
+  let email: string | undefined
+  if (node.id === 'root' && currentUserEmail) email = currentUserEmail
+  else if (node.id.includes('@') && !node.id.endsWith('@staff')) email = node.id
   return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email }
 }
 
@@ -561,6 +563,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
   const [movingId, setMovingId] = useState<string | null>(null)
   const [profileNode, setProfileNode] = useState<OrgNode | null>(null)
   const [, forceUpdate] = useState(0)
+  const currentUserEmail = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_email') || '' : ''
 
   const staffToUse: TeamMember[] = importedStaff?.length
     ? importedStaff.map((s, i) => ({
@@ -589,7 +592,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
 
   function OrgNodeView({ node, depth = 0 }: { node: OrgNode; depth?: number }) {
     const isMoving = movingId === node.id
-    const staffRecord = nodeToStaffRecord(node)
+    const staffRecord = nodeToStaffRecord(node, currentUserEmail)
 
     return (
       <div className="flex flex-col items-center">
@@ -675,7 +678,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
       {/* Profile modal */}
       {profileNode && (
         <ProfileModal
-          staff={nodeToStaffRecord(profileNode)}
+          staff={nodeToStaffRecord(profileNode, currentUserEmail)}
           index={0}
           isCurrentUser={profileNode.id === 'root'}
           onClose={() => setProfileNode(null)}
