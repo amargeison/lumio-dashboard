@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       status: 'active',
       onboarding_completed: false,
       onboarding_complete: false,
+      onboarded: false,
       demo_data_active: false,
       welcome_email_sent: false,
       created_at: new Date().toISOString(),
