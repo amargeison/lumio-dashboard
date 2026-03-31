@@ -70,6 +70,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const expanded = pinned || hovered
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    const handler = () => forceUpdate(n => n + 1)
+    window.addEventListener('lumio-settings-changed', handler)
+    return () => window.removeEventListener('lumio-settings-changed', handler)
+  }, [])
 
   function togglePin() {
     setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
@@ -141,7 +147,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           )}
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
-          {SIDEBAR_ITEMS.map(item => {
+          {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
             const active = activeDept === item.id
             return (
               <button key={item.id}
@@ -183,7 +189,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
-              {SIDEBAR_ITEMS.map(item => {
+              {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
                 const active = activeDept === item.id
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
@@ -646,7 +652,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -785,10 +791,10 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Meetings', value: 4, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅' },
-              { label: 'Tasks', value: 7, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
-              { label: 'Urgent', value: 2, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Emails', value: 12, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧' },
+              { label: 'Meetings', value: demoDataActive ? 4 : 0, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅' },
+              { label: 'Tasks', value: demoDataActive ? 7 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
+              { label: 'Urgent', value: demoDataActive ? 2 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Emails', value: demoDataActive ? 12 : 0, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
@@ -834,12 +840,12 @@ const DEMO_PHOTOS = [
 ]
 
 // Photos stored in localStorage only — never persisted to server or committed to repo
-function PhotoFrame() {
+function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [photos, setPhotos] = useState<string[]>(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
       if (saved) { const parsed = JSON.parse(saved); if (parsed.length > 0) return parsed }
-      return DEMO_PHOTOS
+      return demoDataActive ? DEMO_PHOTOS : []
     } catch { return [] }
   })
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -1222,10 +1228,11 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
 ]
 
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
+  const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
   return (
     <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
-        {OVERVIEW_TABS.map(t => (
+        {visibleTabs.map(t => (
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             style={{ borderBottomColor: tab === t.id ? '#7C3AED' : 'transparent', color: tab === t.id ? '#A78BFA' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
             <span className="text-base">{t.icon}</span>{t.label}
@@ -1292,10 +1299,12 @@ const QUICK_ACTIONS = [
 ]
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
+  const visibleActions = QUICK_ACTIONS.filter(a => typeof window !== 'undefined' ? localStorage.getItem(`lumio_qa_${a.label.toLowerCase().replace(/\s+/g, '')}_visible`) !== 'false' : true)
+  if (!visibleActions.length) return null
   return (
     <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-      {QUICK_ACTIONS.map(a => (
+      {visibleActions.map(a => (
         <div key={a.label} className="relative group shrink-0">
           <button onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             <a.icon size={12} />{a.label}
@@ -1340,7 +1349,7 @@ const MORNING_HIGHLIGHTS = [
   'Reminder: end-of-month reporting due Friday',
 ]
 
-function MorningAIPanel() {
+function MorningAIPanel({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [open, setOpen] = useState(true)
   const now = new Date()
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -1358,12 +1367,14 @@ function MorningAIPanel() {
       </button>
       {open && (
         <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
-          {MORNING_HIGHLIGHTS.map((item, i) => (
+          {demoDataActive ? MORNING_HIGHLIGHTS.map((item, i) => (
             <div key={i} className="flex gap-3">
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
               <p className="text-xs leading-relaxed" style={{ color: '#C4B5FD' }}>{item}</p>
             </div>
-          ))}
+          )) : (
+            <p className="text-xs text-center py-3" style={{ color: '#6B7280' }}>Connect your tools in Settings to generate your AI morning summary.</p>
+          )}
         </div>
       )}
     </div>
@@ -1700,23 +1711,105 @@ function TimezoneSelector() {
   )
 }
 
+// ─── Integration Groups ─────────────────────────────────────────────────────
+
+const INTEGRATION_GROUPS = [
+  { label: 'Communication', items: [
+    { key: 'gmail', name: 'Gmail', desc: 'Email sync & send' },
+    { key: 'outlook', name: 'Outlook / Microsoft 365', desc: 'Email sync & send' },
+    { key: 'slack', name: 'Slack', desc: 'Team messaging' },
+    { key: 'teams', name: 'Microsoft Teams', desc: 'Meetings & chat' },
+    { key: 'whatsapp', name: 'WhatsApp Business', desc: 'Customer messaging' },
+    { key: 'twilio', name: 'Twilio SMS', desc: 'SMS & voice' },
+  ]},
+  { label: 'Calendar', items: [
+    { key: 'gcal', name: 'Google Calendar', desc: 'Calendar sync' },
+    { key: 'outlook_cal', name: 'Outlook Calendar', desc: 'Calendar sync' },
+  ]},
+  { label: 'Finance & Accounting', items: [
+    { key: 'xero', name: 'Xero', desc: 'Accounting & invoicing' },
+    { key: 'quickbooks', name: 'QuickBooks', desc: 'Bookkeeping' },
+    { key: 'sage', name: 'Sage', desc: 'Accounting & payroll' },
+    { key: 'freeagent', name: 'FreeAgent', desc: 'Small business accounting' },
+  ]},
+  { label: 'CRM & Sales', items: [
+    { key: 'hubspot', name: 'HubSpot', desc: 'CRM & marketing' },
+    { key: 'salesforce', name: 'Salesforce', desc: 'Enterprise CRM' },
+    { key: 'pipedrive', name: 'Pipedrive', desc: 'Sales pipeline' },
+  ]},
+  { label: 'HR & People', items: [
+    { key: 'bamboohr', name: 'BambooHR', desc: 'HR management' },
+    { key: 'sage_hr', name: 'Sage HR', desc: 'HR & payroll' },
+    { key: 'breathe', name: 'Breathe HR', desc: 'People management' },
+  ]},
+  { label: 'Project Management', items: [
+    { key: 'asana', name: 'Asana', desc: 'Task & project tracking' },
+    { key: 'monday', name: 'Monday.com', desc: 'Work management' },
+    { key: 'trello', name: 'Trello', desc: 'Kanban boards' },
+    { key: 'notion', name: 'Notion', desc: 'Docs & wikis' },
+    { key: 'clickup', name: 'ClickUp', desc: 'All-in-one productivity' },
+  ]},
+  { label: 'Storage & Files', items: [
+    { key: 'gdrive', name: 'Google Drive', desc: 'Cloud storage' },
+    { key: 'onedrive', name: 'OneDrive', desc: 'Cloud storage' },
+    { key: 'dropbox', name: 'Dropbox', desc: 'File sharing' },
+  ]},
+]
+
 // ─── Settings View ───────────────────────────────────────────────────────────
 
 function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
   company: string; demoDataActive: boolean; sessionToken: string; onDemoToggle: (active: boolean) => void
 }) {
+  // ── State ────────────────────────────────────────────────────────────────
   const [clearing, setClearing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const isDev = process.env.NEXT_PUBLIC_ENV !== 'production'
   const fileRef = useRef<HTMLInputElement>(null)
+  const logoFileRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [uploadFiles, setUploadFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
 
+  // Workspace
+  const [editingName, setEditingName] = useState(false)
+  const [companyNameDraft, setCompanyNameDraft] = useState(company)
+  const [savingName, setSavingName] = useState(false)
+  const [logoUrl, setLogoUrl] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') || '' : '')
+
+  // Team invite
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('staff')
+  const [inviteSending, setInviteSending] = useState(false)
+  const [inviteSent, setInviteSent] = useState(false)
+
+  // Integrations
+  const [connectedIntegrations, setConnectedIntegrations] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {}
+    const result: Record<string, boolean> = {}
+    INTEGRATION_GROUPS.forEach(g => g.items.forEach(i => {
+      result[i.key] = localStorage.getItem(`lumio_integration_${i.key}`) === 'true'
+    }))
+    return result
+  })
+
+  // Notifications
+  const [emailNotifs, setEmailNotifs] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_email') !== 'false' : true)
+  const [inAppNotifs, setInAppNotifs] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_inapp') !== 'false' : true)
+  const [weeklyDigest, setWeeklyDigest] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_weekly') !== 'false' : true)
+
+  // Customise re-render key
+  const [customiseKey, setCustomiseKey] = useState(0)
+
+  // Security
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [currentPin, setCurrentPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   async function handleClearDemo() {
     setClearing(true)
     await fetch('/api/onboarding/clear-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
-    // Clear localStorage flags
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
@@ -1728,7 +1821,6 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
   async function handleLoadDemo() {
     setLoading(true)
     await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
-    // Set localStorage flags so department pages show content immediately
     localStorage.setItem('lumio_demo_active', 'true')
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
     allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
@@ -1747,141 +1839,476 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
     setUploading(false)
   }
 
-  async function handleResetOnboarding() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    // Just call the complete endpoint with a reset flag — or update directly
-    await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
-    // Actually we need to UN-set it. Let's just reload — the API doesn't support reset.
-    // For dev: we'll clear localStorage flag and reload
-    localStorage.removeItem('onboarding_completed_' + company)
-    window.location.reload()
+  async function handleSaveCompanyName() {
+    if (!companyNameDraft.trim() || companyNameDraft === company) { setEditingName(false); return }
+    setSavingName(true)
+    await fetch('/api/workspace/status', {
+      method: 'PATCH',
+      headers: { 'x-workspace-token': sessionToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: companyNameDraft.trim() }),
+    }).catch(() => {})
+    localStorage.setItem('workspace_company_name', companyNameDraft.trim())
+    localStorage.setItem('lumio_company_name', companyNameDraft.trim())
+    setSavingName(false)
+    setEditingName(false)
   }
 
-  const INTEGRATIONS = [
-    { name: 'Gmail / Outlook', desc: 'Connect your email' },
-    { name: 'Slack', desc: 'Team messaging' },
-    { name: 'Microsoft Teams', desc: 'Meetings & chat' },
-    { name: 'Xero', desc: 'Accounting & finance' },
-    { name: 'QuickBooks', desc: 'Bookkeeping' },
-    { name: 'Google Calendar', desc: 'Calendar sync' },
-    { name: 'Outlook Calendar', desc: 'Calendar sync' },
-    { name: 'BambooHR / Sage HR', desc: 'HR management' },
-  ]
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const blobUrl = URL.createObjectURL(file)
+    setLogoUrl(blobUrl)
+    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
+    const ext = file.name.split('.').pop() || 'png'
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const path = `${slug}/logo.${ext}`
+      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
+      setLogoUrl(publicUrl)
+      localStorage.setItem('workspace_company_logo', publicUrl)
+      localStorage.setItem('lumio_company_logo', publicUrl)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) { console.error('Logo upload failed:', err) }
+  }
 
+  async function handleInvite() {
+    if (!inviteEmail || !inviteEmail.includes('@')) return
+    setInviteSending(true)
+    await fetch('/api/demo/invite', {
+      method: 'POST',
+      headers: { 'x-workspace-token': sessionToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+    }).catch(() => {})
+    setInviteSending(false)
+    setInviteSent(true)
+    setInviteEmail('')
+    setTimeout(() => setInviteSent(false), 3000)
+  }
+
+  function toggleIntegration(key: string) {
+    const next = !connectedIntegrations[key]
+    setConnectedIntegrations(prev => ({ ...prev, [key]: next }))
+    localStorage.setItem(`lumio_integration_${key}`, String(next))
+  }
+
+  function toggleNotif(key: string, val: boolean, setter: (v: boolean) => void) {
+    setter(!val)
+    localStorage.setItem(key, String(!val))
+  }
+
+  // ── Toggle helper ────────────────────────────────────────────────────────
+  function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+    return (
+      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+        <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+      </button>
+    )
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="max-w-3xl space-y-6">
-      {/* Workspace info */}
-      {[
-        { title: 'Workspace', fields: [['Company name', company], ['Plan', 'Lumio Business'], ['Status', 'Active']] },
-        { title: 'Team', fields: [['Members', '1 (you)'], ['Pending invites', '0']] },
-      ].map(section => (
-        <div key={section.title} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{section.title}</p>
-          </div>
-          <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-            {section.fields.map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between px-5 py-3">
-                <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
-                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
 
-      {/* Bulk Data Import */}
+      {/* ── Section 1: Workspace ──────────────────────────────────────────── */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data Import</p>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workspace</p>
         </div>
-        <div className="p-5">
-          <div
-            className="rounded-xl p-6 text-center cursor-pointer transition-colors"
-            style={{ backgroundColor: dragOver ? 'rgba(245,166,35,0.06)' : '#0A0B10', border: `2px dashed ${dragOver ? '#F5A623' : '#1F2937'}` }}
-            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); setUploadFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]) }}
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload size={24} style={{ color: '#F5A623', margin: '0 auto 8px' }} />
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop any files here — Lumio will sort them automatically</p>
-            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>CSV, XLSX, DOCX, PDF, images</p>
-            <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { if (e.target.files) setUploadFiles(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {/* Company name — editable */}
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Company name</span>
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input value={companyNameDraft} onChange={e => setCompanyNameDraft(e.target.value)} className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', width: 200 }} autoFocus onKeyDown={e => e.key === 'Enter' && handleSaveCompanyName()} />
+                <button onClick={handleSaveCompanyName} disabled={savingName} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#0D9488', color: '#fff' }}>{savingName ? '...' : 'Save'}</button>
+                <button onClick={() => { setEditingName(false); setCompanyNameDraft(company) }} className="text-xs px-2 py-1.5 rounded-lg" style={{ color: '#6B7280' }}>Cancel</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{company}</span>
+                <button onClick={() => setEditingName(true)} className="text-xs px-2 py-1 rounded" style={{ color: '#0D9488' }}>Edit</button>
+              </div>
+            )}
           </div>
-          {uploadFiles.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {uploadFiles.map((f, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <span className="text-xs" style={{ color: '#F9FAFB' }}>{f.name}</span>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>{(f.size / 1024).toFixed(0)} KB</span>
-                </div>
-              ))}
-              <button onClick={handleUpload} disabled={uploading} className="w-full py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-                {uploading ? 'Processing...' : 'Process & Import'}
+          {/* Company logo */}
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Company logo</span>
+            <div className="flex items-center gap-3">
+              {logoUrl && <img src={logoUrl} alt="" className="rounded-lg" style={{ width: 32, height: 32, objectFit: 'cover' }} />}
+              <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              <button onClick={() => logoFileRef.current?.click()} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                {logoUrl ? 'Change' : 'Upload'}
               </button>
             </div>
-          )}
+          </div>
+          {/* Read-only fields */}
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Business</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              Manage billing
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Data & Display */}
+      {/* ── Section 2: Team ───────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Members</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE TEAM MEMBER</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} onKeyDown={e => e.key === 'Enter' && handleInvite()} />
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="staff">Staff</option>
+              </select>
+              <button onClick={handleInvite} disabled={inviteSending || !inviteEmail} className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: inviteSent ? '#22C55E' : '#0D9488', color: '#fff', opacity: !inviteEmail ? 0.5 : 1 }}>
+                {inviteSending ? 'Sending...' : inviteSent ? 'Sent!' : 'Send Invite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 3: Data & Display ─────────────────────────────────────── */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data & Display</p>
           <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: demoDataActive ? 'rgba(245,166,35,0.15)' : 'rgba(34,197,94,0.15)', color: demoDataActive ? '#F5A623' : '#22C55E' }}>
-            {demoDataActive ? 'Active' : 'Off'}
+            Demo data: {demoDataActive ? 'Active' : 'Off'}
           </span>
         </div>
-        <div className="px-5 py-4">
-          {demoDataActive ? (
-            <button onClick={handleClearDemo} disabled={clearing} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
-              {clearing ? 'Clearing...' : 'Clear Demo Data'}
-            </button>
-          ) : (
-            <button onClick={handleLoadDemo} disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
-              {loading ? 'Loading...' : 'Load Demo Data'}
-            </button>
-          )}
+        <div className="p-5 space-y-5">
+          {/* Demo data toggle */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DEMO DATA</p>
+            {demoDataActive ? (
+              <button onClick={handleClearDemo} disabled={clearing} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                {clearing ? 'Clearing...' : 'Clear Demo Data'}
+              </button>
+            ) : (
+              <button onClick={handleLoadDemo} disabled={loading} className="w-full py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+                {loading ? 'Loading...' : 'Load Demo Data'}
+              </button>
+            )}
+          </div>
+
+          {/* Data import dropzone */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA IMPORT</p>
+            <div
+              className="rounded-xl p-6 text-center cursor-pointer transition-colors"
+              style={{ backgroundColor: dragOver ? 'rgba(245,166,35,0.06)' : '#0A0B10', border: `2px dashed ${dragOver ? '#F5A623' : '#1F2937'}` }}
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); setUploadFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]) }}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload size={24} style={{ color: '#F5A623', margin: '0 auto 8px' }} />
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop any files here — Lumio will sort them automatically</p>
+              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>CSV, XLSX, DOCX, PDF, images</p>
+              <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { if (e.target.files) setUploadFiles(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+            </div>
+            {uploadFiles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {uploadFiles.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                    <span className="text-xs" style={{ color: '#F9FAFB' }}>{f.name}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{(f.size / 1024).toFixed(0)} KB</span>
+                  </div>
+                ))}
+                <button onClick={handleUpload} disabled={uploading} className="w-full py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+                  {uploading ? 'Processing...' : 'Process & Import'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* CSV templates */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>CSV TEMPLATES</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { label: 'Staff Template', file: '/templates/business_staff.csv' },
+                { label: 'Contacts Template', file: '/templates/business_contacts.csv' },
+                { label: 'Accounts Template', file: '/templates/business_accounts.csv' },
+              ].map(t => (
+                <a key={t.file} href={t.file} download className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#9CA3AF', textDecoration: 'none' }}>
+                  <FileText size={12} /> {t.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Integrations */}
+      {/* ── Section 4: Integrations ───────────────────────────────────────── */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{Object.values(connectedIntegrations).filter(Boolean).length} connected</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
-          {INTEGRATIONS.map(integ => (
-            <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-              <div>
-                <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.name}</p>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p>
+        <div className="p-5 space-y-5">
+          {INTEGRATION_GROUPS.map(group => (
+            <div key={group.label}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>{group.label.toUpperCase()}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {group.items.map(integ => {
+                  const connected = connectedIntegrations[integ.key]
+                  return (
+                    <div key={integ.key} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: connected ? '1px solid rgba(34,197,94,0.3)' : '1px solid #1F2937' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p>
+                        <p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p>
+                      </div>
+                      {connected ? (
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
+                          <button onClick={() => toggleIntegration(integ.key)} className="text-xs px-2.5 py-1 rounded-lg" style={{ color: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                            Disconnect
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => toggleIntegration(integ.key)} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                          Connect
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-                Connect
-              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* AI Morning Briefing */}
+      {/* ── Section 5: AI Morning Briefing ────────────────────────────────── */}
       <BriefingSettings />
 
-      {/* Voice Assistant */}
+      {/* ── Section 6: Voice Assistant ─────────────────────────────────────── */}
       <VoiceSelector />
 
-      {/* World Clock Timezones */}
+      {/* ── Section 7: World Clock ─────────────────────────────────────────── */}
       <TimezoneSelector />
 
-      {/* Dev: Reset onboarding */}
-      {isDev && (
-        <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.2)' }}>
-          <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>DEV TOOLS</p>
-          <button onClick={handleResetOnboarding} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-            Reset Onboarding (re-test flow)
+      {/* ── Section 8: Notifications ──────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔔</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Notifications</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive important updates via email</p></div>
+            <Toggle on={emailNotifs} onToggle={() => toggleNotif('lumio_notif_email', emailNotifs, setEmailNotifs)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
+            <Toggle on={inAppNotifs} onToggle={() => toggleNotif('lumio_notif_inapp', inAppNotifs, setInAppNotifs)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your workspace activity every Monday</p></div>
+            <Toggle on={weeklyDigest} onToggle={() => toggleNotif('lumio_notif_weekly', weeklyDigest, setWeeklyDigest)} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 9: Security ───────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔒</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Security</p>
+          </div>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>PIN code</p><p className="text-xs" style={{ color: '#6B7280' }}>Change your sign-in PIN</p></div>
+            <button onClick={() => setShowPinModal(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              Change PIN
+            </button>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Active sessions</p><p className="text-xs" style={{ color: '#6B7280' }}>1 active session (this device)</p></div>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+              Sign out all others
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 10: Customise Your Workspace ──────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎨</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Customise Your Workspace</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Show or hide tabs, quick actions, and departments</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 space-y-6">
+
+          {/* Dashboard Tabs */}
+          <div>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DASHBOARD TABS</p>
+            <div className="space-y-2">
+              {OVERVIEW_TABS.map(t => {
+                const locked = t.id === 'today'
+                const key = `lumio_tab_${t.id}_visible`
+                const visible = locked || (typeof window !== 'undefined' ? localStorage.getItem(key) !== 'false' : true)
+                return (
+                  <div key={t.id} className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{t.icon}</span>
+                      <span className="text-sm" style={{ color: '#F9FAFB' }}>{t.label}</span>
+                      {locked && <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: '#6B7280', backgroundColor: '#1F2937' }}>Always on</span>}
+                    </div>
+                    <Toggle on={visible} onToggle={() => {
+                      if (locked) return
+                      const next = !visible
+                      localStorage.setItem(key, String(next))
+                      window.dispatchEvent(new Event('lumio-settings-changed'))
+                      setCustomiseKey(k => k + 1)
+                    }} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>QUICK ACTIONS</p>
+            <div className="space-y-2">
+              {QUICK_ACTIONS.map(a => {
+                const key = `lumio_qa_${a.label.toLowerCase().replace(/\s+/g, '')}_visible`
+                const visible = typeof window !== 'undefined' ? localStorage.getItem(key) !== 'false' : true
+                return (
+                  <div key={a.label} className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center gap-2">
+                      <a.icon size={14} style={{ color: '#9CA3AF' }} />
+                      <span className="text-sm" style={{ color: '#F9FAFB' }}>{a.label}</span>
+                    </div>
+                    <Toggle on={visible} onToggle={() => {
+                      const next = !visible
+                      localStorage.setItem(key, String(next))
+                      window.dispatchEvent(new Event('lumio-settings-changed'))
+                      setCustomiseKey(k => k + 1)
+                    }} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Navigation / Departments */}
+          <div>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>NAVIGATION / DEPARTMENTS</p>
+            <div className="space-y-2">
+              {SIDEBAR_ITEMS.map(item => {
+                const locked = item.id === 'overview' || item.id === 'settings'
+                const key = `lumio_nav_${item.id}_visible`
+                const visible = locked || (typeof window !== 'undefined' ? localStorage.getItem(key) !== 'false' : true)
+                return (
+                  <div key={item.id} className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center gap-2">
+                      <item.icon size={14} style={{ color: '#9CA3AF' }} />
+                      <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.label}</span>
+                      {locked && <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: '#6B7280', backgroundColor: '#1F2937' }}>Always on</span>}
+                    </div>
+                    <Toggle on={visible} onToggle={() => {
+                      if (locked) return
+                      const next = !visible
+                      localStorage.setItem(key, String(next))
+                      window.dispatchEvent(new Event('lumio-settings-changed'))
+                      setCustomiseKey(k => k + 1)
+                    }} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── Dev Tools ─────────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(245,166,35,0.04)', border: '1px solid rgba(245,166,35,0.2)' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(245,166,35,0.15)' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🛠️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F5A623' }}>Dev Tools</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 flex flex-wrap gap-2">
+          <button onClick={() => { localStorage.removeItem('onboarding_completed_' + company); localStorage.removeItem('lumio_onboarding_shown'); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+            Reset Onboarding
           </button>
+          <button onClick={() => { localStorage.removeItem(`lumio_welcomed_${typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+            Reset Welcome Screen
+          </button>
+          <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_integration_')).forEach(k => localStorage.removeItem(k)); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+            Reset Integrations
+          </button>
+          <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_notif_')).forEach(k => localStorage.removeItem(k)); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+            Reset Notifications
+          </button>
+          <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_') || k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+            Nuke All localStorage
+          </button>
+          <button onClick={() => console.log(JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k]) => k.startsWith('lumio_') || k.startsWith('workspace_') || k.startsWith('demo_'))), null, 2))} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+            Dump State to Console
+          </button>
+        </div>
+      </div>
+
+      {/* PIN Modal */}
+      {showPinModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowPinModal(false)}>
+          <div className="rounded-xl p-6 w-full max-w-sm" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Change PIN</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Current PIN</label>
+                <input type="password" value={currentPin} onChange={e => setCurrentPin(e.target.value)} maxLength={6} className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', letterSpacing: '0.3em' }} />
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>New PIN</label>
+                <input type="password" value={newPin} onChange={e => setNewPin(e.target.value)} maxLength={6} className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', letterSpacing: '0.3em' }} />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowPinModal(false)} className="flex-1 py-2.5 rounded-lg text-sm" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
+              <button onClick={() => { setShowPinModal(false); setCurrentPin(''); setNewPin('') }} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Save</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1894,6 +2321,12 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    const handler = () => forceUpdate(n => n + 1)
+    window.addEventListener('lumio-settings-changed', handler)
+    return () => window.removeEventListener('lumio-settings-changed', handler)
+  }, [])
 
   const quickActionToasts: Record<string, string> = {
     'Send Email': 'Opening email composer...',
@@ -1935,7 +2368,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1950,8 +2383,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
               <MeetingsToday demoDataActive={demoDataActive} />
             </div>
             <div className="lg:col-span-1 flex flex-col gap-4">
-              <PhotoFrame />
-              <MorningAIPanel />
+              <PhotoFrame demoDataActive={demoDataActive} />
+              <MorningAIPanel demoDataActive={demoDataActive} />
             </div>
           </div>
 
@@ -1995,15 +2428,25 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        <QuickWins />
+        demoDataActive ? <QuickWins /> : (
+          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
+        )
       ) : tab === 'tasks' ? (
-        <DailyTasks />
+        demoDataActive ? <DailyTasks /> : (
+          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
+        )
       ) : tab === 'insights' ? (
-        <Insights />
+        demoDataActive ? <Insights /> : (
+          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
+        )
       ) : tab === 'not-to-miss' ? (
-        <NotToMiss />
+        demoDataActive ? <NotToMiss /> : (
+          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
+        )
       ) : tab === 'team' ? (
-        <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} />
+        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : (
+          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
+        )
       ) : (
         <TabPlaceholder tab={tab} />
       )}
