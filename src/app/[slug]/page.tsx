@@ -2875,7 +2875,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       {showPhoneCall && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowPhoneCall(false)}>
           <div className="rounded-xl p-6 w-full max-w-sm" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Make a Call</h3>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Make a Call</h3>
+            <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your phone system in Settings to enable calling from Lumio. Or dial manually:</p>
             <div className="space-y-3">
               <div>
                 <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Phone number or name</label>
@@ -2894,7 +2895,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowPhoneCall(false)} className="flex-1 py-2.5 rounded-lg text-sm" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
-              <button onClick={() => { onAction(`Calling${phoneNumber ? ' ' + phoneNumber : ''} via ${callVia}...`); setShowPhoneCall(false); setPhoneNumber('') }} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Start Call</button>
+              <button onClick={() => { setShowPhoneCall(false); setPhoneNumber(''); if (onGoSettings) onGoSettings() }} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Connect Phone System →</button>
             </div>
           </div>
         </div>
