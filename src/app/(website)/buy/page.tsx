@@ -534,6 +534,10 @@ export default function CompanyCheckoutPage() {
         // Clear all hasData flags so every page starts empty
         const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
         keys.forEach(k => localStorage.removeItem(k))
+        // Clear demo keys to prevent demo session bleeding into live portal
+        Object.keys(localStorage).filter(k => k.startsWith('demo_')).forEach(k => localStorage.removeItem(k))
+        // Mark as just purchased so live portal shows welcome overlay
+        localStorage.setItem('lumio_just_purchased', 'true')
       }
 
       const targetSlug = data.slug || slug

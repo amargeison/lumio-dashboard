@@ -1992,7 +1992,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       ) : tab === 'not-to-miss' ? (
         <NotToMiss />
       ) : tab === 'team' ? (
-        <TeamPanel />
+        <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
@@ -2065,7 +2065,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         .then(data => {
           if (!data || data.status !== 'active') {
             // Don't boot fresh purchases — session may still be propagating
-            if (justPurchased) { setShowOnboarding(true); return }
+            if (justPurchased) {
+              if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
+                setShowWelcome(true)
+              } else {
+                setShowOnboarding(true)
+              }
+              return
+            }
             router.replace('/trial-ended')
             return
           }
@@ -2090,7 +2097,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           }
           if (data.demo_data_active) setDemoDataActive(true)
           if (!data.onboarding_complete) {
-            console.log('Welcome check — key:', `lumio_welcomed_${slug}`, 'value:', localStorage.getItem(`lumio_welcomed_${slug}`))
             if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
               setShowWelcome(true)
             } else {

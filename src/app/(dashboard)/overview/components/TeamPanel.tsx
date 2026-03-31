@@ -50,14 +50,40 @@ const BIRTHDAYS = [
 
 type SubTab = 'today' | 'orgchart' | 'company'
 
-export default function TeamPanel() {
+export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] } = {}) {
   const [team, setTeam] = useState<TeamMember[]>(TEAM)
   const [filter, setFilter] = useState<string>('all')
   const [subTab, setSubTab] = useState<SubTab>('today')
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedPolicy, setSelectedPolicy] = useState<typeof POLICIES[0] | null>(null)
+  const [lastSynced, setLastSynced] = useState<string>('')
+
+  // Auto-sync directory on load + tab focus + 4hr interval
+  useEffect(() => {
+    function syncDirectory() {
+      // In production this would call /api/directory/sync
+      setLastSynced(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+    }
+    syncDirectory()
+    const interval = setInterval(syncDirectory, 4 * 60 * 60 * 1000)
+    function onVisibility() { if (!document.hidden) syncDirectory() }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisibility) }
+  }, [])
+
+  // Map selected department IDs to display names for filtering
+  const deptNameMap: Record<string, string[]> = {
+    hr: ['HR'], sales: ['Sales'], marketing: ['Marketing'], accounts: ['Finance'],
+    it: ['IT'], operations: ['Operations'], support: ['Support'], success: ['Success'],
+    crm: ['Sales', 'CRM'], overview: ['Executive'], insights: ['Data'],
+  }
+  const activeDeptNames = selectedDepts?.length
+    ? [...new Set(selectedDepts.flatMap(d => deptNameMap[d] || [])), 'Executive']
+    : null
 
   const filtered = team.filter(m => {
+    // First apply department filter from onboarding
+    if (activeDeptNames && !activeDeptNames.includes(m.department)) return false
     if (filter === 'all') return true
     if (filter === 'alerts') return m.alerts > 0
     if (filter === 'away') return m.status !== 'active' && m.status !== 'wfh'
@@ -77,9 +103,10 @@ export default function TeamPanel() {
 
       {/* ═══ TEAM TODAY ═══ */}
       {subTab === 'today' && <>
-        <div className="flex items-center justify-between">
-          <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{team.length} people · {team.filter(m => m.status === 'holiday' || m.status === 'sick').length} out · {team.filter(m => m.alerts > 0).length} with alerts</p></div>
-          <div className="flex gap-1 flex-wrap">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{filtered.length} people{activeDeptNames ? ` (filtered by ${selectedDepts?.length} departments)` : ''} · {team.filter(m => m.status === 'holiday' || m.status === 'sick').length} out · {team.filter(m => m.alerts > 0).length} with alerts</p></div>
+          <div className="flex gap-1 flex-wrap items-center">
+            {lastSynced && <span className="text-[10px] mr-2" style={{ color: '#374151' }}>Last synced {lastSynced}</span>}
             {['all', 'alerts', 'away', 'myteam', 'executive'].map(f => (
               <button key={f} onClick={() => setFilter(f)} className="px-3 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor: filter === f ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: filter === f ? '#fff' : '#6B7280' }}>
                 {f === 'all' ? 'All' : f === 'alerts' ? 'Alerts' : f === 'away' ? 'Out' : f === 'myteam' ? 'My Team' : 'Executive'}
