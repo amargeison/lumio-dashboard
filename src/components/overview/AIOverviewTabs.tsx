@@ -539,10 +539,16 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
   return root
 }
 
-function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string> }) {
+function nodeToStaffRecord(node: OrgNode): StaffRecord {
+  const parts = node.name.split(' ')
+  return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email: `${node.id}@staff` }
+}
+
+function OrgChart({ items, ctx }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string> }) {
   const [editing, setEditing] = useState(false)
   const [overrides, setOverrides] = useState<Record<string, string>>(getReportingOverrides)
   const [movingId, setMovingId] = useState<string | null>(null)
+  const [profileNode, setProfileNode] = useState<OrgNode | null>(null)
   const [, forceUpdate] = useState(0)
 
   const tree = buildHierarchy(items, ctx.userName || 'You', ctx.role || 'Manager')
@@ -555,51 +561,54 @@ function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AICon
     forceUpdate(n => n + 1)
   }
 
-  function handleCancel() {
-    setEditing(false); setMovingId(null)
-    setOverrides(getReportingOverrides())
-  }
+  function handleCancel() { setEditing(false); setMovingId(null); setOverrides(getReportingOverrides()) }
 
-  function OrgNode({ node, depth = 0 }: { node: OrgNode; depth?: number }) {
-    const initials = node.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = node.id === 'root' ? { bg: 'rgba(108,63,197,0.15)', border: 'rgba(108,63,197,0.3)', text: '#A78BFA' } : LEVEL_COLORS[node.level]
+  function OrgNodeView({ node, depth = 0 }: { node: OrgNode; depth?: number }) {
     const isMoving = movingId === node.id
+    const staffRecord = nodeToStaffRecord(node)
 
     return (
       <div className="flex flex-col items-center">
-        {/* Node */}
-        <div className="relative rounded-xl px-4 py-2.5 text-center" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, minWidth: 150, opacity: isMoving ? 0.5 : 1 }}>
-          <div className="flex items-center justify-center gap-2">
-            <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 28, height: 28, backgroundColor: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize: 10, fontWeight: 700 }}>
-              {initials}
-            </div>
-            <div className="text-left min-w-0">
-              <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{node.name}</p>
-              <p className="text-xs truncate" style={{ color: colors.text, fontSize: 10 }}>{node.role}</p>
-            </div>
-            {node.id !== 'root' && <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 6, height: 6, backgroundColor: statusColor['available'] || '#22C55E' }} />}
-          </div>
+        {/* Node — mini EmployeeProfileCard */}
+        <div style={{ opacity: isMoving ? 0.5 : 1, position: 'relative' }}>
+          <EmployeeProfileCard
+            staff={staffRecord}
+            index={0}
+            isCurrentUser={node.id === 'root'}
+            onViewProfile={() => setProfileNode(node)}
+            variant="mini"
+          />
+          {/* Edit mode buttons overlaid below the card */}
           {editing && node.id !== 'root' && (
-            <button onClick={() => setMovingId(movingId === node.id ? null : node.id)} className="mt-1 text-xs px-2 py-0.5 rounded" style={{ backgroundColor: isMoving ? 'rgba(239,68,68,0.15)' : 'rgba(108,63,197,0.15)', color: isMoving ? '#EF4444' : '#A78BFA', border: `1px solid ${isMoving ? 'rgba(239,68,68,0.3)' : 'rgba(108,63,197,0.3)'}`, fontSize: 10 }}>
-              {isMoving ? 'Cancel' : 'Move'}
-            </button>
+            <div className="flex justify-center mt-1">
+              <button onClick={e => { e.stopPropagation(); setMovingId(movingId === node.id ? null : node.id) }} className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: isMoving ? 'rgba(239,68,68,0.15)' : 'rgba(108,63,197,0.15)', color: isMoving ? '#EF4444' : '#A78BFA', border: `1px solid ${isMoving ? 'rgba(239,68,68,0.3)' : 'rgba(108,63,197,0.3)'}` }}>
+                {isMoving ? 'Cancel' : 'Move'}
+              </button>
+            </div>
           )}
           {movingId && movingId !== node.id && editing && (
-            <button onClick={() => handleMove(movingId, node.id)} className="mt-1 text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)', fontSize: 10 }}>
-              Place here
-            </button>
+            <div className="flex justify-center mt-1">
+              <button onClick={e => { e.stopPropagation(); handleMove(movingId, node.id) }} className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)' }}>
+                Place here
+              </button>
+            </div>
           )}
         </div>
 
-        {/* Children */}
+        {/* SVG connecting line + children */}
         {node.children.length > 0 && (
           <>
-            <div style={{ width: 2, height: 16, backgroundColor: '#1F2937' }} />
-            <div className="flex flex-wrap justify-center gap-4">
+            <svg width="2" height="20" className="shrink-0"><line x1="1" y1="0" x2="1" y2="20" stroke="rgba(124,58,237,0.4)" strokeWidth="2" /></svg>
+            {node.children.length > 1 && (
+              <svg width={Math.max(node.children.length * 180, 200)} height="2" className="shrink-0">
+                <line x1={90} y1="1" x2={90 + (node.children.length - 1) * 180} y2="1" stroke="rgba(124,58,237,0.4)" strokeWidth="2" />
+              </svg>
+            )}
+            <div className="flex justify-center gap-5">
               {node.children.map(child => (
                 <div key={child.id} className="flex flex-col items-center">
-                  <div style={{ width: 2, height: 8, backgroundColor: '#1F2937' }} />
-                  <OrgNode node={child} depth={depth + 1} />
+                  <svg width="2" height="12" className="shrink-0"><line x1="1" y1="0" x2="1" y2="12" stroke="rgba(124,58,237,0.4)" strokeWidth="2" /></svg>
+                  <OrgNodeView node={child} depth={depth + 1} />
                 </div>
               ))}
             </div>
@@ -612,9 +621,7 @@ function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AICon
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-xs" style={{ color: '#6B7280' }}>
-          {items.length} team members · hierarchy auto-detected from job titles
-        </p>
+        <p className="text-xs" style={{ color: '#6B7280' }}>{items.length} team members · hierarchy auto-detected from job titles</p>
         {editing ? (
           <div className="flex gap-2">
             <button onClick={handleCancel} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
@@ -628,7 +635,7 @@ function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AICon
       </div>
       <div className="overflow-x-auto">
         <div className="flex justify-center min-w-fit">
-          <OrgNode node={tree} />
+          <OrgNodeView node={tree} />
         </div>
       </div>
       {/* Legend */}
@@ -640,6 +647,16 @@ function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AICon
           </div>
         ))}
       </div>
+
+      {/* Profile modal */}
+      {profileNode && (
+        <ProfileModal
+          staff={nodeToStaffRecord(profileNode)}
+          index={0}
+          isCurrentUser={profileNode.id === 'root'}
+          onClose={() => setProfileNode(null)}
+        />
+      )}
     </div>
   )
 }
@@ -776,5 +793,64 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
         </>
       )}
     </div>
+  )
+}
+
+// ─── Team Info Sticker Cards ─────────────────────────────────────────────────
+
+function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
+  importedStaff: ImportedStaff[]; items: TeamMember[]; ctx: AIContext; onAction?: (msg: string) => void
+}) {
+  const [profileStaff, setProfileStaff] = useState<StaffRecord | null>(null)
+  const [profileIndex, setProfileIndex] = useState(0)
+
+  const currentUserName = (ctx.userName || '').toLowerCase()
+
+  // Build sticker data from imported staff or AI items
+  const staffCards: StaffRecord[] = importedStaff.length > 0
+    ? importedStaff
+    : items.map(m => {
+        const parts = m.name.split(' ')
+        return { first_name: parts[0], last_name: parts.slice(1).join(' '), job_title: m.role, department: m.department, email: '' }
+      })
+
+  function isCurrentUser(s: StaffRecord): boolean {
+    if (!currentUserName) return false
+    const full = [s.first_name, s.last_name].filter(Boolean).join(' ').toLowerCase()
+    return full === currentUserName || (s.first_name?.toLowerCase() === currentUserName)
+  }
+
+  if (staffCards.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-sm" style={{ color: '#6B7280' }}>No team members yet — import staff via Settings.</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {staffCards.map((s, i) => (
+          <EmployeeProfileCard
+            key={s.email || i}
+            staff={s}
+            index={i}
+            isCurrentUser={isCurrentUser(s)}
+            onViewProfile={() => { setProfileStaff(s); setProfileIndex(i) }}
+            onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
+          />
+        ))}
+      </div>
+
+      {profileStaff && (
+        <ProfileModal
+          staff={profileStaff}
+          index={profileIndex}
+          isCurrentUser={isCurrentUser(profileStaff)}
+          onClose={() => setProfileStaff(null)}
+        />
+      )}
+    </>
   )
 }

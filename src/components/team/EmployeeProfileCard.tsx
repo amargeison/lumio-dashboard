@@ -117,20 +117,59 @@ function injectShimmerCSS() {
 // ─── Sticker Card ────────────────────────────────────────────────────────────
 
 export function EmployeeProfileCard({
-  staff, index, isCurrentUser, onViewProfile, onMessage,
+  staff, index, isCurrentUser, onViewProfile, onMessage, variant = 'full',
 }: {
   staff: StaffRecord; index: number; isCurrentUser: boolean
-  onViewProfile: () => void; onMessage?: () => void
+  onViewProfile: () => void; onMessage?: () => void; variant?: 'full' | 'mini'
 }) {
   useEffect(() => { injectShimmerCSS() }, [])
 
   const name = [staff.first_name, staff.last_name].filter(Boolean).join(' ') || 'Unknown'
+  const shortName = staff.first_name ? `${staff.first_name} ${(staff.last_name || '')[0] || ''}`.trim() : name
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const deptColor = getDeptColor(staff.department)
   const empId = getOrCreateId(staff.email || `staff-${index}`, index)
   const profile = getProfiles()[staff.email || ''] || {}
   const filledFacts = FUN_QUESTIONS.filter(q => profile[q.key])
 
+  // ── Mini variant (for org chart) ─────────────────────────────────────────
+  if (variant === 'mini') {
+    return (
+      <div className="lumio-sticker relative rounded-xl overflow-hidden cursor-pointer" style={{ width: 160, transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
+        <div className="lumio-shimmer-border absolute inset-0 rounded-xl" style={{ padding: 1.5 }}>
+          <div className="w-full h-full rounded-[10px]" style={{ backgroundColor: '#111318' }} />
+        </div>
+        <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ height: 4, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
+          {/* Dept badge + You badge */}
+          <div className="flex items-center justify-center gap-1.5 pt-2 px-2">
+            {isCurrentUser && (
+              <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+                <Star size={6} /> You
+              </span>
+            )}
+            <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${deptColor}20`, color: deptColor, border: `1px solid ${deptColor}40` }}>
+              {staff.department || 'Team'}
+            </span>
+          </div>
+          {/* Avatar */}
+          <div className="flex justify-center py-2.5">
+            <div className="flex items-center justify-center rounded-full text-xl font-black" style={{ width: 60, height: 60, backgroundColor: `${deptColor}25`, color: deptColor, border: `2px solid ${deptColor}50` }}>
+              {initials}
+            </div>
+          </div>
+          {/* Name + title + ID */}
+          <div className="text-center px-2 pb-2.5">
+            <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{shortName}</p>
+            <p className="text-[10px] mt-0.5 truncate" style={{ color: '#9CA3AF' }}>{staff.job_title || 'Team Member'}</p>
+            <p className="text-[9px] mt-1" style={{ color: '#4B5563' }}>{empId}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Full variant ─────────────────────────────────────────────────────────
   return (
     <div className="lumio-sticker relative rounded-2xl overflow-hidden cursor-pointer" style={{ transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
       {/* Shimmer border */}
