@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
-import ActivationBanner from '@/components/dashboard/ActivationBanner'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -105,7 +104,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
         <ClearDemoBar />
-        <ActivationBanner />
         <div className="p-4 md:p-6">
           {children}
         </div>
