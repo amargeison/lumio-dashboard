@@ -1598,7 +1598,10 @@ function DeptRedirect({ dept }: { dept: DeptId }) {
   const router = useRouter()
   useEffect(() => {
     const route = DEPT_ROUTES[dept]
-    if (route) router.push(route)
+    if (route) {
+      const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+      router.push(slug ? `/${slug}${route}` : route)
+    }
   }, [dept, router])
   return (
     <div className="flex items-center justify-center py-20">
