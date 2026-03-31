@@ -2094,14 +2094,21 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
       setImportStatus(`Importing ${staff.length} staff...`)
 
+      const token = localStorage.getItem('workspace_session_token') || localStorage.getItem('session_token') || sessionToken || ''
+      console.log('[import-staff] Using token:', token ? 'found (' + token.slice(0, 8) + '...)' : 'MISSING')
+      console.log('[import-staff] Staff count:', staff.length, 'First row:', staff[0])
+
       const res = await fetch('/api/workspace/import-staff', {
         method: 'POST',
-        headers: { 'x-workspace-token': sessionToken, 'Content-Type': 'application/json' },
+        headers: { 'x-workspace-token': token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ staff }),
       })
 
+      console.log('[import-staff] Response status:', res.status)
+      const data = await res.json()
+      console.log('[import-staff] Response body:', data)
+
       if (res.ok) {
-        const data = await res.json()
         // Cache imported staff in localStorage
         const existing = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
         localStorage.setItem('lumio_staff_imported', JSON.stringify([...existing, ...staff]))
