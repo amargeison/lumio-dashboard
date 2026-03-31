@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ accounts: data || [], type: 'schools' })
   }
 
-  let query = supabase.from('businesses').select('id, company_name, slug, plan, status, onboarding_complete, demo_data_active, created_at, admin_notes, owner_email, billing_type')
+  let query = supabase.from('businesses').select('id, company_name, slug, plan, status, onboarding_complete, onboarding_completed, demo_data_active, created_at, admin_notes, owner_email, owner_name, billing_type, welcome_email_sent')
   if (search) query = query.ilike('company_name', `%${search}%`)
   const { data } = await query.order('created_at', { ascending: false }).limit(100)
   return NextResponse.json({ accounts: data || [], type: 'business' })

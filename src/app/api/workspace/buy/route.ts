@@ -8,7 +8,7 @@ import { logEmail } from '@/lib/emails/log'
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 }
 
@@ -43,19 +43,27 @@ export async function POST(req: NextRequest) {
   const activationToken = crypto.randomUUID()
   const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
+  const ownerName = `${firstName || ''} ${lastName || ''}`.trim() || email.split('@')[0] || 'User'
+
+  console.log('[workspace/buy] Creating business:', { slug, companyName: companyName.trim(), email, ownerName, plan: plan || 'starter' })
+
   const { data: business, error: createError } = await supabase
     .from('businesses')
     .insert({
       company_name: companyName.trim(),
       slug,
       owner_email: email,
-      owner_name: `${firstName || ''} ${lastName || ''}`.trim() || null,
+      owner_name: ownerName,
       status: 'active',
-      plan: plan || 'growth',
+      plan: plan || 'starter',
       onboarding_complete: false,
+      onboarding_completed: false,
+      demo_data_active: false,
+      welcome_email_sent: false,
       activation_token: activationToken,
       activation_expires_at: activationExpiresAt,
       activated_at: null,
+      created_at: new Date().toISOString(),
     })
     .select('id, slug')
     .single()
@@ -81,8 +89,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Send welcome + activation emails (fire-and-forget)
-  sendWelcomeEmail(business.id, business.slug, `${firstName || ''} ${lastName || ''}`.trim(), email).catch(console.error)
-  sendActivationEmail(business.id, business.slug, `${firstName || ''} ${lastName || ''}`.trim(), email, activationToken).catch(console.error)
+  console.log('[workspace/buy] Sending welcome + activation emails to:', email)
+  sendWelcomeEmail(business.id, business.slug, ownerName, email).catch(err => console.error('[workspace/buy] Welcome email error:', err))
+  sendActivationEmail(business.id, business.slug, ownerName, email, activationToken).catch(err => console.error('[workspace/buy] Activation email error:', err))
 
   return NextResponse.json({
     success: true,
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function sendWelcomeEmail(id: string, slug: string, ownerName: string, ownerEmail: string) {
+  console.log('[workspace/buy] sendWelcomeEmail called for:', ownerEmail, 'ENV:', process.env.NEXT_PUBLIC_ENV, 'NODE_ENV:', process.env.NODE_ENV)
   const firstName = ownerName?.split(' ')[0] || 'there'
   const { error } = await sendEmail({
     from: 'Lumio <hello@lumiocms.com>',

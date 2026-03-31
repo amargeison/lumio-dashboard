@@ -550,7 +550,9 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
 
 function nodeToStaffRecord(node: OrgNode): StaffRecord {
   const parts = node.name.split(' ')
-  return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email: `${node.id}@staff` }
+  // Preserve real email for photo lookup — node.id is the email for imported staff
+  const email = node.id.includes('@') && !node.id.endsWith('@staff') ? node.id : undefined
+  return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email }
 }
 
 function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string>; importedStaff?: ImportedStaff[] }) {
