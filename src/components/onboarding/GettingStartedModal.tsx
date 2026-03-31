@@ -1,10 +1,44 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import Image from 'next/image'
-import { Upload, Users, Sparkles, X, Check, FileText, Loader2, Mail, ArrowRight, ArrowLeft, Play, Link2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Upload, Check, Loader2, ArrowRight, ArrowLeft, X, Mail } from 'lucide-react'
 
-type Phase = 'welcome' | 'options' | 'upload' | 'it-team' | 'connect-apps' | 'demo-loading' | 'done'
+const S: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '10px 14px', fontSize: 14, outline: 'none', width: '100%' }
+
+const DEPARTMENTS = [
+  { id: 'hr', icon: '👥', name: 'HR & People', desc: 'Onboarding, leave, reviews' },
+  { id: 'sales', icon: '📈', name: 'Sales & CRM', desc: 'Pipeline, deals, forecasting' },
+  { id: 'accounts', icon: '💰', name: 'Finance & Accounts', desc: 'Invoices, payroll, reporting' },
+  { id: 'marketing', icon: '📣', name: 'Marketing', desc: 'Campaigns, content, leads' },
+  { id: 'support', icon: '🎧', name: 'Customer Support', desc: 'Tickets, SLAs, CSAT' },
+  { id: 'success', icon: '🏆', name: 'Customer Success', desc: 'Health scores, renewals' },
+  { id: 'operations', icon: '⚙️', name: 'Operations', desc: 'Procurement, processes' },
+  { id: 'it', icon: '💻', name: 'IT & Systems', desc: 'Assets, provisioning, security' },
+  { id: 'legal', icon: '⚖️', name: 'Legal & Compliance', desc: 'Contracts, GDPR, policies' },
+  { id: 'executive', icon: '🏛️', name: 'Executive', desc: 'Board reports, OKRs, strategy' },
+  { id: 'projects', icon: '📋', name: 'Projects', desc: 'Sprints, roadmap, tasks' },
+  { id: 'partners', icon: '🤝', name: 'Partners', desc: 'Referrals, integrations' },
+]
+
+const TOOLS = [
+  { id: 'notion', icon: '📝', name: 'Notion' },
+  { id: 'hubspot', icon: '🟠', name: 'HubSpot' },
+  { id: 'xero', icon: '💙', name: 'Xero' },
+  { id: 'slack', icon: '💜', name: 'Slack' },
+  { id: 'microsoft', icon: '🔷', name: 'Microsoft 365' },
+  { id: 'google', icon: '🔵', name: 'Google Workspace' },
+  { id: 'salesforce', icon: '☁️', name: 'Salesforce' },
+  { id: 'zendesk', icon: '🟢', name: 'Zendesk' },
+  { id: 'pipedrive', icon: '🟤', name: 'Pipedrive' },
+  { id: 'quickbooks', icon: '🟩', name: 'QuickBooks' },
+  { id: 'jira', icon: '🔷', name: 'Jira' },
+  { id: 'github', icon: '⚫', name: 'GitHub' },
+  { id: 'intercom', icon: '🔵', name: 'Intercom' },
+  { id: 'freshdesk', icon: '🟢', name: 'Freshdesk' },
+  { id: 'none', icon: '➖', name: 'None yet' },
+]
+
+type Step = 'personalise' | 'departments' | 'tools' | 'invite' | 'building'
 
 interface Props {
   companyName: string
@@ -14,344 +48,163 @@ interface Props {
 }
 
 export default function GettingStartedModal({ companyName, ownerEmail, sessionToken, onComplete }: Props) {
-  const [phase, setPhase] = useState<Phase>('welcome')
-  const [files, setFiles] = useState<File[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [uploadResult, setUploadResult] = useState<string[]>([])
-  const [itEmail, setItEmail] = useState('')
-  const [itSending, setItSending] = useState(false)
-  const [itSent, setItSent] = useState(false)
+  const [step, setStep] = useState<Step>('personalise')
+  const [name, setName] = useState(companyName || '')
+  const [logoPreview, setLogoPreview] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [selectedDepts, setSelectedDepts] = useState<string[]>(['hr', 'sales', 'accounts'])
+  const [selectedTools, setSelectedTools] = useState<string[]>([])
+  const [inviteEmails, setInviteEmails] = useState(['', '', '', '', ''])
+  const [buildProgress, setBuildProgress] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
-  const [dragOver, setDragOver] = useState(false)
+  const domain = ownerEmail?.split('@')[1] || 'company.com'
+  const initials = name ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'LC'
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)])
-  }, [])
+  function toggleDept(id: string) { setSelectedDepts(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]) }
+  function toggleTool(id: string) { setSelectedTools(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]) }
 
-  async function handleProcessUpload() {
-    if (!files.length) return
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      files.forEach(f => fd.append('files', f))
-      fd.append('session_token', sessionToken)
-      const res = await fetch('/api/onboarding/process-data', { method: 'POST', body: fd })
-      if (res.ok) {
-        const data = await res.json()
-        setUploadResult(data.summary || ['Files processed successfully'])
-      }
-    } catch { setUploadResult(['Upload complete — files will be processed shortly']) }
-    setUploading(false)
-    setPhase('done')
+  function handleLogoChange(file: File) {
+    setLogoFile(file)
+    const reader = new FileReader()
+    reader.onload = e => setLogoPreview(e.target?.result as string)
+    reader.readAsDataURL(file)
   }
 
-  async function handleSendIT() {
-    setItSending(true)
-    try {
-      await fetch('/api/onboarding/notify-it', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerEmail, itEmail, companyName, sessionToken }),
-      })
-    } catch {}
-    setItSent(true)
-    setItSending(false)
-    setTimeout(() => setPhase('done'), 1500)
+  async function handleBuild() {
+    setStep('building')
+    for (const p of [20, 40, 60, 80, 100]) {
+      await new Promise(r => setTimeout(r, 600))
+      setBuildProgress(p)
+    }
+    if (sessionToken) {
+      try {
+        if (logoFile) {
+          const fd = new FormData(); fd.append('logo', logoFile)
+          await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': sessionToken }, body: fd }).catch(() => {})
+        }
+        await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-workspace-token': sessionToken } }).catch(() => {})
+        if (name !== companyName) { localStorage.setItem('lumio_company_name', name); localStorage.setItem('workspace_company_name', name) }
+        localStorage.setItem('lumio_selected_departments', JSON.stringify(selectedDepts))
+        localStorage.setItem('lumio_selected_tools', JSON.stringify(selectedTools))
+        const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']
+        ALL.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
+        localStorage.setItem('lumio_demo_active', 'true')
+        await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+      } catch { /* continue */ }
+    }
+    await new Promise(r => setTimeout(r, 800))
+    onComplete()
   }
 
-  async function handleLoadDemo() {
-    setPhase('demo-loading')
-    try {
-      await fetch('/api/onboarding/load-demo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-workspace-token': sessionToken },
-      })
-    } catch {}
-    // Set localStorage flags so department pages show content immediately
-    localStorage.setItem('lumio_demo_active', 'true')
-    const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
-    allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
-    setPhase('done')
-  }
+  const stepNum = step === 'personalise' ? 1 : step === 'departments' ? 2 : step === 'tools' ? 3 : step === 'invite' ? 4 : 5
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto"
-      style={{ background: 'radial-gradient(ellipse at 50% 30%, #1a1838 0%, #0F1629 50%, #080c1a 100%)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+      <div className="w-full rounded-2xl flex flex-col" style={{ maxWidth: 640, maxHeight: '92vh', backgroundColor: '#111318', border: '1px solid #1F2937' }}>
 
-      <div className="w-full max-w-3xl mx-auto px-6 py-12">
-
-        {/* ── WELCOME PHASE ── */}
-        {phase === 'welcome' && (
-          <div className="flex flex-col items-center text-center" style={{ animation: 'fadeIn 0.4s ease' }}>
-            {/* Logo */}
-            <div className="mb-8">
-              <Image src="/lumio-logo-primary.png" alt="Lumio" width={320} height={160} style={{ width: 180, height: 'auto' }} />
+        {step !== 'building' && (
+          <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <p className="text-xs font-semibold tracking-widest" style={{ color: '#0D9488' }}>STEP {stepNum} OF 4</p>
+              <div className="flex gap-1 mt-2">{[1,2,3,4].map(i => <div key={i} className="h-1 rounded-full" style={{ width: 40, backgroundColor: i <= stepNum ? '#0D9488' : '#1F2937' }} />)}</div>
             </div>
+            <button onClick={onComplete} style={{ color: '#4B5563' }}><X size={16} /></button>
+          </div>
+        )}
 
-            {/* Heading */}
-            <h1 className="text-4xl font-black mb-3" style={{ color: '#F9FAFB' }}>Welcome to Lumio</h1>
-            <p className="text-lg mb-12" style={{ color: '#6B7280' }}>Let&apos;s get your workspace set up in 2 minutes</p>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
 
-            {/* Video cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full mb-10">
-              <div className="rounded-2xl overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]"
-                style={{ background: 'linear-gradient(135deg, #3d2a0f, #1a1520)', border: '1px solid rgba(245,166,35,0.25)', minHeight: 225 }}>
-                <div className="flex flex-col items-center justify-center h-full p-8 gap-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center relative"
-                    style={{ backgroundColor: 'rgba(245,166,35,0.2)', border: '2px solid rgba(245,166,35,0.4)' }}>
-                    <Play size={28} style={{ color: '#F5A623', marginLeft: 3 }} fill="#F5A623" />
-                    <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: 'rgba(245,166,35,0.1)' }} />
+          {step === 'personalise' && (
+            <div className="space-y-6">
+              <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Let&apos;s personalise your workspace</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>You can update everything later in Settings.</p></div>
+              <div><label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Company Name</label><input value={name} onChange={e => setName(e.target.value)} style={S} placeholder="Your company" /></div>
+              <div>
+                <label className="text-xs font-semibold block mb-2" style={{ color: '#9CA3AF' }}>Logo (optional)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ backgroundColor: logoPreview ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
+                    {logoPreview ? <img src={logoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="text-xl font-bold">{initials}</span>}
                   </div>
                   <div>
-                    <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>Getting Started with Lumio</p>
-                    <p className="text-sm mt-1" style={{ color: '#F5A623' }}>2 min intro</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]"
-                style={{ backgroundColor: '#111318', border: '1px solid rgba(245,166,35,0.2)', minHeight: 225 }}>
-                <div className="flex flex-col items-center justify-center h-full p-8 gap-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center relative"
-                    style={{ backgroundColor: 'rgba(245,166,35,0.1)', border: '2px solid rgba(245,166,35,0.25)' }}>
-                    <Play size={28} style={{ color: '#F5A623', marginLeft: 3 }} fill="#F5A623" />
-                    <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: 'rgba(245,166,35,0.08)', animationDelay: '0.5s' }} />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>Getting the Most Out of Lumio</p>
-                    <p className="text-sm mt-1" style={{ color: '#F5A623' }}>2 min tips &amp; tricks</p>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) handleLogoChange(e.target.files[0]) }} />
+                    <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #374151' }}><Upload size={14} /> Upload</button>
+                    <p className="text-xs mt-1" style={{ color: '#4B5563' }}>PNG, JPG or SVG</p>
                   </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 w-full mb-8">
-              <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
-              <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Ready to set up your workspace?</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+          {step === 'departments' && (
+            <div className="space-y-4">
+              <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Which departments matter to you?</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Pick at least 3. Your workspace will be seeded with realistic data for each one.</p></div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{DEPARTMENTS.map(d => {
+                const sel = selectedDepts.includes(d.id)
+                return (<button key={d.id} onClick={() => toggleDept(d.id)} className="flex items-center gap-3 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: sel ? 'rgba(13,148,136,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${sel ? 'rgba(13,148,136,0.5)' : '#1F2937'}` }}>
+                  <span className="text-xl">{d.icon}</span>
+                  <div className="min-w-0"><p className="text-xs font-semibold truncate" style={{ color: sel ? '#F9FAFB' : '#9CA3AF' }}>{d.name}</p><p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{d.desc}</p></div>
+                  {sel && <Check size={14} style={{ color: '#0D9488', marginLeft: 'auto', flexShrink: 0 }} />}
+                </button>)
+              })}</div>
+              <p className="text-xs" style={{ color: '#4B5563' }}>{selectedDepts.length} selected</p>
             </div>
+          )}
 
-            {/* CTA */}
-            <button onClick={() => setPhase('options')}
-              className="w-full py-4 rounded-xl text-lg font-bold transition-all hover:opacity-90 hover:scale-[1.01]"
-              style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-              Get Started <ArrowRight size={18} className="inline ml-1" />
-            </button>
-          </div>
-        )}
-
-        {/* ── OPTIONS PHASE ── */}
-        {phase === 'options' && (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <button onClick={() => setPhase('welcome')} className="flex items-center gap-1 text-sm mb-8" style={{ color: '#6B7280' }}>
-              <ArrowLeft size={14} /> Back
-            </button>
-
-            <h2 className="text-2xl font-black mb-2 text-center" style={{ color: '#F9FAFB' }}>How would you like to start?</h2>
-            <p className="text-sm mb-8 text-center" style={{ color: '#6B7280' }}>Choose one to get going — you can always change this later in Settings</p>
-
-            <div className="flex flex-col gap-4">
-              {[
-                { icon: '📤', title: 'Upload Your Own Data', desc: 'Import your files, spreadsheets, and documents', action: () => setPhase('upload') },
-                { icon: '🔗', title: 'Connect Your Apps', desc: 'Sync Office 365, Slack, Google and more automatically', action: () => setPhase('connect-apps') },
-                { icon: '👥', title: 'Work With Your IT Team', desc: "We'll send your IT team full setup instructions", action: () => setPhase('it-team') },
-                { icon: '✨', title: 'Explore With Demo Data', desc: 'Load sample data and explore — clear it any time', action: handleLoadDemo },
-              ].map(opt => (
-                <button key={opt.title} onClick={opt.action}
-                  className="flex items-center gap-5 rounded-xl px-6 py-5 text-left transition-all hover:scale-[1.01]"
-                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#F5A623'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1F2937'}>
-                  <span className="text-4xl flex-shrink-0" style={{ width: 60, textAlign: 'center' }}>{opt.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>{opt.title}</p>
-                    <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>{opt.desc}</p>
-                  </div>
-                  <ArrowRight size={20} style={{ color: '#4B5563', flexShrink: 0 }} />
-                </button>
-              ))}
+          {step === 'tools' && (
+            <div className="space-y-4">
+              <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>What tools do you use today?</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>We&apos;ll show you how Lumio connects to what you already have. Skip if not sure.</p></div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">{TOOLS.map(t => {
+                const sel = selectedTools.includes(t.id)
+                return (<button key={t.id} onClick={() => toggleTool(t.id)} className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all" style={{ backgroundColor: sel ? 'rgba(108,63,197,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${sel ? 'rgba(108,63,197,0.5)' : '#1F2937'}` }}>
+                  <span className="text-lg">{t.icon}</span>
+                  <span className="text-xs font-medium truncate w-full text-center" style={{ color: sel ? '#A78BFA' : '#9CA3AF' }}>{t.name}</span>
+                </button>)
+              })}</div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── UPLOAD PHASE ── */}
-        {phase === 'upload' && (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <button onClick={() => setPhase('options')} className="flex items-center gap-1 text-sm mb-8" style={{ color: '#6B7280' }}>
-              <ArrowLeft size={14} /> Back
-            </button>
-
-            <h2 className="text-2xl font-black mb-6 text-center" style={{ color: '#F9FAFB' }}>Upload Your Data</h2>
-
-            <div
-              className="rounded-2xl p-12 text-center cursor-pointer transition-colors"
-              style={{
-                backgroundColor: dragOver ? 'rgba(245,166,35,0.06)' : '#111318',
-                border: `2px dashed ${dragOver ? '#F5A623' : '#1F2937'}`,
-              }}
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload size={40} style={{ color: '#F5A623', margin: '0 auto 16px' }} />
-              <p className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Drop any files here</p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>Lumio will work out where everything goes</p>
-              <p className="text-xs mt-3" style={{ color: '#4B5563' }}>CSV, XLSX, DOCX, PDF, images — anything</p>
-              <input ref={fileRef} type="file" multiple className="hidden"
-                onChange={e => { if (e.target.files) setFiles(prev => [...prev, ...Array.from(e.target.files!)]) }} />
-            </div>
-
-            {files.length > 0 && (
-              <div className="mt-5 space-y-2">
-                {files.map((f, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                    <div className="flex items-center gap-3">
-                      <FileText size={16} style={{ color: '#F5A623' }} />
-                      <span className="text-sm" style={{ color: '#F9FAFB' }}>{f.name}</span>
-                    </div>
-                    <span className="text-xs" style={{ color: '#6B7280' }}>{(f.size / 1024).toFixed(0)} KB</span>
-                  </div>
-                ))}
-                <button onClick={handleProcessUpload} disabled={uploading}
-                  className="w-full py-4 rounded-xl text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50 mt-4"
-                  style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-                  {uploading ? <><Loader2 size={16} className="inline animate-spin mr-2" /> Processing...</> : 'Process & Import'}
-                </button>
+          {step === 'invite' && (
+            <div className="space-y-4">
+              <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Invite your team</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everyone gets their own magic link. Optional — you can do this later.</p></div>
+              <div className="space-y-2">{inviteEmails.map((email, i) => (<input key={i} value={email} onChange={e => { const next = [...inviteEmails]; next[i] = e.target.value; setInviteEmails(next) }} placeholder={`colleague${i + 1}@${domain}`} style={S} />))}</div>
+              <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)' }}>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}><Mail size={11} className="inline mr-1" style={{ color: '#0D9488' }} />Each invited person gets an email with a magic link to access the workspace instantly.</p>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ── IT TEAM PHASE ── */}
-        {phase === 'it-team' && (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <button onClick={() => setPhase('options')} className="flex items-center gap-1 text-sm mb-8" style={{ color: '#6B7280' }}>
-              <ArrowLeft size={14} /> Back
-            </button>
-
-            <div className="max-w-md mx-auto text-center">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: 'rgba(245,166,35,0.12)' }}>
-                <Mail size={28} style={{ color: '#F5A623' }} />
-              </div>
-              <h2 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Send instructions to your IT team</h2>
-              <p className="text-sm mb-8" style={{ color: '#6B7280' }}>They&apos;ll receive everything they need to connect your systems to Lumio.</p>
-
-              <div className="space-y-4 text-left">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>Your email</label>
-                  <input type="email" value={ownerEmail} readOnly className="w-full rounded-xl px-4 py-3 text-sm"
-                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#6B7280' }} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>IT team email</label>
-                  <input type="email" value={itEmail} onChange={e => setItEmail(e.target.value)} placeholder="it@yourcompany.com"
-                    className="w-full rounded-xl px-4 py-3 text-sm"
-                    style={{ backgroundColor: '#111318', border: '1px solid #374151', color: '#F9FAFB' }} />
-                </div>
-              </div>
-
-              <button onClick={handleSendIT} disabled={itSending || itSent}
-                className="w-full py-4 rounded-xl text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50 mt-6"
-                style={{ backgroundColor: itSent ? '#22C55E' : '#F5A623', color: '#0A0B10' }}>
-                {itSent ? <><Check size={16} className="inline mr-2" /> Sent!</> : itSending ? 'Sending...' : 'Send Instructions'}
-              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── CONNECT APPS PHASE ── */}
-        {phase === 'connect-apps' && (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <button onClick={() => setPhase('options')} className="flex items-center gap-1 text-sm mb-8" style={{ color: '#6B7280' }}>
-              <ArrowLeft size={14} /> Back
-            </button>
-
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: 'rgba(245,166,35,0.12)' }}>
-                <Link2 size={28} style={{ color: '#F5A623' }} />
+          {step === 'building' && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Loader2 size={40} className="animate-spin mb-6" style={{ color: '#0D9488' }} />
+              <h2 className="text-xl font-bold mb-1" style={{ color: '#F9FAFB' }}>Building your workspace...</h2>
+              <p className="text-sm mb-8" style={{ color: '#9CA3AF' }}>This takes about 3 seconds</p>
+              <div className="w-full max-w-xs space-y-3">
+                {[{ label: 'Provisioning your workspace', t: 20 }, { label: 'Loading workflow library', t: 40 }, { label: 'Seeding demo data', t: 60 }, { label: 'Configuring selected departments', t: 80 }, { label: 'Connecting AI engine', t: 100 }].map((item, i) => {
+                  const done = buildProgress >= item.t
+                  return (<div key={i} className="flex items-center gap-3 text-left">
+                    <span className="text-xs font-mono w-5 shrink-0" style={{ color: '#4B5563' }}>{String(i + 1).padStart(2, '0')}</span>
+                    {done ? <Check size={14} style={{ color: '#0D9488' }} /> : <Loader2 size={14} className="animate-spin" style={{ color: '#374151' }} />}
+                    <span className="text-sm" style={{ color: done ? '#0D9488' : '#6B7280' }}>{item.label}{done ? '' : '...'}</span>
+                  </div>)
+                })}
               </div>
-              <h2 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Connect Your Apps</h2>
-              <p className="text-sm" style={{ color: '#6B7280' }}>Sync your existing tools so Lumio can pull in your data automatically</p>
             </div>
+          )}
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {[
-                { name: 'Office 365', icon: '📧', color: '#2563EB', desc: 'Email, Calendar, Teams' },
-                { name: 'Slack', icon: '💬', color: '#7C3AED', desc: 'Messages & channels' },
-                { name: 'Google Workspace', icon: '🔵', color: '#DC2626', desc: 'Gmail, Drive, Calendar' },
-              ].map(app => (
-                <div key={app.name} className="rounded-xl p-5 flex flex-col items-center text-center gap-3"
-                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <span className="text-3xl">{app.icon}</span>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{app.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{app.desc}</p>
-                  </div>
-                  <button
-                    className="w-full py-2 rounded-lg text-xs font-semibold relative overflow-hidden"
-                    style={{ backgroundColor: `${app.color}20`, color: app.color, border: `1px solid ${app.color}40` }}
-                    onClick={() => {}}
-                  >
-                    Coming Soon
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={onComplete}
-              className="w-full text-center text-sm font-medium py-3 transition-colors"
-              style={{ color: '#F5A623' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#FBBF24' }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#F5A623' }}
-            >
-              Configure all later in Settings →
+        {step !== 'building' && (
+          <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+            {step !== 'personalise' ? (
+              <button onClick={() => { if (step === 'departments') setStep('personalise'); else if (step === 'tools') setStep('departments'); else if (step === 'invite') setStep('tools') }} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#9CA3AF' }}><ArrowLeft size={14} /> Back</button>
+            ) : <div />}
+            <button onClick={() => { if (step === 'personalise') setStep('departments'); else if (step === 'departments') setStep('tools'); else if (step === 'tools') setStep('invite'); else if (step === 'invite') handleBuild() }}
+              disabled={step === 'departments' && selectedDepts.length < 3}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: step === 'departments' && selectedDepts.length < 3 ? 0.5 : 1 }}>
+              {step === 'invite' ? 'Build my workspace' : 'Next'} <ArrowRight size={14} />
             </button>
           </div>
         )}
-
-        {/* ── DEMO LOADING PHASE ── */}
-        {phase === 'demo-loading' && (
-          <div className="flex flex-col items-center justify-center py-20 text-center" style={{ animation: 'fadeIn 0.3s ease' }}>
-            <Loader2 size={40} style={{ color: '#F5A623' }} className="animate-spin mb-6" />
-            <p className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Loading sample data...</p>
-            <p className="text-sm" style={{ color: '#6B7280' }}>This takes a few seconds</p>
-          </div>
-        )}
-
-        {/* ── DONE PHASE ── */}
-        {phase === 'done' && (
-          <div className="flex flex-col items-center justify-center py-16 text-center" style={{ animation: 'fadeIn 0.3s ease' }}>
-            <div className="text-6xl mb-6">🎉</div>
-            <h2 className="text-3xl font-black mb-3" style={{ color: '#F9FAFB' }}>You&apos;re all set!</h2>
-            {uploadResult.length > 0 && (
-              <div className="rounded-xl p-5 text-left mb-6 w-full max-w-md" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                {uploadResult.map((s, i) => (
-                  <p key={i} className="text-sm mb-1" style={{ color: '#9CA3AF' }}>{s}</p>
-                ))}
-              </div>
-            )}
-            <button onClick={onComplete}
-              className="px-10 py-4 rounded-xl text-lg font-bold transition-all hover:opacity-90 hover:scale-[1.01]"
-              style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-              Continue to your portal <ArrowRight size={18} className="inline ml-1" />
-            </button>
-          </div>
-        )}
-
       </div>
-
-      {/* Fade-in animation */}
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

@@ -31,6 +31,7 @@ import PerformanceReviewModal, { type PerformanceReviewData } from '@/components
 import ConvertModal from '@/app/(demo-workspace)/components/ConvertModal'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
+import DeptInfoModal from '@/components/DeptInfoModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Set Alert',        tooltip: 'Create a metric alert — notify when a threshold is hit',        icon: AlertCircle },
     { label: 'Share Dashboard',  tooltip: 'Generate a shareable link to this dashboard view',              icon: Users     },
     { label: 'Dept Insights',    tooltip: 'View AI-generated insights for Insights',                       icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   hr:         [
     { label: 'New Starter',        tooltip: 'Trigger the full onboarding workflow for a new hire',         icon: UserPlus  },
@@ -97,6 +99,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',       icon: FileText  },
     { label: 'Book Contractor',    tooltip: 'Book a contractor or temp worker for a project',              icon: Users     },
     { label: 'Dept Insights',      tooltip: 'View AI-generated insights for HR & People',                  icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   accounts:   [
     { label: 'Chase Invoice',     tooltip: 'Send payment reminders for all overdue invoices',              icon: Receipt     },
@@ -106,6 +109,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Xero Sync',         tooltip: 'Trigger a manual sync with Xero accounting',                  icon: RotateCcw   },
     { label: 'Run Payroll',       tooltip: 'Process this month\'s payroll run',                            icon: Zap         },
     { label: 'Dept Insights',     tooltip: 'View AI-generated insights for Accounts',                     icon: BarChart3   },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   sales:      [
     { label: 'New Deal',       tooltip: 'Add a new deal and start the qualification workflow',             icon: TrendingUp},
@@ -114,6 +118,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Log Call',       tooltip: 'Log a call with a prospect or lead',                             icon: FileText  },
     { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Sales',                           icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   crm:        [
     { label: 'Log Call',       tooltip: 'Log a call against a customer account',                          icon: FileText  },
@@ -122,6 +127,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send NPS',       tooltip: 'Send an NPS survey to selected customers',                       icon: Send      },
     { label: 'Account Review', tooltip: 'Schedule an account review meeting',                             icon: Calendar  },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for CRM',                             icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   marketing:  [
     { label: 'New Campaign',   tooltip: 'Create a multi-step email or ad campaign',                        icon: Megaphone },
@@ -130,6 +136,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'A/B Test',       tooltip: 'Set up an A/B test on email subject lines or ad copy',            icon: BarChart2 },
     { label: 'Email Blast',    tooltip: 'Send a one-off broadcast to a selected audience segment',         icon: Send      },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Marketing',                       icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   trials:     [
     { label: 'Admin Portal',        tooltip: 'Open the admin portal to manage trial workspaces',              icon: Users       },
@@ -140,6 +147,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Day 3 Email',    tooltip: 'Send the Day 3 check-in email to active trials',                icon: Send        },
     { label: 'Send Day 7 Email',    tooltip: 'Send the Day 7 engagement email to active trials',              icon: Send        },
     { label: 'Dept Insights',       tooltip: 'View AI-generated insights for Trials',                         icon: BarChart3   },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   operations: [
     { label: 'New PO',         tooltip: 'Raise a new purchase order and send to a supplier',              icon: Package   },
@@ -150,6 +158,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Create Wiki',    tooltip: 'Start a new internal wiki page for your team',                   icon: FileText  },
     { label: 'Create FAQ',     tooltip: 'Build a new FAQ document for staff or customers',                icon: Hash      },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Operations',                      icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   support:    [
     { label: 'New Ticket',     tooltip: 'Open a new support ticket and assign it to the queue',           icon: Plus      },
@@ -158,6 +167,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'SLA Report',     tooltip: 'Generate this week\'s SLA compliance report',                    icon: FileText  },
     { label: 'Knowledge Article', tooltip: 'Create a new article in the support knowledge base',          icon: FileText  },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Support',                         icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   success:    [
     { label: 'Health Check',   tooltip: 'Run the automated health score calculation for all accounts',    icon: Star      },
@@ -166,6 +176,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Expansion Proposal', tooltip: 'Create an upsell proposal based on usage data',             icon: TrendingUp},
     { label: 'NPS Survey',     tooltip: 'Send an NPS survey to a selected cohort of customers',           icon: Send      },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Customer Success',                icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   it:         [
     { label: 'New Device',     tooltip: 'Start the device provisioning workflow for a new hire',          icon: Monitor   },
@@ -174,6 +185,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Security Alert', tooltip: 'Log a security incident and notify the security team',           icon: AlertCircle },
     { label: 'System Update',  tooltip: 'Schedule and push a system update to managed devices',           icon: ArrowRight},
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for IT & Systems',                    icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   workflows:  [
     { label: 'New Workflow',   tooltip: 'Start building a new automation workflow from a template',       icon: Plus      },
@@ -181,16 +193,20 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Test Run',       tooltip: 'Run a selected workflow against test data',                      icon: Play      },
     { label: 'Schedule',       tooltip: 'Set or update the schedule for a workflow trigger',              icon: Calendar  },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Workflows Library',               icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   settings:   [],
   partners:   [
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Partners',                        icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   strategy:   [
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Strategy',                        icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   projects:   [
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Projects',                        icon: BarChart3 },
+  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
 }
 
@@ -1984,8 +2000,9 @@ function HRView({ company }: { company: string }) {
             { label: 'Send Contract', icon: FileText },
             { label: 'Book Contractor', icon: Handshake },
             { label: 'Dept Insights', icon: BarChart3 },
+            { label: 'Dept Info', icon: Users },
           ].map(a => (
-            <button key={a.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            <button key={a.label} onClick={() => fireToast(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               <a.icon size={12} />{a.label}
             </button>
@@ -2068,8 +2085,8 @@ function AccountsView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Chase Invoice',i:Receipt},{l:'Raise Invoice',i:DollarSign},{l:'Weekly Report',i:FileText},{l:'Payment Received',i:DollarSign},{l:'Xero Sync',i:RotateCcw},{l:'Run Payroll',i:Zap},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'Chase Invoice',i:Receipt},{l:'Raise Invoice',i:DollarSign},{l:'Weekly Report',i:FileText},{l:'Payment Received',i:DollarSign},{l:'Xero Sync',i:RotateCcw},{l:'Run Payroll',i:Zap},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2136,7 +2153,7 @@ function SalesView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'New Deal',i:TrendingUp},{l:'Book Demo',i:Calendar},{l:'Send Proposal',i:Send},{l:'Log Call',i:FileText},{l:'New Lead',i:UserPlus},{l:'Dept Insights',i:BarChart3},{l:'Generate Leads',i:Zap}].map(a=>(
-            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2389,8 +2406,8 @@ function MarketingView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Create Post',i:Send},{l:'Book Event',i:Calendar},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'Create Post',i:Send},{l:'Book Event',i:Calendar},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2479,8 +2496,8 @@ function TrialsView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Admin Portal',i:Users},{l:'New Trial',i:FlaskConical},{l:'Extend Trial',i:Clock},{l:'Convert to Customer',i:UserPlus},{l:'End Trial',i:AlertCircle},{l:'Send Day 3 Email',i:Send},{l:'Send Day 7 Email',i:Send},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'Admin Portal',i:Users},{l:'New Trial',i:FlaskConical},{l:'Extend Trial',i:Clock},{l:'Convert to Customer',i:UserPlus},{l:'End Trial',i:AlertCircle},{l:'Send Day 3 Email',i:Send},{l:'Send Day 7 Email',i:Send},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2542,8 +2559,8 @@ function OpsView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Raise PO',i:Package},{l:'Update Stock',i:BarChart3},{l:'Supplier Invoice',i:Receipt},{l:'New Order',i:Plus},{l:'Restock Alert',i:AlertCircle},{l:'Supplier Contact',i:Handshake},{l:'Delivery Log',i:FileText},{l:'Stock Report',i:FileText},{l:'Book Stock',i:Package},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'Raise PO',i:Package},{l:'Update Stock',i:BarChart3},{l:'Supplier Invoice',i:Receipt},{l:'New Order',i:Plus},{l:'Restock Alert',i:AlertCircle},{l:'Supplier Contact',i:Handshake},{l:'Delivery Log',i:FileText},{l:'Stock Report',i:FileText},{l:'Book Stock',i:Package},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2614,8 +2631,8 @@ function SupportView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New Ticket',i:Plus},{l:'Open Chat',i:Send},{l:'Create School',i:Home},{l:'Add User',i:UserPlus},{l:'Send Update',i:Send},{l:'Support Report',i:FileText},{l:'Call a School',i:Phone},{l:'Book Meeting',i:Calendar},{l:'Create Wiki',i:FileText},{l:'Create FAQ',i:Hash},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'New Ticket',i:Plus},{l:'Open Chat',i:Send},{l:'Create School',i:Home},{l:'Add User',i:UserPlus},{l:'Send Update',i:Send},{l:'Support Report',i:FileText},{l:'Call a School',i:Phone},{l:'Book Meeting',i:Calendar},{l:'Create Wiki',i:FileText},{l:'Create FAQ',i:Hash},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2683,8 +2700,8 @@ function SuccessView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'Health Check',i:Star},{l:'QBR Prep',i:Calendar},{l:'Churn Alert',i:AlertCircle},{l:'NPS Survey',i:Send},{l:'Expansion Opp',i:TrendingUp},{l:'Dept Insights',i:BarChart3}].map(a=>(
-            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'Health Check',i:Star},{l:'QBR Prep',i:Calendar},{l:'Churn Alert',i:AlertCircle},{l:'NPS Survey',i:Send},{l:'Expansion Opp',i:TrendingUp},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2746,8 +2763,8 @@ function ITView({ company }: { company: string }) {
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
-          {[{l:'New IT Request',i:Plus},{l:'Provision Account',i:UserPlus},{l:'Asset Register',i:Package},{l:'Licence Renewal',i:RotateCcw},{l:'IT Report',i:FileText},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'Dept Insights',i:Sparkles}].map(a=>(
-            <button key={a.l} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+          {[{l:'New IT Request',i:Plus},{l:'Provision Account',i:UserPlus},{l:'Asset Register',i:Package},{l:'Licence Renewal',i:RotateCcw},{l:'IT Report',i:FileText},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'Dept Insights',i:Sparkles},{l:'Dept Info',i:Users}].map(a=>(
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -3747,6 +3764,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [demoDataActive, setDemoDataActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const [overviewAction, setOverviewAction] = useState<string | null>(null)
   const [showNewJoiner,    setShowNewJoiner]    = useState(false)
   const [showLeaveRequest, setShowLeaveRequest] = useState(false)
@@ -3880,6 +3898,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   function fireToast(label: string = '') {
     if (OVERVIEW_ACTIONS.includes(label)) { setOverviewAction(label);                        return }
     if (label === 'Dept Insights')     { setShowDeptInsights(true);                         return }
+    if (label === 'Dept Info')         { setShowDeptInfo(true);                             return }
     if (label === 'New Joiner' || label === 'New Starter') { setShowNewJoiner(true);        return }
     if (label === 'Leave Request')     { setShowLeaveRequest(true);                          return }
     if (label === 'Offboarding')       { setShowOffboarding(true);                           return }
@@ -3929,6 +3948,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
       <Toast message={toast} />
       {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
       {showDeptInsights && <DeptInsightsModal dept={activeDept} onClose={() => setShowDeptInsights(false)} />}
+      {showDeptInfo && <DeptInfoModal dept={activeDept} onClose={() => setShowDeptInfo(false)} onViewTeam={() => { setShowDeptInfo(false); setActiveDept('overview') }} />}
       {showNewJoiner    && <NewJoinerModal          onClose={() => setShowNewJoiner(false)}    onSubmit={handleDemoNewJoiner}    />}
       {showLeaveRequest && <LeaveRequestModal      onClose={() => setShowLeaveRequest(false)} onSubmit={handleDemoLeaveRequest} />}
       {showOffboarding  && <OffboardingModal        onClose={() => setShowOffboarding(false)}  onSubmit={handleDemoOffboarding}  />}
