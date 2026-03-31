@@ -583,7 +583,7 @@ function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
 }
 
 function WorldClock() {
-  const [now, setNow] = useState(() => typeof window !== 'undefined' ? new Date() : new Date(0))
+  const [now, setNow] = useState(() => new Date())
   const [zones, setZones] = useState(getStoredZones)
   const localTz = getUserLocalTz()
   const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
@@ -646,17 +646,10 @@ function WorldClock() {
 }
 
 function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
-  const [hour, setHour] = useState(12)
-  const [greeting, setGreeting] = useState('Good afternoon')
-  const [date, setDate] = useState('')
-  const [bg, setBg] = useState(BG_GRADIENTS[0])
-  useEffect(() => {
-    const h = new Date().getHours()
-    setHour(h)
-    setGreeting(h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening')
-    setDate(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
-    setBg(BG_GRADIENTS[new Date().getDay()])
-  }, [])
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
   const [quote, setQuote] = useState(QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
@@ -1340,13 +1333,10 @@ const MORNING_HIGHLIGHTS = [
 
 function MorningAIPanel() {
   const [open, setOpen] = useState(true)
-  const [dayLabel, setDayLabel] = useState('')
-  useEffect(() => {
-    const now = new Date()
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    setDayLabel(`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`)
-  }, [])
+  const now = new Date()
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
   return (
     <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #6C3FC5' }}>
       <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(108,63,197,0.08)', borderBottom: open ? '1px solid rgba(108,63,197,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
@@ -2043,7 +2033,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast]           = useState<string | null>(null)
   const [ownerEmail, setOwnerEmail] = useState('')
-  const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(false)
@@ -2099,13 +2088,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_company_logo', data.logo_url)
           }
           if (data.demo_data_active) setDemoDataActive(true)
-          if (!data.onboarding_complete) {
-            if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
-              setShowWelcome(true)
-            } else {
-              setShowOnboarding(true)
-            }
-          }
+          if (!data.onboarding_complete) setShowOnboarding(true)
         })
         .catch(() => {
           // Network error — don't redirect if this looks like a fresh purchase
@@ -2140,47 +2123,43 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
-      {/* Demo data bar — slim version with connections modal */}
-      {demoDataActive && <ClearDemoBar />}
-
-      {/* bell + avatar rendered inline in heading row below */}
-      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
-
-      {/* Welcome overlay — first visit only */}
-      {showWelcome && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', maxWidth: 520, padding: '2rem', width: '100%' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
-            <h1 style={{ color: 'white', fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
-            <p style={{ color: '#aaa', marginBottom: '2.5rem', fontSize: '1rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting Started with Lumio</div>
-                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min intro</div>
-              </div>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting the Most Out of Lumio</div>
-                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min tips & tricks</div>
-              </div>
+      {/* Top-right: bell + avatar */}
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={() => setNotificationsOpen(o => !o)}
+          title="Notifications"
+          style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Bell size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setAvatarDropdownOpen(o => !o)}
+            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+            {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
+          </button>
+          {avatarDropdownOpen && (
+            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
+              <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                👤 Profile
+              </button>
+              <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                ⚙️ Settings
+              </button>
+              <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
+                🚪 Sign out
+              </button>
             </div>
-            <div style={{ borderTop: '1px solid #2a2a3e', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
-              <p style={{ color: '#555', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
-            </div>
-            <button onClick={() => {
-              localStorage.setItem(`lumio_welcomed_${slug}`, 'true')
-              setShowWelcome(false)
-              setShowOnboarding(true)
-            }}
-              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 10, fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer' }}>
-              Get Started →
-            </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
+      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
       {/* Onboarding */}
       {showOnboarding && (
@@ -2192,6 +2171,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         />
       )}
       {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
+
+      {/* Demo data bar — slim version with connections modal */}
+      {demoDataActive && <ClearDemoBar />}
 
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -2210,38 +2192,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
                 <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' && localStorage.getItem('lumio_company_name')) || slug}</span></p>
-              </div>
-              <div className="hidden md:flex items-center gap-2">
-                <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications"
-                  style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-                  <Bell size={16} strokeWidth={1.75} />
-                  <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-                </button>
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setAvatarDropdownOpen(o => !o)}
-                    style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                    {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
-                  </button>
-                  {avatarDropdownOpen && (
-                    <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-                      <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                        👤 Profile
-                      </button>
-                      <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                        ⚙️ Settings
-                      </button>
-                      <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
-                        🚪 Sign out
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
