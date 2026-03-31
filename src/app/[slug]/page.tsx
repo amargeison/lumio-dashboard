@@ -1067,11 +1067,12 @@ const ROUNDUP_ITEMS = [
   },
 ]
 
-function MorningRoundup() {
+function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [replied, setReplied] = useState<string[]>([])
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [showReply, setShowReply] = useState<string | null>(null)
+  const items = demoDataActive ? ROUNDUP_ITEMS : []
 
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
@@ -1088,7 +1089,10 @@ function MorningRoundup() {
         <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
       </div>
       <div className="space-y-2">
-        {ROUNDUP_ITEMS.map(item => {
+        {items.length === 0 && (
+          <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your tools in Settings to see messages here.</p>
+        )}
+        {items.map(item => {
           const isOpen = expanded === item.id
           return (
             <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
@@ -1108,14 +1112,14 @@ function MorningRoundup() {
               {/* Messages */}
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
-                  {item.id === 'whatsapp' && (
+                  {demoDataActive && item.id === 'whatsapp' && (
                     <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}>
                       <span className="text-xs" style={{ color: '#25D366' }}>💬 Showing demo data — connect WhatsApp Business to see real messages</span>
                       <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)' }}
                         onClick={() => window.location.href = '/settings'}>Connect →</button>
                     </div>
                   )}
-                  {item.id === 'sms' && (
+                  {demoDataActive && item.id === 'sms' && (
                     <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
                       <span className="text-xs" style={{ color: '#3B82F6' }}>📱 Showing demo data — connect Twilio SMS to see real messages</span>
                       <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
@@ -1241,13 +1245,14 @@ const MEETINGS: { id: string; title: string; time: string; duration: string; att
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
 ]
 
-function MeetingsToday() {
-  const live = MEETINGS.find(m => m.status === 'now')
+function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean }) {
+  const meetings = demoDataActive ? MEETINGS : []
+  const live = meetings.find(m => m.status === 'now')
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 Meetings Today</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{MEETINGS.length} scheduled</span>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{meetings.length} scheduled</span>
       </div>
       {live && (
         <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
@@ -1256,8 +1261,11 @@ function MeetingsToday() {
           {'link' in live && live.link && <a href={live.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
         </div>
       )}
+      {meetings.length === 0 && (
+        <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>No meetings scheduled. Connect your calendar in Settings.</p>
+      )}
       <div className="space-y-1">
-        {MEETINGS.map(m => (
+        {meetings.map(m => (
           <div key={m.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
             <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
             <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
@@ -1936,10 +1944,10 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
-              <MorningRoundup />
+              <MorningRoundup demoDataActive={demoDataActive} />
             </div>
             <div className="lg:col-span-1 flex flex-col">
-              <MeetingsToday />
+              <MeetingsToday demoDataActive={demoDataActive} />
             </div>
             <div className="lg:col-span-1 flex flex-col gap-4">
               <PhotoFrame />
@@ -2027,7 +2035,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [company, setCompany]       = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('workspace_company_name') || localStorage.getItem('demo_company_name') || ''
+      return localStorage.getItem('workspace_company_name') || ''
     }
     return ''
   })
@@ -2054,9 +2062,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   useEffect(() => {
     // Read cached values from localStorage
-    const name = localStorage.getItem('workspace_company_name') || localStorage.getItem('demo_company_name') || ''
-    const user = localStorage.getItem('workspace_user_name') || localStorage.getItem('demo_user_name') || ''
-    const logo = localStorage.getItem('workspace_company_logo') || localStorage.getItem('demo_company_logo') || ''
+    const name = localStorage.getItem('workspace_company_name') || ''
+    const user = localStorage.getItem('workspace_user_name') || ''
+    const logo = localStorage.getItem('workspace_company_logo') || ''
     setCompany(name)
     setUserName(user)
     setCompanyLogo(logo)
