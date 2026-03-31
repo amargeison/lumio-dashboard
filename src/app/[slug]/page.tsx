@@ -672,13 +672,85 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
 
   const { isListening, lastCommand, startListening, stopListening, pendingAction, setPendingAction } = useVoiceCommands()
 
-  function handleBriefing() {
-    if (!ttsEnabled) return
-    if (isPlaying) { stop(); return }
+  function generateBriefing(): string {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
     const closingLine = CLOSING_LINES[dayOfYear % CLOSING_LINES.length]
-    const script = `${greeting}, ${firstName || 'there'}. ${openingLine} You have 4 meetings today, 12 emails to review, and 2 workflows need attention. ${closingLine}`
+
+    const parts: string[] = []
+    parts.push(`${greeting}, ${firstName || 'there'}. ${openingLine}`)
+
+    // Meetings
+    const calConnected = typeof window !== 'undefined' && (localStorage.getItem('lumio_integration_gcal') === 'true' || localStorage.getItem('lumio_integration_outlook_cal') === 'true')
+    if (demoDataActive) {
+      const meetingCount = MEETINGS.length
+      const nextMeeting = MEETINGS.find(m => m.status === 'upcoming' || m.status === 'now')
+      parts.push(`You have ${meetingCount} meetings today${nextMeeting ? `, starting with your ${nextMeeting.time} ${nextMeeting.title}` : ''}.`)
+    } else if (calConnected) {
+      parts.push('Your calendar is connected — check your meetings tab for today\'s schedule.')
+    } else {
+      parts.push('No meetings scheduled today — connect Google Calendar or Outlook in Settings to sync your calendar.')
+    }
+
+    // Tasks from AI cache
+    try {
+      const tasksRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_daily-tasks_cache') : null
+      if (tasksRaw) {
+        const tasks = JSON.parse(tasksRaw) as { id: string }[]
+        if (tasks.length > 0) parts.push(`You have ${tasks.length} tasks on your list today.`)
+      }
+    } catch { /* ignore */ }
+
+    // Quick wins from AI cache
+    try {
+      const winsRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_quick-wins_cache') : null
+      if (winsRaw) {
+        const wins = JSON.parse(winsRaw) as { id: string }[]
+        if (wins.length > 0) parts.push(`${wins.length} quick wins ready to action.`)
+      }
+    } catch { /* ignore */ }
+
+    // Don't miss items
+    try {
+      const missRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_dont-miss_cache') : null
+      if (missRaw) {
+        const items = JSON.parse(missRaw) as { urgency: string }[]
+        const critical = items.filter(i => i.urgency === 'critical').length
+        if (critical > 0) parts.push(`${critical} critical ${critical === 1 ? 'item needs' : 'items need'} your attention.`)
+      }
+    } catch { /* ignore */ }
+
+    // Messages
+    const emailConnected = typeof window !== 'undefined' && (localStorage.getItem('lumio_integration_gmail') === 'true' || localStorage.getItem('lumio_integration_outlook') === 'true')
+    if (demoDataActive) {
+      parts.push('You have several new messages to review.')
+    } else if (!emailConnected) {
+      parts.push('No new messages — connect your email in Settings to see live updates.')
+    }
+
+    // Staff
+    try {
+      const staffRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_staff_imported') : null
+      if (staffRaw) {
+        const staff = JSON.parse(staffRaw) as unknown[]
+        if (staff.length > 0) parts.push(`Your team has ${staff.length} ${staff.length === 1 ? 'member' : 'members'}.`)
+      }
+    } catch { /* ignore */ }
+
+    // Integration tip
+    const anyConnected = typeof window !== 'undefined' && Object.keys(localStorage).some(k => k.startsWith('lumio_integration_') && localStorage.getItem(k) === 'true')
+    if (!anyConnected && !demoDataActive) {
+      parts.push('Tip: connect your tools in Settings to get live, personalised data in your briefing.')
+    }
+
+    parts.push(closingLine)
+    return parts.join(' ')
+  }
+
+  function handleBriefing() {
+    if (!ttsEnabled) return
+    if (isPlaying) { stop(); return }
+    const script = generateBriefing()
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''
     const chunks: string[] = []
