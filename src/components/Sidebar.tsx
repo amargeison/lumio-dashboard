@@ -25,6 +25,7 @@ import {
   Layers,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { getDeptStaff } from '@/lib/staff/deptMatch'
 
 const BASE_NAV_ITEMS: {
   label: string
@@ -57,6 +58,7 @@ function getNavItems() {
   return BASE_NAV_ITEMS.map(item => ({
     ...item,
     href: slug ? `/${slug}${item.path}` : (item.path || '/overview'),
+    path: item.path,
   }))
 }
 
@@ -82,6 +84,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [userEmail, setUserEmail] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
   const [logoHover, setLogoHover] = useState(false)
+  const [activeDepts, setActiveDepts] = useState<Set<string>>(new Set())
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -110,6 +113,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       if (e.key === 'lumio_company_name') setCompanyName(e.newValue || 'Lumio')
     }
     window.addEventListener('storage', onStorage)
+    // Detect active departments from imported staff
+    const isDemoActive = localStorage.getItem('lumio_demo_active') === 'true'
+    if (!isDemoActive) {
+      const deptKeys = ['sales', 'hr', 'marketing', 'accounts', 'operations', 'it', 'support', 'success', 'partners', 'strategy', 'trials', 'projects', 'insights']
+      const active = new Set<string>()
+      deptKeys.forEach(d => { if (getDeptStaff(d).length > 0) active.add(d) })
+      setActiveDepts(active)
+    }
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
@@ -227,20 +238,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-1.5 py-3">
-          {navItems.map(({ label, href, icon: Icon, badge, accent }) => {
+          {navItems.map(({ label, href, icon: Icon, badge, accent, path }) => {
             const isActive = pathname.startsWith(href)
             const activeColor = accent ?? '#0D9488'
             const hoverBg = accent ? `${accent}1a` : '#111318'
+            const deptKey = (path || '').replace('/', '')
+            const hasDeptStaff = activeDepts.size > 0 && activeDepts.has(deptKey)
 
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={onClose}
-                className="flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors"
+                className="flex items-center gap-3 rounded-lg py-2 text-sm transition-colors"
                 style={{
                   backgroundColor: isActive ? activeColor : 'transparent',
-                  color: isActive ? '#F9FAFB' : '#9CA3AF',
+                  color: isActive ? '#F9FAFB' : hasDeptStaff ? '#F9FAFB' : '#9CA3AF',
+                  fontWeight: isActive || hasDeptStaff ? 600 : 400,
                   paddingLeft: expanded ? 12 : 0,
                   paddingRight: expanded ? 12 : 0,
                   justifyContent: expanded ? 'flex-start' : 'center',
@@ -259,6 +273,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 }}
               >
+                {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 4, height: 4, backgroundColor: '#22C55E' }} />}
                 <Icon size={17} strokeWidth={1.75} className="shrink-0" />
                 {expanded && <span className="flex-1 truncate">{label}</span>}
                 {expanded && badge !== null && (
@@ -313,12 +328,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button onClick={onClose} style={{ color: '#9CA3AF' }}><X size={18} strokeWidth={1.75} /></button>
           </div>
           <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-3">
-            {navItems.map(({ label, href, icon: Icon, badge, accent }) => {
+            {navItems.map(({ label, href, icon: Icon, badge, accent, path }) => {
               const isActive = pathname.startsWith(href)
+              const deptKey = (path || '').replace('/', '')
+              const hasDeptStaff = activeDepts.size > 0 && activeDepts.has(deptKey)
               return (
                 <Link key={href} href={href} onClick={onClose}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium"
-                  style={{ backgroundColor: isActive ? (accent ?? '#0D9488') : 'transparent', color: isActive ? '#F9FAFB' : '#9CA3AF' }}>
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                  style={{ backgroundColor: isActive ? (accent ?? '#0D9488') : 'transparent', color: isActive ? '#F9FAFB' : hasDeptStaff ? '#F9FAFB' : '#9CA3AF', fontWeight: isActive || hasDeptStaff ? 600 : 400 }}>
+                  {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 4, height: 4, backgroundColor: '#22C55E' }} />}
                   <Icon size={17} strokeWidth={1.75} className="shrink-0" />
                   <span className="flex-1 truncate">{label}</span>
                   {badge !== null && (
