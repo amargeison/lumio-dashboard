@@ -3244,7 +3244,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' && localStorage.getItem('lumio_company_name')) || slug}</span></p>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' ? localStorage.getItem('lumio_company_name') || localStorage.getItem('workspace_company_name') : null) || 'Loading...'}</span></p>
               </div>
             </div>
 

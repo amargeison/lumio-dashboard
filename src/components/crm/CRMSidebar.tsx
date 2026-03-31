@@ -20,26 +20,48 @@ interface CRMSidebarProps {
   intelligenceBadgeCount?: number;
 }
 
-const navItems = [
-  { label: 'Dashboard', href: '/crm/dashboard', icon: LayoutDashboard },
-  { label: 'Pipeline', href: '/crm/pipeline', icon: GitBranch },
-  { label: 'Contacts', href: '/crm/contacts', icon: Users },
-  { label: 'Companies', href: '/crm/companies', icon: Building2 },
-  { label: 'Intelligence', href: '/crm/intelligence', icon: Sparkles, hasBadge: true },
-  { label: 'Reports', href: '/crm/reports', icon: BarChart2 },
+const BASE_NAV = [
+  { label: 'Dashboard', path: '/crm/dashboard', icon: LayoutDashboard },
+  { label: 'Pipeline', path: '/crm/pipeline', icon: GitBranch },
+  { label: 'Contacts', path: '/crm/contacts', icon: Users },
+  { label: 'Companies', path: '/crm/companies', icon: Building2 },
+  { label: 'Intelligence', path: '/crm/intelligence', icon: Sparkles, hasBadge: true },
+  { label: 'Reports', path: '/crm/reports', icon: BarChart2 },
 ];
 
-const toolItems = [
-  { label: 'Email', href: '/crm/email', icon: Mail },
-  { label: 'Calendar', href: '/crm/calendar', icon: Calendar },
-  { label: 'Settings', href: '/crm/settings', icon: Settings },
+const BASE_TOOLS = [
+  { label: 'Email', path: '/crm/email', icon: Mail },
+  { label: 'Calendar', path: '/crm/calendar', icon: Calendar },
+  { label: 'Settings', path: '/crm/settings', icon: Settings },
 ];
+
+function getCrmSlug(): string {
+  if (typeof window === 'undefined') return ''
+  const parts = window.location.pathname.split('/').filter(Boolean)
+  // If URL is /slug/crm/..., first part is slug
+  if (parts.length >= 2 && parts[1] === 'crm') return parts[0]
+  return localStorage.getItem('lumio_workspace_slug') || ''
+}
+
+function getNavItems() {
+  const slug = getCrmSlug()
+  const prefix = slug ? `/${slug}` : ''
+  return BASE_NAV.map(item => ({ ...item, href: `${prefix}${item.path}` }))
+}
+
+function getToolItems() {
+  const slug = getCrmSlug()
+  const prefix = slug ? `/${slug}` : ''
+  return BASE_TOOLS.map(item => ({ ...item, href: `${prefix}${item.path}` }))
+}
 
 export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [initials, setInitials] = useState('LU');
   const [toast, setToast] = useState<string | null>(null);
+  const navItems = getNavItems();
+  const toolItems = getToolItems();
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_company_initials');
@@ -81,7 +103,7 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-3 flex-1">
         {navItems.map((item) => {
-          const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+          const active = pathname === item.href || pathname?.startsWith(item.href + '/') || pathname === item.path || pathname?.startsWith(item.path + '/');
           const Icon = item.icon;
           return (
             <Link
@@ -138,7 +160,7 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
         {/* Tool items */}
         {toolItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+          const active = pathname === item.href || pathname?.startsWith(item.href + '/') || pathname === item.path || pathname?.startsWith(item.path + '/');
           return (
             <Link
               key={item.label}
