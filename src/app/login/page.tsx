@@ -29,6 +29,7 @@ function LoginContent() {
   const [verifying, setVerifying] = useState(false)
   const [formError, setFormError] = useState('')
   const [resendCountdown, setResendCountdown] = useState(0)
+  const [slug, setSlug] = useState('')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Countdown timer for resend
@@ -38,28 +39,64 @@ function LoginContent() {
     return () => clearTimeout(t)
   }, [resendCountdown])
 
+  // ── Step 1 → Send OTP via workspace flow ──────────────────────────────────
+
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
+
+    // Look up workspace for this email
+    const lookupRes = await fetch('/api/workspace/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
     })
-    if (error) {
-      setFormError(
-        error.message.includes('not found') || error.message.includes('Email not confirmed')
-          ? 'No account found for this email. Start a free trial or contact hello@lumiocms.com.'
-          : error.message
-      )
-    } else {
+
+    if (!lookupRes.ok) {
+      // No workspace found — try Supabase Auth OTP as fallback (for SSO-registered users)
+      const { error: supaErr } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      })
+      if (supaErr) {
+        setFormError('No account found for this email. Start a free trial or contact hello@lumiocms.com.')
+        setLoading(false)
+        return
+      }
+      setSlug('')
       setDigits(['', '', '', '', '', ''])
       setStep('otp')
       setResendCountdown(30)
       setTimeout(() => inputRefs.current[0]?.focus(), 100)
+      setLoading(false)
+      return
     }
+
+    const { slug: foundSlug } = await lookupRes.json()
+    setSlug(foundSlug || '')
+
+    // Send OTP
+    const otpRes = await fetch('/api/workspace/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    })
+
+    if (!otpRes.ok) {
+      setFormError('Failed to send code — please try again.')
+      setLoading(false)
+      return
+    }
+
+    setDigits(['', '', '', '', '', ''])
+    setStep('otp')
+    setResendCountdown(30)
+    setTimeout(() => inputRefs.current[0]?.focus(), 100)
     setLoading(false)
   }
+
+  // ── OTP digit handlers ────────────────────────────────────────────────────
 
   const handleDigitChange = (index: number, value: string) => {
     const char = value.replace(/\D/g, '').slice(-1)
@@ -83,30 +120,85 @@ function LoginContent() {
     }
   }
 
+  // ── Step 2 → Verify OTP ───────────────────────────────────────────────────
+
   const handleVerify = async () => {
     const token = digits.join('')
     if (token.length < 6) return
     setFormError('')
     setVerifying(true)
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
-    if (error) {
-      setFormError('Invalid or expired code — please try again')
-      setDigits(['', '', '', '', '', ''])
-      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+
+    if (slug) {
+      // Workspace OTP flow
+      const res = await fetch('/api/workspace/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), otp: token }),
+      })
+
+      if (!res.ok) {
+        setFormError('Invalid or expired code — please try again')
+        setDigits(['', '', '', '', '', ''])
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+        setVerifying(false)
+        return
+      }
+
+      const data = await res.json()
+      // Store session
+      localStorage.setItem('workspace_session_token', data.session_token)
+      if (data.company_name) {
+        localStorage.setItem('workspace_company_name', data.company_name)
+        localStorage.setItem('lumio_company_name', data.company_name)
+      }
+      if (data.owner_name) {
+        localStorage.setItem('workspace_user_name', data.owner_name)
+        localStorage.setItem('lumio_user_name', data.owner_name)
+      }
+      if (data.logo_url) {
+        localStorage.setItem('workspace_company_logo', data.logo_url)
+        localStorage.setItem('lumio_company_logo', data.logo_url)
+      }
+      localStorage.setItem('lumio_workspace_slug', data.slug)
+      localStorage.setItem('lumio_company_active', 'true')
+
+      // Redirect to workspace or original destination
+      const dest = redirectTo !== '/' ? redirectTo : `/${data.slug}`
+      router.push(dest)
     } else {
-      router.push(redirectTo)
+      // Supabase Auth OTP fallback
+      const { error: verifyErr } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+      if (verifyErr) {
+        setFormError('Invalid or expired code — please try again')
+        setDigits(['', '', '', '', '', ''])
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+      } else {
+        router.push(redirectTo)
+      }
     }
     setVerifying(false)
   }
 
+  // ── Resend ────────────────────────────────────────────────────────────────
+
   const handleResend = async () => {
     if (resendCountdown > 0) return
     setFormError('')
-    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    if (slug) {
+      await fetch('/api/workspace/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+    } else {
+      await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    }
     setDigits(['', '', '', '', '', ''])
     setResendCountdown(30)
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
+
+  // ── SSO handlers ──────────────────────────────────────────────────────────
 
   const handleGoogle = async () => {
     setSsoLoading('google')
@@ -326,7 +418,7 @@ function LoginContent() {
                 )}
                 <span className="mx-2 text-gray-700">·</span>
                 <button
-                  onClick={() => { setStep('email'); setFormError('') }}
+                  onClick={() => { setStep('email'); setFormError(''); setSlug('') }}
                   className="text-gray-500 hover:text-gray-300 transition-colors underline"
                 >
                   Use a different email

@@ -705,6 +705,22 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     }
   }, [lastCommand, postBriefingListening])
 
+  function isCacheFresh(tab: string): boolean {
+    if (typeof window === 'undefined') return false
+    const ts = localStorage.getItem(`lumio_ai_${tab}_timestamp`)
+    if (!ts) return false
+    return Date.now() - parseInt(ts) < 30 * 60 * 1000
+  }
+
+  function readFreshCache<T>(tab: string): T[] | null {
+    if (!isCacheFresh(tab)) return null
+    try {
+      const raw = localStorage.getItem(`lumio_ai_${tab}_cache`)
+      if (!raw) return null
+      return JSON.parse(raw) as T[]
+    } catch { return null }
+  }
+
   function generateBriefing(): string {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
@@ -713,52 +729,49 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     const parts: string[] = []
     parts.push(`${greeting}, ${firstName || 'there'}. ${openingLine}`)
 
-    // Meetings
     const calConnected = typeof window !== 'undefined' && (localStorage.getItem('lumio_integration_gcal') === 'true' || localStorage.getItem('lumio_integration_outlook_cal') === 'true')
+    const emailConnected = typeof window !== 'undefined' && (localStorage.getItem('lumio_integration_gmail') === 'true' || localStorage.getItem('lumio_integration_outlook') === 'true')
+
+    // Meetings
     if (demoDataActive) {
-      const meetingCount = MEETINGS.length
       const nextMeeting = MEETINGS.find(m => m.status === 'upcoming' || m.status === 'now')
-      parts.push(`You have ${meetingCount} meetings today${nextMeeting ? `, starting with your ${nextMeeting.time} ${nextMeeting.title}` : ''}.`)
+      parts.push(`You have ${MEETINGS.length} meetings today${nextMeeting ? `, starting with your ${nextMeeting.time} ${nextMeeting.title}` : ''}.`)
     } else if (calConnected) {
       parts.push('Your calendar is connected — check your meetings tab for today\'s schedule.')
     } else {
-      parts.push('No meetings scheduled today — connect Google Calendar or Outlook in Settings to sync your calendar.')
+      parts.push('No meetings connected yet — connect Google Calendar or Outlook in Settings to sync your schedule.')
     }
 
-    // Tasks from AI cache
-    try {
-      const tasksRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_daily-tasks_cache') : null
-      if (tasksRaw) {
-        const tasks = JSON.parse(tasksRaw) as { id: string }[]
-        if (tasks.length > 0) parts.push(`You have ${tasks.length} tasks on your list today.`)
+    // Tasks — only from fresh cache when not in demo
+    if (demoDataActive) {
+      parts.push('You have tasks and quick wins waiting for you on the overview.')
+    } else {
+      const tasks = readFreshCache<{ id: string }>('daily-tasks')
+      if (tasks && tasks.length > 0) {
+        parts.push(`You have ${tasks.length} tasks on your list today.`)
+      } else {
+        parts.push('No tasks yet — switch to the Daily Tasks tab to generate your task list.')
       }
-    } catch { /* ignore */ }
 
-    // Quick wins from AI cache
-    try {
-      const winsRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_quick-wins_cache') : null
-      if (winsRaw) {
-        const wins = JSON.parse(winsRaw) as { id: string }[]
-        if (wins.length > 0) parts.push(`${wins.length} quick wins ready to action.`)
+      const wins = readFreshCache<{ id: string }>('quick-wins')
+      if (wins && wins.length > 0) {
+        parts.push(`${wins.length} quick wins ready to action.`)
       }
-    } catch { /* ignore */ }
 
-    // Don't miss items
-    try {
-      const missRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_ai_dont-miss_cache') : null
-      if (missRaw) {
-        const items = JSON.parse(missRaw) as { urgency: string }[]
-        const critical = items.filter(i => i.urgency === 'critical').length
+      const missItems = readFreshCache<{ urgency: string }>('dont-miss')
+      if (missItems) {
+        const critical = missItems.filter(i => i.urgency === 'critical').length
         if (critical > 0) parts.push(`${critical} critical ${critical === 1 ? 'item needs' : 'items need'} your attention.`)
       }
-    } catch { /* ignore */ }
+    }
 
     // Messages
-    const emailConnected = typeof window !== 'undefined' && (localStorage.getItem('lumio_integration_gmail') === 'true' || localStorage.getItem('lumio_integration_outlook') === 'true')
     if (demoDataActive) {
       parts.push('You have several new messages to review.')
-    } else if (!emailConnected) {
-      parts.push('No new messages — connect your email in Settings to see live updates.')
+    } else if (emailConnected) {
+      parts.push('Your email is connected — check your inbox for new messages.')
+    } else {
+      parts.push('No messages connected yet — connect your email in Settings to see live updates.')
     }
 
     // Staff
@@ -2015,6 +2028,11 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
+    // Clear all AI tab caches so briefing and tabs start fresh
+    ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
+      localStorage.removeItem('lumio_ai_' + tab + '_cache')
+      localStorage.removeItem('lumio_ai_' + tab + '_timestamp')
+    })
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
     onDemoToggle(false)
@@ -2862,7 +2880,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               }
               return
             }
-            router.replace('/trial-ended')
+            router.replace(`/login?redirectTo=/${slug}&message=${encodeURIComponent('Your session has expired. Please sign in again.')}`)
             return
           }
           if (data.company_name) {
@@ -2899,10 +2917,38 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         })
         .catch(() => {
           // Network error — don't redirect if this looks like a fresh purchase
-          if (!justPurchased) router.replace('/trial-ended')
+          if (!justPurchased) router.replace(`/login?redirectTo=/${slug}`)
         })
     } else if (!justPurchased) {
-      router.replace('/trial-ended')
+      // No workspace_session_token — try to create one from Supabase auth session
+      import('@supabase/supabase-js').then(({ createClient }) => {
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (!user?.email) { router.replace('/login?redirectTo=/' + slug); return }
+          fetch('/api/workspace/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, slug }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (!data?.session_token) { router.replace('/login?redirectTo=/' + slug); return }
+              localStorage.setItem('workspace_session_token', data.session_token)
+              if (data.business?.company_name) { setCompany(data.business.company_name); localStorage.setItem('workspace_company_name', data.business.company_name); localStorage.setItem('lumio_company_name', data.business.company_name) }
+              if (data.business?.owner_name) { setUserName(data.business.owner_name); localStorage.setItem('workspace_user_name', data.business.owner_name); localStorage.setItem('lumio_user_name', data.business.owner_name) }
+              if (data.business?.owner_email) { setOwnerEmail(data.business.owner_email); localStorage.setItem('lumio_user_email', data.business.owner_email) }
+              if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
+              if (data.business?.id) setBusinessId(data.business.id)
+              if (data.business?.demo_data_active) setDemoDataActive(true)
+              if (data.business?.onboarding_completed === false && !data.business?.demo_data_active && !localStorage.getItem('lumio_onboarding_shown')) {
+                setShowLiveOnboarding(true)
+              } else if (!data.business?.onboarding_complete) {
+                if (!localStorage.getItem(`lumio_welcomed_${slug}`)) { setShowWelcome(true) } else { setShowOnboarding(true) }
+              }
+            })
+            .catch(() => router.replace('/login?redirectTo=/' + slug))
+        }).catch(() => router.replace('/login?redirectTo=/' + slug))
+      }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
     }
   }, [slug, router])
 
