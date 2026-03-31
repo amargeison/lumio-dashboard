@@ -137,7 +137,8 @@ export function DashboardEmptyState({
       } catch { /* continue with localStorage fallback */ }
     }
 
-    showToast(`✓ ${allRows.length} staff members imported successfully`)
+    showToast(`✓ ${allRows.length} records imported successfully`)
+    window.dispatchEvent(new CustomEvent('staff-updated', { detail: { count: allRows.length } }))
     setPreviewRows([])
     setAllRows([])
     await new Promise(r => setTimeout(r, 1000))

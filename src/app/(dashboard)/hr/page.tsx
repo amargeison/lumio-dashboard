@@ -123,6 +123,13 @@ export default function HRPage() {
   )
 
   // ── Fetch demo/real data from Supabase ──────────────────────────────────
+  const [refreshKey, setRefreshKey] = useState(0)
+  useEffect(() => {
+    function onStaffUpdate() { setRefreshKey(k => k + 1) }
+    window.addEventListener('staff-updated', onStaffUpdate)
+    return () => window.removeEventListener('staff-updated', onStaffUpdate)
+  }, [])
+
   useEffect(() => {
     if (!workspace?.id) return
     const bid = workspace.id
@@ -183,7 +190,7 @@ export default function HRPage() {
         manager: r.manager || '—',
       })))
     })
-  }, [workspace?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [workspace?.id, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasData = useHasDashboardData('hr')
   if (hasData === null) return null
