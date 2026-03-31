@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, Shield, Star } from 'lucide-react'
+import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, Shield, Star, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -52,6 +52,7 @@ const upcoming = [
 export default function OperationsPage() {
   const [showProject, setShowProject] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -66,6 +67,7 @@ export default function OperationsPage() {
     { label: 'Book Stock',        icon: PackagePlus,   onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Admin Portal',     icon: Shield,        onClick: () => window.open('/admin', '_blank') },
     { label: 'Dept Insights',   icon: Star,          onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',       icon: Building2,     onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('operations')
@@ -133,6 +135,7 @@ export default function OperationsPage() {
       {showProject && <NewProjectModal onClose={() => setShowProject(false)} onSubmit={() => { setShowProject(false); showToast('Project created') }} />}
       <AIInsightsReport dept="operations" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="operations" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

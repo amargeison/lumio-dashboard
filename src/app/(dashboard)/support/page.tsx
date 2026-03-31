@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Headphones, Clock, Star, CheckCircle2, Plus, MessageSquare, Building2, UserPlus, Send, FileText, Phone, CalendarPlus, BookOpen, HelpCircle, Shield } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -51,6 +52,7 @@ export default function SupportPage() {
   const [showCreateWiki, setShowCreateWiki] = useState(false)
   const [showCreateFAQ, setShowCreateFAQ] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -66,6 +68,7 @@ export default function SupportPage() {
     { label: 'Create FAQ',    icon: HelpCircle,    onClick: () => setShowCreateFAQ(true) },
     { label: 'Admin Portal',  icon: Shield,        onClick: () => window.open('/admin', '_blank') },
     { label: 'Dept Insights', icon: Star,         onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',    icon: Building2,    onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('support')
