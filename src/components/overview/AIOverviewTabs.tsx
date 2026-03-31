@@ -216,7 +216,7 @@ function trendMetricColor(trend: string): { bg: string; fg: string } {
 export function AIQuickWins({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<QuickWin>('quick-wins', ctx)
   const [done, setDone] = useState<Set<string>>(new Set())
-  const showBanner = !hasRealData(['staff', 'integrations'])
+  const showBanner = !hasRealData(['integrations'])
 
   function markDone(id: string) { setDone(prev => new Set(prev).add(id)) }
 
@@ -273,7 +273,7 @@ export function AIQuickWins({ ctx }: { ctx: AIContext }) {
 export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<DailyTask>('daily-tasks', ctx)
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  const showBanner = !hasRealData(['staff', 'integrations'])
+  const showBanner = !hasRealData(['integrations'])
 
   function toggle(id: string) {
     setChecked(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
@@ -334,7 +334,7 @@ export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
 
 export function AIInsights({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<Insight>('insights', ctx)
-  const showBanner = !hasRealData(['staff', 'contacts', 'integrations'])
+  const showBanner = !hasRealData(['integrations'])
 
   return (
     <div>
@@ -380,7 +380,7 @@ export function AIInsights({ ctx }: { ctx: AIContext }) {
 export function AIDontMiss({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate: baseRegenerate } = useAIFetch<DontMissItem>('dont-miss', ctx)
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed)
-  const showBanner = !hasRealData(['staff', 'contacts', 'integrations'])
+  const showBanner = !hasRealData(['integrations'])
 
   const urgencyColor: Record<string, string> = { critical: '#EF4444', high: '#F59E0B', medium: '#FBBF24' }
   const urgencyBg: Record<string, string> = { critical: 'rgba(239,68,68,0.08)', high: 'rgba(245,158,11,0.08)', medium: 'rgba(251,191,36,0.08)' }

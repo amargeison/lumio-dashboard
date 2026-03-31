@@ -1570,14 +1570,14 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
       </div>
       {/* Integration toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-xl px-5 py-3 shadow-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 480 }}>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            Connect <span style={{ color: '#F9FAFB', fontWeight: 600 }}>{toast.integration}</span> in Settings to use {toast.label}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-xl shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 320, maxWidth: 520, padding: '12px 16px' }}>
+          <p style={{ color: '#9CA3AF', fontSize: 14 }}>
+            Connect <span style={{ color: '#F9FAFB', fontWeight: 700 }}>{toast.integration}</span> in Settings to use {toast.label}
           </p>
-          <button onClick={() => { setToast(null); onGoSettings() }} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 whitespace-nowrap" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+          <button onClick={() => { setToast(null); onGoSettings() }} className="shrink-0 whitespace-nowrap" style={{ fontSize: 14, fontWeight: 700, color: '#0D9488', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
             Go to Settings
           </button>
-          <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={14} /></button>
+          <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
         </div>
       )}
     </>
@@ -2880,7 +2880,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             <div className="space-y-3">
               <div>
                 <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Phone number or name</label>
-                <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="+44 7700 900000 or John Smith" className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} autoFocus />
+                <input type="text" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault() }} placeholder="+44 7700 900000 or John Smith" className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} autoFocus />
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Call via</label>
