@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2 } from 'lucide-react'
+import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +144,16 @@ function SkeletonCards({ count = 3 }: { count?: number }) {
   )
 }
 
+function hasRealData(checks: ('staff' | 'contacts' | 'integrations')[]): boolean {
+  if (typeof window === 'undefined') return false
+  for (const c of checks) {
+    if (c === 'staff') { try { if (JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0) return true } catch { /* */ } }
+    if (c === 'contacts') { try { if (JSON.parse(localStorage.getItem('lumio_crm_contacts') || '[]').length > 0) return true } catch { /* */ } }
+    if (c === 'integrations') { if (Object.keys(localStorage).some(k => k.startsWith('lumio_integration_') && localStorage.getItem(k) === 'true')) return true }
+  }
+  return false
+}
+
 function NoBanner() {
   return (
     <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-4" style={{ backgroundColor: 'rgba(108,63,197,0.08)', border: '1px solid rgba(108,63,197,0.2)' }}>
@@ -205,7 +215,7 @@ function trendMetricColor(trend: string): { bg: string; fg: string } {
 export function AIQuickWins({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<QuickWin>('quick-wins', ctx)
   const [done, setDone] = useState<Set<string>>(new Set())
-  const noIntegrations = !ctx.connectedIntegrations.length
+  const showBanner = !hasRealData(['staff', 'integrations'])
 
   function markDone(id: string) { setDone(prev => new Set(prev).add(id)) }
 
@@ -217,7 +227,7 @@ export function AIQuickWins({ ctx }: { ctx: AIContext }) {
           <RegenerateBtn onClick={regenerate} loading={loading} />
         </div>
       } />
-      {noIntegrations && <NoBanner />}
+      {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <div className="space-y-3">
           {items.map(win => {
@@ -262,7 +272,7 @@ export function AIQuickWins({ ctx }: { ctx: AIContext }) {
 export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<DailyTask>('daily-tasks', ctx)
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  const noIntegrations = !ctx.connectedIntegrations.length
+  const showBanner = !hasRealData(['staff', 'integrations'])
 
   function toggle(id: string) {
     setChecked(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
@@ -283,7 +293,7 @@ export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
           <RegenerateBtn onClick={regenerate} loading={loading} />
         </div>
       } />
-      {noIntegrations && <NoBanner />}
+      {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={5} /> : (
         <>
           <div className="rounded-full h-2 mb-4 overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
@@ -323,12 +333,12 @@ export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
 
 export function AIInsights({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate } = useAIFetch<Insight>('insights', ctx)
-  const noIntegrations = !ctx.connectedIntegrations.length
+  const showBanner = !hasRealData(['staff', 'contacts', 'integrations'])
 
   return (
     <div>
       <TabHeader title="Insights" right={<RegenerateBtn onClick={regenerate} loading={loading} />} />
-      {noIntegrations && <NoBanner />}
+      {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {items.map(insight => {
@@ -369,7 +379,7 @@ export function AIInsights({ ctx }: { ctx: AIContext }) {
 export function AIDontMiss({ ctx }: { ctx: AIContext }) {
   const { items, loading, error, regenerate: baseRegenerate } = useAIFetch<DontMissItem>('dont-miss', ctx)
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed)
-  const noIntegrations = !ctx.connectedIntegrations.length
+  const showBanner = !hasRealData(['staff', 'contacts', 'integrations'])
 
   const urgencyColor: Record<string, string> = { critical: '#EF4444', high: '#F59E0B', medium: '#FBBF24' }
   const urgencyBg: Record<string, string> = { critical: 'rgba(239,68,68,0.08)', high: 'rgba(245,158,11,0.08)', medium: 'rgba(251,191,36,0.08)' }
@@ -391,7 +401,7 @@ export function AIDontMiss({ ctx }: { ctx: AIContext }) {
   return (
     <div>
       <TabHeader title="Don't Miss" right={<RegenerateBtn onClick={regenerate} loading={loading} />} />
-      {noIntegrations && <NoBanner />}
+      {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards /> : visible.length === 0 ? (
         <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm" style={{ color: '#22C55E' }}>All clear! Nothing urgent right now.</p>
@@ -434,6 +444,205 @@ export function AIDontMiss({ ctx }: { ctx: AIContext }) {
   )
 }
 
+// ─── Org Chart ──────────────────────────────────────────────────────────────
+
+type HierarchyLevel = 'csuite' | 'director' | 'manager' | 'staff'
+
+const LEVEL_COLORS: Record<HierarchyLevel, { bg: string; border: string; text: string }> = {
+  csuite:   { bg: 'rgba(13,148,136,0.15)', border: 'rgba(13,148,136,0.4)', text: '#0D9488' },
+  director: { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', text: '#3B82F6' },
+  manager:  { bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', text: '#9CA3AF' },
+  staff:    { bg: 'rgba(75,85,99,0.08)', border: 'rgba(75,85,99,0.25)', text: '#6B7280' },
+}
+
+function detectLevel(title: string): HierarchyLevel {
+  const t = (title || '').toLowerCase()
+  if (/\b(ceo|cto|cfo|coo|cpo|ciso|founder|owner|president|managing director)\b/i.test(t)) return 'csuite'
+  if (/\b(director|vp|vice president|head of)\b/i.test(t)) return 'director'
+  if (/\b(manager|lead|principal|senior)\b/i.test(t)) return 'manager'
+  return 'staff'
+}
+
+function getReportingOverrides(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem('lumio_staff_reporting') || '{}') } catch { return {} }
+}
+
+function saveReportingOverrides(data: Record<string, string>) {
+  if (typeof window !== 'undefined') localStorage.setItem('lumio_staff_reporting', JSON.stringify(data))
+}
+
+interface OrgNode { id: string; name: string; role: string; department: string; level: HierarchyLevel; children: OrgNode[] }
+
+function buildHierarchy(members: TeamMember[], userName: string, userRole: string): OrgNode {
+  const overrides = getReportingOverrides()
+  const root: OrgNode = { id: 'root', name: userName || 'You', role: userRole || 'Manager', department: '', level: 'csuite', children: [] }
+
+  // Categorise members by level
+  const byLevel: Record<HierarchyLevel, TeamMember[]> = { csuite: [], director: [], manager: [], staff: [] }
+  members.forEach(m => { byLevel[detectLevel(m.role)].push(m) })
+
+  // Build tree with overrides first, then auto-detect
+  const placed = new Set<string>()
+  const nodeMap = new Map<string, OrgNode>()
+
+  // Create nodes for all members
+  members.forEach(m => {
+    nodeMap.set(m.id, { id: m.id, name: m.name, role: m.role, department: m.department, level: detectLevel(m.role), children: [] })
+  })
+
+  // Apply overrides
+  for (const [childId, parentId] of Object.entries(overrides)) {
+    const child = nodeMap.get(childId)
+    const parent = parentId === 'root' ? root : nodeMap.get(parentId)
+    if (child && parent) { parent.children.push(child); placed.add(childId) }
+  }
+
+  // Auto-place unplaced members by level
+  const unplaced = members.filter(m => !placed.has(m.id))
+
+  // C-Suite → report to root
+  unplaced.filter(m => detectLevel(m.role) === 'csuite').forEach(m => {
+    const node = nodeMap.get(m.id)!; root.children.push(node); placed.add(m.id)
+  })
+
+  // Directors → report to matching dept C-suite or root
+  unplaced.filter(m => detectLevel(m.role) === 'director' && !placed.has(m.id)).forEach(m => {
+    const node = nodeMap.get(m.id)!
+    const deptParent = root.children.find(c => c.department === m.department)
+    ;(deptParent || root).children.push(node); placed.add(m.id)
+  })
+
+  // Managers → report to matching dept director or C-suite or root
+  unplaced.filter(m => detectLevel(m.role) === 'manager' && !placed.has(m.id)).forEach(m => {
+    const node = nodeMap.get(m.id)!
+    const findParent = (nodes: OrgNode[]): OrgNode | null => {
+      for (const n of nodes) { if (n.department === m.department && (n.level === 'director' || n.level === 'csuite')) return n; const found = findParent(n.children); if (found) return found }
+      return null
+    }
+    const parent = findParent(root.children) || root
+    parent.children.push(node); placed.add(m.id)
+  })
+
+  // Staff → report to matching dept manager/director or root
+  unplaced.filter(m => !placed.has(m.id)).forEach(m => {
+    const node = nodeMap.get(m.id)!
+    const findParent = (nodes: OrgNode[]): OrgNode | null => {
+      for (const n of nodes) { if (n.department === m.department && (n.level === 'manager' || n.level === 'director')) return n; const found = findParent(n.children); if (found) return found }
+      return null
+    }
+    const parent = findParent(root.children) || root
+    parent.children.push(node)
+  })
+
+  return root
+}
+
+function OrgChart({ items, ctx, statusColor }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string> }) {
+  const [editing, setEditing] = useState(false)
+  const [overrides, setOverrides] = useState<Record<string, string>>(getReportingOverrides)
+  const [movingId, setMovingId] = useState<string | null>(null)
+  const [, forceUpdate] = useState(0)
+
+  const tree = buildHierarchy(items, ctx.userName || 'You', ctx.role || 'Manager')
+
+  function handleMove(childId: string, parentId: string) {
+    const next = { ...overrides, [childId]: parentId }
+    setOverrides(next)
+    saveReportingOverrides(next)
+    setMovingId(null)
+    forceUpdate(n => n + 1)
+  }
+
+  function handleCancel() {
+    setEditing(false); setMovingId(null)
+    setOverrides(getReportingOverrides())
+  }
+
+  function OrgNode({ node, depth = 0 }: { node: OrgNode; depth?: number }) {
+    const initials = node.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    const colors = node.id === 'root' ? { bg: 'rgba(108,63,197,0.15)', border: 'rgba(108,63,197,0.3)', text: '#A78BFA' } : LEVEL_COLORS[node.level]
+    const isMoving = movingId === node.id
+
+    return (
+      <div className="flex flex-col items-center">
+        {/* Node */}
+        <div className="relative rounded-xl px-4 py-2.5 text-center" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, minWidth: 150, opacity: isMoving ? 0.5 : 1 }}>
+          <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 28, height: 28, backgroundColor: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize: 10, fontWeight: 700 }}>
+              {initials}
+            </div>
+            <div className="text-left min-w-0">
+              <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{node.name}</p>
+              <p className="text-xs truncate" style={{ color: colors.text, fontSize: 10 }}>{node.role}</p>
+            </div>
+            {node.id !== 'root' && <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 6, height: 6, backgroundColor: statusColor['available'] || '#22C55E' }} />}
+          </div>
+          {editing && node.id !== 'root' && (
+            <button onClick={() => setMovingId(movingId === node.id ? null : node.id)} className="mt-1 text-xs px-2 py-0.5 rounded" style={{ backgroundColor: isMoving ? 'rgba(239,68,68,0.15)' : 'rgba(108,63,197,0.15)', color: isMoving ? '#EF4444' : '#A78BFA', border: `1px solid ${isMoving ? 'rgba(239,68,68,0.3)' : 'rgba(108,63,197,0.3)'}`, fontSize: 10 }}>
+              {isMoving ? 'Cancel' : 'Move'}
+            </button>
+          )}
+          {movingId && movingId !== node.id && editing && (
+            <button onClick={() => handleMove(movingId, node.id)} className="mt-1 text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)', fontSize: 10 }}>
+              Place here
+            </button>
+          )}
+        </div>
+
+        {/* Children */}
+        {node.children.length > 0 && (
+          <>
+            <div style={{ width: 2, height: 16, backgroundColor: '#1F2937' }} />
+            <div className="flex flex-wrap justify-center gap-4">
+              {node.children.map(child => (
+                <div key={child.id} className="flex flex-col items-center">
+                  <div style={{ width: 2, height: 8, backgroundColor: '#1F2937' }} />
+                  <OrgNode node={child} depth={depth + 1} />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-xs" style={{ color: '#6B7280' }}>
+          {items.length} team members · hierarchy auto-detected from job titles
+        </p>
+        {editing ? (
+          <div className="flex gap-2">
+            <button onClick={handleCancel} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
+            <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Save</button>
+          </div>
+        ) : (
+          <button onClick={() => setEditing(true)} className="text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+            <Pencil size={10} /> Edit
+          </button>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <div className="flex justify-center min-w-fit">
+          <OrgNode node={tree} />
+        </div>
+      </div>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 mt-6 pt-4" style={{ borderTop: '1px solid #1F2937' }}>
+        {([['You', 'rgba(108,63,197,0.3)'], ['C-Suite', LEVEL_COLORS.csuite.border], ['Directors', LEVEL_COLORS.director.border], ['Managers', LEVEL_COLORS.manager.border], ['Staff', LEVEL_COLORS.staff.border]] as const).map(([label, color]) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span className="rounded" style={{ width: 10, height: 10, backgroundColor: color }} />
+            <span className="text-xs" style={{ color: '#6B7280' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Team ────────────────────────────────────────────────────────────────────
 
 interface ImportedStaff {
@@ -463,7 +672,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
   const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(getImportedStaff)
   const { items: aiItems, loading, error, regenerate } = useAIFetch<TeamMember>('team', ctx, importedStaff.length ? { importedStaff } : undefined)
   const [subTab, setSubTab] = useState<TeamSubTab>('staff')
-  const noIntegrations = !ctx.connectedIntegrations.length
+  const showBanner = !hasRealData(['staff'])
 
   // Listen for new imports
   useEffect(() => {
@@ -514,7 +723,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
         ))}
       </div>
 
-      {noIntegrations && <NoBanner />}
+      {showBanner && <NoBanner />}
 
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <>
@@ -557,52 +766,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
           )}
 
           {/* Org Chart */}
-          {subTab === 'org' && (
-            <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              {/* CEO / MD node */}
-              <div className="flex flex-col items-center mb-6">
-                <div className="rounded-xl px-5 py-3 text-center" style={{ backgroundColor: 'rgba(108,63,197,0.15)', border: '1px solid rgba(108,63,197,0.3)' }}>
-                  <p className="text-sm font-bold" style={{ color: '#A78BFA' }}>{ctx.userName || 'You'}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{ctx.role || 'Manager'}</p>
-                </div>
-                <div style={{ width: 2, height: 24, backgroundColor: '#1F2937' }} />
-              </div>
-
-              {/* Department branches */}
-              <div className="flex flex-wrap justify-center gap-6">
-                {Object.entries(departments).map(([dept, members]) => (
-                  <div key={dept} className="flex flex-col items-center">
-                    {/* Department head */}
-                    <div className="rounded-lg px-4 py-2.5 text-center mb-2" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)', minWidth: 140 }}>
-                      <p className="text-xs font-bold" style={{ color: '#0D9488' }}>{dept}</p>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>{members.length} {members.length === 1 ? 'person' : 'people'}</p>
-                    </div>
-                    <div style={{ width: 2, height: 12, backgroundColor: '#1F2937' }} />
-                    {/* Team members */}
-                    <div className="flex flex-col gap-1.5">
-                      {members.map(m => {
-                        const initials = m.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-                        return (
-                          <div key={m.id} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', minWidth: 140 }}>
-                            <div className="relative">
-                              <div className="flex items-center justify-center rounded-full text-xs font-bold" style={{ width: 24, height: 24, backgroundColor: '#6C3FC5', color: '#F9FAFB', fontSize: 9 }}>
-                                {initials}
-                              </div>
-                              <div className="absolute -bottom-0.5 -right-0.5 rounded-full" style={{ width: 8, height: 8, backgroundColor: statusColor[m.status] || '#6B7280', border: '1.5px solid #0A0B10' }} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
-                              <p className="text-xs truncate" style={{ color: '#6B7280', fontSize: 10 }}>{m.role}</p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {subTab === 'org' && <OrgChart items={items} ctx={ctx} statusColor={statusColor} />}
 
           {/* Team Info */}
           {subTab === 'info' && (
