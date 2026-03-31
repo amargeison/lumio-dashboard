@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Activity, Send, FileText, AlertCircle, BarChart2, Star } from 'lucide-react'
+import { Users, Activity, Send, FileText, AlertCircle, BarChart2, Star, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -77,6 +78,7 @@ export default function SuccessPage() {
   const [showHealth, setShowHealth] = useState(false)
   const [showAtRisk, setShowAtRisk] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -87,6 +89,7 @@ export default function SuccessPage() {
     { label: 'Health Report',   icon: FileText,    onClick: () => setShowHealth(true) },
     { label: 'At-Risk Report',  icon: BarChart2,   onClick: () => setShowAtRisk(true) },
     { label: 'Dept Insights',  icon: Star,        onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',      icon: Building2,   onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('success')
@@ -147,6 +150,7 @@ export default function SuccessPage() {
       {showAtRisk && <AtRiskReportModal onClose={() => setShowAtRisk(false)} onToast={showToast} />}
       <AIInsightsReport dept="success" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="success" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

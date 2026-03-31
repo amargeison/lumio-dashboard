@@ -134,6 +134,7 @@ export default function SupportPage() {
       {showCreateFAQ && <FAQBuilderModal onClose={() => setShowCreateFAQ(false)} onToast={showToast} />}
       <AIInsightsReport dept="support" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="support" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

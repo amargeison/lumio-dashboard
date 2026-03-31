@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Shield, AlertTriangle, Sparkles } from 'lucide-react'
+import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Shield, AlertTriangle, Sparkles, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -50,6 +51,7 @@ const licences = [
 export default function ITPage() {
   const [showTicket, setShowTicket] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -61,6 +63,7 @@ export default function ITPage() {
     { label: 'Access Review',     icon: Shield,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Security Alert',    icon: AlertTriangle,  onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Dept Insights',    icon: Sparkles,       onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',        icon: Building2,      onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('it')
@@ -118,6 +121,7 @@ export default function ITPage() {
       {showTicket && <NewITTicketModal onClose={() => setShowTicket(false)} onSubmit={() => { setShowTicket(false); showToast('IT request created') }} />}
       <AIInsightsReport dept="it" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="it" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle, Star } from 'lucide-react'
+import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle, Star, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import { useToast } from '@/components/modals/useToast'
@@ -116,6 +117,7 @@ function RunButton({ status, onClick }: { status: RunStatus; onClick: () => void
 export default function WorkflowsPage() {
   const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -124,6 +126,7 @@ export default function WorkflowsPage() {
     { label: 'View Logs',     icon: FileText, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Export Report', icon: Download, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Dept Insights', icon: Star, onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',    icon: Building2, onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('workflows')
@@ -234,6 +237,7 @@ export default function WorkflowsPage() {
       />
       <AIInsightsReport dept="workflows" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="workflows" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }
