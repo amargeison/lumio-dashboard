@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles, Briefcase, ClipboardList, Calendar } from 'lucide-react'
+import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles, Briefcase, ClipboardList, Calendar, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import NewJoinerModal,        { type NewJoinerData }        from '@/components/NewJoinerModal'
@@ -106,6 +107,7 @@ export default function HRPage() {
   const [showContract,    setShowContract]    = useState(false)
   const [showContractor,  setShowContractor]  = useState(false)
   const [showAIInsights,  setShowAIInsights]  = useState(false)
+  const [showDeptInfo,    setShowDeptInfo]    = useState(false)
 
   const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
@@ -315,6 +317,7 @@ export default function HRPage() {
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
     { label: 'Book Contractor',    icon: Briefcase,      onClick: () => setShowContractor(true) },
     { label: 'Dept Insights',      icon: Star,           onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',          icon: Building2,      onClick: () => setShowDeptInfo(true) },
   ]
 
   return (
@@ -429,6 +432,7 @@ export default function HRPage() {
       {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
       <AIInsightsReport dept="hr" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast message={toast} />
+      {showDeptInfo && <DeptInfoModal dept="hr" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

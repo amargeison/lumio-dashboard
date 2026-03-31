@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles } from 'lucide-react'
+import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -74,6 +75,7 @@ export default function MarketingPage() {
   const [showWebinar, setShowWebinar] = useState(false)
   const [showLeadReport, setShowLeadReport] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -84,6 +86,7 @@ export default function MarketingPage() {
     { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
     { label: 'Lead Report',       icon: TrendingUp, onClick: () => setShowLeadReport(true) },
     { label: 'Dept Insights',    icon: Star,       onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',        icon: Building2,  onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('marketing')
@@ -191,6 +194,7 @@ export default function MarketingPage() {
       {showLeadReport && <LeadReportModal onClose={() => setShowLeadReport(false)} onToast={showToast} />}
       <AIInsightsReport dept="marketing" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="marketing" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

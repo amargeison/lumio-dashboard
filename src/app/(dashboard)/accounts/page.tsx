@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star } from 'lucide-react'
+import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -68,6 +69,7 @@ export default function AccountsPage() {
   const [xeroSyncing, setXeroSyncing] = useState(false)
   const [showRunPayroll, setShowRunPayroll] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES)
@@ -136,6 +138,7 @@ export default function AccountsPage() {
     { label: 'Xero Sync',       icon: RefreshCw,   onClick: () => { setXeroSyncing(true); showToast('Syncing with Xero...'); setTimeout(() => { setXeroSyncing(false); showToast('Synced with Xero — connected ✓') }, 1500) } },
     { label: 'Run Payroll',    icon: DollarSign,  onClick: () => setShowRunPayroll(true) },
     { label: 'Dept Insights', icon: Star,        onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',     icon: Building2,   onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('accounts')
@@ -206,6 +209,7 @@ export default function AccountsPage() {
       {showRunPayroll && <RunPayrollModal onClose={() => setShowRunPayroll(false)} onToast={showToast} />}
       <AIInsightsReport dept="accounts" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="accounts" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

@@ -2002,7 +2002,7 @@ function HRView({ company }: { company: string }) {
             { label: 'Dept Insights', icon: BarChart3 },
             { label: 'Dept Info', icon: Users },
           ].map(a => (
-            <button key={a.label} onClick={() => fireToast(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            <button key={a.label} onClick={() => { if (a.label === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.label === 'Dept Insights') window.dispatchEvent(new Event('lumio-dept-insights')) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               <a.icon size={12} />{a.label}
             </button>
@@ -2086,7 +2086,7 @@ function AccountsView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'Chase Invoice',i:Receipt},{l:'Raise Invoice',i:DollarSign},{l:'Weekly Report',i:FileText},{l:'Payment Received',i:DollarSign},{l:'Xero Sync',i:RotateCcw},{l:'Run Payroll',i:Zap},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2153,7 +2153,7 @@ function SalesView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'New Deal',i:TrendingUp},{l:'Book Demo',i:Calendar},{l:'Send Proposal',i:Send},{l:'Log Call',i:FileText},{l:'New Lead',i:UserPlus},{l:'Dept Insights',i:BarChart3},{l:'Generate Leads',i:Zap}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2407,7 +2407,7 @@ function MarketingView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'Create Post',i:Send},{l:'Book Event',i:Calendar},{l:'New Campaign',i:Megaphone},{l:'Case Study',i:FileText},{l:'Webinar Setup',i:Calendar},{l:'Lead Report',i:Target},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2497,7 +2497,7 @@ function TrialsView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'Admin Portal',i:Users},{l:'New Trial',i:FlaskConical},{l:'Extend Trial',i:Clock},{l:'Convert to Customer',i:UserPlus},{l:'End Trial',i:AlertCircle},{l:'Send Day 3 Email',i:Send},{l:'Send Day 7 Email',i:Send},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2560,7 +2560,7 @@ function OpsView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'Raise PO',i:Package},{l:'Update Stock',i:BarChart3},{l:'Supplier Invoice',i:Receipt},{l:'New Order',i:Plus},{l:'Restock Alert',i:AlertCircle},{l:'Supplier Contact',i:Handshake},{l:'Delivery Log',i:FileText},{l:'Stock Report',i:FileText},{l:'Book Stock',i:Package},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2632,7 +2632,7 @@ function SupportView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'New Ticket',i:Plus},{l:'Open Chat',i:Send},{l:'Create School',i:Home},{l:'Add User',i:UserPlus},{l:'Send Update',i:Send},{l:'Support Report',i:FileText},{l:'Call a School',i:Phone},{l:'Book Meeting',i:Calendar},{l:'Create Wiki',i:FileText},{l:'Create FAQ',i:Hash},{l:'Admin Portal',i:Monitor},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') setShowDeptInfo(true) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank'); if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2701,7 +2701,7 @@ function SuccessView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'Health Check',i:Star},{l:'QBR Prep',i:Calendar},{l:'Churn Alert',i:AlertCircle},{l:'NPS Survey',i:Send},{l:'Expansion Opp',i:TrendingUp},{l:'Dept Insights',i:BarChart3},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -2764,7 +2764,7 @@ function ITView({ company }: { company: string }) {
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
           {[{l:'New IT Request',i:Plus},{l:'Provision Account',i:UserPlus},{l:'Asset Register',i:Package},{l:'Licence Renewal',i:RotateCcw},{l:'IT Report',i:FileText},{l:'Access Review',i:CheckCircle2},{l:'Security Alert',i:AlertCircle},{l:'Dept Insights',i:Sparkles},{l:'Dept Info',i:Users}].map(a=>(
-            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') setShowDeptInfo(true); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
+            <button key={a.l} onClick={() => { if (a.l === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.l === 'Admin Portal') window.open('/demo/admin', '_blank') }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}><a.i size={12}/>{a.l}</button>
           ))}
         </div>
       </div>
@@ -3765,6 +3765,13 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   const [showCoachMarks, setShowCoachMarks]   = useState(false)
   const [showDeptInsights, setShowDeptInsights] = useState(false)
   const [showDeptInfo, setShowDeptInfo] = useState(false)
+  useEffect(() => {
+    const handleDeptInfo = () => setShowDeptInfo(true)
+    const handleDeptInsights = () => setShowDeptInsights(true)
+    window.addEventListener('lumio-dept-info', handleDeptInfo)
+    window.addEventListener('lumio-dept-insights', handleDeptInsights)
+    return () => { window.removeEventListener('lumio-dept-info', handleDeptInfo); window.removeEventListener('lumio-dept-insights', handleDeptInsights) }
+  }, [])
   const [overviewAction, setOverviewAction] = useState<string | null>(null)
   const [showNewJoiner,    setShowNewJoiner]    = useState(false)
   const [showLeaveRequest, setShowLeaveRequest] = useState(false)

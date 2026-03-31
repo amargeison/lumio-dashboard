@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield, Star } from 'lucide-react'
+import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield, Star, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import NewTrialModal from '@/components/modals/NewTrialModal'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { useToast } from '@/components/modals/useToast'
 
@@ -57,6 +58,7 @@ const opportunities = [
 export default function TrialsPage() {
   const [showTrial, setShowTrial] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -68,6 +70,7 @@ export default function TrialsPage() {
     { label: 'Send Day 3 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Send Day 7 Email',    icon: Send,         onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
     { label: 'Dept Insights',      icon: Star,         onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',          icon: Building2,    onClick: () => setShowDeptInfo(true) },
   ]
 
   const hasData = useHasDashboardData('trials')
@@ -123,6 +126,7 @@ export default function TrialsPage() {
       {showTrial && <NewTrialModal onClose={() => setShowTrial(false)} onSubmit={() => { setShowTrial(false); showToast('Trial created') }} />}
       <AIInsightsReport dept="trials" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="trials" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }

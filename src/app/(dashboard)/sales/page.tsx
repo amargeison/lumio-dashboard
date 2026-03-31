@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sparkles } from 'lucide-react'
+import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sparkles, Building2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -10,6 +10,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { NewDealModal, BookDemoModal, SendProposalModal, LogCallModal, NewLeadModal, DeptInsightsModal, GenerateLeadsModal } from '@/components/modals/SalesModals'
 import { useToast } from '@/components/modals/useToast'
 import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
 
 const STAGE_LABELS: Record<string, string> = {
   lead: 'Lead', qualified: 'Discovery', demo: 'Demo', proposal: 'Proposal',
@@ -82,6 +83,7 @@ export default function SalesPage() {
   const [showDemo, setShowDemo] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   const [showGenLeads, setShowGenLeads] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
   const { showToast, Toast } = useToast()
 
   const actions = [
@@ -92,6 +94,7 @@ export default function SalesPage() {
     { label: 'New Lead',       icon: UserPlus,   onClick: () => setShowLead(true) },
     { label: 'Dept Insights',  icon: Sparkles,   onClick: () => setShowInsights(true) },
     { label: 'Generate Leads', icon: UserPlus,   onClick: () => setShowGenLeads(true) },
+    { label: 'Dept Info',      icon: Building2,  onClick: () => setShowDeptInfo(true) },
   ]
 
   useEffect(() => {
@@ -219,6 +222,7 @@ export default function SalesPage() {
       {showInsights && <DeptInsightsModal onClose={() => setShowInsights(false)} onToast={showToast} />}
       {showGenLeads && <GenerateLeadsModal onClose={() => setShowGenLeads(false)} onToast={showToast} />}
       <Toast />
+      {showDeptInfo && <DeptInfoModal dept="sales" onClose={() => setShowDeptInfo(false)} />}
     </PageShell>
   )
 }
