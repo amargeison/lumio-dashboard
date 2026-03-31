@@ -158,3 +158,98 @@ export function useHasData(pageName: string): boolean | null {
   const slug = slugMatch?.[1] ?? 'school'
   return localStorage.getItem(`lumio_${slug}_${pageName}_hasData`) === 'true'
 }
+
+// ─── School-specific empty state definitions ─────────────────────────────────
+
+export interface EmptyStateConfig {
+  title: string
+  message: string
+  ctaLabel: string
+  ctaHref: string
+  icon: 'data' | 'integration' | 'generic'
+}
+
+export const EMPTY_STATES: Record<string, EmptyStateConfig> = {
+  pupils: {
+    title: 'No pupils added yet',
+    message: 'Import your pupils via CSV or sync from your MIS to see your roll here.',
+    ctaLabel: 'Import pupils',
+    ctaHref: '/settings/data',
+    icon: 'data',
+  },
+  mis: {
+    title: 'Connect your MIS',
+    message: 'Link Arbor, SIMS, Bromcom or Wonde to sync pupils, staff and timetables automatically.',
+    ctaLabel: 'Set up MIS sync',
+    ctaHref: '/settings/integrations',
+    icon: 'integration',
+  },
+  send: {
+    title: 'No SEND records yet',
+    message: 'SEND profiles will appear here once pupils are imported or synced from your MIS.',
+    ctaLabel: 'Import pupils',
+    ctaHref: '/settings/data',
+    icon: 'data',
+  },
+  safeguarding: {
+    title: 'No safeguarding records',
+    message: 'Log incidents and concerns here. Records will appear once your first entry is added.',
+    ctaLabel: 'Log an incident',
+    ctaHref: '#log-incident',
+    icon: 'generic',
+  },
+  attendance: {
+    title: 'No attendance data yet',
+    message: 'Attendance will populate here once pupils are added and registers are connected.',
+    ctaLabel: 'Connect registers',
+    ctaHref: '/settings/integrations',
+    icon: 'integration',
+  },
+  timetable: {
+    title: 'No timetable connected',
+    message: 'Sync your timetable from your MIS or upload manually to see lessons here.',
+    ctaLabel: 'Set up MIS sync',
+    ctaHref: '/settings/integrations',
+    icon: 'integration',
+  },
+  staff_schools: {
+    title: 'No staff added yet',
+    message: 'Import your staff via CSV or sync from your MIS or HR system.',
+    ctaLabel: 'Import staff',
+    ctaHref: '/settings/data',
+    icon: 'data',
+  },
+  ofsted: {
+    title: 'No Ofsted data yet',
+    message: 'Your Ofsted readiness score will build as you add pupils, staff and policies.',
+    ctaLabel: 'Get started',
+    ctaHref: '/settings',
+    icon: 'generic',
+  },
+}
+
+/**
+ * Lightweight empty state card for inline use on pages that already have
+ * their own layout (e.g. dashboard sub-sections). Uses the EMPTY_STATES
+ * config to show title, message and a CTA link.
+ */
+export function InlineEmptyState({ config }: { config: EmptyStateConfig }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl mb-4" style={{
+        background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(13,148,136,0.05))',
+        border: '1px solid rgba(13,148,136,0.25)',
+      }}>
+        <Database size={24} style={{ color: '#0D9488' }} />
+      </div>
+      <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{config.title}</h3>
+      <p className="text-xs mb-4 max-w-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{config.message}</p>
+      <a href={config.ctaHref} className="text-xs font-semibold px-4 py-2 rounded-lg" style={{
+        backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488',
+        border: '1px solid rgba(13,148,136,0.3)',
+      }}>
+        {config.ctaLabel}
+      </a>
+    </div>
+  )
+}

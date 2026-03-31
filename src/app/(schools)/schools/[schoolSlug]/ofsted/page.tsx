@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity, BarChart3 } from 'lucide-react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -129,6 +130,18 @@ function StatusIcon({ status }: { status: string }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function OfstedModePage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_ofsted_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   const [activated, setActivated] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [inspectionDate, setInspectionDate] = useState(new Date().toISOString().split('T')[0])
@@ -247,6 +260,19 @@ export default function OfstedModePage() {
   }
 
   // ─── Active Ofsted Dashboard ───────────────────────────────────────────────
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="ofsted"
+      title="No Ofsted data yet"
+      description="Your Ofsted readiness score will build as you add pupils, staff and policies. Upload your data or connect your MIS to get started."
+      uploads={[
+        { key: 'policies', label: 'Upload Policies & Evidence (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
+
   return (
     <div className="space-y-6">
       {/* Orange inspection banner */}

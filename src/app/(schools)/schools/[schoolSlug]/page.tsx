@@ -1020,6 +1020,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [schoolId, setSchoolId] = useState('')
   const [schoolData, setSchoolData] = useState<SchoolData | null>(null)
+  const [demoDataActive, setDemoDataActive] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+  )
 
   useEffect(() => {
     fetch(`/api/schools/${_slug}`)
@@ -1028,6 +1031,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         if (data) {
           setSchoolData(data)
           if (data.id) setSchoolId(data.id)
+          if (data.demo_data_active) setDemoDataActive(true)
           // Live onboarding wizard — show if not completed and no localStorage guard
           if (data.onboarding_completed === false && !localStorage.getItem('lumio_onboarding_shown')) {
             setShowLiveOnboarding(true)
@@ -1122,15 +1126,17 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       </div>
 
-      {/* 4. Safeguarding alert — always visible */}
-      <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
-        <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>1 open safeguarding concern</p>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>Requires DSL review — logged 2 days ago</p>
+      {/* 4. Safeguarding alert — only when demo data is active */}
+      {demoDataActive && (
+        <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
+          <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>1 open safeguarding concern</p>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>Requires DSL review — logged 2 days ago</p>
+          </div>
+          <button className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
         </div>
-        <button className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
-      </div>
+      )}
 
       {/* TAB: Today */}
       {activeTab === 'today' && (
@@ -1144,15 +1150,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               {/* Staff Today */}
               <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>👥 Staff Today</h3>
-                <div className="space-y-1">
-                  {STAFF_TODAY.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 py-2">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{s.name.split(' ').slice(-1)[0][0]}</div>
-                      <div className="flex-1 min-w-0"><p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p></div>
-                      <StaffBadge status={s.status} />
-                    </div>
-                  ))}
-                </div>
+                {demoDataActive ? (
+                  <div className="space-y-1">
+                    {STAFF_TODAY.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2 py-2">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{s.name.split(' ').slice(-1)[0][0]}</div>
+                        <div className="flex-1 min-w-0"><p className="text-xs font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name}</p></div>
+                        <StaffBadge status={s.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs py-4 text-center" style={{ color: '#6B7280' }}>No staff data yet. Import staff via CSV or sync from your MIS.</p>
+                )}
               </div>
             </div>
           </div>
@@ -1163,21 +1173,25 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'quick-wins' && (
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h3>
-          <div className="space-y-2">
-            {[
-              { text: 'Take register for Year 4B — overdue', urgent: true },
-              { text: 'Sign off DSL concern logged 2 days ago', urgent: true },
-              { text: 'Chase 3 outstanding trip permission slips', urgent: false },
-              { text: 'Review EHCP draft for student review tomorrow', urgent: false },
-              { text: 'Send parent callback — missed call logged this morning', urgent: false },
-            ].map((w, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                <span className="text-sm flex-1" style={{ color: '#F9FAFB' }}>{w.text}</span>
-                {w.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
-              </div>
-            ))}
-          </div>
+          {demoDataActive ? (
+            <div className="space-y-2">
+              {[
+                { text: 'Take register for Year 4B — overdue', urgent: true },
+                { text: 'Sign off DSL concern logged 2 days ago', urgent: true },
+                { text: 'Chase 3 outstanding trip permission slips', urgent: false },
+                { text: 'Review EHCP draft for student review tomorrow', urgent: false },
+                { text: 'Send parent callback — missed call logged this morning', urgent: false },
+              ].map((w, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
+                  <span className="text-sm flex-1" style={{ color: '#F9FAFB' }}>{w.text}</span>
+                  {w.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Quick wins will appear here once your data is connected.</p>
+          )}
         </div>
       )}
 
@@ -1185,20 +1199,24 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'tasks' && (
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h3>
-          <div className="space-y-2">
-            {[
-              'Morning register check — all classes',
-              'Review attendance alerts',
-              'Check safeguarding log',
-              'Staff briefing notes',
-              'End of day behaviour summary',
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                <span className="text-sm" style={{ color: '#F9FAFB' }}>{t}</span>
-              </div>
-            ))}
-          </div>
+          {demoDataActive ? (
+            <div className="space-y-2">
+              {[
+                'Morning register check — all classes',
+                'Review attendance alerts',
+                'Check safeguarding log',
+                'Staff briefing notes',
+                'End of day behaviour summary',
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
+                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Daily tasks will appear here once your data is connected.</p>
+          )}
         </div>
       )}
 
@@ -1206,19 +1224,23 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'insights' && (
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>📊 Insights</h3>
-          <div className="space-y-3">
-            {[
-              { label: 'Attendance trend this week', value: '94.3% → 96.1%', color: '#22C55E', trend: '↑' },
-              { label: 'Behaviour incidents vs last week', value: '7 vs 12', color: '#0D9488', trend: '↓' },
-              { label: 'SEND review deadlines approaching', value: '3 this month', color: '#F59E0B', trend: '' },
-              { label: 'FSM uptake this term', value: '18.2%', color: '#A78BFA', trend: '' },
-            ].map(s => (
-              <div key={s.label} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <span className="text-sm" style={{ color: '#9CA3AF' }}>{s.label}</span>
-                <span className="text-sm font-bold" style={{ color: s.color }}>{s.trend} {s.value}</span>
-              </div>
-            ))}
-          </div>
+          {demoDataActive ? (
+            <div className="space-y-3">
+              {[
+                { label: 'Attendance trend this week', value: '94.3% → 96.1%', color: '#22C55E', trend: '↑' },
+                { label: 'Behaviour incidents vs last week', value: '7 vs 12', color: '#0D9488', trend: '↓' },
+                { label: 'SEND review deadlines approaching', value: '3 this month', color: '#F59E0B', trend: '' },
+                { label: 'FSM uptake this term', value: '18.2%', color: '#A78BFA', trend: '' },
+              ].map(s => (
+                <div key={s.label} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <span className="text-sm" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                  <span className="text-sm font-bold" style={{ color: s.color }}>{s.trend} {s.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
+          )}
         </div>
       )}
 
@@ -1226,21 +1248,25 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'dont-miss' && (
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>🔴 Don't Miss</h3>
-          <div className="space-y-2">
-            {[
-              { text: 'EHCP annual review overdue — 2 students', level: 'critical' },
-              { text: 'DBS expiry — 1 staff member in 7 days', level: 'critical' },
-              { text: 'Ofsted data return due Friday', level: 'warning' },
-              { text: 'Year 6 SATs prep — resources not uploaded', level: 'warning' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${item.level === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, borderLeft: `3px solid ${item.level === 'critical' ? '#EF4444' : '#F59E0B'}` }}>
-                <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.text}</span>
-                <span className="text-xs px-1.5 py-0.5 rounded ml-auto flex-shrink-0" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: item.level === 'critical' ? '#F87171' : '#FBBF24' }}>
-                  {item.level === 'critical' ? 'Critical' : 'Warning'}
-                </span>
-              </div>
-            ))}
-          </div>
+          {demoDataActive ? (
+            <div className="space-y-2">
+              {[
+                { text: 'EHCP annual review overdue — 2 students', level: 'critical' },
+                { text: 'DBS expiry — 1 staff member in 7 days', level: 'critical' },
+                { text: 'Ofsted data return due Friday', level: 'warning' },
+                { text: 'Year 6 SATs prep — resources not uploaded', level: 'warning' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${item.level === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, borderLeft: `3px solid ${item.level === 'critical' ? '#EF4444' : '#F59E0B'}` }}>
+                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.text}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded ml-auto flex-shrink-0" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: item.level === 'critical' ? '#F87171' : '#FBBF24' }}>
+                    {item.level === 'critical' ? 'Critical' : 'Warning'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Alerts and reminders will appear here once your data is connected.</p>
+          )}
         </div>
       )}
 
@@ -1248,6 +1274,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'staff' && (
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>👥 Staff Overview</h3>
+          {demoDataActive ? (
+          <>
           <div className="grid grid-cols-2 gap-3 mb-4">
             {[
               { label: 'Staff in today', value: '4 / 6', color: '#0D9488' },
@@ -1261,10 +1289,15 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               </div>
             ))}
           </div>
+          </>
+          ) : (
+            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Staff data will appear here once imported or synced from your MIS.</p>
+          )}
         </div>
       )}
 
-      {/* Stats row */}
+      {/* Stats row + Attendance + Workflows + Compliance — demo data only */}
+      {demoDataActive ? (
       <div className="space-y-4">
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
@@ -1346,6 +1379,30 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             </div>
           </Card>
       </div>
+      ) : (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          {[
+            { label: 'Attendance today',  value: '--',  sub: 'No data yet', icon: Activity   },
+            { label: 'Active workflows',  value: '0',   sub: 'None set up', icon: GitBranch  },
+            { label: 'Open concerns',     value: '0',   sub: 'No records',  icon: Shield     },
+            { label: 'Staff in today',    value: '--',  sub: 'No staff imported', icon: Users },
+          ].map(s => {
+            const Icon = s.icon
+            return (
+              <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(107,114,153,0.1)' }}>
+                    <Icon size={14} style={{ color: '#6B7280' }} />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold" style={{ color: '#4B5563' }}>{s.value}</p>
+                <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.sub}</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Live tenant onboarding wizard ──────────────────────── */}
       {showLiveOnboarding && schoolId && (

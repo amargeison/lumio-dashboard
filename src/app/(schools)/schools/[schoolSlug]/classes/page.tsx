@@ -1,6 +1,7 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sparkles, ClipboardList, UserPlus, Eye, Calendar, BarChart3 } from 'lucide-react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { RegisterClassModal, AddPupilToClassModal, TimetableChangeModal } from '@/components/modals/SchoolModals'
@@ -51,6 +52,18 @@ function QuickActions({ actions, onAction }: { actions: typeof ACTIONS; onAction
 }
 
 export default function ClassesPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_classes_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   const [showRegister, setShowRegister] = useState(false)
   const [showAddPupil, setShowAddPupil] = useState(false)
   const [showTimetable, setShowTimetable] = useState(false)
@@ -65,6 +78,19 @@ export default function ClassesPage() {
     else if (label === 'Dept Insights') setShowInsights(true)
     else showToast('Feature coming soon')
   }
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="classes"
+      title="No classes set up yet"
+      description="Import your class groups and pupil allocations via CSV or sync from your MIS to manage registers and timetables."
+      uploads={[
+        { key: 'classes', label: 'Upload Class Groups (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3 } from 'lucide-react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -80,6 +81,18 @@ function findClashes(lessons: Lesson[]): { type: string; detail: string; lessons
 const INPUT_S: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none', width: '100%' }
 
 export default function TimetablePage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_timetable_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   const [view, setView] = useState<'week' | 'teacher' | 'room' | 'class'>('week')
   const [selectedYear, setSelectedYear] = useState('Year 7')
   const [selectedTeacher, setSelectedTeacher] = useState(TEACHERS[0])
@@ -151,6 +164,19 @@ export default function TimetablePage() {
       </div>
     )
   }
+
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="timetable"
+      title="No timetable data yet"
+      description="Sync your timetable from your MIS or upload manually to see lessons, rooms and teacher allocations here."
+      uploads={[
+        { key: 'timetable', label: 'Upload Timetable (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
 
   return (
     <div className="space-y-4">

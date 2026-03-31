@@ -17,7 +17,7 @@ export async function GET(
 
   const { data: school, error } = await supabase
     .from('schools')
-    .select('id, name, slug, town, headteacher, ofsted_rating, pupil_count, staff_count, plan, trial_ends_at, workspace_type, active, live_school_id, onboarding_completed')
+    .select('id, name, slug, town, headteacher, ofsted_rating, pupil_count, staff_count, plan, trial_ends_at, workspace_type, active, live_school_id, onboarding_completed, demo_data_active')
     .eq('slug', slug)
     .maybeSingle()
 

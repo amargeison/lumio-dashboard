@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { ExternalLink } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
 
 const VOICES = [
   { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
@@ -81,8 +83,14 @@ function ConnectRow({ label, connected }: { label: string; connected: boolean })
 }
 
 export default function SchoolSettingsPage() {
+  const pathname = usePathname()
+  const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+  const schoolSlug = slugMatch?.[1] ?? 'school'
+
   const [schoolName, setSchoolName] = useState('')
   const [plan, setPlan] = useState('Trial')
+  const [demoDataActive, setDemoDataActive] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
 
   // AI Briefing
   const [briefingEnabled, setBriefingEnabled] = useState(true)
@@ -107,6 +115,12 @@ export default function SchoolSettingsPage() {
     const name = localStorage.getItem('lumio_school_name') || ''
     setSchoolName(name)
     setPlan(localStorage.getItem('lumio_school_plan') || 'Trial')
+    // Check demo data status
+    setDemoDataActive(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
+    fetch(`/api/schools/${schoolSlug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.demo_data_active) setDemoDataActive(true) })
+      .catch(() => {})
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'true') setVoiceEnabled(true)
     const v = localStorage.getItem('lumio_tts_voice')
@@ -298,7 +312,57 @@ export default function SchoolSettingsPage() {
         </div>
       </Section>
 
-      {/* Section 9 — Dev Tools */}
+      {/* Section 9 — Data & Display */}
+      <Section title="Data & Display">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>
+                {demoDataActive ? 'Demo data is active' : 'Demo data'}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                {demoDataActive
+                  ? 'Your portal is showing sample data. Clear it to see your real workspace.'
+                  : 'Load sample data to explore all features before connecting your real data.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              setDemoLoading(true)
+              const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+              if (demoDataActive) {
+                // Clear demo data
+                Object.keys(localStorage)
+                  .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData'))
+                  .forEach(k => localStorage.removeItem(k))
+                localStorage.removeItem('lumio_schools_demo_loaded')
+                await supabase.from('schools').update({ demo_data_active: false }).eq('slug', schoolSlug)
+                setDemoDataActive(false)
+              } else {
+                // Load demo data
+                localStorage.setItem('lumio_schools_demo_loaded', 'true')
+                await supabase.from('schools').update({ demo_data_active: true }).eq('slug', schoolSlug)
+                setDemoDataActive(true)
+              }
+              setDemoLoading(false)
+              window.location.reload()
+            }}
+            disabled={demoLoading}
+            className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: demoDataActive ? 'rgba(239,68,68,0.1)' : 'rgba(13,148,136,0.1)',
+              color: demoDataActive ? '#EF4444' : '#0D9488',
+              border: `1px solid ${demoDataActive ? 'rgba(239,68,68,0.3)' : 'rgba(13,148,136,0.3)'}`,
+              opacity: demoLoading ? 0.6 : 1,
+            }}
+          >
+            {demoLoading ? 'Loading...' : demoDataActive ? 'Clear demo data' : 'Load demo data'}
+          </button>
+        </div>
+      </Section>
+
+      {/* Section 10 — Dev Tools */}
       {isDev && (
         <Section title="Dev Tools">
           <div className="px-5 py-4">
