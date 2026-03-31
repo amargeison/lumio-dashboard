@@ -1336,8 +1336,11 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
               <button onClick={() => handleClick(a)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
                 <a.icon size={12} />{a.label}
               </button>
-              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2.5 py-1.5 rounded-lg text-xs w-52 text-center z-50 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>
-                {connected ? a.tooltip : 'Connect your tools in Settings to use this feature'}
+              <div className="pointer-events-none absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ bottom: '100%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 9999 }}>
+                <div className="px-2.5 py-1.5 rounded-lg text-xs w-52 text-center" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>
+                  {connected ? a.tooltip : 'Connect your tools in Settings to use this feature'}
+                </div>
+                <div style={{ width: 0, height: 0, margin: '0 auto', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #374151' }} />
               </div>
             </div>
           )
@@ -1801,8 +1804,8 @@ const INTEGRATION_GROUPS = [
 
 // ─── Settings View ───────────────────────────────────────────────────────────
 
-function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
-  company: string; demoDataActive: boolean; sessionToken: string; onDemoToggle: (active: boolean) => void
+function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onToast }: {
+  company: string; demoDataActive: boolean; sessionToken: string; onDemoToggle: (active: boolean) => void; onToast: (msg: string) => void
 }) {
   // ── State ────────────────────────────────────────────────────────────────
   const [clearing, setClearing] = useState(false)
@@ -1857,6 +1860,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
+    // Prevent onboarding/welcome overlays from re-triggering after demo clear
+    localStorage.setItem('lumio_onboarding_shown', 'true')
     onDemoToggle(false)
     setClearing(false)
   }
@@ -1871,15 +1876,93 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
     setLoading(false)
   }
 
+  const [importStatus, setImportStatus] = useState('')
+
   async function handleUpload() {
     if (!uploadFiles.length) return
     setUploading(true)
-    const fd = new FormData()
-    uploadFiles.forEach(f => fd.append('files', f))
-    fd.append('session_token', sessionToken)
-    await fetch('/api/onboarding/process-data', { method: 'POST', body: fd }).catch(() => {})
+
+    // Find the first CSV file
+    const csvFile = uploadFiles.find(f => f.name.toLowerCase().endsWith('.csv'))
+    if (!csvFile) {
+      // Non-CSV files: send to generic processor
+      const fd = new FormData()
+      uploadFiles.forEach(f => fd.append('files', f))
+      fd.append('session_token', sessionToken)
+      await fetch('/api/onboarding/process-data', { method: 'POST', body: fd }).catch(() => {})
+      onToast('Files uploaded successfully')
+      setUploadFiles([])
+      setUploading(false)
+      return
+    }
+
+    // Parse CSV
+    try {
+      const text = await csvFile.text()
+      const lines = text.split(/\r?\n/).filter(l => l.trim())
+      if (lines.length < 2) { onToast('CSV file is empty or has no data rows'); setUploading(false); return }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z_ ]/g, ''))
+      const colMap: Record<string, string> = {}
+      headers.forEach((h, i) => {
+        if (h.includes('first') && h.includes('name')) colMap['first_name'] = String(i)
+        else if (h.includes('last') && h.includes('name')) colMap['last_name'] = String(i)
+        else if (h === 'name' || h === 'full name' || h === 'fullname') colMap['full_name'] = String(i)
+        else if (h.includes('email')) colMap['email'] = String(i)
+        else if (h.includes('job') || h.includes('title') || h.includes('role') || h.includes('position')) colMap['job_title'] = String(i)
+        else if (h.includes('department') || h.includes('dept') || h.includes('team')) colMap['department'] = String(i)
+        else if (h.includes('phone') || h.includes('mobile') || h.includes('tel')) colMap['phone'] = String(i)
+        else if (h.includes('start') && h.includes('date')) colMap['start_date'] = String(i)
+      })
+
+      const staff = lines.slice(1).map(line => {
+        const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+        const row: Record<string, string> = {}
+
+        if (colMap['full_name'] !== undefined) {
+          const parts = (cols[parseInt(colMap['full_name'])] || '').split(' ')
+          row.first_name = parts[0] || ''
+          row.last_name = parts.slice(1).join(' ') || ''
+        }
+        if (colMap['first_name'] !== undefined) row.first_name = cols[parseInt(colMap['first_name'])] || ''
+        if (colMap['last_name'] !== undefined) row.last_name = cols[parseInt(colMap['last_name'])] || ''
+        if (colMap['email'] !== undefined) row.email = cols[parseInt(colMap['email'])] || ''
+        if (colMap['job_title'] !== undefined) row.job_title = cols[parseInt(colMap['job_title'])] || ''
+        if (colMap['department'] !== undefined) row.department = cols[parseInt(colMap['department'])] || ''
+        if (colMap['phone'] !== undefined) row.phone = cols[parseInt(colMap['phone'])] || ''
+        if (colMap['start_date'] !== undefined) row.start_date = cols[parseInt(colMap['start_date'])] || ''
+
+        return row
+      }).filter(s => s.first_name || s.email)
+
+      if (!staff.length) { onToast('No valid staff rows found — need First Name or Email'); setUploading(false); return }
+
+      setImportStatus(`Importing ${staff.length} staff...`)
+
+      const res = await fetch('/api/workspace/import-staff', {
+        method: 'POST',
+        headers: { 'x-workspace-token': sessionToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        // Cache imported staff in localStorage
+        const existing = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+        localStorage.setItem('lumio_staff_imported', JSON.stringify([...existing, ...staff]))
+        window.dispatchEvent(new Event('lumio-staff-imported'))
+        onToast(`${data.imported} staff members imported successfully`)
+      } else {
+        onToast('Import failed — please check your CSV format')
+      }
+    } catch (err) {
+      console.error('[handleUpload] CSV parse error:', err)
+      onToast('Import failed — please check your CSV format')
+    }
+
     setUploadFiles([])
     setUploading(false)
+    setImportStatus('')
   }
 
   async function handleSaveCompanyName() {
@@ -2084,7 +2167,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
                   </div>
                 ))}
                 <button onClick={handleUpload} disabled={uploading} className="w-full py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-                  {uploading ? 'Processing...' : 'Process & Import'}
+                  {uploading ? (importStatus || 'Processing...') : 'Process & Import'}
                 </button>
               </div>
             )}
@@ -2364,6 +2447,9 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
+  const [showPhoneCall, setShowPhoneCall] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [callVia, setCallVia] = useState('Phone')
   const [, forceUpdate] = useState(0)
   useEffect(() => {
     const handler = () => forceUpdate(n => n + 1)
@@ -2374,12 +2460,12 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   const quickActionToasts: Record<string, string> = {
     'Send Email': 'Opening email composer...',
     'Send Slack': 'Opening Slack...',
-    'Phone Call': 'Logging a call...',
     'Book Meeting': 'Opening calendar...',
     'Team Events': 'Opening team events...',
   }
 
   const quickActionModals: Record<string, () => void> = {
+    'Phone Call': () => setShowPhoneCall(true),
     'Claim Expenses': () => setShowExpense(true),
     'Book Holiday': () => setShowHoliday(true),
     'Report Sickness': () => setShowSickness(true),
@@ -2413,7 +2499,11 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       role: typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'Manager' : 'Manager',
       department: 'General',
       connectedIntegrations: integrations,
-      importedData: { hasStaff: false, hasContacts: false, hasAccounts: false },
+      importedData: {
+        hasStaff: typeof window !== 'undefined' && (localStorage.getItem('lumio_staff_imported') || '[]') !== '[]',
+        hasContacts: false,
+        hasAccounts: false,
+      },
     }
   }, [firstName, company])
 
@@ -2506,6 +2596,35 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
       {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} />}
       {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} />}
+
+      {/* Phone Call modal */}
+      {showPhoneCall && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowPhoneCall(false)}>
+          <div className="rounded-xl p-6 w-full max-w-sm" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Make a Call</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Phone number or name</label>
+                <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="+44 7700 900000 or John Smith" className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} autoFocus />
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Call via</label>
+                <select value={callVia} onChange={e => setCallVia(e.target.value)} className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                  <option>Phone</option>
+                  <option>Slack Huddle</option>
+                  <option>Zoom</option>
+                  <option>Teams</option>
+                  <option>Google Meet</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowPhoneCall(false)} className="flex-1 py-2.5 rounded-lg text-sm" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
+              <button onClick={() => { onAction(`Calling${phoneNumber ? ' ' + phoneNumber : ''} via ${callVia}...`); setShowPhoneCall(false); setPhoneNumber('') }} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Start Call</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2767,7 +2886,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             </div>
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
-            {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
+            {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} />}
           </main>
         </div>

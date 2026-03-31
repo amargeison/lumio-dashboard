@@ -86,7 +86,7 @@ function clearDismissed() {
   if (typeof window !== 'undefined') localStorage.removeItem('lumio_dontmiss_dismissed')
 }
 
-function useAIFetch<T>(tab: string, ctx: AIContext) {
+function useAIFetch<T>(tab: string, ctx: AIContext, extraContext?: Record<string, unknown>) {
   const [items, setItems] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -105,7 +105,7 @@ function useAIFetch<T>(tab: string, ctx: AIContext) {
         headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
         body: JSON.stringify({
           tab,
-          context: { ...ctx, timeOfDay: getTimeOfDay(), dayOfWeek: getDayOfWeek() },
+          context: { ...ctx, ...extraContext, timeOfDay: getTimeOfDay(), dayOfWeek: getDayOfWeek() },
         }),
       })
       if (!res.ok) throw new Error('fetch failed')
@@ -432,10 +432,47 @@ export function AIDontMiss({ ctx }: { ctx: AIContext }) {
 
 // ─── Team ────────────────────────────────────────────────────────────────────
 
+interface ImportedStaff {
+  first_name?: string; last_name?: string; email?: string
+  job_title?: string; department?: string; phone?: string; start_date?: string
+}
+
+function getImportedStaff(): ImportedStaff[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+}
+
+function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
+  return {
+    id: `imported-${i}`,
+    name: [s.first_name, s.last_name].filter(Boolean).join(' ') || s.email || 'Unknown',
+    role: s.job_title || 'Team Member',
+    department: s.department || 'General',
+    status: 'available',
+    currentFocus: 'Imported via CSV',
+    needsAttention: false,
+    attentionNote: null,
+  }
+}
+
 export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: string) => void }) {
-  const { items, loading, error, regenerate } = useAIFetch<TeamMember>('team', ctx)
+  const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(getImportedStaff)
+  const { items: aiItems, loading, error, regenerate } = useAIFetch<TeamMember>('team', ctx, importedStaff.length ? { importedStaff } : undefined)
   const [subTab, setSubTab] = useState<TeamSubTab>('staff')
   const noIntegrations = !ctx.connectedIntegrations.length
+
+  // Listen for new imports
+  useEffect(() => {
+    const handler = () => setImportedStaff(getImportedStaff())
+    window.addEventListener('lumio-staff-imported', handler)
+    return () => window.removeEventListener('lumio-staff-imported', handler)
+  }, [])
+
+  const hasImported = importedStaff.length > 0
+  // If staff have been imported, use them as primary source; AI items as fallback
+  const items: TeamMember[] = hasImported
+    ? importedStaff.map((s, i) => importedToTeamMember(s, i))
+    : aiItems
 
   const statusColor: Record<string, string> = { available: '#22C55E', 'in-meeting': '#F59E0B', busy: '#EF4444', away: '#6B7280' }
   const statusLabel: Record<string, string> = { available: 'Available', 'in-meeting': 'In meeting', busy: 'Busy', away: 'Away' }

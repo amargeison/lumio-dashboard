@@ -15,6 +15,7 @@ interface OverviewContext {
     hasContacts: boolean
     hasAccounts: boolean
   }
+  importedStaff?: { first_name?: string; last_name?: string; job_title?: string; department?: string }[]
 }
 
 const SYSTEM_PROMPTS: Record<TabType, string> = {
@@ -101,6 +102,14 @@ export async function POST(req: NextRequest) {
     }
 
     const systemPrompt = SYSTEM_PROMPTS[tab]
+    let staffContext = ''
+    if (tab === 'team' && context.importedStaff?.length) {
+      const staffList = context.importedStaff.map(s =>
+        `${[s.first_name, s.last_name].filter(Boolean).join(' ')} — ${s.job_title || 'Team Member'} (${s.department || 'General'})`
+      ).join('\n  ')
+      staffContext = `\n\nIMPORTANT: The following staff have been imported. Use these real people in your team overview instead of generating fictional ones:\n  ${staffList}`
+    }
+
     const userMessage = `Generate content for the "${tab}" tab.
 
 User context:
@@ -111,7 +120,7 @@ User context:
 - Time of day: ${context.timeOfDay || 'morning'}
 - Day: ${context.dayOfWeek || 'Monday'}
 - Connected integrations: ${context.connectedIntegrations?.length ? context.connectedIntegrations.join(', ') : 'None — generate role-based suggestions'}
-- Imported data: Staff=${context.importedData?.hasStaff || false}, Contacts=${context.importedData?.hasContacts || false}, Accounts=${context.importedData?.hasAccounts || false}
+- Imported data: Staff=${context.importedData?.hasStaff || false}, Contacts=${context.importedData?.hasContacts || false}, Accounts=${context.importedData?.hasAccounts || false}${staffContext}
 
 Return the JSON array now.`
 
