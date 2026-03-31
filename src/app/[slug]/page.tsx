@@ -29,6 +29,7 @@ import NotToMiss from '@/app/(dashboard)/overview/components/NotToMiss'
 import TeamPanel from '@/app/(dashboard)/overview/components/TeamPanel'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -2037,6 +2038,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(false)
+  const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
+  const [businessId, setBusinessId] = useState('')
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
@@ -2095,8 +2098,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('workspace_company_logo', data.logo_url)
             localStorage.setItem('lumio_company_logo', data.logo_url)
           }
+          if (data.id) setBusinessId(data.id)
           if (data.demo_data_active) setDemoDataActive(true)
-          if (!data.onboarding_complete) {
+          // Live tenant onboarding wizard — show for non-demo tenants that haven't completed it
+          if (data.onboarding_completed === false && !data.demo_data_active && !localStorage.getItem('lumio_onboarding_shown')) {
+            setShowLiveOnboarding(true)
+          } else if (!data.onboarding_complete) {
             if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
               setShowWelcome(true)
             } else {
@@ -2174,6 +2181,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         </div>
       </div>
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+
+      {/* Live tenant onboarding wizard */}
+      {showLiveOnboarding && businessId && (
+        <OnboardingWizard
+          type="business"
+          tenantId={businessId}
+          onComplete={() => setShowLiveOnboarding(false)}
+        />
+      )}
 
       {/* Welcome overlay — first visit */}
       {showWelcome && (

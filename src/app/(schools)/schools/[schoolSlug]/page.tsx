@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1016,13 +1017,36 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
+  const [schoolId, setSchoolId] = useState('')
   const [schoolData, setSchoolData] = useState<SchoolData | null>(null)
 
   useEffect(() => {
     fetch(`/api/schools/${_slug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setSchoolData(data) })
-      .catch(() => {})
+      .then(data => {
+        if (data) {
+          setSchoolData(data)
+          if (data.id) setSchoolId(data.id)
+          // Live onboarding wizard — show if not completed and no localStorage guard
+          if (data.onboarding_completed === false && !localStorage.getItem('lumio_onboarding_shown')) {
+            setShowLiveOnboarding(true)
+            return // don't show the old onboarding modal
+          }
+        }
+        // Existing onboarding modal check
+        const key = `lumio_onboarded_${_slug}`
+        if (!localStorage.getItem(key)) {
+          setShowOnboarding(true)
+        }
+      })
+      .catch(() => {
+        // Existing onboarding modal check
+        const key = `lumio_onboarded_${_slug}`
+        if (!localStorage.getItem(key)) {
+          setShowOnboarding(true)
+        }
+      })
       .finally(() => {
         // If API didn't return data, build from localStorage (set during checkout)
         setSchoolData(prev => {
@@ -1039,11 +1063,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           }
         })
       })
-
-    const key = `lumio_onboarded_${_slug}`
-    if (!localStorage.getItem(key)) {
-      setShowOnboarding(true)
-    }
   }, [_slug])
 
   function completeOnboarding() {
@@ -1327,6 +1346,15 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             </div>
           </Card>
       </div>
+
+      {/* ── Live tenant onboarding wizard ──────────────────────── */}
+      {showLiveOnboarding && schoolId && (
+        <OnboardingWizard
+          type="school"
+          tenantId={schoolId}
+          onComplete={() => setShowLiveOnboarding(false)}
+        />
+      )}
 
       {/* ── Onboarding modal ────────────────────────────────────── */}
       {showOnboarding && schoolData && (
