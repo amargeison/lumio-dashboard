@@ -49,7 +49,8 @@ export default function ReportsPage() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
         let data = await getCRMData(workspaceId!)
-        if (data.contacts.length === 0) {
+        const demoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+        if (data.contacts.length === 0 && demoActive) {
           await seedDemoData(workspaceId!)
           data = await getCRMData(workspaceId!)
         }

@@ -87,7 +87,8 @@ export default function CRMDashboardPage() {
         const data = await getCRMData(workspaceId!)
 
         let result = data
-        if (data.contacts.length === 0) {
+        const demoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+        if (data.contacts.length === 0 && demoActive) {
           await seedDemoData(workspaceId!)
           result = await getCRMData(workspaceId!)
         }

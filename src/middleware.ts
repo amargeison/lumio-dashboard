@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 const RESERVED_SLUGS = new Set([
-  'demo', 'schools', 'school', 'trial-ended', 'website', 'demobusiness',
+  'demo', 'schools', 'school', 'trial-ended', 'website', 'demobusiness', 'dev-login',
   'demoschool', 'portallive', 'schoollive', 'login', 'signup', 'api',
   'overview', 'auth', 'public', 'static', 'home', 'pricing', 'about',
   'terms', 'privacy', 'cookies', 'support', 'success', 'settings',
@@ -18,6 +18,25 @@ const DASHBOARD_ROUTES = new Set([
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── Dev PIN gate (non-production only) ────────────────────────────────
+  const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
+  const devPin = process.env.DEV_ACCESS_PIN
+  if (!isProduction && devPin) {
+    const isExcluded = pathname === '/dev-login'
+      || pathname.startsWith('/api/')
+      || pathname.startsWith('/_next/')
+      || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|woff2?|ttf)$/i.test(pathname)
+    if (!isExcluded) {
+      const cookie = request.cookies.get('lumio_dev_access')?.value
+      if (cookie !== devPin) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dev-login'
+        url.searchParams.set('from', pathname)
+        return NextResponse.redirect(url)
+      }
+    }
+  }
 
   // Redirect / → /home
   if (pathname === '/') {

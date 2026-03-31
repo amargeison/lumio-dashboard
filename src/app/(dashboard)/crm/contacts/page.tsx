@@ -20,10 +20,35 @@ export default function ContactsPage() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
         let data = await getCRMData(workspaceId!)
-        if (data.contacts.length === 0) {
+        const demoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+        if (data.contacts.length === 0 && demoActive) {
           await seedDemoData(workspaceId!)
           data = await getCRMData(workspaceId!)
         }
+        // Also load imported contacts from localStorage
+        try {
+          const imported = JSON.parse(localStorage.getItem('lumio_crm_contacts') || '[]')
+          if (imported.length) {
+            const mapped = imported.map((c: any, i: number) => ({
+              id: `imported-${i}`,
+              workspace_id: workspaceId,
+              first_name: c.first_name || '',
+              last_name: c.last_name || '',
+              email: c.email || '',
+              company: c.company || '',
+              phone: c.phone || '',
+              job_title: c.job_title || '',
+              tags: c.tags ? [c.tags] : [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              verified: false,
+              health_score: null,
+              deal_count: 0,
+              total_value: 0,
+            }))
+            data.contacts = [...mapped, ...data.contacts]
+          }
+        } catch { /* ignore */ }
         setContacts(data.contacts)
       } catch (e) {
         console.error('Failed to load contacts:', e)
@@ -95,6 +120,30 @@ export default function ContactsPage() {
           {[1, 2, 3, 4, 5, 6].map(i => (
             <div key={i} className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 220 }} />
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (contacts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
+        <div className="relative flex flex-col items-center text-center max-w-md w-full">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2), rgba(108,63,197,0.05))', border: '1px solid rgba(108,63,197,0.3)' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No contacts yet</h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: '#9CA3AF' }}>
+            Import your contacts via CSV, connect your CRM, or add your first contact manually.
+          </p>
+          <div className="flex flex-col gap-3 w-full">
+            <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>
+              Add your first contact
+            </button>
+            <a href="/settings" className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', textDecoration: 'none' }}>
+              Import contacts via Settings
+            </a>
+          </div>
         </div>
       </div>
     )
