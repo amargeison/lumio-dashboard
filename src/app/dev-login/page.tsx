@@ -7,7 +7,7 @@ import Image from 'next/image'
 function DevLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('from') || '/dev'
+  const redirectTo = searchParams.get('from') || ''
 
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState(false)
@@ -67,7 +67,7 @@ function DevLoginContent() {
           localStorage.setItem('lumio_user_name', data.owner_name)
         }
         // Redirect: use from param, or portal slug, or fallback
-        const dest = redirectTo !== '/dev' ? redirectTo : data.slug ? `/${data.slug}` : '/oxed-us-inc'
+        const dest = redirectTo || (data.slug ? `/${data.slug}` : '/home')
         router.push(dest)
       } else {
         setError(true)
