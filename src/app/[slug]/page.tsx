@@ -1289,31 +1289,73 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
 // ─── Quick Actions Bar ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail },
-  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare },
-  { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone },
-  { label: 'Book Meeting', tooltip: 'Schedule a meeting or demo', icon: Calendar },
-  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Users },
-  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt },
-  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar },
-  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle },
+  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: ['gmail', 'outlook'], integrationLabel: 'Gmail or Outlook' },
+  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: ['slack'], integrationLabel: 'Slack' },
+  { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone, integrations: null, integrationLabel: '' },
+  { label: 'Book Meeting', tooltip: 'Schedule a meeting or demo', icon: Calendar, integrations: ['gcal', 'outlook_cal'], integrationLabel: 'Google Calendar or Outlook Calendar' },
+  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Users, integrations: ['gcal'], integrationLabel: 'Google Calendar' },
+  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: ['xero', 'quickbooks'], integrationLabel: 'Xero or QuickBooks' },
+  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
+  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
 ]
 
-function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
+function isIntegrationConnected(keys: string[] | null): boolean {
+  if (!keys) return true // null means always works (e.g. Phone Call)
+  return keys.some(k => typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${k}`) === 'true')
+}
+
+function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string) => void; onGoSettings: () => void }) {
   const visibleActions = QUICK_ACTIONS.filter(a => typeof window !== 'undefined' ? localStorage.getItem(`lumio_qa_${a.label.toLowerCase().replace(/\s+/g, '')}_visible`) !== 'false' : true)
+  const [toast, setToast] = useState<{ label: string; integration: string } | null>(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 5000)
+    return () => clearTimeout(t)
+  }, [toast])
+
   if (!visibleActions.length) return null
+
+  function handleClick(a: typeof QUICK_ACTIONS[0]) {
+    const connected = isIntegrationConnected(a.integrations)
+    if (connected) {
+      onAction(a.label)
+    } else {
+      setToast({ label: a.label, integration: a.integrationLabel })
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-      <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-      {visibleActions.map(a => (
-        <div key={a.label} className="relative group shrink-0">
-          <button onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
+    <>
+      <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+        <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+        {visibleActions.map(a => {
+          const connected = isIntegrationConnected(a.integrations)
+          return (
+            <div key={a.label} className="relative group shrink-0">
+              <button onClick={() => handleClick(a)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                <a.icon size={12} />{a.label}
+              </button>
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2.5 py-1.5 rounded-lg text-xs w-52 text-center z-50 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>
+                {connected ? a.tooltip : 'Connect your tools in Settings to use this feature'}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {/* Integration toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-xl px-5 py-3 shadow-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 480 }}>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>
+            Connect <span style={{ color: '#F9FAFB', fontWeight: 600 }}>{toast.integration}</span> in Settings to use {toast.label}
+          </p>
+          <button onClick={() => { setToast(null); onGoSettings() }} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 whitespace-nowrap" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+            Go to Settings
           </button>
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2.5 py-1.5 rounded-lg text-xs w-48 text-center z-50 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>{a.tooltip}</div>
+          <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={14} /></button>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   )
 }
 
@@ -2318,7 +2360,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle }: {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
@@ -2393,7 +2435,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
       {tab === 'today' ? (
         <div className="space-y-4">
-          <QuickActionsBar onAction={handleQuickAction} />
+          <QuickActionsBar onAction={handleQuickAction} onGoSettings={onGoSettings || (() => {})} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
@@ -2724,7 +2766,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             </div>
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} />}
           </main>
