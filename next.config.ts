@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       source: '/(.*)',
       headers: [
         { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+        { key: 'X-Frame-Options', value: 'ALLOWALL' },
+        { key: 'Content-Security-Policy', value: 'frame-ancestors *;' },
       ],
     },
   ],
