@@ -1571,11 +1571,11 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
       </div>
       {/* Integration toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-xl shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 320, maxWidth: 520, padding: '12px 16px' }}>
+        <div className="fixed z-[100] flex items-center gap-3 shadow-2xl" style={{ bottom: 32, left: '50%', transform: 'translateX(-50%)', backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 12, minWidth: 340, maxWidth: 480, padding: '14px 20px' }}>
           <p style={{ color: '#9CA3AF', fontSize: 14 }}>
             Connect <span style={{ color: '#F9FAFB', fontWeight: 700 }}>{toast.integration}</span> in Settings to use {toast.label}
           </p>
-          <button onClick={() => { setToast(null); onGoSettings() }} className="shrink-0 whitespace-nowrap" style={{ fontSize: 14, fontWeight: 700, color: '#0D9488', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+          <button onClick={() => { setToast(null); onGoSettings() }} className="shrink-0 whitespace-nowrap" style={{ fontSize: 14, fontWeight: 700, color: '#A78BFA', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
             Go to Settings
           </button>
           <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
@@ -2038,6 +2038,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [dragOver, setDragOver] = useState(false)
   const [uploadFiles, setUploadFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [replaceOnImport, setReplaceOnImport] = useState(true)
 
   // Workspace
   const [editingName, setEditingName] = useState(false)
@@ -2205,8 +2206,21 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         })
         const data = await res.json()
         if (res.ok) {
-          const existing = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-          localStorage.setItem('lumio_staff_imported', JSON.stringify([...existing, ...rows]))
+          // Deduplicate by email on merge, or replace entirely
+          if (replaceOnImport) {
+            localStorage.setItem('lumio_staff_imported', JSON.stringify(rows))
+          } else {
+            const existing: Record<string, unknown>[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+            const merged = [...existing]
+            for (const s of rows as Record<string, unknown>[]) {
+              const email = s.email as string | undefined
+              if (email) {
+                const idx = merged.findIndex(e => e.email === email)
+                if (idx >= 0) merged[idx] = s; else merged.push(s)
+              } else { merged.push(s) }
+            }
+            localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
+          }
           window.dispatchEvent(new Event('lumio-staff-imported'))
           onToast(`${data.imported} staff members imported successfully`)
         } else {
@@ -2424,6 +2438,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
                     <span className="text-xs" style={{ color: '#6B7280' }}>{(f.size / 1024).toFixed(0)} KB</span>
                   </div>
                 ))}
+                <label className="flex items-center gap-2 py-2 cursor-pointer">
+                  <input type="checkbox" checked={replaceOnImport} onChange={e => setReplaceOnImport(e.target.checked)} style={{ accentColor: '#0D9488' }} />
+                  <span className="text-xs" style={{ color: '#9CA3AF' }}>Replace existing staff (uncheck to add new staff only)</span>
+                </label>
                 <button onClick={handleUpload} disabled={uploading} className="w-full py-2.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
                   {uploading ? (importStatus || 'Processing...') : 'Process & Import'}
                 </button>

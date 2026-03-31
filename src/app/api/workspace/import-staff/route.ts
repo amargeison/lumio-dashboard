@@ -59,7 +59,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid staff rows (need First Name or Email)' }, { status: 400 })
     }
 
-    const { error } = await supabase.from('workspace_staff').insert(rows)
+    // Upsert to avoid duplicates on reimport
+    // NOTE: requires UNIQUE(business_id, email) constraint on workspace_staff
+    // If missing, add migration: ALTER TABLE workspace_staff ADD CONSTRAINT workspace_staff_biz_email_unique UNIQUE(business_id, email);
+    const withEmail = rows.filter(r => r.email)
+    const withoutEmail = rows.filter(r => !r.email)
+    let error = null
+    if (withEmail.length) {
+      const res = await supabase.from('workspace_staff').upsert(withEmail, { onConflict: 'business_id,email' })
+      if (res.error) error = res.error
+    }
+    if (withoutEmail.length && !error) {
+      const res = await supabase.from('workspace_staff').insert(withoutEmail)
+      if (res.error) error = res.error
+    }
 
     if (error) {
       console.error('[workspace/import-staff] Insert error:', error)
