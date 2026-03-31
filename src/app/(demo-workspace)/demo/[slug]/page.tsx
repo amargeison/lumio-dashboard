@@ -1270,32 +1270,97 @@ function DemoMorningRoundup() {
 }
 
 function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
-  const labels: Record<OverviewTab, { title: string; icon: string; desc: string }> = {
-    'today':       { title: 'Today',       icon: '🏠', desc: '' },
-    'quick-wins':  { title: 'Quick Wins',  icon: '⚡', desc: 'Your highest-impact actions for today, prioritised by AI.' },
-    'tasks':       { title: 'Daily Tasks', icon: '✅', desc: 'All your tasks in one place, synced from Notion and your calendar.' },
-    'insights':    { title: 'Insights',    icon: '📊', desc: 'Key metrics and AI-generated observations across your business.' },
-    'not-to-miss': { title: "Don't Miss",  icon: '🔴', desc: 'Critical items that need your attention today.' },
-    'team':        { title: 'Team',        icon: '👥', desc: 'See what your team is working on and who needs support.' },
-  }
-  const { title, icon, desc } = labels[tab]
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-3xl"
-        style={{ backgroundColor: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
-        {icon}
-      </div>
-      <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{title}</h3>
-      <p className="text-sm mb-6 max-w-xs" style={{ color: '#9CA3AF' }}>
-        {desc || 'This section is fully configured with real data in your live workspace.'}
-      </p>
-      <Link href="/pricing"
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
-        style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-        Start your workspace <ArrowRight size={14} />
-      </Link>
+  if (tab === 'quick-wins') return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>⚡ Quick Wins — do these in under 15 minutes</p><span className="text-xs" style={{color:'#6B7280'}}>5 items · ~35 min total</span></div>
+      {[
+        {task:'Reply to Apex Consulting email — contract renewal query',time:'5 min',dept:'Sales',done:false},
+        {task:"Approve Rachel's leave request — 28 Mar to 1 Apr",time:'2 min',dept:'HR',done:false},
+        {task:'Review new trial signup — Crestview Academy',time:'10 min',dept:'Trials',done:false},
+        {task:'Chase overdue invoice — Pinebrook Primary (14d overdue)',time:'5 min',dept:'Accounts',done:false},
+        {task:'Update CRM stage for Oakridge deal — move to Verbal Yes',time:'3 min',dept:'CRM',done:false},
+      ].map((w,i)=>(
+        <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+          <input type="checkbox" className="shrink-0 w-4 h-4 rounded" style={{accentColor:'#0D9488'}} />
+          <div className="flex-1 min-w-0"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{w.task}</p><p className="text-xs mt-0.5" style={{color:'#6B7280'}}>{w.dept} · {w.time}</p></div>
+          <span className="text-xs px-2 py-0.5 rounded shrink-0" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{w.time}</span>
+        </div>
+      ))}
     </div>
   )
+
+  if (tab === 'tasks') return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>✅ Daily Tasks · 0/4 done</p><div className="flex gap-1">{['All (4)','Critical (1)','High (2)','Medium (1)'].map(f=><span key={f} className="text-xs px-2 py-0.5 rounded-lg cursor-pointer" style={{backgroundColor:f.startsWith('All')?'rgba(13,148,136,0.15)':'transparent',color:f.startsWith('All')?'#0D9488':'#6B7280',border:'1px solid #1F2937'}}>{f}</span>)}</div></div>
+      {[
+        {priority:'Critical',color:'#EF4444',dept:'Finance',source:'lumio',time:'12:00',title:'Review and respond to Bramble Hill invoice dispute',desc:'They queried the September charge. Email from George Harrison at 11pm.',tag:'AC-04'},
+        {priority:'High',color:'#F59E0B',dept:'Operations',source:'notion',time:'14:00',title:'Finalise The Feed Network testing guide sign-off',desc:'Phase 5 review due today. 13 flagged gaps to resolve.',tag:''},
+        {priority:'High',color:'#F59E0B',dept:'Finance',source:'manual',time:'17:00',title:'Send investor deck to Marcus',desc:'Promised by end of day. Latest version in Notion.',tag:''},
+        {priority:'Medium',color:'#3B82F6',dept:'HR',source:'workflow',time:'16:00',title:'Approve payroll pack for review',desc:'HR-07 generated the pack. Needs sign-off before Friday.',tag:'HR-07'},
+      ].map((t,i)=>(
+        <div key={i} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-bold px-2 py-0.5 rounded" style={{backgroundColor:`${t.color}1a`,color:t.color}}>{t.priority}</span>
+            <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'#1F2937',color:'#9CA3AF'}}>{t.dept}</span>
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{backgroundColor:'rgba(108,63,197,0.1)',color:'#A78BFA'}}>{t.source}</span>
+            <span className="text-xs ml-auto" style={{color:'#6B7280'}}>{t.time}</span>
+          </div>
+          <p className="text-sm font-semibold" style={{color:'#F9FAFB'}}>{t.title}</p>
+          <p className="text-xs mt-1" style={{color:'#9CA3AF'}}>{t.desc}</p>
+          {t.tag&&<span className="inline-block text-xs mt-2 px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{t.tag}</span>}
+        </div>
+      ))}
+    </div>
+  )
+
+  if (tab === 'insights') return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{l:'MRR',v:'£28,400',t:'+12% MoM',c:'#22C55E'},{l:'Active Customers',v:'171',t:'+8 this month',c:'#0D9488'},{l:'Pipeline Value',v:'£128k',t:'34 open deals',c:'#8B5CF6'},{l:'Team Utilisation',v:'78%',t:'vs 72% last month',c:'#F59E0B'}].map(m=>(
+          <div key={m.l} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}><p className="text-xs" style={{color:'#6B7280'}}>{m.l}</p><p className="text-xl font-black mt-1" style={{color:'#F9FAFB'}}>{m.v}</p><p className="text-xs mt-1" style={{color:m.c}}>{m.t}</p></div>
+        ))}
+      </div>
+      <div className="rounded-xl p-5" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+        <div className="flex items-center gap-2 mb-3"><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-sm font-bold" style={{color:'#F9FAFB'}}>AI Observations</span></div>
+        <div className="space-y-2.5">
+          {[
+            {dot:'#22C55E',text:'MRR growth accelerating — 12% month-on-month, strongest since launch'},
+            {dot:'#EF4444',text:'3 high-value deals stalled in pipeline — combined value £42k. Schedule follow-ups this week.'},
+            {dot:'#F59E0B',text:'Support ticket volume up 18% — consider adding a self-serve knowledge base'},
+            {dot:'#0D9488',text:'Trial conversion rate improved to 34% after day-3 email sequence was activated'},
+            {dot:'#8B5CF6',text:'Marketing ROI: LinkedIn outbound generating 3x the conversion rate of cold email'},
+            {dot:'#3B82F6',text:'HR onboarding backlog: 3 new starters pending equipment provisioning from IT'},
+          ].map((o,i)=>(
+            <div key={i} className="flex items-start gap-2.5"><div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{backgroundColor:o.dot}}/><p className="text-xs leading-relaxed" style={{color:'#D1D5DB'}}>{o.text}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
+  if (tab === 'not-to-miss') return (
+    <div className="space-y-3">
+      <p className="text-sm font-bold mb-2" style={{color:'#F9FAFB'}}>🔴 Requires Your Attention</p>
+      {[
+        {urgency:'Critical',color:'#EF4444',title:'Bramble Hill Trust — invoice dispute escalated',desc:'George Harrison emailed at 11pm. £4,800 September charge queried. Client threatening to pause contract.',action:'View dispute'},
+        {urgency:'High',color:'#F59E0B',title:'Starling Schools trial expires in 2 days',desc:'High engagement (84%) but no conversion call booked. Maria Olsen is the decision maker.',action:'Book call'},
+        {urgency:'High',color:'#F59E0B',title:'Overdue performance review — Amara Diallo',desc:'Was due 24 Mar. Manager Laura Simmons has not submitted. Now 7 days overdue.',action:'Chase review'},
+        {urgency:'Medium',color:'#3B82F6',title:'Oakridge deal going cold — 18 days no activity',desc:'£14,800 deal in Negotiation stage. Last contact was a pricing email. No response.',action:'Follow up'},
+      ].map((a,i)=>(
+        <div key={i} className="rounded-xl p-4 flex items-start justify-between gap-3" style={{backgroundColor:'#111318',border:`1px solid ${a.color}33`}}>
+          <div>
+            <div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold px-2 py-0.5 rounded" style={{backgroundColor:`${a.color}1a`,color:a.color}}>{a.urgency}</span></div>
+            <p className="text-sm font-semibold" style={{color:'#F9FAFB'}}>{a.title}</p>
+            <p className="text-xs mt-1" style={{color:'#9CA3AF'}}>{a.desc}</p>
+          </div>
+          <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap" style={{backgroundColor:'#0D9488',color:'#F9FAFB'}}>{a.action}</button>
+        </div>
+      ))}
+    </div>
+  )
+
+  // Fallback for today/team (shouldn't reach here)
+  return null
 }
 
 // ─── Department views ─────────────────────────────────────────────────────────
