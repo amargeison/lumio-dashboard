@@ -13,6 +13,7 @@ import {
   Mail,
   Calendar,
   Settings,
+  Building2,
 } from 'lucide-react';
 
 interface CRMSidebarProps {
@@ -23,14 +24,15 @@ const navItems = [
   { label: 'Dashboard', href: '/crm/dashboard', icon: LayoutDashboard },
   { label: 'Pipeline', href: '/crm/pipeline', icon: GitBranch },
   { label: 'Contacts', href: '/crm/contacts', icon: Users },
+  { label: 'Companies', href: '/crm/companies', icon: Building2 },
   { label: 'Intelligence', href: '/crm/intelligence', icon: Sparkles, hasBadge: true },
   { label: 'Reports', href: '/crm/reports', icon: BarChart2 },
 ];
 
 const toolItems = [
-  { label: 'Email', icon: Mail, action: 'email' },
-  { label: 'Calendar', icon: Calendar, action: 'calendar' },
-  { label: 'Settings', icon: Settings, action: 'settings' },
+  { label: 'Email', href: '/crm/email', icon: Mail },
+  { label: 'Calendar', href: '/crm/calendar', icon: Calendar },
+  { label: 'Settings', href: '/crm/settings', icon: Settings },
 ];
 
 export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarProps) {
@@ -44,15 +46,8 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
     if (stored) setInitials(stored);
   }, []);
 
-  function handleToolAction(action: string) {
-    if (action === 'email') {
-      setToast('Opening email composer...');
-      setTimeout(() => setToast(null), 2000);
-    } else if (action === 'calendar') {
-      router.push('/settings');
-    } else if (action === 'settings') {
-      router.push('/settings');
-    }
+  function handleToolAction(_action: string) {
+    // All tool items are now links — this is kept for backwards compat
   }
 
   return (
@@ -143,26 +138,26 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
         {/* Tool items */}
         {toolItems.map((item) => {
           const Icon = item.icon;
+          const active = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
-            <button
+            <Link
               key={item.label}
-              onClick={() => handleToolAction(item.action)}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left"
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg"
               style={{
-                color: '#6B7299',
+                backgroundColor: active ? '#1E2035' : 'transparent',
+                color: active ? '#F1F3FA' : '#6B7299',
+                textDecoration: 'none',
                 fontSize: 14,
-                cursor: 'pointer',
-                borderLeft: '3px solid transparent',
-                backgroundColor: 'transparent',
-                border: 'none',
-                transition: 'color 0.15s',
+                fontWeight: active ? 600 : 400,
+                transition: 'background-color 0.15s, color 0.15s',
+                borderLeft: active ? '3px solid transparent' : '3px solid transparent',
+                borderImage: active ? 'linear-gradient(180deg, #8B5CF6, #22D3EE) 1' : 'none',
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#F1F3FA'; e.currentTarget.style.backgroundColor = '#1E2035' }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#6B7299'; e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <Icon size={18} />
               <span>{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </nav>
