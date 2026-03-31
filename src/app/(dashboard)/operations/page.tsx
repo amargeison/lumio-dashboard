@@ -9,6 +9,8 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import NewProjectModal from '@/components/modals/NewProjectModal'
 import { useToast } from '@/components/modals/useToast'
 
@@ -71,15 +73,24 @@ export default function OperationsPage() {
   ]
 
   const hasData = useHasDashboardData('operations')
+
+  const deptStaff = getDeptStaff('operations')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="operations"
-    title="No operations data yet"
-    description="Upload your process documentation, FAQ library and operational data to activate the Operations module."
-    uploads={[
-      { key: 'processes', label: 'Upload Process Docs (CSV)' },
-      { key: 'faq', label: 'Upload FAQ Library (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="operations" />}
+      <DashboardEmptyState pageKey="operations"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your operations data` : 'No operations data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Operations Lead'}. Upload your process documentation, FAQ library and operational data to activate the Operations module.` : 'Upload your process documentation, FAQ library and operational data to activate the Operations module.'}
+        uploads={[
+          { key: 'processes', label: 'Upload Process Docs (CSV)' },
+          { key: 'faq', label: 'Upload FAQ Library (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   return (
     <PageShell title="Operations" subtitle="Workflows, supply chain and process management">

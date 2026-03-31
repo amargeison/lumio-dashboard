@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil } from 'lucide-react'
-import { EmployeeProfileCard, ProfileModal, type StaffRecord } from '@/components/team/EmployeeProfileCard'
+import { EmployeeProfileCard, ProfileModal, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -865,6 +865,7 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
                 staff={currentUserCard}
                 index={staffCards.indexOf(currentUserCard)}
                 isCurrentUser={true}
+                teamSize={staffCards.length}
                 onViewProfile={() => { setProfileStaff(currentUserCard); setProfileIndex(staffCards.indexOf(currentUserCard)) }}
                 onMessage={() => onAction?.('Opening your profile...')}
               />
@@ -876,13 +877,14 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
           {/* Right — team */}
           <div className="flex-1">
             <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>YOUR TEAM</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`grid ${getGridCols(otherCards.length)} gap-4`}>
               {otherCards.map((s, i) => (
                 <EmployeeProfileCard
                   key={s.email || i}
                   staff={s}
                   index={staffCards.indexOf(s)}
                   isCurrentUser={false}
+                  teamSize={staffCards.length}
                   onViewProfile={() => { setProfileStaff(s); setProfileIndex(staffCards.indexOf(s)) }}
                   onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
                 />
@@ -891,13 +893,14 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid ${getGridCols(staffCards.length)} gap-4`}>
           {staffCards.map((s, i) => (
             <EmployeeProfileCard
               key={s.email || i}
               staff={s}
               index={i}
               isCurrentUser={false}
+              teamSize={staffCards.length}
               onViewProfile={() => { setProfileStaff(s); setProfileIndex(i) }}
               onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
           />

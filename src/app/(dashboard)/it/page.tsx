@@ -8,6 +8,8 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import { ITAssets } from '@/components/dashboard/LiveStaffPanels'
 import NewITTicketModal from '@/components/modals/NewITTicketModal'
 import { useToast } from '@/components/modals/useToast'
@@ -71,15 +73,23 @@ export default function ITPage() {
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
   const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
 
+  const deptStaff = getDeptStaff('it')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="it"
-    title="No IT data yet"
-    description="Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking."
-    uploads={[
-      { key: 'systems', label: 'Upload Systems Inventory (CSV)' },
-      { key: 'assets', label: 'Upload Asset Register (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="it" />}
+      <DashboardEmptyState pageKey="it"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your IT data` : 'No IT data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'IT Lead'}. Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking.` : 'Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking.'}
+        uploads={[
+          { key: 'systems', label: 'Upload Systems Inventory (CSV)' },
+          { key: 'assets', label: 'Upload Asset Register (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   if (hasImportedStaff && !isDemoActive) {
     return (

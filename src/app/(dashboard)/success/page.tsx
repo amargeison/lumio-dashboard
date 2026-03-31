@@ -8,6 +8,8 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import { RAGCheckModal, StartRecoveryModal, SendCheckInModal, UsageReportModal, HealthReportModal, AtRiskReportModal } from '@/components/modals/SuccessModals'
 import { useToast } from '@/components/modals/useToast'
 
@@ -93,15 +95,24 @@ export default function SuccessPage() {
   ]
 
   const hasData = useHasDashboardData('success')
+
+  const deptStaff = getDeptStaff('success')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="success"
-    title="No customer success data yet"
-    description="Upload your customer health data, renewal pipeline and success playbooks to activate the Customer Success module."
-    uploads={[
-      { key: 'health', label: 'Upload Customer Health Data (CSV)' },
-      { key: 'renewals', label: 'Upload Renewal Pipeline (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="success" />}
+      <DashboardEmptyState pageKey="success"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your success data` : 'No customer success data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Success Lead'}. Upload your customer health data, renewal pipeline and success playbooks to activate the Customer Success module.` : 'Upload your customer health data, renewal pipeline and success playbooks to activate the Customer Success module.'}
+        uploads={[
+          { key: 'health', label: 'Upload Customer Health Data (CSV)' },
+          { key: 'renewals', label: 'Upload Renewal Pipeline (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   const grouped = (['green', 'amber', 'red'] as RAG[]).map((rag) => ({
     rag,

@@ -31,6 +31,7 @@ import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
+import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 
 // ─── Staff types & helpers ───────────────────────────────────────────────────
 
@@ -2813,6 +2814,40 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
               <MorningAIPanel demoDataActive={demoDataActive} />
             </div>
           </div>
+
+          {/* Active Departments — shows when staff imported and demo off */}
+          {!demoDataActive && (() => {
+            const allStaff = getImportedStaff()
+            if (!allStaff.length) return null
+            const DEPTS = [
+              { key: 'sales', icon: '💼', route: '/sales' }, { key: 'marketing', icon: '📊', route: '/marketing' },
+              { key: 'hr', icon: '👥', route: '/hr' }, { key: 'accounts', icon: '💰', route: '/accounts' },
+              { key: 'operations', icon: '⚙️', route: '/operations' }, { key: 'it', icon: '💻', route: '/it' },
+              { key: 'support', icon: '🎧', route: '/support' }, { key: 'success', icon: '🏆', route: '/success' },
+              { key: 'partners', icon: '🤝', route: '/partners' },
+            ]
+            const activeDepts = DEPTS.map(d => {
+              const staff = getDeptStaff(d.key)
+              if (!staff.length) return null
+              const lead = getDeptLead(staff)
+              return { ...d, lead, count: staff.length }
+            }).filter(Boolean) as { key: string; icon: string; route: string; lead: ReturnType<typeof getDeptLead>; count: number }[]
+            if (!activeDepts.length) return null
+            return (
+              <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>ACTIVE DEPARTMENTS</p>
+                <div className="flex flex-wrap gap-2">
+                  {activeDepts.map(d => (
+                    <a key={d.key} href={d.route} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', textDecoration: 'none' }}>
+                      <span>{d.icon}</span>
+                      <span className="capitalize">{d.key}</span>
+                      {d.lead && <span style={{ color: '#6B7280' }}>— {getStaffShortName(d.lead)}</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {demoDataActive ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

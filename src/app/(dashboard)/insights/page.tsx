@@ -10,6 +10,8 @@ import { StatCard, SectionCard, Badge, PageShell } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import ExportPdfButton from '@/components/ExportPdfButton'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 
 // ─── Types & helpers ──────────────────────────────────────────────────────────
 
@@ -613,15 +615,24 @@ export default function InsightsPage() {
   const [trust,    setTrust]    = useState('All Trusts')
 
   const hasData = useHasDashboardData('insights')
+
+  const deptStaff = getDeptStaff('strategy')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="insights"
-    title="Add data to unlock Insights"
-    description="Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard."
-    uploads={[
-      { key: 'data', label: 'Upload Business Data (CSV)' },
-      { key: 'metrics', label: 'Upload Key Metrics (CSV/XLSX)', accept: '.csv,.xlsx' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="strategy" />}
+      <DashboardEmptyState pageKey="insights"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your insights data` : 'Add data to unlock Insights'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Strategy Lead'}. Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard.` : 'Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard.'}
+        uploads={[
+          { key: 'data', label: 'Upload Business Data (CSV)' },
+          { key: 'metrics', label: 'Upload Key Metrics (CSV/XLSX)', accept: '.csv,.xlsx' },
+        ]}
+      />
+    </>
+  )
 
   const isFiltered = region !== 'All Regions' || country !== 'All Countries' ||
                      product !== 'All Products' || district !== 'All Districts' || trust !== 'All Trusts'

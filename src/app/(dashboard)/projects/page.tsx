@@ -7,6 +7,8 @@ import {
   ArrowUp, ArrowDown, Minus, Play, Pause, Circle
 } from 'lucide-react'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Status = 'backlog' | 'todo' | 'in-progress' | 'review' | 'done' | 'blocked'
@@ -824,15 +826,24 @@ export default function ProjectsPage() {
   const [tab, setTab] = useState('overview')
 
   const hasData = useHasDashboardData('projects')
+
+  const deptStaff = getDeptStaff('projects')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="projects"
-    title="No project data yet"
-    description="Create your first project or import your existing project data to activate the Project Management module with kanban, sprints and OKRs."
-    uploads={[
-      { key: 'projects', label: 'Upload Projects (CSV)' },
-      { key: 'tasks', label: 'Upload Tasks (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="projects" />}
+      <DashboardEmptyState pageKey="projects"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your projects data` : 'No project data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Projects Lead'}. Create your first project or import your existing project data to activate the Project Management module with kanban, sprints and OKRs.` : 'Create your first project or import your existing project data to activate the Project Management module with kanban, sprints and OKRs.'}
+        uploads={[
+          { key: 'projects', label: 'Upload Projects (CSV)' },
+          { key: 'tasks', label: 'Upload Tasks (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   return (
     <div className="flex flex-col gap-0" style={{ backgroundColor: '#07080F', minHeight: '100vh' }}>

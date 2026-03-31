@@ -5,6 +5,8 @@ import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sp
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
 import { NewDealModal, BookDemoModal, SendProposalModal, LogCallModal, NewLeadModal, DeptInsightsModal, GenerateLeadsModal } from '@/components/modals/SalesModals'
@@ -140,16 +142,25 @@ export default function SalesPage() {
   }, [workspace?.id])
 
   const hasData = useHasDashboardData('sales')
+
+  const deptStaff = getDeptStaff('sales')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="sales"
-    title="No sales data yet"
-    description="Import your deal pipeline, revenue data and sales activity to unlock the Sales dashboard with forecasting, leaderboard and conversion analytics."
-    uploads={[
-      { key: 'pipeline', label: 'Upload Sales Pipeline (CSV)' },
-      { key: 'revenue', label: 'Upload Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
-      { key: 'targets', label: 'Upload Sales Targets (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="sales" />}
+      <DashboardEmptyState pageKey="sales"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your sales data` : 'No sales data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Sales Lead'}. Import your deal pipeline, revenue data and sales activity to unlock the Sales dashboard with forecasting, leaderboard and conversion analytics.` : 'Import your deal pipeline, revenue data and sales activity to unlock the Sales dashboard with forecasting, leaderboard and conversion analytics.'}
+        uploads={[
+          { key: 'pipeline', label: 'Upload Sales Pipeline (CSV)' },
+          { key: 'revenue', label: 'Upload Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
+          { key: 'targets', label: 'Upload Sales Targets (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   return (
     <PageShell title="Sales" subtitle="Pipeline, deals, leads and revenue tracking">

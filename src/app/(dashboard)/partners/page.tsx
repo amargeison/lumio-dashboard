@@ -13,6 +13,8 @@ import { ChartSection, parseNum } from '@/components/chart-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 
@@ -598,15 +600,24 @@ export default function PartnersPage() {
   }, [supabase])
 
   const hasData = useHasDashboardData('partners')
+
+  const deptStaff = getDeptStaff('partners')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="partners"
-    title="No partner data yet"
-    description="Add your agency, reseller and referral partners to activate the Partners module. Track deals, commissions and co-marketing activity."
-    uploads={[
-      { key: 'partners', label: 'Upload Partner List (CSV)' },
-      { key: 'deals', label: 'Upload Partner Deals (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="partners" />}
+      <DashboardEmptyState pageKey="partners"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your partners data` : 'No partner data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Partners Lead'}. Add your agency, reseller and referral partners to activate the Partners module. Track deals, commissions and co-marketing activity.` : 'Add your agency, reseller and referral partners to activate the Partners module. Track deals, commissions and co-marketing activity.'}
+        uploads={[
+          { key: 'partners', label: 'Upload Partner List (CSV)' },
+          { key: 'deals', label: 'Upload Partner Deals (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   async function removePartner(id: string) {
     await supabase.from('partners').delete().eq('id', id)

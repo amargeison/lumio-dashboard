@@ -8,6 +8,8 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import CaseStudyModal from '@/components/modals/CaseStudyModal'
 import { CreatePostModal, NewCampaignModal as CampaignBuilderModal, WebinarSetupModal, LeadReportModal } from '@/components/modals/MarketingModals'
 import { useToast } from '@/components/modals/useToast'
@@ -90,16 +92,25 @@ export default function MarketingPage() {
   ]
 
   const hasData = useHasDashboardData('marketing')
+
+  const deptStaff = getDeptStaff('marketing')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="marketing"
-    title="No marketing data yet"
-    description="Connect your marketing tools or upload campaign data to activate the Marketing module with analytics, campaign tracking and lead attribution."
-    uploads={[
-      { key: 'campaigns', label: 'Upload Campaign Data (CSV)' },
-      { key: 'leads', label: 'Upload Lead Data (CSV)' },
-      { key: 'analytics', label: 'Upload Web Analytics (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="marketing" />}
+      <DashboardEmptyState pageKey="marketing"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your marketing data` : 'No marketing data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Marketing Lead'}. Connect your marketing tools or upload campaign data to activate the Marketing module with analytics, campaign tracking and lead attribution.` : 'Connect your marketing tools or upload campaign data to activate the Marketing module with analytics, campaign tracking and lead attribution.'}
+        uploads={[
+          { key: 'campaigns', label: 'Upload Campaign Data (CSV)' },
+          { key: 'leads', label: 'Upload Lead Data (CSV)' },
+          { key: 'analytics', label: 'Upload Web Analytics (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   const isFiltered = country !== 'All Countries' || product !== 'All Products' ||
                      region !== 'All Regions' || org !== 'All Organisations'

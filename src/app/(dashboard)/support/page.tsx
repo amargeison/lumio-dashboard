@@ -8,6 +8,8 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import NewSupportTicketModal from '@/components/modals/NewSupportTicketModal'
 import WikiBuilderModal from '@/components/modals/WikiBuilderModal'
 import FAQBuilderModal from '@/components/modals/FAQBuilderModal'
@@ -72,15 +74,24 @@ export default function SupportPage() {
   ]
 
   const hasData = useHasDashboardData('support')
+
+  const deptStaff = getDeptStaff('support')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="support"
-    title="No support data yet"
-    description="Upload your support tickets, customer contacts and SLA data to activate the Support module with ticket management and response tracking."
-    uploads={[
-      { key: 'tickets', label: 'Upload Support Tickets (CSV)' },
-      { key: 'contacts', label: 'Upload Customer Contacts (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="support" />}
+      <DashboardEmptyState pageKey="support"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your support data` : 'No support data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Support Lead'}. Upload your support tickets, customer contacts and SLA data to activate the Support module with ticket management and response tracking.` : 'Upload your support tickets, customer contacts and SLA data to activate the Support module with ticket management and response tracking.'}
+        uploads={[
+          { key: 'tickets', label: 'Upload Support Tickets (CSV)' },
+          { key: 'contacts', label: 'Upload Customer Contacts (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   return (
     <PageShell title="Support" subtitle="Helpdesk, tickets, wiki and customer success">

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { X, MessageSquare, User, Mail, Phone, Calendar, MapPin, Hash, Star, Sparkles } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { X, MessageSquare, User, Calendar, Hash, Star, Sparkles, Upload } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,7 +56,7 @@ function getOrCreateId(email: string, index: number): string {
   return id
 }
 
-// ─── Profile storage ─────────────────────────────────────────────────────────
+// ─── Profile + photo storage ─────────────────────────────────────────────────
 
 function getProfiles(): Record<string, StaffProfile> {
   try { return JSON.parse(localStorage.getItem('lumio_staff_profiles') || '{}') } catch { return {} }
@@ -66,6 +66,19 @@ function saveProfile(email: string, profile: StaffProfile) {
   const all = getProfiles()
   all[email] = profile
   localStorage.setItem('lumio_staff_profiles', JSON.stringify(all))
+}
+
+function getPhoto(email?: string): string | null {
+  if (!email || typeof window === 'undefined') return null
+  return localStorage.getItem(`lumio_staff_photo_${email}`) || null
+}
+
+function savePhoto(email: string, base64: string) {
+  localStorage.setItem(`lumio_staff_photo_${email}`, base64)
+}
+
+function removePhoto(email: string) {
+  localStorage.removeItem(`lumio_staff_photo_${email}`)
 }
 
 // ─── Fun questions ───────────────────────────────────────────────────────────
@@ -81,7 +94,7 @@ const FUN_QUESTIONS: { key: keyof StaffProfile; emoji: string; label: string }[]
   { key: 'superhero_power', emoji: '⚡', label: 'Superhero power' },
 ]
 
-// ─── Shimmer CSS (injected once) ─────────────────────────────────────────────
+// ─── Shimmer CSS ─────────────────────────────────────────────────────────────
 
 const SHIMMER_STYLE_ID = 'lumio-sticker-shimmer'
 
@@ -114,7 +127,7 @@ function injectShimmerCSS() {
   document.head.appendChild(style)
 }
 
-// ─── Seeded random for consistent stats ─────────────────────────────────────
+// ─── Seeded helpers ──────────────────────────────────────────────────────────
 
 function seedHash(str: string): number {
   let h = 5381
@@ -156,13 +169,48 @@ function getRating(title: string): number {
   return 74 + (seedHash(t) % 6)
 }
 
+// ─── Size scaling ────────────────────────────────────────────────────────────
+
+function getCardDimensions(teamSize?: number) {
+  const n = teamSize || 7
+  if (n <= 3) return { width: 280, height: 420, avatar: 160, fontSize: '5xl' }
+  if (n <= 6) return { width: 240, height: 360, avatar: 140, fontSize: '4xl' }
+  if (n <= 12) return { width: 200, height: 300, avatar: 110, fontSize: '4xl' }
+  if (n <= 20) return { width: 170, height: 260, avatar: 100, fontSize: '3xl' }
+  return { width: 150, height: 230, avatar: 85, fontSize: '2xl' }
+}
+
+export function getGridCols(teamSize: number): string {
+  if (teamSize <= 3) return 'grid-cols-1'
+  if (teamSize <= 6) return 'grid-cols-1 sm:grid-cols-2'
+  if (teamSize <= 12) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+  return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+}
+
+// ─── Avatar component (photo or initials) ────────────────────────────────────
+
+function Avatar({ email, initials, size, deptColor }: { email?: string; initials: string; size: number; deptColor: string }) {
+  const photo = getPhoto(email)
+  if (photo) {
+    return (
+      <img src={photo} alt="" className="rounded-full object-cover" style={{ width: size, height: size, border: `3px solid ${deptColor}50` }} />
+    )
+  }
+  const textClass = size >= 140 ? 'text-5xl' : size >= 110 ? 'text-4xl' : size >= 85 ? 'text-3xl' : 'text-2xl'
+  return (
+    <div className={`flex items-center justify-center rounded-full font-black ${textClass}`} style={{ width: size, height: size, backgroundColor: `${deptColor}20`, color: deptColor, border: `3px solid ${deptColor}50`, boxShadow: `0 0 20px ${deptColor}30` }}>
+      {initials}
+    </div>
+  )
+}
+
 // ─── Sticker Card ────────────────────────────────────────────────────────────
 
 export function EmployeeProfileCard({
-  staff, index, isCurrentUser, onViewProfile, onMessage, variant = 'full',
+  staff, index, isCurrentUser, onViewProfile, onMessage, variant = 'full', teamSize,
 }: {
   staff: StaffRecord; index: number; isCurrentUser: boolean
-  onViewProfile: () => void; onMessage?: () => void; variant?: 'full' | 'mini'
+  onViewProfile: () => void; onMessage?: () => void; variant?: 'full' | 'mini'; teamSize?: number
 }) {
   useEffect(() => { injectShimmerCSS() }, [])
 
@@ -171,10 +219,8 @@ export function EmployeeProfileCard({
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const deptColor = getDeptColor(staff.department)
   const empId = getOrCreateId(staff.email || `staff-${index}`, index)
-  const profile = getProfiles()[staff.email || ''] || {}
-  const filledFacts = FUN_QUESTIONS.filter(q => profile[q.key])
 
-  // ── Mini variant (for org chart) ─────────────────────────────────────────
+  // ── Mini variant ────────────────────────────────────────────────────────
   if (variant === 'mini') {
     return (
       <div className="lumio-sticker relative rounded-xl overflow-hidden cursor-pointer" style={{ width: 160, transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
@@ -183,7 +229,6 @@ export function EmployeeProfileCard({
         </div>
         <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ height: 4, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
-          {/* Dept badge + You badge */}
           <div className="flex items-center justify-center gap-1.5 pt-2 px-2">
             {isCurrentUser && (
               <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
@@ -194,13 +239,9 @@ export function EmployeeProfileCard({
               {staff.department || 'Team'}
             </span>
           </div>
-          {/* Avatar */}
           <div className="flex justify-center py-2.5">
-            <div className="flex items-center justify-center rounded-full text-xl font-black" style={{ width: 60, height: 60, backgroundColor: `${deptColor}25`, color: deptColor, border: `2px solid ${deptColor}50` }}>
-              {initials}
-            </div>
+            <Avatar email={staff.email} initials={initials} size={60} deptColor={deptColor} />
           </div>
-          {/* Name + title + ID */}
           <div className="text-center px-2 pb-2.5">
             <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{shortName}</p>
             <p className="text-[10px] mt-0.5 truncate" style={{ color: '#9CA3AF' }}>{staff.job_title || 'Team Member'}</p>
@@ -211,7 +252,8 @@ export function EmployeeProfileCard({
     )
   }
 
-  // ── Full variant — FIFA player card style ──────────────────────────────────
+  // ── Full variant — FIFA card ────────────────────────────────────────────
+  const dim = getCardDimensions(teamSize)
   const posAbbr = getPositionAbbr(staff.job_title || '')
   const rating = getRating(staff.job_title || '')
   const stats = [
@@ -222,23 +264,20 @@ export function EmployeeProfileCard({
     { label: 'DEF', value: seededStat(name, 'def') },
     { label: 'PHY', value: seededStat(name, 'phy') },
   ]
+  const compact = dim.width <= 170
 
   return (
-    <div className="lumio-sticker relative rounded-2xl overflow-hidden cursor-pointer" style={{ width: 200, transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
-      {/* Shimmer border */}
+    <div className="lumio-sticker relative rounded-2xl overflow-hidden cursor-pointer" style={{ width: dim.width, transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
       <div className="lumio-shimmer-border absolute inset-0 rounded-2xl" style={{ padding: 2 }}>
         <div className="w-full h-full rounded-[14px]" style={{ backgroundColor: '#111318' }} />
       </div>
 
       <div className="relative rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {/* Gradient top section */}
         <div style={{ background: `linear-gradient(180deg, ${deptColor}40 0%, ${deptColor}15 40%, #111318 100%)`, paddingBottom: 4 }}>
-
-          {/* Position + Rating badges */}
           <div className="flex items-start justify-between px-3 pt-3">
             <div className="flex flex-col items-center">
-              <span className="text-2xl font-black leading-none" style={{ color: '#F9FAFB' }}>{rating}</span>
-              <span className="text-[9px] font-bold tracking-widest mt-0.5" style={{ color: deptColor }}>{posAbbr}</span>
+              <span className={`${compact ? 'text-xl' : 'text-2xl'} font-black leading-none`} style={{ color: '#F9FAFB' }}>{rating}</span>
+              <span className={`${compact ? 'text-[8px]' : 'text-[9px]'} font-bold tracking-widest mt-0.5`} style={{ color: deptColor }}>{posAbbr}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               {isCurrentUser && (
@@ -246,54 +285,46 @@ export function EmployeeProfileCard({
                   <Star size={7} /> You
                 </span>
               )}
-              <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${deptColor}25`, color: deptColor, border: `1px solid ${deptColor}40` }}>
+              <span className={`${compact ? 'text-[7px]' : 'text-[8px]'} font-semibold px-1.5 py-0.5 rounded-full`} style={{ backgroundColor: `${deptColor}25`, color: deptColor, border: `1px solid ${deptColor}40` }}>
                 {staff.department || 'Team'}
               </span>
             </div>
           </div>
 
-          {/* Avatar */}
           <div className="flex justify-center py-3">
-            <div className="flex items-center justify-center rounded-full text-4xl font-black" style={{ width: 110, height: 110, backgroundColor: `${deptColor}20`, color: deptColor, border: `4px solid ${deptColor}60`, boxShadow: `0 0 20px ${deptColor}30` }}>
-              {initials}
-            </div>
+            <Avatar email={staff.email} initials={initials} size={dim.avatar} deptColor={deptColor} />
           </div>
         </div>
 
-        {/* Name + title */}
         <div className="text-center px-3 -mt-1">
-          <p className="text-sm font-black tracking-wide" style={{ color: '#F9FAFB' }}>{name}</p>
-          <p className="text-[10px] mt-0.5 font-semibold" style={{ color: deptColor }}>{staff.job_title || 'Team Member'}</p>
+          <p className={`${compact ? 'text-xs' : 'text-sm'} font-black tracking-wide`} style={{ color: '#F9FAFB' }}>{name}</p>
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5 font-semibold`} style={{ color: deptColor }}>{staff.job_title || 'Team Member'}</p>
         </div>
 
-        {/* Divider */}
         <div className="mx-4 my-2" style={{ height: 1, background: `linear-gradient(90deg, transparent, ${deptColor}40, transparent)` }} />
 
-        {/* Stats grid — FIFA style */}
         <div className="grid grid-cols-3 gap-x-2 gap-y-1 px-4">
           {stats.map(s => (
             <div key={s.label} className="flex items-center gap-1.5">
-              <span className="text-[9px] font-bold" style={{ color: '#6B7280', width: 22 }}>{s.label}</span>
-              <span className="text-xs font-black" style={{ color: s.value >= 85 ? '#22C55E' : s.value >= 75 ? '#F9FAFB' : '#9CA3AF' }}>{s.value}</span>
+              <span className={`${compact ? 'text-[8px]' : 'text-[9px]'} font-bold`} style={{ color: '#6B7280', width: compact ? 18 : 22 }}>{s.label}</span>
+              <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-black`} style={{ color: s.value >= 85 ? '#22C55E' : s.value >= 75 ? '#F9FAFB' : '#9CA3AF' }}>{s.value}</span>
             </div>
           ))}
         </div>
 
-        {/* ID + date */}
-        <div className="flex items-center justify-center gap-3 px-3 mt-2 text-[9px]" style={{ color: '#4B5563' }}>
+        <div className={`flex items-center justify-center gap-3 px-3 mt-2 ${compact ? 'text-[8px]' : 'text-[9px]'}`} style={{ color: '#4B5563' }}>
           <span>{empId}</span>
           {staff.start_date && <span>{staff.start_date}</span>}
         </div>
 
-        {/* Buttons */}
         <div className="flex gap-1.5 p-3 pt-2">
           {onMessage && (
-            <button onClick={e => { e.stopPropagation(); onMessage() }} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-              <MessageSquare size={10} /> Message
+            <button onClick={e => { e.stopPropagation(); onMessage() }} className={`flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 ${compact ? 'text-[9px]' : 'text-[10px]'} font-semibold`} style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              <MessageSquare size={compact ? 8 : 10} /> Message
             </button>
           )}
-          <button onClick={e => { e.stopPropagation(); onViewProfile() }} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-semibold" style={{ backgroundColor: `${deptColor}15`, color: deptColor, border: `1px solid ${deptColor}30` }}>
-            <User size={10} /> Profile
+          <button onClick={e => { e.stopPropagation(); onViewProfile() }} className={`flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 ${compact ? 'text-[9px]' : 'text-[10px]'} font-semibold`} style={{ backgroundColor: `${deptColor}15`, color: deptColor, border: `1px solid ${deptColor}30` }}>
+            <User size={compact ? 8 : 10} /> Profile
           </button>
         </div>
       </div>
@@ -315,17 +346,38 @@ export function ProfileModal({
 
   const [editing, setEditing] = useState(false)
   const [profile, setProfile] = useState<StaffProfile>(() => getProfiles()[staff.email || ''] || {})
+  const [photo, setPhoto] = useState<string | null>(() => getPhoto(staff.email))
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleSave() {
     if (staff.email) saveProfile(staff.email, profile)
     setEditing(false)
   }
 
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !staff.email) return
+    if (file.size > 2 * 1024 * 1024) { alert('Photo must be under 2MB'); return }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = reader.result as string
+      savePhoto(staff.email!, base64)
+      setPhoto(base64)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  function handleRemovePhoto() {
+    if (!staff.email) return
+    removePhoto(staff.email)
+    setPhoto(null)
+  }
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#0F1019', border: '1px solid #1F2937' }}>
 
-        {/* Close button */}
         <div className="flex items-center justify-end px-6 pt-4">
           <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: '#6B7280' }}><X size={18} /></button>
         </div>
@@ -335,11 +387,13 @@ export function ProfileModal({
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ height: 6, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
             <div className="flex items-start gap-6 p-6">
-              {/* Avatar */}
-              <div className="flex items-center justify-center rounded-full text-4xl font-black shrink-0" style={{ width: 120, height: 120, backgroundColor: `${deptColor}25`, color: deptColor, border: `3px solid ${deptColor}50` }}>
-                {initials}
-              </div>
-              {/* Info */}
+              {photo ? (
+                <img src={photo} alt="" className="rounded-full object-cover shrink-0" style={{ width: 120, height: 120, border: `3px solid ${deptColor}50` }} />
+              ) : (
+                <div className="flex items-center justify-center rounded-full text-4xl font-black shrink-0" style={{ width: 120, height: 120, backgroundColor: `${deptColor}25`, color: deptColor, border: `3px solid ${deptColor}50` }}>
+                  {initials}
+                </div>
+              )}
               <div className="flex-1 min-w-0 pt-2">
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>{name}</h2>
@@ -385,7 +439,7 @@ export function ProfileModal({
             </div>
           </div>
 
-          {/* Right — Fun facts */}
+          {/* Right — Fun facts + photo */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-sm font-semibold inline-flex items-center gap-2" style={{ color: '#F9FAFB' }}><Sparkles size={14} style={{ color: '#F59E0B' }} />Fun Facts</p>
@@ -396,6 +450,32 @@ export function ProfileModal({
               )}
             </div>
             <div className="p-5 space-y-3">
+              {/* Photo upload (only in edit mode for current user) */}
+              {editing && isCurrentUser && (
+                <div className="mb-4 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-xs font-medium mb-2" style={{ color: '#6B7280' }}>Profile Photo</p>
+                  <div className="flex items-center gap-4">
+                    {photo ? (
+                      <img src={photo} alt="" className="rounded-full object-cover" style={{ width: 56, height: 56, border: `2px solid ${deptColor}50` }} />
+                    ) : (
+                      <div className="flex items-center justify-center rounded-full text-lg font-black" style={{ width: 56, height: 56, backgroundColor: `${deptColor}20`, color: deptColor, border: `2px solid ${deptColor}50` }}>
+                        {initials}
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1.5">
+                      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                      <button onClick={() => fileInputRef.current?.click()} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                        <Upload size={10} /> {photo ? 'Change photo' : 'Upload photo'}
+                      </button>
+                      {photo && (
+                        <button onClick={handleRemovePhoto} className="text-[10px]" style={{ color: '#EF4444' }}>Remove photo</button>
+                      )}
+                      <p className="text-[10px]" style={{ color: '#4B5563' }}>Max 2MB. JPG, PNG or WebP.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {FUN_QUESTIONS.map(q => (
                 <div key={q.key}>
                   <div className="flex items-center gap-2 mb-1">

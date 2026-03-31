@@ -5,6 +5,8 @@ import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, Al
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import NewTrialModal from '@/components/modals/NewTrialModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -74,15 +76,24 @@ export default function TrialsPage() {
   ]
 
   const hasData = useHasDashboardData('trials')
+
+  const deptStaff = getDeptStaff('trials')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="trials"
-    title="No trial data yet"
-    description="Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline."
-    uploads={[
-      { key: 'trials', label: 'Upload Trial Signups (CSV)' },
-      { key: 'onboarding', label: 'Upload Onboarding Data (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="trials" />}
+      <DashboardEmptyState pageKey="trials"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your trials data` : 'No trial data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Trials Lead'}. Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline.` : 'Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline.'}
+        uploads={[
+          { key: 'trials', label: 'Upload Trial Signups (CSV)' },
+          { key: 'onboarding', label: 'Upload Onboarding Data (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   return (
     <PageShell title="Trials" subtitle="Trial management, conversions and pipeline">

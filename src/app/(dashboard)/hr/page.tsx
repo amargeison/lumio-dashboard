@@ -16,6 +16,8 @@ import OffboardingModal,      { type OffboardingData }      from '@/components/O
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
+import { getDeptStaff, getDeptLead, getStaffName } from '@/lib/staff/deptMatch'
 import { HRStaffList, HRChecklist } from '@/components/dashboard/LiveStaffPanels'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import SendContractModal from '@/components/modals/SendContractModal'
@@ -197,16 +199,24 @@ export default function HRPage() {
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
   const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
 
+  const deptStaff = getDeptStaff('hr')
+  const deptLead = getDeptLead(deptStaff)
+
   if (hasData === null) return null
-  if (!hasData) return <DashboardEmptyState pageKey="hr"
-    title="No HR data yet"
-    description="Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure."
-    uploads={[
-      { key: 'people', label: 'Upload Team Roster (CSV)' },
-      { key: 'org', label: 'Upload Org Chart (CSV)' },
-      { key: 'absences', label: 'Upload Absence Records (CSV)' },
-    ]}
-  />
+  if (!hasData) return (
+    <>
+      {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="hr" />}
+      <DashboardEmptyState pageKey="hr"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your HR data` : 'No HR data yet'}
+        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'HR Lead'}. Import your team roster or connect BambooHR to activate the full HR & People dashboard.` : 'Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure.'}
+        uploads={[
+          { key: 'people', label: 'Upload Team Roster (CSV)' },
+          { key: 'org', label: 'Upload Org Chart (CSV)' },
+          { key: 'absences', label: 'Upload Absence Records (CSV)' },
+        ]}
+      />
+    </>
+  )
 
   // Live staff panels — show when staff imported and NOT in demo mode
   if (hasImportedStaff && !isDemoActive) {
