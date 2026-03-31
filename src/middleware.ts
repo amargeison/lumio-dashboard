@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 const RESERVED_SLUGS = new Set([
-  'demo', 'schools', 'school', 'trial-ended', 'website', 'demobusiness', 'dev-login',
+  'demo', 'dev', 'master', 'schools', 'school', 'trial-ended', 'website', 'demobusiness', 'dev-login',
   'demoschool', 'portallive', 'schoollive', 'login', 'signup', 'api',
   'overview', 'auth', 'public', 'static', 'home', 'pricing', 'about',
   'terms', 'privacy', 'cookies', 'support', 'success', 'settings',

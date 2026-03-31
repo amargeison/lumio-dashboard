@@ -7,7 +7,7 @@ import Image from 'next/image'
 function DevLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('from') || '/home'
+  const redirectTo = searchParams.get('from') || '/dev'
 
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState(false)
@@ -51,7 +51,24 @@ function DevLoginContent() {
         body: JSON.stringify({ pin }),
       })
       if (res.ok) {
-        router.push(redirectTo)
+        const data = await res.json()
+        // Store workspace session so portal works immediately
+        if (data.session_token) localStorage.setItem('workspace_session_token', data.session_token)
+        if (data.slug) {
+          localStorage.setItem('lumio_workspace_slug', data.slug)
+          localStorage.setItem('lumio_company_active', 'true')
+        }
+        if (data.company_name) {
+          localStorage.setItem('workspace_company_name', data.company_name)
+          localStorage.setItem('lumio_company_name', data.company_name)
+        }
+        if (data.owner_name) {
+          localStorage.setItem('workspace_user_name', data.owner_name)
+          localStorage.setItem('lumio_user_name', data.owner_name)
+        }
+        // Redirect: use from param, or portal slug, or fallback
+        const dest = redirectTo !== '/dev' ? redirectTo : data.slug ? `/${data.slug}` : '/oxed-us-inc'
+        router.push(dest)
       } else {
         setError(true)
         setShake(true)
