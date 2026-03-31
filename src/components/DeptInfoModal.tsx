@@ -45,9 +45,51 @@ const LEVEL_COLORS: Record<string, { color: string; bg: string }> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function DeptInfoModal({ dept, onClose, onViewTeam }: { dept: string; onClose: () => void; onViewTeam?: () => void }) {
+interface ImportedStaff { first_name?: string; last_name?: string; email?: string; job_title?: string; department?: string; phone?: string }
+
+const DEPT_MATCH_PATTERNS: Record<string, RegExp> = {
+  hr:         /\b(hr|human resources|people)\b/i,
+  marketing:  /\b(marketing|comms|communications)\b/i,
+  sales:      /\b(sales|business development)\b/i,
+  accounts:   /\b(accounts|finance|accounting)\b/i,
+  operations: /\b(operations|ops)\b/i,
+  it:         /\b(it|tech|technology|systems|engineering)\b/i,
+  success:    /\b(success|customer success)\b/i,
+  support:    /\b(support|helpdesk|service desk)\b/i,
+  strategy:   /\b(strategy|leadership)\b/i,
+  crm:        /\b(crm|customer relationship)\b/i,
+  trials:     /\b(trials|growth)\b/i,
+  partners:   /\b(partner|partnerships)\b/i,
+  projects:   /\b(project|pmo)\b/i,
+  workflows:  /\b(workflow|automation)\b/i,
+  insights:   /\b(data|analytics|insights)\b/i,
+}
+
+function filterStaffByDept(staff: ImportedStaff[], dept: string): ImportedStaff[] {
+  const pattern = DEPT_MATCH_PATTERNS[dept]
+  if (!pattern) return staff
+  return staff.filter(s => s.department && pattern.test(s.department))
+}
+
+function groupStaffByDept(staff: ImportedStaff[]): Record<string, ImportedStaff[]> {
+  const groups: Record<string, ImportedStaff[]> = {}
+  for (const s of staff) {
+    const dept = s.department || 'Other'
+    if (!groups[dept]) groups[dept] = []
+    groups[dept].push(s)
+  }
+  return groups
+}
+
+export default function DeptInfoModal({ dept, onClose, onViewTeam, importedStaff, isDirectorUser, demoDataActive }: {
+  dept: string; onClose: () => void; onViewTeam?: () => void
+  importedStaff?: ImportedStaff[]; isDirectorUser?: boolean; demoDataActive?: boolean
+}) {
   const data = DATA[dept] || DATA.overview
   const label = DEPT_LABELS[dept] || dept
+  const hasRealStaff = importedStaff && importedStaff.length > 0 && !demoDataActive
+  const realDeptStaff = hasRealStaff ? (isDirectorUser ? importedStaff : filterStaffByDept(importedStaff!, dept)) : []
+  const groupedStaff = hasRealStaff && isDirectorUser ? groupStaffByDept(importedStaff!) : null
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -60,15 +102,67 @@ export default function DeptInfoModal({ dept, onClose, onViewTeam }: { dept: str
             </div>
             <div>
               <h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{label}</h2>
-              <p className="text-xs" style={{ color: '#6B7280' }}>Managed by {data.manager} · {data.size} people</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>
+                {hasRealStaff
+                  ? `${isDirectorUser ? importedStaff!.length : realDeptStaff.length} people${isDirectorUser ? ' across all departments' : ' in this department'}`
+                  : `Managed by ${data.manager} · ${data.size} people`}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: '#6B7280' }}><X size={18} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-6">
-          {/* Team */}
-          {data.team.length > 0 && (
+          {/* Team — real staff when available, demo data otherwise */}
+          {hasRealStaff ? (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#F9FAFB' }}><Users size={14} style={{ color: '#0D9488' }} /> Team</h3>
+                <span className="text-xs" style={{ color: '#6B7280' }}>{isDirectorUser ? `${importedStaff!.length} people across all departments` : `${realDeptStaff.length} people in this department`}</span>
+              </div>
+              {groupedStaff ? (
+                /* Director view: grouped by department */
+                Object.entries(groupedStaff).map(([deptName, members]) => (
+                  <div key={deptName} className="mb-4">
+                    <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>{deptName.toUpperCase()}</p>
+                    <div className="space-y-1.5">
+                      {members.map((s, i) => {
+                        const name = [s.first_name, s.last_name].filter(Boolean).join(' ') || 'Unknown'
+                        const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2)
+                        return (
+                          <div key={`${s.email || i}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: '#07080F' }}>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>{initials}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{name}</p>
+                              <p className="text-xs truncate" style={{ color: '#6B7280' }}>{s.job_title || 'Team Member'}{s.email ? ` · ${s.email}` : ''}{s.phone ? ` · ${s.phone}` : ''}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))
+              ) : realDeptStaff.length > 0 ? (
+                <div className="space-y-2">
+                  {realDeptStaff.map((s, i) => {
+                    const name = [s.first_name, s.last_name].filter(Boolean).join(' ') || 'Unknown'
+                    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2)
+                    return (
+                      <div key={`${s.email || i}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: '#07080F' }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>{initials}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{name}</p>
+                          <p className="text-xs truncate" style={{ color: '#6B7280' }}>{s.job_title || 'Team Member'}{s.email ? ` · ${s.email}` : ''}{s.phone ? ` · ${s.phone}` : ''}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-center py-4" style={{ color: '#6B7280' }}>No staff in this department yet</p>
+              )}
+            </div>
+          ) : data.team.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#F9FAFB' }}><Users size={14} style={{ color: '#0D9488' }} /> Team</h3>
@@ -87,7 +181,7 @@ export default function DeptInfoModal({ dept, onClose, onViewTeam }: { dept: str
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Roles */}
           {data.roles.length > 0 && (

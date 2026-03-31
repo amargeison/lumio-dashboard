@@ -7,6 +7,8 @@ interface OverviewContext {
   company: string
   role: string
   department: string
+  activeDepartment?: string
+  isDirector?: boolean
   timeOfDay: string
   dayOfWeek: string
   connectedIntegrations: string[]
@@ -16,6 +18,7 @@ interface OverviewContext {
     hasAccounts: boolean
   }
   importedStaff?: { first_name?: string; last_name?: string; job_title?: string; department?: string }[]
+  departmentStaff?: { first_name?: string; last_name?: string; job_title?: string; department?: string }[]
 }
 
 const SYSTEM_PROMPTS: Record<TabType, string> = {
@@ -110,6 +113,27 @@ export async function POST(req: NextRequest) {
       staffContext = `\n\nIMPORTANT: The following staff have been imported. Use these real people in your team overview instead of generating fictional ones:\n  ${staffList}`
     }
 
+    // Department scoping
+    const activeDept = context.activeDepartment || 'overview'
+    let deptContext = ''
+    if (context.isDirector) {
+      deptContext = `\n\nThis user is a director/senior leader with visibility across all departments. Generate cross-functional insights and suggestions covering the whole business.`
+      if (context.importedStaff?.length) {
+        const allList = context.importedStaff.map(s =>
+          `${[s.first_name, s.last_name].filter(Boolean).join(' ')} — ${s.job_title || 'Team Member'} (${s.department || 'General'})`
+        ).join('\n  ')
+        deptContext += `\nAll staff:\n  ${allList}`
+      }
+    } else if (activeDept !== 'overview') {
+      deptContext = `\n\nThe user is currently viewing the ${activeDept} department. Focus your suggestions on ${activeDept}-specific tasks and insights.`
+      if (context.departmentStaff?.length) {
+        const deptList = context.departmentStaff.map(s =>
+          `${[s.first_name, s.last_name].filter(Boolean).join(' ')} — ${s.job_title || 'Team Member'}`
+        ).join('\n  ')
+        deptContext += `\nDepartment staff:\n  ${deptList}`
+      }
+    }
+
     const userMessage = `Generate content for the "${tab}" tab.
 
 User context:
@@ -117,10 +141,12 @@ User context:
 - Company: ${context.company || 'My Company'}
 - Role: ${context.role || 'Manager'}
 - Department: ${context.department || 'General'}
+- Active department view: ${activeDept}
+- Director/senior leader: ${context.isDirector || false}
 - Time of day: ${context.timeOfDay || 'morning'}
 - Day: ${context.dayOfWeek || 'Monday'}
 - Connected integrations: ${context.connectedIntegrations?.length ? context.connectedIntegrations.join(', ') : 'None — generate role-based suggestions'}
-- Imported data: Staff=${context.importedData?.hasStaff || false}, Contacts=${context.importedData?.hasContacts || false}, Accounts=${context.importedData?.hasAccounts || false}${staffContext}
+- Imported data: Staff=${context.importedData?.hasStaff || false}, Contacts=${context.importedData?.hasContacts || false}, Accounts=${context.importedData?.hasAccounts || false}${staffContext}${deptContext}
 
 Return the JSON array now.`
 

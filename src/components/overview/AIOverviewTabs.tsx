@@ -10,8 +10,12 @@ interface AIContext {
   company: string
   role: string
   department: string
+  activeDepartment?: string
+  isDirector?: boolean
   connectedIntegrations: string[]
   importedData: { hasStaff: boolean; hasContacts: boolean; hasAccounts: boolean }
+  importedStaff?: { first_name?: string; last_name?: string; job_title?: string; department?: string }[]
+  departmentStaff?: { first_name?: string; last_name?: string; job_title?: string; department?: string }[]
 }
 
 interface QuickWin { id: string; title: string; description: string; impact: 'HIGH' | 'MEDIUM'; timeEstimate: string; department: string; actionLabel: string; source: string }

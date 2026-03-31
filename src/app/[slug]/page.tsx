@@ -32,6 +32,60 @@ import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 
+// ─── Staff types & helpers ───────────────────────────────────────────────────
+
+interface StaffMember {
+  first_name?: string; last_name?: string; email?: string
+  job_title?: string; department?: string; phone?: string; start_date?: string
+}
+
+function getImportedStaff(): StaffMember[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+}
+
+const DIRECTOR_TITLES = /\b(director|ceo|coo|cto|cfo|chief|founder|owner|president|vp|vice president|head of|managing director|md)\b/i
+const DIRECTOR_DEPTS = /^(director|leadership|executive|board|c-suite)$/i
+
+function isDirector(staff: StaffMember | null): boolean {
+  if (!staff) {
+    if (typeof window !== 'undefined' && localStorage.getItem('lumio_user_role') === 'Admin') return true
+    return false
+  }
+  if (staff.job_title && DIRECTOR_TITLES.test(staff.job_title)) return true
+  if (staff.department && DIRECTOR_DEPTS.test(staff.department)) return true
+  if (typeof window !== 'undefined' && localStorage.getItem('lumio_user_role') === 'Admin') return true
+  return false
+}
+
+const DEPT_MATCH: Record<string, RegExp> = {
+  hr:         /\b(hr|human resources|people)\b/i,
+  marketing:  /\b(marketing|comms|communications)\b/i,
+  sales:      /\b(sales|business development)\b/i,
+  accounts:   /\b(accounts|finance|accounting)\b/i,
+  operations: /\b(operations|ops)\b/i,
+  it:         /\b(it|tech|technology|systems|engineering)\b/i,
+  success:    /\b(success|customer success)\b/i,
+  support:    /\b(support|helpdesk|service desk)\b/i,
+  strategy:   /\b(strategy|leadership)\b/i,
+  crm:        /\b(crm|customer relationship)\b/i,
+  trials:     /\b(trials|growth)\b/i,
+  partners:   /\b(partner|partnerships)\b/i,
+  projects:   /\b(project|pmo)\b/i,
+  workflows:  /\b(workflow|automation)\b/i,
+  insights:   /\b(data|analytics|insights)\b/i,
+}
+
+function matchDept(staff: StaffMember[], dept: string): StaffMember[] {
+  const pattern = DEPT_MATCH[dept]
+  if (!pattern) return staff
+  return staff.filter(s => s.department && pattern.test(s.department))
+}
+
+function staffFullName(s: StaffMember): string {
+  return [s.first_name, s.last_name].filter(Boolean).join(' ') || 'Unknown'
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy' | 'projects'
@@ -2033,6 +2087,11 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
       localStorage.removeItem('lumio_ai_' + tab + '_timestamp')
     })
+    // Clear CRM caches
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('lumio_crm_'))
+      .forEach(k => localStorage.removeItem(k))
+    try { sessionStorage.removeItem('lumio_crm_cache') } catch { /* ignore */ }
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
     onDemoToggle(false)
@@ -2082,13 +2141,18 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         else if (h.includes('last') && h.includes('name')) colMap['last_name'] = String(i)
         else if (h === 'name' || h === 'full name' || h === 'fullname') colMap['full_name'] = String(i)
         else if (h.includes('email')) colMap['email'] = String(i)
+        else if (h.includes('company') || h.includes('organisation') || h.includes('organization')) colMap['company'] = String(i)
         else if (h.includes('job') || h.includes('title') || h.includes('role') || h.includes('position')) colMap['job_title'] = String(i)
         else if (h.includes('department') || h.includes('dept') || h.includes('team')) colMap['department'] = String(i)
         else if (h.includes('phone') || h.includes('mobile') || h.includes('tel')) colMap['phone'] = String(i)
         else if (h.includes('start') && h.includes('date')) colMap['start_date'] = String(i)
+        else if (h.includes('tag')) colMap['tags'] = String(i)
       })
 
-      const staff = lines.slice(1).map(line => {
+      // Detect if this is a contacts CSV (has company column) or staff CSV
+      const isContactsCsv = colMap['company'] !== undefined
+
+      const rows = lines.slice(1).map(line => {
         const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
         const row: Record<string, string> = {}
 
@@ -2100,40 +2164,53 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         if (colMap['first_name'] !== undefined) row.first_name = cols[parseInt(colMap['first_name'])] || ''
         if (colMap['last_name'] !== undefined) row.last_name = cols[parseInt(colMap['last_name'])] || ''
         if (colMap['email'] !== undefined) row.email = cols[parseInt(colMap['email'])] || ''
+        if (colMap['company'] !== undefined) row.company = cols[parseInt(colMap['company'])] || ''
         if (colMap['job_title'] !== undefined) row.job_title = cols[parseInt(colMap['job_title'])] || ''
         if (colMap['department'] !== undefined) row.department = cols[parseInt(colMap['department'])] || ''
         if (colMap['phone'] !== undefined) row.phone = cols[parseInt(colMap['phone'])] || ''
         if (colMap['start_date'] !== undefined) row.start_date = cols[parseInt(colMap['start_date'])] || ''
+        if (colMap['tags'] !== undefined) row.tags = cols[parseInt(colMap['tags'])] || ''
 
         return row
       }).filter(s => s.first_name || s.email)
 
-      if (!staff.length) { onToast('No valid staff rows found — need First Name or Email'); setUploading(false); return }
-
-      setImportStatus(`Importing ${staff.length} staff...`)
+      if (!rows.length) { onToast('No valid rows found — need First Name or Email'); setUploading(false); return }
 
       const token = localStorage.getItem('workspace_session_token') || localStorage.getItem('session_token') || sessionToken || ''
-      console.log('[import-staff] Using token:', token ? 'found (' + token.slice(0, 8) + '...)' : 'MISSING')
-      console.log('[import-staff] Staff count:', staff.length, 'First row:', staff[0])
 
-      const res = await fetch('/api/workspace/import-staff', {
-        method: 'POST',
-        headers: { 'x-workspace-token': token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staff }),
-      })
-
-      console.log('[import-staff] Response status:', res.status)
-      const data = await res.json()
-      console.log('[import-staff] Response body:', data)
-
-      if (res.ok) {
-        // Cache imported staff in localStorage
-        const existing = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-        localStorage.setItem('lumio_staff_imported', JSON.stringify([...existing, ...staff]))
-        window.dispatchEvent(new Event('lumio-staff-imported'))
-        onToast(`${data.imported} staff members imported successfully`)
+      if (isContactsCsv) {
+        // Import as CRM contacts
+        setImportStatus(`Importing ${rows.length} contacts...`)
+        const res = await fetch('/api/workspace/import-contacts', {
+          method: 'POST',
+          headers: { 'x-workspace-token': token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contacts: rows }),
+        })
+        const data = await res.json()
+        if (res.ok) {
+          const existing = JSON.parse(localStorage.getItem('lumio_crm_contacts') || '[]')
+          localStorage.setItem('lumio_crm_contacts', JSON.stringify([...existing, ...rows]))
+          onToast(`${data.imported} contacts imported successfully`)
+        } else {
+          onToast('Import failed — please check your CSV format')
+        }
       } else {
-        onToast('Import failed — please check your CSV format')
+        // Import as staff
+        setImportStatus(`Importing ${rows.length} staff...`)
+        const res = await fetch('/api/workspace/import-staff', {
+          method: 'POST',
+          headers: { 'x-workspace-token': token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ staff: rows }),
+        })
+        const data = await res.json()
+        if (res.ok) {
+          const existing = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+          localStorage.setItem('lumio_staff_imported', JSON.stringify([...existing, ...rows]))
+          window.dispatchEvent(new Event('lumio-staff-imported'))
+          onToast(`${data.imported} staff members imported successfully`)
+        } else {
+          onToast('Import failed — please check your CSV format')
+        }
       }
     } catch (err) {
       console.error('[handleUpload] CSV parse error:', err)
@@ -2665,6 +2742,18 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
   const [tab, setTab] = useState<OverviewTab>('today')
 
+  // Staff data + director detection
+  const allStaff = React.useMemo(() => getImportedStaff(), [])
+  const currentUserStaff = React.useMemo(() => {
+    const name = (firstName || '').toLowerCase()
+    if (!name) return null
+    return allStaff.find(s => {
+      const full = staffFullName(s).toLowerCase()
+      return full === name || full.startsWith(name) || (s.first_name && s.first_name.toLowerCase() === name)
+    }) || null
+  }, [firstName, allStaff])
+  const isDirectorUser = React.useMemo(() => isDirector(currentUserStaff), [currentUserStaff])
+
   // Build AI context for overview tabs
   const aiCtx = React.useMemo(() => {
     const integrations: string[] = []
@@ -2673,19 +2762,24 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         if (localStorage.getItem(`lumio_integration_${i.key}`) === 'true') integrations.push(i.name)
       }))
     }
+    const deptStaff = isDirectorUser ? allStaff : matchDept(allStaff, 'overview')
     return {
       userName: firstName || '',
       company,
       role: typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'Manager' : 'Manager',
       department: 'General',
+      activeDepartment: 'overview',
+      isDirector: isDirectorUser,
       connectedIntegrations: integrations,
       importedData: {
-        hasStaff: typeof window !== 'undefined' && (localStorage.getItem('lumio_staff_imported') || '[]') !== '[]',
+        hasStaff: allStaff.length > 0,
         hasContacts: false,
         hasAccounts: false,
       },
+      importedStaff: allStaff,
+      departmentStaff: deptStaff,
     }
-  }, [firstName, company])
+  }, [firstName, company, allStaff, isDirectorUser])
 
   const wf = fakeNum(47, company, 'wf')
   const cu = fakeNum(181, company, 'cu')
@@ -2774,8 +2868,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       )}
 
       {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
-      {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} />}
-      {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} />}
+      {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
+      {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
 
       {/* Phone Call modal */}
       {showPhoneCall && (

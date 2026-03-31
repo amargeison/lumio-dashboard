@@ -13,7 +13,7 @@ const INPUT_STYLE: React.CSSProperties = {
   width: '100%',
 }
 
-type ModalProps = { onClose: () => void; onToast: (msg: string) => void }
+type ModalProps = { onClose: () => void; onToast: (msg: string) => void; userName?: string; userDept?: string; userTitle?: string }
 
 function Overlay({ children }: { children: React.ReactNode }) {
   return (
@@ -159,7 +159,7 @@ export function ClaimExpenseModal({ onClose, onToast }: ModalProps) {
 
 /* ─── 2. BookHolidayModal ─── */
 
-export function BookHolidayModal({ onClose, onToast }: ModalProps) {
+export function BookHolidayModal({ onClose, onToast, userName, userDept, userTitle }: ModalProps) {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [holidayType, setHolidayType] = useState('Annual Leave')
@@ -178,6 +178,11 @@ export function BookHolidayModal({ onClose, onToast }: ModalProps) {
   return (
     <Overlay>
       <Header title="Request Annual Leave" onClose={onClose} />
+      {userName && (
+        <div style={{ background: 'rgba(108,63,197,0.08)', border: '1px solid rgba(108,63,197,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 13, color: '#A78BFA' }}>
+          {userName}{userTitle ? ` — ${userTitle}` : ''}{userDept ? ` (${userDept})` : ''}
+        </div>
+      )}
       <div style={{ background: 'rgba(13,148,136,0.12)', border: '1px solid #0D9488', borderRadius: 8, padding: '8px 12px', marginBottom: 16, fontSize: 13, color: '#5EEAD4' }}>
         You have 18 days remaining this year
       </div>
@@ -214,7 +219,7 @@ export function BookHolidayModal({ onClose, onToast }: ModalProps) {
 
 /* ─── 3. ReportSicknessModal ─── */
 
-export function ReportSicknessModal({ onClose, onToast }: ModalProps) {
+export function ReportSicknessModal({ onClose, onToast, userName, userDept, userTitle }: ModalProps) {
   const [firstDay, setFirstDay] = useState(todayStr())
   const [expectedReturn, setExpectedReturn] = useState('')
   const [reason, setReason] = useState('Illness')
@@ -234,6 +239,11 @@ export function ReportSicknessModal({ onClose, onToast }: ModalProps) {
   return (
     <Overlay>
       <Header title="Report Absence" onClose={onClose} />
+      {userName && (
+        <div style={{ background: 'rgba(108,63,197,0.08)', border: '1px solid rgba(108,63,197,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 13, color: '#A78BFA' }}>
+          {userName}{userTitle ? ` — ${userTitle}` : ''}{userDept ? ` (${userDept})` : ''}
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         <Field label="First Day of Absence">
           <Input type="date" value={firstDay} onChange={setFirstDay} />
