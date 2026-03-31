@@ -3087,7 +3087,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           })
             .then(r => r.ok ? r.json() : null)
             .then(data => {
-              if (!data?.session_token) { router.replace('/login?redirectTo=/' + slug); return }
+              if (!data?.session_token) { console.log('[session] No token returned from /api/workspace/session'); router.replace('/login?redirectTo=/' + slug); return }
+              console.log('[session] Token saved:', data.session_token ? 'yes' : 'NO TOKEN RETURNED')
               localStorage.setItem('workspace_session_token', data.session_token)
               if (data.business?.company_name) { setCompany(data.business.company_name); localStorage.setItem('workspace_company_name', data.business.company_name); localStorage.setItem('lumio_company_name', data.business.company_name) }
               if (data.business?.owner_name) { setUserName(data.business.owner_name); localStorage.setItem('workspace_user_name', data.business.owner_name); localStorage.setItem('lumio_user_name', data.business.owner_name) }
