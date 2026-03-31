@@ -30,6 +30,7 @@ import TeamPanel from '@/app/(dashboard)/overview/components/TeamPanel'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -2355,6 +2356,25 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     onAction(quickActionToasts[label] || label)
   }
   const [tab, setTab] = useState<OverviewTab>('today')
+
+  // Build AI context for overview tabs
+  const aiCtx = React.useMemo(() => {
+    const integrations: string[] = []
+    if (typeof window !== 'undefined') {
+      INTEGRATION_GROUPS.forEach(g => g.items.forEach(i => {
+        if (localStorage.getItem(`lumio_integration_${i.key}`) === 'true') integrations.push(i.name)
+      }))
+    }
+    return {
+      userName: firstName || '',
+      company,
+      role: typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'Manager' : 'Manager',
+      department: 'General',
+      connectedIntegrations: integrations,
+      importedData: { hasStaff: false, hasContacts: false, hasAccounts: false },
+    }
+  }, [firstName, company])
+
   const wf = fakeNum(47, company, 'wf')
   const cu = fakeNum(181, company, 'cu')
   const mrr = fakeNum(42000, company, 'mrr')
@@ -2428,25 +2448,15 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        demoDataActive ? <QuickWins /> : (
-          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
-        )
+        demoDataActive ? <QuickWins /> : <AIQuickWins ctx={aiCtx} />
       ) : tab === 'tasks' ? (
-        demoDataActive ? <DailyTasks /> : (
-          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
-        )
+        demoDataActive ? <DailyTasks /> : <AIDailyTasks ctx={aiCtx} />
       ) : tab === 'insights' ? (
-        demoDataActive ? <Insights /> : (
-          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
-        )
+        demoDataActive ? <Insights /> : <AIInsights ctx={aiCtx} />
       ) : tab === 'not-to-miss' ? (
-        demoDataActive ? <NotToMiss /> : (
-          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
-        )
+        demoDataActive ? <NotToMiss /> : <AIDontMiss ctx={aiCtx} />
       ) : tab === 'team' ? (
-        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : (
-          <div className="flex items-center justify-center py-16"><p className="text-sm" style={{ color: '#6B7280' }}>Content will be displayed once you&apos;ve connected your data.</p></div>
-        )
+        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
