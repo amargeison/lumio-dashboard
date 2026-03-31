@@ -1594,15 +1594,14 @@ const DEPT_ROUTES: Record<string, string> = {
   partners: '/partners', strategy: '/strategy', insights: '/insights',
 }
 
-function DeptRedirect({ dept }: { dept: DeptId }) {
+function DeptRedirect({ dept, slug }: { dept: DeptId; slug: string }) {
   const router = useRouter()
   useEffect(() => {
     const route = DEPT_ROUTES[dept]
     if (route) {
-      const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
       router.push(slug ? `/${slug}${route}` : route)
     }
-  }, [dept, router])
+  }, [dept, slug, router])
   return (
     <div className="flex items-center justify-center py-20">
       <Loader2 size={24} className="animate-spin" style={{ color: '#0D9488' }} />
@@ -3034,6 +3033,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             router.replace(`/login?redirectTo=/${slug}&message=${encodeURIComponent('Your session has expired. Please sign in again.')}`)
             return
           }
+          // Lock slug to current URL — clear any stale values
+          localStorage.setItem('lumio_workspace_slug', slug)
+          localStorage.setItem('lumio_tenant_slug', slug)
+          document.cookie = `lumio_tenant_slug=${slug}; max-age=2592000; path=/`
+
           if (data.company_name) {
             setCompany(data.company_name)
             localStorage.setItem('workspace_company_name', data.company_name)
@@ -3246,7 +3250,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
         </div>
       </div>

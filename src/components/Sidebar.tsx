@@ -54,7 +54,10 @@ const BASE_NAV_ITEMS: {
 ]
 
 function getNavItems() {
-  const slug = typeof window !== 'undefined' ? (localStorage.getItem('lumio_workspace_slug') || '') : ''
+  // Use URL as source of truth for slug, not localStorage
+  const slug = typeof window !== 'undefined'
+    ? window.location.pathname.split('/').filter(Boolean)[0] || localStorage.getItem('lumio_workspace_slug') || ''
+    : ''
   return BASE_NAV_ITEMS.map(item => ({
     ...item,
     href: slug ? `/${slug}${item.path}` : (item.path || '/overview'),
