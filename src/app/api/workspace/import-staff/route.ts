@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { propagateAllStaff } from '@/lib/staff/propagate'
 
 function getSupabase() {
   return createClient(
@@ -63,6 +64,22 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('[workspace/import-staff] Insert error:', error)
       return NextResponse.json({ error: 'Failed to import staff' }, { status: 500 })
+    }
+
+    // Propagate to payroll, IT assets, and onboarding checklist
+    const validForPropagation = rows.filter(r => r.email).map(r => ({
+      first_name: r.first_name || '',
+      last_name: r.last_name || '',
+      email: r.email!,
+      job_title: r.job_title || '',
+      department: r.department || '',
+      phone: r.phone || undefined,
+      start_date: r.start_date || undefined,
+    }))
+    if (validForPropagation.length) {
+      propagateAllStaff(session.business_id, validForPropagation).catch(err =>
+        console.error('[workspace/import-staff] Propagation error:', err)
+      )
     }
 
     return NextResponse.json({ success: true, imported: rows.length })

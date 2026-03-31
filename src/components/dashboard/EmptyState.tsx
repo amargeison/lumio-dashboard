@@ -463,7 +463,16 @@ export function useHasDashboardData(pageKey: string): boolean | null {
       return
     }
 
-    // Fast path 2: demo mode is active — sync per-page flags immediately
+    // Fast path 2: staff has been imported — enable HR/Accounts/IT pages
+    const staffPages = new Set(['hr', 'accounts', 'it'])
+    if (staffPages.has(pageKey)) {
+      try {
+        const imported = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+        if (imported.length > 0) { setHas(true); return }
+      } catch { /* ignore */ }
+    }
+
+    // Fast path 3: demo mode is active — sync per-page flags immediately
     if (localStorage.getItem('lumio_demo_active') === 'true') {
       ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
       setHas(true)

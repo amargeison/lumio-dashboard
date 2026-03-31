@@ -544,14 +544,27 @@ function nodeToStaffRecord(node: OrgNode): StaffRecord {
   return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email: `${node.id}@staff` }
 }
 
-function OrgChart({ items, ctx }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string> }) {
+function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIContext; statusColor: Record<string, string>; importedStaff?: ImportedStaff[] }) {
   const [editing, setEditing] = useState(false)
   const [overrides, setOverrides] = useState<Record<string, string>>(getReportingOverrides)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [profileNode, setProfileNode] = useState<OrgNode | null>(null)
   const [, forceUpdate] = useState(0)
 
-  const tree = buildHierarchy(items, ctx.userName || 'You', ctx.role || 'Manager')
+  const staffToUse: TeamMember[] = importedStaff?.length
+    ? importedStaff.map((s, i) => ({
+        id: s.email || `imported-${i}`,
+        name: [s.first_name, s.last_name].filter(Boolean).join(' ') || s.email || 'Unknown',
+        role: s.job_title || 'Team Member',
+        department: s.department || 'General',
+        status: 'available' as const,
+        currentFocus: '',
+        needsAttention: false,
+        attentionNote: null,
+      }))
+    : items
+
+  const tree = buildHierarchy(staffToUse, ctx.userName || 'You', ctx.role || 'Manager')
 
   function handleMove(childId: string, parentId: string) {
     const next = { ...overrides, [childId]: parentId }
@@ -621,7 +634,7 @@ function OrgChart({ items, ctx }: { items: TeamMember[]; ctx: AIContext; statusC
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-xs" style={{ color: '#6B7280' }}>{items.length} team members · hierarchy auto-detected from job titles</p>
+        <p className="text-xs" style={{ color: '#6B7280' }}>{staffToUse.length} team members · hierarchy auto-detected from job titles</p>
         {editing ? (
           <div className="flex gap-2">
             <button onClick={handleCancel} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
@@ -784,7 +797,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
           )}
 
           {/* Org Chart */}
-          {subTab === 'org' && <OrgChart items={items} ctx={ctx} statusColor={statusColor} />}
+          {subTab === 'org' && <OrgChart items={items} ctx={ctx} statusColor={statusColor} importedStaff={importedStaff} />}
 
           {/* Team Info — Sticker cards */}
           {subTab === 'info' && (

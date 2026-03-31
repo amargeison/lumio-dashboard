@@ -16,6 +16,7 @@ import OffboardingModal,      { type OffboardingData }      from '@/components/O
 import RecruitmentModal,      { type RecruitmentData }      from '@/components/RecruitmentModal'
 import PerformanceReviewModal, { type PerformanceReviewData } from '@/components/PerformanceReviewModal'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { HRStaffList, HRChecklist } from '@/components/dashboard/LiveStaffPanels'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import SendContractModal from '@/components/modals/SendContractModal'
 import BookContractorModal from '@/components/modals/BookContractorModal'
@@ -193,6 +194,9 @@ export default function HRPage() {
   }, [workspace?.id, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasData = useHasDashboardData('hr')
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="hr"
     title="No HR data yet"
@@ -203,6 +207,20 @@ export default function HRPage() {
       { key: 'absences', label: 'Upload Absence Records (CSV)' },
     ]}
   />
+
+  // Live staff panels — show when staff imported and NOT in demo mode
+  if (hasImportedStaff && !isDemoActive) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>HR & People</h1>
+          <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Manage your team, onboarding checklists and leave</p>
+        </div>
+        <HRStaffList />
+        <HRChecklist />
+      </div>
+    )
+  }
 
   function showToast(msg: string) {
     setToast(msg)

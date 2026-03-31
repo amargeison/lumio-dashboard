@@ -8,6 +8,7 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { ITAssets } from '@/components/dashboard/LiveStaffPanels'
 import NewITTicketModal from '@/components/modals/NewITTicketModal'
 import { useToast } from '@/components/modals/useToast'
 
@@ -67,6 +68,9 @@ export default function ITPage() {
   ]
 
   const hasData = useHasDashboardData('it')
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="it"
     title="No IT data yet"
@@ -76,6 +80,18 @@ export default function ITPage() {
       { key: 'assets', label: 'Upload Asset Register (CSV)' },
     ]}
   />
+
+  if (hasImportedStaff && !isDemoActive) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>IT & Systems</h1>
+          <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Equipment provisioning, system access and IT onboarding</p>
+        </div>
+        <ITAssets />
+      </div>
+    )
+  }
 
   return (
     <PageShell title="IT & Systems" subtitle="Infrastructure, security and system management">

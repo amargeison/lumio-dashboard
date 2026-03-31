@@ -8,6 +8,7 @@ import DeptInfoModal from '@/components/DeptInfoModal'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { AccountsPayroll } from '@/components/dashboard/LiveStaffPanels'
 import { useWorkspace } from '@/hooks/useWorkspace'
 import { createBrowserClient } from '@supabase/ssr'
 import NewInvoiceModal from '@/components/modals/NewInvoiceModal'
@@ -142,6 +143,9 @@ export default function AccountsPage() {
   ]
 
   const hasData = useHasDashboardData('accounts')
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+
   if (hasData === null) return null
   if (!hasData) return <DashboardEmptyState pageKey="accounts"
     title="No accounts data yet"
@@ -152,6 +156,18 @@ export default function AccountsPage() {
       { key: 'contracts', label: 'Upload Contracts (CSV)' },
     ]}
   />
+
+  if (hasImportedStaff && !isDemoActive) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Accounts</h1>
+          <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Payroll, invoicing and financial management</p>
+        </div>
+        <AccountsPayroll />
+      </div>
+    )
+  }
 
   return (
     <PageShell title="Accounts" subtitle="Invoicing, payroll, expenses and financial reporting">
