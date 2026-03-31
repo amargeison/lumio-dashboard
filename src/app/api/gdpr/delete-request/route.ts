@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -11,7 +11,6 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   const supabase = getSupabase()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const body = await request.json()
     const { requestType, email, details, submittedAt } = body
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send confirmation to requester
-    await resend.emails.send({
+    await sendEmail({
       from: 'Lumio Privacy <privacy@lumiocms.com>',
       to: [email],
       subject: `Data request received — Reference ${reference}`,
@@ -62,7 +61,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Notify DPO
-    await resend.emails.send({
+    await sendEmail({
       from: 'Lumio System <privacy@lumiocms.com>',
       to: ['privacy@lumiocms.com'],
       subject: `[GDPR] ${reference} — ${requestType} — ${email}`,
