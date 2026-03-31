@@ -49,7 +49,11 @@ const COMMANDS: { patterns: RegExp[]; action: string; response: (m: RegExpMatchA
   { patterns: [/team event/i, /team outing/i, /team lunch/i, /team drinks/i], action: 'TEAM_EVENT', response: () => 'Opening the team events researcher.' },
   { patterns: [/what.*time/i], action: 'TELL_TIME', response: () => `It's ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.` },
   { patterns: [/how many email/i, /check.*email/i], action: 'EMAIL_COUNT', response: () => 'You have 12 emails, 3 marked urgent.' },
-  { patterns: [/help/i, /what can you do/i, /commands/i], action: 'HELP', response: () => "You can say: play my briefing, I'm ill today, send Slack, call Sarah, book a meeting, new invoice, claim expenses, book holiday, or team event." },
+  { patterns: [/add task (.+)/i, /add (.+) to (?:my )?tasks/i], action: 'ADD_TASK', response: (m) => `Got it — I've added "${m[1]}" to your daily tasks.`, data: (m) => ({ taskName: m[1] }) },
+  { patterns: [/read (?:my )?tasks/i, /what.*(?:my )?tasks/i, /list (?:my )?tasks/i], action: 'READ_TASKS', response: () => 'Reading your tasks now.' },
+  { patterns: [/read (?:my )?quick wins/i, /what.*quick wins/i, /list (?:my )?quick wins/i], action: 'READ_QUICK_WINS', response: () => 'Reading your quick wins now.' },
+  { patterns: [/what (?:do i|have i) (?:got )?on today/i, /what.*on today/i, /today'?s schedule/i, /what'?s on/i], action: 'READ_TODAY', response: () => 'Here\'s your day at a glance.' },
+  { patterns: [/help/i, /what can you do/i, /commands/i], action: 'HELP', response: () => "You can say: play my briefing, add task, read my tasks, read my quick wins, what's on today, I'm ill, send Slack, call Sarah, book a meeting, new invoice, claim expenses, or book holiday." },
 ]
 
 export function useVoiceCommands() {

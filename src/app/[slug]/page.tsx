@@ -672,6 +672,39 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
 
   const { isListening, lastCommand, startListening, stopListening, pendingAction, setPendingAction } = useVoiceCommands()
 
+  // Post-briefing listening state
+  const [briefingJustPlayed, setBriefingJustPlayed] = useState(false)
+  const [postBriefingListening, setPostBriefingListening] = useState(false)
+  const postBriefingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wasPlayingRef = useRef(false)
+
+  // Detect when TTS finishes after a briefing
+  useEffect(() => {
+    if (isPlaying) {
+      wasPlayingRef.current = true
+    } else if (wasPlayingRef.current && briefingJustPlayed) {
+      wasPlayingRef.current = false
+      setBriefingJustPlayed(false)
+      // Auto-activate mic after briefing ends
+      if (voiceCommandsEnabled) {
+        setPostBriefingListening(true)
+        startListening()
+        postBriefingTimer.current = setTimeout(() => {
+          setPostBriefingListening(false)
+          stopListening()
+        }, 15000)
+      }
+    }
+  }, [isPlaying, briefingJustPlayed, voiceCommandsEnabled, startListening, stopListening])
+
+  // Clear post-briefing state when a command is detected
+  useEffect(() => {
+    if (lastCommand && postBriefingListening) {
+      setPostBriefingListening(false)
+      if (postBriefingTimer.current) { clearTimeout(postBriefingTimer.current); postBriefingTimer.current = null }
+    }
+  }, [lastCommand, postBriefingListening])
+
   function generateBriefing(): string {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
@@ -744,12 +777,13 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     }
 
     parts.push(closingLine)
+    parts.push('Is there anything I can help you with to get you started? I can add items to your daily task list, send a message, book a meeting, or fire any of your quick actions. Just say Hi Lumio followed by what you need.')
     return parts.join(' ')
   }
 
   function handleBriefing() {
     if (!ttsEnabled) return
-    if (isPlaying) { stop(); return }
+    if (isPlaying) { stop(); setBriefingJustPlayed(false); return }
     const script = generateBriefing()
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''
@@ -763,7 +797,10 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       }
     }
     if (chunk) chunks.push(chunk.trim())
-    if (chunks.length > 0) speak(chunks[0])
+    if (chunks.length > 0) {
+      setBriefingJustPlayed(true)
+      speak(chunks[0])
+    }
   }
 
   // Handle voice command actions
@@ -824,6 +861,52 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       if (onVoiceCommand) onVoiceCommand(lastCommand)
     } else if (action === 'BOOK_MEETING') {
       if (onVoiceCommand) onVoiceCommand({ ...lastCommand, action: 'OPEN_MODAL', payload: { modal: 'ScheduleDemo' } })
+    } else if (action === 'ADD_TASK') {
+      const taskName = payload?.taskName || lastCommand.data?.taskName || 'New task'
+      try {
+        const cached = JSON.parse(localStorage.getItem('lumio_ai_daily-tasks_cache') || '[]')
+        cached.unshift({ id: `voice-${Date.now()}`, title: taskName, description: 'Added via voice command', priority: 'normal', category: 'Personal', dueTime: null, estimatedMinutes: 15 })
+        localStorage.setItem('lumio_ai_daily-tasks_cache', JSON.stringify(cached))
+        localStorage.setItem('lumio_ai_daily-tasks_timestamp', String(Date.now()))
+        window.dispatchEvent(new Event('lumio-settings-changed'))
+      } catch { /* ignore */ }
+    } else if (action === 'READ_TASKS') {
+      try {
+        const cached = JSON.parse(localStorage.getItem('lumio_ai_daily-tasks_cache') || '[]') as { title: string; priority: string }[]
+        if (cached.length) {
+          const taskList = cached.slice(0, 6).map((t, i) => `${i + 1}. ${t.title}`).join('. ')
+          setTimeout(() => speak(`You have ${cached.length} tasks today. ${taskList}.`), 1500)
+        } else {
+          setTimeout(() => speak('You have no tasks on your list yet. Say "add task" followed by what you need to do.'), 1500)
+        }
+      } catch { setTimeout(() => speak('I couldn\'t read your tasks right now. Try switching to the Daily Tasks tab.'), 1500) }
+    } else if (action === 'READ_QUICK_WINS') {
+      try {
+        const cached = JSON.parse(localStorage.getItem('lumio_ai_quick-wins_cache') || '[]') as { title: string; impact: string }[]
+        if (cached.length) {
+          const winList = cached.slice(0, 5).map((w, i) => `${i + 1}. ${w.title}`).join('. ')
+          setTimeout(() => speak(`You have ${cached.length} quick wins available. ${winList}.`), 1500)
+        } else {
+          setTimeout(() => speak('No quick wins available yet. Switch to the Quick Wins tab to generate some.'), 1500)
+        }
+      } catch { setTimeout(() => speak('I couldn\'t read your quick wins right now.'), 1500) }
+    } else if (action === 'READ_TODAY') {
+      const todayParts: string[] = []
+      if (demoDataActive) {
+        const upcoming = MEETINGS.filter(m => m.status !== 'done')
+        todayParts.push(`You have ${MEETINGS.length} meetings today${upcoming.length ? '. Next up: ' + upcoming[0].title + ' at ' + upcoming[0].time : ''}.`)
+      } else {
+        todayParts.push('No calendar connected, so I can\'t see your meetings.')
+      }
+      try {
+        const tasks = JSON.parse(localStorage.getItem('lumio_ai_daily-tasks_cache') || '[]') as { title: string }[]
+        if (tasks.length) todayParts.push(`${tasks.length} tasks on your list.`)
+      } catch { /* ignore */ }
+      try {
+        const wins = JSON.parse(localStorage.getItem('lumio_ai_quick-wins_cache') || '[]') as { title: string }[]
+        if (wins.length) todayParts.push(`${wins.length} quick wins available.`)
+      } catch { /* ignore */ }
+      setTimeout(() => speak(todayParts.join(' ')), 1500)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastCommand])
@@ -892,12 +975,12 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     {isListening && (
       <div style={{
         position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-        backgroundColor: '#111318', border: '1px solid #EF4444',
+        backgroundColor: '#111318', border: postBriefingListening ? '1px solid #A78BFA' : '1px solid #EF4444',
         borderRadius: 999, padding: '8px 20px', zIndex: 50,
         display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
       }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
-        Listening... say a command
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: postBriefingListening ? '#A78BFA' : '#EF4444', animation: 'pulse 1s infinite' }} />
+        {postBriefingListening ? 'Listening... what can I help with?' : 'Listening... say a command'}
       </div>
     )}
   </>
