@@ -2043,6 +2043,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast]           = useState<string | null>(null)
   const [ownerEmail, setOwnerEmail] = useState('')
+  const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(false)
@@ -2098,7 +2099,13 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_company_logo', data.logo_url)
           }
           if (data.demo_data_active) setDemoDataActive(true)
-          if (!data.onboarding_complete) setShowOnboarding(true)
+          if (!data.onboarding_complete) {
+            if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
+              setShowWelcome(true)
+            } else {
+              setShowOnboarding(true)
+            }
+          }
         })
         .catch(() => {
           // Network error — don't redirect if this looks like a fresh purchase
@@ -2138,6 +2145,42 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
       {/* bell + avatar rendered inline in heading row below */}
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+
+      {/* Welcome overlay — first visit only */}
+      {showWelcome && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 520, padding: '2rem', width: '100%' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
+            <h1 style={{ color: 'white', fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
+            <p style={{ color: '#aaa', marginBottom: '2.5rem', fontSize: '1rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting Started with Lumio</div>
+                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min intro</div>
+              </div>
+              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
+                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting the Most Out of Lumio</div>
+                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min tips & tricks</div>
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #2a2a3e', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
+              <p style={{ color: '#555', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
+            </div>
+            <button onClick={() => {
+              localStorage.setItem(`lumio_welcomed_${slug}`, 'true')
+              setShowWelcome(false)
+              setShowOnboarding(true)
+            }}
+              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 10, fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer' }}>
+              Get Started →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Onboarding */}
       {showOnboarding && (
