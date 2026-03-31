@@ -2193,6 +2193,42 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       )}
       {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
 
+      {/* Row 2: thin header with bell + avatar */}
+      <div className="hidden md:flex items-center justify-end shrink-0 px-6 py-2" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications"
+            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={16} strokeWidth={1.75} />
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+          </button>
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setAvatarDropdownOpen(o => !o)}
+              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
+            </button>
+            {avatarDropdownOpen && (
+              <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
+                <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                  👤 Profile
+                </button>
+                <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                  ⚙️ Settings
+                </button>
+                <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
+                  🚪 Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
         <button className="p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
@@ -2210,38 +2246,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               <div>
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
                 <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' && localStorage.getItem('lumio_company_name')) || slug}</span></p>
-              </div>
-              <div className="hidden md:flex items-center gap-2" style={{ paddingRight: 8 }}>
-                <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications"
-                  style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-                  <Bell size={16} strokeWidth={1.75} />
-                  <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-                </button>
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setAvatarDropdownOpen(o => !o)}
-                    style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                    {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
-                  </button>
-                  {avatarDropdownOpen && (
-                    <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-                      <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                        👤 Profile
-                      </button>
-                      <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                        ⚙️ Settings
-                      </button>
-                      <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
-                        🚪 Sign out
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
