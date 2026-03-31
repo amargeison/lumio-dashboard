@@ -7,7 +7,7 @@ import Image from 'next/image'
 function DevLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('from') || ''
+  const redirectTo = searchParams.get('from') || '/lumio-dev'
 
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState(false)
