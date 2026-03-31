@@ -507,32 +507,41 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
     const node = nodeMap.get(m.id)!; root.children.push(node); placed.add(m.id)
   })
 
-  // Directors → report to matching dept C-suite or root
+  // Helper: find first C-Suite node (for cascading)
+  const firstCSuite = root.children.find(c => c.level === 'csuite') || null
+
+  // Directors → report to C-Suite in same dept, any C-Suite, or root
   unplaced.filter(m => detectLevel(m.role) === 'director' && !placed.has(m.id)).forEach(m => {
     const node = nodeMap.get(m.id)!
-    const deptParent = root.children.find(c => c.department === m.department)
-    ;(deptParent || root).children.push(node); placed.add(m.id)
-  })
-
-  // Managers → report to matching dept director or C-suite or root
-  unplaced.filter(m => detectLevel(m.role) === 'manager' && !placed.has(m.id)).forEach(m => {
-    const node = nodeMap.get(m.id)!
-    const findParent = (nodes: OrgNode[]): OrgNode | null => {
-      for (const n of nodes) { if (n.department === m.department && (n.level === 'director' || n.level === 'csuite')) return n; const found = findParent(n.children); if (found) return found }
-      return null
-    }
-    const parent = findParent(root.children) || root
+    const deptCSuite = root.children.find(c => c.level === 'csuite' && c.department === m.department)
+    const parent = deptCSuite || firstCSuite || root
     parent.children.push(node); placed.add(m.id)
   })
 
-  // Staff → report to matching dept manager/director or root
+  // Helper: find all placed nodes recursively
+  const findInTree = (nodes: OrgNode[], test: (n: OrgNode) => boolean): OrgNode | null => {
+    for (const n of nodes) { if (test(n)) return n; const found = findInTree(n.children, test); if (found) return found }
+    return null
+  }
+
+  // Managers → find Director in same dept, any Director, C-Suite, or root
+  unplaced.filter(m => detectLevel(m.role) === 'manager' && !placed.has(m.id)).forEach(m => {
+    const node = nodeMap.get(m.id)!
+    const parent =
+      findInTree(root.children, n => n.level === 'director' && n.department === m.department) ||
+      findInTree(root.children, n => n.level === 'director') ||
+      firstCSuite || root
+    parent.children.push(node); placed.add(m.id)
+  })
+
+  // Staff → find Manager in same dept, any Manager, Director in same dept, or root
   unplaced.filter(m => !placed.has(m.id)).forEach(m => {
     const node = nodeMap.get(m.id)!
-    const findParent = (nodes: OrgNode[]): OrgNode | null => {
-      for (const n of nodes) { if (n.department === m.department && (n.level === 'manager' || n.level === 'director')) return n; const found = findParent(n.children); if (found) return found }
-      return null
-    }
-    const parent = findParent(root.children) || root
+    const parent =
+      findInTree(root.children, n => n.level === 'manager' && n.department === m.department) ||
+      findInTree(root.children, n => n.level === 'manager') ||
+      findInTree(root.children, n => n.level === 'director' && n.department === m.department) ||
+      firstCSuite || root
     parent.children.push(node)
   })
 
@@ -841,20 +850,60 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
     )
   }
 
+  const currentUserCard = staffCards.find(s => isCurrentUser(s))
+  const otherCards = staffCards.filter(s => !isCurrentUser(s))
+
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {staffCards.map((s, i) => (
-          <EmployeeProfileCard
-            key={s.email || i}
-            staff={s}
-            index={i}
-            isCurrentUser={isCurrentUser(s)}
-            onViewProfile={() => { setProfileStaff(s); setProfileIndex(i) }}
-            onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
+      {currentUserCard ? (
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left — current user */}
+          <div className="flex flex-col items-center lg:w-1/3 shrink-0">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>YOUR PROFILE</p>
+            <div style={{ transform: 'scale(1.05)', transformOrigin: 'top center' }}>
+              <EmployeeProfileCard
+                staff={currentUserCard}
+                index={staffCards.indexOf(currentUserCard)}
+                isCurrentUser={true}
+                onViewProfile={() => { setProfileStaff(currentUserCard); setProfileIndex(staffCards.indexOf(currentUserCard)) }}
+                onMessage={() => onAction?.('Opening your profile...')}
+              />
+            </div>
+            <button onClick={() => { setProfileStaff(currentUserCard); setProfileIndex(staffCards.indexOf(currentUserCard)) }} className="mt-3 text-xs font-semibold px-4 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              Edit Profile
+            </button>
+          </div>
+          {/* Right — team */}
+          <div className="flex-1">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>YOUR TEAM</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {otherCards.map((s, i) => (
+                <EmployeeProfileCard
+                  key={s.email || i}
+                  staff={s}
+                  index={staffCards.indexOf(s)}
+                  isCurrentUser={false}
+                  onViewProfile={() => { setProfileStaff(s); setProfileIndex(staffCards.indexOf(s)) }}
+                  onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {staffCards.map((s, i) => (
+            <EmployeeProfileCard
+              key={s.email || i}
+              staff={s}
+              index={i}
+              isCurrentUser={false}
+              onViewProfile={() => { setProfileStaff(s); setProfileIndex(i) }}
+              onMessage={() => onAction?.(`Opening Slack DM with ${[s.first_name, s.last_name].filter(Boolean).join(' ')}...`)}
           />
         ))}
       </div>
+      )}
 
       {profileStaff && (
         <ProfileModal

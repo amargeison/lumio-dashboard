@@ -114,6 +114,48 @@ function injectShimmerCSS() {
   document.head.appendChild(style)
 }
 
+// ─── Seeded random for consistent stats ─────────────────────────────────────
+
+function seedHash(str: string): number {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i)
+  return Math.abs(h)
+}
+
+function seededStat(name: string, salt: string): number {
+  return 60 + (seedHash(name + salt) % 40)
+}
+
+function getPositionAbbr(title: string): string {
+  const t = (title || '').toLowerCase()
+  if (/ceo|managing director|founder|owner|president/i.test(t)) return 'CEO'
+  if (/cto/i.test(t)) return 'CTO'
+  if (/cfo/i.test(t)) return 'CFO'
+  if (/coo/i.test(t)) return 'COO'
+  if (/director/i.test(t)) return 'DIR'
+  if (/head of/i.test(t)) return 'HOD'
+  if (/vp|vice president/i.test(t)) return 'VP'
+  if (/market/i.test(t)) return 'MKT'
+  if (/sale/i.test(t)) return 'SAL'
+  if (/engineer|develop|tech/i.test(t)) return 'DEV'
+  if (/design/i.test(t)) return 'DES'
+  if (/hr|people|human/i.test(t)) return 'HR'
+  if (/finance|account/i.test(t)) return 'FIN'
+  if (/operat/i.test(t)) return 'OPS'
+  if (/support/i.test(t)) return 'SUP'
+  if (/manager|lead/i.test(t)) return 'MGR'
+  if (/senior/i.test(t)) return 'SNR'
+  return 'STF'
+}
+
+function getRating(title: string): number {
+  const t = (title || '').toLowerCase()
+  if (/ceo|cto|cfo|coo|founder|owner|president|managing director/i.test(t)) return 93 + (seedHash(t) % 6)
+  if (/director|vp|vice president|head of/i.test(t)) return 86 + (seedHash(t) % 8)
+  if (/manager|lead|principal|senior/i.test(t)) return 79 + (seedHash(t) % 7)
+  return 74 + (seedHash(t) % 6)
+}
+
 // ─── Sticker Card ────────────────────────────────────────────────────────────
 
 export function EmployeeProfileCard({
@@ -169,77 +211,89 @@ export function EmployeeProfileCard({
     )
   }
 
-  // ── Full variant ─────────────────────────────────────────────────────────
+  // ── Full variant — FIFA player card style ──────────────────────────────────
+  const posAbbr = getPositionAbbr(staff.job_title || '')
+  const rating = getRating(staff.job_title || '')
+  const stats = [
+    { label: 'PAC', value: seededStat(name, 'pac') },
+    { label: 'SHO', value: seededStat(name, 'sho') },
+    { label: 'PAS', value: seededStat(name, 'pas') },
+    { label: 'DRI', value: seededStat(name, 'dri') },
+    { label: 'DEF', value: seededStat(name, 'def') },
+    { label: 'PHY', value: seededStat(name, 'phy') },
+  ]
+
   return (
-    <div className="lumio-sticker relative rounded-2xl overflow-hidden cursor-pointer" style={{ transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
+    <div className="lumio-sticker relative rounded-2xl overflow-hidden cursor-pointer" style={{ width: 200, transition: 'transform 0.25s, box-shadow 0.25s' }} onClick={onViewProfile}>
       {/* Shimmer border */}
       <div className="lumio-shimmer-border absolute inset-0 rounded-2xl" style={{ padding: 2 }}>
         <div className="w-full h-full rounded-[14px]" style={{ backgroundColor: '#111318' }} />
       </div>
 
-      {/* Card content */}
       <div className="relative rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {/* Top colour band */}
-        <div style={{ height: 6, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
+        {/* Gradient top section */}
+        <div style={{ background: `linear-gradient(180deg, ${deptColor}40 0%, ${deptColor}15 40%, #111318 100%)`, paddingBottom: 4 }}>
 
-        {/* Header row */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-1">
-          <span className="text-[10px] font-black tracking-widest" style={{ color: '#6B7280' }}>LUMIO</span>
-          <div className="flex items-center gap-2">
-            {isCurrentUser && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
-                <Star size={8} /> You
+          {/* Position + Rating badges */}
+          <div className="flex items-start justify-between px-3 pt-3">
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-black leading-none" style={{ color: '#F9FAFB' }}>{rating}</span>
+              <span className="text-[9px] font-bold tracking-widest mt-0.5" style={{ color: deptColor }}>{posAbbr}</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              {isCurrentUser && (
+                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <Star size={7} /> You
+                </span>
+              )}
+              <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${deptColor}25`, color: deptColor, border: `1px solid ${deptColor}40` }}>
+                {staff.department || 'Team'}
               </span>
-            )}
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${deptColor}20`, color: deptColor, border: `1px solid ${deptColor}40` }}>
-              {staff.department || 'Team'}
-            </span>
+            </div>
           </div>
-        </div>
 
-        {/* Avatar */}
-        <div className="flex justify-center py-4">
-          <div className="flex items-center justify-center rounded-full text-3xl font-black" style={{ width: 100, height: 100, backgroundColor: `${deptColor}25`, color: deptColor, border: `3px solid ${deptColor}50` }}>
-            {initials}
+          {/* Avatar */}
+          <div className="flex justify-center py-3">
+            <div className="flex items-center justify-center rounded-full text-4xl font-black" style={{ width: 110, height: 110, backgroundColor: `${deptColor}20`, color: deptColor, border: `4px solid ${deptColor}60`, boxShadow: `0 0 20px ${deptColor}30` }}>
+              {initials}
+            </div>
           </div>
         </div>
 
         {/* Name + title */}
-        <div className="text-center px-4">
-          <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>{name}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{staff.job_title || 'Team Member'}</p>
+        <div className="text-center px-3 -mt-1">
+          <p className="text-sm font-black tracking-wide" style={{ color: '#F9FAFB' }}>{name}</p>
+          <p className="text-[10px] mt-0.5 font-semibold" style={{ color: deptColor }}>{staff.job_title || 'Team Member'}</p>
         </div>
 
         {/* Divider */}
-        <div className="mx-4 my-3" style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+        <div className="mx-4 my-2" style={{ height: 1, background: `linear-gradient(90deg, transparent, ${deptColor}40, transparent)` }} />
 
-        {/* Stats */}
-        <div className="flex items-center justify-center gap-4 px-4 text-[11px]" style={{ color: '#6B7280' }}>
-          <span className="inline-flex items-center gap-1"><Hash size={10} />{empId}</span>
-          {staff.start_date && <span className="inline-flex items-center gap-1"><Calendar size={10} />{staff.start_date}</span>}
+        {/* Stats grid — FIFA style */}
+        <div className="grid grid-cols-3 gap-x-2 gap-y-1 px-4">
+          {stats.map(s => (
+            <div key={s.label} className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold" style={{ color: '#6B7280', width: 22 }}>{s.label}</span>
+              <span className="text-xs font-black" style={{ color: s.value >= 85 ? '#22C55E' : s.value >= 75 ? '#F9FAFB' : '#9CA3AF' }}>{s.value}</span>
+            </div>
+          ))}
         </div>
 
-        {/* Fun facts (show up to 4 if filled) */}
-        {filledFacts.length > 0 && (
-          <div className="mx-4 mt-3 rounded-lg p-2.5 space-y-1" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            {filledFacts.slice(0, 4).map(q => (
-              <div key={q.key} className="flex items-center gap-2 text-[11px]">
-                <span>{q.emoji}</span>
-                <span style={{ color: '#9CA3AF' }}>{profile[q.key]}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* ID + date */}
+        <div className="flex items-center justify-center gap-3 px-3 mt-2 text-[9px]" style={{ color: '#4B5563' }}>
+          <span>{empId}</span>
+          {staff.start_date && <span>{staff.start_date}</span>}
+        </div>
 
         {/* Buttons */}
-        <div className="flex gap-2 p-4">
+        <div className="flex gap-1.5 p-3 pt-2">
           {onMessage && (
-            <button onClick={e => { e.stopPropagation(); onMessage() }} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-              <MessageSquare size={12} /> Message
+            <button onClick={e => { e.stopPropagation(); onMessage() }} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              <MessageSquare size={10} /> Message
             </button>
           )}
-          <button onClick={e => { e.stopPropagation(); onViewProfile() }} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold" style={{ backgroundColor: `${deptColor}15`, color: deptColor, border: `1px solid ${deptColor}30` }}>
-            <User size={12} /> View Profile
+          <button onClick={e => { e.stopPropagation(); onViewProfile() }} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-semibold" style={{ backgroundColor: `${deptColor}15`, color: deptColor, border: `1px solid ${deptColor}30` }}>
+            <User size={10} /> Profile
           </button>
         </div>
       </div>
