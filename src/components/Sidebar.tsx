@@ -273,7 +273,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 }}
               >
-                {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 4, height: 4, backgroundColor: '#22C55E' }} />}
+                {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: '#22C55E' }} />}
                 <Icon size={17} strokeWidth={1.75} className="shrink-0" />
                 {expanded && <span className="flex-1 truncate">{label}</span>}
                 {expanded && badge !== null && (
@@ -336,7 +336,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link key={href} href={href} onClick={onClose}
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
                   style={{ backgroundColor: isActive ? (accent ?? '#0D9488') : 'transparent', color: isActive ? '#F9FAFB' : hasDeptStaff ? '#F9FAFB' : '#9CA3AF', fontWeight: isActive || hasDeptStaff ? 600 : 400 }}>
-                  {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 4, height: 4, backgroundColor: '#22C55E' }} />}
+                  {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: '#22C55E' }} />}
                   <Icon size={17} strokeWidth={1.75} className="shrink-0" />
                   <span className="flex-1 truncate">{label}</span>
                   {badge !== null && (
