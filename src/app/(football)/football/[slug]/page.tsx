@@ -1326,6 +1326,35 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
                   </div>
                 ))}
               </div>
+
+              {/* Squad Readiness — GPS */}
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #C0392B' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(192,57,43,0.06)' }}>
+                  <div className="flex items-center gap-2">
+                    <Activity size={14} style={{ color: '#C0392B' }} />
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Readiness</p>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>GPS</span>
+                  </div>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>ACWR-based</span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex items-center gap-1.5"><span>🟢</span><span className="text-sm font-bold" style={{ color: '#22C55E' }}>7</span><span className="text-xs" style={{ color: '#6B7280' }}>ready</span></div>
+                    <div className="flex items-center gap-1.5"><span>🟡</span><span className="text-sm font-bold" style={{ color: '#F59E0B' }}>3</span><span className="text-xs" style={{ color: '#6B7280' }}>manage</span></div>
+                    <div className="flex items-center gap-1.5"><span>🔴</span><span className="text-sm font-bold" style={{ color: '#EF4444' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>rest</span></div>
+                    <div className="flex items-center gap-1.5"><span>🔵</span><span className="text-sm font-bold" style={{ color: '#3B82F6' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>under</span></div>
+                  </div>
+                  {/* Injury Risk Alert */}
+                  <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle size={14} style={{ color: '#EF4444' }} />
+                      <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>GPS Injury Risk: Sean O&apos;Brien (ACWR 1.58) — rest recommended</p>
+                    </div>
+                  </div>
+                  <p className="text-xs mb-2" style={{ color: '#6B7280' }}>Last session: 31 Mar — Tactical Session — Set Pieces</p>
+                  <button className="text-xs font-semibold" style={{ color: '#C0392B' }}>View Performance Dashboard →</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2227,6 +2256,47 @@ function MedicalView() {
         </div>
       </div>
 
+      {/* GPS Injury Risk — ACWR Alerts */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(239,68,68,0.4)' }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(239,68,68,0.05)' }}>
+          <div className="flex items-center gap-2">
+            <Activity size={14} style={{ color: '#EF4444' }} />
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>GPS Injury Risk — ACWR Monitoring</p>
+          </div>
+          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Live GPS Data</span>
+        </div>
+        <div className="p-5 space-y-3">
+          {[
+            { player: "Sean O'Brien", acwr: 1.58, load: 478, note: 'Steady increase over 8 weeks. Rest recommended — remove from starting XI consideration.' },
+            { player: 'Diego Martinez', acwr: 1.48, load: 298, note: 'Returning from injury — load ramp too aggressive. Reduce intensity for next 2 sessions.' },
+            { player: 'Jamie Wilson', acwr: 1.42, load: 456, note: 'Match-to-training spike of +47%. Conditioning concern — increase training intensity or limit match minutes.' },
+            { player: 'Jamal Henderson', acwr: 1.35, load: 445, note: 'Two consecutive match starts caused spike. One training rest day recommended.' },
+          ].map((p, i) => {
+            const color = p.acwr > 1.5 ? '#EF4444' : '#F59E0B'
+            const label = p.acwr > 1.5 ? 'HIGH RISK' : 'CAUTION'
+            return (
+              <div key={i} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: `1px solid ${color}33` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{p.acwr > 1.5 ? '🔴' : '🟡'}</span>
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.player}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: `${color}1a`, color }}>{label}</span>
+                    <span className="text-xs font-mono" style={{ color }}>ACWR {p.acwr.toFixed(2)}</span>
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{p.note}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs" style={{ color: '#6B7280' }}>Load: {p.load}</span>
+                  <button onClick={() => medAction('Add medical note')} className="text-xs font-semibold" style={{ color: '#C0392B' }}>+ Add Note</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Return to Play Pipeline */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -2899,6 +2969,485 @@ function MatchdayView() {
     </div>
   )
 }
+
+// ─── Performance & GPS View ─────────────────────────────────────────────────
+
+type PerfTab = 'session' | 'readiness' | 'trends' | 'match-vs-training' | 'connect'
+
+const GPS_SESSIONS_DEMO = [
+  { date: '2026-03-31', type: 'training', name: 'Tactical Session — Set Pieces', players: 22 },
+  { date: '2026-03-29', type: 'match', name: 'vs Millwall (H) — W 2-1', players: 14 },
+  { date: '2026-03-28', type: 'training', name: 'Recovery & Activation', players: 18 },
+  { date: '2026-03-27', type: 'training', name: 'High Intensity Pressing', players: 22 },
+  { date: '2026-03-25', type: 'training', name: 'Possession & Build-Up', players: 20 },
+]
+
+const GPS_PLAYER_DEMO = [
+  { name: 'Ryan Thompson', distance: 11.4, hsr: 1680, sprints: 28, maxSpeed: 33.8, load: 420, acwr: 1.12, status: 'optimal' as const },
+  { name: 'Jamal Henderson', distance: 10.8, hsr: 1550, sprints: 42, maxSpeed: 34.2, load: 445, acwr: 1.35, status: 'caution' as const },
+  { name: 'Marcus Cole', distance: 9.2, hsr: 620, sprints: 12, maxSpeed: 28.4, load: 310, acwr: 0.92, status: 'optimal' as const },
+  { name: "Sean O'Brien", distance: 10.1, hsr: 1490, sprints: 36, maxSpeed: 34.8, load: 478, acwr: 1.58, status: 'high-risk' as const },
+  { name: 'Kwame Okafor', distance: 10.6, hsr: 1380, sprints: 30, maxSpeed: 33.1, load: 398, acwr: 1.02, status: 'optimal' as const },
+  { name: 'Lucas Santos', distance: 9.8, hsr: 890, sprints: 18, maxSpeed: 30.6, load: 280, acwr: 0.72, status: 'under' as const },
+  { name: 'Alex Collins', distance: 10.2, hsr: 1420, sprints: 34, maxSpeed: 33.1, load: 412, acwr: 1.18, status: 'optimal' as const },
+  { name: 'Jamie Wilson', distance: 11.1, hsr: 1620, sprints: 38, maxSpeed: 35.2, load: 456, acwr: 1.42, status: 'caution' as const },
+  { name: 'Tom Richards', distance: 8.4, hsr: 520, sprints: 10, maxSpeed: 26.8, load: 245, acwr: 0.85, status: 'optimal' as const },
+  { name: 'Jake Phillips', distance: 9.0, hsr: 640, sprints: 14, maxSpeed: 29.2, load: 322, acwr: 0.95, status: 'optimal' as const },
+  { name: 'Diego Martinez', distance: 8.8, hsr: 580, sprints: 11, maxSpeed: 27.6, load: 298, acwr: 1.48, status: 'caution' as const },
+  { name: 'James Walker', distance: 5.8, hsr: 320, sprints: 4, maxSpeed: 24.2, load: 165, acwr: 0.88, status: 'optimal' as const },
+]
+
+const WEEKLY_LOAD_DEMO = [
+  { week: 'W1', 'Ryan Thompson': 380, 'Jamal Henderson': 420, "Sean O'Brien": 350, 'Kwame Okafor': 360, avg: 378 },
+  { week: 'W2', 'Ryan Thompson': 395, 'Jamal Henderson': 410, "Sean O'Brien": 380, 'Kwame Okafor': 375, avg: 390 },
+  { week: 'W3', 'Ryan Thompson': 410, 'Jamal Henderson': 430, "Sean O'Brien": 420, 'Kwame Okafor': 390, avg: 413 },
+  { week: 'W4', 'Ryan Thompson': 390, 'Jamal Henderson': 440, "Sean O'Brien": 445, 'Kwame Okafor': 385, avg: 415 },
+  { week: 'W5', 'Ryan Thompson': 420, 'Jamal Henderson': 435, "Sean O'Brien": 460, 'Kwame Okafor': 400, avg: 429 },
+  { week: 'W6', 'Ryan Thompson': 405, 'Jamal Henderson': 445, "Sean O'Brien": 470, 'Kwame Okafor': 395, avg: 429 },
+  { week: 'W7', 'Ryan Thompson': 415, 'Jamal Henderson': 440, "Sean O'Brien": 475, 'Kwame Okafor': 398, avg: 432 },
+  { week: 'W8', 'Ryan Thompson': 420, 'Jamal Henderson': 445, "Sean O'Brien": 478, 'Kwame Okafor': 412, avg: 439 },
+]
+
+const MATCH_VS_TRAIN_DEMO = [
+  { name: 'Ryan Thompson', matchDist: 11.4, trainDist: 9.8, matchHSR: 1680, trainHSR: 1220, matchLoad: 420, trainLoad: 340, diff: '+24%' },
+  { name: 'Jamal Henderson', matchDist: 10.8, trainDist: 10.2, matchHSR: 1550, trainHSR: 1380, matchLoad: 445, trainLoad: 410, diff: '+9%' },
+  { name: "Sean O'Brien", matchDist: 10.1, trainDist: 9.5, matchHSR: 1490, trainHSR: 1100, matchLoad: 478, trainLoad: 350, diff: '+37%' },
+  { name: 'Kwame Okafor', matchDist: 10.6, trainDist: 10.0, matchHSR: 1380, trainHSR: 1280, matchLoad: 398, trainLoad: 370, diff: '+8%' },
+  { name: 'Jamie Wilson', matchDist: 11.1, trainDist: 9.2, matchHSR: 1620, trainHSR: 1050, matchLoad: 456, trainLoad: 310, diff: '+47%' },
+  { name: 'Alex Collins', matchDist: 10.2, trainDist: 9.6, matchHSR: 1420, trainHSR: 1200, matchLoad: 412, trainLoad: 360, diff: '+14%' },
+]
+
+function PerformanceGPSView() {
+  const [tab, setTab] = useState<PerfTab>('session')
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [connectToken, setConnectToken] = useState('')
+  const [connectProvider, setConnectProvider] = useState<'catapult' | 'statsports'>('catapult')
+
+  const acwrColor = (acwr: number) => acwr > 1.5 ? '#EF4444' : acwr > 1.3 ? '#F59E0B' : acwr < 0.8 ? '#3B82F6' : '#22C55E'
+  const acwrLabel = (acwr: number) => acwr > 1.5 ? 'High Risk' : acwr > 1.3 ? 'Caution' : acwr < 0.8 ? 'Under-trained' : 'Optimal'
+  const statusIcon = (acwr: number) => acwr > 1.5 ? '🔴' : acwr > 1.3 ? '🟡' : acwr < 0.8 ? '🔵' : '🟢'
+  const readinessLabel = (acwr: number) => acwr > 1.5 ? 'Rest recommended' : acwr > 1.3 ? 'Manage load' : acwr < 0.8 ? 'Build load' : 'Ready to play'
+
+  const readyCt = GPS_PLAYER_DEMO.filter(p => p.acwr >= 0.8 && p.acwr <= 1.3).length
+  const cautionCt = GPS_PLAYER_DEMO.filter(p => p.acwr > 1.3 && p.acwr <= 1.5).length
+  const riskCt = GPS_PLAYER_DEMO.filter(p => p.acwr > 1.5).length
+  const underCt = GPS_PLAYER_DEMO.filter(p => p.acwr < 0.8).length
+
+  const perfTabs: { id: PerfTab; label: string }[] = [
+    { id: 'session', label: 'Session Overview' },
+    { id: 'readiness', label: 'Player Readiness' },
+    { id: 'trends', label: 'Load Trends' },
+    { id: 'match-vs-training', label: 'Match vs Training' },
+    { id: 'connect', label: 'Connect GPS' },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Performance & GPS</h2>
+          <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>GPS wearables data, player load monitoring, ACWR injury risk, and squad readiness.</p>
+        </div>
+        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C', border: '1px solid rgba(192,57,43,0.4)' }}>Industry First</span>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Sync GPS Data', icon: Activity },
+          { label: 'Load Report', icon: BarChart3 },
+          { label: 'Readiness Check', icon: CheckCircle2 },
+          { label: 'Upload CSV', icon: FileText },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} onClick={() => { setToast(`${a.label} — opening workflow...`); setTimeout(() => setToast(null), 2500) }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Ready to Play" value={String(readyCt)} icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Manage Load" value={String(cautionCt)} icon={AlertCircle} color="#F59E0B" />
+        <StatCard label="Injury Risk" value={String(riskCt)} icon={Heart} color="#EF4444" />
+        <StatCard label="Last Session" value={GPS_SESSIONS_DEMO[0].date.split('-').slice(1).join('/')} icon={Activity} color="#C0392B" />
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex gap-1 overflow-x-auto" style={{ borderBottom: '1px solid #1F2937' }}>
+        {perfTabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors"
+            style={{
+              color: tab === t.id ? '#F9FAFB' : '#6B7280',
+              borderBottom: tab === t.id ? '2px solid #C0392B' : '2px solid transparent',
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* TAB 1 — SESSION OVERVIEW */}
+      {tab === 'session' && (
+        <div className="space-y-4">
+          {/* Recent Sessions */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Sessions</p>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{GPS_SESSIONS_DEMO.length} sessions</span>
+            </div>
+            <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+              {GPS_SESSIONS_DEMO.map((s, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                      style={{ backgroundColor: s.type === 'match' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)', color: s.type === 'match' ? '#EF4444' : '#3B82F6' }}>
+                      {s.type}
+                    </span>
+                    <span className="text-sm" style={{ color: '#F9FAFB' }}>{s.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{s.players} players</span>
+                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{s.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Latest Session Player Breakdown */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Player Breakdown — {GPS_SESSIONS_DEMO[0].name}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{GPS_SESSIONS_DEMO[0].date} &middot; {GPS_SESSIONS_DEMO[0].type}</p>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <span style={{ color: '#22C55E' }}>● Normal</span>
+                <span style={{ color: '#F59E0B' }}>● High</span>
+                <span style={{ color: '#EF4444' }}>● Very High</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                    {['Player', 'Distance (km)', 'HSR (m)', 'Sprints', 'Max Speed', 'Load', 'ACWR', 'Status'].map(h => (
+                      <th key={h} className="text-left px-5 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...GPS_PLAYER_DEMO].sort((a, b) => b.load - a.load).map((p, i) => (
+                    <tr key={i} className="cursor-pointer hover:bg-white/5 transition-colors"
+                      onClick={() => setSelectedPlayer(selectedPlayer === p.name ? null : p.name)}
+                      style={{ borderBottom: i < GPS_PLAYER_DEMO.length - 1 ? '1px solid #1F2937' : undefined }}>
+                      <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
+                      <td className="px-5 py-3" style={{ color: '#9CA3AF' }}>{p.distance.toFixed(1)}</td>
+                      <td className="px-5 py-3" style={{ color: '#9CA3AF' }}>{p.hsr.toLocaleString()}</td>
+                      <td className="px-5 py-3" style={{ color: '#9CA3AF' }}>{p.sprints}</td>
+                      <td className="px-5 py-3" style={{ color: '#9CA3AF' }}>{p.maxSpeed.toFixed(1)} km/h</td>
+                      <td className="px-5 py-3 font-bold" style={{ color: p.load > 450 ? '#EF4444' : p.load > 400 ? '#F59E0B' : '#22C55E' }}>{p.load}</td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: `${acwrColor(p.acwr)}1a`, color: acwrColor(p.acwr) }}>
+                          {p.acwr.toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: `${acwrColor(p.acwr)}1a`, color: acwrColor(p.acwr) }}>
+                          {acwrLabel(p.acwr)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Squad Summary Cards */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Avg Player Load</p>
+              <p className="text-2xl font-black mt-1" style={{ color: '#F9FAFB' }}>{Math.round(GPS_PLAYER_DEMO.reduce((s, p) => s + p.load, 0) / GPS_PLAYER_DEMO.length)}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Avg Distance (km)</p>
+              <p className="text-2xl font-black mt-1" style={{ color: '#F9FAFB' }}>{(GPS_PLAYER_DEMO.reduce((s, p) => s + p.distance, 0) / GPS_PLAYER_DEMO.length).toFixed(1)}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Avg HSR (m)</p>
+              <p className="text-2xl font-black mt-1" style={{ color: '#F9FAFB' }}>{Math.round(GPS_PLAYER_DEMO.reduce((s, p) => s + p.hsr, 0) / GPS_PLAYER_DEMO.length)}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Max Speed Recorded</p>
+              <p className="text-2xl font-black mt-1" style={{ color: '#F9FAFB' }}>{Math.max(...GPS_PLAYER_DEMO.map(p => p.maxSpeed)).toFixed(1)} km/h</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2 — PLAYER READINESS */}
+      {tab === 'readiness' && (
+        <div className="space-y-4">
+          {/* Readiness Summary */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }}>
+              <p className="text-3xl font-black" style={{ color: '#22C55E' }}>{readyCt}</p>
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#22C55E' }}>Ready to Play</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>ACWR 0.8 – 1.3</p>
+            </div>
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <p className="text-3xl font-black" style={{ color: '#F59E0B' }}>{cautionCt}</p>
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#F59E0B' }}>Manage Load</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>ACWR 1.3 – 1.5</p>
+            </div>
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <p className="text-3xl font-black" style={{ color: '#EF4444' }}>{riskCt}</p>
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#EF4444' }}>High Injury Risk</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>ACWR &gt; 1.5</p>
+            </div>
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)' }}>
+              <p className="text-3xl font-black" style={{ color: '#3B82F6' }}>{underCt}</p>
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#3B82F6' }}>Under-trained</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>ACWR &lt; 0.8</p>
+            </div>
+          </div>
+
+          {/* Player Readiness List */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Readiness — ACWR Traffic Lights</p>
+            </div>
+            <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+              {[...GPS_PLAYER_DEMO].sort((a, b) => b.acwr - a.acwr).map((p, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{statusIcon(p.acwr)}</span>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.name}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>Load: {p.load} &middot; ACWR: {p.acwr.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${acwrColor(p.acwr)}1a`, color: acwrColor(p.acwr) }}>
+                      {readinessLabel(p.acwr)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3 — LOAD TRENDS */}
+      {tab === 'trends' && (
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Weekly Player Load — Last 8 Weeks</p>
+            <div style={{ width: '100%', height: 350 }}>
+              <ResponsiveContainer>
+                <LineChart data={WEEKLY_LOAD_DEMO}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+                  <XAxis dataKey="week" stroke="#6B7280" fontSize={11} />
+                  <YAxis stroke="#6B7280" fontSize={11} />
+                  <Tooltip contentStyle={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="Ryan Thompson" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Jamal Henderson" stroke="#EF4444" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Sean O'Brien" stroke="#F59E0B" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Kwame Okafor" stroke="#22C55E" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="avg" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="4-Week Avg" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Key Observations */}
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>Key Observations</p>
+            <div className="space-y-2">
+              {[
+                "Sean O'Brien's load has increased steadily over 8 weeks — now at high injury risk (ACWR 1.58).",
+                "Jamal Henderson spiked in W4 following two consecutive match starts — manage carefully.",
+                "Squad average load trending upward — consider a recovery week before next fixture run.",
+                "Ryan Thompson and Kwame Okafor both within optimal range — available for full selection.",
+              ].map((obs, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+                  <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{obs}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4 — MATCH vs TRAINING */}
+      {tab === 'match-vs-training' && (
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Match Day vs Average Training Output</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Identifies conditioning gaps — who drops off or spikes on match day?</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                    {['Player', 'Match Dist', 'Train Dist', 'Match HSR', 'Train HSR', 'Match Load', 'Train Load', 'Diff'].map(h => (
+                      <th key={h} className="text-left px-5 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MATCH_VS_TRAIN_DEMO.map((p, i) => {
+                    const diffNum = parseInt(p.diff)
+                    const diffColor = diffNum > 30 ? '#EF4444' : diffNum > 20 ? '#F59E0B' : '#22C55E'
+                    return (
+                      <tr key={i} style={{ borderBottom: i < MATCH_VS_TRAIN_DEMO.length - 1 ? '1px solid #1F2937' : undefined }}>
+                        <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
+                        <td className="px-5 py-3" style={{ color: '#F9FAFB' }}>{p.matchDist.toFixed(1)}</td>
+                        <td className="px-5 py-3" style={{ color: '#6B7280' }}>{p.trainDist.toFixed(1)}</td>
+                        <td className="px-5 py-3" style={{ color: '#F9FAFB' }}>{p.matchHSR}</td>
+                        <td className="px-5 py-3" style={{ color: '#6B7280' }}>{p.trainHSR}</td>
+                        <td className="px-5 py-3 font-bold" style={{ color: '#F9FAFB' }}>{p.matchLoad}</td>
+                        <td className="px-5 py-3" style={{ color: '#6B7280' }}>{p.trainLoad}</td>
+                        <td className="px-5 py-3"><span className="font-bold" style={{ color: diffColor }}>{p.diff}</span></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>Fitness Coach Notes</p>
+            <div className="space-y-2">
+              {[
+                "Jamie Wilson shows highest match-to-training spike (+47%) — condition needs work or his training intensity is too low.",
+                "Sean O'Brien +37% spike on match day with already high ACWR — limit minutes or start from bench.",
+                "Jamal Henderson and Kwame Okafor both consistent — match output mirrors training. Good conditioning base.",
+              ].map((n, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+                  <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{n}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5 — CONNECT GPS */}
+      {tab === 'connect' && (
+        <div className="space-y-4">
+          {/* Provider Connection Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Catapult */}
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
+                  <Activity size={20} style={{ color: '#3B82F6' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Catapult OpenField</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect via API bearer token</p>
+                </div>
+              </div>
+              <input type="text" placeholder="Paste Catapult API token..."
+                className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
+                style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
+                value={connectProvider === 'catapult' ? connectToken : ''}
+                onChange={e => { setConnectProvider('catapult'); setConnectToken(e.target.value) }} />
+              <button onClick={() => { setToast('Catapult connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
+                className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#3B82F6', color: '#FFF' }}>
+                Connect Catapult
+              </button>
+            </div>
+
+            {/* STATSports */}
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}>
+                  <Activity size={20} style={{ color: '#22C55E' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>STATSports Sonra</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect via API key</p>
+                </div>
+              </div>
+              <input type="text" placeholder="Paste STATSports API key..."
+                className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
+                style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
+                value={connectProvider === 'statsports' ? connectToken : ''}
+                onChange={e => { setConnectProvider('statsports'); setConnectToken(e.target.value) }} />
+              <button onClick={() => { setToast('STATSports connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
+                className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#22C55E', color: '#FFF' }}>
+                Connect STATSports
+              </button>
+            </div>
+          </div>
+
+          {/* CSV Upload */}
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
+                <FileText size={20} style={{ color: '#F59E0B' }} />
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>CSV Upload</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Manually export from your GPS platform and upload directly. Supports both Catapult and STATSports formats.</p>
+              </div>
+            </div>
+            <div className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-amber-600"
+              style={{ borderColor: '#374151' }}>
+              <FileText size={32} className="mx-auto mb-2" style={{ color: '#6B7280' }} />
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop CSV file here or click to browse</p>
+              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Auto-detects Catapult or STATSports format from column headers</p>
+            </div>
+          </div>
+
+          {/* Sync Status */}
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold mb-3" style={{ color: '#F9FAFB' }}>Sync Status</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10' }}>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Last Sync</p>
+                <p className="text-sm font-bold mt-1" style={{ color: '#F9FAFB' }}>31 Mar 2026, 09:15</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10' }}>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Sessions Synced</p>
+                <p className="text-sm font-bold mt-1" style={{ color: '#F9FAFB' }}>48</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10' }}>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Provider</p>
+                <p className="text-sm font-bold mt-1" style={{ color: '#3B82F6' }}>Catapult OpenField</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Training View ──────────────────────────────────────────────────────────
 
 function TrainingView() {
   return (
