@@ -2640,6 +2640,25 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       return
     }
 
+    // Slack — real OAuth flow
+    if (key === 'slack') {
+      const clientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID
+      if (!clientId) {
+        setIntegrationToast(`${name} — Slack OAuth not configured yet. Add NEXT_PUBLIC_SLACK_CLIENT_ID to environment.`)
+        setTimeout(() => setIntegrationToast(''), 5000)
+        return
+      }
+      const wsSlug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+      const state = JSON.stringify({ slug: wsSlug })
+      const scopes = 'channels:history,channels:read,groups:read,groups:history,im:read,im:history,users:read,chat:write'
+      const params = new URLSearchParams({
+        client_id: clientId, scope: scopes, user_scope: 'identity.basic,identity.email',
+        redirect_uri: 'https://lumiocms.com/api/auth/callback/slack', state,
+      })
+      window.location.href = `https://slack.com/oauth/v2/authorize?${params.toString()}`
+      return
+    }
+
     // All other integrations — coming soon
     setIntegrationToast(`${name} integration coming soon — OAuth is being configured`)
     setTimeout(() => setIntegrationToast(''), 4000)
