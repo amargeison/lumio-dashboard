@@ -1982,7 +1982,27 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
       ) : (
         <>
           {demoMeetings.length === 0 && !calConnected && (
-            <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your calendar in Settings.</p>
+            <div className="space-y-2 py-3">
+              {(!msCalConnected || !impCtx.isImpersonating) && !gCalConnected && (
+                <div className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm opacity-40">📅</span>
+                    <span className="text-xs" style={{ color: '#4B5563' }}>Outlook Calendar</span>
+                  </div>
+                  <button onClick={() => triggerOAuth('microsoft', 'outlook_cal')} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>Connect</button>
+                </div>
+              )}
+              {(!gCalConnected || !impCtx.isImpersonating) && !msCalConnected && (
+                <div className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm opacity-40">📅</span>
+                    <span className="text-xs" style={{ color: '#4B5563' }}>Google Calendar</span>
+                  </div>
+                  <button onClick={() => triggerOAuth('google', 'gcal')} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>Connect</button>
+                </div>
+              )}
+              <p className="text-xs text-center pt-1" style={{ color: '#4B5563' }}>Connect your calendar to see today&apos;s meetings</p>
+            </div>
           )}
           {demoMeetings.length === 0 && calConnected && liveEvents === null && (
             <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Loading calendar...</p>
@@ -2631,6 +2651,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     try { sessionStorage.removeItem('lumio_crm_cache') } catch { /* ignore */ }
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
+    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
     onDemoToggle(false)
     setClearing(false)
   }
@@ -3294,7 +3315,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           </div>
         </div>
         <div className="px-5 py-4 flex flex-wrap gap-2">
-          <button onClick={() => { localStorage.removeItem('onboarding_completed_' + company); localStorage.removeItem('lumio_onboarding_shown'); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+          <button onClick={() => { localStorage.removeItem('onboarding_completed_' + company); localStorage.removeItem('lumio_onboarding_shown'); localStorage.removeItem(`lumio_onboarding_done_${slug}`); localStorage.removeItem('lumio_tour_completed'); localStorage.removeItem(`lumio_tour_done_${slug}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
             Reset Onboarding
           </button>
           <button onClick={() => { localStorage.removeItem(`lumio_welcomed_${typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
@@ -3895,7 +3916,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           }
           // Live tenant onboarding wizard — only show if NEVER completed
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
-          if (!alreadyOnboarded && !data.demo_data_active && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+          if (alreadyOnboarded) {
+            // DB says done — persist to localStorage so we never check again
+            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+            localStorage.setItem('lumio_onboarding_shown', 'true')
+          } else if (!data.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
             setShowLiveOnboarding(true)
           }
         })
@@ -3926,7 +3951,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.id) setBusinessId(data.business.id)
               if (data.business?.demo_data_active) setDemoDataActive(true)
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
-              if (!bizOnboarded && !data.business?.demo_data_active && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+              if (bizOnboarded) {
+                localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+                localStorage.setItem('lumio_onboarding_shown', 'true')
+              } else if (!data.business?.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
                 setShowLiveOnboarding(true)
               }
             })
@@ -3947,7 +3975,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   async function handleTabGuideComplete() {
     setShowTabGuide(false)
     localStorage.setItem('lumio_tour_completed', 'true')
+    localStorage.setItem(`lumio_tour_done_${slug}`, 'true')
     localStorage.setItem('lumio_onboarding_shown', 'true')
+    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
     // Mark onboarding as complete in Supabase
     try {
       await fetch('/api/onboarding/complete', {
@@ -4033,7 +4063,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <OnboardingWizard
           type="business"
           tenantId={businessId}
-          onComplete={() => setShowLiveOnboarding(false)}
+          onComplete={() => {
+            setShowLiveOnboarding(false)
+            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+            localStorage.setItem('lumio_onboarding_shown', 'true')
+          }}
         />
       )}
 
