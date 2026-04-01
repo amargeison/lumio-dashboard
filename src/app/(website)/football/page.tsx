@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Shield, Users, Target, Zap, BarChart3, Mic, Monitor, Layers, Award, Lock, Plug, Star, ChevronRight } from 'lucide-react'
 
@@ -75,6 +76,158 @@ const PRICING = [
   { tier: 'Full Club', desc: 'Enterprise platform for the entire club', features: ['Everything in First Team', 'Board Suite with PSR/FFP', 'Financial integration', 'Multi-department access', 'Dedicated account manager'] },
 ]
 
+// ─── Role Showcase Data ──────────────────────────────────────────────────────
+
+const ROLES = [
+  { id: 'dof', emoji: '🏟️', label: 'Director of Football',
+    features: [
+      { name: 'Transfer Pipeline Manager', points: ['Active targets tracked — position, value, agent, status', 'Window countdown — days, hours, minutes', 'Budget dashboard — spent, committed, remaining', 'Work permit tracker — post-Brexit requirements', 'Agent contact log — last contact, next action', 'Bid workflow — configure → submit → track'], outcome: 'Never miss a transfer deadline. Every target tracked, every agent logged, every deadline visible.' },
+      { name: 'Contract Expiry Tracker', points: ['Visual timeline of all contract end dates', 'Priority renewals flagged in red', 'Agent involved for each player', 'Wage budget impact of renewal', 'Board approval workflow', 'Release clause tracker'], outcome: 'See exactly which contracts need attention — today, this month, this season.' },
+      { name: 'Squad Planner (2-season)', points: ['Current squad with contract status', 'Next season projection — who leaves, who stays', 'Position gaps highlighted automatically', 'Academy pipeline integrated', 'Hypothetical targets added to plan', 'Export to board as visual report'], outcome: 'Plan two seasons ahead. Know exactly which positions need filling and when.' },
+      { name: 'AI Morning Briefing', points: ['Squad fitness summary', 'Transfer window updates', 'Contract alerts', 'Agent messages', 'Academy highlights', 'Board items for today'], outcome: 'Everything you need to know — read aloud in 60 seconds every morning.' },
+      { name: 'Board Report Generator', points: ['Select report type and period', 'AI compiles data across all departments', 'Financial summary auto-included', 'Transfer activity summarised', 'Squad performance metrics', 'Export as PDF or presentation'], outcome: 'Board-ready reports generated in seconds, not days.' },
+      { name: 'PSR / FFP Dashboard', points: ['3-year rolling loss calculated automatically', 'Allowable deductions tracked', 'What-if calculator for transfers', 'Year-end projection updated live', 'Wage/revenue ratio monitored', 'Board-ready compliance report'], outcome: 'Know your PSR position every day. Never risk a points deduction.' },
+    ],
+  },
+  { id: 'coach', emoji: '🧠', label: 'Head Coach',
+    features: [
+      { name: 'Team Sheet Builder', points: ['Drag-and-drop formation builder', 'Availability filter — injured, suspended, doubtful', 'GPS readiness scores per player', 'Save and compare multiple line-ups', 'Share with staff instantly', 'Voice command — "Build me a team sheet"'], outcome: 'Pick your best team with full confidence. Fitness, form and tactics — all in one view.' },
+      { name: 'Tactics Board', points: ['Interactive pitch with drag-and-drop', 'Multiple formation templates', 'Draw movement arrows and zones', 'Save and compare tactical setups', 'Share with coaching team digitally', 'Print for dressing room'], outcome: 'Visualise your game plan. Share it with one click.' },
+      { name: 'Training Planner', points: ['Weekly training calendar', 'GPS load per player tracked', 'Session templates for tactical, technical, fitness', 'Recovery group management', 'Share plan with medical team', 'Adjust based on upcoming fixtures'], outcome: 'Plan training around matches, load and fitness — not guesswork.' },
+      { name: 'Match Analysis', points: ['Post-match performance breakdown', 'Key events timeline', 'Player ratings with data backing', 'Half-time and full-time notes', 'Opposition comparison', 'Share insights with staff'], outcome: 'Review every match with data. Make better decisions next time.' },
+      { name: 'Player Dynamics', points: ['Dressing room mood tracker', 'Leadership group visibility', 'Clique detection alerts', 'One-to-one meeting log', 'Culture health score', 'Weekly dynamics summary'], outcome: 'Manage the room. Know what\'s happening before it becomes a problem.' },
+      { name: 'Opposition Scout Report', points: ['Auto-loaded next opponent data', 'Formation and key players', 'Strengths and weaknesses', 'Set piece threats flagged', 'Last 5 results analysed', 'Suggested tactical approach'], outcome: 'Know your opponent better than they know themselves.' },
+    ],
+  },
+  { id: 'medical', emoji: '🏥', label: 'Medical',
+    features: [
+      { name: 'Injury Tracker', points: ['Current injuries with expected return dates', 'GPS ACWR scores — flag overload before injury', 'Return-to-play protocol steps', 'Treatment log per player', 'Integration with Catapult & STATSports', 'Alert when player exceeds safe load threshold'], outcome: 'Reduce injuries. Manage return-to-play with confidence. GPS data built in.' },
+      { name: 'Return-to-Play Planner', points: ['Step-by-step rehab protocol', 'Daily progress tracking', 'Medical sign-off required at each stage', 'GPS metrics integrated for clearance', 'Notification when player passes threshold', 'Automatic squad status update'], outcome: 'Every return-to-play managed safely. No player rushed back.' },
+      { name: 'GPS Load Monitor', points: ['Live session load data', 'Weekly load trends per player', 'ACWR calculation automated', 'Red/amber/green thresholds', 'Comparison to squad average', 'Historical load charts'], outcome: 'Prevent injuries before they happen. GPS data at your fingertips.' },
+      { name: 'Medical Notes', points: ['Confidential player medical records', 'Treatment history', 'Medication tracking', 'Scan results storage', 'Referral management', 'GDPR compliant'], outcome: 'Every medical note secure. Every treatment logged.' },
+      { name: 'DBS & Certifications', points: ['Staff DBS check tracking', 'First aid certification dates', 'Safeguarding training records', 'Renewal reminders', 'Compliance dashboard', 'Export for audits'], outcome: 'Never miss a renewal. Every certification tracked.' },
+      { name: 'Physio Dashboard', points: ['Treatment schedule for today', 'Player queue management', 'Notes per session', 'Recovery protocol tracking', 'Injury recurrence alerts', 'Workload balance across physio team'], outcome: 'Manage your treatment list efficiently. Every session documented.' },
+    ],
+  },
+  { id: 'recruitment', emoji: '🔍', label: 'Recruitment',
+    features: [
+      { name: 'Scouting Pipeline', points: ['Targets tracked by position, age, value, nationality', 'Scout report submission and review', 'Agent contact and commission log', 'Trial scheduling and feedback', 'Video room for match footage review', 'PSR impact calculator per target'], outcome: 'Build your squad intelligently. Every target, every report, every agent — tracked.' },
+      { name: 'Target Watchlist', points: ['Priority targets with status', 'Contract situation tracked', 'Alternative options per position', 'Value trend over time', 'Availability windows flagged', 'Quick share to DoF'], outcome: 'Your shortlist, always up to date. Never lose track of a target.' },
+      { name: 'Agent Directory', points: ['Agent database with contact details', 'Past dealings and commission history', 'Players represented', 'Relationship notes', 'Last contact date', 'Meeting log'], outcome: 'Know every agent. Track every relationship.' },
+      { name: 'Trial Manager', points: ['Trial scheduling', 'Training session allocation', 'Feedback forms from coaches', 'Medical clearance tracking', 'Decision workflow', 'Parent/agent communication log'], outcome: 'Run trials properly. Every trialist tracked from arrival to decision.' },
+      { name: 'Video Room', points: ['Upload match and training footage', 'Tag key moments', 'Share clips with staff', 'Build highlight reels per player', 'Opposition footage library', 'Scout from anywhere'], outcome: 'All your footage in one place. Tag, share, decide.' },
+      { name: 'Scout Reports', points: ['Standardised report template', 'Star rating system', 'Position-specific criteria', 'Photo and video attachment', 'Comparison to current squad', 'Recommendation workflow'], outcome: 'Professional scouting reports. Consistent, thorough, shareable.' },
+    ],
+  },
+  { id: 'academy', emoji: '🎓', label: 'Academy',
+    features: [
+      { name: 'Academy Squad Tracker', points: ['U18/U21 squad management', 'Development milestone tracking', 'First team promotion pipeline', 'Match reports per age group', 'GPS load monitoring for young players', 'Parent communication portal'], outcome: 'Develop tomorrow\'s first team. Track every player from U9 to the bench.' },
+      { name: 'Development Pathway', points: ['Individual development plans', 'Skill milestone tracking', 'Coach assessment forms', 'Progress reports for parents', 'Season objectives per player', 'Annual review scheduling'], outcome: 'Every young player on a clear pathway. Progress visible to everyone.' },
+      { name: 'Promotion Pipeline', points: ['First team readiness assessment', 'Training with first team scheduling', 'Head Coach recommendations', 'Physical development metrics', 'Mental readiness evaluation', 'Contract status alerts'], outcome: 'Know which academy players are ready. Promote with confidence.' },
+      { name: 'U21 Match Reports', points: ['Match report templates', 'Performance ratings per player', 'Key event logging', 'Opposition notes', 'Attendance tracking', 'Season statistics dashboard'], outcome: 'Every youth match documented. Scouts and coaches aligned.' },
+      { name: 'Parent Portal', points: ['Match schedule visibility', 'Transport information', 'Welfare check-ins', 'Development progress access', 'Consent form management', 'Communication log'], outcome: 'Keep parents informed and engaged. Build trust with families.' },
+      { name: 'Academy Analytics', points: ['Conversion rate by age group', 'Scholarship success metrics', 'Category compliance dashboard', 'EPPP audit preparation', 'Cost per player analysis', 'Benchmark against top academies'], outcome: 'Run your academy with data. Prove its value to the board.' },
+    ],
+  },
+  { id: 'analysis', emoji: '📊', label: 'Analysis',
+    features: [
+      { name: 'Match Analytics', points: ['Post-match performance breakdown', 'Player rating and contribution scores', 'GPS heat maps per player', 'Opposition shape and pattern analysis', 'Set piece catalogue — attacking and defending', 'Season trend lines per metric'], outcome: 'Turn data into decisions. Every match analysed. Every pattern spotted.' },
+      { name: 'Performance Trends', points: ['Player form over time', 'Fitness trend charts', 'Comparison to squad average', 'Seasonal peaks and troughs identified', 'Impact of training load on performance', 'Export for coaching presentations'], outcome: 'See the trends others miss. Data that makes a difference.' },
+      { name: 'Opposition Analysis', points: ['Next opponent auto-loaded', 'Formation and system analysis', 'Key player profiles', 'Defensive and attacking patterns', 'Set piece threats', 'Last 5 matches breakdown'], outcome: 'Prepare for every opponent with comprehensive intelligence.' },
+      { name: 'Set Piece Library', points: ['Corner routines — attacking and defending', 'Free kick playbook', 'Throw-in routines', 'Visual SVG pitch diagrams', 'Success rate tracking per routine', 'Share on tablet in dressing room'], outcome: 'Set pieces win games. Yours are planned, drilled and tracked.' },
+      { name: 'GPS Heat Maps', points: ['Player positional data visualised', 'Session vs match comparison', 'Team shape analysis', 'Running lanes and zones', 'Sprint locations mapped', 'Share with coaching team'], outcome: 'See where your players actually play. Not where you think they play.' },
+      { name: 'Video Tagging', points: ['Tag key moments in footage', 'Build clip sequences', 'Share individual player clips', 'Opposition tactical clips', 'Integration with analysis software', 'Searchable tag database'], outcome: 'Find any moment, any match, any player — in seconds.' },
+    ],
+  },
+  { id: 'finance', emoji: '💰', label: 'Finance & PSR',
+    features: [
+      { name: 'PSR/FFP Dashboard', points: ['Real-time PSR headroom calculation', 'Wage bill vs revenue ratio', 'Player amortisation schedule', 'Transfer spend vs budget remaining', 'Revenue streams — matchday, broadcast, commercial', 'Automatic board report generation'], outcome: 'Stay PSR compliant. Know your numbers before the window opens.' },
+      { name: 'Wage Bill Tracker', points: ['Total wage bill breakdown', 'Per player cost', 'Bonus and appearance fee tracking', 'Image rights payments', 'Projection for next season', 'Comparison to league averages'], outcome: 'Control your biggest expense. Every pound accounted for.' },
+      { name: 'Transfer Budget Manager', points: ['Total budget set by board', 'Committed spend tracked', 'Remaining budget calculated', 'What-if scenarios for targets', 'Sell-to-buy impact modelling', 'Real-time during window'], outcome: 'Spend smart. Know exactly what you can afford.' },
+      { name: 'Player Amortisation', points: ['Transfer fee spread calculation', 'Remaining book value per player', 'Impact of selling early or late', 'Multi-year contract amortisation', 'PSR impact per player', 'Visual amortisation charts'], outcome: 'Understand the true cost of every player. Not just the fee.' },
+      { name: 'Revenue Dashboard', points: ['Matchday revenue tracking', 'Commercial income summary', 'Broadcast revenue allocation', 'Sponsorship income', 'Merchandise sales', 'Year-on-year comparison'], outcome: 'See all your revenue in one place. Drive growth where it matters.' },
+      { name: 'Board Financial Report', points: ['One-click financial summary', 'P&L by department', 'Cash flow projection', 'Variance analysis', 'Board-ready formatting', 'Export as PDF'], outcome: 'Board reports in one click. Not one week.' },
+    ],
+  },
+  { id: 'dynamics', emoji: '⚡', label: 'Dynamics',
+    features: [
+      { name: 'Dressing Room Monitor', points: ['Anonymous player sentiment tracking', 'Leadership group assignments', 'Clique and faction detection', 'Mentor pairing for new signings', 'Culture health score', 'Weekly dynamics report for Head Coach'], outcome: 'Manage what you can\'t see. Build a winning culture from the inside out.' },
+      { name: 'Player Mood Tracker', points: ['Weekly mood check-ins', 'Trend analysis per player', 'Red flag alerts for concerning patterns', 'Comparison to performance data', 'Confidential — coach eyes only', 'Integration with medical welfare'], outcome: 'Catch problems early. Support players before they struggle.' },
+      { name: 'Leadership Groups', points: ['Define leadership group', 'Assign captaincy responsibilities', 'Track leadership actions', 'Mentoring assignments', 'New signing integration plan', 'Culture ambassador programme'], outcome: 'Build leaders on and off the pitch. Structure your culture.' },
+      { name: 'Clique Detection', points: ['Social mapping of squad', 'Faction identification', 'Integration risk for new signings', 'Language group visibility', 'Nationality group dynamics', 'Alert when cliques form'], outcome: 'See the invisible dynamics. Act before cliques become problems.' },
+      { name: 'Mentor Assignments', points: ['Assign mentors to new signings', 'Track mentoring meetings', 'Integration milestone checklist', 'Feedback from both parties', 'Success metrics', 'Cultural orientation programme'], outcome: 'Every new signing settles faster. Mentoring that works.' },
+      { name: 'Culture Report', points: ['Monthly culture health score', 'Player engagement metrics', 'Training attitude assessment', 'Community involvement tracking', 'Values alignment scoring', 'Board culture summary'], outcome: 'Measure your culture. Report it to the board. Build something lasting.' },
+    ],
+  },
+]
+
+function RoleShowcase() {
+  const [activeRole, setActiveRole] = useState(0)
+  const [activeFeature, setActiveFeature] = useState(0)
+  const role = ROLES[activeRole]
+  const feature = role.features[activeFeature]
+
+  return (
+    <section className="max-w-6xl mx-auto px-6 py-20">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl md:text-4xl font-black mb-2">Everything your club needs</h2>
+        <p className="text-sm" style={{ color: '#9CA3AF' }}>Click a role. See exactly what Lumio Pro Club does for them.</p>
+      </div>
+
+      {/* Role tabs — flex-wrap, no scrollbar */}
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {ROLES.map((r, i) => (
+          <button key={r.id} onClick={() => { setActiveRole(i); setActiveFeature(0) }}
+            className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+            style={{ backgroundColor: activeRole === i ? RED : CARD, color: activeRole === i ? '#F9FAFB' : '#9CA3AF', border: activeRole === i ? `1px solid ${RED}` : `1px solid ${BORDER}` }}>
+            {r.emoji} {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Feature panel */}
+      <div className="flex flex-col lg:flex-row gap-4 rounded-2xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+        {/* Left — feature list */}
+        <div className="lg:w-1/3 p-4 space-y-1" style={{ borderRight: `1px solid ${BORDER}` }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider mb-3 px-3" style={{ color: '#4B5563' }}>{role.label} tools</p>
+          {role.features.map((f, i) => (
+            <button key={f.name} onClick={() => setActiveFeature(i)}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all"
+              style={{ backgroundColor: activeFeature === i ? `${RED}20` : 'transparent', color: activeFeature === i ? '#F9FAFB' : '#9CA3AF', borderLeft: activeFeature === i ? `3px solid ${RED}` : '3px solid transparent' }}>
+              {f.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Right — feature detail */}
+        <div className="flex-1 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{feature.name}</h3>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${RED}20`, color: RED, border: `1px solid ${RED}40` }}>
+              {role.label}
+            </span>
+          </div>
+
+          <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>What it does</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+            {feature.points.map((p, i) => (
+              <div key={i} className="flex items-start gap-2.5 rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER}` }}>
+                <span className="flex items-center justify-center rounded-full shrink-0 text-[10px] font-bold" style={{ width: 20, height: 20, backgroundColor: `${RED}20`, color: RED }}>{i + 1}</span>
+                <span className="text-xs" style={{ color: '#D1D5DB', lineHeight: 1.5 }}>{p}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#0D9488' }}>Outcome</p>
+            <p className="text-sm font-semibold" style={{ color: '#0D9488' }}>{feature.outcome}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function FootballPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#F9FAFB' }}>
@@ -115,6 +268,9 @@ export default function FootballPage() {
           ))}
         </div>
       </section>
+
+      {/* ── Role Tabs ───────────────────────────────────────────────────── */}
+      <RoleShowcase />
 
       {/* ── GPS Integration Hero Section ──────────────────────────────── */}
       <section id="gps" className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, #1a0808, ${BG})` }}>
