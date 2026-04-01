@@ -470,7 +470,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
             </>
           )}
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
+        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto football-sidebar-scroll">
           {sections.map((sec, si) => (
             <div key={si}>
               {sec.label && expanded && (
@@ -518,7 +518,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
               <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>NAVIGATION</span>
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
-            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
+            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto football-sidebar-scroll">
               {SIDEBAR_ITEMS.map(item => {
                 const active = activeDept === item.id
                 return (
