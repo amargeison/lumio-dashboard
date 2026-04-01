@@ -16,6 +16,7 @@ const EXPANDED_W = 200
 
 const NAV = [
   { section: null,          path: '',              label: 'Overview',               icon: LayoutDashboard, badge: null },
+  { section: null,          path: 'slt',           label: 'SLT Suite',              icon: GraduationCap,   badge: null, sltOnly: true },
   { section: null,          path: 'insights',      label: 'Insights',               icon: Sparkles,        badge: null },
   { section: 'Departments', path: 'school-office', label: 'School Office',          icon: Building2,       badge: null },
   { section: null,          path: 'hr-staff',      label: 'HR & Staff',             icon: Users,           badge: null },
@@ -29,7 +30,6 @@ const NAV = [
   { section: null,          path: 'admissions',    label: 'Admissions & Marketing', icon: UserPlus,        badge: null },
   { section: null,          path: 'safeguarding',  label: 'Safeguarding',           icon: Shield,          badge: 1    },
   { section: null,          path: 'wraparound',    label: 'Pre & After School',     icon: Sunrise,         badge: null },
-  { section: 'Leadership',  path: 'slt',            label: 'SLT Suite',              icon: GraduationCap,   badge: null },
   { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
   { section: null,          path: 'ofsted',        label: 'Ofsted Mode',            icon: Shield,          badge: 'NEW' },
   { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
@@ -127,9 +127,9 @@ export default function SchoolLayout({ children }: Props) {
 
         <nav className="flex-1 overflow-y-auto px-1.5 py-3 space-y-0.5">
           {NAV.filter(item => {
-            if (item.path === 'slt') {
-              const schoolRole = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4, isOwner: false }
-              return schoolRole.role_level <= 1 || schoolRole.isOwner
+            if ((item as any).sltOnly) {
+              const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }
+              return r.role_level <= 1 || r.isOwner
             }
             return true
           }).map((item, i) => {
@@ -187,7 +187,7 @@ export default function SchoolLayout({ children }: Props) {
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
             {NAV.filter(item => {
-              if (item.path === 'slt') { const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4, isOwner: false }; return r.role_level <= 1 || r.isOwner }
+              if ((item as any).sltOnly) { const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }; return r.role_level <= 1 || r.isOwner }
               return true
             }).map((item, i) => {
               const prev = NAV[i - 1]
