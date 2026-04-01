@@ -47,18 +47,29 @@ function Nav() {
   const [showTypeModal, setShowTypeModal] = useState(false)
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
+  const isFootball = pathname?.startsWith('/football') ?? false
 
   const baseLinks = isSchools
     ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
     : NAV_LINKS
   const navLinks = baseLinks
-    .filter(l => !(isSchools && l.label === 'CRM'))
+    .filter(l => {
+      if (isSchools && (l.label === 'CRM' || l.label === 'Football')) return false
+      if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
+      return true
+    })
+    .filter(l => {
+      // Remove SSO & Rostering from football pages (it's a schools-only feature)
+      if (isFootball && l.label === 'SSO & Rostering') return false
+      return true
+    })
     .map(l => {
-      if (!isSchools) return l
-      if (l.label === 'Product')      return { ...l, href: '/schools/product' }
-      if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
-      if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
-      if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
+      if (isSchools) {
+        if (l.label === 'Product')      return { ...l, href: '/schools/product' }
+        if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
+        if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
+        if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
+      }
       return l
     })
 
