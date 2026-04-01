@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { propagateAllStaff } from '@/lib/staff/propagate'
 import { assignDepartments } from '@/lib/staff/departmentMatch'
+import { detectRole } from '@/lib/detect-role'
 
 function getSupabase() {
   return createClient(
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
 
     const rows = validStaff.map((s, i) => {
       const match = deptResults.results[i]?.matched
+      const { role, role_level } = detectRole(s.job_title)
       return {
         business_id: session.business_id,
         first_name: s.first_name?.trim() || null,
@@ -59,6 +61,8 @@ export async function POST(req: NextRequest) {
         department: match ? match.label : (s.department?.trim() || null),
         phone: s.phone?.trim() || null,
         start_date: s.start_date?.trim() || null,
+        role,
+        role_level,
       }
     })
 

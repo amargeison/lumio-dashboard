@@ -94,7 +94,7 @@ function staffFullName(s: StaffMember): string {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy' | 'projects'
+type DeptId = 'overview' | 'insights' | 'hr' | 'accounts' | 'sales' | 'crm' | 'marketing' | 'trials' | 'operations' | 'support' | 'success' | 'it' | 'workflows' | 'settings' | 'partners' | 'strategy' | 'projects' | 'directors'
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = [
   { id: 'overview',    label: 'Overview',          icon: Home        },
@@ -2069,6 +2069,7 @@ const DEPT_ROUTES: Record<string, string> = {
   marketing: '/marketing', trials: '/trials', operations: '/operations',
   support: '/support', success: '/success', it: '/it', workflows: '/workflows',
   partners: '/partners', strategy: '/strategy', insights: '/insights',
+  directors: '/directors',
 }
 
 function DeptRedirect({ dept, slug }: { dept: DeptId; slug: string }) {
