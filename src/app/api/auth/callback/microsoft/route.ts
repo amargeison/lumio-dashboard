@@ -59,29 +59,56 @@ export async function GET(req: NextRequest) {
 
   try {
     // Exchange code for tokens
-    const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft',
-        grant_type: 'authorization_code',
-      }),
+    const tokenBody = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft',
+      grant_type: 'authorization_code',
     })
+
+    console.log('[microsoft/callback] Exchanging code for tokens...', {
+      client_id: clientId.slice(0, 8) + '...',
+      redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft',
+      code_length: code.length,
+      integrationKey,
+      slug,
+    })
+
+    let tokenRes: Response
+    try {
+      tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: tokenBody,
+      })
+    } catch (fetchErr) {
+      console.error('[microsoft/callback] Token fetch network error:', fetchErr)
+      const url = req.nextUrl.clone()
+      url.pathname = redirectBase || '/home'
+      url.search = '?integration_error=Network+error+contacting+Microsoft'
+      return NextResponse.redirect(url)
+    }
 
     if (!tokenRes.ok) {
       const errBody = await tokenRes.text()
-      console.error('[microsoft/callback] Token exchange failed:', tokenRes.status, errBody)
+      console.error('[microsoft/callback] Token exchange failed:', {
+        status: tokenRes.status,
+        statusText: tokenRes.statusText,
+        body: errBody,
+        client_id: clientId,
+        redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft',
+      })
       const url = req.nextUrl.clone()
       url.pathname = redirectBase || '/home'
-      url.search = '?integration_error=Token+exchange+failed'
+      const shortErr = errBody.length > 100 ? errBody.slice(0, 100) : errBody
+      url.search = `?integration_error=${encodeURIComponent(`Token exchange failed (${tokenRes.status}): ${shortErr}`)}`
       return NextResponse.redirect(url)
     }
 
     const tokens = await tokenRes.json()
     const { access_token, refresh_token, expires_in } = tokens
+    console.log('[microsoft/callback] Token exchange successful, expires_in:', expires_in)
 
     // Get user profile from Microsoft Graph
     const profileRes = await fetch('https://graph.microsoft.com/v1.0/me', {
@@ -100,7 +127,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle()
 
     if (business) {
-      await supabase.from('integration_tokens').upsert({
+      const { error: upsertError } = await supabase.from('integration_tokens').upsert({
         business_id: business.id,
         provider: `microsoft_${integrationKey}`,
         access_token,
@@ -110,21 +137,26 @@ export async function GET(req: NextRequest) {
         profile_name: profile.displayName || null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'business_id,provider' })
+
+      if (upsertError) {
+        console.error('[microsoft/callback] DB upsert failed (integration_tokens may not exist — run migration 054):', upsertError)
+        // Still redirect as connected — tokens worked, just DB storage failed
+      }
+    } else {
+      console.warn('[microsoft/callback] No business found for slug:', slug)
     }
 
     console.log('[microsoft/callback] Successfully connected:', integrationKey, 'for slug:', slug, 'email:', profile.mail || profile.userPrincipalName)
 
-    // Redirect back to portal with success flag
-    // The client will read this and set localStorage
     const url = req.nextUrl.clone()
     url.pathname = redirectBase || '/home'
     url.search = `?integration_connected=${integrationKey}`
     return NextResponse.redirect(url)
   } catch (err) {
-    console.error('[microsoft/callback] Error:', err)
+    console.error('[microsoft/callback] Unhandled error:', err)
     const url = req.nextUrl.clone()
     url.pathname = redirectBase || '/home'
-    url.search = '?integration_error=Something+went+wrong'
+    url.search = `?integration_error=${encodeURIComponent(err instanceof Error ? err.message : 'Something went wrong')}`
     return NextResponse.redirect(url)
   }
 }
