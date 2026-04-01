@@ -9,6 +9,7 @@ import {
   Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, LogOut, DoorOpen, Clock,
 } from 'lucide-react'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
+import { getSchoolClientRole } from '@/lib/detect-school-role'
 
 const COLLAPSED_W = 48
 const EXPANDED_W = 200
@@ -28,6 +29,7 @@ const NAV = [
   { section: null,          path: 'admissions',    label: 'Admissions & Marketing', icon: UserPlus,        badge: null },
   { section: null,          path: 'safeguarding',  label: 'Safeguarding',           icon: Shield,          badge: 1    },
   { section: null,          path: 'wraparound',    label: 'Pre & After School',     icon: Sunrise,         badge: null },
+  { section: 'Leadership',  path: 'slt',            label: 'SLT Suite',              icon: GraduationCap,   badge: null },
   { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
   { section: null,          path: 'ofsted',        label: 'Ofsted Mode',            icon: Shield,          badge: 'NEW' },
   { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
@@ -124,7 +126,13 @@ export default function SchoolLayout({ children }: Props) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-1.5 py-3 space-y-0.5">
-          {NAV.map((item, i) => {
+          {NAV.filter(item => {
+            if (item.path === 'slt') {
+              const schoolRole = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4, isOwner: false }
+              return schoolRole.role_level <= 1 || schoolRole.isOwner
+            }
+            return true
+          }).map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
             const href = item.path === '' ? base : item.path.startsWith('/') ? `${item.path}/${slug}` : `${base}/${item.path}`
@@ -178,7 +186,10 @@ export default function SchoolLayout({ children }: Props) {
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-            {NAV.map((item, i) => {
+            {NAV.filter(item => {
+              if (item.path === 'slt') { const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4, isOwner: false }; return r.role_level <= 1 || r.isOwner }
+              return true
+            }).map((item, i) => {
               const prev = NAV[i - 1]
               const showSection = item.section && item.section !== prev?.section
               const href = item.path === '' ? base : `${base}/${item.path}`

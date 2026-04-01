@@ -22,6 +22,7 @@ import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
+import { EmailActions } from '@/components/overview/MessageActions'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
