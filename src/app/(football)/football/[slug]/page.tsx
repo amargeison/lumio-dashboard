@@ -23,6 +23,7 @@ import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -1039,12 +1040,18 @@ function TabContent({ tab }: { tab: OverviewTab }) {
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
         <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
-          {SQUAD.map(p => (
-            <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-              <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
-              <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
-            </div>
-          ))}
+          {SQUAD.map(p => {
+            const playerInjury = (p.fitness === 'injured' || p.fitness === 'doubt') ? DEMO_INJURIES.filter(d => p.name.includes(d.playerName)) : []
+            return (
+              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+                {playerInjury.length > 0 && (
+                  <div className="flex justify-center mt-1"><FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} /></div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
       {/* Weather */}
@@ -1557,12 +1564,18 @@ function InsightsView() {
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
           <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
-            {SQUAD.map(p => (
-              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
-                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
-              </div>
-            ))}
+            {SQUAD.map(p => {
+              const playerInjury = (p.fitness === 'injured' || p.fitness === 'doubt') ? DEMO_INJURIES.filter(d => p.name.includes(d.playerName)) : []
+              return (
+                <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                  <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+                  <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+                  {playerInjury.length > 0 && (
+                    <div className="flex justify-center mt-1"><FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} /></div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1600,6 +1613,10 @@ function InsightsView() {
           <InsightCard label="Returning This Week" value="1" color="#22C55E" />
           <InsightCard label="Days Lost (Season)" value="47" />
           <InsightCard label="Injury Cost Est." value="£284k" sub="Wages during absence" color="#F59E0B" />
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Injury Body Map</p>
+          <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
         </div>
         <InsightTable cols={['Player', 'Injury', 'Phase', 'Injured', 'Expected Return', 'Missed', 'Physio']}
           rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Dr. J. Williams'])} />
@@ -1749,6 +1766,14 @@ function SquadView() {
         <StatCard label="Injured" value={String(SQUAD.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
         <StatCard label="Avg Age" value={(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length).toFixed(1)} icon={Users} color="#3B82F6" />
       </div>
+
+      {/* Squad Injury Overview */}
+      {SQUAD.some(p => p.fitness === 'injured') && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Current Injuries</p>
+          <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
+        </div>
+      )}
 
       {/* Top Performers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -2190,6 +2215,12 @@ function MedicalView() {
         </div>
       </div>
 
+      {/* Squad Injury Body Map */}
+      <div className="rounded-xl overflow-hidden p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Injury Body Map — All Injured Players</p>
+        <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
+      </div>
+
       {/* Injury Tracker Table */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -2199,7 +2230,7 @@ function MedicalView() {
           <table className="w-full text-xs">
             <thead>
               <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                {['Player', 'Injury', 'Treatment Phase', 'Expected Return', 'Days Out'].map(h => (
+                {['', 'Player', 'Injury', 'Treatment Phase', 'Expected Return', 'Days Out'].map(h => (
                   <th key={h} className="text-left px-5 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
                 ))}
               </tr>
@@ -2208,8 +2239,10 @@ function MedicalView() {
               {INJURIES.map((inj, i) => {
                 const returnDate = new Date(inj.expectedReturn.replace(/(\d+) (\w+) (\d+)/, '$2 $1, $3'))
                 const daysOut = Math.max(0, Math.ceil((returnDate.getTime() - Date.now()) / 86400000))
+                const miniInjury = DEMO_INJURIES.filter(d => inj.player.includes(d.playerName))
                 return (
                   <tr key={i} style={{ borderBottom: i < INJURIES.length - 1 ? '1px solid #1F2937' : undefined }}>
+                    <td className="px-3 py-2"><FootballBodyMap injuries={miniInjury} size="mini" showLegend={false} /></td>
                     <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{inj.player}</td>
                     <td className="px-5 py-3" style={{ color: '#EF4444' }}>{inj.type}</td>
                     <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-lg text-xs" style={{ backgroundColor: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>{inj.phase}</span></td>
@@ -2308,19 +2341,28 @@ function MedicalView() {
             { player: 'Lucas Santos', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 3 },
             { player: 'Diego Martinez', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 2 },
             { player: "Sean O'Brien", stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 1 },
-          ].map((p, pi) => (
-            <div key={pi} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.player}</p>
-              <div className="flex items-center gap-1">
-                {p.stages.map((stage, si) => (
-                  <div key={si} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full h-2 rounded-full" style={{ backgroundColor: si <= p.current ? '#22C55E' : '#1F2937' }} />
-                    <span className="text-[10px]" style={{ color: si <= p.current ? '#22C55E' : '#4B5563' }}>{stage}</span>
+          ].map((p, pi) => {
+            const playerInjury = DEMO_INJURIES.filter(d => p.player.includes(d.playerName))
+            return (
+              <div key={pi} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <div className="flex items-start gap-4 mb-3">
+                  <FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.player}</p>
+                    {playerInjury[0] && <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{playerInjury[0].bodyPart} — {playerInjury[0].injuryType}</p>}
                   </div>
-                ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  {p.stages.map((stage, si) => (
+                    <div key={si} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full h-2 rounded-full" style={{ backgroundColor: si <= p.current ? '#22C55E' : '#1F2937' }} />
+                      <span className="text-[10px]" style={{ color: si <= p.current ? '#22C55E' : '#4B5563' }}>{stage}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -2915,6 +2957,36 @@ function MatchdayView() {
         <StatCard label="Kick Off" value="15:00" icon={Clock} color="#3B82F6" />
         <StatCard label="Expected Attendance" value="8,200" icon={Users} color="#22C55E" />
         <StatCard label="Matchday Revenue" value="£42k" icon={DollarSign} color="#F59E0B" />
+      </div>
+
+      {/* Match Day Fitness Overview */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Match Day Fitness Overview</p>
+        </div>
+        <div className="p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold mb-2" style={{ color: '#6B7280' }}>UNAVAILABLE FOR SELECTION</p>
+              {SQUAD.filter(p => p.fitness === 'injured' || p.fitness === 'doubt' || p.fitness === 'suspended').map(p => {
+                const playerInjury = DEMO_INJURIES.filter(d => p.name.includes(d.playerName))
+                return (
+                  <div key={p.name} className="flex items-center gap-3 rounded-lg p-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                    {playerInjury.length > 0 && <FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+                      <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{p.position} · #{p.number}</p>
+                    </div>
+                    <FitnessBadge status={p.fitness} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Operations Checklist */}
