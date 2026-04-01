@@ -457,8 +457,11 @@ export function useHasDashboardData(pageKey: string): boolean | null {
   const [has, setHas] = useState<boolean | null>(null)
 
   useEffect(() => {
-    // Fast path 1: localStorage per-page flag
-    if (localStorage.getItem(`lumio_dashboard_${pageKey}_hasData`) === 'true') {
+    const demoActive = localStorage.getItem('lumio_demo_active') === 'true'
+
+    // Fast path 1: demo mode is active — all pages have data
+    if (demoActive) {
+      ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
       setHas(true)
       return
     }
@@ -472,12 +475,8 @@ export function useHasDashboardData(pageKey: string): boolean | null {
       } catch { /* ignore */ }
     }
 
-    // Fast path 3: demo mode is active — sync per-page flags immediately
-    if (localStorage.getItem('lumio_demo_active') === 'true') {
-      ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
-      setHas(true)
-      return
-    }
+    // Per-page flag ONLY trusted when demo is active (already handled above)
+    // When demo is off, ignore stale lumio_dashboard_*_hasData flags
 
     // Async fallback: check Supabase via workspace status API
     const token = localStorage.getItem('workspace_session_token')
