@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
 
           for (const msg of (histData.messages || []).slice(0, 5)) {
             if (msg.subtype && msg.subtype !== 'bot_message') continue // skip system messages
+            if (authUserId && msg.user === authUserId) continue // skip own messages
             allMessages.push({
               id: msg.ts,
               channel: `#${ch.name}`,
