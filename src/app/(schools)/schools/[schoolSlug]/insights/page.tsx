@@ -2176,55 +2176,51 @@ export default function InsightsPage() {
   const activeRoleMeta = ROLES.find((r) => r.id === activeRole)!
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#07080F' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Insights</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>{SCHOOL_NAME} · Select a role to view tailored insights</p>
-        </div>
-
-        {/* Role selector */}
-        <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>View insights as</p>
-          <div className="flex flex-wrap gap-2">
-            {ROLES.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => setActiveRole(role.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
-                style={
-                  activeRole === role.id
-                    ? { backgroundColor: '#0D9488', color: '#ffffff', borderColor: '#0D9488' }
-                    : { backgroundColor: '#111318', color: '#9CA3AF', borderColor: '#1F2937' }
-                }
-              >
-                <span>{role.icon}</span>
-                <span>{role.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Active role header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">
-            {activeRoleMeta.icon}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">{activeRoleMeta.label} View</h2>
-            <p className="text-xs" style={{ color: '#6B7280' }}>{activeRoleMeta.description}</p>
-          </div>
-          <div className="ml-auto text-xs" style={{ color: '#6B7280' }}>
-            Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </div>
-        </div>
-
-        {/* Role content */}
-        <div>{roleView[activeRole]}</div>
-
+    <div className="space-y-6 w-full">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-white">Insights</h1>
+        <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>{SCHOOL_NAME} · Select a role to view tailored insights</p>
       </div>
+
+      {/* Role selector */}
+      <div className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>View insights as</p>
+        <div className="flex flex-wrap gap-2">
+          {ROLES.map((role) => (
+            <button
+              key={role.id}
+              onClick={() => setActiveRole(role.id)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
+              style={
+                activeRole === role.id
+                  ? { backgroundColor: '#0D9488', color: '#ffffff', borderColor: '#0D9488' }
+                  : { backgroundColor: '#111318', color: '#9CA3AF', borderColor: '#1F2937' }
+              }
+            >
+              <span>{role.icon}</span>
+              <span>{role.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Active role header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: '#0D9488' }}>
+          {activeRoleMeta.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-bold text-white">{activeRoleMeta.label} View</h2>
+          <p className="text-xs" style={{ color: '#6B7280' }}>{activeRoleMeta.description}</p>
+        </div>
+        <div className="text-xs shrink-0" style={{ color: '#6B7280' }}>
+          Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
+      </div>
+
+      {/* Role content */}
+      <div>{roleView[activeRole]}</div>
     </div>
   )
 }
