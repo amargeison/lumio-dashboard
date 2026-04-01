@@ -2291,6 +2291,7 @@ const INTEGRATION_GROUPS = [
     { key: 'hubspot', name: 'HubSpot', desc: 'CRM & marketing' },
     { key: 'salesforce', name: 'Salesforce', desc: 'Enterprise CRM' },
     { key: 'pipedrive', name: 'Pipedrive', desc: 'Sales pipeline' },
+    { key: 'zendesk', name: 'Zendesk', desc: 'Customer support & ticketing' },
   ]},
   { label: 'HR & People', items: [
     { key: 'bamboohr', name: 'BambooHR', desc: 'HR management' },
@@ -2609,6 +2610,31 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       const state = JSON.stringify({ key: 'microsoft_all', slug: wsSlug })
       const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri, scope: allScopes, state, response_mode: 'query', prompt: 'consent' })
       window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`
+      return
+    }
+
+    // Google integrations — real OAuth flow
+    const GOOGLE_KEYS: Record<string, string> = {
+      gmail: 'https://www.googleapis.com/auth/gmail.readonly',
+      gcal: 'https://www.googleapis.com/auth/calendar.readonly',
+      gdrive: 'https://www.googleapis.com/auth/drive.readonly',
+    }
+    if (GOOGLE_KEYS[key]) {
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+      if (!clientId) {
+        setIntegrationToast(`${name} — Google OAuth not configured yet. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to environment.`)
+        setTimeout(() => setIntegrationToast(''), 5000)
+        return
+      }
+      const wsSlug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+      const state = JSON.stringify({ key, slug: wsSlug })
+      const params = new URLSearchParams({
+        client_id: clientId, response_type: 'code',
+        redirect_uri: 'https://lumiocms.com/api/auth/callback/google',
+        scope: `openid email profile ${GOOGLE_KEYS[key]}`,
+        state, access_type: 'offline', prompt: 'consent',
+      })
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
       return
     }
 
@@ -3044,6 +3070,131 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
               <button onClick={() => { setShowPinModal(false); setCurrentPin(''); setNewPin('') }} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Save</button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Finance + CRM Snapshot Widgets ──────────────────────────────────────────
+
+interface FinanceSnap { provider: string; outstanding: number; billsDue: number; overdueCount: number; invoiceCount: number; billCount: number }
+interface CRMSnap { provider: string; openDeals: number; pipelineValue: number; newContactsThisWeek: number; overdueTasks: number }
+
+const FINANCE_PROVIDERS = [
+  { key: 'xero', label: 'Xero', route: '/api/integrations/xero/snapshot', color: '#13B5EA' },
+  { key: 'quickbooks', label: 'QuickBooks', route: '/api/integrations/quickbooks/snapshot', color: '#2CA01C' },
+  { key: 'sage', label: 'Sage', route: '/api/integrations/sage/snapshot', color: '#00DC00' },
+  { key: 'freeagent', label: 'FreeAgent', route: '/api/integrations/freeagent/snapshot', color: '#3B7DDD' },
+]
+
+const CRM_PROVIDERS = [
+  { key: 'hubspot', label: 'HubSpot', route: '/api/integrations/hubspot/snapshot', color: '#FF7A59' },
+  { key: 'salesforce', label: 'Salesforce', route: '/api/integrations/salesforce/snapshot', color: '#00A1E0' },
+  { key: 'pipedrive', label: 'Pipedrive', route: '/api/integrations/pipedrive/snapshot', color: '#007E3A' },
+]
+
+function SnapshotWidgets() {
+  const [finance, setFinance] = useState<FinanceSnap[]>([])
+  const [crm, setCrm] = useState<CRMSnap[]>([])
+  const [financeErrors, setFinanceErrors] = useState<string[]>([])
+  const [crmErrors, setCrmErrors] = useState<string[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  const connectedFinance = FINANCE_PROVIDERS.filter(p => typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${p.key}`) === 'true')
+  const connectedCrm = CRM_PROVIDERS.filter(p => typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${p.key}`) === 'true')
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+    if (!token) { setLoaded(true); return }
+    const headers = { 'x-workspace-token': token }
+
+    Promise.all([
+      ...connectedFinance.map(p => fetch(p.route, { headers }).then(r => r.ok ? r.json() : r.status === 401 ? { _error: `${p.label} reconnection needed` } : null).catch(() => null)),
+      ...connectedCrm.map(p => fetch(p.route, { headers }).then(r => r.ok ? r.json() : r.status === 401 ? { _error: `${p.label} reconnection needed` } : null).catch(() => null)),
+    ]).then(results => {
+      const fResults = results.slice(0, connectedFinance.length)
+      const cResults = results.slice(connectedFinance.length)
+      const fSnaps: FinanceSnap[] = []; const fErrs: string[] = []
+      fResults.forEach(r => { if (r?._error) fErrs.push(r._error); else if (r?.provider) fSnaps.push(r) })
+      const cSnaps: CRMSnap[] = []; const cErrs: string[] = []
+      cResults.forEach(r => { if (r?._error) cErrs.push(r._error); else if (r?.provider) cSnaps.push(r) })
+      setFinance(fSnaps); setFinanceErrors(fErrs); setCrm(cSnaps); setCrmErrors(cErrs); setLoaded(true)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (!loaded) return null
+  const showFinance = connectedFinance.length > 0 || finance.length > 0
+  const showCrm = connectedCrm.length > 0 || crm.length > 0
+  if (!showFinance && !showCrm) return null
+
+  const totalOutstanding = finance.reduce((s, f) => s + f.outstanding, 0)
+  const totalBills = finance.reduce((s, f) => s + f.billsDue, 0)
+  const totalOverdue = finance.reduce((s, f) => s + f.overdueCount, 0)
+  const totalDeals = crm.reduce((s, c) => s + c.openDeals, 0)
+  const totalPipeline = crm.reduce((s, c) => s + c.pipelineValue, 0)
+  const totalCrmOverdue = crm.reduce((s, c) => s + c.overdueTasks, 0)
+
+  function StatBox({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
+    return (
+      <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+        <p className="text-lg font-black" style={{ color }}>{value}</p>
+        <p className="text-[10px]" style={{ color: '#6B7280' }}>{label}</p>
+        {sub && <p className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{sub}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Finance Snapshot */}
+      {showFinance && (
+        <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>💰 Finance Snapshot</h3>
+            <div className="flex gap-1">
+              {finance.map(f => {
+                const p = FINANCE_PROVIDERS.find(fp => fp.key === f.provider)
+                return p ? <span key={p.key} className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${p.color}20`, color: p.color }}>{p.label}</span> : null
+              })}
+            </div>
+          </div>
+          {financeErrors.map(e => <p key={e} className="text-xs mb-2" style={{ color: '#F59E0B' }}>{e}</p>)}
+          {finance.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              <StatBox label="Outstanding" value={`£${totalOutstanding.toLocaleString()}`} color="#22C55E" />
+              <StatBox label="Bills Due" value={`£${totalBills.toLocaleString()}`} color="#F59E0B" />
+              <StatBox label="Overdue" value={String(totalOverdue)} color={totalOverdue > 0 ? '#EF4444' : '#6B7280'} />
+            </div>
+          ) : (
+            <p className="text-xs text-center py-4" style={{ color: '#6B7280' }}>Connect Xero, QuickBooks, Sage or FreeAgent in Settings</p>
+          )}
+        </div>
+      )}
+
+      {/* CRM Snapshot */}
+      {showCrm && (
+        <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📊 CRM Snapshot</h3>
+            <div className="flex gap-1">
+              {crm.map(c => {
+                const p = CRM_PROVIDERS.find(cp => cp.key === c.provider)
+                return p ? <span key={p.key} className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${p.color}20`, color: p.color }}>{p.label}</span> : null
+              })}
+            </div>
+          </div>
+          {crmErrors.map(e => <p key={e} className="text-xs mb-2" style={{ color: '#F59E0B' }}>{e}</p>)}
+          {crm.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              <StatBox label="Open Deals" value={String(totalDeals)} color="#7C3AED" />
+              <StatBox label="Pipeline" value={`£${totalPipeline.toLocaleString()}`} color="#22C55E" />
+              <StatBox label="Overdue Tasks" value={String(totalCrmOverdue)} color={totalCrmOverdue > 0 ? '#EF4444' : '#6B7280'} />
+            </div>
+          ) : (
+            <p className="text-xs text-center py-4" style={{ color: '#6B7280' }}>Connect HubSpot, Salesforce or Pipedrive in Settings</p>
+          )}
         </div>
       )}
     </div>
