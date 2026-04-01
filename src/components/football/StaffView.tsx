@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Users, Heart, Eye, Briefcase, Calendar, UserPlus } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Users, Heart, Eye, Briefcase, Calendar, UserPlus, Upload } from 'lucide-react'
+import { detectFootballRole, getFootballRoleBadge } from '@/lib/detect-football-role'
 
 function getStaffPhoto(email?: string): string | null {
   if (!email || typeof window === 'undefined') return null
@@ -11,18 +12,18 @@ function getStaffPhoto(email?: string): string | null {
 }
 
 const STAFF = [
-  {name:'Marcus Reid',role:'Head Coach',dept:'Coaching',quals:'UEFA Pro',status:'in' as const,loc:'Training ground, 9am-6pm',rel:'Your manager',email:'reid@oakridgefc.com',phone:'07700 900001'},
-  {name:'David Hughes',role:'Assistant Manager',dept:'Coaching',quals:'UEFA A',status:'in' as const,loc:'Training ground',rel:'Works closely with you',email:'hughes@oakridgefc.com',phone:'07700 900002'},
-  {name:'Dr Sarah Phillips',role:'Club Doctor',dept:'Medical',quals:'MBBS, MRCGP',status:'in' as const,loc:'Medical centre, 8am-5pm',rel:'Medical dept',email:'phillips@oakridgefc.com',phone:'07700 900003'},
-  {name:'Pete Morrison',role:'Head Physio',dept:'Medical',quals:'MSc Sports Med',status:'in' as const,loc:'Medical centre, 8am-6pm',rel:'Medical dept',email:'morrison@oakridgefc.com',phone:'07700 900004'},
-  {name:'Dave Thompson',role:'Head of Recruitment',dept:'Scouting',quals:'UEFA B',status:'away' as const,loc:'Away scouting',rel:'Direct report',email:'thompson@oakridgefc.com',phone:'07700 900005'},
-  {name:'Ian Brooks',role:'Academy Director',dept:'Academy',quals:'UEFA A, PGCE',status:'in' as const,loc:'Academy building',rel:'Direct report',email:'brooks@oakridgefc.com',phone:'07700 900006'},
-  {name:'Steve Walsh',role:'Chief Scout',dept:'Scouting',quals:'UEFA B',status:'away' as const,loc:'Belgium trip',rel:'Scouting dept',email:'walsh@oakridgefc.com',phone:'07700 900007'},
-  {name:'Lisa Chen',role:'Sports Scientist',dept:'Medical',quals:'PhD Biomechanics',status:'away' as const,loc:'Conference',rel:'Performance dept',email:'chen@oakridgefc.com',phone:'07700 900008'},
-  {name:'Emma Clark',role:'Performance Analyst',dept:'Coaching',quals:'MSc Data Science',status:'in' as const,loc:'Analysis suite',rel:'Analytics dept',email:'clark@oakridgefc.com',phone:'07700 900009'},
-  {name:'Mark Evans',role:'Scout',dept:'Scouting',quals:'UEFA B',status:'in' as const,loc:'Office — report writing',rel:'Scouting dept',email:'evans@oakridgefc.com',phone:'07700 900010'},
-  {name:'Alan Cooper',role:'GK Coach',dept:'Coaching',quals:'UEFA Pro (in progress)',status:'away' as const,loc:'Course Mon-Wed',rel:'Coaching dept',email:'cooper@oakridgefc.com',phone:'07700 900011'},
-  {name:'Tom Wallace',role:'Fitness Coach',dept:'Coaching',quals:'BSc S&C',status:'in' as const,loc:'Gym, 7am-4pm',rel:'Performance dept',email:'wallace@oakridgefc.com',phone:'07700 900012'},
+  {name:'Marcus Reid',role:'Head Coach',dept:'Coaching',quals:'UEFA Pro',status:'in' as const,loc:'Training ground, 9am-6pm',rel:'Your manager',email:'reid@oakridgefc.com',phone:'07700 900001',role_level:2 as const},
+  {name:'David Hughes',role:'Assistant Manager',dept:'Coaching',quals:'UEFA A',status:'in' as const,loc:'Training ground',rel:'Works closely with you',email:'hughes@oakridgefc.com',phone:'07700 900002',role_level:2 as const},
+  {name:'Dr Sarah Phillips',role:'Club Doctor',dept:'Medical',quals:'MBBS, MRCGP',status:'in' as const,loc:'Medical centre, 8am-5pm',rel:'Medical dept',email:'phillips@oakridgefc.com',phone:'07700 900003',role_level:3 as const},
+  {name:'Pete Morrison',role:'Head Physio',dept:'Medical',quals:'MSc Sports Med',status:'in' as const,loc:'Medical centre, 8am-6pm',rel:'Medical dept',email:'morrison@oakridgefc.com',phone:'07700 900004',role_level:3 as const},
+  {name:'Dave Thompson',role:'Head of Recruitment',dept:'Scouting',quals:'UEFA B',status:'away' as const,loc:'Away scouting',rel:'Direct report',email:'thompson@oakridgefc.com',phone:'07700 900005',role_level:2 as const},
+  {name:'Ian Brooks',role:'Academy Director',dept:'Academy',quals:'UEFA A, PGCE',status:'in' as const,loc:'Academy building',rel:'Direct report',email:'brooks@oakridgefc.com',phone:'07700 900006',role_level:2 as const},
+  {name:'Steve Walsh',role:'Chief Scout',dept:'Scouting',quals:'UEFA B',status:'away' as const,loc:'Belgium trip',rel:'Scouting dept',email:'walsh@oakridgefc.com',phone:'07700 900007',role_level:2 as const},
+  {name:'Lisa Chen',role:'Sports Scientist',dept:'Medical',quals:'PhD Biomechanics',status:'away' as const,loc:'Conference',rel:'Performance dept',email:'chen@oakridgefc.com',phone:'07700 900008',role_level:4 as const},
+  {name:'Emma Clark',role:'Performance Analyst',dept:'Coaching',quals:'MSc Data Science',status:'in' as const,loc:'Analysis suite',rel:'Analytics dept',email:'clark@oakridgefc.com',phone:'07700 900009',role_level:4 as const},
+  {name:'Mark Evans',role:'Scout',dept:'Scouting',quals:'UEFA B',status:'in' as const,loc:'Office — report writing',rel:'Scouting dept',email:'evans@oakridgefc.com',phone:'07700 900010',role_level:4 as const},
+  {name:'Alan Cooper',role:'GK Coach',dept:'Coaching',quals:'UEFA Pro (in progress)',status:'away' as const,loc:'Course Mon-Wed',rel:'Coaching dept',email:'cooper@oakridgefc.com',phone:'07700 900011',role_level:3 as const},
+  {name:'Tom Wallace',role:'Fitness Coach',dept:'Coaching',quals:'BSc S&C',status:'in' as const,loc:'Gym, 7am-4pm',rel:'Performance dept',email:'wallace@oakridgefc.com',phone:'07700 900012',role_level:3 as const},
 ]
 
 type StaffMember = typeof STAFF[0]
@@ -33,10 +34,35 @@ function statusColor(s: string) { return s === 'in' ? '#22C55E' : '#F59E0B' }
 function statusLabel(s: string) { return s === 'in' ? '🟢 In today' : '🟡 Away' }
 function deptColor(d: string) { return d === 'Coaching' ? '#C0392B' : d === 'Medical' ? '#3B82F6' : d === 'Scouting' ? '#F59E0B' : d === 'Academy' ? '#22C55E' : '#8B5CF6' }
 
+function RoleBadge({ role }: { role: string }) {
+  const detected = detectFootballRole(role)
+  const badge = getFootballRoleBadge(detected.role)
+  if (!badge) return null
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ backgroundColor: `${badge.color}15`, color: badge.color }}>
+      {badge.emoji} L{detected.role_level}
+    </span>
+  )
+}
+
+function StaffPhoto({ email, name, size = 40, borderColor }: { email?: string; name: string; size?: number; borderColor?: string }) {
+  const photo = getStaffPhoto(email)
+  if (photo) {
+    return <img src={photo} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size, border: borderColor ? `2px solid ${borderColor}50` : undefined }} />
+  }
+  return (
+    <div className="rounded-full flex items-center justify-center font-bold shrink-0" style={{ width: size, height: size, fontSize: size * 0.28, backgroundColor: borderColor ? `${borderColor}20` : '#1F293750', color: borderColor || '#9CA3AF' }}>
+      {name.split(' ').map(w => w[0]).join('')}
+    </div>
+  )
+}
+
 export default function FootballStaffView() {
   const [staffTab, setStaffTab] = useState<'today' | 'orgchart' | 'clubinfo'>('today')
   const [staffFilter, setStaffFilter] = useState('All')
   const [selStaff, setSelStaff] = useState<StaffMember | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const filtered = STAFF.filter(s => {
     if (staffFilter === 'All') return true
@@ -44,6 +70,30 @@ export default function FootballStaffView() {
     if (staffFilter === 'Away') return s.status === 'away'
     return s.dept === staffFilter
   })
+
+  async function handlePhotoUpload(file: File, email: string) {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('email', email)
+      const res = await fetch('/api/workspace/upload-profile-photo', { method: 'POST', body: formData })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.url) {
+          localStorage.setItem(`lumio_staff_photo_${email}`, data.url)
+          setSelStaff(prev => prev ? { ...prev } : null) // force re-render
+        }
+      }
+    } catch {
+      // Silently handle — demo may not have Supabase configured
+      // For demo: store as object URL locally
+      const url = URL.createObjectURL(file)
+      localStorage.setItem(`lumio_staff_photo_${email}`, url)
+      setSelStaff(prev => prev ? { ...prev } : null)
+    }
+    setUploading(false)
+  }
 
   return (
     <div className="space-y-5">
@@ -78,13 +128,7 @@ export default function FootballStaffView() {
               <button key={s.name} onClick={() => setSelStaff(s)} className="rounded-xl p-4 text-left transition-all hover:ring-1 hover:ring-white/10"
                 style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-3 mb-2">
-                  {(() => { const photo = getStaffPhoto(s.email); return photo ? (
-                    <img src={photo} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" style={{ border: `2px solid ${statusColor(s.status)}50` }} />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: `${statusColor(s.status)}20`, color: statusColor(s.status) }}>
-                      {s.name.split(' ').map(w => w[0]).join('')}
-                    </div>
-                  ) })()}
+                  <StaffPhoto email={s.email} name={s.name} size={40} borderColor={statusColor(s.status)} />
                   <div className="min-w-0">
                     <p className="text-sm font-bold truncate" style={{ color: '#F9FAFB' }}>{s.name}</p>
                     <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.role}</p>
@@ -92,7 +136,10 @@ export default function FootballStaffView() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: statusColor(s.status) }}>{statusLabel(s.status)}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: `${deptColor(s.dept)}1a`, color: deptColor(s.dept) }}>{s.dept}</span>
+                  <div className="flex items-center gap-1.5">
+                    <RoleBadge role={s.role} />
+                    <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: `${deptColor(s.dept)}1a`, color: deptColor(s.dept) }}>{s.dept}</span>
+                  </div>
                 </div>
                 <p className="text-[10px] mt-1.5" style={{ color: '#4B5563' }}>{s.rel}</p>
               </button>
@@ -104,24 +151,36 @@ export default function FootballStaffView() {
       {/* ──── ORG CHART ──── */}
       {staffTab === 'orgchart' && (
         <div className="space-y-6">
-          {/* Chairman */}
+          {/* Chairman — Level 1 */}
           <div className="flex justify-center">
-            <div className="rounded-xl px-6 py-3 text-center" style={{ backgroundColor: '#111318', border: '2px solid #8B5CF6' }}>
-              <p className="text-xs" style={{ color: '#8B5CF6' }}>Chairman</p>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+            <div className="rounded-xl px-6 py-3 text-center" style={{ backgroundColor: '#111318', border: '2px solid #F1C40F' }}>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <StaffPhoto email="chairman@oakridgefc.com" name="Robert Blackwell" size={28} borderColor="#F1C40F" />
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+                  <p className="text-xs" style={{ color: '#F1C40F' }}>Chairman</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ backgroundColor: '#F1C40F15', color: '#F1C40F' }}>👑 Board · L1</span>
             </div>
           </div>
           <div className="flex justify-center"><div className="w-px h-6" style={{ backgroundColor: '#374151' }} /></div>
 
-          {/* Level 2 */}
+          {/* Level 2 — Senior Management */}
           <div className="flex justify-center gap-12">
             {[
-              { name: 'Dave Thompson', role: 'Director of Football', color: '#F59E0B' },
-              { name: 'Marcus Reid', role: 'Head Coach', color: '#C0392B' },
+              { name: 'Dave Thompson', role: 'Director of Football', color: '#F1C40F', email: 'thompson@oakridgefc.com' },
+              { name: 'Marcus Reid', role: 'Head Coach', color: '#C0392B', email: 'reid@oakridgefc.com' },
             ].map(p => (
               <div key={p.name} className="rounded-xl px-5 py-3 text-center" style={{ backgroundColor: '#111318', border: `2px solid ${p.color}` }}>
-                <p className="text-xs" style={{ color: p.color }}>{p.role}</p>
-                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <StaffPhoto email={p.email} name={p.name} size={24} borderColor={p.color} />
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+                    <p className="text-xs" style={{ color: p.color }}>{p.role}</p>
+                  </div>
+                </div>
+                <RoleBadge role={p.role} />
               </div>
             ))}
           </div>
@@ -130,20 +189,23 @@ export default function FootballStaffView() {
             <div className="w-px h-6" style={{ backgroundColor: '#374151' }} />
           </div>
 
-          {/* Level 3 */}
+          {/* Level 3 — Department Heads */}
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-center mb-3" style={{ color: '#F59E0B' }}>Reports to DoF</p>
+              <p className="text-xs font-semibold text-center mb-3" style={{ color: '#F1C40F' }}>Reports to DoF</p>
               {[
-                { name: 'Steve Walsh', role: 'Chief Scout', color: '#F59E0B' },
-                { name: 'Ian Brooks', role: 'Academy Director', color: '#22C55E' },
-                { name: 'Mark Evans', role: 'Scout', color: '#F59E0B' },
+                { name: 'Steve Walsh', role: 'Chief Scout', color: '#F59E0B', email: 'walsh@oakridgefc.com' },
+                { name: 'Ian Brooks', role: 'Academy Director', color: '#22C55E', email: 'brooks@oakridgefc.com' },
+                { name: 'Mark Evans', role: 'Scout', color: '#F59E0B', email: 'evans@oakridgefc.com' },
               ].map(p => (
                 <div key={p.name} className="rounded-lg px-4 py-2.5 flex items-center gap-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${p.color}33` }}>
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                  <div>
+                  <StaffPhoto email={p.email} name={p.name} size={24} borderColor={p.color} />
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                      <RoleBadge role={p.role} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -151,36 +213,42 @@ export default function FootballStaffView() {
             <div className="space-y-2">
               <p className="text-xs font-semibold text-center mb-3" style={{ color: '#C0392B' }}>Reports to Head Coach</p>
               {[
-                { name: 'David Hughes', role: 'Assistant Manager', color: '#C0392B' },
-                { name: 'Alan Cooper', role: 'GK Coach', color: '#C0392B' },
-                { name: 'Tom Wallace', role: 'Fitness Coach', color: '#C0392B' },
-                { name: 'Lisa Chen', role: 'Sports Scientist', color: '#3B82F6' },
-                { name: 'Emma Clark', role: 'Performance Analyst', color: '#C0392B' },
+                { name: 'David Hughes', role: 'Assistant Manager', color: '#C0392B', email: 'hughes@oakridgefc.com' },
+                { name: 'Alan Cooper', role: 'GK Coach', color: '#C0392B', email: 'cooper@oakridgefc.com' },
+                { name: 'Tom Wallace', role: 'Fitness Coach', color: '#C0392B', email: 'wallace@oakridgefc.com' },
+                { name: 'Lisa Chen', role: 'Sports Scientist', color: '#3B82F6', email: 'chen@oakridgefc.com' },
+                { name: 'Emma Clark', role: 'Performance Analyst', color: '#C0392B', email: 'clark@oakridgefc.com' },
               ].map(p => (
                 <div key={p.name} className="rounded-lg px-4 py-2.5 flex items-center gap-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${p.color}33` }}>
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                  <div>
+                  <StaffPhoto email={p.email} name={p.name} size={24} borderColor={p.color} />
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                      <RoleBadge role={p.role} />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Medical */}
+          {/* Medical — Level 3/4 */}
           <div>
             <p className="text-xs font-semibold text-center mb-3" style={{ color: '#3B82F6' }}>Medical Department</p>
             <div className="flex justify-center gap-3">
               {[
-                { name: 'Dr Sarah Phillips', role: 'Club Doctor' },
-                { name: 'Pete Morrison', role: 'Head Physio' },
+                { name: 'Dr Sarah Phillips', role: 'Club Doctor', email: 'phillips@oakridgefc.com' },
+                { name: 'Pete Morrison', role: 'Head Physio', email: 'morrison@oakridgefc.com' },
               ].map(p => (
                 <div key={p.name} className="rounded-lg px-4 py-2.5 flex items-center gap-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #3B82F633' }}>
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3B82F6' }} />
+                  <StaffPhoto email={p.email} name={p.name} size={24} borderColor="#3B82F6" />
                   <div>
                     <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.role}</p>
+                      <RoleBadge role={p.role} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -189,7 +257,7 @@ export default function FootballStaffView() {
 
           {/* Legend */}
           <div className="flex items-center justify-center gap-4 pt-2">
-            {[{ label: 'Coaching', color: '#C0392B' }, { label: 'Medical', color: '#3B82F6' }, { label: 'Scouting', color: '#F59E0B' }, { label: 'Academy', color: '#22C55E' }, { label: 'Executive', color: '#8B5CF6' }].map(l => (
+            {[{ label: 'Coaching', color: '#C0392B' }, { label: 'Medical', color: '#3B82F6' }, { label: 'Scouting', color: '#F59E0B' }, { label: 'Academy', color: '#22C55E' }, { label: 'Executive', color: '#F1C40F' }].map(l => (
               <div key={l.label} className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: l.color }} />
                 <span className="text-[10px]" style={{ color: '#6B7280' }}>{l.label}</span>
@@ -288,28 +356,34 @@ export default function FootballStaffView() {
         </div>
       )}
 
-      {/* Staff detail modal */}
+      {/* Staff detail modal with photo upload */}
       {selStaff && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
           <div className="rounded-2xl p-6 w-full" style={{ maxWidth: 420, backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
-                  style={{ backgroundColor: `${statusColor(selStaff.status)}20`, color: statusColor(selStaff.status) }}>
-                  {selStaff.name.split(' ').map(w => w[0]).join('')}
+                <div className="relative">
+                  <StaffPhoto email={selStaff.email} name={selStaff.name} size={48} borderColor={statusColor(selStaff.status)} />
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selStaff) handlePhotoUpload(f, selStaff.email) }} />
+                  <button onClick={() => fileRef.current?.click()} className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C0392B', border: '1px solid #111318' }} title="Upload photo">
+                    <Upload size={9} color="#fff" />
+                  </button>
                 </div>
                 <div>
                   <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>{selStaff.name}</p>
                   <p className="text-xs" style={{ color: '#9CA3AF' }}>{selStaff.role} · {selStaff.dept}</p>
+                  <RoleBadge role={selStaff.role} />
                 </div>
               </div>
               <button onClick={() => setSelStaff(null)} style={{ color: '#6B7280' }}><X size={16} /></button>
             </div>
+            {uploading && <p className="text-xs mb-2" style={{ color: '#F59E0B' }}>Uploading photo...</p>}
             <div className="space-y-2 mb-4">
               {[
                 { l: 'Status', v: statusLabel(selStaff.status), c: statusColor(selStaff.status) },
                 { l: 'Location', v: selStaff.loc, c: '#F9FAFB' },
                 { l: 'Qualifications', v: selStaff.quals, c: '#F9FAFB' },
+                { l: 'Role Level', v: `Level ${selStaff.role_level}`, c: '#F1C40F' },
                 { l: 'Relationship', v: selStaff.rel, c: '#F9FAFB' },
                 { l: 'Email', v: selStaff.email, c: '#C0392B' },
                 { l: 'Phone', v: selStaff.phone, c: '#F9FAFB' },

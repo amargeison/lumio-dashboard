@@ -435,10 +435,21 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const PRIMARY = '#C0392B'
   const DARK = '#922B21'
 
-  // group items by section — Board Suite hidden for Head Coach and below
+  // group items by section — filter sidebar based on impersonated role level
   const impRole = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_impersonated_role') : null
   const impLevel = FOOTBALL_ROLE_OPTIONS.find(r => r.key === impRole)?.level ?? 1
-  const visibleItems = SIDEBAR_ITEMS.filter(i => i.id !== 'board' || impLevel <= 1)
+  const HEAD_COACH_DEPTS: DeptId[] = ['overview', 'insights', 'squad', 'tactics', 'medical', 'training', 'analytics', 'dynamics', 'matchday', 'squad-planner', 'staff', 'settings']
+  const DEPT_HEAD_DEPTS: DeptId[] = ['overview', 'insights', 'staff', 'settings']
+  const SUPPORT_DEPTS: DeptId[] = ['overview', 'staff', 'settings']
+  const visibleItems = SIDEBAR_ITEMS.filter(i => {
+    if (impLevel <= 1) {
+      // Chairman/DoF: see everything; DoF hides Financial Strategy tab (handled in BoardSuiteView)
+      return true
+    }
+    if (impLevel === 2) return HEAD_COACH_DEPTS.includes(i.id) // Head Coach
+    if (impLevel === 3) return DEPT_HEAD_DEPTS.includes(i.id) // Dept Head
+    return SUPPORT_DEPTS.includes(i.id) // Support Staff
+  })
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
     { label: null, items: visibleItems.filter(i => i.section === null) },
     { label: 'Departments', items: visibleItems.filter(i => i.section === 'Departments') },
