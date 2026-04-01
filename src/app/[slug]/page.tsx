@@ -2651,7 +2651,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     try { sessionStorage.removeItem('lumio_crm_cache') } catch { /* ignore */ }
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
-    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
     onDemoToggle(false)
     setClearing(false)
   }
@@ -3315,7 +3315,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           </div>
         </div>
         <div className="px-5 py-4 flex flex-wrap gap-2">
-          <button onClick={() => { localStorage.removeItem('onboarding_completed_' + company); localStorage.removeItem('lumio_onboarding_shown'); localStorage.removeItem(`lumio_onboarding_done_${slug}`); localStorage.removeItem('lumio_tour_completed'); localStorage.removeItem(`lumio_tour_done_${slug}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
+          <button onClick={() => { localStorage.removeItem('onboarding_completed_' + company); localStorage.removeItem('lumio_onboarding_shown'); localStorage.removeItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`); localStorage.removeItem('lumio_tour_completed'); localStorage.removeItem(`lumio_tour_done_${localStorage.getItem('lumio_workspace_slug') || ''}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
             Reset Onboarding
           </button>
           <button onClick={() => { localStorage.removeItem(`lumio_welcomed_${typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''}`); window.location.reload() }} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
@@ -3918,9 +3918,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
           if (alreadyOnboarded) {
             // DB says done — persist to localStorage so we never check again
-            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+            localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
-          } else if (!data.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+          } else if (!data.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
             setShowLiveOnboarding(true)
           }
         })
@@ -3952,9 +3952,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.demo_data_active) setDemoDataActive(true)
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
               if (bizOnboarded) {
-                localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+                localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
                 localStorage.setItem('lumio_onboarding_shown', 'true')
-              } else if (!data.business?.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+              } else if (!data.business?.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
                 setShowLiveOnboarding(true)
               }
             })
@@ -3975,9 +3975,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   async function handleTabGuideComplete() {
     setShowTabGuide(false)
     localStorage.setItem('lumio_tour_completed', 'true')
-    localStorage.setItem(`lumio_tour_done_${slug}`, 'true')
+    localStorage.setItem(`lumio_tour_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
     localStorage.setItem('lumio_onboarding_shown', 'true')
-    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
     // Mark onboarding as complete in Supabase
     try {
       await fetch('/api/onboarding/complete', {
@@ -4065,7 +4065,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           tenantId={businessId}
           onComplete={() => {
             setShowLiveOnboarding(false)
-            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+            localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
           }}
         />
