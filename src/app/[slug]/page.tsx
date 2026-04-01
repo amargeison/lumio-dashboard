@@ -1145,6 +1145,62 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
     })
   }
 
+  // Zoom + pan state
+  const [zoom, setZoom] = useState(100)
+  const [panX, setPanX] = useState(0)
+  const [panY, setPanY] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
+  const frameRef = useRef<HTMLDivElement>(null)
+
+  // Load saved transform for current photo
+  useEffect(() => {
+    if (typeof window === 'undefined' || !photos[currentIdx]) return
+    try {
+      const saved = localStorage.getItem(`lumio_photoframe_transform_${currentIdx}`)
+      if (saved) { const t = JSON.parse(saved); setZoom(t.zoom || 100); setPanX(t.x || 0); setPanY(t.y || 0) }
+      else { setZoom(100); setPanX(0); setPanY(0) }
+    } catch { setZoom(100); setPanX(0); setPanY(0) }
+  }, [currentIdx, photos])
+
+  function saveTransform(z: number, x: number, y: number) {
+    if (typeof window !== 'undefined') localStorage.setItem(`lumio_photoframe_transform_${currentIdx}`, JSON.stringify({ zoom: z, x, y }))
+  }
+
+  function handleZoomChange(val: number) {
+    const clamped = Math.max(100, Math.min(300, val))
+    setZoom(clamped)
+    // Clamp pan when zooming out
+    if (clamped === 100) { setPanX(0); setPanY(0); saveTransform(clamped, 0, 0) }
+    else saveTransform(clamped, panX, panY)
+  }
+
+  function resetPosition() { setZoom(100); setPanX(0); setPanY(0); saveTransform(100, 0, 0) }
+
+  function startDrag(clientX: number, clientY: number) {
+    if (zoom <= 100) return
+    setDragging(true)
+    dragStart.current = { x: clientX, y: clientY, panX, panY }
+  }
+
+  function moveDrag(clientX: number, clientY: number) {
+    if (!dragging) return
+    const dx = clientX - dragStart.current.x
+    const dy = clientY - dragStart.current.y
+    const maxPan = (zoom - 100) / 100 * 150 // limit pan range proportional to zoom
+    const nx = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panX + dx))
+    const ny = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panY + dy))
+    setPanX(nx); setPanY(ny)
+  }
+
+  function endDrag() {
+    if (dragging) { setDragging(false); saveTransform(zoom, panX, panY) }
+  }
+
+  const isTransformed = zoom > 100 || panX !== 0 || panY !== 0
+  const showControls = hoveringFrame && photos.length > 0
+
   function prev() { setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }
   function next() { setCurrentIdx(i => (i + 1) % photos.length) }
 
@@ -1182,8 +1238,21 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 180 }}>
-          <img src={photos[currentIdx]} alt="Photo frame" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, transition: 'opacity 0.5s ease' }} />
+        <div ref={frameRef} className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden"
+          style={{ minHeight: 180, cursor: zoom > 100 ? (dragging ? 'grabbing' : 'grab') : 'default' }}
+          onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); endDrag() }}
+          onMouseDown={e => { e.preventDefault(); startDrag(e.clientX, e.clientY) }}
+          onMouseMove={e => moveDrag(e.clientX, e.clientY)}
+          onMouseUp={endDrag}
+          onTouchStart={e => { const t = e.touches[0]; if (t) startDrag(t.clientX, t.clientY) }}
+          onTouchMove={e => { const t = e.touches[0]; if (t) moveDrag(t.clientX, t.clientY) }}
+          onTouchEnd={endDrag}>
+          <img src={photos[currentIdx]} alt="Photo frame" draggable={false} style={{
+            width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0,
+            transition: dragging ? 'none' : 'transform 0.2s ease, opacity 0.5s ease',
+            transform: `scale(${zoom / 100}) translate(${panX / (zoom / 100)}px, ${panY / (zoom / 100)}px)`,
+            userSelect: 'none', pointerEvents: 'none',
+          }} />
           {photos.length > 1 && (
             <>
               <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
@@ -1204,6 +1273,17 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
             style={{ width: 22, height: 22, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>×</button>
           <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
             {currentIdx + 1} / {photos.length}
+          </div>
+
+          {/* Zoom/pan controls — appear on hover */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full transition-opacity"
+            style={{ backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none' }}>
+            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom - 20) }} className="text-xs font-bold" style={{ color: zoom <= 100 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>−</button>
+            <span className="text-[10px] font-semibold" style={{ color: '#D1D5DB', minWidth: 32, textAlign: 'center' }}>{zoom}%</span>
+            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom + 20) }} className="text-xs font-bold" style={{ color: zoom >= 300 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>+</button>
+            {isTransformed && (
+              <button onClick={e => { e.stopPropagation(); resetPosition() }} className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: '#A78BFA', backgroundColor: 'rgba(108,63,197,0.2)' }}>Reset</button>
+            )}
           </div>
         </div>
       )}
