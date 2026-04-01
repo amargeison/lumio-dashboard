@@ -33,6 +33,7 @@ import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 import { EmailActions, MeetingActions } from '@/components/overview/MessageActions'
 import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
+import { RoleSwitcherPill, ImpersonationBanner } from '@/components/dashboard/RoleSwitcher'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 import HRSnapshot from '@/components/overview/HRSnapshot'
 import ProjectsSnapshot from '@/components/overview/ProjectsSnapshot'
@@ -3945,10 +3946,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+      <ImpersonationBanner />
       <Toast message={toast} />
 
-      {/* Top-right: bell + avatar */}
+      {/* Top-right: role switcher + bell + avatar */}
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <RoleSwitcherPill />
         <button
           onClick={() => setNotificationsOpen(o => !o)}
           title="Notifications"
@@ -3978,7 +3981,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
                 ⚙️ Settings
               </button>
-              <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
+              <button onClick={() => { localStorage.removeItem('lumio_impersonated_role'); Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
                 🚪 Sign out

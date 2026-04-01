@@ -35,14 +35,29 @@ export function hasAccess(userLevel: number, requiredLevel: number): boolean {
 }
 
 // Client-side role detection from localStorage
-export function getClientRole(): RoleResult & { isOwner: boolean } {
-  if (typeof window === 'undefined') return { role: 'user', role_level: 4, isOwner: false }
+// Checks impersonated role first (for owner preview mode)
+export function getClientRole(): RoleResult & { isOwner: boolean; impersonating: boolean } {
+  if (typeof window === 'undefined') return { role: 'user', role_level: 4, isOwner: false, impersonating: false }
+
+  // Check impersonation mode first
+  const impersonatedRole = localStorage.getItem('lumio_impersonated_role')
+  if (impersonatedRole && localStorage.getItem('lumio_user_is_owner') === 'true') {
+    const roleMap: Record<string, { role: RoleResult['role']; role_level: RoleResult['role_level'] }> = {
+      owner: { role: 'director', role_level: 1 },
+      director: { role: 'director', role_level: 1 },
+      admin: { role: 'admin', role_level: 2 },
+      manager: { role: 'manager', role_level: 3 },
+      user: { role: 'user', role_level: 4 },
+    }
+    const mapped = roleMap[impersonatedRole]
+    if (mapped) return { ...mapped, isOwner: true, impersonating: true }
+  }
 
   const cachedRole = localStorage.getItem('lumio_user_role_level')
   if (cachedRole) {
     const level = parseInt(cachedRole)
     const roleMap: Record<number, RoleResult['role']> = { 1: 'director', 2: 'admin', 3: 'manager', 4: 'user' }
-    return { role: roleMap[level] || 'user', role_level: (level as RoleResult['role_level']) || 4, isOwner: localStorage.getItem('lumio_user_is_owner') === 'true' }
+    return { role: roleMap[level] || 'user', role_level: (level as RoleResult['role_level']) || 4, isOwner: localStorage.getItem('lumio_user_is_owner') === 'true', impersonating: false }
   }
 
   // Detect from imported staff
@@ -56,9 +71,9 @@ export function getClientRole(): RoleResult & { isOwner: boolean } {
     if (match?.job_title) {
       const detected = detectRole(match.job_title)
       localStorage.setItem('lumio_user_role_level', String(detected.role_level))
-      return { ...detected, isOwner: false }
+      return { ...detected, isOwner: false, impersonating: false }
     }
   } catch { /* ignore */ }
 
-  return { role: 'user', role_level: 4, isOwner: false }
+  return { role: 'user', role_level: 4, isOwner: false, impersonating: false }
 }
