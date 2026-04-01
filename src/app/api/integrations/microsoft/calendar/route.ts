@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,attendees,location,isOnlineMeeting,onlineMeetingUrl,webLink&$orderby=start/dateTime&$top=20`,
+      `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,attendees,location,isOnlineMeeting,onlineMeeting,onlineMeetingUrl,bodyPreview,webLink&$orderby=start/dateTime&$top=20`,
       { headers: { Authorization: `Bearer ${access_token}` } },
     )
 
@@ -41,15 +41,36 @@ export async function GET(req: NextRequest) {
     const data = await graphRes.json()
     const events = (data.value || []).map((evt: Record<string, unknown>) => {
       const attendees = evt.attendees as { emailAddress?: { name?: string } }[] | undefined
+      const onlineMeeting = evt.onlineMeeting as { joinUrl?: string } | null | undefined
+      const location = evt.location as { displayName?: string; uri?: string } | null | undefined
+      const bodyPreview = (evt.bodyPreview as string) || ''
+
+      // Extract join URL from multiple sources
+      let joinUrl: string | null =
+        onlineMeeting?.joinUrl ||
+        (evt.onlineMeetingUrl as string) ||
+        null
+
+      // Fallback: location URI if it's a meeting URL
+      if (!joinUrl && location?.uri && /^https?:\/\//.test(location.uri)) {
+        joinUrl = location.uri
+      }
+
+      // Fallback: parse bodyPreview for Teams/Meet/Zoom URLs
+      if (!joinUrl && bodyPreview) {
+        const urlMatch = bodyPreview.match(/https:\/\/(?:teams\.microsoft\.com\/l\/meetup-join|teams\.live\.com|meet\.google\.com|zoom\.us\/j|whereby\.com)\/[^\s)]+/)
+        if (urlMatch) joinUrl = urlMatch[0]
+      }
+
       return {
         id: evt.id,
         title: evt.subject || 'No title',
         start: (evt.start as Record<string, string>)?.dateTime,
         end: (evt.end as Record<string, string>)?.dateTime,
         attendeesCount: attendees?.length || 0,
-        location: (evt.location as Record<string, string>)?.displayName || null,
-        isOnline: evt.isOnlineMeeting || false,
-        joinUrl: evt.onlineMeetingUrl || null,
+        location: location?.displayName || null,
+        isOnline: evt.isOnlineMeeting || !!joinUrl,
+        joinUrl,
         webLink: evt.webLink || null,
       }
     })

@@ -7,6 +7,8 @@ function getToken() { return typeof window !== 'undefined' ? localStorage.getIte
 
 // ─── Email Actions ───────────────────────────────────────────────────────────
 
+const QUICK_EMOJIS = ['👍', '👎', '❤️', '😂', '😮', '🙏']
+
 export function EmailActions({ msgId, source, senderEmail, subject, preview, onToast }: {
   msgId: string; source: string; senderEmail: string; subject: string; preview: string; onToast: (msg: string) => void
 }) {
@@ -16,6 +18,8 @@ export function EmailActions({ msgId, source, senderEmail, subject, preview, onT
   const [sending, setSending] = useState(false)
   const [to, setTo] = useState('')
   const [body, setBody] = useState('')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [reaction, setReaction] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem(`lumio_reaction_${msgId}`) : null)
 
   const isOutlook = source === 'outlook'
 
@@ -78,6 +82,24 @@ export function EmailActions({ msgId, source, senderEmail, subject, preview, onT
             <FolderInput size={12} />
           </button>
         )}
+        {/* Emoji reaction */}
+        <div className="relative">
+          <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="React" className="p-1.5 rounded-lg transition-colors" style={{ color: reaction ? '#F9FAFB' : '#6B7280' }}>
+            {reaction || '😊'}
+          </button>
+          {showEmojiPicker && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
+              <div className="absolute bottom-full mb-1 left-0 z-50 flex gap-1 rounded-lg p-1.5" style={{ backgroundColor: '#1A1D26', border: '1px solid #374151' }}>
+                {QUICK_EMOJIS.map(e => (
+                  <button key={e} onClick={() => { setReaction(e); localStorage.setItem(`lumio_reaction_${msgId}`, e); setShowEmojiPicker(false) }} className="text-sm p-1 rounded hover:bg-white/10 transition-colors" style={{ lineHeight: 1 }}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Inline composer */}
@@ -168,7 +190,7 @@ export function MeetingActions({ eventId, title, startTime, joinUrl, source, onT
           <Video size={10} /> Join
         </a>
       )}
-      {!joinUrl && <span className="text-[9px] px-2 py-1 rounded-lg" style={{ color: '#4B5563', backgroundColor: 'rgba(255,255,255,0.03)' }} title="No online meeting link">No link</span>}
+      {/* No link label removed — if no joinUrl, just hide the Join button */}
 
       <button onClick={() => setShowForward(!showForward)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.1)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.2)' }}>
         <Forward size={10} /> Forward
