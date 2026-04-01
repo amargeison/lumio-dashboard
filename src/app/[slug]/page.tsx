@@ -1310,12 +1310,31 @@ const ROUNDUP_ITEMS = [
   },
 ]
 
+interface LiveEmail { id: string; subject: string; senderName: string; senderEmail: string; receivedAt: string; isRead: boolean; preview: string; webLink: string | null }
+
 function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [replied, setReplied] = useState<string[]>([])
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [showReply, setShowReply] = useState<string | null>(null)
+  const [liveEmails, setLiveEmails] = useState<LiveEmail[] | null>(null)
+  const [mailError, setMailError] = useState<string | null>(null)
+  const outlookConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook') === 'true'
   const items = demoDataActive ? ROUNDUP_ITEMS : []
+
+  useEffect(() => {
+    if (!outlookConnected || demoDataActive) return
+    const token = localStorage.getItem('workspace_session_token') || ''
+    if (!token) return
+    fetch('/api/integrations/microsoft/mail', { headers: { 'x-workspace-token': token } })
+      .then(r => {
+        if (r.status === 401) { setMailError('Outlook reconnection needed'); return null }
+        if (!r.ok) return null
+        return r.json()
+      })
+      .then(d => { if (d?.emails) setLiveEmails(d.emails) })
+      .catch(() => {})
+  }, [outlookConnected, demoDataActive])
 
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
@@ -1325,14 +1344,80 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
     }
   }
 
+  function formatEmailTime(iso: string) {
+    try {
+      const d = new Date(iso)
+      const now = new Date()
+      if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    } catch { return '' }
+  }
+
+  const hasLiveEmails = outlookConnected && !demoDataActive && liveEmails !== null
+  const showEmpty = items.length === 0 && !hasLiveEmails && !outlookConnected
+
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
         <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
       </div>
+
+      {mailError && (
+        <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <p className="text-xs" style={{ color: '#F59E0B' }}>{mailError}</p>
+        </div>
+      )}
+
+      {/* Live Outlook emails */}
+      {hasLiveEmails && liveEmails!.length > 0 && (
+        <div className="mb-3 rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
+          <button onClick={() => setExpanded(expanded === 'live-email' ? null : 'live-email')} className="w-full flex items-center justify-between p-3 text-left">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">📧</span>
+              <span className="text-sm font-bold" style={{ color: '#60A5FA' }}>Emails</span>
+              <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(96,165,250,0.15)', color: '#60A5FA' }}>{liveEmails!.filter(e => !e.isRead).length} unread</span>
+            </div>
+            <span className="text-xs" style={{ color: '#6B7280' }}>{liveEmails!.length} messages</span>
+          </button>
+          {expanded === 'live-email' && (
+            <div className="px-3 pb-3 space-y-2">
+              {liveEmails!.map(email => (
+                <div key={email.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: email.isRead ? 0.7 : 1 }}>
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: 'rgba(96,165,250,0.2)', color: '#60A5FA' }}>
+                        {email.senderName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: '#F9FAFB' }}>{email.senderName}</p>
+                        <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{email.subject}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!email.isRead && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#60A5FA' }} />}
+                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{formatEmailTime(email.receivedAt)}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#9CA3AF' }}>{email.preview}</p>
+                  {email.webLink && (
+                    <a href={email.webLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-[10px] font-semibold" style={{ color: '#60A5FA' }}>
+                      View in Outlook →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasLiveEmails && liveEmails!.length === 0 && items.length === 0 && (
+        <p className="text-xs text-center py-3 mb-2" style={{ color: '#6B7280' }}>No new messages since your last visit.</p>
+      )}
+
       <div className="space-y-2">
-        {items.length === 0 && (
+        {showEmpty && (
           <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your tools in Settings to see messages here.</p>
         )}
         {items.map(item => {
@@ -1489,35 +1574,116 @@ const MEETINGS: { id: string; title: string; time: string; duration: string; att
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
 ]
 
+interface LiveCalEvent { id: string; title: string; start: string; end: string; attendeesCount: number; location: string | null; isOnline: boolean; joinUrl: string | null }
+
 function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean }) {
-  const meetings = demoDataActive ? MEETINGS : []
-  const live = meetings.find(m => m.status === 'now')
+  const [liveEvents, setLiveEvents] = useState<LiveCalEvent[] | null>(null)
+  const [calError, setCalError] = useState<string | null>(null)
+  const calConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
+
+  useEffect(() => {
+    if (!calConnected || demoDataActive) return
+    const token = localStorage.getItem('workspace_session_token') || ''
+    if (!token) return
+    fetch('/api/integrations/microsoft/calendar', { headers: { 'x-workspace-token': token } })
+      .then(r => {
+        if (r.status === 401) { setCalError('Calendar reconnection needed'); return null }
+        if (!r.ok) return null
+        return r.json()
+      })
+      .then(d => { if (d?.events) setLiveEvents(d.events) })
+      .catch(() => {})
+  }, [calConnected, demoDataActive])
+
+  // Use live data if available, otherwise demo data
+  const hasLive = calConnected && !demoDataActive && liveEvents !== null
+  const demoMeetings = demoDataActive ? MEETINGS : []
+
+  function formatTime(iso: string) {
+    try { return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+  }
+
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 Meetings Today</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{meetings.length} scheduled</span>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>
+          {hasLive ? `${liveEvents!.length} scheduled` : `${demoMeetings.length} scheduled`}
+        </span>
       </div>
-      {live && (
-        <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-          <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{live.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {live.duration}</p></div>
-          {'link' in live && live.link && <a href={live.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
+
+      {calError && (
+        <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <p className="text-xs" style={{ color: '#F59E0B' }}>{calError}</p>
         </div>
       )}
-      {meetings.length === 0 && (
-        <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>No meetings scheduled. Connect your calendar in Settings.</p>
-      )}
-      <div className="space-y-1">
-        {meetings.map(m => (
-          <div key={m.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
-            <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
-            <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
-            <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
-            {'link' in m && m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>}
+
+      {hasLive ? (
+        liveEvents!.length === 0 ? (
+          <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>No meetings today.</p>
+        ) : (
+          <div className="space-y-1">
+            {liveEvents!.map(evt => {
+              const now = new Date()
+              const start = new Date(evt.start)
+              const end = new Date(evt.end)
+              const isNow = now >= start && now <= end
+              const isPast = now > end
+              return (
+                <div key={evt.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: isPast ? 0.4 : 1 }}>
+                  <div className="text-center flex-shrink-0 w-12">
+                    <div className="text-sm font-bold" style={{ color: isNow ? '#4ADE80' : '#E5E7EB' }}>{formatTime(evt.start)}</div>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>{formatTime(evt.end)}</div>
+                  </div>
+                  <span className="text-base flex-shrink-0">{evt.isOnline ? '📹' : '📅'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: isPast ? '#6B7280' : '#F9FAFB', textDecoration: isPast ? 'line-through' : 'none' }}>{evt.title}</p>
+                    <p className="text-xs truncate" style={{ color: '#6B7280' }}>
+                      {evt.attendeesCount > 0 ? `${evt.attendeesCount} attendee${evt.attendeesCount > 1 ? 's' : ''}` : ''}
+                      {evt.location ? ` · ${evt.location}` : ''}
+                    </p>
+                  </div>
+                  {isNow && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
+                  {evt.joinUrl && !isPast && (
+                    <a href={evt.joinUrl} target="_blank" rel="noopener noreferrer" className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        ))}
-      </div>
+        )
+      ) : (
+        <>
+          {demoMeetings.length === 0 && !calConnected && (
+            <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your calendar in Settings.</p>
+          )}
+          {demoMeetings.length === 0 && calConnected && liveEvents === null && (
+            <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Loading calendar...</p>
+          )}
+          {demoMeetings.map(m => {
+            const live = m.status === 'now'
+            return (
+              <div key={m.id}>
+                {live && (
+                  <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                    <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{m.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {m.duration}</p></div>
+                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
+                  </div>
+                )}
+                {!live && (
+                  <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
+                    <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
+                    <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
+                    <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
+                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </>
+      )}
     </div>
   )
 }
