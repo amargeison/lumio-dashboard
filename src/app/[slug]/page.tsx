@@ -859,26 +859,35 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     return parts.join(' ')
   }
 
-  function handleBriefing() {
-    if (!ttsEnabled) return
-    if (isPlaying) { stop(); setBriefingJustPlayed(false); return }
-    const script = generateBriefing()
+  function speakScript(script: string) {
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script]
     let chunk = ''
     const chunks: string[] = []
     for (const s of sentences) {
-      if ((chunk + s).length > 480) {
-        if (chunk) chunks.push(chunk.trim())
-        chunk = s
-      } else {
-        chunk += s
-      }
+      if ((chunk + s).length > 480) { if (chunk) chunks.push(chunk.trim()); chunk = s } else { chunk += s }
     }
     if (chunk) chunks.push(chunk.trim())
-    if (chunks.length > 0) {
-      setBriefingJustPlayed(true)
-      speak(chunks[0])
-    }
+    if (chunks.length > 0) { setBriefingJustPlayed(true); speak(chunks[0]) }
+  }
+
+  async function handleBriefing() {
+    if (!ttsEnabled) return
+    if (isPlaying) { stop(); setBriefingJustPlayed(false); return }
+
+    // Try server-side dynamic script first (real integration data)
+    try {
+      const wsToken = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+      if (wsToken) {
+        const res = await fetch('/api/roundup/voice-script', { headers: { 'x-workspace-token': wsToken } })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.script) { speakScript(data.script); return }
+        }
+      }
+    } catch { /* fall through to client-side */ }
+
+    // Fallback: client-side generated script
+    speakScript(generateBriefing())
   }
 
   // Handle voice command actions
@@ -1328,23 +1337,50 @@ interface RoundupMessage {
 }
 
 const ROUNDUP_SOURCES: { key: string; lsKey: string; icon: string; label: string; color: string; bg: string; border: string
-  route: string; parse: (d: Record<string, unknown>) => RoundupMessage[]; viewLabel: string; viewUrl: string | null }[] = [
+  route: string; parse: (d: Record<string, unknown>) => RoundupMessage[]; viewLabel: string; viewUrl: string | null
+  group: string; oauthType: 'microsoft' | 'google' | 'coming-soon'; order: number }[] = [
   { key: 'outlook', lsKey: 'lumio_integration_outlook', icon: '📧', label: 'Outlook', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',
     route: '/api/integrations/microsoft/mail', viewLabel: 'View in Outlook', viewUrl: 'https://outlook.office.com/mail/',
+    group: 'email', oauthType: 'microsoft', order: 1,
     parse: (d) => ((d.emails || []) as Record<string, unknown>[]).map(e => ({ id: e.id as string, source: 'outlook', icon: '📧', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', senderName: (e.senderName as string) || '', subject: (e.subject as string) || '', preview: (e.preview as string) || '', timestamp: (e.receivedAt as string) || '', isRead: !!e.isRead, webLink: (e.webLink as string) || null })) },
   { key: 'gmail', lsKey: 'lumio_integration_gmail', icon: '📨', label: 'Gmail', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)',
     route: '/api/integrations/google/mail', viewLabel: 'View in Gmail', viewUrl: 'https://mail.google.com/',
+    group: 'email', oauthType: 'google', order: 1,
     parse: (d) => ((d.emails || []) as Record<string, unknown>[]).map(e => ({ id: e.id as string, source: 'gmail', icon: '📨', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', senderName: (e.senderName as string) || '', subject: (e.subject as string) || '', preview: (e.preview as string) || '', timestamp: (e.receivedAt as string) || '', isRead: !!e.isRead, webLink: (e.webLink as string) || null })) },
   { key: 'slack', lsKey: 'lumio_integration_slack', icon: '💬', label: 'Slack', color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
     route: '/api/integrations/slack/messages', viewLabel: 'Open Slack', viewUrl: null,
+    group: 'slack', oauthType: 'coming-soon', order: 2,
     parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'slack', icon: '💬', color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', senderName: (m.sender as string) || '', subject: (m.channel as string) || '', preview: (m.text as string) || '', timestamp: (m.timestamp as string) || '', isRead: false, webLink: null })) },
   { key: 'whatsapp', lsKey: 'lumio_integration_whatsapp', icon: '💬', label: 'WhatsApp', color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
     route: '/api/integrations/whatsapp/messages', viewLabel: 'Open WhatsApp', viewUrl: null,
+    group: 'whatsapp', oauthType: 'coming-soon', order: 3,
     parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'whatsapp', icon: '💬', color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)', senderName: (m.from as string) || '', subject: 'WhatsApp', preview: (m.preview as string) || '', timestamp: (m.timestamp as string) || '', isRead: !!m.isRead, webLink: null })) },
   { key: 'twilio', lsKey: 'lumio_integration_twilio', icon: '📱', label: 'SMS', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
     route: '/api/integrations/twilio/messages', viewLabel: 'View SMS', viewUrl: null,
+    group: 'sms', oauthType: 'coming-soon', order: 4,
     parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'twilio', icon: '📱', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', senderName: (m.from as string) || '', subject: 'SMS', preview: (m.preview as string) || '', timestamp: (m.timestamp as string) || '', isRead: true, webLink: null })) },
 ]
+
+function triggerOAuth(type: 'microsoft' | 'google' | 'coming-soon', key: string) {
+  if (type === 'coming-soon') return false
+  const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+  if (type === 'microsoft') {
+    const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID
+    if (!clientId) return false
+    const state = JSON.stringify({ key: 'microsoft_all', slug })
+    const allScopes = 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite Team.ReadBasic.All Chat.Read'
+    window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft', scope: allScopes, state, response_mode: 'query', prompt: 'consent' })}`
+    return true
+  }
+  if (type === 'google') {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    if (!clientId) return false
+    const state = JSON.stringify({ key, slug })
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/google', scope: `openid email profile https://www.googleapis.com/auth/gmail.readonly`, state, access_type: 'offline', prompt: 'consent' })}`
+    return true
+  }
+  return false
+}
 
 function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -1430,22 +1466,59 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
         </div>
       ))}
 
-      {/* Live message sections by source */}
-      {!demoDataActive && ROUNDUP_SOURCES.map(src => {
+      {/* Live message sections by source — with dedup and ordering */}
+      {!demoDataActive && (() => {
+        // Determine which sources to show — email dedup logic
+        const outlookConnected = connectedSources.some(c => c.key === 'outlook')
+        const gmailConnected = connectedSources.some(c => c.key === 'gmail')
+
+        const visibleSources = ROUNDUP_SOURCES.filter(src => {
+          // Email dedup: if one is connected, hide the other's disconnect row
+          if (src.group === 'email') {
+            const thisConnected = connectedSources.some(c => c.key === src.key)
+            if (thisConnected) return true // always show connected
+            // If the OTHER email source is connected, hide this disconnect row
+            if (src.key === 'outlook' && gmailConnected) return false
+            if (src.key === 'gmail' && outlookConnected) return false
+            return true // neither connected — show both
+          }
+          return true
+        })
+
+        // Sort: connected first within each order group, then by order
+        const sorted = [...visibleSources].sort((a, b) => {
+          const aConn = connectedSources.some(c => c.key === a.key) ? 0 : 1
+          const bConn = connectedSources.some(c => c.key === b.key) ? 0 : 1
+          if (a.order !== b.order) return a.order - b.order
+          return aConn - bConn
+        })
+
+        return sorted.map(src => {
         const isConnected = connectedSources.some(c => c.key === src.key)
         const msgs = liveMessages[src.key] || []
         const unread = msgs.filter(m => !m.isRead).length
         const isOpen = expanded === `live-${src.key}`
 
         if (!isConnected) {
-          // Show greyed-out row for disconnected sources
           return (
             <div key={src.key} className="mb-2 rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-2">
                 <span className="text-sm opacity-40">{src.icon}</span>
                 <span className="text-xs" style={{ color: '#4B5563' }}>{src.label}</span>
               </div>
-              <span className="text-[10px]" style={{ color: '#4B5563' }}>Connect in Settings</span>
+              <button onClick={() => {
+                if (!triggerOAuth(src.oauthType, src.key)) {
+                  // coming-soon toast — use a temporary element since we don't have toast state here
+                  const el = document.createElement('div')
+                  el.className = 'fixed bottom-6 right-6 z-50 rounded-xl px-4 py-3 shadow-lg text-sm'
+                  el.style.cssText = 'background:#111318;border:1px solid #1F2937;color:#F9FAFB'
+                  el.textContent = `${src.label} integration coming soon`
+                  document.body.appendChild(el)
+                  setTimeout(() => el.remove(), 3000)
+                }
+              }} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                Connect
+              </button>
             </div>
           )
         }
@@ -1506,7 +1579,7 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
             )}
           </div>
         )
-      })}
+      }) })()}
 
       {noMessages && anyConnected && (
         <p className="text-xs text-center py-3 mb-2" style={{ color: '#6B7280' }}>No new messages since your last visit.</p>
