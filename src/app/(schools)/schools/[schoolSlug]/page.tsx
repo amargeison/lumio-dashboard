@@ -1074,7 +1074,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     setShowOnboarding(false)
   }
 
-  const ownerName = localStorage.getItem(`lumio_school_${_slug}_owner`) || ''
+  const isAdminImpersonating = typeof window !== 'undefined' && localStorage.getItem('lumio_impersonated_from_admin') === 'true'
+  const ownerName = isAdminImpersonating
+    ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
+    : (localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
   const firstName = ownerName ? ownerName.split(' ')[0] : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
