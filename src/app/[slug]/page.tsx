@@ -2344,7 +2344,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         return
       }
       const wsSlug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
-      const redirectUri = `${window.location.origin}/api/auth/callback/microsoft`
+      const redirectUri = 'https://lumiocms.com/api/auth/callback/microsoft'
       const state = JSON.stringify({ key, slug: wsSlug })
       const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri, scope: msScopes[key], state, response_mode: 'query', prompt: 'consent' })
       window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`

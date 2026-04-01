@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        redirect_uri: `${req.nextUrl.origin}/api/auth/callback/microsoft`,
+        redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft',
         grant_type: 'authorization_code',
       }),
     })
