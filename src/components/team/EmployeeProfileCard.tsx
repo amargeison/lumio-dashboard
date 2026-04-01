@@ -354,17 +354,53 @@ export function ProfileModal({
     setEditing(false)
   }
 
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !staff.email) return
-    if (file.size > 2 * 1024 * 1024) { alert('Photo must be under 2MB'); return }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result as string
-      savePhoto(staff.email!, base64)
-      setPhoto(base64)
+    setUploadError('')
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setUploadError('Invalid file type — JPG, PNG or WebP only')
+      e.target.value = ''; return
     }
-    reader.readAsDataURL(file)
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('File too large — maximum 2MB')
+      e.target.value = ''; return
+    }
+
+    // Optimistic: show local preview immediately
+    const blobUrl = URL.createObjectURL(file)
+    setPhoto(blobUrl)
+    savePhoto(staff.email!, blobUrl)
+
+    // Upload to Supabase
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('email', staff.email!)
+      const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+      const res = await fetch('/api/workspace/upload-profile-photo', {
+        method: 'POST', headers: { 'x-workspace-token': token }, body: fd,
+      })
+      if (res.ok) {
+        const { url } = await res.json()
+        savePhoto(staff.email!, url)
+        setPhoto(url)
+        // If this is the current user, update header avatar
+        if (isCurrentUser) localStorage.setItem('lumio_user_photo', url)
+        URL.revokeObjectURL(blobUrl)
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }))
+        setUploadError(err.error || 'Upload failed — please try again')
+      }
+    } catch {
+      setUploadError('Upload failed — please try again')
+    }
+    setUploading(false)
     e.target.value = ''
   }
 
@@ -465,10 +501,13 @@ export function ProfileModal({
                     <div className="flex flex-col gap-1.5">
                       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
                       <button onClick={() => fileInputRef.current?.click()} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-                        <Upload size={10} /> {photo ? 'Change photo' : 'Upload photo'}
+                        <Upload size={10} /> {uploading ? 'Uploading...' : photo ? 'Change photo' : 'Upload photo'}
                       </button>
                       {photo && (
                         <button onClick={handleRemovePhoto} className="text-[10px]" style={{ color: '#EF4444' }}>Remove photo</button>
+                      )}
+                      {uploadError && (
+                        <p className="text-[10px] mt-1" style={{ color: '#EF4444' }}>{uploadError}</p>
                       )}
                       <p className="text-[10px]" style={{ color: '#4B5563' }}>Max 2MB. JPG, PNG or WebP.</p>
                     </div>
