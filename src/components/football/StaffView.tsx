@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import { X, Users, Heart, Eye, Briefcase, Calendar, UserPlus } from 'lucide-react'
 
+function getStaffPhoto(email?: string): string | null {
+  if (!email || typeof window === 'undefined') return null
+  const val = localStorage.getItem(`lumio_staff_photo_${email}`)
+  if (val && val.startsWith('data:')) return null // reject base64
+  return val || null
+}
+
 const STAFF = [
   {name:'Marcus Reid',role:'Head Coach',dept:'Coaching',quals:'UEFA Pro',status:'in' as const,loc:'Training ground, 9am-6pm',rel:'Your manager',email:'reid@oakridgefc.com',phone:'07700 900001'},
   {name:'David Hughes',role:'Assistant Manager',dept:'Coaching',quals:'UEFA A',status:'in' as const,loc:'Training ground',rel:'Works closely with you',email:'hughes@oakridgefc.com',phone:'07700 900002'},
@@ -71,10 +78,13 @@ export default function FootballStaffView() {
               <button key={s.name} onClick={() => setSelStaff(s)} className="rounded-xl p-4 text-left transition-all hover:ring-1 hover:ring-white/10"
                 style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ backgroundColor: `${statusColor(s.status)}20`, color: statusColor(s.status) }}>
-                    {s.name.split(' ').map(w => w[0]).join('')}
-                  </div>
+                  {(() => { const photo = getStaffPhoto(s.email); return photo ? (
+                    <img src={photo} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" style={{ border: `2px solid ${statusColor(s.status)}50` }} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: `${statusColor(s.status)}20`, color: statusColor(s.status) }}>
+                      {s.name.split(' ').map(w => w[0]).join('')}
+                    </div>
+                  ) })()}
                   <div className="min-w-0">
                     <p className="text-sm font-bold truncate" style={{ color: '#F9FAFB' }}>{s.name}</p>
                     <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.role}</p>

@@ -23,6 +23,7 @@ import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
 import { EmailActions } from '@/components/overview/MessageActions'
+import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -671,6 +672,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
 const FOOTBALL_QUICK_ACTIONS = [
   { label: 'Team Sheet', icon: Clipboard },
   { label: 'Log Injury', icon: Heart },
+  { label: 'Send Email', icon: MessageSquare },
   { label: 'Transfer Hub', icon: ArrowUpDown },
   { label: 'Book Video Room', icon: Video },
   { label: 'Press Conf', icon: Newspaper },
@@ -4078,6 +4080,8 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
   const [footballRole, setFootballRole] = useState<string | null>(null)
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [showMeetingBook, setShowMeetingBook] = useState(false)
 
   useEffect(() => {
     setFootballRole(localStorage.getItem('lumio_football_impersonated_role'))
@@ -4112,6 +4116,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
   function handleActionClick(label: string) {
     if (label === 'Dept Insights') { setShowAIInsights(true); return }
+    if (label === 'Send Email') { setShowEmailCompose(true); return }
+    if (label === 'Book Video Room' || label === 'Book Meeting') { setShowMeetingBook(true); return }
+    if (label === 'Press Conf') { setShowMeetingBook(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
@@ -4240,6 +4247,8 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           onToast={fireToast}
         />
       )}
+      {showEmailCompose && <EmailComposeModal onClose={() => setShowEmailCompose(false)} onToast={fireToast} />}
+      {showMeetingBook && <MeetingBookModal onClose={() => setShowMeetingBook(false)} onToast={fireToast} />}
       <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
