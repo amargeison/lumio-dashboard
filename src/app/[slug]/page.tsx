@@ -3978,6 +3978,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (!data || data.status !== 'active') {
             // Don't boot fresh purchases — session may still be propagating
             if (justPurchased) {
+              // Skip onboarding if workspace already has a name, or was previously completed
+              const alreadySetUp = localStorage.getItem(`lumio_onboarding_done_${slug}`)
+                || localStorage.getItem('lumio_onboarding_shown')
+                || localStorage.getItem('workspace_company_name')
+              if (alreadySetUp) return // Already onboarded — just show the page
               if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
                 setShowWelcome(true)
               } else {
@@ -4081,6 +4086,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   function handleOnboardingComplete() {
     setShowOnboarding(false)
+    // Mark onboarding as done so it never reappears
+    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    localStorage.setItem('lumio_onboarding_shown', 'true')
     setShowTabGuide(true)
   }
 
