@@ -1032,6 +1032,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           setSchoolData(data)
           if (data.id) setSchoolId(data.id)
           if (data.demo_data_active) setDemoDataActive(true)
+          // Set school role — default to SLT (headteacher/owner) for now
+          // The school creator is always SLT level
+          if (!localStorage.getItem('lumio_school_role_level')) {
+            localStorage.setItem('lumio_school_role_level', '1')
+            localStorage.setItem('lumio_school_is_owner', 'true')
+          }
           // Live onboarding wizard — show if not completed and no localStorage guard
           if (data.onboarding_completed === false && !localStorage.getItem('lumio_onboarding_shown')) {
             setShowLiveOnboarding(true)

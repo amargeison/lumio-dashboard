@@ -1137,6 +1137,7 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
+  const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -1300,11 +1301,28 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
               ))}
             </div>
           )}
-          <button onClick={() => removePhoto(currentIdx)} className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs"
-            style={{ width: 22, height: 22, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>×</button>
+          {/* Remove button — visible on hover */}
+          <button onClick={e => { e.stopPropagation(); setConfirmRemoveIdx(currentIdx) }}
+            className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs transition-opacity"
+            style={{ width: 24, height: 24, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none', fontWeight: 700 }}>✕</button>
           <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
             {currentIdx + 1} / {photos.length}
           </div>
+          {/* Remove confirmation dialog */}
+          {confirmRemoveIdx !== null && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10 }}>
+              <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 260 }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Remove this photo?</p>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>This cannot be undone.</p>
+                <div className="flex gap-2 justify-center">
+                  <button onClick={() => setConfirmRemoveIdx(null)} className="px-4 py-2 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Cancel</button>
+                  <button onClick={() => { removePhoto(confirmRemoveIdx); setConfirmRemoveIdx(null) }} className="px-4 py-2 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: '#EF4444', color: '#fff' }}>Remove</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Zoom/pan controls — appear on hover */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full transition-opacity"
@@ -2611,6 +2629,11 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
   // Customise re-render key
   const [customiseKey, setCustomiseKey] = useState(0)
+
+  // Photo Frame management
+  const settingsPhotoRef = useRef<HTMLInputElement>(null)
+  const [framePhotos, setFramePhotos] = useState<string[]>([])
+  const [confirmClearPhotos, setConfirmClearPhotos] = useState(false)
 
   // Security
   const [showPinModal, setShowPinModal] = useState(false)
