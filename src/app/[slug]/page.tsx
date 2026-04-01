@@ -1501,7 +1501,15 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
   const [liveMessages, setLiveMessages] = useState<Record<string, RoundupMessage[]>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loaded, setLoaded] = useState(false)
+  const [unreadFilter, setUnreadFilter] = useState<Record<string, boolean>>({})
   const items = demoDataActive ? ROUNDUP_ITEMS : []
+
+  function handleToggleRead(sourceKey: string, msgId: string, newIsRead: boolean) {
+    setLiveMessages(prev => ({
+      ...prev,
+      [sourceKey]: (prev[sourceKey] || []).map(m => m.id === msgId ? { ...m, isRead: newIsRead } : m),
+    }))
+  }
 
   // Check which sources are connected
   const connectedSources = ROUNDUP_SOURCES.filter(s => typeof window !== 'undefined' && localStorage.getItem(s.lsKey) === 'true')
@@ -1636,31 +1644,48 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
 
         if (msgs.length === 0) return null
 
+        const filtering = !!unreadFilter[src.key]
+        const displayMsgs = filtering ? msgs.filter(m => !m.isRead) : msgs
+
         return (
           <div key={src.key} className="mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: src.bg, border: `1px solid ${src.border}` }}>
             <button onClick={() => setExpanded(isOpen ? null : `live-${src.key}`)} className="w-full flex items-center justify-between p-3 text-left">
               <div className="flex items-center gap-2.5">
                 <span className="text-base">{src.icon}</span>
                 <span className="text-sm font-bold" style={{ color: src.color }}>{src.label}</span>
-                {unread > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${src.color}20`, color: src.color }}>{unread} unread</span>}
+                {unread > 0 && (
+                  <button onClick={e => { e.stopPropagation(); setUnreadFilter(prev => ({ ...prev, [src.key]: !prev[src.key] })) }}
+                    className="text-xs px-1.5 py-0.5 rounded-full transition-colors" style={{ backgroundColor: filtering ? src.color : `${src.color}20`, color: filtering ? '#fff' : src.color }}>
+                    {unread} unread
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: '#6B7280' }}>{msgs.length}</span>
+                <span className="text-xs" style={{ color: '#6B7280' }}>{displayMsgs.length}</span>
                 <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
               </div>
             </button>
             {isOpen && (
               <div className="px-3 pb-3 space-y-2">
-                {msgs.map(msg => (
-                  <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.isRead ? 0.7 : 1 }}>
+                {filtering && (
+                  <div className="flex items-center gap-2 px-2 py-1">
+                    <span className="text-[10px]" style={{ color: src.color }}>Showing unread only</span>
+                    <button onClick={() => setUnreadFilter(prev => ({ ...prev, [src.key]: false }))} className="text-[10px]" style={{ color: '#6B7280' }}>✕</button>
+                  </div>
+                )}
+                {displayMsgs.map(msg => (
+                  <div key={msg.id} className="rounded-lg p-3 relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.isRead ? 0.75 : 1 }}>
+                    {!msg.isRead && (
+                      <span className="absolute top-2 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#0D9488', color: '#fff' }}>Unread</span>
+                    )}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: `${msg.color}25`, color: msg.color }}>
                           {msg.senderName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || msg.icon}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: '#F9FAFB' }}>{msg.senderName}</p>
-                          <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{msg.subject}</p>
+                          <p className={`text-xs truncate ${msg.isRead ? 'font-normal' : 'font-bold'}`} style={{ color: '#F9FAFB' }}>{msg.senderName}</p>
+                          <p className={`text-[10px] truncate ${msg.isRead ? 'font-normal' : 'font-semibold'}`} style={{ color: msg.isRead ? '#6B7280' : '#9CA3AF' }}>{msg.subject}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -1677,7 +1702,7 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
                       )}
                     </div>
                     {(src.key === 'outlook' || src.key === 'gmail') && (
-                      <EmailActions msgId={msg.id} source={src.key} senderEmail={msg.senderName} subject={msg.subject} preview={msg.preview} onToast={(_m: string) => {}} />
+                      <EmailActions msgId={msg.id} source={src.key} senderEmail={msg.senderName} subject={msg.subject} preview={msg.preview} isRead={msg.isRead} onToast={(_m: string) => {}} onToggleRead={(id, newRead) => handleToggleRead(src.key, id, newRead)} />
                     )}
                   </div>
                 ))}

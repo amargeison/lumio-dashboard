@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Reply, Forward, Star, FolderInput, Send, X, Loader2, Video, Trash2 } from 'lucide-react'
+import { Reply, Forward, Star, FolderInput, Send, X, Loader2, Video, Trash2, MailOpen, Mail } from 'lucide-react'
 
 function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : '' }
 
@@ -9,19 +9,37 @@ function getToken() { return typeof window !== 'undefined' ? localStorage.getIte
 
 const QUICK_EMOJIS = ['👍', '👎', '❤️', '😂', '😮', '🙏']
 
-export function EmailActions({ msgId, source, senderEmail, subject, preview, onToast }: {
+export function EmailActions({ msgId, source, senderEmail, subject, preview, onToast, isRead = true, onToggleRead }: {
   msgId: string; source: string; senderEmail: string; subject: string; preview: string; onToast: (msg: string) => void
+  isRead?: boolean; onToggleRead?: (msgId: string, newIsRead: boolean) => void
 }) {
   const [action, setAction] = useState<'reply' | 'forward' | 'move' | null>(null)
   const [flagged, setFlagged] = useState(false)
   const [flagging, setFlagging] = useState(false)
   const [sending, setSending] = useState(false)
+  const [markingRead, setMarkingRead] = useState(false)
   const [to, setTo] = useState('')
   const [body, setBody] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [reaction, setReaction] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem(`lumio_reaction_${msgId}`) : null)
 
   const isOutlook = source === 'outlook'
+
+  async function handleMarkRead() {
+    setMarkingRead(true)
+    const newIsRead = !isRead
+    // Optimistic update
+    onToggleRead?.(msgId, newIsRead)
+    const route = isOutlook ? '/api/integrations/microsoft/mail/mark-read' : '/api/integrations/google/mail/mark-read'
+    const r = await fetch(route, {
+      method: 'PATCH', headers: { 'x-workspace-token': getToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId: msgId, isRead: newIsRead }),
+    }).catch(() => null)
+    if (r?.ok) onToast(newIsRead ? 'Marked as read' : 'Marked as unread')
+    else if (r?.status === 401) onToast(`Reconnect ${isOutlook ? 'Outlook' : 'Gmail'} in Settings`)
+    else { onToggleRead?.(msgId, isRead); onToast('Failed to update') } // revert on error
+    setMarkingRead(false)
+  }
 
   async function handleFlag() {
     if (!isOutlook) { onToast('Flagging only available for Outlook'); return }
@@ -76,6 +94,9 @@ export function EmailActions({ msgId, source, senderEmail, subject, preview, onT
         </button>
         <button onClick={handleFlag} disabled={flagging} title={flagged ? 'Remove flag' : 'Flag'} className="p-1.5 rounded-lg transition-colors" style={{ color: flagged ? '#F59E0B' : '#6B7280' }}>
           {flagging ? <Loader2 size={12} className="animate-spin" /> : <Star size={12} fill={flagged ? '#F59E0B' : 'none'} />}
+        </button>
+        <button onClick={handleMarkRead} disabled={markingRead} title={isRead ? 'Mark as unread' : 'Mark as read'} className="p-1.5 rounded-lg transition-colors" style={{ color: isRead ? '#6B7280' : '#0D9488' }}>
+          {markingRead ? <Loader2 size={12} className="animate-spin" /> : (isRead ? <Mail size={12} /> : <MailOpen size={12} />)}
         </button>
         {isOutlook && (
           <button onClick={() => setAction(action === 'move' ? null : 'move')} title="Move to folder" className="p-1.5 rounded-lg transition-colors" style={{ backgroundColor: action === 'move' ? 'rgba(108,63,197,0.15)' : 'transparent', color: action === 'move' ? '#A78BFA' : '#6B7280' }}>
