@@ -82,25 +82,51 @@ export function EmailActions({ msgId, source, senderEmail, subject, preview, onT
             <FolderInput size={12} />
           </button>
         )}
-        {/* Emoji reaction */}
+        {/* Emoji reaction trigger */}
         <div className="relative">
-          <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="React" className="p-1.5 rounded-lg transition-colors" style={{ color: reaction ? '#F9FAFB' : '#6B7280' }}>
-            {reaction || '😊'}
+          <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="React" className="p-1.5 rounded-lg transition-colors" style={{ color: '#6B7280' }}>
+            😊
           </button>
           {showEmojiPicker && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
-              <div className="absolute bottom-full mb-1 left-0 z-50 flex gap-1 rounded-lg p-1.5" style={{ backgroundColor: '#1A1D26', border: '1px solid #374151' }}>
+              <div className="absolute bottom-full mb-1 left-0 z-50 flex items-center gap-0.5 rounded-xl p-1" style={{ backgroundColor: '#1A1D26', border: '1px solid #374151', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
                 {QUICK_EMOJIS.map(e => (
-                  <button key={e} onClick={() => { setReaction(e); localStorage.setItem(`lumio_reaction_${msgId}`, e); setShowEmojiPicker(false) }} className="text-sm p-1 rounded hover:bg-white/10 transition-colors" style={{ lineHeight: 1 }}>
+                  <button key={e} onClick={() => { setReaction(e); localStorage.setItem(`lumio_reaction_${msgId}`, e); setShowEmojiPicker(false) }}
+                    className="rounded-lg transition-all"
+                    style={{
+                      padding: reaction === e ? '3px 5px' : '4px 6px',
+                      fontSize: reaction === e ? 18 : 15,
+                      lineHeight: 1,
+                      backgroundColor: reaction === e ? 'rgba(13,148,136,0.25)' : 'transparent',
+                      border: reaction === e ? '2px solid rgba(13,148,136,0.5)' : '2px solid transparent',
+                      transform: reaction === e ? 'scale(1.2)' : 'scale(1)',
+                    }}>
                     {e}
                   </button>
                 ))}
+                {reaction && (
+                  <button onClick={() => { setReaction(null); localStorage.removeItem(`lumio_reaction_${msgId}`); setShowEmojiPicker(false) }}
+                    className="ml-0.5 rounded-lg transition-colors"
+                    style={{ padding: '4px 6px', fontSize: 11, color: '#EF4444', lineHeight: 1 }}>
+                    ✕
+                  </button>
+                )}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Reaction badge — shown below action buttons */}
+      {reaction && (
+        <button onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full transition-colors"
+          style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)', cursor: 'pointer' }}>
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{reaction}</span>
+          <span className="text-[9px] font-semibold" style={{ color: '#0D9488' }}>Reacted</span>
+        </button>
+      )}
 
       {/* Inline composer */}
       {(action === 'reply' || action === 'forward') && (

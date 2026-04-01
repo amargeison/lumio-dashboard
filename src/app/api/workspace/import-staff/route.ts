@@ -66,24 +66,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid staff rows (need First Name or Email)' }, { status: 400 })
     }
 
-    // Upsert to avoid duplicates on reimport
-    // NOTE: requires UNIQUE(business_id, email) constraint on workspace_staff
-    // If missing, add migration: ALTER TABLE workspace_staff ADD CONSTRAINT workspace_staff_biz_email_unique UNIQUE(business_id, email);
+    // Insert staff — try upsert first, fall back to plain insert if unique constraint missing
     const withEmail = rows.filter(r => r.email)
     const withoutEmail = rows.filter(r => !r.email)
-    let error = null
+    let insertError = null
+
     if (withEmail.length) {
+      // Try upsert first (requires UNIQUE constraint on business_id,email)
       const res = await supabase.from('workspace_staff').upsert(withEmail, { onConflict: 'business_id,email' })
-      if (res.error) error = res.error
+      if (res.error) {
+        console.warn('[workspace/import-staff] Upsert failed, falling back to insert:', res.error.message)
+        // Fallback: delete existing by email then insert fresh
+        for (const row of withEmail) {
+          await supabase.from('workspace_staff').delete().eq('business_id', session.business_id).eq('email', row.email!)
+        }
+        const fallback = await supabase.from('workspace_staff').insert(withEmail)
+        if (fallback.error) { insertError = fallback.error; console.error('[workspace/import-staff] Insert fallback error:', fallback.error) }
+      }
     }
-    if (withoutEmail.length && !error) {
+    if (withoutEmail.length && !insertError) {
       const res = await supabase.from('workspace_staff').insert(withoutEmail)
-      if (res.error) error = res.error
+      if (res.error) { insertError = res.error; console.error('[workspace/import-staff] Insert (no email) error:', res.error) }
     }
 
-    if (error) {
-      console.error('[workspace/import-staff] Insert error:', error)
-      return NextResponse.json({ error: 'Failed to import staff' }, { status: 500 })
+    if (insertError) {
+      console.error('[workspace/import-staff] Final insert error:', JSON.stringify(insertError))
+      return NextResponse.json({ error: `Failed to import staff: ${insertError.message || 'unknown error'}` }, { status: 500 })
     }
 
     // Propagate to payroll, IT assets, and onboarding checklist
@@ -109,7 +117,7 @@ export async function POST(req: NextRequest) {
       departments_pending: deptResults.pending,
     })
   } catch (err) {
-    console.error('[workspace/import-staff] Error:', err)
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    console.error('[workspace/import-staff] Unhandled error:', err instanceof Error ? err.stack : err)
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Something went wrong' }, { status: 500 })
   }
 }

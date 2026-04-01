@@ -652,14 +652,17 @@ function MiniAnalogClock({ tz, now }: { tz: string; now: Date }) {
 }
 
 function WorldClock() {
-  const [now, setNow] = useState(() => new Date())
-  const [zones, setZones] = useState(getStoredZones)
+  const [now, setNow] = useState(new Date(0)) // hydration-safe; updated in useEffect
+  const [zones, setZones] = useState(DEFAULT_WORLD_ZONES)
   const localTz = getUserLocalTz()
-  const [mode, setMode] = useState<'digital' | 'analogue'>(() => {
-    if (typeof window !== 'undefined') return (localStorage.getItem('lumio_clock_mode') as 'digital' | 'analogue') || 'digital'
-    return 'digital'
-  })
-  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+  const [mode, setMode] = useState<'digital' | 'analogue'>('digital')
+  useEffect(() => {
+    setNow(new Date())
+    setZones(getStoredZones())
+    const stored = localStorage.getItem('lumio_clock_mode') as 'digital' | 'analogue' | null
+    if (stored) setMode(stored)
+    const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id)
+  }, [])
   useEffect(() => {
     function onStorage(e: StorageEvent) { if (e.key === 'lumio_world_zones') setZones(getStoredZones()) }
     window.addEventListener('storage', onStorage)
@@ -718,7 +721,8 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
+  const [bg, setBg] = useState(BG_GRADIENTS[0])
+  useEffect(() => { setBg(BG_GRADIENTS[new Date().getDay()]) }, [])
   const { speak, stop, isPlaying } = useSpeech()
   const [quote, setQuote] = useState(QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
@@ -2371,9 +2375,10 @@ function VoiceSelector() {
 // ─── Timezone Selector ──────────────────────────────────────────────────────
 
 function TimezoneSelector() {
-  const [zones, setZones] = useState(getStoredZones)
+  const [zones, setZones] = useState(DEFAULT_WORLD_ZONES)
   const [search, setSearch] = useState('')
   const localTz = getUserLocalTz()
+  useEffect(() => { setZones(getStoredZones()) }, [])
 
   function toggleZone(zone: { label: string; tz: string }) {
     const exists = zones.some(z => z.tz === zone.tz)
