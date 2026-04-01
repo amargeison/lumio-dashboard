@@ -116,6 +116,108 @@ export default function FootballPage() {
         </div>
       </section>
 
+      {/* ── GPS Integration Hero Section ──────────────────────────────── */}
+      <section id="gps" className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, #1a0808, ${BG})` }}>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at 30% 40%, ${RED}60 0%, transparent 50%)` }} />
+        <div className="relative max-w-6xl mx-auto px-6 py-20">
+          <div className="flex flex-col md:flex-row gap-12 items-center">
+            {/* Text side */}
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ backgroundColor: `${GOLD}15`, border: `1px solid ${GOLD}40` }}>
+                <span className="text-xs font-black tracking-wider" style={{ color: GOLD }}>INDUSTRY FIRST</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-black mb-3 leading-tight">Game-Changing GPS Integration</h2>
+              <p className="text-lg mb-8" style={{ color: '#9CA3AF' }}>Connect Catapult &amp; STATSports directly into your club dashboard</p>
+
+              <div className="space-y-4">
+                {[
+                  { icon: '\u{1F3C3}', label: 'Real-time player load monitoring', desc: 'Track every sprint, acceleration and deceleration from training and match day' },
+                  { icon: '\u{2764}\u{FE0F}', label: 'Injury risk prediction', desc: 'ACWR scoring flags players at risk before injuries happen' },
+                  { icon: '\u{1F4CA}', label: 'Squad readiness dashboard', desc: "Instant traffic light view of who\u2019s ready to play" },
+                  { icon: '\u{26BD}', label: 'Match vs training comparison', desc: 'See how players perform when it matters most' },
+                  { icon: '\u{1F517}', label: 'Direct API connection', desc: 'Catapult OpenField and STATSports Sonra connect in one click' },
+                  { icon: '\u{1F4C1}', label: 'CSV upload fallback', desc: 'Manually export from your GPS platform and upload directly' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-start gap-3">
+                    <span className="text-lg shrink-0 mt-0.5">{item.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{item.label}</p>
+                      <p className="text-sm" style={{ color: '#9CA3AF' }}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8">
+                <Link href="/football#gps" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: RED, color: '#F9FAFB', textDecoration: 'none' }}>
+                  See GPS Integration <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Mock GPS Dashboard Visual */}
+            <div className="flex-1 w-full">
+              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a0a0a', border: `1px solid ${RED}30` }}>
+                {/* Dashboard header */}
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${RED}20` }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: RED }} />
+                    <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>GPS Dashboard</span>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${GOLD}20`, color: GOLD }}>LIVE</span>
+                </div>
+
+                {/* Player rows */}
+                <div className="px-5 py-4 space-y-3">
+                  {[
+                    { name: 'J. Smith', load: 847, dist: '11.2km', hsr: '1.8km', status: 'green' },
+                    { name: 'R. Johnson', load: 923, dist: '10.8km', hsr: '2.1km', status: 'amber' },
+                    { name: 'D. Williams', load: 1102, dist: '12.4km', hsr: '2.6km', status: 'red' },
+                    { name: 'T. Brown', load: 689, dist: '9.1km', hsr: '1.4km', status: 'green' },
+                    { name: 'M. Davies', load: 756, dist: '10.0km', hsr: '1.6km', status: 'green' },
+                  ].map(player => (
+                    <div key={player.name} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: player.status === 'green' ? '#22C55E' : player.status === 'amber' ? '#F59E0B' : '#EF4444' }} />
+                      <span className="text-xs font-semibold w-24 truncate" style={{ color: '#F9FAFB' }}>{player.name}</span>
+                      <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <p className="text-[10px]" style={{ color: '#6B7280' }}>Load</p>
+                          <p className="text-xs font-bold" style={{ color: player.load > 1000 ? '#EF4444' : '#F9FAFB' }}>{player.load}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px]" style={{ color: '#6B7280' }}>Distance</p>
+                          <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{player.dist}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px]" style={{ color: '#6B7280' }}>HSR</p>
+                          <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{player.hsr}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer stats */}
+                <div className="px-5 py-3 grid grid-cols-3 gap-2 text-center" style={{ borderTop: `1px solid ${RED}20`, backgroundColor: 'rgba(192,57,43,0.05)' }}>
+                  <div>
+                    <p className="text-[10px]" style={{ color: '#6B7280' }}>Avg Load</p>
+                    <p className="text-sm font-black" style={{ color: GOLD }}>863</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px]" style={{ color: '#6B7280' }}>At Risk</p>
+                    <p className="text-sm font-black" style={{ color: '#EF4444' }}>1</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px]" style={{ color: '#6B7280' }}>Squad Ready</p>
+                    <p className="text-sm font-black" style={{ color: '#22C55E' }}>4/5</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Features ────────────────────────────────────────────────────── */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-20 space-y-20">
         {FEATURES.map((f, i) => (
