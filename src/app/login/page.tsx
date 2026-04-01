@@ -212,16 +212,21 @@ function LoginContent() {
     if (error) { setFormError(error.message); setSsoLoading(null) }
   }
 
-  const handleMicrosoft = async () => {
-    setSsoLoading('azure')
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'azure',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
-        scopes: 'email openid profile',
-      },
+  const handleMicrosoft = () => {
+    setSsoLoading('microsoft')
+    const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID
+    if (!clientId) { setFormError('Microsoft SSO not configured'); setSsoLoading(null); return }
+    const state = JSON.stringify({ redirectTo })
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: 'code',
+      redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft-sso',
+      scope: 'openid email profile User.Read offline_access',
+      state,
+      response_mode: 'query',
+      prompt: 'select_account',
     })
-    if (error) { setFormError(error.message); setSsoLoading(null) }
+    window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`
   }
 
   const handleGitHub = async () => {
@@ -299,7 +304,7 @@ function LoginContent() {
                   disabled={!!ssoLoading}
                   className="w-full flex items-center justify-center gap-3 bg-[#2F2F2F] text-white rounded-xl py-3 font-semibold text-sm hover:bg-[#3D3D3D] disabled:opacity-60 transition-colors border border-white/10"
                 >
-                  {ssoLoading === 'azure' ? (
+                  {ssoLoading === 'microsoft' ? (
                     <span className="animate-spin">⟳</span>
                   ) : (
                     <svg className="w-5 h-5" viewBox="0 0 23 23">

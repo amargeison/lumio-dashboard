@@ -2331,12 +2331,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       return
     }
     // Microsoft integrations — real OAuth flow
-    const msScopes: Record<string, string> = {
-      outlook: 'openid email profile Mail.Read Mail.Send offline_access',
-      outlook_cal: 'openid email profile Calendars.Read Calendars.ReadWrite offline_access',
-      teams: 'openid email profile Team.ReadBasic.All Chat.Read offline_access',
-    }
-    if (msScopes[key]) {
+    const MS_KEYS = ['outlook', 'outlook_cal', 'teams']
+    if (MS_KEYS.includes(key)) {
       const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID
       if (!clientId) {
         setIntegrationToast(`${name} — Microsoft OAuth not configured yet. Add NEXT_PUBLIC_MICROSOFT_CLIENT_ID to environment.`)
@@ -2345,8 +2341,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       }
       const wsSlug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
       const redirectUri = 'https://lumiocms.com/api/auth/callback/microsoft'
-      const state = JSON.stringify({ key, slug: wsSlug })
-      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri, scope: msScopes[key], state, response_mode: 'query', prompt: 'consent' })
+      const allScopes = 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite Team.ReadBasic.All Chat.Read'
+      const state = JSON.stringify({ key: 'microsoft_all', slug: wsSlug })
+      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri, scope: allScopes, state, response_mode: 'query', prompt: 'consent' })
       window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`
       return
     }
@@ -3081,12 +3078,29 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
 
-    // Handle OAuth callback redirect (e.g. ?integration_connected=outlook)
+    // Handle Microsoft SSO callback — store session from query params
     const urlParams = new URLSearchParams(window.location.search)
+    const ssoSession = urlParams.get('sso_session')
+    if (ssoSession) {
+      localStorage.setItem('workspace_session_token', ssoSession)
+      const ssoSlug = urlParams.get('sso_slug'); if (ssoSlug) { localStorage.setItem('lumio_workspace_slug', ssoSlug); localStorage.setItem('lumio_company_active', 'true') }
+      const ssoCompany = urlParams.get('sso_company'); if (ssoCompany) { localStorage.setItem('workspace_company_name', ssoCompany); localStorage.setItem('lumio_company_name', ssoCompany) }
+      const ssoName = urlParams.get('sso_name'); if (ssoName) { localStorage.setItem('workspace_user_name', ssoName); localStorage.setItem('lumio_user_name', ssoName) }
+      const ssoEmail = urlParams.get('sso_email'); if (ssoEmail) localStorage.setItem('lumio_user_email', ssoEmail)
+      const ssoLogo = urlParams.get('sso_logo'); if (ssoLogo) { localStorage.setItem('workspace_company_logo', ssoLogo); localStorage.setItem('lumio_company_logo', ssoLogo) }
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+
+    // Handle OAuth callback redirect (e.g. ?integration_connected=outlook or microsoft_all)
     const connectedKey = urlParams.get('integration_connected')
     if (connectedKey) {
-      localStorage.setItem(`lumio_integration_${connectedKey}`, 'true')
-      // Clean URL
+      if (connectedKey === 'microsoft_all') {
+        localStorage.setItem('lumio_integration_outlook', 'true')
+        localStorage.setItem('lumio_integration_outlook_cal', 'true')
+        localStorage.setItem('lumio_integration_teams', 'true')
+      } else {
+        localStorage.setItem(`lumio_integration_${connectedKey}`, 'true')
+      }
       window.history.replaceState({}, '', window.location.pathname)
     }
 
