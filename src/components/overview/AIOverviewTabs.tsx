@@ -38,22 +38,68 @@ function getDayOfWeek(): string {
   return new Date().toLocaleDateString('en-GB', { weekday: 'long' })
 }
 
-const CACHE_TTL = 30 * 60 * 1000 // 30 minutes
 const DISMISS_TTL = 24 * 60 * 60 * 1000 // 24 hours
 
-function getCached<T>(tab: string): T | null {
+function getTodayKey(): string {
+  return new Date().toISOString().split('T')[0] // e.g. '2026-04-01'
+}
+
+function getSlug(): string {
+  if (typeof window === 'undefined') return ''
+  const parts = window.location.pathname.split('/').filter(Boolean)
+  return parts[0] || ''
+}
+
+function getCached<T>(tab: string): { data: T; time: string } | null {
   if (typeof window === 'undefined') return null
-  const ts = localStorage.getItem(`lumio_ai_${tab}_timestamp`)
-  if (!ts || Date.now() - parseInt(ts) > CACHE_TTL) return null
-  const raw = localStorage.getItem(`lumio_ai_${tab}_cache`)
+  const slug = getSlug()
+  const today = getTodayKey()
+  const raw = localStorage.getItem(`lumio_ai_${tab}_${slug}_${today}`)
   if (!raw) return null
-  try { return JSON.parse(raw) } catch { return null }
+  try {
+    const parsed = JSON.parse(raw)
+    return { data: parsed.data, time: parsed.time || '' }
+  } catch { return null }
 }
 
 function setCache(tab: string, data: unknown) {
   if (typeof window === 'undefined') return
-  localStorage.setItem(`lumio_ai_${tab}_cache`, JSON.stringify(data))
-  localStorage.setItem(`lumio_ai_${tab}_timestamp`, String(Date.now()))
+  const slug = getSlug()
+  const today = getTodayKey()
+  const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  localStorage.setItem(`lumio_ai_${tab}_${slug}_${today}`, JSON.stringify({ data, time }))
+  // Clean up old date caches for this tab
+  const prefix = `lumio_ai_${tab}_${slug}_`
+  Object.keys(localStorage).filter(k => k.startsWith(prefix) && !k.endsWith(today)).forEach(k => localStorage.removeItem(k))
+}
+
+function getCacheTime(tab: string): string {
+  if (typeof window === 'undefined') return ''
+  const slug = getSlug()
+  const today = getTodayKey()
+  const raw = localStorage.getItem(`lumio_ai_${tab}_${slug}_${today}`)
+  if (!raw) return ''
+  try { return JSON.parse(raw).time || '' } catch { return '' }
+}
+
+// Persist checked/done tasks per slug per day
+function getCheckedTasks(tab: string): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  const slug = getSlug()
+  const today = getTodayKey()
+  const raw = localStorage.getItem(`lumio_tasks_done_${tab}_${slug}_${today}`)
+  if (!raw) return new Set()
+  try { return new Set(JSON.parse(raw)) } catch { return new Set() }
+}
+
+function saveCheckedTasks(tab: string, ids: Set<string>) {
+  if (typeof window === 'undefined') return
+  const slug = getSlug()
+  const today = getTodayKey()
+  localStorage.setItem(`lumio_tasks_done_${tab}_${slug}_${today}`, JSON.stringify(Array.from(ids)))
+  // Clean up old date keys
+  const prefix = `lumio_tasks_done_${tab}_${slug}_`
+  Object.keys(localStorage).filter(k => k.startsWith(prefix) && !k.endsWith(today)).forEach(k => localStorage.removeItem(k))
 }
 
 // Dismissed items with 24hr expiry
@@ -92,14 +138,21 @@ function clearDismissed() {
 }
 
 function useAIFetch<T>(tab: string, ctx: AIContext, extraContext?: Record<string, unknown>) {
-  const [items, setItems] = useState<T[]>([])
-  const [loading, setLoading] = useState(true)
+  const [items, setItems] = useState<T[]>(() => {
+    const cached = getCached<T[]>(tab)
+    return cached ? cached.data : []
+  })
+  const [loading, setLoading] = useState(() => {
+    const cached = getCached<T[]>(tab)
+    return !cached
+  })
   const [error, setError] = useState(false)
+  const [generatedAt, setGeneratedAt] = useState(() => getCacheTime(tab))
 
   const fetchData = useCallback(async (force = false) => {
     if (!force) {
       const cached = getCached<T[]>(tab)
-      if (cached) { setItems(cached); setLoading(false); return }
+      if (cached) { setItems(cached.data); setGeneratedAt(cached.time); setLoading(false); return }
     }
     setLoading(true)
     setError(false)
@@ -117,6 +170,7 @@ function useAIFetch<T>(tab: string, ctx: AIContext, extraContext?: Record<string
       const data = await res.json()
       setItems(data.items || [])
       setCache(tab, data.items || [])
+      setGeneratedAt(getCacheTime(tab))
     } catch {
       setError(true)
     } finally {
@@ -126,7 +180,7 @@ function useAIFetch<T>(tab: string, ctx: AIContext, extraContext?: Record<string
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  return { items, loading, error, regenerate: () => fetchData(true) }
+  return { items, loading, error, regenerate: () => fetchData(true), generatedAt }
 }
 
 // ─── Shared UI ───────────────────────────────────────────────────────────────
@@ -214,16 +268,23 @@ function trendMetricColor(trend: string): { bg: string; fg: string } {
 // ─── Quick Wins ──────────────────────────────────────────────────────────────
 
 export function AIQuickWins({ ctx }: { ctx: AIContext }) {
-  const { items, loading, error, regenerate } = useAIFetch<QuickWin>('quick-wins', ctx)
-  const [done, setDone] = useState<Set<string>>(new Set())
+  const { items, loading, error, regenerate, generatedAt } = useAIFetch<QuickWin>('quick-wins', ctx)
+  const [done, setDone] = useState<Set<string>>(() => getCheckedTasks('quick-wins'))
   const showBanner = !hasRealData(['integrations'])
 
-  function markDone(id: string) { setDone(prev => new Set(prev).add(id)) }
+  function markDone(id: string) {
+    setDone(prev => {
+      const next = new Set(prev).add(id)
+      saveCheckedTasks('quick-wins', next)
+      return next
+    })
+  }
 
   return (
     <div>
       <TabHeader title="Quick Wins" right={
         <div className="flex items-center gap-3">
+          {!loading && generatedAt && <span className="text-[10px]" style={{ color: '#4B5563' }}>Generated today at {generatedAt}</span>}
           {!loading && <span className="text-xs font-semibold" style={{ color: '#0D9488' }}>{done.size}/{items.length} done today</span>}
           <RegenerateBtn onClick={regenerate} loading={loading} />
         </div>
@@ -271,12 +332,17 @@ export function AIQuickWins({ ctx }: { ctx: AIContext }) {
 // ─── Daily Tasks ─────────────────────────────────────────────────────────────
 
 export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
-  const { items, loading, error, regenerate } = useAIFetch<DailyTask>('daily-tasks', ctx)
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const { items, loading, error, regenerate, generatedAt } = useAIFetch<DailyTask>('daily-tasks', ctx)
+  const [checked, setChecked] = useState<Set<string>>(() => getCheckedTasks('daily-tasks'))
   const showBanner = !hasRealData(['integrations'])
 
   function toggle(id: string) {
-    setChecked(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+    setChecked(prev => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      saveCheckedTasks('daily-tasks', s)
+      return s
+    })
   }
 
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2 }
@@ -290,6 +356,7 @@ export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
     <div>
       <TabHeader title="Daily Tasks" right={
         <div className="flex items-center gap-3">
+          {!loading && generatedAt && <span className="text-[10px]" style={{ color: '#4B5563' }}>Generated today at {generatedAt}</span>}
           {!loading && <span className="text-xs font-semibold" style={{ color: '#0D9488' }}>{checked.size}/{items.length} complete</span>}
           <RegenerateBtn onClick={regenerate} loading={loading} />
         </div>
@@ -333,12 +400,17 @@ export function AIDailyTasks({ ctx }: { ctx: AIContext }) {
 // ─── Insights ────────────────────────────────────────────────────────────────
 
 export function AIInsights({ ctx }: { ctx: AIContext }) {
-  const { items, loading, error, regenerate } = useAIFetch<Insight>('insights', ctx)
+  const { items, loading, error, regenerate, generatedAt } = useAIFetch<Insight>('insights', ctx)
   const showBanner = !hasRealData(['integrations'])
 
   return (
     <div>
-      <TabHeader title="Insights" right={<RegenerateBtn onClick={regenerate} loading={loading} />} />
+      <TabHeader title="Insights" right={
+        <div className="flex items-center gap-3">
+          {!loading && generatedAt && <span className="text-[10px]" style={{ color: '#4B5563' }}>Generated today at {generatedAt}</span>}
+          <RegenerateBtn onClick={regenerate} loading={loading} />
+        </div>
+      } />
       {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -378,7 +450,7 @@ export function AIInsights({ ctx }: { ctx: AIContext }) {
 // ─── Don't Miss ──────────────────────────────────────────────────────────────
 
 export function AIDontMiss({ ctx }: { ctx: AIContext }) {
-  const { items, loading, error, regenerate: baseRegenerate } = useAIFetch<DontMissItem>('dont-miss', ctx)
+  const { items, loading, error, regenerate: baseRegenerate, generatedAt } = useAIFetch<DontMissItem>('dont-miss', ctx)
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed)
   const showBanner = !hasRealData(['integrations'])
 
@@ -401,7 +473,12 @@ export function AIDontMiss({ ctx }: { ctx: AIContext }) {
 
   return (
     <div>
-      <TabHeader title="Don't Miss" right={<RegenerateBtn onClick={regenerate} loading={loading} />} />
+      <TabHeader title="Don't Miss" right={
+        <div className="flex items-center gap-3">
+          {!loading && generatedAt && <span className="text-[10px]" style={{ color: '#4B5563' }}>Generated today at {generatedAt}</span>}
+          <RegenerateBtn onClick={regenerate} loading={loading} />
+        </div>
+      } />
       {showBanner && <NoBanner />}
       {error ? <ErrorCard /> : loading ? <SkeletonCards /> : visible.length === 0 ? (
         <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
