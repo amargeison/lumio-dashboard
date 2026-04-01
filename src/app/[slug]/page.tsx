@@ -4072,6 +4072,25 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       {showTabGuide && <TabGuide onComplete={handleTabGuideComplete} />}
 
       {/* Demo data bar — slim version with connections modal */}
+      {/* Impersonation banner */}
+      {typeof window !== 'undefined' && localStorage.getItem('lumio_impersonated_from_admin') === 'true' && (
+        <div className="flex items-center justify-between px-4 py-2 rounded-none" style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
+          <p className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+            👁 Impersonating: {localStorage.getItem('lumio_impersonated_user_name') || 'User'} ({localStorage.getItem('lumio_impersonated_user_role') || 'user'})
+          </p>
+          <button onClick={() => {
+            localStorage.removeItem('lumio_impersonated_user_email')
+            localStorage.removeItem('lumio_impersonated_user_name')
+            localStorage.removeItem('lumio_impersonated_user_role')
+            localStorage.removeItem('lumio_impersonated_user_role_level')
+            localStorage.removeItem('lumio_impersonated_from_admin')
+            window.location.href = '/admin'
+          }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+            Exit Impersonation
+          </button>
+        </div>
+      )}
+
       {demoDataActive && <ClearDemoBar />}
 
       {/* Mobile menu button */}
