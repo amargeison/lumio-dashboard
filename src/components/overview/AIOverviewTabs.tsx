@@ -23,7 +23,7 @@ interface QuickWin { id: string; title: string; description: string; impact: 'HI
 interface DailyTask { id: string; title: string; description: string; priority: 'urgent' | 'high' | 'normal'; category: string; dueTime: string | null; estimatedMinutes: number }
 interface Insight { id: string; title: string; summary: string; trend: 'up' | 'down' | 'neutral' | 'alert'; metric: string | null; recommendation: string; category: string }
 interface DontMissItem { id: string; title: string; description: string; urgency: 'critical' | 'high' | 'medium'; deadline: string | null; actionLabel: string; category: string }
-interface TeamMember { id: string; name: string; role: string; department: string; status: 'available' | 'in-meeting' | 'busy' | 'away'; currentFocus: string; needsAttention: boolean; attentionNote: string | null }
+interface TeamMember { id: string; name: string; role: string; department: string; status: 'available' | 'in-meeting' | 'busy' | 'away'; currentFocus: string; needsAttention: boolean; attentionNote: string | null; roleLevel?: number }
 
 type TeamSubTab = 'staff' | 'org' | 'info'
 
@@ -456,7 +456,13 @@ const LEVEL_COLORS: Record<HierarchyLevel, { bg: string; border: string; text: s
   staff:    { bg: 'rgba(75,85,99,0.08)', border: 'rgba(75,85,99,0.25)', text: '#6B7280' },
 }
 
-function detectLevel(title: string): HierarchyLevel {
+function detectLevel(title: string, roleLevel?: number): HierarchyLevel {
+  // Use explicit role_level if available (from workspace_staff)
+  if (roleLevel === 1) return 'csuite'
+  if (roleLevel === 2) return 'director'
+  if (roleLevel === 3) return 'manager'
+  if (roleLevel === 4) return 'staff'
+  // Fallback: detect from job title
   const t = (title || '').toLowerCase()
   if (/\b(ceo|cto|cfo|coo|cpo|ciso|founder|owner|president|managing director)\b/i.test(t)) return 'csuite'
   if (/\b(director|vp|vice president|head of)\b/i.test(t)) return 'director'
@@ -481,7 +487,7 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
 
   // Categorise members by level
   const byLevel: Record<HierarchyLevel, TeamMember[]> = { csuite: [], director: [], manager: [], staff: [] }
-  members.forEach(m => { byLevel[detectLevel(m.role)].push(m) })
+  members.forEach(m => { byLevel[detectLevel(m.role, m.roleLevel)].push(m) })
 
   // Build tree with overrides first, then auto-detect
   const placed = new Set<string>()
@@ -489,7 +495,7 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
 
   // Create nodes for all members
   members.forEach(m => {
-    nodeMap.set(m.id, { id: m.id, name: m.name, role: m.role, department: m.department, level: detectLevel(m.role), children: [] })
+    nodeMap.set(m.id, { id: m.id, name: m.name, role: m.role, department: m.department, level: detectLevel(m.role, m.roleLevel), children: [] })
   })
 
   // Apply overrides
@@ -503,7 +509,7 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
   const unplaced = members.filter(m => !placed.has(m.id))
 
   // C-Suite → report to root
-  unplaced.filter(m => detectLevel(m.role) === 'csuite').forEach(m => {
+  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'csuite').forEach(m => {
     const node = nodeMap.get(m.id)!; root.children.push(node); placed.add(m.id)
   })
 
@@ -511,7 +517,7 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
   const firstCSuite = root.children.find(c => c.level === 'csuite') || null
 
   // Directors → report to C-Suite in same dept, any C-Suite, or root
-  unplaced.filter(m => detectLevel(m.role) === 'director' && !placed.has(m.id)).forEach(m => {
+  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'director' && !placed.has(m.id)).forEach(m => {
     const node = nodeMap.get(m.id)!
     const deptCSuite = root.children.find(c => c.level === 'csuite' && c.department === m.department)
     const parent = deptCSuite || firstCSuite || root
@@ -525,7 +531,7 @@ function buildHierarchy(members: TeamMember[], userName: string, userRole: strin
   }
 
   // Managers → find Director in same dept, any Director, C-Suite, or root
-  unplaced.filter(m => detectLevel(m.role) === 'manager' && !placed.has(m.id)).forEach(m => {
+  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'manager' && !placed.has(m.id)).forEach(m => {
     const node = nodeMap.get(m.id)!
     const parent =
       findInTree(root.children, n => n.level === 'director' && n.department === m.department) ||
@@ -693,6 +699,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
 interface ImportedStaff {
   first_name?: string; last_name?: string; email?: string
   job_title?: string; department?: string; phone?: string; start_date?: string
+  role?: string; role_level?: number
 }
 
 function getImportedStaff(): ImportedStaff[] {
@@ -710,6 +717,7 @@ function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
     currentFocus: 'Imported via CSV',
     needsAttention: false,
     attentionNote: null,
+    roleLevel: s.role_level,
   }
 }
 

@@ -16,20 +16,12 @@ export async function getEmployeeRole(businessId: string, email: string): Promis
     return { role: 'director', role_level: 1, isOwner: true }
   }
 
-  // Check business_employees
-  const { data: employee } = await supabase.from('business_employees').select('role, role_level, job_title').eq('business_id', businessId).eq('email', email.toLowerCase()).maybeSingle()
+  // Check workspace_staff (primary source — has job_title, role, role_level)
+  const { data: staff } = await supabase.from('workspace_staff').select('role, role_level, job_title').eq('business_id', businessId).eq('email', email.toLowerCase()).maybeSingle()
 
-  if (employee?.role && employee?.role_level) {
-    return { role: employee.role as RoleResult['role'], role_level: employee.role_level as RoleResult['role_level'], isOwner: false }
+  if (staff?.role && staff?.role_level && staff.role !== 'user') {
+    return { role: staff.role as RoleResult['role'], role_level: staff.role_level as RoleResult['role_level'], isOwner: false }
   }
-
-  // Auto-detect from job title
-  if (employee?.job_title) {
-    return { ...detectRole(employee.job_title), isOwner: false }
-  }
-
-  // Check imported staff in workspace_staff
-  const { data: staff } = await supabase.from('workspace_staff').select('job_title').eq('business_id', businessId).eq('email', email.toLowerCase()).maybeSingle()
 
   if (staff?.job_title) {
     return { ...detectRole(staff.job_title), isOwner: false }
