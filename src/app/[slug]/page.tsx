@@ -1310,31 +1310,76 @@ const ROUNDUP_ITEMS = [
   },
 ]
 
-interface LiveEmail { id: string; subject: string; senderName: string; senderEmail: string; receivedAt: string; isRead: boolean; preview: string; webLink: string | null }
+// ─── Roundup message types ──────────────────────────────────────────────────
+
+interface RoundupMessage {
+  id: string; source: string; icon: string; color: string; bg: string; border: string
+  senderName: string; subject: string; preview: string; timestamp: string
+  isRead: boolean; webLink: string | null
+}
+
+const ROUNDUP_SOURCES: { key: string; lsKey: string; icon: string; label: string; color: string; bg: string; border: string
+  route: string; parse: (d: Record<string, unknown>) => RoundupMessage[]; viewLabel: string; viewUrl: string | null }[] = [
+  { key: 'outlook', lsKey: 'lumio_integration_outlook', icon: '📧', label: 'Outlook', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',
+    route: '/api/integrations/microsoft/mail', viewLabel: 'View in Outlook', viewUrl: 'https://outlook.office.com/mail/',
+    parse: (d) => ((d.emails || []) as Record<string, unknown>[]).map(e => ({ id: e.id as string, source: 'outlook', icon: '📧', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)', senderName: (e.senderName as string) || '', subject: (e.subject as string) || '', preview: (e.preview as string) || '', timestamp: (e.receivedAt as string) || '', isRead: !!e.isRead, webLink: (e.webLink as string) || null })) },
+  { key: 'gmail', lsKey: 'lumio_integration_gmail', icon: '📨', label: 'Gmail', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)',
+    route: '/api/integrations/google/mail', viewLabel: 'View in Gmail', viewUrl: 'https://mail.google.com/',
+    parse: (d) => ((d.emails || []) as Record<string, unknown>[]).map(e => ({ id: e.id as string, source: 'gmail', icon: '📨', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', senderName: (e.senderName as string) || '', subject: (e.subject as string) || '', preview: (e.preview as string) || '', timestamp: (e.receivedAt as string) || '', isRead: !!e.isRead, webLink: (e.webLink as string) || null })) },
+  { key: 'slack', lsKey: 'lumio_integration_slack', icon: '💬', label: 'Slack', color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
+    route: '/api/integrations/slack/messages', viewLabel: 'Open Slack', viewUrl: null,
+    parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'slack', icon: '💬', color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', senderName: (m.sender as string) || '', subject: (m.channel as string) || '', preview: (m.text as string) || '', timestamp: (m.timestamp as string) || '', isRead: false, webLink: null })) },
+  { key: 'whatsapp', lsKey: 'lumio_integration_whatsapp', icon: '💬', label: 'WhatsApp', color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
+    route: '/api/integrations/whatsapp/messages', viewLabel: 'Open WhatsApp', viewUrl: null,
+    parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'whatsapp', icon: '💬', color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)', senderName: (m.from as string) || '', subject: 'WhatsApp', preview: (m.preview as string) || '', timestamp: (m.timestamp as string) || '', isRead: !!m.isRead, webLink: null })) },
+  { key: 'twilio', lsKey: 'lumio_integration_twilio', icon: '📱', label: 'SMS', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
+    route: '/api/integrations/twilio/messages', viewLabel: 'View SMS', viewUrl: null,
+    parse: (d) => ((d.messages || []) as Record<string, unknown>[]).map(m => ({ id: m.id as string, source: 'twilio', icon: '📱', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', senderName: (m.from as string) || '', subject: 'SMS', preview: (m.preview as string) || '', timestamp: (m.timestamp as string) || '', isRead: true, webLink: null })) },
+]
 
 function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [replied, setReplied] = useState<string[]>([])
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [showReply, setShowReply] = useState<string | null>(null)
-  const [liveEmails, setLiveEmails] = useState<LiveEmail[] | null>(null)
-  const [mailError, setMailError] = useState<string | null>(null)
-  const outlookConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook') === 'true'
+  const [liveMessages, setLiveMessages] = useState<Record<string, RoundupMessage[]>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loaded, setLoaded] = useState(false)
   const items = demoDataActive ? ROUNDUP_ITEMS : []
 
+  // Check which sources are connected
+  const connectedSources = ROUNDUP_SOURCES.filter(s => typeof window !== 'undefined' && localStorage.getItem(s.lsKey) === 'true')
+  const anyConnected = connectedSources.length > 0
+
   useEffect(() => {
-    if (!outlookConnected || demoDataActive) return
-    const token = localStorage.getItem('workspace_session_token') || ''
-    if (!token) return
-    fetch('/api/integrations/microsoft/mail', { headers: { 'x-workspace-token': token } })
-      .then(r => {
-        if (r.status === 401) { setMailError('Outlook reconnection needed'); return null }
-        if (!r.ok) return null
-        return r.json()
+    if (demoDataActive || !anyConnected) { setLoaded(true); return }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+    if (!token) { setLoaded(true); return }
+
+    Promise.all(
+      connectedSources.map(async (src) => {
+        try {
+          const r = await fetch(src.route, { headers: { 'x-workspace-token': token } })
+          if (r.status === 401) return { key: src.key, error: `${src.label} reconnection needed`, messages: [] }
+          if (r.status === 404) return { key: src.key, error: null, messages: [], authRequired: true }
+          if (!r.ok) return { key: src.key, error: null, messages: [] }
+          const d = await r.json()
+          return { key: src.key, error: null, messages: src.parse(d) }
+        } catch { return { key: src.key, error: null, messages: [] } }
       })
-      .then(d => { if (d?.emails) setLiveEmails(d.emails) })
-      .catch(() => {})
-  }, [outlookConnected, demoDataActive])
+    ).then(results => {
+      const msgs: Record<string, RoundupMessage[]> = {}
+      const errs: Record<string, string> = {}
+      for (const r of results) {
+        msgs[r.key] = r.messages
+        if (r.error) errs[r.key] = r.error
+      }
+      setLiveMessages(msgs)
+      setErrors(errs)
+      setLoaded(true)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoDataActive])
 
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
@@ -1344,7 +1389,7 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
     }
   }
 
-  function formatEmailTime(iso: string) {
+  function fmtTime(iso: string) {
     try {
       const d = new Date(iso)
       const now = new Date()
@@ -1353,71 +1398,109 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
     } catch { return '' }
   }
 
-  const hasLiveEmails = outlookConnected && !demoDataActive && liveEmails !== null
-  const showEmpty = items.length === 0 && !hasLiveEmails && !outlookConnected
+  // Compute totals
+  const allLiveMessages = Object.values(liveMessages).flat()
+  const totalUnread = allLiveMessages.filter(m => !m.isRead).length
+  const hasAnyLive = !demoDataActive && loaded && allLiveMessages.length > 0
+  const noMessages = !demoDataActive && loaded && allLiveMessages.length === 0 && items.length === 0
 
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+          {totalUnread > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>{totalUnread} unread</span>}
+        </div>
         <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
       </div>
 
-      {mailError && (
-        <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
-          <p className="text-xs" style={{ color: '#F59E0B' }}>{mailError}</p>
+      {/* Errors */}
+      {Object.entries(errors).map(([key, msg]) => (
+        <div key={key} className="mb-2 rounded-xl p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <p className="text-xs" style={{ color: '#F59E0B' }}>{msg}</p>
         </div>
-      )}
+      ))}
 
-      {/* Live Outlook emails */}
-      {hasLiveEmails && liveEmails!.length > 0 && (
-        <div className="mb-3 rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
-          <button onClick={() => setExpanded(expanded === 'live-email' ? null : 'live-email')} className="w-full flex items-center justify-between p-3 text-left">
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">📧</span>
-              <span className="text-sm font-bold" style={{ color: '#60A5FA' }}>Emails</span>
-              <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(96,165,250,0.15)', color: '#60A5FA' }}>{liveEmails!.filter(e => !e.isRead).length} unread</span>
+      {/* Live message sections by source */}
+      {!demoDataActive && ROUNDUP_SOURCES.map(src => {
+        const isConnected = connectedSources.some(c => c.key === src.key)
+        const msgs = liveMessages[src.key] || []
+        const unread = msgs.filter(m => !m.isRead).length
+        const isOpen = expanded === `live-${src.key}`
+
+        if (!isConnected) {
+          // Show greyed-out row for disconnected sources
+          return (
+            <div key={src.key} className="mb-2 rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm opacity-40">{src.icon}</span>
+                <span className="text-xs" style={{ color: '#4B5563' }}>{src.label}</span>
+              </div>
+              <span className="text-[10px]" style={{ color: '#4B5563' }}>Connect in Settings</span>
             </div>
-            <span className="text-xs" style={{ color: '#6B7280' }}>{liveEmails!.length} messages</span>
-          </button>
-          {expanded === 'live-email' && (
-            <div className="px-3 pb-3 space-y-2">
-              {liveEmails!.map(email => (
-                <div key={email.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: email.isRead ? 0.7 : 1 }}>
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: 'rgba(96,165,250,0.2)', color: '#60A5FA' }}>
-                        {email.senderName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          )
+        }
+
+        if (msgs.length === 0) return null
+
+        return (
+          <div key={src.key} className="mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: src.bg, border: `1px solid ${src.border}` }}>
+            <button onClick={() => setExpanded(isOpen ? null : `live-${src.key}`)} className="w-full flex items-center justify-between p-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base">{src.icon}</span>
+                <span className="text-sm font-bold" style={{ color: src.color }}>{src.label}</span>
+                {unread > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${src.color}20`, color: src.color }}>{unread} unread</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: '#6B7280' }}>{msgs.length}</span>
+                <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+              </div>
+            </button>
+            {isOpen && (
+              <div className="px-3 pb-3 space-y-2">
+                {msgs.map(msg => (
+                  <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.isRead ? 0.7 : 1 }}>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: `${msg.color}25`, color: msg.color }}>
+                          {msg.senderName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || msg.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate" style={{ color: '#F9FAFB' }}>{msg.senderName}</p>
+                          <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{msg.subject}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate" style={{ color: '#F9FAFB' }}>{email.senderName}</p>
-                        <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{email.subject}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!msg.isRead && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: msg.color }} />}
+                        <span className="text-[10px]" style={{ color: '#6B7280' }}>{fmtTime(msg.timestamp)}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {!email.isRead && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#60A5FA' }} />}
-                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{formatEmailTime(email.receivedAt)}</span>
-                    </div>
+                    <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
+                    {msg.webLink && (
+                      <a href={msg.webLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-[10px] font-semibold" style={{ color: msg.color }}>
+                        {src.viewLabel} →
+                      </a>
+                    )}
                   </div>
-                  <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#9CA3AF' }}>{email.preview}</p>
-                  {email.webLink && (
-                    <a href={email.webLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-[10px] font-semibold" style={{ color: '#60A5FA' }}>
-                      View in Outlook →
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                ))}
+                {src.viewUrl && (
+                  <a href={src.viewUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-[10px] font-semibold pt-1" style={{ color: src.color }}>
+                    View all in {src.label} →
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
 
-      {hasLiveEmails && liveEmails!.length === 0 && items.length === 0 && (
+      {noMessages && anyConnected && (
         <p className="text-xs text-center py-3 mb-2" style={{ color: '#6B7280' }}>No new messages since your last visit.</p>
       )}
 
+      {/* Demo items or empty state */}
       <div className="space-y-2">
-        {showEmpty && (
+        {!anyConnected && !demoDataActive && items.length === 0 && (
           <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your tools in Settings to see messages here.</p>
         )}
         {items.map(item => {
