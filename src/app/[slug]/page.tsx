@@ -2651,7 +2651,44 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (localStorage.getItem('lumio_notif_email') === 'false') setEmailNotifs(false)
     if (localStorage.getItem('lumio_notif_inapp') === 'false') setInAppNotifs(false)
     if (localStorage.getItem('lumio_notif_weekly') === 'false') setWeeklyDigest(false)
+    try { const p = JSON.parse(localStorage.getItem('lumio_photo_frame') || '[]'); setFramePhotos(p) } catch { /* */ }
   }, [])
+
+  // ── Photo Frame handlers ────────────────────────────────────────────────
+
+  function removeFramePhoto(idx: number) {
+    setFramePhotos(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+      return next
+    })
+  }
+
+  function addFramePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const url = ev.target?.result as string
+        setFramePhotos(prev => {
+          const next = [...prev, url].slice(-20)
+          localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+          return next
+        })
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  function clearAllPhotos() {
+    setFramePhotos([])
+    localStorage.setItem('lumio_photo_frame', JSON.stringify([]))
+    // Clean up transforms
+    Object.keys(localStorage).filter(k => k.startsWith('lumio_photoframe_transform_')).forEach(k => localStorage.removeItem(k))
+    setConfirmClearPhotos(false)
+    onToast('All photos removed')
+  }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -3204,6 +3241,58 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           <div className="flex items-center justify-between">
             <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your workspace activity every Monday</p></div>
             <Toggle on={weeklyDigest} onToggle={() => toggleNotif('lumio_notif_weekly', weeklyDigest, setWeeklyDigest)} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section: Photo Frame ────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🖼️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Photo Frame</p>
+          </div>
+          <span className="text-xs" style={{ color: '#6B7280' }}>{framePhotos.length} photo{framePhotos.length !== 1 ? 's' : ''} in your frame</span>
+        </div>
+        <div className="p-5">
+          {framePhotos.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+              {framePhotos.map((photo, i) => (
+                <div key={i} className="relative group rounded-lg overflow-hidden" style={{ aspectRatio: '1', border: '1px solid #1F2937' }}>
+                  <img src={photo} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <button onClick={() => removeFramePhoto(i)}
+                    className="absolute top-1 right-1 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ width: 22, height: 22, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 mb-4 rounded-xl" style={{ border: '2px dashed #374151' }}>
+              <p className="text-sm" style={{ color: '#6B7280' }}>No photos yet — add some to personalise your overview</p>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <button onClick={() => settingsPhotoRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              + Add Photos
+            </button>
+            <input ref={settingsPhotoRef} type="file" accept="image/*" multiple onChange={addFramePhotos} className="hidden" />
+            {framePhotos.length > 0 && (
+              <>
+                {!confirmClearPhotos ? (
+                  <button onClick={() => setConfirmClearPhotos(true)} className="text-xs font-semibold px-4 py-2 rounded-lg"
+                    style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    Clear all photos
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#EF4444' }}>Remove all photos?</span>
+                    <button onClick={clearAllPhotos} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#EF4444', color: '#fff' }}>Yes, clear all</button>
+                    <button onClick={() => setConfirmClearPhotos(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
