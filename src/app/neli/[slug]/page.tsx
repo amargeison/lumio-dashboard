@@ -18,7 +18,8 @@ const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreen
 
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, Cell,
+  LineChart, Line, Cell, ScatterChart, Scatter, ReferenceLine, ReferenceArea,
+  ZAxis, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts'
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
@@ -63,6 +64,8 @@ const REPORT_TYPES = [
   { id: 'subtest', name: 'Subtest Analysis Report', desc: 'School-wide breakdown across all 4 LanguageScreen subtests with comparisons.', lastGen: '12 Mar 2026' },
   { id: 'ofsted', name: 'Ofsted Evidence Pack', desc: 'Structured evidence of language intervention impact for inspection readiness.', lastGen: '10 Mar 2026' },
   { id: 'parent', name: 'Parent Communication Report', desc: 'Plain-English progress summaries for parent meetings and updates.', lastGen: '22 Mar 2026' },
+  { id: 'svor', name: 'Simple View of Reading', desc: 'Two-dimensional view of language comprehension vs word decoding for all assessed pupils. Identifies pupils at risk across four quadrants.', lastGen: '' },
+  { id: 'class-dashboard', name: 'Class Dashboard', desc: 'LanguageScreen results for all pupils showing first and last assessment scores with progress arrows. Identifies movement across the standard score range.', lastGen: '' },
 ]
 
 const NARRATIVES: Record<string, string> = {
@@ -72,6 +75,404 @@ const NARRATIVES: Record<string, string> = {
   'subtest': 'Subtest analysis reveals that Receptive Vocabulary is the weakest area across the cohort, whilst Listening Comprehension is the strongest. NELI pupils show a larger gap in Expressive Vocabulary.',
   'ofsted': "This evidence pack demonstrates the school's systematic approach to early language intervention. Impact data shows the programme is closing the gap between disadvantaged and non-disadvantaged pupils. This aligns with the EIF inspection framework's focus on cultural capital and curriculum intent.",
   'parent': "Your child has been assessed using LanguageScreen, a tool developed by Oxford University researchers. The assessment looks at four areas: understanding words, using words, grammar, and listening. Your child's teacher will share their individual results at the next parent meeting.",
+  'svor': '',
+  'class-dashboard': '',
+}
+
+/* ── SVoR scatter data ───────────────────────────────────────────────────── */
+function buildSvorData() {
+  return PUPILS.map((p: any) => {
+    const x = Math.round((p.subscores.grammar + p.subscores.listening) / 2)
+    const y = Math.round((p.subscores.recVocab + p.subscores.expVocab) / 2)
+    const concern = x < 85 && y < 85 ? 'clear' : (x < 90 || y < 90) ? 'slight' : 'none'
+    return { x, y, name: p.name, concern }
+  })
+}
+const SVOR_COLORS: Record<string, string> = { none: '#15803D', slight: '#B45309', clear: '#B91C1C' }
+function SvorDot(props: any) {
+  const { cx, cy, payload } = props
+  return <circle cx={cx} cy={cy} r={7} fill={SVOR_COLORS[payload.concern]} stroke="white" strokeWidth={1.5} />
+}
+function SvorTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  return (
+    <div style={{ background: 'white', border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+      <p style={{ fontWeight: 700, margin: '0 0 4px', color: T.navy }}>{d.name}</p>
+      <p style={{ margin: '0 0 2px', color: T.text }}>Decoding: {d.x}</p>
+      <p style={{ margin: '0 0 2px', color: T.text }}>Comprehension: {d.y}</p>
+      <p style={{ margin: 0, color: SVOR_COLORS[d.concern], fontWeight: 600 }}>{d.concern === 'none' ? 'No concerns' : d.concern === 'slight' ? 'Slight concerns' : 'Clear concerns'}</p>
+    </div>
+  )
+}
+
+function SvorReport() {
+  const data = buildSvorData()
+  const typical = data.filter((d: any) => d.x >= 90 && d.y >= 90).length
+  const langRisk = data.filter((d: any) => d.y < 90 && d.x >= 90).length
+  const decRisk = data.filter((d: any) => d.x < 90 && d.y >= 90).length
+  const dualRisk = data.filter((d: any) => d.x < 90 && d.y < 90).length
+  const avgX = Math.round(data.reduce((s: number, d: any) => s + d.x, 0) / data.length * 10) / 10
+  const avgY = Math.round(data.reduce((s: number, d: any) => s + d.y, 0) / data.length * 10) / 10
+  const neliOnProg = PUPILS.filter((p: any) => p.neli).length
+
+  const quadrant = (d: any) => d.x >= 90 && d.y >= 90 ? 'Typical' : d.x < 90 && d.y < 90 ? 'Dual Risk' : d.y < 90 ? 'Language Risk' : 'Decoding Risk'
+  const sortOrder: Record<string, number> = { 'Dual Risk': 0, 'Language Risk': 1, 'Decoding Risk': 2, 'Typical': 3 }
+  const sortedPupils = [...data].sort((a: any, b: any) => sortOrder[quadrant(a)] - sortOrder[quadrant(b)])
+  const quadrantColor: Record<string, string> = { 'Typical': T.green, 'Language Risk': T.amber, 'Decoding Risk': T.amber, 'Dual Risk': T.red }
+  const quadrantBg: Record<string, string> = { 'Typical': '#F0FDF4', 'Language Risk': '#FFFBEB', 'Decoding Risk': '#FFFBEB', 'Dual Risk': '#FEF2F2' }
+
+  return (
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        {[
+          { l: 'Typical Skills', v: typical, c: T.green },
+          { l: 'Language Risk', v: langRisk, c: T.amber },
+          { l: 'Decoding Risk', v: decRisk, c: T.amber },
+          { l: 'Dual Risk', v: dualRisk, c: T.red },
+        ].map(k => (
+          <div key={k.l} style={{ background: '#FAFAF8', borderRadius: 10, padding: 14, textAlign: 'center', borderTop: `3px solid ${k.c}` }}>
+            <p style={{ fontSize: 9, fontWeight: 700, color: T.muted, textTransform: 'uppercase', margin: '0 0 4px' }}>{k.l}</p>
+            <p style={{ fontSize: 26, fontWeight: 800, color: k.c, margin: 0, fontFamily: 'Georgia, serif' }}>{k.v}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Description */}
+      <div style={{ background: '#FAFAF8', borderLeft: `4px solid ${T.navy}`, borderRadius: 12, padding: 24, marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.8, fontFamily: 'Georgia, serif' }}>
+          The Simple View of Reading (SVoR) is a framework for assessing the reading ability of children. To become a fluent reader who understands what they read, two sets of skills are needed: language comprehension and word decoding. Together, these are the foundation for reading comprehension.
+        </p>
+        <p style={{ fontSize: 13, color: T.text, margin: '12px 0 0', lineHeight: 1.8, fontFamily: 'Georgia, serif' }}>
+          The SVoR graph below provides a two-dimensional view of combined Standard Scores for all pupils assessed with LanguageScreen (language comprehension) and ReadingScreen (word decoding). See individual pupil profiles for detailed results.
+        </p>
+      </div>
+
+      {/* Scatter chart */}
+      <div style={{ background: '#FAFAF8', borderRadius: 12, padding: 20, marginBottom: 24, position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={500}>
+          <ScatterChart margin={{ top: 30, right: 30, bottom: 40, left: 40 }}>
+            {/* Quadrant fills */}
+            <ReferenceArea x1={90} x2={135} y1={90} y2={135} fill="rgba(21,128,61,0.06)" />
+            <ReferenceArea x1={65} x2={90} y1={90} y2={135} fill="rgba(29,78,216,0.06)" />
+            <ReferenceArea x1={90} x2={135} y1={65} y2={90} fill="rgba(180,83,9,0.06)" />
+            <ReferenceArea x1={65} x2={90} y1={65} y2={90} fill="rgba(185,28,28,0.06)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2DDD4" />
+            <XAxis type="number" dataKey="x" domain={[65, 135]} ticks={[65,70,75,80,85,90,95,100,105,110,115,120,125,130,135]} tick={{ fontSize: 10, fill: T.muted }} label={{ value: 'Word Reading (Decoding)', position: 'bottom', offset: 10, style: { fontSize: 12, fill: T.navy, fontWeight: 600 } }} />
+            <YAxis type="number" dataKey="y" domain={[65, 135]} ticks={[65,70,75,80,85,90,95,100,105,110,115,120,125,130,135]} tick={{ fontSize: 10, fill: T.muted }} label={{ value: 'Language Comprehension', angle: -90, position: 'left', offset: 10, style: { fontSize: 12, fill: T.navy, fontWeight: 600 } }} />
+            <ZAxis range={[200, 200]} />
+            <ReferenceLine x={90} stroke="#1D4ED8" strokeDasharray="6 3" strokeWidth={1.5} />
+            <ReferenceLine y={90} stroke="#1D4ED8" strokeDasharray="6 3" strokeWidth={1.5} />
+            <ReferenceLine x={100} stroke="#D1D5DB" strokeDasharray="3 3" />
+            <ReferenceLine y={100} stroke="#D1D5DB" strokeDasharray="3 3" />
+            <Tooltip content={<SvorTooltip />} />
+            <Scatter data={data} shape={(props: any) => {
+              const { cx, cy, payload } = props
+              const initials = payload.name.split(' ').map((w: string) => w[0]).join('')
+              return (
+                <g>
+                  <circle cx={cx} cy={cy} r={10} fill={SVOR_COLORS[payload.concern]} stroke="white" strokeWidth={2} />
+                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={7} fontWeight={700}>{initials}</text>
+                </g>
+              )
+            }} />
+          </ScatterChart>
+        </ResponsiveContainer>
+        {/* Quadrant labels */}
+        <div style={{ position: 'absolute', top: 42, left: 70, fontSize: 11, color: '#1D4ED8', fontStyle: 'italic', textAlign: 'center', width: 130 }}>Poor reading skills</div>
+        <div style={{ position: 'absolute', top: 42, right: 50, fontSize: 11, color: '#1D4ED8', fontStyle: 'italic', textAlign: 'center', width: 170 }}>Typical reading and<br/>language skills</div>
+        <div style={{ position: 'absolute', bottom: 65, left: 70, fontSize: 11, color: '#1D4ED8', fontStyle: 'italic', textAlign: 'center', width: 170 }}>Poor reading and<br/>poor language skills</div>
+        <div style={{ position: 'absolute', bottom: 65, right: 50, fontSize: 11, color: '#1D4ED8', fontStyle: 'italic', textAlign: 'center', width: 130 }}>Poor language skills</div>
+        <div style={{ position: 'absolute', bottom: 48, left: 55, fontSize: 9, color: T.muted, fontWeight: 600 }}>Weak</div>
+        <div style={{ position: 'absolute', bottom: 48, right: 38, fontSize: 9, color: T.muted, fontWeight: 600 }}>Strong</div>
+        <div style={{ position: 'absolute', top: 28, left: 12, fontSize: 9, color: T.muted, fontWeight: 600 }}>Strong</div>
+        <div style={{ position: 'absolute', bottom: 65, left: 16, fontSize: 9, color: T.muted, fontWeight: 600 }}>Weak</div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 8 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: T.text }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#15803D', display: 'inline-block' }} /> No concerns</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: T.text }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#B45309', display: 'inline-block' }} /> Slight concerns</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: T.text }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#B91C1C', display: 'inline-block' }} /> Clear concerns</span>
+      </div>
+      <p style={{ fontSize: 10, color: T.muted, textAlign: 'center', marginBottom: 24 }}>Age-expected threshold shown at 90. Grey lines indicate population mean (100).</p>
+
+      {/* Pupil table */}
+      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead><tr style={{ background: '#FAFAF8' }}>
+            {['Pupil', 'Language', 'Decoding', 'Quadrant', 'Band', 'TEL TED', 'Trend'].map(h => (
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: T.muted, textTransform: 'uppercase', borderBottom: `2px solid ${T.border}` }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {sortedPupils.map((d: any) => {
+              const q = quadrant(d)
+              const p = PUPILS.find((pp: any) => pp.name === d.name) as any
+              const band = getLight(p?.es || 0)
+              return (
+                <tr key={d.name} style={{ borderBottom: `1px solid ${T.border}`, background: quadrantBg[q] }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: T.text }}>{d.name}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: d.y < 90 ? T.red : T.green }}>{d.y}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: d.x < 90 ? T.red : T.green }}>{d.x}</td>
+                  <td style={{ padding: '10px 12px' }}><span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: `${quadrantColor[q]}18`, color: quadrantColor[q] }}>{q}</span></td>
+                  <td style={{ padding: '10px 12px' }}><span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: lb(band), color: lc(band) }}>{ll(band)}</span></td>
+                  <td style={{ padding: '10px 12px' }}>{p?.neli ? <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: T.goldLight, color: T.gold }}>TEL TED</span> : <span style={{ color: T.muted }}>—</span>}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: p && p.es > p.is ? T.green : p && p.es < p.is ? T.red : T.muted }}>{p && p.es > p.is ? '↑' : p && p.es < p.is ? '↓' : '→'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Interpretation panel */}
+      <div style={{ background: T.navy, borderRadius: 12, padding: 24, color: 'white' }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.04em', color: T.goldLight }}>Interpretation</h4>
+        <p style={{ fontSize: 13, margin: 0, lineHeight: 1.8, opacity: 0.9 }}>
+          {typical} pupils are performing in the typical range for both language comprehension and word decoding. {dualRisk} pupil{dualRisk !== 1 ? 's' : ''} show{dualRisk === 1 ? 's' : ''} dual risk across both areas and {dualRisk === 1 ? 'is a' : 'are'} priority candidate{dualRisk !== 1 ? 's' : ''} for TEL TED intervention. {neliOnProg} pupils are currently receiving TEL TED support this term. Average language comprehension score: {avgY}. Average decoding score: {avgX}.
+        </p>
+      </div>
+
+      <div style={{ textAlign: 'right', marginTop: 16 }}>
+        <button onClick={() => window.print()} style={{ fontSize: 12, fontWeight: 600, padding: '8px 20px', borderRadius: 8, border: `1px solid ${T.border}`, background: 'white', cursor: 'pointer', color: T.text }}>Download PDF</button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Class Dashboard ────────────────────────────────────────────────────── */
+function ClassDashboardReport() {
+  const [orderBy, setOrderBy] = useState('name')
+  const [filter, setFilter] = useState('all')
+  const [showInitial, setShowInitial] = useState(true)
+
+  let filtered = [...PUPILS] as any[]
+  if (filter === 'neli') filtered = filtered.filter((p: any) => p.neli)
+  if (filter === 'atrisk') filtered = filtered.filter((p: any) => p.es < 90)
+
+  const sorted = filtered.sort((a: any, b: any) => {
+    if (orderBy === 'score-asc') return a.es - b.es
+    if (orderBy === 'score-desc') return b.es - a.es
+    if (orderBy === 'gain') return (b.es - b.is) - (a.es - a.is)
+    return a.name.localeCompare(b.name)
+  })
+
+  const classAvg = Math.round(PUPILS.reduce((s: number, p: any) => s + p.es, 0) / PUPILS.length)
+  const neliAvgI = Math.round(neliPupils.reduce((s: number, p: any) => s + p.is, 0) / neliPupils.length * 10) / 10
+  const neliAvgE = Math.round(neliPupils.reduce((s: number, p: any) => s + p.es, 0) / neliPupils.length * 10) / 10
+  const minScore = 65, maxScore = 135, range = maxScore - minScore
+  const pct = (v: number) => ((v - minScore) / range) * 100
+  const ticks = [65,70,75,80,85,90,95,100,105,110,115,120,125,130,135]
+  const markerColor = (score: number) => score < 85 ? T.red : score < 90 ? T.amber : T.green
+
+  // Zone bands
+  const zones = [
+    { from: 65, to: 75, bg: 'rgba(185,28,28,0.18)', label: 'Well Below' },
+    { from: 75, to: 85, bg: 'rgba(185,28,28,0.10)', label: 'Below' },
+    { from: 85, to: 90, bg: 'rgba(180,83,9,0.10)', label: 'Average' },
+    { from: 90, to: 115, bg: 'rgba(21,128,61,0.06)', label: 'Above' },
+    { from: 115, to: 135, bg: 'rgba(21,128,61,0.12)', label: 'Well Above' },
+  ]
+
+  // Subtest data
+  const subtests = [
+    { name: 'Receptive Vocabulary', key: 'recVocab' },
+    { name: 'Expressive Vocabulary', key: 'expVocab' },
+    { name: 'Grammar', key: 'grammar' },
+    { name: 'Listening', key: 'listening' },
+  ]
+
+  // Priority lists
+  const immediate = PUPILS.filter((p: any) => p.es < 85)
+  const monitor = PUPILS.filter((p: any) => p.es >= 85 && p.es < 90)
+  const neliThisWeek = PUPILS.filter((p: any) => p.neli)
+  const onTrack = PUPILS.filter((p: any) => p.es >= 90 && !p.neli)
+
+  return (
+    <div style={{ maxWidth: 840, margin: '0 auto' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
+        {[
+          { l: 'Total Assessed', v: PUPILS.length, c: T.navy },
+          { l: 'Avg Initial', v: classAvgI.toFixed(1), c: T.muted },
+          { l: 'Avg Current', v: classAvgE.toFixed(1), c: T.navy },
+          { l: 'Avg Gain', v: `+${(classAvgE - classAvgI).toFixed(1)}`, c: T.green },
+          { l: 'TEL TED Students', v: neliPupils.length, c: T.gold },
+        ].map(k => (
+          <div key={k.l} style={{ background: '#FAFAF8', borderRadius: 10, padding: 12, textAlign: 'center', borderTop: `3px solid ${k.c}` }}>
+            <p style={{ fontSize: 9, fontWeight: 700, color: T.muted, textTransform: 'uppercase', margin: '0 0 3px' }}>{k.l}</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: k.c, margin: 0, fontFamily: 'Georgia, serif' }}>{k.v}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <select value={orderBy} onChange={e => setOrderBy(e.target.value)} style={{ fontSize: 11, padding: '6px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: 'white', color: T.text }}>
+          <option value="name">By first name</option>
+          <option value="score-asc">By score (low→high)</option>
+          <option value="score-desc">By score (high→low)</option>
+          <option value="gain">By gain</option>
+        </select>
+        <select value={filter} onChange={e => setFilter(e.target.value)} style={{ fontSize: 11, padding: '6px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: 'white', color: T.text }}>
+          <option value="all">All pupils</option>
+          <option value="neli">TEL TED only</option>
+          <option value="atrisk">At risk only (&lt;90)</option>
+        </select>
+        <button onClick={() => setShowInitial(v => !v)} style={{ fontSize: 11, padding: '6px 12px', borderRadius: 6, border: `1px solid ${T.border}`, background: showInitial ? T.navy : 'white', color: showInitial ? 'white' : T.text, cursor: 'pointer', fontWeight: 600 }}>
+          {showInitial ? 'Show initial & current' : 'Current only'}
+        </button>
+      </div>
+
+      {/* Zone chart */}
+      <div style={{ background: '#FAFAF8', borderRadius: 12, padding: '16px 20px', marginBottom: 8 }}>
+        {sorted.map((p: any) => {
+          const improved = p.es > p.is
+          const same = p.es === p.is
+          const gain = p.es - p.is
+          return (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, height: 28, transition: 'all 0.15s' }}
+              onMouseEnter={(e: any) => { e.currentTarget.style.borderLeft = `3px solid ${T.gold}` }}
+              onMouseLeave={(e: any) => { e.currentTarget.style.borderLeft = '3px solid transparent' }}>
+              <div style={{ width: 180, flexShrink: 0, fontSize: 12, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {p.name}
+                {p.neli && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: T.gold, borderRadius: 3, padding: '1px 4px', lineHeight: 1 }}>N</span>}
+              </div>
+              <div style={{ flex: 1, position: 'relative', height: 24 }}>
+                {/* Zone backgrounds */}
+                {zones.map(z => (
+                  <div key={z.from} style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(z.from)}%`, width: `${pct(z.to) - pct(z.from)}%`, background: z.bg }} />
+                ))}
+                <div style={{ position: 'absolute', top: 10, left: 0, right: 0, height: 2, background: '#E2DDD4', borderRadius: 1, zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(90)}%`, width: 0, borderLeft: '1px dashed #B91C1C', zIndex: 2 }} />
+                <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(classAvg)}%`, width: 0, borderLeft: '1px dashed ${T.navy}', zIndex: 2 }} />
+                {showInitial && !same && (
+                  <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 3 }}>
+                    <line x1={`${pct(p.is)}%`} y1="12" x2={`${pct(p.es)}%`} y2="12" stroke={improved ? T.green : '#9CA3AF'} strokeWidth={1.5} />
+                  </svg>
+                )}
+                {showInitial && <div title={`${p.name}: Initial ${p.is}`} style={{ position: 'absolute', top: 7, left: `${pct(p.is)}%`, width: 10, height: 10, transform: 'translateX(-5px)', background: markerColor(p.is), borderRadius: 2, zIndex: 4 }} />}
+                <div title={`${p.name}: Current ${p.es}`} style={{ position: 'absolute', top: 6, left: `${pct(p.es)}%`, width: 12, height: 12, transform: 'translateX(-6px)', background: markerColor(p.es), borderRadius: '50%', border: '2px solid white', zIndex: 5 }} />
+                {gain > 2 && <span style={{ position: 'absolute', top: -2, left: `${pct(p.es)}%`, transform: 'translateX(-50%)', fontSize: 9, fontWeight: 700, color: T.green, zIndex: 6 }}>+{gain}</span>}
+              </div>
+            </div>
+          )
+        })}
+        {/* Zone labels */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: 4 }}>
+          <div style={{ width: 180, flexShrink: 0 }} />
+          <div style={{ flex: 1, position: 'relative', height: 14 }}>
+            {zones.map(z => (
+              <div key={z.label} style={{ position: 'absolute', left: `${pct(z.from)}%`, width: `${pct(z.to) - pct(z.from)}%`, textAlign: 'center', fontSize: 8, color: T.muted, fontWeight: 600 }}>{z.label}</div>
+            ))}
+          </div>
+        </div>
+        {/* X axis */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: 2 }}>
+          <div style={{ width: 180, flexShrink: 0 }} />
+          <div style={{ flex: 1, position: 'relative', height: 24 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: '#9CA3AF' }} />
+            {ticks.map(t => (
+              <div key={t} style={{ position: 'absolute', left: `${pct(t)}%`, top: 0, transform: 'translateX(-50%)', textAlign: 'center' }}>
+                <div style={{ width: 1, height: 4, background: '#9CA3AF', margin: '0 auto' }} />
+                <span style={{ fontSize: 9, color: T.muted, display: 'block', marginTop: 1 }}>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap', fontSize: 11, color: T.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#9CA3AF', display: 'inline-block' }} /> Initial</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#9CA3AF', display: 'inline-block' }} /> Current</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: T.red, display: 'inline-block' }} /> &lt;85</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: T.amber, display: 'inline-block' }} /> 85–89</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: T.green, display: 'inline-block' }} /> ≥90</span>
+      </div>
+
+      {/* Subtest breakdown */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        {subtests.map(st => {
+          const avg = Math.round(PUPILS.reduce((s: number, p: any) => s + p.subscores[st.key], 0) / PUPILS.length)
+          const band = getLight(avg)
+          const weakest = [...PUPILS].sort((a: any, b: any) => a.subscores[st.key] - b.subscores[st.key]).slice(0, 3)
+          const redCount = PUPILS.filter((p: any) => getLight(p.subscores[st.key]) === 'red').length
+          const amberCount = PUPILS.filter((p: any) => getLight(p.subscores[st.key]) === 'amber').length
+          const greenCount = PUPILS.filter((p: any) => getLight(p.subscores[st.key]) === 'green').length
+          const total = PUPILS.length
+          return (
+            <div key={st.key} style={{ background: 'white', borderRadius: 10, padding: 14, border: `1px solid ${T.border}` }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: T.navy, margin: '0 0 6px' }}>{st.name}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: lc(band), margin: '0 0 8px', fontFamily: 'Georgia, serif' }}>{avg}</p>
+              <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ width: `${redCount / total * 100}%`, background: T.red }} />
+                <div style={{ width: `${amberCount / total * 100}%`, background: T.amber }} />
+                <div style={{ width: `${greenCount / total * 100}%`, background: T.green }} />
+              </div>
+              <p style={{ fontSize: 9, fontWeight: 700, color: T.muted, margin: '0 0 4px', textTransform: 'uppercase' }}>Weakest 3:</p>
+              {weakest.map((w: any) => (
+                <p key={w.id} style={{ fontSize: 10, color: T.red, margin: '0 0 1px' }}>{w.name.split(' ')[0]} ({w.subscores[st.key]})</p>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Cohort trend chart */}
+      <div style={{ background: 'white', borderRadius: 12, padding: 20, border: `1px solid ${T.border}`, marginBottom: 20 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, color: T.navy, margin: '0 0 12px' }}>Cohort Trend</h4>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={['Sep','Oct','Nov','Dec','Jan','Feb','Mar'].map((m, i) => ({
+            month: m,
+            all: Math.round((classAvgI + (classAvgE - classAvgI) * (i / 6)) * 10) / 10,
+            neli: Math.round((neliAvgI + (neliAvgE - neliAvgI) * (i / 6)) * 10) / 10,
+          }))} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2DDD4" />
+            <XAxis dataKey="month" tick={{ fontSize: 10, fill: T.muted }} />
+            <YAxis domain={[60, 110]} tick={{ fontSize: 10, fill: T.muted }} />
+            <Tooltip />
+            <Legend wrapperStyle={{ fontSize: 10 }} />
+            <ReferenceLine y={90} stroke={T.red} strokeDasharray="6 3" label={{ value: 'Threshold', position: 'right', fontSize: 9, fill: T.red }} />
+            <ReferenceLine y={100} stroke={T.green} strokeDasharray="6 3" label={{ value: 'Age Expected', position: 'right', fontSize: 9, fill: T.green }} />
+            <Area type="monotone" dataKey="all" stroke={T.navy} fill={T.navy} fillOpacity={0.08} strokeWidth={2} name="All Pupils" />
+            <Area type="monotone" dataKey="neli" stroke={T.gold} fill={T.gold} fillOpacity={0.12} strokeWidth={2} name="TEL TED Students" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Priority action list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        {immediate.length > 0 && (
+          <div style={{ borderLeft: `4px solid ${T.red}`, borderRadius: 8, padding: '12px 16px', background: '#FEF2F2' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: T.red, margin: '0 0 6px' }}>🔴 Immediate attention (score &lt; 85)</p>
+            {immediate.map((p: any) => <p key={p.id} style={{ fontSize: 12, color: T.text, margin: '0 0 2px' }}>{p.name} — <strong style={{ color: T.red }}>{p.es}</strong></p>)}
+          </div>
+        )}
+        {monitor.length > 0 && (
+          <div style={{ borderLeft: `4px solid ${T.amber}`, borderRadius: 8, padding: '12px 16px', background: '#FFFBEB' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: T.amber, margin: '0 0 6px' }}>🟡 Monitor closely (score 85–89)</p>
+            {monitor.map((p: any) => <p key={p.id} style={{ fontSize: 12, color: T.text, margin: '0 0 2px' }}>{p.name} — <strong style={{ color: T.amber }}>{p.es}</strong></p>)}
+          </div>
+        )}
+        <div style={{ borderLeft: `4px solid ${T.gold}`, borderRadius: 8, padding: '12px 16px', background: T.goldLight }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: T.gold, margin: '0 0 6px' }}>🌟 TEL TED students this week</p>
+          {neliThisWeek.map((p: any) => <p key={p.id} style={{ fontSize: 12, color: T.text, margin: '0 0 2px' }}>{p.name} — Week {p.neliWeek || '—'} · {p.interventionist || '—'}</p>)}
+        </div>
+        <div style={{ borderLeft: `4px solid ${T.green}`, borderRadius: 8, padding: '12px 16px', background: T.greenBg }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: T.green, margin: '0 0 6px' }}>✅ On track (score ≥ 90, not on TEL TED)</p>
+          <p style={{ fontSize: 12, color: T.text, margin: 0 }}>{onTrack.length} pupils meeting age-expected outcomes</p>
+        </div>
+      </div>
+
+      {/* Print footer */}
+      <div style={{ borderTop: `2px solid ${T.border}`, paddingTop: 16 }}>
+        <p style={{ fontSize: 10, color: T.muted, margin: 0 }}>Generated by <strong>Lumio Schools</strong> · OxEd & Assessment · TEL TED Programme · {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      </div>
+    </div>
+  )
 }
 
 function ReportsPanel() {
@@ -87,7 +488,7 @@ function ReportsPanel() {
   }
   function handlePrint() {
     const s = document.createElement('style'); s.id = 'neli-print'
-    s.textContent = '@media print{.neli-sidebar,.neli-report-left,.neli-header{display:none!important}.neli-report-preview{position:absolute!important;inset:0!important}}'
+    s.textContent = '@media print{.neli-sidebar,.neli-report-left,.neli-header{display:none!important}.neli-report-preview{position:absolute!important;inset:0!important}select,button:not([data-print]){display:none!important}}'
     document.head.appendChild(s); window.print()
     setTimeout(() => document.getElementById('neli-print')?.remove(), 1000)
   }
@@ -137,7 +538,13 @@ function ReportsPanel() {
             <p style={{ fontSize: 15, fontWeight: 600, color: T.navy, marginTop: 16 }}>Generating report with AI...</p>
           </div>
         )}
-        {preview && !generating && (
+        {preview && !generating && preview.id === 'svor' && (
+          <SvorReport />
+        )}
+        {preview && !generating && preview.id === 'class-dashboard' && (
+          <ClassDashboardReport />
+        )}
+        {preview && !generating && preview.id !== 'svor' && preview.id !== 'class-dashboard' && (
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             <div style={{ borderBottom: `3px solid ${T.navy}`, paddingBottom: 20, marginBottom: 24, display: 'flex', justifyContent: 'space-between' }}>
               <div>
