@@ -31,7 +31,7 @@ export default function AdminFootballClubPage({ params }: { params: Promise<{ sl
         <button onClick={() => router.back()} className="p-2 rounded-lg" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}><ArrowLeft size={16} /></button>
         <div><h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{club.club_name}</h1><p className="text-xs" style={{ color: '#6B7280' }}>{club.tier} · Position: {club.league_position || '—'}</p></div>
         <div className="ml-auto flex gap-2">
-          <button onClick={() => router.push(`/demo/football/${slug}`)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}><ExternalLink size={12} /> Impersonate</button>
+          <button onClick={() => router.push(`/football/pro/${slug}`)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}><ExternalLink size={12} /> Impersonate</button>
         </div>
       </div>
 
