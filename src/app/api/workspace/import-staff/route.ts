@@ -70,31 +70,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid staff rows (need First Name or Email)' }, { status: 400 })
     }
 
-    // Insert staff — try upsert first, fall back to plain insert if unique constraint missing
+    // Deduplicate input rows by email
     const withEmail = rows.filter(r => r.email)
     const withoutEmail = rows.filter(r => !r.email)
     let insertError = null
+    let added = 0, updated = 0, skipped = 0
 
     if (withEmail.length) {
-      // Try upsert first (requires UNIQUE constraint on business_id,email)
-      const res = await supabase.from('workspace_staff').upsert(withEmail, { onConflict: 'business_id,email' })
-      if (res.error) {
-        console.warn('[workspace/import-staff] Upsert failed, falling back to insert:', res.error.message)
-        // Fallback: delete existing by email then insert fresh
-        for (const row of withEmail) {
-          await supabase.from('workspace_staff').delete().eq('business_id', session.business_id).eq('email', row.email!)
-        }
-        const fallback = await supabase.from('workspace_staff').insert(withEmail)
-        if (fallback.error) { insertError = fallback.error; console.error('[workspace/import-staff] Insert fallback error:', fallback.error) }
+      // Check which emails already exist
+      const emails = withEmail.map(r => r.email!)
+      const { data: existing } = await supabase.from('workspace_staff').select('email').eq('business_id', session.business_id).in('email', emails)
+      const existingEmails = new Set((existing || []).map(e => e.email?.toLowerCase()))
+
+      const toInsert = withEmail.filter(r => !existingEmails.has(r.email!.toLowerCase()))
+      const toUpdate = withEmail.filter(r => existingEmails.has(r.email!.toLowerCase()))
+
+      // Insert new records
+      if (toInsert.length) {
+        const res = await supabase.from('workspace_staff').insert(toInsert)
+        if (res.error) { console.error('[workspace/import-staff] Insert error:', res.error); insertError = res.error }
+        else added = toInsert.length
+      }
+
+      // Update existing records
+      for (const row of toUpdate) {
+        const { error: upErr } = await supabase.from('workspace_staff')
+          .update({ first_name: row.first_name, last_name: row.last_name, job_title: row.job_title, department: row.department, phone: row.phone, start_date: row.start_date })
+          .eq('business_id', session.business_id).eq('email', row.email!)
+        if (upErr) console.warn('[workspace/import-staff] Update error for', row.email, upErr.message)
+        else updated++
       }
     }
+
+    // Insert rows without email (can't deduplicate — always add)
     if (withoutEmail.length && !insertError) {
       const res = await supabase.from('workspace_staff').insert(withoutEmail)
       if (res.error) { insertError = res.error; console.error('[workspace/import-staff] Insert (no email) error:', res.error) }
+      else added += withoutEmail.length
     }
 
     if (insertError) {
-      console.error('[workspace/import-staff] Final insert error:', JSON.stringify(insertError))
+      console.error('[workspace/import-staff] Final error:', JSON.stringify(insertError))
       return NextResponse.json({ error: `Failed to import staff: ${insertError.message || 'unknown error'}` }, { status: 500 })
     }
 
@@ -117,6 +133,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       imported: rows.length,
+      added,
+      updated,
+      skipped,
       departments_assigned: deptResults.assigned,
       departments_pending: deptResults.pending,
     })
