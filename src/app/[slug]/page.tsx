@@ -1221,16 +1221,24 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
           </div>
         )}
         <div className="flex gap-2">
-          <button className="flex-1 text-xs py-1.5 rounded-lg flex items-center justify-center gap-1"
-            style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid #1F2937' }}
-            onClick={() => alert('Google Photos integration coming soon \u2014 connect in Settings \u2192 Integrations')}>
-            <span>📷</span> Google Photos
-          </button>
-          <button className="flex-1 text-xs py-1.5 rounded-lg flex items-center justify-center gap-1"
-            style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid #1F2937' }}
-            onClick={() => alert('iCloud integration coming soon \u2014 connect in Settings \u2192 Integrations')}>
-            <span>☁️</span> iCloud
-          </button>
+          <div className="relative flex-1 group">
+            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
+              <span>📷</span> Google Photos <span>✨</span>
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
+              Coming soon — upload photos directly for now
+            </div>
+          </div>
+          <div className="relative flex-1 group">
+            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
+              <span>☁️</span> iCloud <span>✨</span>
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
+              Coming soon — upload photos directly for now
+            </div>
+          </div>
         </div>
       </div>
     </div>
