@@ -22,6 +22,7 @@ import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
+import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -4440,7 +4441,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'social' && <SocialMediaView />}
             {activeDept === 'matchday' && <MatchdayView />}
             {activeDept === 'training' && <TrainingView />}
-            {activeDept === 'performance' && <PlaceholderView title="Performance & GPS" subtitle="Player load data, GPS tracking and fitness metrics" stats={[]} highlights={[]} actionButtons={[]} />}
+            {activeDept === 'performance' && <GPSPerformanceView />}
             {activeDept === 'finance' && <FinanceView />}
             {activeDept === 'staff' && <StaffView />}
             {activeDept === 'facilities' && <FacilitiesView />}

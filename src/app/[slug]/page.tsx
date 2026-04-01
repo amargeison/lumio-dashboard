@@ -1137,6 +1137,7 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
+  const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -1300,11 +1301,28 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
               ))}
             </div>
           )}
-          <button onClick={() => removePhoto(currentIdx)} className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs"
-            style={{ width: 22, height: 22, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>×</button>
+          {/* Remove button — visible on hover */}
+          <button onClick={e => { e.stopPropagation(); setConfirmRemoveIdx(currentIdx) }}
+            className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs transition-opacity"
+            style={{ width: 24, height: 24, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none', fontWeight: 700 }}>✕</button>
           <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
             {currentIdx + 1} / {photos.length}
           </div>
+          {/* Remove confirmation dialog */}
+          {confirmRemoveIdx !== null && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10 }}>
+              <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 260 }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Remove this photo?</p>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>This cannot be undone.</p>
+                <div className="flex gap-2 justify-center">
+                  <button onClick={() => setConfirmRemoveIdx(null)} className="px-4 py-2 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Cancel</button>
+                  <button onClick={() => { removePhoto(confirmRemoveIdx); setConfirmRemoveIdx(null) }} className="px-4 py-2 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: '#EF4444', color: '#fff' }}>Remove</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Zoom/pan controls — appear on hover */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full transition-opacity"
@@ -2612,6 +2630,11 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   // Customise re-render key
   const [customiseKey, setCustomiseKey] = useState(0)
 
+  // Photo Frame management
+  const settingsPhotoRef = useRef<HTMLInputElement>(null)
+  const [framePhotos, setFramePhotos] = useState<string[]>([])
+  const [confirmClearPhotos, setConfirmClearPhotos] = useState(false)
+
   // Security
   const [showPinModal, setShowPinModal] = useState(false)
   const [currentPin, setCurrentPin] = useState('')
@@ -2628,7 +2651,44 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (localStorage.getItem('lumio_notif_email') === 'false') setEmailNotifs(false)
     if (localStorage.getItem('lumio_notif_inapp') === 'false') setInAppNotifs(false)
     if (localStorage.getItem('lumio_notif_weekly') === 'false') setWeeklyDigest(false)
+    try { const p = JSON.parse(localStorage.getItem('lumio_photo_frame') || '[]'); setFramePhotos(p) } catch { /* */ }
   }, [])
+
+  // ── Photo Frame handlers ────────────────────────────────────────────────
+
+  function removeFramePhoto(idx: number) {
+    setFramePhotos(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+      return next
+    })
+  }
+
+  function addFramePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const url = ev.target?.result as string
+        setFramePhotos(prev => {
+          const next = [...prev, url].slice(-20)
+          localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
+          return next
+        })
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  function clearAllPhotos() {
+    setFramePhotos([])
+    localStorage.setItem('lumio_photo_frame', JSON.stringify([]))
+    // Clean up transforms
+    Object.keys(localStorage).filter(k => k.startsWith('lumio_photoframe_transform_')).forEach(k => localStorage.removeItem(k))
+    setConfirmClearPhotos(false)
+    onToast('All photos removed')
+  }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -3181,6 +3241,58 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           <div className="flex items-center justify-between">
             <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your workspace activity every Monday</p></div>
             <Toggle on={weeklyDigest} onToggle={() => toggleNotif('lumio_notif_weekly', weeklyDigest, setWeeklyDigest)} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section: Photo Frame ────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🖼️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Photo Frame</p>
+          </div>
+          <span className="text-xs" style={{ color: '#6B7280' }}>{framePhotos.length} photo{framePhotos.length !== 1 ? 's' : ''} in your frame</span>
+        </div>
+        <div className="p-5">
+          {framePhotos.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+              {framePhotos.map((photo, i) => (
+                <div key={i} className="relative group rounded-lg overflow-hidden" style={{ aspectRatio: '1', border: '1px solid #1F2937' }}>
+                  <img src={photo} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <button onClick={() => removeFramePhoto(i)}
+                    className="absolute top-1 right-1 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ width: 22, height: 22, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 mb-4 rounded-xl" style={{ border: '2px dashed #374151' }}>
+              <p className="text-sm" style={{ color: '#6B7280' }}>No photos yet — add some to personalise your overview</p>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <button onClick={() => settingsPhotoRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+              + Add Photos
+            </button>
+            <input ref={settingsPhotoRef} type="file" accept="image/*" multiple onChange={addFramePhotos} className="hidden" />
+            {framePhotos.length > 0 && (
+              <>
+                {!confirmClearPhotos ? (
+                  <button onClick={() => setConfirmClearPhotos(true)} className="text-xs font-semibold px-4 py-2 rounded-lg"
+                    style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    Clear all photos
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#EF4444' }}>Remove all photos?</span>
+                    <button onClick={clearAllPhotos} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#EF4444', color: '#fff' }}>Yes, clear all</button>
+                    <button onClick={() => setConfirmClearPhotos(false)} className="text-xs px-3 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #1F2937' }}>Cancel</button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -3866,6 +3978,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (!data || data.status !== 'active') {
             // Don't boot fresh purchases — session may still be propagating
             if (justPurchased) {
+              // Skip onboarding if workspace already has a name, or was previously completed
+              const alreadySetUp = localStorage.getItem(`lumio_onboarding_done_${slug}`)
+                || localStorage.getItem('lumio_onboarding_shown')
+                || localStorage.getItem('workspace_company_name')
+              if (alreadySetUp) return // Already onboarded — just show the page
               if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
                 setShowWelcome(true)
               } else {
@@ -3969,6 +4086,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   function handleOnboardingComplete() {
     setShowOnboarding(false)
+    // Mark onboarding as done so it never reappears
+    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    localStorage.setItem('lumio_onboarding_shown', 'true')
     setShowTabGuide(true)
   }
 

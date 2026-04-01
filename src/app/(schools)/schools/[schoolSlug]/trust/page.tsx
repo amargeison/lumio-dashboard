@@ -1257,6 +1257,8 @@ const TABS = [
 
 export default function TrustDashboard() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [tab, setTab] = useState('exec')
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   useEffect(() => {
     const pathname = window.location.pathname
@@ -1274,9 +1276,6 @@ export default function TrustDashboard() {
     { key: 'finance', label: 'Upload Trust Finance (CSV/XLSX)', accept: '.csv,.xlsx' },
     { key: 'mis', label: 'Connect MIS' },
   ]} />
-
-  const [tab, setTab] = useState('exec')
-  const [showAIInsights, setShowAIInsights] = useState(false)
   const ActiveTab = TABS.find(t=>t.id===tab)!.component
 
   const redCount = SCHOOLS.filter(s=>s.ragOverall==='red').length
