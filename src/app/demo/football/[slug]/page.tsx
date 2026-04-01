@@ -14,7 +14,7 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
@@ -26,7 +26,7 @@ import FootballStaffView from '@/components/football/StaffView'
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
@@ -69,6 +69,7 @@ const BG_GRADIENTS = [
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
   { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
+  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
@@ -424,7 +425,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const PRIMARY = '#C0392B'
   const DARK = '#922B21'
 
-  // group items by section
+  // group items by section — Board Suite visible in demo (gated by role in live)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
     { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
@@ -3749,6 +3750,183 @@ function ClubProfileView() {
   )
 }
 
+// ─── Board Suite View ────────────────────────────────────────────────────────
+
+function BoardSuiteView() {
+  const [tab, setTab] = useState<'overview' | 'notes' | 'meetings' | 'financial' | 'transfers'>('overview')
+  const [noteContent, setNoteContent] = useState('')
+  const TABS = [
+    { id: 'overview' as const, label: 'Club Overview', icon: '🏟️' },
+    { id: 'notes' as const, label: 'Confidential Notes', icon: '🔒' },
+    { id: 'meetings' as const, label: 'Board Meetings', icon: '📅' },
+    { id: 'financial' as const, label: 'Financial Strategy', icon: '💰' },
+    { id: 'transfers' as const, label: 'Transfer Strategy', icon: '🎯' },
+  ]
+
+  function StatCard({ label, value, sub, color = '#F1C40F' }: { label: string; value: string; sub?: string; color?: string }) {
+    return (
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+        <p className="text-xs" style={{ color: '#9CA3AF' }}>{label}</p>
+        <p className="text-xl font-black mt-1" style={{ color }}>{value}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(241,196,15,0.12)' }}>
+          <Crown size={20} style={{ color: '#F1C40F' }} />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Board Suite</h1>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>Confidential board-level information</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+            style={{ backgroundColor: tab === t.id ? 'rgba(241,196,15,0.15)' : 'transparent', color: tab === t.id ? '#F1C40F' : '#6B7280', border: `1px solid ${tab === t.id ? 'rgba(241,196,15,0.3)' : '#1F2937'}` }}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Club Overview */}
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <StatCard label="League Position" value="8th" sub="Championship" />
+            <StatCard label="Transfer Budget" value="£2.4m" sub="£1.8m remaining" />
+            <StatCard label="Squad Value" value="£14.2m" sub="+£1.8m vs last season" color="#22C55E" />
+            <StatCard label="PSR Headroom" value="£3.1m" sub="Within limits" color="#22C55E" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Revenue vs Expenditure</h3>
+              <div className="space-y-2">
+                {[{ label: 'Matchday Revenue', value: '£1.2m', pct: 60 }, { label: 'Broadcast Income', value: '£3.8m', pct: 85 }, { label: 'Commercial', value: '£2.1m', pct: 70 }, { label: 'Player Sales', value: '£600k', pct: 30 }].map(r => (
+                  <div key={r.label}>
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.value}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: '#F1C40F' }} /></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Match</h3>
+              <div className="text-center py-4">
+                <p className="text-2xl font-black" style={{ color: '#F9FAFB' }}>vs Sheffield Wednesday</p>
+                <p className="text-sm mt-1" style={{ color: '#F1C40F' }}>Saturday 3pm · Home</p>
+                <p className="text-xs mt-2" style={{ color: '#6B7280' }}>Championship · Matchday 38</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confidential Notes */}
+      {tab === 'notes' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>📝 Board Notes (Confidential)</h3>
+          <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} rows={10} placeholder="Type confidential board notes here..." className="w-full text-sm rounded-lg p-4 outline-none resize-vertical" style={{ backgroundColor: '#0F0505', border: '1px solid #2D1515', color: '#F9FAFB' }} />
+          <button className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#F1C40F', color: '#0A0A0A' }}>Save Notes</button>
+        </div>
+      )}
+
+      {/* Board Meetings */}
+      {tab === 'meetings' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Board Meetings</h3>
+            {[{ date: '15 Apr', title: 'Monthly Board Meeting', attendees: 'All Board Members', status: 'Confirmed' }, { date: '1 May', title: 'Transfer Strategy Review', attendees: 'Chairman, DoF, Head Coach', status: 'Pending' }, { date: '20 May', title: 'End of Season Review', attendees: 'All Board Members + Senior Staff', status: 'Draft' }].map(m => (
+              <div key={m.title} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #2D1515' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.title}</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>{m.date} · {m.attendees}</p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: m.status === 'Confirmed' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: m.status === 'Confirmed' ? '#22C55E' : '#F59E0B' }}>{m.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financial Strategy */}
+      {tab === 'financial' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+            <StatCard label="Wage Bill" value="£4.8m/yr" sub="62% of revenue" color="#EF4444" />
+            <StatCard label="Player Amortisation" value="£1.2m" sub="Annual charge" />
+            <StatCard label="Net Spend (Season)" value="-£800k" sub="Transfer deficit" color="#EF4444" />
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>PSR/FFP Breakdown</h3>
+            <div className="space-y-2">
+              {[{ label: 'Allowable Losses (3yr)', limit: '£39m', current: '£12.4m', pct: 32, ok: true }, { label: 'Squad Cost Ratio', limit: '70%', current: '62%', pct: 89, ok: true }, { label: 'Agent Fees', limit: '£500k', current: '£380k', pct: 76, ok: true }].map(r => (
+                <div key={r.label} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.current} / {r.limit}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.ok ? '#22C55E' : '#EF4444' }} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Strategy */}
+      {tab === 'transfers' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔒 Confidential Transfer Targets</h3>
+            <div className="space-y-2">
+              {[
+                { pos: 'ST', name: 'Target A', club: 'League One', fee: '£400k', priority: 'High', status: 'Agent contacted' },
+                { pos: 'CB', name: 'Target B', club: 'Championship', fee: '£200k loan', priority: 'High', status: 'Terms discussed' },
+                { pos: 'CM', name: 'Target C', club: 'Abroad', fee: '£150k', priority: 'Medium', status: 'Scouted 3x' },
+                { pos: 'LW', name: 'Target D', club: 'Free Agent', fee: 'Free', priority: 'Low', status: 'Monitoring' },
+              ].map(t => (
+                <div key={t.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(241,196,15,0.15)', color: '#F1C40F' }}>{t.pos}</span>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{t.name}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{t.club} · {t.fee}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{t.status}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: t.priority === 'High' ? 'rgba(239,68,68,0.1)' : t.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(107,114,128,0.1)', color: t.priority === 'High' ? '#EF4444' : t.priority === 'Medium' ? '#F59E0B' : '#6B7280' }}>{t.priority}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>💸 Offload Pipeline</h3>
+            <div className="space-y-2">
+              {[
+                { name: 'Player X', reason: 'Surplus to requirements', value: '£300k', interest: '2 clubs' },
+                { name: 'Player Y', reason: 'High wages, low output', value: '£150k', interest: '1 club (loan)' },
+              ].map(p => (
+                <div key={p.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.reason}</p></div>
+                  <div className="text-right"><p className="text-xs font-semibold" style={{ color: '#F1C40F' }}>{p.value}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.interest}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SettingsView() {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
@@ -4010,6 +4188,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'psr' && <PSRView />}
             {activeDept === 'squad-planner' && <SquadPlannerView />}
             {activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'board' && <BoardSuiteView />}
             {activeDept === 'settings' && <SettingsView />}
           </main>
         </div>
