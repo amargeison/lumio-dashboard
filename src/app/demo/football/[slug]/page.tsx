@@ -91,6 +91,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
+const FOOTBALL_ROLE_OPTIONS = [
+  { key: 'chairman', label: 'Chairman/CEO', emoji: '👑', level: 1 },
+  { key: 'dof', label: 'Director of Football', emoji: '⚽', level: 1 },
+  { key: 'head_coach', label: 'Head Coach', emoji: '🎽', level: 2 },
+  { key: 'dept_head', label: 'Department Head', emoji: '📋', level: 3 },
+  { key: 'support', label: 'Support Staff', emoji: '🔍', level: 4 },
+]
+
 // ─── Squad Data ──────────────────────────────────────────────────────────────
 
 type FitnessStatus = 'fit' | 'injured' | 'suspended' | 'modified' | 'doubt'
@@ -425,11 +433,14 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const PRIMARY = '#C0392B'
   const DARK = '#922B21'
 
-  // group items by section — Board Suite visible in demo (gated by role in live)
+  // group items by section — Board Suite hidden for Head Coach and below
+  const impRole = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_impersonated_role') : null
+  const impLevel = FOOTBALL_ROLE_OPTIONS.find(r => r.key === impRole)?.level ?? 1
+  const visibleItems = SIDEBAR_ITEMS.filter(i => i.id !== 'board' || impLevel <= 1)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
-    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
-    { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
-    { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
+    { label: null, items: visibleItems.filter(i => i.section === null) },
+    { label: 'Departments', items: visibleItems.filter(i => i.section === 'Departments') },
+    { label: 'Tools', items: visibleItems.filter(i => i.section === 'Tools') },
   ]
 
   return (
@@ -4068,22 +4079,29 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const { slug } = use(params)
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
-  const [clubName, setClubName] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_club_name') || 'Oakridge FC'
-    }
-    return 'Oakridge FC'
-  })
-  const [userName, setUserName] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
-    }
-    return ''
-  })
+  const [clubName, setClubName] = useState('Oakridge FC')
+  const [userName, setUserName] = useState('')
+
+  useEffect(() => {
+    const cn = localStorage.getItem('football_club_name'); if (cn) setClubName(cn)
+    const un = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name'); if (un) setUserName(un)
+  }, [])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+  const [footballRole, setFootballRole] = useState<string | null>(null)
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
+
+  useEffect(() => {
+    setFootballRole(localStorage.getItem('lumio_football_impersonated_role'))
+    const email = localStorage.getItem('lumio_user_email')
+    if (email) {
+      const p = localStorage.getItem(`lumio_staff_photo_${email}`)
+      if (p && !p.startsWith('data:')) setUserPhoto(p)
+    }
+  }, [])
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -4128,14 +4146,50 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
-      {/* Top-right avatar */}
+      {/* Impersonation banner */}
+      {footballRole && footballRole !== 'chairman' && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
+          <Eye size={14} style={{ color: '#F59E0B' }} />
+          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+            Previewing as: {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.label} — your actual role is Chairman
+          </span>
+          <button onClick={() => { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role'); window.location.reload() }} className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <X size={10} /> Exit Preview
+          </button>
+        </div>
+      )}
+
+      {/* Top-right role switcher + avatar */}
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Football role switcher */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+            style={{ backgroundColor: footballRole ? 'rgba(245,158,11,0.15)' : 'rgba(241,196,15,0.1)', color: footballRole ? '#F59E0B' : '#F1C40F', border: `1px solid ${footballRole ? 'rgba(245,158,11,0.3)' : 'rgba(241,196,15,0.2)'}` }}>
+            <Eye size={12} /> {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.label} <ChevronDown size={10} />
+          </button>
+          {roleSwitcherOpen && (
+            <div className="absolute top-full right-0 mt-1.5 rounded-xl py-1.5 shadow-xl" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515', zIndex: 100, minWidth: 200 }}>
+              {FOOTBALL_ROLE_OPTIONS.map(r => (
+                <button key={r.key} onClick={() => {
+                  if (r.key === 'chairman') { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role') }
+                  else { setFootballRole(r.key); localStorage.setItem('lumio_football_impersonated_role', r.key) }
+                  setRoleSwitcherOpen(false); window.location.reload()
+                }} className="flex w-full items-center gap-2 px-4 py-2 text-xs transition-colors"
+                  style={{ color: (footballRole || 'chairman') === r.key ? '#F9FAFB' : '#9CA3AF', backgroundColor: (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2D1515' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}>
+                  <span>{r.emoji}</span> {r.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          {initials}
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden' }}>
+          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : initials}
         </button>
       </div>
 
