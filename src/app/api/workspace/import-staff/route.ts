@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { propagateAllStaff } from '@/lib/staff/propagate'
+import { assignDepartments } from '@/lib/staff/departmentMatch'
 
 function getSupabase() {
   return createClient(
@@ -42,18 +43,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Filter valid rows and prepare for upsert
-    const rows = staff
-      .filter(s => s.first_name || s.email)
-      .map(s => ({
+    const validStaff = staff.filter(s => s.first_name || s.email)
+
+    // Run department auto-assignment
+    const deptResults = assignDepartments(validStaff.map(s => ({ department: s.department, job_title: s.job_title })))
+
+    const rows = validStaff.map((s, i) => {
+      const match = deptResults.results[i]?.matched
+      return {
         business_id: session.business_id,
         first_name: s.first_name?.trim() || null,
         last_name: s.last_name?.trim() || null,
         email: s.email?.trim().toLowerCase() || null,
         job_title: s.job_title?.trim() || null,
-        department: s.department?.trim() || null,
+        department: match ? match.label : (s.department?.trim() || null),
         phone: s.phone?.trim() || null,
         start_date: s.start_date?.trim() || null,
-      }))
+      }
+    })
 
     if (!rows.length) {
       return NextResponse.json({ error: 'No valid staff rows (need First Name or Email)' }, { status: 400 })
@@ -95,7 +102,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, imported: rows.length })
+    return NextResponse.json({
+      success: true,
+      imported: rows.length,
+      departments_assigned: deptResults.assigned,
+      departments_pending: deptResults.pending,
+    })
   } catch (err) {
     console.error('[workspace/import-staff] Error:', err)
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })

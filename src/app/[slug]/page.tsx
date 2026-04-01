@@ -2255,7 +2255,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
           }
           window.dispatchEvent(new Event('lumio-staff-imported'))
-          onToast(`${data.imported} staff members imported successfully`)
+          const deptMsg = data.departments_pending > 0
+            ? ` — ${data.departments_assigned} assigned automatically, ${data.departments_pending} need department review`
+            : ''
+          onToast(`${data.imported} staff members imported successfully${deptMsg}`)
         } else {
           console.error('[handleUpload] Staff import error:', data)
           onToast(`Import failed: ${data.error || 'check your CSV format'}`)
@@ -3060,6 +3063,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
+  const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -3084,10 +3088,18 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     if (ssoSession) {
       localStorage.setItem('workspace_session_token', ssoSession)
       const ssoSlug = urlParams.get('sso_slug'); if (ssoSlug) { localStorage.setItem('lumio_workspace_slug', ssoSlug); localStorage.setItem('lumio_company_active', 'true') }
-      const ssoCompany = urlParams.get('sso_company'); if (ssoCompany) { localStorage.setItem('workspace_company_name', ssoCompany); localStorage.setItem('lumio_company_name', ssoCompany) }
-      const ssoName = urlParams.get('sso_name'); if (ssoName) { localStorage.setItem('workspace_user_name', ssoName); localStorage.setItem('lumio_user_name', ssoName) }
+      const ssoCompany = urlParams.get('sso_company'); if (ssoCompany) { localStorage.setItem('workspace_company_name', ssoCompany); localStorage.setItem('lumio_company_name', ssoCompany); setCompany(ssoCompany) }
+      const ssoName = urlParams.get('sso_name'); if (ssoName) { localStorage.setItem('workspace_user_name', ssoName); localStorage.setItem('lumio_user_name', ssoName); setUserName(ssoName) }
       const ssoEmail = urlParams.get('sso_email'); if (ssoEmail) localStorage.setItem('lumio_user_email', ssoEmail)
-      const ssoLogo = urlParams.get('sso_logo'); if (ssoLogo) { localStorage.setItem('workspace_company_logo', ssoLogo); localStorage.setItem('lumio_company_logo', ssoLogo) }
+      const ssoLogo = urlParams.get('sso_logo'); if (ssoLogo) { localStorage.setItem('workspace_company_logo', ssoLogo); localStorage.setItem('lumio_company_logo', ssoLogo); setCompanyLogo(ssoLogo) }
+      // Department assignment from SSO
+      const ssoDept = urlParams.get('sso_department'); if (ssoDept) localStorage.setItem('lumio_user_department', ssoDept)
+      const ssoJobTitle = urlParams.get('sso_job_title'); if (ssoJobTitle) localStorage.setItem('lumio_user_job_title', ssoJobTitle)
+      const ssoDeptPending = urlParams.get('sso_dept_pending') === 'true'
+      // Show SSO welcome modal on first login
+      if (urlParams.get('sso_first_login') === 'true') {
+        setSsoWelcome({ name: urlParams.get('sso_name') || '', department: ssoDept || null, pending: ssoDeptPending })
+      }
       window.history.replaceState({}, '', window.location.pathname)
     }
 
@@ -3268,6 +3280,28 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         </div>
       </div>
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+
+      {/* SSO Welcome Modal */}
+      {ssoWelcome && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.95)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSsoWelcome(null)}>
+          <div style={{ textAlign: 'center', maxWidth: 440, padding: '2.5rem', width: '100%', backgroundColor: '#111318', borderRadius: 20, border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{ssoWelcome.pending ? '👋' : '🎉'}</div>
+            <h2 style={{ color: '#F9FAFB', fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>Welcome, {ssoWelcome.name.split(' ')[0] || 'there'}!</h2>
+            {ssoWelcome.pending ? (
+              <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+                Your department is being confirmed by HR — you have full access in the meantime.
+              </p>
+            ) : (
+              <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+                You&apos;ve been assigned to <span style={{ color: '#7C3AED', fontWeight: 600 }}>{ssoWelcome.department}</span>. Your workspace is ready to go.
+              </p>
+            )}
+            <button onClick={() => setSsoWelcome(null)} style={{ width: '100%', padding: '12px 24px', borderRadius: 12, backgroundColor: '#7C3AED', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Live tenant onboarding wizard */}
       {showLiveOnboarding && businessId && (
