@@ -761,7 +761,8 @@ function MorningRoundup() {
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
                   {item.messages.map(msg => (
-                    <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
+                    <div key={msg.id} className="rounded-lg p-3 relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.75 : 1 }}>
+                      {!msg.read && <span className="absolute top-2 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Unread</span>}
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-2">
                           <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>
@@ -769,34 +770,17 @@ function MorningRoundup() {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              <span className={`text-xs truncate ${msg.read ? 'font-normal' : 'font-bold'}`} style={{ color: '#F9FAFB' }}>{msg.from}</span>
                               {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
                               {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
                             </div>
-                            <div className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{msg.subject}</div>
+                            <div className={`text-xs ${msg.read ? 'font-normal' : 'font-semibold'}`} style={{ color: msg.read ? '#6B7280' : '#D1D5DB' }}>{msg.subject}</div>
                           </div>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
                       </div>
                       <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
-                      {replied.includes(msg.id) ? (
-                        <span className="text-xs" style={{ color: '#C0392B' }}>Replied</span>
-                      ) : (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button onClick={() => setShowReply(showReply === msg.id ? null : msg.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>Reply</button>
-                          <button className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
-                        </div>
-                      )}
-                      {showReply === msg.id && (
-                        <div className="mt-2">
-                          <textarea value={replyText[msg.id] || ''} onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))} placeholder="Write your reply..." rows={2}
-                            className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
-                          <div className="flex gap-2 mt-1.5">
-                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Send</button>
-                            <button onClick={() => setShowReply(null)} className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
-                          </div>
-                        </div>
-                      )}
+                      <EmailActions msgId={msg.id} source="outlook" senderEmail={msg.from} subject={msg.subject} preview={msg.preview} isRead={msg.read} onToast={() => {}} />
                     </div>
                   ))}
                 </div>
