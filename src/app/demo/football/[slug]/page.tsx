@@ -22,6 +22,7 @@ import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
+import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import { EmailActions } from '@/components/overview/MessageActions'
 import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 
@@ -30,7 +31,7 @@ import { EmailComposeModal, MeetingBookModal } from '@/components/overview/Compo
 type DeptId =
   | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
-  | 'media' | 'social' | 'matchday' | 'training' | 'finance'
+  | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
 
@@ -84,6 +85,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
   { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
   { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
+  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'Tools' },
   { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
   { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
   { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
@@ -4271,6 +4273,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'social' && <SocialMediaView />}
             {activeDept === 'matchday' && <MatchdayView />}
             {activeDept === 'training' && <TrainingView />}
+            {activeDept === 'performance' && <GPSPerformanceView />}
             {activeDept === 'finance' && <FinanceView />}
             {activeDept === 'staff' && <StaffView />}
             {activeDept === 'facilities' && <FacilitiesView />}

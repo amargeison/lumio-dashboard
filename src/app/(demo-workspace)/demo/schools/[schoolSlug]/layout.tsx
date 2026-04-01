@@ -18,6 +18,7 @@ const EXPANDED_W = 200
 const NAV = [
   { section: null,          path: '',              label: 'Overview',               icon: LayoutDashboard, badge: null },
   { section: null,          path: 'insights',      label: 'Insights',               icon: Sparkles,        badge: null },
+  { section: null,          path: 'slt',           label: 'SLT Suite',              icon: GraduationCap,   badge: null },
   { section: 'Departments', path: 'school-office', label: 'School Office',          icon: Building2,       badge: null },
   { section: null,          path: 'hr-staff',      label: 'HR & Staff',             icon: Users,           badge: null },
   { section: null,          path: 'curriculum',    label: 'Curriculum',             icon: BookOpen,        badge: null },
