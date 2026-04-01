@@ -83,9 +83,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [tenantSlug, setTenantSlug] = useState('')
+  const [mounted, setMounted] = useState(false)
 
-  // Resolve slug on mount (client-side only)
-  useEffect(() => { setTenantSlug(resolveSlug()) }, [])
+  // Resolve slug on mount and pathname changes (client-side only)
+  useEffect(() => {
+    setTenantSlug(resolveSlug())
+    setMounted(true)
+  }, [pathname])
 
   const navItems = BASE_NAV_ITEMS.map(item => ({
     ...item,

@@ -119,7 +119,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
 }) {
   const initials = userInitials || (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const companyInitials = (companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
+  const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [logoUrl, setLogoUrl] = useState(initialLogo || null)
   const [iconHover, setIconHover] = useState(false)
@@ -128,6 +128,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const expanded = pinned || hovered
   const [, forceUpdate] = useState(0)
   useEffect(() => {
+    setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     const handler = () => forceUpdate(n => n + 1)
     window.addEventListener('lumio-settings-changed', handler)
     return () => window.removeEventListener('lumio-settings-changed', handler)
@@ -1708,11 +1709,19 @@ function ComingSoonView({ dept }: { dept: DeptId }) {
 // ─── Briefing Settings ──────────────────────────────────────────────────────
 
 function BriefingSettings() {
-  const [enabled, setEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_enabled') !== 'false' : true)
-  const [weather, setWeather] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_weather') !== 'false' : true)
-  const [meetings, setMeetings] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_meetings') !== 'false' : true)
-  const [urgent, setUrgent] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_urgent') !== 'false' : true)
-  const [time, setTime] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_briefing_time') || '8am' : '8am')
+  const [enabled, setEnabled] = useState(true)
+  const [weather, setWeather] = useState(true)
+  const [meetings, setMeetings] = useState(true)
+  const [urgent, setUrgent] = useState(true)
+  const [time, setTime] = useState('8am')
+
+  useEffect(() => {
+    if (localStorage.getItem('lumio_briefing_enabled') === 'false') setEnabled(false)
+    if (localStorage.getItem('lumio_briefing_weather') === 'false') setWeather(false)
+    if (localStorage.getItem('lumio_briefing_meetings') === 'false') setMeetings(false)
+    if (localStorage.getItem('lumio_briefing_urgent') === 'false') setUrgent(false)
+    const t = localStorage.getItem('lumio_briefing_time'); if (t) setTime(t)
+  }, [])
 
   function toggle(key: string, val: boolean, setter: (v: boolean) => void) {
     setter(!val)
@@ -1776,14 +1785,17 @@ const VOICES = [
 ]
 
 function VoiceSelector() {
-  const [activeVoice, setActiveVoice] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM'
-    return '21m00Tcm4TlvDq8ikWAM'
-  })
+  const [activeVoice, setActiveVoice] = useState('21m00Tcm4TlvDq8ikWAM')
   const [previewing, setPreviewing] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
-  const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
+  const [ttsOn, setTtsOn] = useState(true)
+  const [vcOn, setVcOn] = useState(true)
+
+  useEffect(() => {
+    const v = localStorage.getItem('lumio_tts_voice'); if (v) setActiveVoice(v)
+    if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsOn(false)
+    if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVcOn(false)
+  }, [])
 
   function selectVoice(id: string) {
     setActiveVoice(id)
@@ -2058,7 +2070,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [editingName, setEditingName] = useState(false)
   const [companyNameDraft, setCompanyNameDraft] = useState(company)
   const [savingName, setSavingName] = useState(false)
-  const [logoUrl, setLogoUrl] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') || '' : '')
+  const [logoUrl, setLogoUrl] = useState('')
 
   // Team invite
   const [inviteEmail, setInviteEmail] = useState('')
@@ -2077,9 +2089,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   })
 
   // Notifications
-  const [emailNotifs, setEmailNotifs] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_email') !== 'false' : true)
-  const [inAppNotifs, setInAppNotifs] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_inapp') !== 'false' : true)
-  const [weeklyDigest, setWeeklyDigest] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_notif_weekly') !== 'false' : true)
+  const [emailNotifs, setEmailNotifs] = useState(true)
+  const [inAppNotifs, setInAppNotifs] = useState(true)
+  const [weeklyDigest, setWeeklyDigest] = useState(true)
 
   // Customise re-render key
   const [customiseKey, setCustomiseKey] = useState(0)
@@ -2299,10 +2311,20 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     setTimeout(() => setInviteSent(false), 3000)
   }
 
-  function toggleIntegration(key: string) {
-    const next = !connectedIntegrations[key]
-    setConnectedIntegrations(prev => ({ ...prev, [key]: next }))
-    localStorage.setItem(`lumio_integration_${key}`, String(next))
+  const [integrationToast, setIntegrationToast] = useState('')
+
+  function handleConnectIntegration(key: string, name: string) {
+    // If already connected, allow disconnect
+    if (connectedIntegrations[key]) {
+      setConnectedIntegrations(prev => ({ ...prev, [key]: false }))
+      localStorage.setItem(`lumio_integration_${key}`, 'false')
+      setIntegrationToast(`${name} disconnected`)
+      setTimeout(() => setIntegrationToast(''), 3000)
+      return
+    }
+    // No real OAuth configured yet — show coming soon
+    setIntegrationToast(`${name} integration coming soon — OAuth is being configured`)
+    setTimeout(() => setIntegrationToast(''), 4000)
   }
 
   function toggleNotif(key: string, val: boolean, setter: (v: boolean) => void) {
@@ -2503,12 +2525,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
                       {connected ? (
                         <div className="flex items-center gap-2 shrink-0 ml-3">
                           <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
-                          <button onClick={() => toggleIntegration(integ.key)} className="text-xs px-2.5 py-1 rounded-lg" style={{ color: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                          <button onClick={() => handleConnectIntegration(integ.key, integ.name)} className="text-xs px-2.5 py-1 rounded-lg" style={{ color: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
                             Disconnect
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => toggleIntegration(integ.key)} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
+                        <button onClick={() => handleConnectIntegration(integ.key, integ.name)} className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
                           Connect
                         </button>
                       )}
@@ -2520,6 +2542,13 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           ))}
         </div>
       </div>
+
+      {/* Integration toast */}
+      {integrationToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] rounded-xl px-5 py-3 shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 440 }}>
+          <p className="text-sm" style={{ color: '#F9FAFB' }}>{integrationToast}</p>
+        </div>
+      )}
 
       {/* ── Section 5: AI Morning Briefing ────────────────────────────────── */}
       <BriefingSettings />
@@ -2989,12 +3018,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const router = useRouter()
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
-  const [company, setCompany]       = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('workspace_company_name') || ''
-    }
-    return ''
-  })
+  const [company, setCompany]       = useState('')
   const [userName, setUserName]     = useState('')
   const [companyLogo, setCompanyLogo] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -3008,8 +3032,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [businessId, setBusinessId] = useState('')
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [ttsEnabled, setTtsEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
-  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
+  const [ttsEnabled, setTtsEnabled] = useState(true)
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -3024,6 +3048,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     setCompany(name)
     setUserName(user)
     setCompanyLogo(logo)
+    // Hydration-safe: read client-only settings after mount
+    if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
+    if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
 
     // Validate session against businesses table
     const sessionToken = localStorage.getItem('workspace_session_token')
