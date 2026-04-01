@@ -70,11 +70,16 @@ function saveProfile(email: string, profile: StaffProfile) {
 
 function getPhoto(email?: string): string | null {
   if (!email || typeof window === 'undefined') return null
-  return localStorage.getItem(`lumio_staff_photo_${email}`) || null
+  const val = localStorage.getItem(`lumio_staff_photo_${email}`)
+  // Only return URL strings, never base64 blobs (cleanup from legacy code)
+  if (val && val.startsWith('data:')) { localStorage.removeItem(`lumio_staff_photo_${email}`); return null }
+  return val || null
 }
 
-function savePhoto(email: string, base64: string) {
-  localStorage.setItem(`lumio_staff_photo_${email}`, base64)
+function savePhoto(email: string, url: string) {
+  // Only store URL strings — never base64
+  if (url.startsWith('data:')) return
+  localStorage.setItem(`lumio_staff_photo_${email}`, url)
 }
 
 function removePhoto(email: string) {

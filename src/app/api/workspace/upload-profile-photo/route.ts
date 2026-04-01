@@ -42,6 +42,12 @@ export async function POST(req: NextRequest) {
 
     const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
 
+    // Update workspace_staff with the photo URL
+    if (email) {
+      await supabase.from('workspace_staff').update({ profile_photo_url: publicUrl }).eq('business_id', session.business_id).eq('email', email)
+        .then(({ error: dbErr }) => { if (dbErr) console.warn('[upload-profile-photo] DB update note:', dbErr.message) })
+    }
+
     return NextResponse.json({ success: true, url: publicUrl })
   } catch (err) {
     console.error('[upload-profile-photo] Error:', err)

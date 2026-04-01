@@ -3735,16 +3735,25 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     // Hydration-safe: read client-only settings after mount
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
-    // Load profile photo
+    // Load profile photo (URL only — clean up any legacy base64)
     const userEmail = localStorage.getItem('lumio_user_email')
     if (userEmail) {
       const photo = localStorage.getItem(`lumio_staff_photo_${userEmail}`)
-      if (photo) setUserPhoto(photo)
+      if (photo && photo.startsWith('data:')) { localStorage.removeItem(`lumio_staff_photo_${userEmail}`) } // clean up base64
+      else if (photo) setUserPhoto(photo)
+      // Also check lumio_user_photo
+      const userPhoto2 = localStorage.getItem('lumio_user_photo')
+      if (userPhoto2 && !userPhoto2.startsWith('data:')) setUserPhoto(userPhoto2)
     }
     // Listen for photo updates
     function onPhotoUpdate() {
       const e = localStorage.getItem('lumio_user_email')
-      if (e) { const p = localStorage.getItem(`lumio_staff_photo_${e}`); setUserPhoto(p) }
+      if (e) {
+        const p = localStorage.getItem(`lumio_staff_photo_${e}`)
+        const p2 = localStorage.getItem('lumio_user_photo')
+        const photo = (p && !p.startsWith('data:')) ? p : (p2 && !p2.startsWith('data:')) ? p2 : null
+        setUserPhoto(photo)
+      }
     }
     window.addEventListener('storage', onPhotoUpdate)
 
