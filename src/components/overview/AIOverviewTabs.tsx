@@ -481,75 +481,54 @@ function saveReportingOverrides(data: Record<string, string>) {
 
 interface OrgNode { id: string; name: string; role: string; department: string; level: HierarchyLevel; children: OrgNode[] }
 
-function buildHierarchy(members: TeamMember[], userName: string, userRole: string): OrgNode {
+function buildHierarchy(members: TeamMember[], _userName: string, _userRole: string): OrgNode {
   const overrides = getReportingOverrides()
-  const root: OrgNode = { id: 'root', name: userName || 'You', role: userRole || 'Manager', department: '', level: 'csuite', children: [] }
+  // Virtual root — invisible container. Hierarchy is PURELY based on role_level.
+  const root: OrgNode = { id: 'root', name: '', role: '', department: '', level: 'csuite', children: [] }
 
-  // Categorise members by level
-  const byLevel: Record<HierarchyLevel, TeamMember[]> = { csuite: [], director: [], manager: [], staff: [] }
-  members.forEach(m => { byLevel[detectLevel(m.role, m.roleLevel)].push(m) })
-
-  // Build tree with overrides first, then auto-detect
-  const placed = new Set<string>()
   const nodeMap = new Map<string, OrgNode>()
+  const placed = new Set<string>()
 
   // Create nodes for all members
   members.forEach(m => {
     nodeMap.set(m.id, { id: m.id, name: m.name, role: m.role, department: m.department, level: detectLevel(m.role, m.roleLevel), children: [] })
   })
 
-  // Apply overrides
+  // Apply manual overrides first
   for (const [childId, parentId] of Object.entries(overrides)) {
     const child = nodeMap.get(childId)
     const parent = parentId === 'root' ? root : nodeMap.get(parentId)
     if (child && parent) { parent.children.push(child); placed.add(childId) }
   }
 
-  // Auto-place unplaced members by level
-  const unplaced = members.filter(m => !placed.has(m.id))
-
-  // C-Suite → report to root
-  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'csuite').forEach(m => {
-    const node = nodeMap.get(m.id)!; root.children.push(node); placed.add(m.id)
-  })
-
-  // Helper: find first C-Suite node (for cascading)
-  const firstCSuite = root.children.find(c => c.level === 'csuite') || null
-
-  // Directors → report to C-Suite in same dept, any C-Suite, or root
-  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'director' && !placed.has(m.id)).forEach(m => {
-    const node = nodeMap.get(m.id)!
-    const deptCSuite = root.children.find(c => c.level === 'csuite' && c.department === m.department)
-    const parent = deptCSuite || firstCSuite || root
-    parent.children.push(node); placed.add(m.id)
-  })
-
-  // Helper: find all placed nodes recursively
   const findInTree = (nodes: OrgNode[], test: (n: OrgNode) => boolean): OrgNode | null => {
     for (const n of nodes) { if (test(n)) return n; const found = findInTree(n.children, test); if (found) return found }
     return null
   }
 
-  // Managers → find Director in same dept, any Director, C-Suite, or root
-  unplaced.filter(m => detectLevel(m.role, m.roleLevel) === 'manager' && !placed.has(m.id)).forEach(m => {
-    const node = nodeMap.get(m.id)!
-    const parent =
-      findInTree(root.children, n => n.level === 'director' && n.department === m.department) ||
-      findInTree(root.children, n => n.level === 'director') ||
-      firstCSuite || root
-    parent.children.push(node); placed.add(m.id)
-  })
+  // Place by level: csuite/director → root, manager → under director, staff → under manager
+  const levels: HierarchyLevel[] = ['csuite', 'director', 'manager', 'staff']
+  for (const level of levels) {
+    members.filter(m => detectLevel(m.role, m.roleLevel) === level && !placed.has(m.id)).forEach(m => {
+      const node = nodeMap.get(m.id)!
+      let parent: OrgNode = root
+      if (level === 'manager') {
+        parent = findInTree(root.children, n => n.level === 'director' && n.department === m.department)
+          || findInTree(root.children, n => (n.level === 'csuite' || n.level === 'director'))
+          || root
+      } else if (level === 'staff') {
+        parent = findInTree(root.children, n => n.level === 'manager' && n.department === m.department)
+          || findInTree(root.children, n => n.level === 'manager')
+          || findInTree(root.children, n => n.level === 'director' && n.department === m.department)
+          || findInTree(root.children, n => (n.level === 'csuite' || n.level === 'director'))
+          || root
+      }
+      parent.children.push(node); placed.add(m.id)
+    })
+  }
 
-  // Staff → find Manager in same dept, any Manager, Director in same dept, or root
-  unplaced.filter(m => !placed.has(m.id)).forEach(m => {
-    const node = nodeMap.get(m.id)!
-    const parent =
-      findInTree(root.children, n => n.level === 'manager' && n.department === m.department) ||
-      findInTree(root.children, n => n.level === 'manager') ||
-      findInTree(root.children, n => n.level === 'director' && n.department === m.department) ||
-      firstCSuite || root
-    parent.children.push(node)
-  })
+  // If root has exactly 1 child, promote it to be the effective root (cleaner visual)
+  if (root.children.length === 1) return root.children[0]
 
   return root
 }
@@ -558,7 +537,7 @@ function nodeToStaffRecord(node: OrgNode, currentUserEmail?: string): StaffRecor
   const parts = node.name.split(' ')
   // Preserve real email for photo lookup — node.id is the email for imported staff
   let email: string | undefined
-  if (node.id === 'root' && currentUserEmail) email = currentUserEmail
+  if (currentUserEmail && node.id.includes('@') === false) email = currentUserEmail // fallback for virtual nodes
   else if (node.id.includes('@') && !node.id.endsWith('@staff')) email = node.id
   return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '', job_title: node.role, department: node.department || 'General', email }
 }
@@ -607,7 +586,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
           <EmployeeProfileCard
             staff={staffRecord}
             index={0}
-            isCurrentUser={node.id === 'root'}
+            isCurrentUser={node.name.toLowerCase() === (ctx.userName || '').toLowerCase()}
             onViewProfile={() => setProfileNode(node)}
             variant="mini"
           />

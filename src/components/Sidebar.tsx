@@ -93,7 +93,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setMounted(true)
   }, [pathname])
 
-  const [userRole] = useState(() => typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false })
+  const [userRole, setUserRole] = useState({ role: 'user' as string, role_level: 4 as number, isOwner: false })
+  useEffect(() => { setUserRole(getClientRole()) }, [])
   const navItems = BASE_NAV_ITEMS
     .filter(item => item.path !== '/directors' || userRole.role_level <= 1 || userRole.isOwner)
     .map(item => ({

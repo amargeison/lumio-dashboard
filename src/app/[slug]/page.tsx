@@ -3830,6 +3830,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (data.owner_email) {
             setOwnerEmail(data.owner_email)
             localStorage.setItem('lumio_user_email', data.owner_email)
+            // Owner is always a director — cache role for sidebar Directors Suite visibility
+            localStorage.setItem('lumio_user_role_level', '1')
+            localStorage.setItem('lumio_user_is_owner', 'true')
           }
           if (data.logo_url) {
             setCompanyLogo(data.logo_url)
