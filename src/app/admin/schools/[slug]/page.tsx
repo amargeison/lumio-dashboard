@@ -181,6 +181,9 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
         </div>
       </div>
 
+      {/* School Staff */}
+      <SchoolStaffPanel schoolId={account.id} slug={account.slug || slug} token={token} />
+
       {/* Danger Zone */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(239,68,68,0.3)' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
@@ -214,6 +217,57 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ slug: s
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function SchoolStaffPanel({ schoolId, slug, token }: { schoolId: string; slug: string; token: string }) {
+  const [staff, setStaff] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch(`/api/admin/school-staff?school_id=${schoolId}`, { headers: { 'x-admin-token': token } })
+      .then(r => r.ok ? r.json() : { staff: [] })
+      .then(d => setStaff(d.staff || []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [schoolId, token])
+
+  function impersonate(s: any) {
+    localStorage.setItem('lumio_impersonated_user_email', s.email || '')
+    localStorage.setItem('lumio_impersonated_user_name', s.name || s.email)
+    localStorage.setItem('lumio_impersonated_user_role', s.role || 'teacher')
+    localStorage.setItem('lumio_impersonated_user_role_level', String(s.role_level || 3))
+    localStorage.setItem('lumio_impersonated_from_admin', 'true')
+    localStorage.setItem('lumio_school_role_level', String(s.role_level || 3))
+    router.push(`/schools/${slug}`)
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Staff ({staff.length})</p>
+      </div>
+      {loading ? (
+        <div className="p-5"><div className="animate-pulse rounded-lg" style={{ backgroundColor: '#1F2937', height: 60 }} /></div>
+      ) : staff.length === 0 ? (
+        <p className="px-5 py-6 text-xs text-center" style={{ color: '#6B7280' }}>No staff found for this school</p>
+      ) : (
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {staff.map((s: any, i: number) => (
+            <div key={s.email || i} className="flex items-center justify-between px-5 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{s.name || s.email}</p>
+                <p className="text-xs truncate" style={{ color: '#6B7280' }}>{s.role || 'Staff'} · {s.email}</p>
+              </div>
+              <button onClick={() => impersonate(s)} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+                <Eye size={12} /> Impersonate
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
