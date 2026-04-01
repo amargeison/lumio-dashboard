@@ -2749,10 +2749,15 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
           }
           window.dispatchEvent(new Event('lumio-staff-imported'))
+          const parts: string[] = []
+          if (data.added > 0) parts.push(`${data.added} added`)
+          if (data.updated > 0) parts.push(`${data.updated} updated`)
+          if (data.skipped > 0) parts.push(`${data.skipped} skipped`)
+          const summary = parts.length ? parts.join(', ') : `${data.imported} imported`
           const deptMsg = data.departments_pending > 0
-            ? ` — ${data.departments_assigned} assigned automatically, ${data.departments_pending} need department review`
+            ? ` — ${data.departments_assigned} dept assigned, ${data.departments_pending} need review`
             : ''
-          onToast(`${data.imported} staff members imported successfully${deptMsg}`)
+          onToast(`Import complete — ${summary}${deptMsg}`)
         } else {
           console.error('[handleUpload] Staff import error:', data)
           onToast(`Import failed: ${data.error || 'check your CSV format'}`)

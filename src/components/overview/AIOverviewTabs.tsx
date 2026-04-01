@@ -683,7 +683,17 @@ interface ImportedStaff {
 
 function getImportedStaff(): ImportedStaff[] {
   if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+  try {
+    const raw: ImportedStaff[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+    // Deduplicate by email at read time
+    const seen = new Set<string>()
+    return raw.filter(s => {
+      const key = s.email?.toLowerCase() || `${s.first_name}_${s.last_name}`.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  } catch { return [] }
 }
 
 function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
@@ -713,10 +723,21 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
     return () => window.removeEventListener('lumio-staff-imported', handler)
   }, [])
 
-  const hasImported = importedStaff.length > 0
-  // If staff have been imported, use them as primary source; AI items as fallback
+  // Deduplicate imported staff by email
+  const dedupedStaff = React.useMemo(() => {
+    const seen = new Set<string>()
+    return importedStaff.filter(s => {
+      const key = s.email?.toLowerCase() || `${s.first_name}_${s.last_name}`.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [importedStaff])
+
+  const hasImported = dedupedStaff.length > 0
+  // Use imported staff as primary source (single source of truth); AI items as fallback only
   const items: TeamMember[] = hasImported
-    ? importedStaff.map((s, i) => importedToTeamMember(s, i))
+    ? dedupedStaff.map((s, i) => importedToTeamMember(s, i))
     : aiItems
 
   const statusColor: Record<string, string> = { available: '#22C55E', 'in-meeting': '#F59E0B', busy: '#EF4444', away: '#6B7280' }
