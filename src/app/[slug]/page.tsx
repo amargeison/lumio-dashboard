@@ -134,6 +134,22 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const fileRef = useRef<HTMLInputElement>(null)
   const expanded = pinned || hovered
   const [, forceUpdate] = useState(0)
+
+  // Sync logo from prop (arrives after async fetch in parent)
+  useEffect(() => {
+    if (initialLogo) setLogoUrl(initialLogo)
+  }, [initialLogo])
+
+  // Also read from localStorage as fallback (in case prop is empty but localStorage has it)
+  useEffect(() => {
+    if (!logoUrl) {
+      const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
+      if (stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
+        setLogoUrl(stored)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     const handler = () => forceUpdate(n => n + 1)
@@ -164,6 +180,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
       const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
       setLogoUrl(publicUrl)
       localStorage.setItem('lumio_company_logo', publicUrl)
+      localStorage.setItem('workspace_company_logo', publicUrl)
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
   }
@@ -188,7 +205,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             title="Upload company logo"
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
@@ -3905,7 +3922,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     const user = isAdminImpersonating
       ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem('workspace_user_name') || '')
       : (localStorage.getItem('workspace_user_name') || '')
-    const logo = localStorage.getItem('workspace_company_logo') || ''
+    const logo = localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') || ''
     setCompany(name)
     setUserName(user)
     setCompanyLogo(logo)

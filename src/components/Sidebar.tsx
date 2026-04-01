@@ -202,6 +202,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
       setCompanyLogo(publicUrl)
       localStorage.setItem('lumio_company_logo', publicUrl)
+      localStorage.setItem('workspace_company_logo', publicUrl)
       URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error('Logo upload failed:', err)
