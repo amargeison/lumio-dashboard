@@ -33,6 +33,8 @@ import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 import HRSnapshot from '@/components/overview/HRSnapshot'
+import ProjectsSnapshot from '@/components/overview/ProjectsSnapshot'
+import RecentFiles from '@/components/overview/RecentFiles'
 
 // ─── Staff types & helpers ───────────────────────────────────────────────────
 
@@ -3354,8 +3356,14 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             )
           })()}
 
-          {/* HR Snapshot — shows when any HR integration connected */}
-          {!demoDataActive && <HRSnapshot />}
+          {/* Integration snapshots — show when connected */}
+          {!demoDataActive && (
+            <div className="space-y-4">
+              <HRSnapshot />
+              <ProjectsSnapshot />
+              <RecentFiles />
+            </div>
+          )}
 
           {demoDataActive ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
