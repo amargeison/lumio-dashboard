@@ -32,6 +32,7 @@ import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 import { EmailActions, MeetingActions } from '@/components/overview/MessageActions'
+import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 import HRSnapshot from '@/components/overview/HRSnapshot'
 import ProjectsSnapshot from '@/components/overview/ProjectsSnapshot'
@@ -3409,6 +3410,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
   const [showPhoneCall, setShowPhoneCall] = useState(false)
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [showMeetingBook, setShowMeetingBook] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [callVia, setCallVia] = useState('Phone')
   const [, forceUpdate] = useState(0)
@@ -3426,6 +3429,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
 
   const quickActionModals: Record<string, () => void> = {
+    'Send Email': () => setShowEmailCompose(true),
+    'Book Meeting': () => setShowMeetingBook(true),
     'Phone Call': () => setShowPhoneCall(true),
     'Claim Expenses': () => setShowExpense(true),
     'Book Holiday': () => setShowHoliday(true),
@@ -3620,6 +3625,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
       {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
       {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
+      {showEmailCompose && <EmailComposeModal onClose={() => setShowEmailCompose(false)} onToast={onAction} />}
+      {showMeetingBook && <MeetingBookModal onClose={() => setShowMeetingBook(false)} onToast={onAction} />}
 
       {/* Phone Call modal */}
       {showPhoneCall && (
