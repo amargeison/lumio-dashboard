@@ -32,6 +32,7 @@ import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
+import HRSnapshot from '@/components/overview/HRSnapshot'
 
 // ─── Staff types & helpers ───────────────────────────────────────────────────
 
@@ -838,6 +839,11 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
         if (staff.length > 0) parts.push(`Your team has ${staff.length} ${staff.length === 1 ? 'member' : 'members'}.`)
       }
     } catch { /* ignore */ }
+
+    // HR platform mention
+    if (typeof window !== 'undefined' && ['bamboohr', 'sage_hr', 'breathe', 'worksmarter'].some(k => localStorage.getItem(`lumio_integration_${k}`) === 'true')) {
+      parts.push('Your HR platform is connected — check the HR department for leave requests and team updates.')
+    }
 
     // Integration tip
     const anyConnected = typeof window !== 'undefined' && Object.keys(localStorage).some(k => k.startsWith('lumio_integration_') && localStorage.getItem(k) === 'true')
@@ -1657,26 +1663,28 @@ const MEETINGS: { id: string; title: string; time: string; duration: string; att
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
 ]
 
-interface LiveCalEvent { id: string; title: string; start: string; end: string; attendeesCount: number; location: string | null; isOnline: boolean; joinUrl: string | null }
+interface LiveCalEvent { id: string; title: string; start: string; end: string; attendeesCount: number; location: string | null; isOnline: boolean; joinUrl: string | null; source?: 'microsoft' | 'google' }
 
 function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [liveEvents, setLiveEvents] = useState<LiveCalEvent[] | null>(null)
   const [calError, setCalError] = useState<string | null>(null)
-  const calConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
+  const msCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
+  const gCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_gcal') === 'true'
+  const calConnected = msCalConnected || gCalConnected
 
   useEffect(() => {
     if (!calConnected || demoDataActive) return
     const token = localStorage.getItem('workspace_session_token') || ''
     if (!token) return
-    fetch('/api/integrations/microsoft/calendar', { headers: { 'x-workspace-token': token } })
-      .then(r => {
-        if (r.status === 401) { setCalError('Calendar reconnection needed'); return null }
-        if (!r.ok) return null
-        return r.json()
-      })
-      .then(d => { if (d?.events) setLiveEvents(d.events) })
-      .catch(() => {})
-  }, [calConnected, demoDataActive])
+    const fetches: Promise<LiveCalEvent[]>[] = []
+    if (msCalConnected) fetches.push(fetch('/api/integrations/microsoft/calendar', { headers: { 'x-workspace-token': token } }).then(r => { if (r.status === 401) { setCalError('Outlook Calendar reconnection needed'); return [] } return r.ok ? r.json().then((d: { events: LiveCalEvent[] }) => (d.events || []).map(e => ({ ...e, source: 'microsoft' as const }))) : [] }).catch(() => []))
+    if (gCalConnected) fetches.push(fetch('/api/integrations/google/calendar', { headers: { 'x-workspace-token': token } }).then(r => { if (r.status === 401) { setCalError('Google Calendar reconnection needed'); return [] } return r.ok ? r.json().then((d: { events: LiveCalEvent[] }) => (d.events || []).map(e => ({ ...e, source: 'google' as const }))) : [] }).catch(() => []))
+    Promise.all(fetches).then(results => {
+      const all = results.flat(); const seen = new Set<string>()
+      const deduped = all.filter(e => { const k = `${e.title}|${e.start}`; if (seen.has(k)) return false; seen.add(k); return true })
+      setLiveEvents(deduped.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()))
+    })
+  }, [calConnected, msCalConnected, gCalConnected, demoDataActive])
 
   // Use live data if available, otherwise demo data
   const hasLive = calConnected && !demoDataActive && liveEvents !== null
@@ -1718,7 +1726,10 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                     <div className="text-sm font-bold" style={{ color: isNow ? '#4ADE80' : '#E5E7EB' }}>{formatTime(evt.start)}</div>
                     <div className="text-xs" style={{ color: '#6B7280' }}>{formatTime(evt.end)}</div>
                   </div>
-                  <span className="text-base flex-shrink-0">{evt.isOnline ? '📹' : '📅'}</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-base">{evt.isOnline ? '📹' : '📅'}</span>
+                    {evt.source && <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: evt.source === 'google' ? 'rgba(66,133,244,0.15)' : 'rgba(0,164,239,0.15)', color: evt.source === 'google' ? '#4285F4' : '#00A4EF' }}>{evt.source === 'google' ? 'G' : 'M'}</span>}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: isPast ? '#6B7280' : '#F9FAFB', textDecoration: isPast ? 'line-through' : 'none' }}>{evt.title}</p>
                     <p className="text-xs truncate" style={{ color: '#6B7280' }}>
@@ -2285,6 +2296,7 @@ const INTEGRATION_GROUPS = [
     { key: 'bamboohr', name: 'BambooHR', desc: 'HR management' },
     { key: 'sage_hr', name: 'Sage HR', desc: 'HR & payroll' },
     { key: 'breathe', name: 'Breathe HR', desc: 'People management' },
+    { key: 'worksmarter', name: 'WorkSmarter', desc: 'HR & workforce management' },
   ]},
   { label: 'Project Management', items: [
     { key: 'asana', name: 'Asana', desc: 'Task & project tracking' },
@@ -3154,6 +3166,9 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             </div>
           </div>
 
+          {/* Finance + CRM Snapshot widgets */}
+          {!demoDataActive && <SnapshotWidgets />}
+
           {/* Active Departments — shows when staff imported and demo off */}
           {!demoDataActive && (() => {
             const allStaff = getImportedStaff()
@@ -3187,6 +3202,9 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
               </div>
             )
           })()}
+
+          {/* HR Snapshot — shows when any HR integration connected */}
+          {!demoDataActive && <HRSnapshot />}
 
           {demoDataActive ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

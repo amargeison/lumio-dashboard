@@ -218,10 +218,23 @@ export default function HRPage() {
     </>
   )
 
+  // Connected HR platforms banner
+  const connectedHR = typeof window !== 'undefined' ? ['bamboohr', 'sage_hr', 'breathe', 'worksmarter'].filter(k => localStorage.getItem(`lumio_integration_${k}`) === 'true') : []
+  const hrLabels: Record<string, string> = { bamboohr: 'BambooHR', sage_hr: 'Sage HR', breathe: 'Breathe HR', worksmarter: 'WorkSmarter' }
+  const hrColors: Record<string, string> = { bamboohr: '#73C41D', sage_hr: '#00DC82', breathe: '#7C3AED', worksmarter: '#3B82F6' }
+
   // Live staff panels — show when staff imported and NOT in demo mode
   if (hasImportedStaff && !isDemoActive) {
     return (
       <div className="space-y-6">
+        {connectedHR.length > 0 && (
+          <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Connected HR:</span>
+            {connectedHR.map(k => (
+              <span key={k} className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${hrColors[k]}20`, color: hrColors[k], border: `1px solid ${hrColors[k]}40` }}>{hrLabels[k]}</span>
+            ))}
+          </div>
+        )}
         <div>
           <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>HR & People</h1>
           <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Manage your team, onboarding checklists and leave</p>
