@@ -65,6 +65,7 @@ export default function CRMDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
+  const [wsResolved, setWsResolved] = useState(false)
   const hasData = contacts.length > 0 || deals.length > 0
 
   // Hydrate from sessionStorage cache after mount (avoids SSR mismatch)
@@ -78,6 +79,16 @@ export default function CRMDashboardPage() {
       setLoading(false)
     }
   }, [])
+
+  // Track workspace resolution — if workspaceId stays null after a timeout, stop loading
+  useEffect(() => {
+    if (workspaceId) { setWsResolved(true); return }
+    const timer = setTimeout(() => {
+      setWsResolved(true)
+      setLoading(false)
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [workspaceId])
 
   // Fetch CRM data
   useEffect(() => {
@@ -144,45 +155,30 @@ export default function CRMDashboardPage() {
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
-  // Skeleton loading state
-  if (!workspaceId && contacts.length === 0) {
+  // Loading skeleton — show while workspace is resolving or data is loading
+  if (loading && contacts.length === 0 && !error) {
     return (
       <div className="space-y-6">
-        <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
+        <div className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 80 }} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 120 }} />
+            <div key={i} className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 120 }} />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
-          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
+          <div className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 300 }} />
+          <div className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 300 }} />
         </div>
       </div>
     )
   }
 
-  if (loading && contacts.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 80 }} />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 120 }} />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
-          <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 300 }} />
-        </div>
-      </div>
-    )
-  }
-
+  // Error state — show clear error message with retry
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: '#0F1019', border: '1px solid #EF4444' }}>
+        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: CRM_BG, border: '1px solid #EF4444' }}>
+          <AlertCircle size={32} className="mx-auto mb-3" style={{ color: '#EF4444' }} />
           <p className="text-sm font-semibold mb-2" style={{ color: '#EF4444' }}>Failed to load CRM data</p>
           <p className="text-xs mb-4" style={{ color: '#6B7299' }}>{error}</p>
           <button
@@ -191,6 +187,25 @@ export default function CRMDashboardPage() {
             style={{ background: '#8B5CF6', color: '#F1F3FA' }}
           >
             Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // No workspace and resolution timed out — show empty state instead of blank
+  if (!workspaceId && wsResolved && !hasData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
+          <p className="text-sm font-semibold mb-2" style={{ color: '#F1F3FA' }}>No workspace connected</p>
+          <p className="text-xs mb-4" style={{ color: '#6B7299' }}>Sign into a workspace to view your CRM dashboard, or enable demo mode to explore.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: '#8B5CF6', color: '#F1F3FA' }}
+          >
+            Refresh
           </button>
         </div>
       </div>

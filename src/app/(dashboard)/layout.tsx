@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { Bell, Settings as SettingsIcon, LogOut } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isCRM = pathname?.includes('/crm')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
@@ -41,6 +43,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     document.addEventListener('mousedown', handleClick)
     return () => { window.removeEventListener('storage', onStorage); document.removeEventListener('mousedown', handleClick) }
   }, [])
+
+  // CRM has its own self-contained layout (sidebar, header, avatar, bell).
+  // Skip the parent dashboard chrome to avoid duplicates.
+  if (isCRM) {
+    return (
+      <main className="min-h-screen" style={{ backgroundColor: '#07080F' }}>
+        {children}
+      </main>
+    )
+  }
 
   return (
     <>
