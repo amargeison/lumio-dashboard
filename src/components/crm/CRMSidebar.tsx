@@ -37,22 +37,14 @@ const BASE_TOOLS = [
 
 function getCrmSlug(): string {
   if (typeof window === 'undefined') return ''
+  // 1. URL — if /slug/crm/..., first part is slug
   const parts = window.location.pathname.split('/').filter(Boolean)
-  // If URL is /slug/crm/..., first part is slug
   if (parts.length >= 2 && parts[1] === 'crm') return parts[0]
+  // 2. Cookie from middleware
+  const cookie = document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+  if (cookie) return cookie
+  // 3. localStorage
   return localStorage.getItem('lumio_workspace_slug') || ''
-}
-
-function getNavItems() {
-  const slug = getCrmSlug()
-  const prefix = slug ? `/${slug}` : ''
-  return BASE_NAV.map(item => ({ ...item, href: `${prefix}${item.path}` }))
-}
-
-function getToolItems() {
-  const slug = getCrmSlug()
-  const prefix = slug ? `/${slug}` : ''
-  return BASE_TOOLS.map(item => ({ ...item, href: `${prefix}${item.path}` }))
 }
 
 export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarProps) {
@@ -60,13 +52,17 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
   const router = useRouter();
   const [initials, setInitials] = useState('LU');
   const [toast, setToast] = useState<string | null>(null);
-  const navItems = getNavItems();
-  const toolItems = getToolItems();
+  const [crmSlug, setCrmSlug] = useState('');
 
   useEffect(() => {
+    setCrmSlug(getCrmSlug());
     const stored = localStorage.getItem('lumio_company_initials');
     if (stored) setInitials(stored);
   }, []);
+
+  const prefix = crmSlug ? `/${crmSlug}` : '';
+  const navItems = BASE_NAV.map(item => ({ ...item, href: `${prefix}${item.path}` }));
+  const toolItems = BASE_TOOLS.map(item => ({ ...item, href: `${prefix}${item.path}` }));
 
   function handleToolAction(_action: string) {
     // All tool items are now links — this is kept for backwards compat

@@ -988,6 +988,18 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
+            {/* Company logo + name */}
+            {company && (
+              <div className="flex items-center gap-2 mb-2">
+                {(() => {
+                  const logo = typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') : null
+                  return logo
+                    ? <img src={logo} alt="" className="rounded" style={{ width: 24, height: 24, objectFit: 'cover' }} />
+                    : <div className="flex items-center justify-center rounded text-[9px] font-bold" style={{ width: 24, height: 24, backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}>{company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+                })()}
+                <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>{company}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
@@ -3058,7 +3070,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_company_logo', data.logo_url)
           }
           if (data.id) setBusinessId(data.id)
-          if (data.demo_data_active) setDemoDataActive(true)
+          if (data.demo_data_active) {
+            setDemoDataActive(true)
+            localStorage.setItem('lumio_demo_active', 'true')
+          } else {
+            // Force-clear stale demo flags for real businesses
+            setDemoDataActive(false)
+            localStorage.setItem('lumio_demo_active', 'false')
+            Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
+          }
           // Live tenant onboarding wizard — show for non-demo tenants that haven't completed it
           if (data.onboarding_completed === false && !data.demo_data_active && !localStorage.getItem('lumio_onboarding_shown')) {
             setShowLiveOnboarding(true)

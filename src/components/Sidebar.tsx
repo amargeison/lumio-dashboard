@@ -53,17 +53,23 @@ const BASE_NAV_ITEMS: {
   { label: 'Settings',          path: '/settings',    icon: Settings,        badge: null },
 ]
 
-function getNavItems() {
-  // Use URL as source of truth for slug, not localStorage
-  const slug = typeof window !== 'undefined'
-    ? window.location.pathname.split('/').filter(Boolean)[0] || localStorage.getItem('lumio_workspace_slug') || ''
-    : ''
-  return BASE_NAV_ITEMS.map(item => ({
-    ...item,
-    href: slug ? `/${slug}${item.path}` : (item.path || '/overview'),
-    path: item.path,
-  }))
+function resolveSlug(): string {
+  if (typeof window === 'undefined') return ''
+  // 1. URL is source of truth
+  const urlParts = window.location.pathname.split('/').filter(Boolean)
+  if (urlParts.length >= 1 && !DASHBOARD_ROUTE_SET.has(urlParts[0])) return urlParts[0]
+  // 2. Cookie set by middleware
+  const cookie = document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+  if (cookie) return cookie
+  // 3. localStorage fallback
+  return localStorage.getItem('lumio_workspace_slug') || ''
 }
+
+const DASHBOARD_ROUTE_SET = new Set([
+  'hr', 'accounts', 'sales', 'crm', 'marketing', 'operations', 'it',
+  'insights', 'workflows', 'strategy', 'trials', 'partners', 'support',
+  'success', 'settings', 'projects', 'onboarding', 'overview',
+])
 
 const COLLAPSED_W = 48
 const EXPANDED_W = 200
@@ -76,7 +82,16 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const navItems = getNavItems()
+  const [tenantSlug, setTenantSlug] = useState('')
+
+  // Resolve slug on mount (client-side only)
+  useEffect(() => { setTenantSlug(resolveSlug()) }, [])
+
+  const navItems = BASE_NAV_ITEMS.map(item => ({
+    ...item,
+    href: tenantSlug ? `/${tenantSlug}${item.path}` : (item.path || '/overview'),
+    path: item.path,
+  }))
   const [companyName, setCompanyName] = useState('Lumio')
   const [initials, setInitials] = useState('AM')
   const [planLabel, setPlanLabel] = useState('Live workspace')
