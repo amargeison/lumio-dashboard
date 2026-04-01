@@ -277,9 +277,9 @@ export function PanelItem({ title, sub, badge, extra }: {
 
 export function PageShell({ children, title, subtitle, action }: { children: React.ReactNode; title?: string; subtitle?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative">
       {title && (
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{title}</h1>
             {subtitle && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{subtitle}</p>}
