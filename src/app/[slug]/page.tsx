@@ -2079,14 +2079,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [inviteSent, setInviteSent] = useState(false)
 
   // Integrations
-  const [connectedIntegrations, setConnectedIntegrations] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {}
-    const result: Record<string, boolean> = {}
-    INTEGRATION_GROUPS.forEach(g => g.items.forEach(i => {
-      result[i.key] = localStorage.getItem(`lumio_integration_${i.key}`) === 'true'
-    }))
-    return result
-  })
+  const [connectedIntegrations, setConnectedIntegrations] = useState<Record<string, boolean>>({})
 
   // Notifications
   const [emailNotifs, setEmailNotifs] = useState(true)
@@ -2100,6 +2093,19 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [showPinModal, setShowPinModal] = useState(false)
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
+
+  // Hydrate client-only state after mount
+  useEffect(() => {
+    setLogoUrl(localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') || '')
+    const integ: Record<string, boolean> = {}
+    INTEGRATION_GROUPS.forEach(g => g.items.forEach(i => {
+      integ[i.key] = localStorage.getItem(`lumio_integration_${i.key}`) === 'true'
+    }))
+    setConnectedIntegrations(integ)
+    if (localStorage.getItem('lumio_notif_email') === 'false') setEmailNotifs(false)
+    if (localStorage.getItem('lumio_notif_inapp') === 'false') setInAppNotifs(false)
+    if (localStorage.getItem('lumio_notif_weekly') === 'false') setWeeklyDigest(false)
+  }, [])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -2220,7 +2226,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           localStorage.setItem('lumio_crm_contacts', JSON.stringify([...existing, ...rows]))
           onToast(`${data.imported} contacts imported successfully`)
         } else {
-          onToast('Import failed — please check your CSV format')
+          console.error('[handleUpload] Contacts import error:', data)
+          onToast(`Import failed: ${data.error || 'check your CSV format'}`)
         }
       } else {
         // Import as staff
@@ -2250,12 +2257,13 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           window.dispatchEvent(new Event('lumio-staff-imported'))
           onToast(`${data.imported} staff members imported successfully`)
         } else {
-          onToast('Import failed — please check your CSV format')
+          console.error('[handleUpload] Staff import error:', data)
+          onToast(`Import failed: ${data.error || 'check your CSV format'}`)
         }
       }
     } catch (err) {
       console.error('[handleUpload] CSV parse error:', err)
-      onToast('Import failed — please check your CSV format')
+      onToast(`Import failed: ${err instanceof Error ? err.message : 'check your CSV format'}`)
     }
 
     setUploadFiles([])
@@ -2322,7 +2330,28 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       setTimeout(() => setIntegrationToast(''), 3000)
       return
     }
-    // No real OAuth configured yet — show coming soon
+    // Microsoft integrations — real OAuth flow
+    const msScopes: Record<string, string> = {
+      outlook: 'openid email profile Mail.Read Mail.Send offline_access',
+      outlook_cal: 'openid email profile Calendars.Read Calendars.ReadWrite offline_access',
+      teams: 'openid email profile Team.ReadBasic.All Chat.Read offline_access',
+    }
+    if (msScopes[key]) {
+      const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID
+      if (!clientId) {
+        setIntegrationToast(`${name} — Microsoft OAuth not configured yet. Add NEXT_PUBLIC_MICROSOFT_CLIENT_ID to environment.`)
+        setTimeout(() => setIntegrationToast(''), 5000)
+        return
+      }
+      const wsSlug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+      const redirectUri = `${window.location.origin}/api/auth/callback/microsoft`
+      const state = JSON.stringify({ key, slug: wsSlug })
+      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri, scope: msScopes[key], state, response_mode: 'query', prompt: 'consent' })
+      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`
+      return
+    }
+
+    // All other integrations — coming soon
     setIntegrationToast(`${name} integration coming soon — OAuth is being configured`)
     setTimeout(() => setIntegrationToast(''), 4000)
   }
@@ -3051,6 +3080,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     // Hydration-safe: read client-only settings after mount
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
+
+    // Handle OAuth callback redirect (e.g. ?integration_connected=outlook)
+    const urlParams = new URLSearchParams(window.location.search)
+    const connectedKey = urlParams.get('integration_connected')
+    if (connectedKey) {
+      localStorage.setItem(`lumio_integration_${connectedKey}`, 'true')
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
+    }
 
     // Validate session against businesses table
     const sessionToken = localStorage.getItem('workspace_session_token')
