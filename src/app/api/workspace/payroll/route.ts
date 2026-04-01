@@ -24,14 +24,30 @@ export async function GET(req: NextRequest) {
   const businessId = await getBusinessId(token)
   if (!businessId) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
 
-  const { data, error } = await getSupabase()
-    .from('workspace_payroll')
-    .select('*')
-    .eq('business_id', businessId)
-    .order('created_at')
+  const supabase = getSupabase()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ items: data || [] })
+  // Try workspace_payroll first
+  const { data: payrollData } = await supabase.from('workspace_payroll').select('*').eq('business_id', businessId).order('created_at')
+
+  if (payrollData && payrollData.length > 0) {
+    return NextResponse.json({ items: payrollData })
+  }
+
+  // Fallback: build payroll view from workspace_staff
+  const { data: staffData } = await supabase.from('workspace_staff').select('first_name, last_name, email, job_title, department, start_date').eq('business_id', businessId).order('last_name')
+
+  const items = (staffData || []).map(s => ({
+    email: s.email,
+    name: [s.first_name, s.last_name].filter(Boolean).join(' ') || s.email,
+    job_title: s.job_title,
+    department: s.department,
+    start_date: s.start_date,
+    salary: null,
+    frequency: 'monthly',
+    bank_transfer: true,
+  }))
+
+  return NextResponse.json({ items })
 }
 
 export async function PATCH(req: NextRequest) {

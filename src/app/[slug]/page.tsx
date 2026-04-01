@@ -2810,7 +2810,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   async function handleInvite() {
     if (!inviteEmail || !inviteEmail.includes('@')) return
     setInviteSending(true)
-    await fetch('/api/demo/invite', {
+    await fetch('/api/workspace/invite', {
       method: 'POST',
       headers: { 'x-workspace-token': sessionToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
@@ -3880,15 +3880,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
-          // Live tenant onboarding wizard — show for non-demo tenants that haven't completed it
-          if (data.onboarding_completed === false && !data.demo_data_active && !localStorage.getItem('lumio_onboarding_shown')) {
+          // Live tenant onboarding wizard — only show if NEVER completed
+          const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
+          if (!alreadyOnboarded && !data.demo_data_active && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
             setShowLiveOnboarding(true)
-          } else if (!data.onboarding_complete) {
-            if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
-              setShowWelcome(true)
-            } else {
-              setShowOnboarding(true)
-            }
           }
         })
         .catch(() => {
@@ -3917,10 +3912,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
               if (data.business?.id) setBusinessId(data.business.id)
               if (data.business?.demo_data_active) setDemoDataActive(true)
-              if (data.business?.onboarding_completed === false && !data.business?.demo_data_active && !localStorage.getItem('lumio_onboarding_shown')) {
+              const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
+              if (!bizOnboarded && !data.business?.demo_data_active && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
                 setShowLiveOnboarding(true)
-              } else if (!data.business?.onboarding_complete) {
-                if (!localStorage.getItem(`lumio_welcomed_${slug}`)) { setShowWelcome(true) } else { setShowOnboarding(true) }
               }
             })
             .catch(() => router.replace('/login?redirectTo=/' + slug))
@@ -3939,6 +3933,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   async function handleTabGuideComplete() {
     setShowTabGuide(false)
+    localStorage.setItem('lumio_tour_completed', 'true')
+    localStorage.setItem('lumio_onboarding_shown', 'true')
     // Mark onboarding as complete in Supabase
     try {
       await fetch('/api/onboarding/complete', {
