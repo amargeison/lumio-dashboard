@@ -456,7 +456,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
             </>
           )}
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
+        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto football-sidebar-scroll">
           {sections.map((sec, si) => (
             <div key={si}>
               {sec.label && expanded && (
@@ -504,7 +504,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
               <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>NAVIGATION</span>
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
-            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
+            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto football-sidebar-scroll">
               {SIDEBAR_ITEMS.map(item => {
                 const active = activeDept === item.id
                 return (
@@ -669,7 +669,7 @@ const FOOTBALL_QUICK_ACTIONS = [
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto football-quickactions-hide-scroll" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
       {FOOTBALL_QUICK_ACTIONS.map(a => (
         <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
