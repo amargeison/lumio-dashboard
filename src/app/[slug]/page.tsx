@@ -4056,10 +4056,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Workspace: <span style={{ color: '#F9FAFB' }}>{company || (typeof window !== 'undefined' ? localStorage.getItem('lumio_company_name') || localStorage.getItem('workspace_company_name') : null) || 'Loading...'}</span></p>
-              </div>
+              <h1 className="text-lg font-bold">{deptLabel}</h1>
             </div>
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}

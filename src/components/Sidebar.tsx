@@ -126,7 +126,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const storedPinned = localStorage.getItem('lumio_sidebar_pinned')
     if (storedPinned === 'true') setPinned(true)
     const storedLogo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-    if (storedLogo && (storedLogo.startsWith('http') || storedLogo.startsWith('blob') || storedLogo.startsWith('/'))) setCompanyLogo(storedLogo)
+    if (storedLogo && (storedLogo.startsWith('http') || storedLogo.startsWith('blob') || storedLogo.startsWith('/'))) {
+      setCompanyLogo(storedLogo)
+    } else {
+      // Fallback: fetch logo from workspace status API
+      const token = localStorage.getItem('workspace_session_token')
+      if (token) {
+        fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data?.logo_url) {
+              setCompanyLogo(data.logo_url)
+              localStorage.setItem('lumio_company_logo', data.logo_url)
+              localStorage.setItem('workspace_company_logo', data.logo_url)
+            }
+          })
+          .catch(() => {})
+      }
+    }
     const storedName = localStorage.getItem('lumio_user_name')
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
