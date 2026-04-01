@@ -31,6 +31,7 @@ import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { AIQuickWins, AIDailyTasks, AIInsights, AIDontMiss, AITeam } from '@/components/overview/AIOverviewTabs'
+import { EmailActions, MeetingActions } from '@/components/overview/MessageActions'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 import HRSnapshot from '@/components/overview/HRSnapshot'
 import ProjectsSnapshot from '@/components/overview/ProjectsSnapshot'
@@ -1484,10 +1485,15 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
                       </div>
                     </div>
                     <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
-                    {msg.webLink && (
-                      <a href={msg.webLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-[10px] font-semibold" style={{ color: msg.color }}>
-                        {src.viewLabel} →
-                      </a>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      {msg.webLink && (
+                        <a href={msg.webLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold" style={{ color: msg.color }}>
+                          {src.viewLabel} →
+                        </a>
+                      )}
+                    </div>
+                    {(src.key === 'outlook' || src.key === 'gmail') && (
+                      <EmailActions msgId={msg.id} source={src.key} senderEmail={msg.senderName} subject={msg.subject} preview={msg.preview} onToast={(_m: string) => {}} />
                     )}
                   </div>
                 ))}
@@ -1670,6 +1676,8 @@ interface LiveCalEvent { id: string; title: string; start: string; end: string; 
 function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [liveEvents, setLiveEvents] = useState<LiveCalEvent[] | null>(null)
   const [calError, setCalError] = useState<string | null>(null)
+  const [meetingToast, setMeetingToast] = useState<string | null>(null)
+  useEffect(() => { if (meetingToast) { const t = setTimeout(() => setMeetingToast(null), 3000); return () => clearTimeout(t) } }, [meetingToast])
   const msCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
   const gCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_gcal') === 'true'
   const calConnected = msCalConnected || gCalConnected
@@ -1723,25 +1731,29 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
               const isNow = now >= start && now <= end
               const isPast = now > end
               return (
-                <div key={evt.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: isPast ? 0.4 : 1 }}>
-                  <div className="text-center flex-shrink-0 w-12">
-                    <div className="text-sm font-bold" style={{ color: isNow ? '#4ADE80' : '#E5E7EB' }}>{formatTime(evt.start)}</div>
-                    <div className="text-xs" style={{ color: '#6B7280' }}>{formatTime(evt.end)}</div>
+                <div key={evt.id}>
+                  <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: isPast ? 0.4 : 1 }}>
+                    <div className="text-center flex-shrink-0 w-12">
+                      <div className="text-sm font-bold" style={{ color: isNow ? '#4ADE80' : '#E5E7EB' }}>{formatTime(evt.start)}</div>
+                      <div className="text-xs" style={{ color: '#6B7280' }}>{formatTime(evt.end)}</div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-base">{evt.isOnline ? '📹' : '📅'}</span>
+                      {evt.source && <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: evt.source === 'google' ? 'rgba(66,133,244,0.15)' : 'rgba(0,164,239,0.15)', color: evt.source === 'google' ? '#4285F4' : '#00A4EF' }}>{evt.source === 'google' ? 'G' : 'M'}</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: isPast ? '#6B7280' : '#F9FAFB', textDecoration: isPast ? 'line-through' : 'none' }}>{evt.title}</p>
+                      <p className="text-xs truncate" style={{ color: '#6B7280' }}>
+                        {evt.attendeesCount > 0 ? `${evt.attendeesCount} attendee${evt.attendeesCount > 1 ? 's' : ''}` : ''}
+                        {evt.location ? ` · ${evt.location}` : ''}
+                      </p>
+                    </div>
+                    {isNow && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-base">{evt.isOnline ? '📹' : '📅'}</span>
-                    {evt.source && <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: evt.source === 'google' ? 'rgba(66,133,244,0.15)' : 'rgba(0,164,239,0.15)', color: evt.source === 'google' ? '#4285F4' : '#00A4EF' }}>{evt.source === 'google' ? 'G' : 'M'}</span>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: isPast ? '#6B7280' : '#F9FAFB', textDecoration: isPast ? 'line-through' : 'none' }}>{evt.title}</p>
-                    <p className="text-xs truncate" style={{ color: '#6B7280' }}>
-                      {evt.attendeesCount > 0 ? `${evt.attendeesCount} attendee${evt.attendeesCount > 1 ? 's' : ''}` : ''}
-                      {evt.location ? ` · ${evt.location}` : ''}
-                    </p>
-                  </div>
-                  {isNow && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
-                  {evt.joinUrl && !isPast && (
-                    <a href={evt.joinUrl} target="_blank" rel="noopener noreferrer" className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>
+                  {!isPast && (
+                    <div className="px-3 pb-1">
+                      <MeetingActions eventId={evt.id} title={evt.title} startTime={formatTime(evt.start)} joinUrl={evt.joinUrl} source={evt.source} onToast={setMeetingToast} onCancel={() => setLiveEvents(prev => prev ? prev.filter(e => e.id !== evt.id) : prev)} />
+                    </div>
                   )}
                 </div>
               )
@@ -1779,6 +1791,13 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
             )
           })}
         </>
+      )}
+
+      {/* Meeting action toast */}
+      {meetingToast && (
+        <div className="mt-2 rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: '#22C55E' }}>
+          {meetingToast}
+        </div>
       )}
     </div>
   )
