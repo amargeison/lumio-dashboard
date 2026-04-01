@@ -717,7 +717,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -726,6 +726,20 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   const { speak, stop, isPlaying } = useSpeech()
   const [quote, setQuote] = useState(QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+  const [liveCounts, setLiveCounts] = useState<{ meetings: number | null; emails: number | null; urgent: number | null; tasks: number | null }>({ meetings: null, emails: null, urgent: null, tasks: null })
+  useEffect(() => {
+    if (demoDataActive) return
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+    if (!token) return
+    const h = { 'x-workspace-token': token }
+    const c = { meetings: 0, emails: 0, urgent: 0, tasks: 0 }
+    const f: Promise<void>[] = []
+    if (localStorage.getItem('lumio_integration_outlook_cal') === 'true') f.push(fetch('/api/integrations/microsoft/calendar', { headers: h }).then(r => r.ok ? r.json() : null).then(d => { if (d?.events) c.meetings += d.events.length }).catch(() => {}))
+    if (localStorage.getItem('lumio_integration_gcal') === 'true') f.push(fetch('/api/integrations/google/calendar', { headers: h }).then(r => r.ok ? r.json() : null).then(d => { if (d?.events) c.meetings += d.events.length }).catch(() => {}))
+    if (localStorage.getItem('lumio_integration_outlook') === 'true') f.push(fetch('/api/integrations/microsoft/mail', { headers: h }).then(r => r.ok ? r.json() : null).then(d => { if (d?.emails) { c.emails += d.emails.length; c.urgent += (d.emails as { isRead: boolean }[]).filter(e => !e.isRead).length } }).catch(() => {}))
+    if (localStorage.getItem('lumio_integration_gmail') === 'true') f.push(fetch('/api/integrations/google/mail', { headers: h }).then(r => r.ok ? r.json() : null).then(d => { if (d?.emails) { c.emails += d.emails.length; c.urgent += (d.emails as { isRead: boolean }[]).filter(e => !e.isRead).length } }).catch(() => {}))
+    if (f.length) Promise.all(f).then(() => setLiveCounts(c))
+  }, [demoDataActive])
 
   useEffect(() => {
     const start = new Date(new Date().getFullYear(), 0, 1).getTime()
@@ -1051,14 +1065,18 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Meetings', value: demoDataActive ? 4 : 0, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅' },
-              { label: 'Tasks', value: demoDataActive ? 7 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
-              { label: 'Urgent', value: demoDataActive ? 2 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Emails', value: demoDataActive ? 12 : 0, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧' },
+              { label: 'Meetings', value: demoDataActive ? 4 : (liveCounts.meetings ?? 0), color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅', widget: 'meetings' },
+              { label: 'Tasks', value: demoDataActive ? 7 : (liveCounts.tasks ?? 0), color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅', widget: 'tasks' },
+              { label: 'Urgent', value: demoDataActive ? 2 : (liveCounts.urgent ?? 0), color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴', widget: 'urgent' },
+              { label: 'Emails', value: demoDataActive ? 12 : (liveCounts.emails ?? 0), color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧', widget: 'emails' },
             ].map(item => (
-              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+              <div key={item.label} onClick={() => onScrollTo?.(item.widget)} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px] cursor-pointer transition-transform hover:scale-105`}>
                 <span className="text-base">{item.icon}</span>
-                <span className="text-lg font-black text-white">{item.value}</span>
+                {liveCounts.meetings === null && !demoDataActive ? (
+                  <div className="w-6 h-5 rounded animate-pulse my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                ) : (
+                  <span className="text-lg font-black text-white">{item.value}</span>
+                )}
                 <span className="text-xs opacity-70">{item.label}</span>
               </div>
             ))}
@@ -1975,8 +1993,7 @@ const QUICK_ACTIONS = [
   { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: ['gmail', 'outlook'], integrationLabel: 'Gmail or Outlook' },
   { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: ['slack'], integrationLabel: 'Slack' },
   { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone, integrations: null, integrationLabel: '' },
-  { label: 'Book Meeting', tooltip: 'Schedule a meeting or demo', icon: Calendar, integrations: ['gcal', 'outlook_cal'], integrationLabel: 'Google Calendar or Outlook Calendar' },
-  { label: 'Team Events', tooltip: 'Schedule a team event', icon: Users, integrations: ['gcal'], integrationLabel: 'Google Calendar' },
+  { label: 'Book Meeting', tooltip: 'Schedule a meeting or team event', icon: Calendar, integrations: ['gcal', 'outlook_cal'], integrationLabel: 'Google Calendar or Outlook Calendar' },
   { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: ['xero', 'quickbooks'], integrationLabel: 'Xero or QuickBooks' },
   { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
   { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
@@ -3430,7 +3447,6 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     'Send Email': 'Opening email composer...',
     'Send Slack': 'Opening Slack...',
     'Book Meeting': 'Opening calendar...',
-    'Team Events': 'Opening team events...',
   }
 
   const quickActionModals: Record<string, () => void> = {
@@ -3701,6 +3717,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -3718,6 +3735,18 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     // Hydration-safe: read client-only settings after mount
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
+    // Load profile photo
+    const userEmail = localStorage.getItem('lumio_user_email')
+    if (userEmail) {
+      const photo = localStorage.getItem(`lumio_staff_photo_${userEmail}`)
+      if (photo) setUserPhoto(photo)
+    }
+    // Listen for photo updates
+    function onPhotoUpdate() {
+      const e = localStorage.getItem('lumio_user_email')
+      if (e) { const p = localStorage.getItem(`lumio_staff_photo_${e}`); setUserPhoto(p) }
+    }
+    window.addEventListener('storage', onPhotoUpdate)
 
     // Handle Microsoft SSO callback — store session from query params
     const urlParams = new URLSearchParams(window.location.search)
@@ -3892,8 +3921,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setAvatarDropdownOpen(o => !o)}
-            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-            {userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'}
+            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
+            {userPhoto ? (
+              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
+            )}
           </button>
           {avatarDropdownOpen && (
             <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>

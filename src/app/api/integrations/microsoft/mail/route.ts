@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/messages?$top=10&$select=id,subject,from,receivedDateTime,isRead,bodyPreview,webLink&$orderby=receivedDateTime desc`,
+      `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=10&$select=id,subject,from,receivedDateTime,isRead,bodyPreview,webLink&$filter=isDraft eq false&$orderby=receivedDateTime desc`,
       { headers: { Authorization: `Bearer ${access_token}` } },
     )
 

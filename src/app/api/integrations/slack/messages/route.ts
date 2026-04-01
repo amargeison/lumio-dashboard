@@ -42,6 +42,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch Slack channels' }, { status: 502 })
     }
 
+    // Get authenticated user's ID to filter out their own messages
+    let authUserId = ''
+    try {
+      const authRes = await fetch('https://slack.com/api/auth.test', { headers: { Authorization: `Bearer ${access_token}` } })
+      const authData = await authRes.json()
+      if (authData.ok) authUserId = authData.user_id || ''
+    } catch { /* ignore */ }
+
     const channels: { id: string; name: string; num_members: number }[] = channelsData.channels || []
 
     // Fetch recent messages from top 5 channels (most members first)

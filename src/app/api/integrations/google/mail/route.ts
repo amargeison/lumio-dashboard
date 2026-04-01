@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     // List latest inbox messages from the last day
     const listRes = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=${encodeURIComponent('is:inbox newer_than:1d')}`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=${encodeURIComponent('in:inbox -in:sent -in:drafts newer_than:1d')}`,
       { headers: { Authorization: `Bearer ${access_token}` } },
     )
 
