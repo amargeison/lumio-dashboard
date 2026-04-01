@@ -4045,6 +4045,50 @@ function SettingsView() {
           <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
         </div>
       </div>
+
+      {/* Integrations */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Connect your email and calendar</p>
+        </div>
+        <div className="p-5 space-y-2">
+          {[
+            { key: 'outlook', label: 'Outlook / Microsoft 365', desc: 'Email sync', icon: '📧', type: 'microsoft' as const },
+            { key: 'outlook_cal', label: 'Outlook Calendar', desc: 'Calendar sync', icon: '📅', type: 'microsoft' as const },
+            { key: 'gmail', label: 'Gmail', desc: 'Email sync', icon: '📨', type: 'google' as const },
+            { key: 'gcal', label: 'Google Calendar', desc: 'Calendar sync', icon: '📅', type: 'google' as const },
+          ].map(integ => {
+            const connected = typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${integ.key}`) === 'true'
+            return (
+              <div key={integ.key} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: connected ? '1px solid rgba(34,197,94,0.3)' : '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>{integ.icon}</span>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.label}</p><p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                </div>
+                {connected ? (
+                  <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
+                ) : (
+                  <button onClick={() => {
+                    const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+                    if (integ.type === 'microsoft') {
+                      const cid = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: 'microsoft_all', slug })
+                      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft', scope: 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite', state, response_mode: 'query', prompt: 'consent' })}`
+                    } else {
+                      const cid = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: integ.key, slug })
+                      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/google', scope: `openid email profile ${integ.key === 'gmail' ? 'https://www.googleapis.com/auth/gmail.readonly' : 'https://www.googleapis.com/auth/calendar.readonly'}`, state, access_type: 'offline', prompt: 'consent' })}`
+                    }
+                  }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>
+                    Connect
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
