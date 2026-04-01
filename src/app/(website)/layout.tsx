@@ -117,21 +117,49 @@ function Nav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
-          <button onClick={() => setShowTypeModal(true)}
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
-            Free 14 day trial
-          </button>
-          <Link href={isSchools ? '/schools/checkout' : '/buy'}
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
-            style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
-            Buy Now
-          </Link>
-          <Link href={isSchools ? '/login?type=school' : '/login'}
+          {isFootball ? (
+            <Link href="/book-demo"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0D9488' }}>
+              Book a Demo
+            </Link>
+          ) : isSchools ? (
+            <Link href="/demo/schools/oakridge-primary"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0D9488' }}>
+              Free School Trial
+            </Link>
+          ) : (
+            <button onClick={() => setShowTypeModal(true)}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
+              Free 14 day trial
+            </button>
+          )}
+          {isFootball ? (
+            <Link href="/book-demo"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
+              Request Access
+            </Link>
+          ) : (
+            <Link href={isSchools ? '/schools/checkout' : '/buy'}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
+              Buy Now
+            </Link>
+          )}
+          <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
             className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
             style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#374151' }}
@@ -164,14 +192,33 @@ function Nav() {
             </Link>
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
-            <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
-              className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14 day trial</button>
-            <Link href={isSchools ? '/schools/checkout' : '/buy'}
-              className="text-sm font-semibold py-2 text-center rounded-lg"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-              onClick={() => setMobileOpen(false)}>Buy Now</Link>
-            <Link href={isSchools ? '/login?type=school' : '/login'}
+            {isFootball ? (
+              <Link href="/book-demo"
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+                onClick={() => setMobileOpen(false)}>Book a Demo</Link>
+            ) : isSchools ? (
+              <Link href="/demo/schools/oakridge-primary"
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+                onClick={() => setMobileOpen(false)}>Free School Trial</Link>
+            ) : (
+              <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14 day trial</button>
+            )}
+            {isFootball ? (
+              <Link href="/book-demo"
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+                onClick={() => setMobileOpen(false)}>Request Access</Link>
+            ) : (
+              <Link href={isSchools ? '/schools/checkout' : '/buy'}
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+                onClick={() => setMobileOpen(false)}>Buy Now</Link>
+            )}
+            <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
               onClick={() => setMobileOpen(false)}>Sign In</Link>

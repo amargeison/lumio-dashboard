@@ -389,7 +389,7 @@ function HeroSection() {
               {/* Content area */}
               <div className="p-4 flex flex-col gap-3">
                 {/* Role tabs */}
-                <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex flex-wrap gap-1.5 pb-0.5">
                   {ROLES.map(role => (
                     <button
                       key={role}
