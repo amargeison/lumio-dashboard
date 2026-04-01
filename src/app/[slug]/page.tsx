@@ -36,6 +36,7 @@ import { EmailComposeModal, MeetingBookModal } from '@/components/overview/Compo
 import { RoleSwitcherPill, ImpersonationBanner } from '@/components/dashboard/RoleSwitcher'
 import { getDeptStaff, getDeptLead, getStaffShortName } from '@/lib/staff/deptMatch'
 import HRSnapshot from '@/components/overview/HRSnapshot'
+import { getImpersonationContext } from '@/lib/impersonation'
 import ProjectsSnapshot from '@/components/overview/ProjectsSnapshot'
 import RecentFiles from '@/components/overview/RecentFiles'
 
@@ -730,6 +731,9 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   const [liveCounts, setLiveCounts] = useState<{ meetings: number | null; emails: number | null; urgent: number | null; tasks: number | null }>({ meetings: null, emails: null, urgent: null, tasks: null })
   useEffect(() => {
     if (demoDataActive) return
+    // Skip integration fetches when impersonating — impersonated user has no tokens
+    const bannerImpCtx = getImpersonationContext()
+    if (bannerImpCtx.isImpersonating) { setLiveCounts({ meetings: 0, emails: 0, urgent: 0, tasks: 0 }); return }
     const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
     if (!token) return
     const h = { 'x-workspace-token': token }
@@ -894,10 +898,11 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
     if (!ttsEnabled) return
     if (isPlaying) { stop(); setBriefingJustPlayed(false); return }
 
-    // Try server-side dynamic script first (real integration data)
+    // Try server-side dynamic script first (skip when impersonating — no owner data)
+    const briefingImpCtx = getImpersonationContext()
     try {
       const wsToken = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
-      if (wsToken) {
+      if (wsToken && !briefingImpCtx.isImpersonating) {
         const res = await fetch('/api/roundup/voice-script', { headers: { 'x-workspace-token': wsToken } })
         if (res.ok) {
           const data = await res.json()
@@ -1120,7 +1125,9 @@ const DEMO_PHOTOS = [
 
 // Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
+  const photoImpCtx = getImpersonationContext()
   const [photos, setPhotos] = useState<string[]>(() => {
+    if (photoImpCtx.isImpersonating) return [] // Don't show owner's photos when impersonating
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
       if (saved) { const parsed = JSON.parse(saved); if (parsed.length > 0) return parsed }
@@ -1512,8 +1519,9 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
     }))
   }
 
-  // Check which sources are connected
-  const connectedSources = ROUNDUP_SOURCES.filter(s => typeof window !== 'undefined' && localStorage.getItem(s.lsKey) === 'true')
+  // Check which sources are connected — skip all when impersonating
+  const roundupImpCtx = getImpersonationContext()
+  const connectedSources = roundupImpCtx.isImpersonating ? [] : ROUNDUP_SOURCES.filter(s => typeof window !== 'undefined' && localStorage.getItem(s.lsKey) === 'true')
   const anyConnected = connectedSources.length > 0
 
   useEffect(() => {
@@ -1888,8 +1896,9 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
   const [calError, setCalError] = useState<string | null>(null)
   const [meetingToast, setMeetingToast] = useState<string | null>(null)
   useEffect(() => { if (meetingToast) { const t = setTimeout(() => setMeetingToast(null), 3000); return () => clearTimeout(t) } }, [meetingToast])
-  const msCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
-  const gCalConnected = typeof window !== 'undefined' && localStorage.getItem('lumio_integration_gcal') === 'true'
+  const impCtx = getImpersonationContext()
+  const msCalConnected = !impCtx.isImpersonating && typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
+  const gCalConnected = !impCtx.isImpersonating && typeof window !== 'undefined' && localStorage.getItem('lumio_integration_gcal') === 'true'
   const calConnected = msCalConnected || gCalConnected
 
   useEffect(() => {
@@ -3757,9 +3766,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   }
 
   useEffect(() => {
-    // Read cached values from localStorage
+    // Read cached values from localStorage — check admin impersonation first
     const name = localStorage.getItem('workspace_company_name') || ''
-    const user = localStorage.getItem('workspace_user_name') || ''
+    const isAdminImpersonating = localStorage.getItem('lumio_impersonated_from_admin') === 'true'
+    const user = isAdminImpersonating
+      ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem('workspace_user_name') || '')
+      : (localStorage.getItem('workspace_user_name') || '')
     const logo = localStorage.getItem('workspace_company_logo') || ''
     setCompany(name)
     setUserName(user)
@@ -3854,7 +3866,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_company_name', data.company_name)
           }
           if (data.owner_name) {
-            setUserName(data.owner_name)
+            // Don't override impersonated user name
+            if (localStorage.getItem('lumio_impersonated_from_admin') !== 'true') setUserName(data.owner_name)
             localStorage.setItem('workspace_user_name', data.owner_name)
             localStorage.setItem('lumio_user_name', data.owner_name)
           }
@@ -3907,7 +3920,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               console.log('[session] Token saved:', data.session_token ? 'yes' : 'NO TOKEN RETURNED')
               localStorage.setItem('workspace_session_token', data.session_token)
               if (data.business?.company_name) { setCompany(data.business.company_name); localStorage.setItem('workspace_company_name', data.business.company_name); localStorage.setItem('lumio_company_name', data.business.company_name) }
-              if (data.business?.owner_name) { setUserName(data.business.owner_name); localStorage.setItem('workspace_user_name', data.business.owner_name); localStorage.setItem('lumio_user_name', data.business.owner_name) }
+              if (data.business?.owner_name) { if (localStorage.getItem('lumio_impersonated_from_admin') !== 'true') setUserName(data.business.owner_name); localStorage.setItem('workspace_user_name', data.business.owner_name); localStorage.setItem('lumio_user_name', data.business.owner_name) }
               if (data.business?.owner_email) { setOwnerEmail(data.business.owner_email); localStorage.setItem('lumio_user_email', data.business.owner_email) }
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
               if (data.business?.id) setBusinessId(data.business.id)
