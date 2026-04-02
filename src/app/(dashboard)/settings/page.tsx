@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Users, CreditCard, Key, Bell, Copy, Check, Shield, Upload } from 'lucide-react'
 import { Badge, SectionCard, PageShell } from '@/components/page-ui'
 
@@ -124,6 +125,12 @@ function LogoUpload() {
 }
 
 export default function SettingsPage() {
+  const router = useRouter()
+  useEffect(() => {
+    const slug = localStorage.getItem('lumio_workspace_slug') || document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+    if (slug) { localStorage.setItem('lumio_active_dept', 'settings'); router.replace(`/${slug}`) }
+  }, [router])
+
   return (
     <PageShell>
 

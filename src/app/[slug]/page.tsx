@@ -3763,7 +3763,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const { slug } = use(params)
   const router = useRouter()
 
-  const [activeDept, setActiveDept] = useState<DeptId>('overview')
+  const [activeDept, setActiveDept] = useState<DeptId>(() => {
+    if (typeof window === 'undefined') return 'overview'
+    const stored = localStorage.getItem('lumio_active_dept')
+    if (stored) { localStorage.removeItem('lumio_active_dept'); return (stored as DeptId) }
+    return 'overview'
+  })
   const [company, setCompany]       = useState('')
   const [userName, setUserName]     = useState('')
   const [companyLogo, setCompanyLogo] = useState('')

@@ -81,11 +81,11 @@ export default function ITPage() {
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="it" />}
       <DashboardEmptyState pageKey="it"
-        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your IT data` : 'No IT data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'IT Lead'}. Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking.` : 'Upload your systems inventory, SaaS stack and IT asset data to activate IT & Systems tracking.'}
+        title="No IT data yet"
+        description="Import your asset register and IT inventory to manage equipment provisioning and system access."
         uploads={[
-          { key: 'systems', label: 'Upload Systems Inventory (CSV)' },
           { key: 'assets', label: 'Upload Asset Register (CSV)' },
+          { key: 'systems', label: 'Upload Software Licences (CSV)' },
         ]}
       />
     </>

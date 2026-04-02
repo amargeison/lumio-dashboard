@@ -207,12 +207,11 @@ export default function HRPage() {
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="hr" />}
       <DashboardEmptyState pageKey="hr"
-        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your HR data` : 'No HR data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'HR Lead'}. Import your team roster or connect BambooHR to activate the full HR & People dashboard.` : 'Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure.'}
+        title="No team data yet"
+        description="Import your staff directory to unlock onboarding checklists, leave management and people analytics."
         uploads={[
-          { key: 'people', label: 'Upload Team Roster (CSV)' },
-          { key: 'org', label: 'Upload Org Chart (CSV)' },
-          { key: 'absences', label: 'Upload Absence Records (CSV)' },
+          { key: 'people', label: 'Upload Staff CSV' },
+          { key: 'absences', label: 'Upload Leave Data (CSV)' },
         ]}
       />
     </>

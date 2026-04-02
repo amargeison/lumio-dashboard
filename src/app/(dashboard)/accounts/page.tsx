@@ -156,12 +156,11 @@ export default function AccountsPage() {
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="accounts" />}
       <DashboardEmptyState pageKey="accounts"
-        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your accounts data` : 'No accounts data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Accounts Lead'}. Upload your customer accounts, ARR data and contract information to activate the Accounts module.` : 'Upload your customer accounts, ARR data and contract information to activate the Accounts module.'}
+        title="No accounts data yet"
+        description="Import payroll and invoicing data to unlock financial dashboards, reporting and expense tracking."
         uploads={[
-          { key: 'accounts', label: 'Upload Customer Accounts (CSV)' },
-          { key: 'revenue', label: 'Upload ARR / Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
-          { key: 'contracts', label: 'Upload Contracts (CSV)' },
+          { key: 'revenue', label: 'Upload Payroll Data (CSV)' },
+          { key: 'accounts', label: 'Upload Invoice Data (CSV)' },
         ]}
       />
     </>
