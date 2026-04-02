@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil } from 'lucide-react'
+import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil, ExternalLink } from 'lucide-react'
 import { EmployeeProfileCard, ProfileModal, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ interface Insight { id: string; title: string; summary: string; trend: 'up' | 'd
 interface DontMissItem { id: string; title: string; description: string; urgency: 'critical' | 'high' | 'medium'; deadline: string | null; actionLabel: string; category: string }
 interface TeamMember { id: string; name: string; role: string; department: string; status: 'available' | 'in-meeting' | 'busy' | 'away'; currentFocus: string; needsAttention: boolean; attentionNote: string | null; roleLevel?: number }
 
-type TeamSubTab = 'staff' | 'org' | 'info'
+type TeamSubTab = 'staff' | 'org' | 'info' | 'company'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -824,6 +824,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
     { id: 'staff', label: 'Staff Today', icon: Users },
     { id: 'org', label: 'Org Chart', icon: Building2 },
     { id: 'info', label: 'Team Info', icon: AlertCircle },
+    { id: 'company', label: 'Company Info', icon: Building2 },
   ]
 
   // Group team by department for org chart
@@ -902,7 +903,92 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
           {subTab === 'info' && (
             <TeamInfoCards importedStaff={importedStaff} items={items} ctx={ctx} onAction={onAction} />
           )}
+
+          {/* Company Info */}
+          {subTab === 'company' && (
+            <CompanyInfoTab items={items} />
+          )}
         </>
+      )}
+    </div>
+  )
+}
+
+// ─── Company Info Tab ────────────────────────────────────────────────────────
+
+const COMPANY_DOCS = [
+  { icon: '📋', title: 'Staff Handbook', desc: 'Employment policies, conduct, benefits' },
+  { icon: '🏖️', title: 'Leave & Holiday Policy', desc: 'Annual leave, booking, blackout dates' },
+  { icon: '💚', title: 'Health & Wellbeing', desc: 'Mental health, EAP, sick leave' },
+  { icon: '🔒', title: 'Data & Security', desc: 'GDPR, data handling, passwords' },
+  { icon: '💰', title: 'Expenses Policy', desc: 'Claims, limits, deadlines' },
+  { icon: '🎓', title: 'Learning & Development', desc: 'Training budget, study leave' },
+]
+
+function CompanyInfoTab({ items }: { items: TeamMember[] }) {
+  const [docModal, setDocModal] = useState<string | null>(null)
+  const ceo = items.find(m => /ceo|founder|director/i.test(m.role)) || items[0]
+  const hr = items.find(m => /hr|people|human/i.test(m.department || m.role))
+  const it = items.find(m => /it|tech|system/i.test(m.department || m.role))
+  const fin = items.find(m => /finance|account/i.test(m.department || m.role))
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Company Info</h2>
+
+      {/* Documents */}
+      <div>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Company Documents</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {COMPANY_DOCS.map(d => (
+            <div key={d.title} onClick={() => setDocModal(d.title)} className="rounded-xl p-4 cursor-pointer transition-all hover:-translate-y-0.5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-2xl block mb-2">{d.icon}</span>
+              <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{d.title}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{d.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Company Details + Key Contacts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Company Details</p>
+          {[['Founded', '2021'], ['Industry', 'SaaS / Technology'], ['Size', '10-50 employees'], ['HQ', 'London, UK'], ['Website', 'lumiocms.com']].map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+          {[['CEO', ceo?.name || '—'], ['HR', hr?.name || '—'], ['IT Support', it?.name || '—'], ['Finance', fin?.name || '—']].map(([r, n]) => (
+            <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Useful Links */}
+      <div>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Useful Links</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {['Slack workspace', 'Google Drive', 'HR system', 'Payroll portal', 'Benefits portal', 'IT helpdesk', 'Company calendar', 'Training platform'].map(l => (
+            <div key={l} className="flex items-center gap-2 rounded-lg p-3 cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <ExternalLink size={12} style={{ color: '#6B7280' }} />
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Document modal */}
+      {docModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setDocModal(null)}>
+          <div className="rounded-2xl p-6 w-full max-w-sm text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <p className="text-3xl mb-3">📄</p>
+            <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{docModal}</h3>
+            <p className="text-sm mb-5" style={{ color: '#6B7280' }}>Document coming soon — upload your company documents in Settings.</p>
+            <button onClick={() => setDocModal(null)} className="px-5 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', border: 'none', cursor: 'pointer' }}>Got it</button>
+          </div>
+        </div>
       )}
     </div>
   )
