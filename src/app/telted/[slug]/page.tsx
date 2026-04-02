@@ -26,6 +26,150 @@ import {
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
 
+// ─── TEL TED Voice Command Processor ─────────────────────────────────────────
+
+interface VoiceToastData {
+  text: string
+  isAndrew?: boolean
+}
+
+function processTelTedCommand(transcript: string): { handled: boolean; response: string; isAndrew?: boolean } | null {
+  const t = transcript.toLowerCase()
+
+  // COMMAND 1 — TEL TED sessions today
+  if (/sessions?\s*today|do i have sessions|tel\s*ted sessions|any sessions/i.test(t)) {
+    const response = "Yes, you have 6 TEL TED sessions today. Starting with Group Session 1A at 8:30 with Amara, Leon, Fatima, Kai and Zahra. Then individual sessions with Amara Johnson at 9:15 and Leon Carter at 10. Group Session 1B at 11:30, a LanguageScreen assessment with Ruby Taylor at 2pm, and a parent call with the Johnson family at 3."
+    return { handled: true, response }
+  }
+
+  // COMMAND 2 — Students needing LanguageScreen
+  if (/language\s*screen|assessment\s*due|need\s*assess|who\s*needs?\s*assessment/i.test(t)) {
+    const behind = PUPILS.filter((p: any) => p.neli && p.neliSessions < (p.neliExpected || 85) * 0.85)
+    const dueCount = behind.length || neliPupils.length
+    const names = (behind.length > 0 ? behind : neliPupils).slice(0, 3).map((p: any) => p.name.split(' ')[0])
+    const amara = PUPILS.find((p: any) => p.name === 'Amara Johnson') as any
+    const sessionsBehind = amara ? (amara.neliExpected || 85) - amara.neliSessions : 7
+    const response = `${dueCount} students are due for LanguageScreen reassessment this term. ${names.join(', ')}. Amara Johnson is most overdue — her last assessment was at week ${amara?.neliWeek || 17} and she's ${sessionsBehind} sessions behind expected progress.`
+    return { handled: true, response }
+  }
+
+  // COMMAND 3 — What week of TEL TED
+  if (/what\s*week|which\s*week|week\s*are\s*we|tel\s*ted\s*week|programme\s*week|program\s*week/i.test(t)) {
+    const avgWeek = Math.round(neliPupils.reduce((s: number, p: any) => s + (p.neliWeek || 17), 0) / neliPupils.length)
+    const avgSessions = Math.round(neliPupils.reduce((s: number, p: any) => s + (p.neliSessions || 80), 0) / neliPupils.length)
+    const avgExpected = Math.round(neliPupils.reduce((s: number, p: any) => s + (p.neliExpected || 85), 0) / neliPupils.length)
+    const amara = PUPILS.find((p: any) => p.name === 'Amara Johnson') as any
+    const response = `You're currently on Week ${avgWeek} of the 20-week TEL TED programme. Your ${neliPupils.length} TEL TED students have completed an average of ${avgSessions} sessions out of ${avgExpected} expected at this point. Amara is slightly behind at ${amara?.neliSessions || 78} sessions — you might want to schedule an extra individual session this week.`
+    return { handled: true, response }
+  }
+
+  // COMMAND 4 — Andrew Mendoza easter egg
+  if (/andrew\s*mendoza|what\s*do\s*you\s*think\s*of\s*andrew|tell\s*me\s*about\s*andrew|who\s*is\s*andrew/i.test(t)) {
+    const response = "Andrew Mendoza... hmm, let me think. I know a few Andrews. If you mean Andrew Mendoza, then I only have good words. Top man. Knows his stuff. Good looking too — I probably should stop there in case he's listening. I'm starting to blush."
+    return { handled: true, response, isAndrew: true }
+  }
+
+  return null
+}
+
+function speakWithPause(speak: (text: string) => void, parts: string[], delayMs: number = 400) {
+  if (parts.length === 0) return
+  speak(parts[0])
+  // For multi-part speech (Andrew easter egg), we chain via Web Speech API directly
+  if (parts.length > 1 && typeof window !== 'undefined' && window.speechSynthesis) {
+    // Cancel and use Web Speech for the pause effect
+    window.speechSynthesis.cancel()
+    const voices = window.speechSynthesis.getVoices()
+    const preferred = ['Google UK English Female', 'Microsoft Sonia Online (Natural) - en-GB']
+    const voice = preferred.reduce<SpeechSynthesisVoice | null>((found, name) => found || voices.find(v => v.name === name) || null, null)
+      || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')) || null
+
+    let index = 0
+    function speakNext() {
+      if (index >= parts.length) return
+      const utterance = new SpeechSynthesisUtterance(parts[index])
+      if (voice) utterance.voice = voice
+      utterance.rate = 0.88
+      utterance.pitch = 1.08
+      utterance.lang = 'en-GB'
+      utterance.onend = () => {
+        index++
+        if (index < parts.length) setTimeout(speakNext, delayMs)
+      }
+      window.speechSynthesis.speak(utterance)
+    }
+    speakNext()
+  }
+}
+
+// ─── Voice Toast Component ───────────────────────────────────────────────────
+
+function VoiceToast({ toast, onDismiss }: { toast: VoiceToastData | null; onDismiss: () => void }) {
+  const [visible, setVisible] = useState(false)
+  const [exiting, setExiting] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (toast) {
+      setExiting(false)
+      // Small delay so the animation triggers
+      requestAnimationFrame(() => setVisible(true))
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => dismiss(), 8000)
+    } else {
+      setVisible(false)
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast])
+
+  function dismiss() {
+    setExiting(true)
+    setTimeout(() => { setVisible(false); onDismiss() }, 300)
+  }
+
+  if (!toast || !visible) return null
+
+  const isAndrew = toast.isAndrew
+  const borderColor = isAndrew ? '#C8960C' : '#C8960C'
+  const bgColor = isAndrew ? 'linear-gradient(135deg, #1B3060 0%, #0C1A2E 100%)' : '#0C1A2E'
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 24,
+        right: 24,
+        zIndex: 9998,
+        maxWidth: 420,
+        width: '100%',
+        borderRadius: 16,
+        borderLeft: `4px solid ${borderColor}`,
+        background: bgColor,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+        padding: '16px 20px',
+        transform: exiting ? 'translateX(120%)' : (visible ? 'translateX(0)' : 'translateX(120%)'),
+        opacity: exiting ? 0 : 1,
+        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{isAndrew ? '😊' : '🎙️'}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#C8960C', letterSpacing: '0.04em' }}>Lumio</span>
+          {isAndrew && <span style={{ fontSize: 10, color: '#FBBF24', fontStyle: 'italic' }}>special response</span>}
+        </div>
+        <button onClick={dismiss} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', padding: 4, lineHeight: 1 }}>
+          <X size={14} />
+        </button>
+      </div>
+      <p style={{ fontSize: 14, color: 'white', margin: 0, lineHeight: 1.7, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        {toast.text}
+      </p>
+    </div>
+  )
+}
+
 // ─── US Market text replacements ──────────────────────────────────────────────
 function usify(text: string): string {
   return text
@@ -355,7 +499,7 @@ function TelTedOverview() {
 
 // ─── Greeting Banner ─────────────────────────────────────────────────────────
 
-function GreetingBanner() {
+function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastData) => void }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -373,13 +517,41 @@ function GreetingBanner() {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
     const openingLine = OPENING_LINES[dayOfYear % OPENING_LINES.length]
     const closingLine = CLOSING_LINES[dayOfYear % CLOSING_LINES.length]
-    const script = `${greeting}, Sarah. ${openingLine} You have 5 TEL TED sessions today. 2 students need attention. Amara Johnson is due for her week 17 individual session. ${closingLine}`
+    const script = `${greeting}, Sarah. ${openingLine} You have 6 TEL TED sessions today. 2 students need attention. Amara Johnson is due for her week 17 individual session. ${closingLine}`
     speak(script)
   }
 
   useEffect(() => {
     if (!lastCommand) return
-    const { action, response } = lastCommand
+    const { command, action, response } = lastCommand
+
+    // Try TEL TED-specific commands first
+    const telted = processTelTedCommand(command)
+    if (telted?.handled) {
+      // Show toast
+      onVoiceToast?.({ text: telted.response, isAndrew: telted.isAndrew })
+
+      // Speak — Andrew gets the pause effect
+      if (telted.isAndrew) {
+        speakWithPause(speak, [
+          "Andrew Mendoza... hmm, let me think. I know a few Andrews.",
+          "If you mean Andrew Mendoza, then I only have good words. Top man. Knows his stuff. Good looking too — I probably should stop there in case he's listening. I'm starting to blush.",
+        ], 600)
+      } else {
+        speak(telted.response)
+      }
+      return
+    }
+
+    // Fall back to generic commands
+    if (action === 'UNKNOWN') {
+      // Custom catch-all for TEL TED
+      const catchAll = `I heard you say "${command}". I'm not sure how to help with that yet, but I'm learning. Try asking me about your TEL TED sessions, student assessments, or programme progress.`
+      onVoiceToast?.({ text: catchAll })
+      speak(catchAll)
+      return
+    }
+
     speak(response)
     if (action === 'PLAY_BRIEFING') setTimeout(() => handleBriefing(), 1500)
     else if (action === 'STOP_AUDIO') stop()
@@ -771,6 +943,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const [assessingDemo, setAssessingDemo] = useState(false)
   const [neliSubTab, setNeliSubTab] = useState<'dashboard' | 'languagescreen' | 'tracker'>('dashboard')
   const [insightsSubTab, setInsightsSubTab] = useState<'school' | 'network'>('school')
+  const [voiceToast, setVoiceToast] = useState<VoiceToastData | null>(null)
 
   const expanded = pinned || hovered
   const sidebarW = expanded ? EXPANDED_W : COLLAPSED_W
@@ -891,7 +1064,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       case 'overview':
         return (
           <div className="space-y-4">
-            <GreetingBanner />
+            <GreetingBanner onVoiceToast={setVoiceToast} />
 
             {/* Quick actions */}
             <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
@@ -1108,6 +1281,9 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
           {renderContent()}
         </main>
       </div>
+
+      {/* Voice command response toast */}
+      <VoiceToast toast={voiceToast} onDismiss={() => setVoiceToast(null)} />
     </div>
   )
 }
