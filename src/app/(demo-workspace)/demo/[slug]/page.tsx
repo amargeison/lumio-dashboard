@@ -4086,22 +4086,35 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         />
       )}
 
-      {/* Trial banner — hidden for converted/paid workspaces */}
+      {/* Trial banner — fixed, stops at sidebar edge */}
       {showUpgrade && isTrial && (
-        <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB' }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
             <span className="font-medium">Trial workspace — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>
-            <span className="hidden sm:inline opacity-75">· Demo data only · Auto-deleted after 14 days</span>
+            <span className="hidden lg:inline opacity-75">· Demo data only · Auto-deleted after 14 days</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
+            <button onClick={() => setShowInvite(true)} className="hidden lg:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
               <UserPlus size={11} /> Invite team
             </button>
-            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
               Clear Demo Data
             </button>
             <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>
+            <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      )}
+      {/* Mobile trial banner — static flow */}
+      {showUpgrade && isTrial && (
+        <div className="md:hidden flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center gap-2">
+            <Clock size={13} />
+            <span className="font-medium">Trial — {daysLeft}d left</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy</Link>
             <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
           </div>
         </div>
@@ -4202,7 +4215,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
+          <main className="flex-1 p-4 sm:p-5" style={{ paddingTop: showUpgrade && isTrial ? 56 : undefined }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 {activeDept !== 'overview' && <h1 className="text-lg font-bold">{deptLabel}</h1>}

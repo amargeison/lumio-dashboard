@@ -618,24 +618,54 @@ export default function InsightsPage() {
 
   if (hasData === null) return null
   if (!hasData) return (
-    <>
+    <PageShell title="Insights" subtitle="Analytics, reporting and performance data">
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="strategy" />}
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.1)' }}>
-          <Sparkles size={28} style={{ color: '#0D9488' }} />
+      <div className="flex flex-col items-center justify-center py-16 text-center max-w-lg mx-auto">
+        <div className="rounded-2xl flex items-center justify-center mb-5" style={{ width: 72, height: 72, backgroundColor: '#2D1B69' }}>
+          <BarChart2 size={32} style={{ color: '#A78BFA' }} />
         </div>
-        <h2 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Add data to unlock Insights</h2>
-        <p className="text-sm text-center max-w-md mb-6" style={{ color: '#6B7280' }}>Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full dashboard.</p>
+        <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>
+          {deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your insights data` : 'Add data to unlock Insights'}
+        </h2>
+        <p className="text-sm mb-8" style={{ color: '#6B7280' }}>
+          {deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Strategy Lead'}. Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard.` : 'Insights gives every role a tailored live view of your business. Add data across your modules to unlock the full Insights dashboard.'}
+        </p>
+
+        <div className="w-full space-y-3 mb-6">
+          {[
+            { icon: '⬆', label: 'Upload Business Data (CSV)', template: true },
+            { icon: '⬆', label: 'Upload Key Metrics (CSV/XLSX)', template: true },
+            { icon: '⇔', label: 'Connect an Integration (HubSpot, Xero, Slack + more)', template: false },
+          ].map((opt, i) => (
+            <div key={i} className="flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-base">{opt.icon}</span>
+                <span className="text-sm" style={{ color: '#F9FAFB' }}>{opt.label}</span>
+              </div>
+              {opt.template && (
+                <button className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>↓ Template</button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="w-full flex items-center gap-3 mb-6">
+          <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+          <span className="text-xs" style={{ color: '#6B7280' }}>or</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+        </div>
+
         <button onClick={() => {
           const ALL_PAGES = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','accounts','support','success','trials','operations','it']
           ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
           localStorage.setItem('lumio_demo_active', 'true')
           window.location.reload()
-        }} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-          Load Demo Data
+        }} className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#6D28D9', color: '#F9FAFB' }}>
+          <Sparkles size={16} /> Explore with Demo Data
         </button>
+        <p className="text-xs mt-3" style={{ color: '#6B7280' }}>Pre-filled sample data so you can explore every feature before adding your own</p>
       </div>
-    </>
+    </PageShell>
   )
 
   const isFiltered = region !== 'All Regions' || country !== 'All Countries' ||
