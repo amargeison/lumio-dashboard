@@ -2587,7 +2587,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.removeItem('lumio_staff_imported')
-    localStorage.setItem('lumio_demo_active', 'false')
+    localStorage.removeItem('lumio_staff_imported_source')
+    localStorage.removeItem('lumio_staff_ids')
+    localStorage.removeItem('lumio_staff_profiles')
+    localStorage.removeItem('lumio_demo_active')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
@@ -2727,6 +2730,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             }
             localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
           }
+          localStorage.setItem('lumio_staff_imported_source', 'supabase')
           window.dispatchEvent(new Event('lumio-staff-imported'))
           const parts: string[] = []
           if (data.added > 0) parts.push(`${data.added} added`)
