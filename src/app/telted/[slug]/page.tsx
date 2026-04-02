@@ -1836,16 +1836,18 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
           </div>
         )}
         {expanded && (
-          <div className="shrink-0 flex items-center gap-2" style={{ padding: '12px 16px', borderBottom: '1px solid #1E2E45' }}>
-            <div className="flex-1 min-w-0">
-              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, height: 'auto', maxHeight: 52, objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
+          <div className="shrink-0" style={{ padding: '12px 16px', borderBottom: '1px solid #1E2E45', textAlign: 'center' }}>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, maxHeight: 52, height: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', textAlign: 'center', width: '100%', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
+              </div>
+              <button onClick={togglePin} className="flex items-center justify-center rounded p-1 shrink-0"
+                style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }}
+                title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+                <Pin size={14} strokeWidth={2} />
+              </button>
             </div>
-            <button onClick={togglePin} className="flex items-center justify-center rounded p-1 shrink-0"
-              style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }}
-              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
-              <Pin size={14} strokeWidth={2} />
-            </button>
           </div>
         )}
 
@@ -1908,8 +1910,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
           <div className="flex shrink-0 items-center gap-2.5" style={{ padding: '12px 16px', borderBottom: '1px solid #1E2E45' }}>
             <div className="flex-1 min-w-0">
-              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, height: 'auto', maxHeight: 52, objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
+              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, maxHeight: 52, height: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', textAlign: 'center', width: '100%', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
             </div>
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
