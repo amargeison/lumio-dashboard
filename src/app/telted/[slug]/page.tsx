@@ -24,6 +24,10 @@ import {
   ZAxis, AreaChart, Area,
 } from 'recharts'
 import DistrictDashboard from '@/components/neli/DistrictDashboard'
+import {
+  StaffManagementPage, SendDslPage, SafeguardingPage, WraparoundPage,
+  InspectionModePage, RosteringPage, MisSyncPage, WorkflowsPage, ReportsToolPage,
+} from '@/components/neli/SidebarPages'
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
 
@@ -242,8 +246,7 @@ const SIDEBAR_NAV = [
   { section: null,     id: 'inspection',   label: 'Inspection Mode',    icon: ClipboardList },
   { section: null,     id: 'rostering',    label: 'Rostering',          icon: Calendar },
   { section: null,     id: 'missync',      label: 'MIS Sync',           icon: Database },
-  { section: 'Tools',  id: 'trust',        label: 'District Overview',  icon: Network },
-  { section: null,     id: 'workflows',    label: 'Workflows',          icon: GitBranch },
+  { section: 'Tools',  id: 'workflows',    label: 'Workflows',          icon: GitBranch },
   { section: null,     id: 'reports',      label: 'Reports',            icon: FileText },
   { section: null,     id: 'settings',     label: 'Settings',           icon: Settings },
 ]
@@ -1662,26 +1665,24 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         return <div><Insights /></div>
       case 'district':
         return <DistrictDashboard />
-      case 'trust':
-        return <DistrictDashboard />
       case 'staff':
-        return <ComingSoonPage title="Staff Management" />
+        return <StaffManagementPage />
       case 'send-dsl':
-        return <ComingSoonPage title="SEND & DSL" />
+        return <SendDslPage />
       case 'safeguarding':
-        return <ComingSoonPage title="Safeguarding" />
+        return <SafeguardingPage />
       case 'wraparound':
-        return <ComingSoonPage title="Pre & After School" />
+        return <WraparoundPage />
       case 'inspection':
-        return <InspectionModeSection />
+        return <InspectionModePage />
       case 'rostering':
-        return <RosteringSection />
+        return <RosteringPage />
       case 'missync':
-        return <ComingSoonPage title="MIS Sync" />
+        return <MisSyncPage />
       case 'workflows':
-        return <ComingSoonPage title="Workflows" />
+        return <WorkflowsPage />
       case 'reports':
-        return <ReportsPanel />
+        return <ReportsToolPage />
       case 'settings':
         return <TelTedSettings />
       default:
@@ -1715,12 +1716,14 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       >
         {/* Logo area */}
         <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#B45309', color: '#F9FAFB' }}>TT</div>
+          {!expanded && (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#B45309', color: '#F9FAFB' }}>TT</div>
+          )}
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>TEL TED Portal</p>
-                <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>OxEd & Assessment</p>
+                <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                <p className="text-[10px] truncate mt-1" style={{ color: '#6B7280' }}>OxEd &amp; Assessment</p>
               </div>
               <button onClick={togglePin} className="flex items-center justify-center rounded p-1 shrink-0"
                 style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }}
@@ -1789,10 +1792,9 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       {mobileOpen && (
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
           <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#B45309', color: '#F9FAFB' }}>TT</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>TEL TED Portal</p>
-              <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>OxEd & Assessment</p>
+              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <p className="text-[10px] truncate mt-1" style={{ color: '#6B7280' }}>OxEd &amp; Assessment</p>
             </div>
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
