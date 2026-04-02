@@ -1278,7 +1278,7 @@ const ROUNDUP_ITEMS = [
     id: 'whatsapp', icon: '💬', label: 'WhatsApp Business', count: 4, urgent: false,
     color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
     messages: [
-      { id: 'w1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
+      { id: 'w1', from: 'Sophie Brennan', avatar: 'SB', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
       { id: 'w2', from: 'James Harlow', avatar: 'JH', subject: 'Contract query', preview: 'Quick question on the contract terms \u2014 can we jump on a call this afternoon?', time: '8:45am', urgent: false, read: false },
       { id: 'w3', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal reminder', preview: 'Our current contract ends next month. Looking forward to renewing with Lumio.', time: 'Yesterday', urgent: false, read: true },
       { id: 'w4', from: 'Dan Marsh', avatar: 'DM', subject: 'Invoice question', preview: 'Could you resend the latest invoice? Need it for our accounts team.', time: 'Yesterday', urgent: false, read: true },
@@ -1299,7 +1299,7 @@ const ROUNDUP_ITEMS = [
     id: 'slack', icon: '💬', label: 'Slack', count: 7, urgent: false,
     color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
     messages: [
-      { id: 's1', from: 'Charlotte Davies', avatar: 'CD', subject: '#sales-pipeline', preview: 'Lead scored 87 in SA-02 — Arron, want me to move this to Proposal stage?', time: '9:02am', urgent: false, read: false, channel: '#sales-pipeline' },
+      { id: 's1', from: 'Rachel Osei', avatar: 'RO', subject: '#sales-pipeline', preview: 'Lead scored 87 in SA-02 — James, want me to move this to Proposal stage?', time: '9:02am', urgent: false, read: false, channel: '#sales-pipeline' },
       { id: 's2', from: 'HR Bot', avatar: 'HR', subject: '#hr-alerts', preview: 'HR-01 workflow completed for new joiner Sophie Williams. Onboarding pack sent \u2713', time: '8:45am', urgent: false, read: false, channel: '#hr-alerts' },
       { id: 's3', from: 'James Harlow', avatar: 'JH', subject: '#general', preview: 'Morning all — heads up, the Wimbledon client is pushing for a demo this Friday. Anyone free?', time: '8:30am', urgent: false, read: false, channel: '#general' },
       { id: 's4', from: 'Rachel Davies', avatar: 'RD', subject: '#management', preview: 'Board pack is ready for review. Can someone sense-check the financial slides?', time: 'Yesterday', urgent: false, read: true, channel: '#management' },
@@ -1309,16 +1309,16 @@ const ROUNDUP_ITEMS = [
     id: 'teams', icon: '🟣', label: 'Microsoft Teams', count: 3, urgent: false,
     color: '#7B83EB', bg: 'rgba(123,131,235,0.08)', border: 'rgba(123,131,235,0.2)',
     messages: [
-      { id: 'tm1', from: 'Charlotte Davies', avatar: 'CD', subject: 'Sales Standup', preview: 'Quick update \u2014 the Apex deal is moving to proposal stage. Can we review pricing before EOD?', time: '9:30am', urgent: false, read: false },
-      { id: 'tm2', from: 'Sophie Williams', avatar: 'SW', subject: 'Onboarding checklist', preview: 'Hi Arron, I\u2019ve completed the first 3 items on my onboarding checklist. Where do I find the IT setup guide?', time: '8:50am', urgent: false, read: false },
-      { id: 'tm3', from: 'James Okafor', avatar: 'JO', subject: 'Client feedback', preview: 'Just got off a call with Oakridge \u2014 they love the new safeguarding module. Might be worth a case study.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'tm1', from: 'Rachel Osei', avatar: 'RO', subject: 'Sales Standup', preview: 'Quick update \u2014 the Apex deal is moving to proposal stage. Can we review pricing before EOD?', time: '9:30am', urgent: false, read: false },
+      { id: 'tm2', from: 'Sophie Williams', avatar: 'SW', subject: 'Onboarding checklist', preview: 'Hi James, I\u2019ve completed the first 3 items on my onboarding checklist. Where do I find the IT setup guide?', time: '8:50am', urgent: false, read: false },
+      { id: 'tm3', from: 'Ben Holloway', avatar: 'BH', subject: 'Client feedback', preview: 'Just got off a call with Oakridge \u2014 they love the new safeguarding module. Might be worth a case study.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
   {
     id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
     color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
     messages: [
-      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Charlotte Davies.', time: '9:45am', urgent: false, read: false },
+      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Rachel Osei.', time: '9:45am', urgent: false, read: false },
       { id: 'h2', from: 'HubSpot CRM', avatar: 'HS', subject: 'New contact — Marcus Chen, Meridian Trust', preview: 'Marcus Chen (CTO, Meridian Trust) has been added as a new contact. Recommended action: schedule intro call.', time: '8:30am', urgent: false, read: false },
       { id: 'h3', from: 'HubSpot', avatar: 'HS', subject: 'Email sequence — 3 contacts opened your email', preview: 'Your "School Digital Transformation" sequence had 3 opens and 1 click-through in the last 24 hours.', time: 'Yesterday', urgent: false, read: true },
       { id: 'h4', from: 'HubSpot', avatar: 'HS', subject: 'Task reminder — follow up with Wimbledon High', preview: 'You have an overdue task: follow up with James Harlow at Wimbledon High regarding the enterprise proposal.', time: 'Yesterday', urgent: true, read: false },
@@ -1337,7 +1337,7 @@ const ROUNDUP_ITEMS = [
     id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false,
     color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)',
     messages: [
-      { id: 'l1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Connection request', preview: 'Hi, I came across Lumio and would love to connect. We\u2019re looking for a school management solution.', time: '10:15am', urgent: false, read: false },
+      { id: 'l1', from: 'Sophie Brennan', avatar: 'SB', subject: 'Connection request', preview: 'Hi, I came across Lumio and would love to connect. We\u2019re looking for a school management solution.', time: '10:15am', urgent: false, read: false },
       { id: 'l2', from: 'LinkedIn', avatar: 'LI', subject: 'Your post is gaining traction', preview: 'Your post about UK school automation got 47 reactions and 12 comments in the last 24 hours.', time: '9:30am', urgent: false, read: false },
       { id: 'l3', from: 'Marcus Chen', avatar: 'MC', subject: 'Connection request', preview: 'Hi — I\u2019m the CTO at Meridian Trust. Interested to learn more about your SSO capabilities.', time: 'Yesterday', urgent: false, read: true },
     ]
@@ -1790,8 +1790,8 @@ function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab
 
 const MEETINGS: { id: string; title: string; time: string; duration: string; attendees: string[]; location: string; type: string; status: string; link?: string }[] = [
   { id: '1', title: 'Weekly Team Check-in', time: '09:00', duration: '30 min', attendees: ['Sarah M.'], location: 'Google Meet', type: 'video', status: 'done' },
-  { id: '2', title: 'New Customer Demo', time: '11:00', duration: '45 min', attendees: ['Charlotte D.'], location: 'Zoom', type: 'video', status: 'now', link: '#' },
-  { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['Arron'], location: 'Google Meet', type: 'call', status: 'upcoming', link: '#' },
+  { id: '2', title: 'New Customer Demo', time: '11:00', duration: '45 min', attendees: ['Rachel O.'], location: 'Zoom', type: 'video', status: 'now', link: '#' },
+  { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['James'], location: 'Google Meet', type: 'call', status: 'upcoming', link: '#' },
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
 ]
 

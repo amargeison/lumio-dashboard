@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Mail, Calendar, ExternalLink, Search } from 'lucide-react'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 interface TeamMember {
   id: string; name: string; role: string; department: string; avatar: string
@@ -48,13 +49,13 @@ const BIRTHDAYS = [
   { name: 'Nate Crawford', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
 ]
 
-const EMPLOYEE_CARDS = [
-  { name: 'James Hartley', role: 'CEO', overall: 97, color: '#7C3AED', avatar: 'JH', stats: { PAC: 86, SHO: 96, PAS: 62, DRI: 99, DEF: 99, PHY: 61 } },
-  { name: 'Sophie Brennan', role: 'Marketing Director', overall: 94, color: '#EC4899', avatar: 'SB', stats: { PAC: 66, SHO: 92, PAS: 90, DRI: 71, DEF: 95, PHY: 65 } },
-  { name: 'Marcus Webb', role: 'Sales Director', overall: 98, color: '#0D9488', avatar: 'MW', stats: { PAC: 95, SHO: 99, PAS: 88, DRI: 94, DEF: 72, PHY: 78 } },
-  { name: 'Rachel Osei', role: 'Operations Manager', overall: 79, color: '#F59E0B', avatar: 'RO', stats: { PAC: 71, SHO: 68, PAS: 74, DRI: 65, DEF: 88, PHY: 82 } },
-  { name: 'Tom Fielding', role: 'Support Lead', overall: 85, color: '#6D28D9', avatar: 'TF', stats: { PAC: 78, SHO: 72, PAS: 91, DRI: 69, DEF: 83, PHY: 77 } },
-  { name: 'Claire Donovan', role: 'IT Director', overall: 93, color: '#0EA5E9', avatar: 'CD', stats: { PAC: 60, SHO: 70, PAS: 76, DRI: 71, DEF: 95, PHY: 65 } },
+const DEMO_STAFF: StaffRecord[] = [
+  { first_name: 'James', last_name: 'Hartley', job_title: 'CEO & Founder', department: 'Executive', email: 'james@lumiodemo.com' },
+  { first_name: 'Sophie', last_name: 'Brennan', job_title: 'Marketing Director', department: 'Marketing', email: 'sophie@lumiodemo.com' },
+  { first_name: 'Marcus', last_name: 'Webb', job_title: 'Sales Director', department: 'Sales', email: 'marcus@lumiodemo.com' },
+  { first_name: 'Rachel', last_name: 'Osei', job_title: 'Operations Manager', department: 'Operations', email: 'rachel@lumiodemo.com' },
+  { first_name: 'Tom', last_name: 'Fielding', job_title: 'Support Lead', department: 'Support', email: 'tom@lumiodemo.com' },
+  { first_name: 'Claire', last_name: 'Donovan', job_title: 'IT Director', department: 'IT', email: 'claire@lumiodemo.com' },
 ]
 
 type SubTab = 'today' | 'orgchart' | 'company' | 'cards'
@@ -193,37 +194,13 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
         </div>
       )}
 
-      {/* ═══ TEAM INFO (FIFA CARDS) ═══ */}
+      {/* ═══ TEAM INFO (FIFA CARDS — same component as live) ═══ */}
       {subTab === 'cards' && (
         <div className="space-y-4">
           <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {EMPLOYEE_CARDS.map(card => (
-              <div key={card.name} className="rounded-2xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${card.color}20 0%, #111318 60%)`, border: `1px solid ${card.color}40` }}>
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-3xl font-black" style={{ color: card.color }}>{card.overall}</p>
-                      <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>Overall</p>
-                    </div>
-                    <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: card.color + '25', color: card.color, border: `2px solid ${card.color}50` }}>{card.avatar}</div>
-                  </div>
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{card.name}</p>
-                  <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.role}</p>
-                </div>
-                <div className="grid grid-cols-6 gap-px mx-4 mb-3" style={{ backgroundColor: '#1F2937', borderRadius: 8, overflow: 'hidden' }}>
-                  {Object.entries(card.stats).map(([key, val]) => (
-                    <div key={key} className="flex flex-col items-center py-2" style={{ backgroundColor: '#0A0B10' }}>
-                      <span className="text-[10px] font-bold" style={{ color: val >= 90 ? '#22C55E' : val >= 75 ? '#F59E0B' : '#9CA3AF' }}>{val}</span>
-                      <span className="text-[8px] font-semibold" style={{ color: '#4B5563' }}>{key}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2 px-4 pb-4">
-                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: card.color + '20', color: card.color, border: `1px solid ${card.color}40` }}>Message</button>
-                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Profile</button>
-                </div>
-              </div>
+          <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`}>
+            {DEMO_STAFF.map((s, i) => (
+              <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => setSelectedMember(team.find(t => t.name.includes(s.last_name || '')) || null)} teamSize={DEMO_STAFF.length} />
             ))}
           </div>
         </div>
