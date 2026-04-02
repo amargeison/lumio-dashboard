@@ -211,7 +211,7 @@ function CornersTab() {
 
 function CornersAttacking() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Routine 1 — Near Post Flick-On */}
       <SectionCard title='Routine 1: "Near Post Flick-On"' onEdit={() => {}}>
         <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
@@ -221,7 +221,7 @@ function CornersAttacking() {
           Delivery: <Badge text="Inswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>Martinez</strong> (left foot)
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — inswinger from right corner to near post */}
@@ -278,7 +278,7 @@ function CornersAttacking() {
           Delivery: <Badge text="Outswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>O&apos;Brien</strong> (right foot)
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="left" />
 
             {/* Ball flight — outswinger from left corner to far post */}
@@ -323,7 +323,7 @@ function CornersAttacking() {
           Taker: <strong style={{ color: C.text }}>Santos</strong>
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Taker at corner */}
@@ -365,7 +365,7 @@ function CornersAttacking() {
           Delivery: <Badge text="Inswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>Martinez</strong> (left foot)
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — inswinger from right corner to back post */}
@@ -419,7 +419,7 @@ function CornersAttacking() {
           Outswinger to near post flick-on specialist (shortest player). Flick directed to penalty spot runner. Back post safety option.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — outswinger to near post */}
@@ -458,7 +458,7 @@ function CornersAttacking() {
           2 blockers screen opposition&apos;s best headers. Flat, driven delivery to back post at pace. One attacker sprints to back post, one holds 6 yards.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — flat driven to back post */}
@@ -504,7 +504,7 @@ function CornersAttacking() {
           2 shooters arriving from outside the box.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Taker at corner */}
@@ -545,7 +545,7 @@ function CornersAttacking() {
           Delivery to edge of box intentionally. 6 players positioned around the box edge to win second ball and shoot. No aerial threat — purely a second-ball routine.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — to edge of box */}
@@ -583,7 +583,7 @@ function CornersAttacking() {
           Short corner to overlapping player who takes a touch, plays back to taker, taker delivers second-phase inswinger with defence pulled out of shape. Timing of the return pass is critical — the box must be disorganised before the delivery.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Taker at corner */}
@@ -633,7 +633,7 @@ function CornersAttacking() {
           Delivery aimed at the GK area. Designated blocker legally obstructs the goalkeeper&apos;s path by holding position in the 6-yard box. Tallest attacker attacks the ball at front post while GK is screened — must be legal, no active push.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — inswinger to front post area */}
@@ -681,7 +681,7 @@ function CornersAttacking() {
           2 runners from the middle of the box split — one drags wide to pull a marker, the other cuts inside to the 6-yard box. Inswinger targeted at the inside runner arriving at pace. The wide decoy must sell the run convincingly.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — inswinger to 6-yard box */}
@@ -724,7 +724,7 @@ function CornersAttacking() {
           All attacking players start near post or central, pinning markers to that side. In the final second before delivery, 3 players surge to back post in coordinated late movement. The timing window is razor-thin — delivery must be pre-planned.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Ball flight — outswinger to back post */}
@@ -772,7 +772,7 @@ function CornersAttacking() {
           Deliberately deliver to an area where the opposition will likely head clear. Position 4 players in a ring around the anticipated clearance zone to win the second ball. Converts a defensive clearance into an attacking opportunity at the edge of the box.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Delivery line — deliberately to opposition header */}
@@ -826,20 +826,20 @@ function CornersAttacking() {
           ]}
         />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function CornersDefending() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Setup 1 — Zonal Marking */}
       <SectionCard title='Setup 1: "Zonal Marking"' onEdit={() => {}}>
         <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
           4 defenders in a zonal line across the 6-yard box. 2 post players, 3 man-markers, 1 edge runner.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Zonal rectangles across 6-yard box */}
             <ZoneHighlight x={120} y={30} width={50} height={25} color="rgba(192,57,43,0.2)" />
             <ZoneHighlight x={170} y={30} width={50} height={25} color="rgba(192,57,43,0.15)" />
@@ -880,7 +880,7 @@ function CornersDefending() {
           Each defender paired with an opposing attacker. Marking lines show assignments.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Attackers */}
             <PlayerDot x={150} y={60} label="A1" type="attack" size={8} />
             <PlayerDot x={190} y={75} label="A2" type="attack" size={8} />
@@ -922,7 +922,7 @@ function CornersDefending() {
           Zonal line in 6-yard box + man-markers on specific threats. Best of both systems.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Zonal zone */}
             <ZoneHighlight x={130} y={30} width={100} height={25} color="rgba(192,57,43,0.15)" />
 
@@ -974,7 +974,7 @@ function CornersDefending() {
           2 players press the corner taker immediately on delivery. Remaining 9 set up zonal in the box.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Corner taker (opposition) */}
@@ -1012,7 +1012,7 @@ function CornersDefending() {
           5 players in rigid zonal line across 6-yard box. 3 man-markers on identified aerial threats. 1 sweeper outside box. GK front post.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* 6-yard box zonal wall highlight */}
             <ZoneHighlight x={110} y={28} width={140} height={28} color="rgba(192,57,43,0.2)" />
 
@@ -1054,7 +1054,7 @@ function CornersDefending() {
           Pack box defensively but designate 2 fast forwards to stay high on halfway. On clearance: immediate long ball to 2 runners.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Defensive shape in box */}
             <ZoneHighlight x={110} y={30} width={140} height={70} color="rgba(192,57,43,0.1)" />
 
@@ -1089,7 +1089,7 @@ function CornersDefending() {
           Intentionally leave near post slightly open as a trap. Strongest header positioned just behind the near post zone to intercept.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <CornerFlag side="right" />
 
             {/* Deliberate gap at near post */}
@@ -1124,7 +1124,7 @@ function CornersDefending() {
           Every opposition player in the box is man-marked. No zonal element — GK takes full responsibility for crosses. 2 post players regardless.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Opposition attackers + our man-markers paired */}
             <PlayerDot x={130} y={55} label="A1" type="attack" size={7} />
             <PlayerDot x={135} y={63} label="D1" type="defend" size={8} />
@@ -1186,7 +1186,7 @@ function CornersDefending() {
           ]}
         />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
@@ -1229,7 +1229,7 @@ function FKAttacking() {
 
 function FKZoneA() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={{ color: C.textSec, fontSize: 12, marginBottom: 12, fontStyle: 'italic' }}>
         Zone A — Shooting Range (18-25 yards, central)
       </div>
@@ -1240,7 +1240,7 @@ function FKZoneA() {
           Taker: <strong style={{ color: C.text }}>Davies</strong> (right foot). Direct strike curling over the wall.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Defensive wall */}
@@ -1269,7 +1269,7 @@ function FKZoneA() {
           Player 1 dummies over the ball, Player 2 drives low under the wall jump.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1299,7 +1299,7 @@ function FKZoneA() {
           Touch to side for arriving midfielder who strikes first time from edge of box.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1330,7 +1330,7 @@ function FKZoneA() {
           Player 1 taps sideways 3 yards to Player 2, who shoots first time as the wall is still jumping.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1358,7 +1358,7 @@ function FKZoneA() {
           3 players stand over the ball and all dummy. 4th player runs in from 10 yards behind and strikes.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1391,7 +1391,7 @@ function FKZoneA() {
           Wall instructed to jump — ball driven hard and low beneath jumping feet.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Wall — shown jumping (higher position) */}
@@ -1416,7 +1416,7 @@ function FKZoneA() {
           Right-footer from left side — natural outswinger swerves away from keeper towards far post. Tall player at far post to head in if needed.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={150} y={100} count={4} />
 
@@ -1445,7 +1445,7 @@ function FKZoneA() {
           No routine — just take it immediately before opposition set up. Condition: only when taker signals thumbs up. Pass into space behind disorganised defence.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* No wall formed yet */}
@@ -1476,7 +1476,7 @@ function FKZoneA() {
           Taker shapes to shoot, runs over the ball, circles back and strikes on the second approach. Defence relaxes after the initial dummy — the second attempt catches them cold. Requires a taker with composure and convincing body shape on the first run.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1520,7 +1520,7 @@ function FKZoneA() {
           2 attackers positioned legally inside the defensive wall. On the whistle, both split apart in opposite directions to create a gap. Shooter fires through the gap before the wall can reform — requires a low, driven strike.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Defensive wall — 4 defenders + 2 attackers embedded */}
@@ -1562,7 +1562,7 @@ function FKZoneA() {
           Instead of shooting, taker chips delicately over the wall to a runner arriving from the blind side behind the defence. Runner heads or volleys from close range. The chip must clear the wall by minimal margin — too high and the GK claims.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1601,7 +1601,7 @@ function FKZoneA() {
           <Badge text="Specialist" />
         </div>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={5} />
 
@@ -1639,7 +1639,7 @@ function FKZoneA() {
           Taker deliberately shoots into the wall, anticipating the rebound. 2 players pre-positioned for the blocked rebound to strike again immediately. The taker aims at the base of the wall — low shots produce the most predictable rebounds.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={100} count={4} />
 
@@ -1674,13 +1674,13 @@ function FKZoneA() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function FKZoneB() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={{ color: C.textSec, fontSize: 12, marginBottom: 12, fontStyle: 'italic' }}>
         Zone B — Wide Free Kick
       </div>
@@ -1691,7 +1691,7 @@ function FKZoneB() {
           Inswinging cross from wide free kick to near-post zone.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* FK taker wide right */}
@@ -1717,7 +1717,7 @@ function FKZoneB() {
           Outswinging cross from wide free kick to far-post zone.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             <PlayerDot x={50} y={110} label="T" type="attack" size={9} />
@@ -1742,7 +1742,7 @@ function FKZoneB() {
           Low driven ball cut back to edge of box for a first-time strike.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             <PlayerDot x={280} y={90} label="T" type="attack" size={9} />
@@ -1763,13 +1763,13 @@ function FKZoneB() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function FKZoneC() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={{ color: C.textSec, fontSize: 12, marginBottom: 12, fontStyle: 'italic' }}>
         Zone C — Deep Free Kick (30-35 yards)
       </div>
@@ -1780,7 +1780,7 @@ function FKZoneC() {
           Lofted delivery over the wall to the back post area for a header.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={90} count={4} />
 
@@ -1805,7 +1805,7 @@ function FKZoneC() {
           Low driven ball into the box — aimed at runners attacking the near post area.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={90} count={3} />
 
@@ -1820,13 +1820,13 @@ function FKZoneC() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function FKZoneD() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={{ color: C.textSec, fontSize: 12, marginBottom: 12, fontStyle: 'italic' }}>
         Zone D — Very Deep / Own Half
       </div>
@@ -1837,7 +1837,7 @@ function FKZoneD() {
           Long delivery from own half to target man in opposition box.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* FK taker in own half */}
@@ -1867,7 +1867,7 @@ function FKZoneD() {
           Short pass from deep free kick to build out from the back.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* FK taker */}
@@ -1892,13 +1892,13 @@ function FKZoneD() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function FKIndirect() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={{ color: C.textSec, fontSize: 12, marginBottom: 12, fontStyle: 'italic' }}>
         Indirect Free Kicks
       </div>
@@ -1909,7 +1909,7 @@ function FKIndirect() {
           Short square pass then immediate shot. Requires two touches for indirect FK.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
             <DefensiveWall x={170} y={85} count={5} />
 
@@ -1935,7 +1935,7 @@ function FKIndirect() {
           Dummy runner over ball draws defenders; second player plays through ball.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Ball */}
@@ -1960,17 +1960,17 @@ function FKIndirect() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function FKDefending() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Central 20-22yds: 4-man wall */}
       <SectionCard title="Central Free Kick (20-22 yds) — 4-Man Wall" onEdit={() => {}}>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
 
             <DefensiveWall x={170} y={100} count={4} />
@@ -1991,7 +1991,7 @@ function FKDefending() {
       {/* Wide 18-25yds: 3-man wall */}
       <SectionCard title="Wide Free Kick (18-25 yds) — 3-Man Wall" onEdit={() => {}}>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
 
             <DefensiveWall x={220} y={95} count={3} />
@@ -2041,7 +2041,7 @@ function FKDefending() {
           Wall is set slightly off-line to cover near post curl. Box behind wall set up zonally. GK covers far post.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={185} y={15} label="GK" type="gk" size={10} />
             <PitchLabel x={200} y={25} text="Far Post" color={C.textSec} size={7} />
 
@@ -2069,7 +2069,7 @@ function FKDefending() {
           Against known power free kick specialists use 5-man wall. Remaining 6 pack box tightly.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
 
             {/* 5-man wall */}
@@ -2098,7 +2098,7 @@ function FKDefending() {
           1 player positioned at wall end sprints towards anticipated layoff target on delivery.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
 
             <DefensiveWall x={170} y={100} count={4} />
@@ -2124,7 +2124,7 @@ function FKDefending() {
           GK positioned very narrow — near post covered by GK. Wall covers far post channel instead (reverses traditional setup).
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* GK positioned near post */}
             <PlayerDot x={155} y={15} label="GK" type="gk" size={10} />
             <PitchLabel x={155} y={28} text="Near Post" color={C.gold} size={7} />
@@ -2150,7 +2150,7 @@ function FKDefending() {
           All defenders drop 2 yards deeper than normal. Sprint line to ball on delivery — more aggressive press forward.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
 
             <DefensiveWall x={170} y={100} count={4} />
@@ -2177,7 +2177,7 @@ function FKDefending() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
@@ -2210,7 +2210,7 @@ function ThrowInsTab() {
           </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2244,14 +2244,14 @@ function ThrowInsTab() {
 
 function ThrowAttacking() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Routine 1: Lay-off + Turn */}
       <SectionCard title='Routine 1: "Lay-off + Turn"' onEdit={() => {}}>
         <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
           Throw to feet, receiver lays off, third man turns into space.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower on touchline */}
@@ -2284,7 +2284,7 @@ function ThrowAttacking() {
           Long throw directly into the box, targeting back post.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2312,7 +2312,7 @@ function ThrowAttacking() {
           Quick throw to a decoy, who flicks on for a third man running in behind.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             <ThrowInMarker x={320} y={90} side="left" />
@@ -2340,7 +2340,7 @@ function ThrowAttacking() {
           Throw to tall player at edge of box, headed flick-on over defenders into 6-yard box. Runner anticipates and attacks the flick.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower on touchline */}
@@ -2373,7 +2373,7 @@ function ThrowAttacking() {
           First player makes run and shouts for ball as decoy. Second player peels off in opposite direction and receives in space.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2404,7 +2404,7 @@ function ThrowAttacking() {
           Short throw to feet, immediate lay-off, third player overlaps wide and receives for cross.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2441,7 +2441,7 @@ function ThrowAttacking() {
           Player shapes to throw up the line, reverses and throws inside to playmaker.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower — body shape facing up the line */}
@@ -2474,7 +2474,7 @@ function ThrowAttacking() {
           Long throw into box headed clear, 3 players immediately press the clearance zone.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower — long throw */}
@@ -2510,7 +2510,7 @@ function ThrowAttacking() {
           Short throw, receiver holds, thrower overlaps past them, then a second player overlaps the overlapper. Creates a 2v1 on the wing with the defence unable to track both overlapping runners. The second overlap is the killer — defenders rarely anticipate it.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2552,7 +2552,7 @@ function ThrowAttacking() {
           Throw to near player who receives and holds the ball to attract pressure. Far-side attacker times a back-door cut behind the defensive line to receive a lay-off in the box. The hold must be long enough to draw defenders, but short enough to execute before recovery.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2595,7 +2595,7 @@ function ThrowAttacking() {
           Receiver uses the defender as a screen, positioning their body between ball and marker. On the throw, receiver spins off the defender into space to collect. The throw must be weighted into the space the receiver is spinning towards — never to feet.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2635,7 +2635,7 @@ function ThrowAttacking() {
           Immediately throw long down the line the moment the ball is received from the referee. Catch the opposition still transitioning back into defensive shape. The winger must be alert and already sprinting before the throw is taken — communication is everything.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Thrower — quick release */}
@@ -2672,7 +2672,7 @@ function ThrowAttacking() {
           Long throw to the near touchline, combined with 4 runners flooding the box from different angles. Essentially a corner kick from a throw-in — designed to create chaos in the penalty area. Requires a long-throw specialist and pre-rehearsed timing.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             {/* Long throw specialist */}
@@ -2713,20 +2713,20 @@ function ThrowAttacking() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function ThrowMiddle() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Routine 1 */}
       <SectionCard title='Routine 1: "Back to Feet — Switch"' onEdit={() => {}}>
         <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
           Throw to midfielder who switches play to far side.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             <ThrowInMarker x={20} y={150} side="right" />
@@ -2751,7 +2751,7 @@ function ThrowMiddle() {
           Quick throw forward along the line, diagonal run into channel.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
 
             <ThrowInMarker x={20} y={140} side="right" />
@@ -2771,20 +2771,20 @@ function ThrowMiddle() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
 function ThrowDefensive() {
   return (
-    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Routine 1 */}
       <SectionCard title='Routine 1: "Safe Retention — CB Switch"' onEdit={() => {}}>
         <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
           Short throw to centre-back who switches play to the far side.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2812,7 +2812,7 @@ function ThrowDefensive() {
           Under pressure, throw back to GK to reset and build again.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2843,7 +2843,7 @@ function ThrowDefensive() {
           3-man triangle — throw to nearest man, immediate third-man pass out wide.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2876,7 +2876,7 @@ function ThrowDefensive() {
           If pressed on nearside — throw long to opposite full back to switch play.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower on left */}
@@ -2905,7 +2905,7 @@ function ThrowDefensive() {
           Throw back to GK to reset and play out from back calmly.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2935,7 +2935,7 @@ function ThrowDefensive() {
           Short throw to CB, CB lays back to keeper&apos;s feet, keeper distributes long.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2965,7 +2965,7 @@ function ThrowDefensive() {
           Thrower plays into space ahead of running player rather than to feet.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
 
             {/* Thrower */}
@@ -2990,7 +2990,7 @@ function ThrowDefensive() {
         </div>
         <CoachAttribution />
       </SectionCard>
-    </>
+    </div>
   )
 }
 
@@ -3170,7 +3170,7 @@ function GoalKicksTab() {
           GK plays short to centre-backs split wide, CMs drop deep, striker stays high.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* Opposition GK area at top */}
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
@@ -3213,7 +3213,7 @@ function GoalKicksTab() {
           Long delivery to target zones: wide channels, target man, or channel runs.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3252,7 +3252,7 @@ function GoalKicksTab() {
           GK diagonal ball from left to right winger (or vice versa) — bypasses congested midfield press.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3285,7 +3285,7 @@ function GoalKicksTab() {
           Driven ball to target man who flicks into path of runner.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3316,7 +3316,7 @@ function GoalKicksTab() {
           GK rolls ball short to CB before opposition press organises.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3349,7 +3349,7 @@ function GoalKicksTab() {
           High lofted ball into wide channel for winger to chase.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3377,7 +3377,7 @@ function GoalKicksTab() {
           Opposition presses high — GK lifts ball over the press line to striker running in behind.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
 
             {/* Our GK */}
@@ -3411,7 +3411,7 @@ function GoalKicksTab() {
           GK shapes to kick long — opposition pushes their line up anticipating the long ball. GK instead rolls short to the CB who has drifted into space vacated by the pressing forwards. Requires composure from the GK and a pre-agreed signal with the CB.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* GK with ball */}
             <PlayerDot x={170} y={458} label="GK" type="gk" size={10} />
 
@@ -3454,7 +3454,7 @@ function GoalKicksTab() {
           3 centre-backs split extremely wide, stretching to the corners of the 18-yard box. GK plays to whichever CB is least pressed. Fullbacks push high into midfield to create a numerical overload in the middle third. Forces the opposition to choose: press wide or hold shape.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* GK */}
             <PlayerDot x={170} y={458} label="GK" type="gk" size={10} />
 
@@ -3499,7 +3499,7 @@ function GoalKicksTab() {
           GK drives the ball flat and fast directly to the winger stationed on the touchline. Cuts out the midfield entirely — high risk, high reward. Requires pinpoint accuracy from the GK and a winger with a strong first touch under pressure.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* GK */}
             <PlayerDot x={170} y={458} label="GK" type="gk" size={10} />
 
@@ -3541,7 +3541,7 @@ function GoalKicksTab() {
           GK hits a half-volley into the space between the opposition fullback and centre-back. Striker makes a pre-planned diagonal run to meet the ball in the channel. The trajectory must be flat enough to arrive quickly but with enough loft to clear the midfield.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* GK */}
             <PlayerDot x={170} y={458} label="GK" type="gk" size={10} />
 
@@ -3581,7 +3581,7 @@ function GoalKicksTab() {
           GK delivers into the centre circle where 3 midfielders are pre-positioned to compete for the second ball. Designed to win possession in neutral territory rather than risk losing it in the defensive third. The 3 midfielders form a triangle around the expected drop zone.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={500} halfPitch={false}>
+          <PitchSVG height={500} halfPitch={false}>
             {/* GK */}
             <PlayerDot x={170} y={458} label="GK" type="gk" size={10} />
 
@@ -3667,7 +3667,7 @@ function KOAttacking() {
           Knock back to CM who plays wide immediately — stretch opposition before they settle.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Centre spot (bottom of half pitch) */}
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
@@ -3700,7 +3700,7 @@ function KOAttacking() {
           Knock back then immediately press high to win the ball in opposition half.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3736,7 +3736,7 @@ function KOAttacking() {
           Knock forward instantly, entire team presses opposition.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks forward */}
@@ -3772,7 +3772,7 @@ function KOAttacking() {
           Knock back, immediate switch to wide player on half-turn — drives forward.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3803,7 +3803,7 @@ function KOAttacking() {
           Ball played back, midfielder turns and plays first time through the lines to striker.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3832,7 +3832,7 @@ function KOAttacking() {
           Kick off back, striker drops deep to receive between the lines. Creates a numerical overload in midfield and opens space behind for wingers to push high and stretch the defensive line. The false 9 movement must be timed with the back pass — too early and defenders track it.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3872,7 +3872,7 @@ function KOAttacking() {
           Kick off and immediately play a long diagonal to test the opposition centre-back. Win the header or contest the second ball from the drop. Sets the tone for the match — lets the CB know they will be under physical pressure from the first whistle.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3911,7 +3911,7 @@ function KOAttacking() {
           Back pass, then immediate switch to the opposite touchline. Stretches the opposition horizontally before they have time to organise. The switch pass must be first-time — any delay allows the opposition to compress.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3947,7 +3947,7 @@ function KOAttacking() {
           All 3 midfielders stay tight in the centre circle area. Kick off back directly to them. Quick short combination passes to progress through the centre of the pitch before opposition can spread their shape. The overload must produce a forward pass within 3 touches.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -3989,7 +3989,7 @@ function KOAttacking() {
           Kick off back, play through the midfield chain all the way to the GK who distributes long to bypass everything. Catches the opposition mid-transition — they press forward expecting build-up play, but the GK launches over the top. Requires total trust in the GK&apos;s distribution range.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
 
             {/* Striker kicks off */}
@@ -4043,7 +4043,7 @@ function KODefending() {
           Default to mid-block shape. Press trigger only if ball goes backwards.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Opposition kicking off */}
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
             <PlayerDot x={165} y={235} label="A" type="defend" size={8} />
@@ -4077,7 +4077,7 @@ function KODefending() {
           Drop into organised mid-block immediately on opposition kick-off.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Opposition kicking off */}
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
             <PlayerDot x={165} y={235} label="A" type="defend" size={8} />
@@ -4112,7 +4112,7 @@ function KODefending() {
           If opposition play short kick-off — press immediately.
         </p>
         <div style={{ overflowX: 'auto', margin: '12px 0' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Opposition short kick-off */}
             <PlayerDot x={170} y={238} label="" type="ball" size={6} />
             <PlayerDot x={165} y={235} label="A1" type="defend" size={8} />
@@ -4219,7 +4219,7 @@ function StatsTab() {
           Where the 6 set piece goals were scored from this season.
         </p>
         <div style={{ overflowX: 'auto' }}>
-          <PitchSVG width={340} height={260} halfPitch>
+          <PitchSVG height={260} halfPitch>
             {/* Goal dots — 6 positions in/around the box */}
             <PlayerDot x={180} y={55} label="" type="ball" size={8} />
             <PlayerDot x={150} y={70} label="" type="ball" size={8} />
