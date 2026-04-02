@@ -23,13 +23,14 @@ import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import { EmailActions } from '@/components/overview/MessageActions'
 import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'transfers'
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
@@ -75,6 +76,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
+  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
   { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
   { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
@@ -4280,6 +4282,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             )}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'set-pieces' && <ProSetPiecesView />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {activeDept === 'medical' && <MedicalView />}
             {activeDept === 'scouting' && <ScoutingView />}
