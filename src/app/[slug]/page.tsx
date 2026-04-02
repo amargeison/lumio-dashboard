@@ -4066,7 +4066,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       }} />
 
       {/* Top-right: role switcher + bell + avatar */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'fixed', top: demoDataActive ? 52 : 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8, transition: 'top 0.2s ease' }}>
         <RoleSwitcherPill />
         <button
           onClick={() => setNotificationsOpen(o => !o)}
