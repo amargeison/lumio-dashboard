@@ -1429,9 +1429,8 @@ function DemoMorningAIPanel() {
 }
 
 const DEMO_DEFAULT_PHOTOS = [
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
 function DemoPhotoFrame() {

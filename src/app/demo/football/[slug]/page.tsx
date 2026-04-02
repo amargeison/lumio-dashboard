@@ -838,9 +838,8 @@ function FixturesPanel() {
 // ─── Photo Frame ─────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
 function PhotoFrame() {
