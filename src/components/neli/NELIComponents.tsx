@@ -2255,10 +2255,11 @@ export function TrustView() {
 // ═══════════════════════════════════════════════════════════
 // TRAINING
 // ═══════════════════════════════════════════════════════════
-export function Training({onStartTraining}: {onStartTraining: () => void}) {
+export function Training({onStartTraining, isTelTed}: {onStartTraining: () => void, isTelTed?: boolean}) {
+  const prog = isTelTed ? "TEL TED" : "NELI";
   return (
     <div>
-      <SectionTitle title="Training Hub" subtitle="CPD-certified NELI courses · FutureLearn platform"/>
+      <SectionTitle title="Training Hub" subtitle={`CPD-certified ${prog} courses · FutureLearn platform`}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
         <StatCard label="Fully Trained" value="2 / 4" sub="All 3 courses complete" icon={Award} color={T.green}/>
         <StatCard label="In Progress" value="2" sub="Course 3 outstanding" icon={BookOpen} color={T.amber}/>
@@ -2318,7 +2319,7 @@ export function Training({onStartTraining}: {onStartTraining: () => void}) {
 // ═══════════════════════════════════════════════════════════
 // TRAINING COURSES (FutureLearn)
 // ═══════════════════════════════════════════════════════════
-export function TrainingCourses({onBack, staffName}: {onBack: () => void, staffName?: string}) {
+export function TrainingCourses({onBack, staffName, isTelTed}: {onBack: () => void, staffName?: string, isTelTed?: boolean}) {
   const [selected, setSelected] = useState<number | null>(null);
   const [filter, setFilter] = useState("all");
 
@@ -2342,7 +2343,7 @@ export function TrainingCourses({onBack, staffName}: {onBack: () => void, staffN
       <div style={{background:"linear-gradient(135deg,#2D0557 0%,#D4007A 100%)",borderRadius:14,
         padding:"24px 28px",marginBottom:20}}>
         <h2 style={{fontSize:20,fontWeight:800,color:"white",margin:"0 0 6px",fontFamily:"Georgia,serif"}}>
-          Your NELI Training — {staffName||"Sarah Mitchell"}
+          Your {isTelTed ? "TEL TED" : "NELI"} Training — {staffName||"Sarah Mitchell"}
         </h2>
         <p style={{fontSize:13,color:"rgba(255,255,255,0.8)",margin:0}}>
           CPD-certified · Self-paced · Expert-mentored · All hosted on FutureLearn
@@ -2691,7 +2692,7 @@ export function TELTedTraining({onBack}: {onBack: () => void}) {
 // ═══════════════════════════════════════════════════════════
 // RESOURCES
 // ═══════════════════════════════════════════════════════════
-export function Resources() {
+export function Resources({isTelTed}: {isTelTed?: boolean} = {}) {
   const [pdfViewer, setPdfViewer] = useState<any>(null);
   const [pdfError, setPdfError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -2770,14 +2771,14 @@ export function Resources() {
 
   return (
     <div>
-      <SectionTitle title="NELI Resources" subtitle="Official downloadable resources from OxEd & Assessment"/>
+      <SectionTitle title={isTelTed ? "TEL TED Resources" : "NELI Resources"} subtitle="Official downloadable resources from OxEd & Assessment"/>
 
       {/* Stats */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
         <StatCard label="Resource Categories" value={groups.length} sub="Record sheets, classroom, planning, certificates" icon={FolderOpen}/>
-        <StatCard label="Total Resources" value={totalItems} sub="All official NELI materials" icon={FileText} color={T.navy}/>
+        <StatCard label="Total Resources" value={totalItems} sub={isTelTed ? "All official TEL TED materials" : "All official NELI materials"} icon={FileText} color={T.navy}/>
         <StatCard label="Useful Links" value={links.length} sub="OxEd, EEF, FutureLearn" icon={ExternalLink} color={T.blue}/>
-        <StatCard label="Programme" value="DfE Funded" sub="2024\u20132029" icon={CheckCircle2} color={T.green}/>
+        <StatCard label="Programme" value={isTelTed ? "EEF 5/5 Evidence Rating" : "DfE Funded"} sub={isTelTed ? "Certified Programme" : "2024\u20132029"} icon={CheckCircle2} color={T.green}/>
       </div>
 
       {/* Download heading */}
@@ -2787,7 +2788,7 @@ export function Resources() {
             <Download size={22} color={T.gold}/>
           </div>
           <div>
-            <h2 style={{fontSize:18,fontWeight:800,color:T.text,margin:0,fontFamily:"Georgia,serif"}}>NELI Resource Kit Downloads</h2>
+            <h2 style={{fontSize:18,fontWeight:800,color:T.text,margin:0,fontFamily:"Georgia,serif"}}>{isTelTed ? "TEL TED" : "NELI"} Resource Kit Downloads</h2>
             <p style={{fontSize:13,color:T.muted,margin:"4px 0 0"}}>Official resources from OxEd & Assessment. Click any item to view the PDF in our secure viewer.</p>
           </div>
         </div>
@@ -2857,7 +2858,7 @@ export function Resources() {
       <div style={{padding:"14px 18px",background:T.goldLight,borderRadius:10,
         fontSize:13,color:T.amber,display:"flex",gap:10,alignItems:"flex-start"}}>
         <Star size={16} style={{flexShrink:0,marginTop:1}}/>
-        <span>All resources are provided as part of the DfE-funded NELI programme. Physical resources (Ted puppet, printed handbooks, flashcard sets) should have been included in your delivery pack. Contact <strong>support@oxedandassessment.com</strong> if anything is missing.</span>
+        <span>All resources are provided as part of the {isTelTed ? "TEL TED" : "DfE-funded NELI"} programme. Physical resources (Ted puppet, printed handbooks, flashcard sets) should have been included in your delivery pack. Contact <strong>support@oxedandassessment.com</strong> if anything is missing.</span>
       </div>
 
       {/* PDF Viewer Modal */}

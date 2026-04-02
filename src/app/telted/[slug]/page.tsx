@@ -625,6 +625,122 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
   )
 }
 
+// ─── TEL TED Digital Resource Library + Resources Wrapper ────────────────────
+
+const NELI_INTERVENTION_RESOURCES = [
+  { icon: '🃏', title: 'Part 1 Flashcards', desc: 'Vocabulary flashcard set for TEL TED Part 1 sessions — 10 topic areas including My Body, Things We Wear, People Who Help Us', badge: 'Digital Resource', badgeColor: '#0D9488', date: '23/09/2024', accent: '#F97316' },
+  { icon: '📖', title: 'Part 1 Teacher Guide', desc: 'Complete delivery guide for TEL TED Part 1 (Weeks 1–10). Includes session plans, vocabulary lists, activity instructions and assessment guidance', badge: 'Teacher Guide', badgeColor: '#1B3060', date: '23/09/2024', accent: '#F97316' },
+  { icon: '🃏', title: 'Part 2 Flashcards', desc: 'Vocabulary flashcard set for TEL TED Part 2 sessions — builds on Part 1 with advanced vocabulary and narrative content', badge: 'Digital Resource', badgeColor: '#0D9488', date: '23/09/2024', accent: '#DC2626' },
+  { icon: '📖', title: 'Part 2 Teacher Guide', desc: 'Complete delivery guide for TEL TED Part 2 (Weeks 11–20). Covers phonological awareness, letter sounds, and advanced narrative activities', badge: 'Teacher Guide', badgeColor: '#1B3060', date: '23/09/2024', accent: '#DC2626' },
+]
+
+const WHOLE_CLASS_RESOURCES = [
+  { icon: '📝', title: 'Activity Sheets', desc: 'Printable activity sheets for whole-class TEL TED sessions. Student-facing worksheets for vocabulary and narrative activities', badge: 'Student Resources', badgeColor: '#15803D' },
+  { icon: '💻', title: 'Digital Slides', desc: 'Presentation slides covering all 6 topic areas: My Body, Things We Wear, People Who Help Us, Growing, Journey, Time. Ready to display on your classroom screen', badge: 'Digital Slides', badgeColor: '#2563EB' },
+  { icon: '🎴', title: 'Narrative Sequence Cards', desc: 'Visual story sequence cards for developing narrative skills. Children arrange cards to tell and retell stories', badge: 'Teaching Aid', badgeColor: '#C8960C' },
+  { icon: '🎵', title: 'Song Files', desc: 'Audio song files for TEL TED whole-class sessions. Vocabulary songs for each topic area. MP3 format, ready to play', badge: 'Audio Resource', badgeColor: '#7C3AED', actionLabel: 'Play / Download' },
+  { icon: '📚', title: 'Story Files', desc: "Digital story books including 'The Dinosaur Park' and other whole-class story titles. Full colour illustrations featuring Ted the Bear", badge: 'Story Books', badgeColor: '#B45309' },
+  { icon: '📖', title: 'Teacher Guide', desc: 'Complete whole-class programme delivery guide. Session structure, differentiation strategies, assessment guidance and programme overview', badge: 'Teacher Guide', badgeColor: '#1B3060' },
+  { icon: '📋', title: 'Template Planning & Record Sheet', desc: 'Blank planning and record templates. TEL TED Whole Class planning and record sheet — print and complete for each session', badge: 'Planning Template', badgeColor: '#0E7490' },
+]
+
+function TelTedResourcesWrapper() {
+  const [previewResource, setPreviewResource] = useState<{ title: string; accent: string } | null>(null)
+
+  function ResourceCard({ icon, title, desc, badge: badgeText, badgeColor, date, accent, actionLabel, accentBorder }: {
+    icon: string; title: string; desc: string; badge: string; badgeColor: string; date?: string; accent?: string; actionLabel?: string; accentBorder: string
+  }) {
+    return (
+      <div className="rounded-xl overflow-hidden transition-all hover:-translate-y-0.5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderTop: `3px solid ${accentBorder}` }}>
+        <div className="p-5">
+          <div className="text-3xl mb-3 text-center">{icon}</div>
+          <h4 className="text-sm font-bold mb-1.5" style={{ color: '#F9FAFB' }}>{title}</h4>
+          <p className="text-xs leading-relaxed mb-3" style={{ color: '#9CA3AF' }}>{desc}</p>
+          <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full mb-2" style={{ backgroundColor: `${badgeColor}20`, color: badgeColor, border: `1px solid ${badgeColor}40` }}>{badgeText}</span>
+          {date && <p className="text-[10px]" style={{ color: '#4B5563' }}>Created: {date}</p>}
+        </div>
+        <button onClick={() => setPreviewResource({ title, accent: accent || accentBorder })} className="w-full py-2.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: 'none', borderTop: '1px solid #1F2937', cursor: 'pointer' }}>
+          {actionLabel || 'View Resource'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* TEL TED Digital Resource Library */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-xl">📚</span>
+          <h2 className="text-lg font-bold" style={{ color: '#F9FAFB', fontFamily: 'Georgia,serif' }}>TEL TED Digital Resource Library</h2>
+        </div>
+        <p className="text-sm mb-5" style={{ color: '#9CA3AF' }}>Official digital resources from OxEd & Assessment · University of Oxford · CPD Certified</p>
+
+        {/* Sub-section 1: NELI Intervention */}
+        <div className="rounded-xl p-5 mb-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderLeft: '4px solid #0D9488' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span>📁</span>
+            <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>TEL TED: NELI Intervention</h3>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Targeted small-group intervention resources for students with language difficulties</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {NELI_INTERVENTION_RESOURCES.map(r => <ResourceCard key={r.title} {...r} accentBorder="#0D9488" />)}
+          </div>
+        </div>
+
+        {/* Sub-section 2: Whole Class */}
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderLeft: '4px solid #15803D' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span>📁</span>
+            <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>TEL TED: Whole Class</h3>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Whole-class language enrichment resources for all students</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {WHOLE_CLASS_RESOURCES.map(r => <ResourceCard key={r.title} {...r} accentBorder="#15803D" />)}
+          </div>
+        </div>
+      </div>
+
+      {/* Original Resources component with TEL TED branding */}
+      <Resources isTelTed />
+
+      {/* Resource preview modal */}
+      {previewResource && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewResource(null)}>
+          <div className="rounded-2xl overflow-hidden" style={{ width: 520, maxWidth: '90vw', backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            {/* Branded header bar */}
+            <div style={{ background: `linear-gradient(135deg, #15803D, ${previewResource.accent})`, padding: '20px 24px', position: 'relative' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>🐻</div>
+                  <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>TEL TED</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>OxEd & Assessment</span>
+                  <button onClick={() => setPreviewResource(null)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+              <h3 className="text-lg font-bold" style={{ color: '#fff', fontFamily: 'Georgia,serif' }}>{previewResource.title}</h3>
+            </div>
+            {/* Content */}
+            <div className="p-6 text-center">
+              <div className="text-5xl mb-4">📄</div>
+              <p className="text-sm mb-1" style={{ color: '#F9FAFB' }}>This resource is available to download from your TEL TED resource portal</p>
+              <p className="text-xs mb-6" style={{ color: '#6B7280' }}>Full-colour, print-ready PDF with TEL TED and OxEd & Assessment branding</p>
+              <div className="flex justify-center gap-3">
+                <a href="https://resource.oxedandassessment.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#fff', textDecoration: 'none' }}>Open in Resource Portal</a>
+                <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', border: 'none', cursor: 'pointer' }}>Download PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Coming Soon ─────────────────────────────────────────────────────────────
 
 function ComingSoonPage({ title }: { title: string }) {
@@ -1598,11 +1714,11 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       case 'classes':
         return <ClassesPage onSelectClass={handleSelectClass} onSelectPupil={handleSelectPupil} />
       case 'training':
-        return <Training onStartTraining={() => setSidebarPage('trainingcourses')} />
+        return <Training onStartTraining={() => setSidebarPage('trainingcourses')} isTelTed />
       case 'telted':
         return <TELTedTraining onBack={() => setActiveTab('training')} />
       case 'resources':
-        return <Resources />
+        return <TelTedResourcesWrapper />
       case 'attendance':
         return <ComingSoonPage title="Attendance" />
       case 'dont-miss':
@@ -1625,7 +1741,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       return <ClassDetail cls={selectedClass} onBack={() => { setSidebarPage('overview'); setSelectedClass(null); setActiveTab('classes') }} onSelectPupil={handleSelectPupil} />
     }
     if (sidebarPage === 'trainingcourses') {
-      return <TrainingCourses onBack={() => { setSidebarPage('overview'); setActiveTab('training') }} staffName="Sarah Mitchell" />
+      return <TrainingCourses onBack={() => { setSidebarPage('overview'); setActiveTab('training') }} staffName="Sarah Mitchell" isTelTed />
     }
 
     // Sidebar nav pages
