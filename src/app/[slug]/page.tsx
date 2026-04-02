@@ -3586,6 +3586,15 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         <div className="space-y-4">
           <QuickActionsBar onAction={handleQuickAction} onGoSettings={onGoSettings || (() => {})} />
 
+          {!demoDataActive && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="text-5xl mb-4">🏢</div>
+              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your tools to get started</h3>
+              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and schedule will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
               <MorningRoundup demoDataActive={demoDataActive} />
@@ -3684,13 +3693,32 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        demoDataActive ? <QuickWins /> : <AIQuickWins ctx={aiCtx} />
+        demoDataActive ? <QuickWins /> : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Quick Wins.</p>
+            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+          </div>
+        )
       ) : tab === 'tasks' ? (
-        demoDataActive ? <DailyTasks /> : <AIDailyTasks ctx={aiCtx} />
+        demoDataActive ? <DailyTasks /> : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Daily Tasks.</p>
+            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+          </div>
+        )
       ) : tab === 'insights' ? (
-        demoDataActive ? <Insights /> : <AIInsights ctx={aiCtx} />
+        demoDataActive ? <Insights /> : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
+          </div>
+        )
       ) : tab === 'not-to-miss' ? (
-        demoDataActive ? <NotToMiss /> : <AIDontMiss ctx={aiCtx} />
+        demoDataActive ? <NotToMiss /> : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Don&apos;t Miss items.</p>
+            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+          </div>
+        )
       ) : tab === 'team' ? (
         demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
       ) : (

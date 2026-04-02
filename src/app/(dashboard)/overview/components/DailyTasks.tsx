@@ -26,13 +26,11 @@ const PRIORITY_STYLES = {
 const SOURCE_ICON = { notion: '📋', lumio: '⚡', manual: '✏️', workflow: '🔄' }
 
 const MOCK_TASKS: Task[] = [
-  { id: '1', title: 'Review and respond to Bramble Hill invoice dispute', description: 'They queried the September charge. Email from Tom Fielding at 11pm.', due: '12:00', priority: 'critical', category: 'Finance', source: 'lumio', done: false, overdue: false },
-  { id: '2', title: 'Finalise The Feed Network testing guide sign-off', description: 'Phase 5 review due today. 13 flagged gaps to resolve.', due: '14:00', priority: 'high', category: 'Operations', source: 'notion', done: false, overdue: false },
-  { id: '3', title: 'Send investor deck to Marcus', description: 'Promised by end of day.', due: '17:00', priority: 'high', category: 'Finance', source: 'manual', done: false, overdue: false },
-  { id: '4', title: 'Approve payroll pack for review', description: 'HR-07 generated the pack. Needs sign-off before Friday.', due: '16:00', priority: 'medium', category: 'HR', source: 'workflow', linkedWorkflow: 'HR-07', done: false, overdue: false },
-  { id: '5', title: 'Update Calendly link in nav buttons', description: 'Currently showing placeholder URL.', due: 'Any time', priority: 'medium', category: 'Tech', source: 'manual', done: false, overdue: false },
-  { id: '6', title: 'Register Lumio Ltd at Companies House', description: 'Required before signing any customer contracts. £12 online, instant.', due: 'Any time', priority: 'high', category: 'Legal', source: 'manual', done: false, overdue: false },
-  { id: '7', title: 'Enable Google OAuth in Supabase', description: 'Currently showing button but not connected.', due: 'Any time', priority: 'low', category: 'Tech', source: 'lumio', done: false, overdue: false },
+  { id: '1', title: 'Follow up with Oakridge Academy', description: 'Demo was 3 days ago. No response. Deal worth £8,400 at risk.', due: '10:00', priority: 'critical', category: 'Sales', source: 'lumio', done: false, overdue: false },
+  { id: '2', title: 'Sign off Q4 budget proposal', description: 'CFO submitted Friday. Board meeting Thursday requires approval.', due: '12:00', priority: 'high', category: 'Leadership', source: 'lumio', done: false, overdue: false },
+  { id: '3', title: 'Approve 2 holiday requests', description: 'Both staff flagged as awaiting manager approval for over 48hrs.', due: '14:00', priority: 'medium', category: 'HR', source: 'workflow', linkedWorkflow: 'HR-07', done: false, overdue: false },
+  { id: '4', title: 'Review campaign performance report', description: 'October campaign ended. Results ready to review and share with board.', due: '16:00', priority: 'medium', category: 'Marketing', source: 'lumio', done: false, overdue: false },
+  { id: '5', title: '5 support tickets unassigned', description: 'Sitting in queue over 4 hours. SLA breach risk.', due: '11:00', priority: 'high', category: 'Support', source: 'lumio', done: false, overdue: true },
 ]
 
 type Filter = 'all' | 'critical' | 'high' | 'medium' | 'low'
