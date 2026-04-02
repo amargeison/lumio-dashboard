@@ -23,6 +23,7 @@ import {
   LineChart, Line, ScatterChart, Scatter, ReferenceLine, ReferenceArea,
   ZAxis, AreaChart, Area,
 } from 'recharts'
+import DistrictDashboard from '@/components/neli/DistrictDashboard'
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
 
@@ -1223,79 +1224,7 @@ function TelTedSettings() {
   )
 }
 
-// ─── District Overview ───────────────────────────────────────────────────────
-
-const DISTRICT_SCHOOLS = [
-  { id: 1, name: 'Parkside Elementary', short: 'PE', pupils: 28, neli: 5, avgI: 91.2, avgE: 96.8, assessed: 100, weeks: 16, status: 'good' },
-  { id: 2, name: 'Riverside Academy', short: 'RA', pupils: 31, neli: 6, avgI: 88.7, avgE: 94.8, assessed: 100, weeks: 15, status: 'good' },
-  { id: 3, name: 'Greenfields School', short: 'GS', pupils: 24, neli: 5, avgI: 90.4, avgE: null, assessed: 83, weeks: 16, status: 'warning' },
-  { id: 4, name: 'Hillside Primary School', short: 'HP', pupils: 19, neli: 5, avgI: 86.1, avgE: null, assessed: 100, weeks: 8, status: 'alert' },
-]
-
-function DistrictOverviewSection() {
-  const totalPupils = DISTRICT_SCHOOLS.reduce((s, sc) => s + sc.pupils, 0)
-  const totalNeli = DISTRICT_SCHOOLS.reduce((s, sc) => s + sc.neli, 0)
-  const avgAssessed = Math.round(DISTRICT_SCHOOLS.reduce((s, sc) => s + sc.assessed, 0) / DISTRICT_SCHOOLS.length)
-  const statusColor = (s: string) => s === 'good' ? '#22C55E' : s === 'warning' ? '#F59E0B' : '#EF4444'
-  const statusLabel = (s: string) => s === 'good' ? 'On Track' : s === 'warning' ? 'Monitor' : 'Needs Attention'
-
-  return (
-    <div className="space-y-4 p-4">
-      <h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>District Overview</h2>
-      <p className="text-sm" style={{ color: '#6B7280' }}>Oak Valley District — TEL TED programme status across all schools</p>
-
-      {/* District Summary Card */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📊 District Summary</h3>
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: 'Total Students', value: totalPupils, color: '#0D9488' },
-            { label: 'TEL TED Students', value: totalNeli, color: '#B45309' },
-            { label: 'Avg Assessment %', value: `${avgAssessed}%`, color: '#22C55E' },
-            { label: 'Schools', value: DISTRICT_SCHOOLS.length, color: '#3B82F6' },
-          ].map(s => (
-            <div key={s.label} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-              <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</p>
-              <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* School Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {DISTRICT_SCHOOLS.map(school => (
-          <div key={school.id} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{school.short}</div>
-                <div>
-                  <h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{school.name}</h4>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{school.pupils} students · {school.neli} on TEL TED</p>
-                </div>
-              </div>
-              <span className="text-xs px-2 py-1 rounded-full font-semibold" style={{ backgroundColor: statusColor(school.status) + '18', color: statusColor(school.status) }}>{statusLabel(school.status)}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}>
-                <p className="text-xs" style={{ color: '#6B7280' }}>Avg Initial</p>
-                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{school.avgI}</p>
-              </div>
-              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}>
-                <p className="text-xs" style={{ color: '#6B7280' }}>Avg Current</p>
-                <p className="text-sm font-bold" style={{ color: school.avgE ? '#22C55E' : '#6B7280' }}>{school.avgE ?? '—'}</p>
-              </div>
-              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}>
-                <p className="text-xs" style={{ color: '#6B7280' }}>Weeks of TEL TED</p>
-                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{school.weeks}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+// ─── District Overview (now in DistrictDashboard component) ──────────────────
 
 // ─── Inspection Mode ─────────────────────────────────────────────────────────
 
@@ -1732,9 +1661,9 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       case 'insights':
         return <div><Insights /></div>
       case 'district':
-        return <DistrictOverviewSection />
+        return <DistrictDashboard />
       case 'trust':
-        return <DistrictOverviewSection />
+        return <DistrictDashboard />
       case 'staff':
         return <ComingSoonPage title="Staff Management" />
       case 'send-dsl':
