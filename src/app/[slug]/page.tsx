@@ -1148,7 +1148,7 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const [photos, setPhotos] = useState<string[]>(() => {
     if (photoImpCtx.isImpersonating) return []
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {}
-    return demoDataActive ? DEMO_PHOTOS : DEMO_PHOTOS
+    return demoDataActive ? DEMO_PHOTOS : []
   })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
