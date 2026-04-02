@@ -55,6 +55,14 @@ export default function SchoolLayout({ children }: Props) {
   const slug = slugMatch?.[1] ?? ''
   const base = `/schools/${slug}`
 
+  const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+  useEffect(() => {
+    const check = () => setIsSchoolDemo(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
+    check()
+    const interval = setInterval(check, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   const [schoolName, setSchoolName] = useState(slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
   const [initials, setInitials] = useState('SC')
   const [planLabel, setPlanLabel] = useState('Trial workspace')
@@ -290,6 +298,18 @@ export default function SchoolLayout({ children }: Props) {
           <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{schoolName}</span>
         </div>
 
+        {isSchoolDemo && (
+          <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span>Demo workspace — exploring with sample data</span>
+              <span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span>
+            </div>
+            <button onClick={() => { localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); window.location.href = `/schools/${slug}` }}
+              className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>
+              Clear Demo Data
+            </button>
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>

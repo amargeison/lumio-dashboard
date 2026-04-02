@@ -1174,14 +1174,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   return (
     <div className="space-y-4">
 
-      {/* 0. Demo banner */}
-      {demoDataActive && (
-        <div className="flex items-center justify-between px-4 -mx-1 shrink-0 rounded-xl" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
-          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); window.location.reload() }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
-        </div>
-      )}
-
       {/* 1. Greeting banner */}
       <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} demoActive={demoDataActive} />
 
