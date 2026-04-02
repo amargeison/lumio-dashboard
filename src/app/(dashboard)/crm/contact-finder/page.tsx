@@ -29,16 +29,32 @@ const ENRICHMENT_STEPS = [
 ]
 
 export default function ContactFinderPage() {
-  const [companyQuery, setCompanyQuery] = useState('')
+  const [companyQuery, setCompanyQuery] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    const params = new URLSearchParams(window.location.search)
+    return params.get('company') || ''
+  })
   const [role, setRole] = useState('Any role')
-  const [searched, setSearched] = useState(false)
+  const [contacts, setContacts] = useState(DEMO_CONTACTS)
   const [searching, setSearching] = useState(false)
   const [revealModal, setRevealModal] = useState<{ name: string; step: number; done: boolean } | null>(null)
-  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
 
-  function handleSearch() {
+  async function handleSearch() {
+    if (!companyQuery.trim()) return
     setSearching(true)
-    setTimeout(() => { setSearching(false); setSearched(true) }, 1200)
+    try {
+      const res = await fetch('/api/aria/contact-finder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: companyQuery.trim(), role }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.contacts?.length) setContacts(data.contacts)
+      }
+    } catch { /* fallback to existing */ }
+    setSearching(false)
   }
 
   function handleReveal(name: string) {
@@ -56,7 +72,21 @@ export default function ContactFinderPage() {
     setTimeout(next, ENRICHMENT_STEPS[0].delay)
   }
 
-  const showResults = searched || isDemoActive
+  async function handleAddContact(contact: typeof DEMO_CONTACTS[0]) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') : null
+    if (token) {
+      try {
+        await fetch('/api/crm/add-contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+          body: JSON.stringify({ name: contact.name, title: contact.title, company: contact.company, email: contact.email }),
+        })
+      } catch { /* ignore */ }
+    }
+    setAddedIds(prev => new Set(prev).add(contact.name))
+  }
+
+  const showResults = true
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -115,7 +145,7 @@ export default function ContactFinderPage() {
             </div>
 
             {/* Contact rows */}
-            {DEMO_CONTACTS.map(contact => (
+            {contacts.map(contact => (
               <div key={contact.name} className="grid items-center gap-3 px-5 py-4 transition-colors" style={{ gridTemplateColumns: '2fr 1.2fr 1.5fr 1fr auto', borderBottom: `1px solid ${BORDER}` }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
@@ -142,9 +172,9 @@ export default function ContactFinderPage() {
                 {/* Last active */}
                 <span className="text-xs" style={{ color: '#6B7299' }}>{contact.active}</span>
                 {/* Action */}
-                <button onClick={() => handleReveal(contact.name)} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-                  style={{ background: `linear-gradient(135deg, ${PURPLE}, #7C3AED)`, color: '#F9FAFB' }}>
-                  <UserPlus size={12} /> Reveal & Add
+                <button onClick={() => { handleReveal(contact.name); handleAddContact(contact) }} disabled={addedIds.has(contact.name)} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+                  style={{ background: addedIds.has(contact.name) ? '#22C55E' : `linear-gradient(135deg, ${PURPLE}, #7C3AED)`, color: '#F9FAFB', opacity: addedIds.has(contact.name) ? 0.7 : 1 }}>
+                  {addedIds.has(contact.name) ? <><CheckCircle2 size={12} /> Added</> : <><UserPlus size={12} /> Reveal & Add</>}
                 </button>
               </div>
             ))}

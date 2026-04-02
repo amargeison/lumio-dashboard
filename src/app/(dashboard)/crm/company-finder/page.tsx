@@ -23,20 +23,46 @@ const DEMO_COMPANIES = [
 export default function CompanyFinderPage() {
   const [query, setQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState<string[]>(['UK Only', 'Education'])
-  const [searched, setSearched] = useState(false)
+  const [companies, setCompanies] = useState(DEMO_COMPANIES)
   const [searching, setSearching] = useState(false)
-  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
 
   function toggleFilter(f: string) {
     setActiveFilters(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])
   }
 
-  function handleSearch() {
+  async function handleSearch() {
+    if (!query.trim()) return
     setSearching(true)
-    setTimeout(() => { setSearching(false); setSearched(true) }, 1500)
+    try {
+      const res = await fetch('/api/aria/company-finder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim(), filters: activeFilters }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.companies?.length) setCompanies(data.companies)
+      }
+    } catch { /* fallback to existing results */ }
+    setSearching(false)
   }
 
-  const showResults = searched || isDemoActive
+  async function handleAddToCRM(company: typeof DEMO_COMPANIES[0]) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') : null
+    if (token) {
+      try {
+        await fetch('/api/crm/add-company', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-workspace-token': token },
+          body: JSON.stringify({ name: company.name, industry: company.industry, location: company.location, size: company.size, website: company.website }),
+        })
+      } catch { /* ignore */ }
+    }
+    setAddedIds(prev => new Set(prev).add(company.name))
+  }
+
+  const showResults = true
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -128,10 +154,10 @@ export default function CompanyFinderPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: TEAL, color: '#F9FAFB' }}>
-                    <Plus size={12} /> Add to CRM
+                  <button onClick={() => handleAddToCRM(company)} disabled={addedIds.has(company.name)} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: addedIds.has(company.name) ? '#22C55E' : TEAL, color: '#F9FAFB', opacity: addedIds.has(company.name) ? 0.7 : 1 }}>
+                    {addedIds.has(company.name) ? <><CheckCircle2 size={12} /> Added</> : <><Plus size={12} /> Add to CRM</>}
                   </button>
-                  <a href="/crm/contact-finder" className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ color: '#A78BFA', border: '1px solid rgba(108,63,197,0.4)', textDecoration: 'none' }}>
+                  <a href={`/crm/contact-finder?company=${encodeURIComponent(company.name)}`} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ color: '#A78BFA', border: '1px solid rgba(108,63,197,0.4)', textDecoration: 'none' }}>
                     Find Contacts →
                   </a>
                 </div>
