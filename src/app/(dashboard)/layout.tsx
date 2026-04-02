@@ -5,7 +5,6 @@ import { Bell, Settings as SettingsIcon, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userEmail, setUserEmail] = useState('')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const [demoActive, setDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
+  const [demoDismissed, setDemoDismissed] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -90,11 +90,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
         {/* Demo banner */}
-        {demoActive && (
-          <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
-            <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
-            <div className="flex items-center gap-2">
-              <button onClick={() => { setDemoActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Clear Demo Data</button>
+        {demoActive && !demoDismissed && (
+          <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, fontSize: 13, color: 'white' }}>
+              <span style={{ fontWeight: 600 }}>Demo workspace — exploring with sample data</span>
+              <span style={{ opacity: 0.8 }}>· Connect your real tools to see live insights</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'false'); setDemoActive(false) }} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>Clear Demo Data</button>
+              <button onClick={() => setDemoDismissed(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>✕</button>
             </div>
           </div>
         )}
@@ -156,7 +160,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
         {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
-        <ClearDemoBar />
         <div className="p-4 md:p-6">
           {children}
         </div>
