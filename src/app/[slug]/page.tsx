@@ -4065,8 +4065,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         e.target.value = ''
       }} />
 
-      {/* Top-right: role switcher + bell + avatar */}
-      <div style={{ position: 'fixed', top: demoDataActive ? 52 : 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8, transition: 'top 0.2s ease' }}>
+      {/* Top-right: role switcher + bell + avatar — positioned in content flow, see below */}
+      <div style={{ display: 'none' }}>
         <RoleSwitcherPill />
         <button
           onClick={() => setNotificationsOpen(o => !o)}
@@ -4252,8 +4252,31 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} companyName={company} companyLogo={companyLogo}
           userInitials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : undefined} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Demo banner — in flow, first child of right column */}
+          {demoDataActive && (
+            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+              <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setDemoDataActive(false); localStorage.removeItem('lumio_demo_active') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+              </div>
+            </div>
+          )}
+          {/* Header bar — in flow, below banner */}
+          <div className="hidden md:flex items-center justify-end shrink-0" style={{ height: 48, minHeight: 48, padding: '0 20px', gap: 8 }}>
+            <RoleSwitcherPill />
+            <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+              <Bell size={16} strokeWidth={1.75} />
+              <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+            </button>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setAvatarDropdownOpen(o => !o)} style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
+                {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} /> : (userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM')}
+              </button>
+            </div>
+          </div>
+          {/* Scrollable page content */}
+          <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
             {activeDept !== 'overview' && (
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-lg font-bold">{deptLabel}</h1>
