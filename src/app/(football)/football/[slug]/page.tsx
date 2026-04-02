@@ -21,6 +21,7 @@ import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/us
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -1329,64 +1330,30 @@ function TabContent({ tab }: { tab: OverviewTab }) {
         </div>
       )}
 
-      {/* ═══ TEAM INFO (Player Cards) ═══ */}
-      {activeStaffTab === 'teaminfo' && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-            {[
-              { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
-              { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
-              { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
-              { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
-              { name: 'Dele Adeyemi', role: 'Left Wing', dept: 'First Team', overall: 85, initials: 'DA', color: '#7C3AED', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 }, id: 'OFC-005', date: '01/07/2025' },
-              { name: 'Ryan Cole', role: 'Right Back', dept: 'First Team', overall: 81, initials: 'RC', color: '#B91C1C', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 }, id: 'OFC-006', date: '01/07/2025' },
-              { name: 'Jamie Torres', role: 'Central Midfielder', dept: 'First Team', overall: 84, initials: 'JT', color: '#0EA5E9', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 }, id: 'OFC-007', date: '01/07/2025' },
-              { name: 'Liam Cross', role: 'Striker', dept: 'First Team', overall: 86, initials: 'LC', color: '#EA580C', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 }, id: 'OFC-008', date: '01/07/2025' },
-              { name: 'Priya Nair', role: 'Head of Medical', dept: 'Medical', overall: 91, initials: 'PN', color: '#EC4899', stats: { PAC: 61, SHO: 44, PAS: 82, DRI: 58, DEF: 77, PHY: 69 }, id: 'OFC-009', date: '01/07/2025' },
-            ].map(card => (
-              <div key={card.id} style={{ background: `linear-gradient(135deg, ${card.color}22 0%, #0A0B10 60%)`, border: `1px solid ${card.color}44`, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', minHeight: 320 }}>
-                {/* Top row: overall left, dept pill right */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontSize: 32, fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.overall}</div>
-                    <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, letterSpacing: '0.1em' }}>OVERALL</div>
-                  </div>
-                  <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: `${card.color}33`, color: card.color, border: `1px solid ${card.color}55` }}>{card.dept}</div>
-                </div>
-                {/* Large centred avatar with glowing ring */}
-                <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
-                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${card.color}44 0%, ${card.color}11 70%)`, border: `2px solid ${card.color}`, boxShadow: `0 0 20px ${card.color}44, 0 0 40px ${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: card.color }}>{card.initials}</div>
-                </div>
-                {/* Name and role */}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#F9FAFB' }}>{card.name}</div>
-                  <div style={{ fontSize: 13, color: card.color, fontWeight: 500, marginTop: 2 }}>{card.role}</div>
-                </div>
-                {/* Stats — 6 columns */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, padding: '8px 0', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-                  {Object.entries(card.stats).map(([key, val]) => (
-                    <div key={key} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: val >= 85 ? '#22C55E' : val >= 70 ? '#F59E0B' : '#EF4444' }}>{val}</div>
-                      <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em' }}>{key}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* ID and date */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#4B5563' }}>
-                  <span>{card.id}</span>
-                  <span>{card.date}</span>
-                </div>
-                {/* Buttons */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', background: `${card.color}33`, color: card.color, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Message</button>
-                  <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Profile</button>
-                </div>
-              </div>
-            ))}
+      {/* ═══ TEAM INFO (Player Cards — identical to business portal) ═══ */}
+      {activeStaffTab === 'teaminfo' && (() => {
+        const FOOTBALL_STAFF: StaffRecord[] = [
+          { first_name: 'Marcus', last_name: 'Reid', job_title: 'Head Coach', department: 'Executive', email: 'marcus@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Danny', last_name: 'Hughes', job_title: 'Assistant Coach', department: 'Operations', email: 'danny@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Kyle', last_name: 'Brennan', job_title: 'Captain / CB', department: 'Operations', email: 'kyle@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Sam', last_name: 'Fletcher', job_title: 'Goalkeeper', department: 'Operations', email: 'sam@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Dele', last_name: 'Adeyemi', job_title: 'Left Wing', department: 'Marketing', email: 'dele@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Ryan', last_name: 'Cole', job_title: 'Right Back', department: 'Support', email: 'ryan@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Jamie', last_name: 'Torres', job_title: 'Central Midfielder', department: 'IT', email: 'jamie@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Liam', last_name: 'Cross', job_title: 'Striker', department: 'Sales', email: 'liam@oakfieldfc.com', start_date: '01/07/2025' },
+          { first_name: 'Priya', last_name: 'Nair', job_title: 'Head of Medical', department: 'HR', email: 'priya@oakfieldfc.com', start_date: '01/07/2025' },
+        ]
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+            <div className={`grid gap-4 justify-items-center ${getGridCols(FOOTBALL_STAFF.length)}`}>
+              {FOOTBALL_STAFF.map((s, i) => (
+                <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => {}} teamSize={FOOTBALL_STAFF.length} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 
