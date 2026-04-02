@@ -14,6 +14,7 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   const [initials, setInitials] = useState('AM')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -23,11 +24,20 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
     if (storedEmail) setUserEmail(storedEmail)
+    // Load user avatar
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    if (storedEmail) {
+      const staffPhoto = localStorage.getItem(`lumio_staff_photo_${storedEmail}`)
+      if (staffPhoto && !staffPhoto.startsWith('data:')) setUserPhoto(staffPhoto)
+    }
+    function onAvatarUpdated(e: Event) { setUserPhoto((e as CustomEvent).detail || null) }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
     function handleClick(e: MouseEvent) {
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    return () => { document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [])
 
   return (
@@ -37,8 +47,10 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
         {/* Avatar + bell row — top-right of CRM content */}
         <div className="flex items-center justify-end gap-3 px-6 pt-4 pb-2">
           <div ref={avatarRef} className="relative">
-            <button onClick={() => setAvatarOpen(o => !o)} className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-              {initials}
+            <button onClick={() => setAvatarOpen(o => !o)} className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80 overflow-hidden" style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0 }}>
+              {userPhoto ? (
+                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
+              ) : initials}
             </button>
             {avatarOpen && (
               <div className="absolute right-0 rounded-xl py-2 shadow-xl" style={{ top: '100%', marginTop: 8, width: 220, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 100 }}>

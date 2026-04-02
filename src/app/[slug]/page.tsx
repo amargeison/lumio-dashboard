@@ -148,6 +148,13 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
         setLogoUrl(stored)
       }
     }
+    // Listen for same-tab logo updates (e.g. from Settings page upload)
+    function onLogoUpdated(e: Event) {
+      const url = (e as CustomEvent).detail
+      if (url) setLogoUrl(url)
+    }
+    window.addEventListener('lumio-logo-updated', onLogoUpdated)
+    return () => window.removeEventListener('lumio-logo-updated', onLogoUpdated)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -169,18 +176,19 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     // Optimistic update — show local blob URL immediately
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
-    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
-    const ext = file.name.split('.').pop() || 'png'
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      const path = `${slug}/logo.${ext}`
-      const { error } = await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
-      if (error) console.error('Logo upload error:', error)
-      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
-      setLogoUrl(publicUrl)
-      localStorage.setItem('lumio_company_logo', publicUrl)
-      localStorage.setItem('workspace_company_logo', publicUrl)
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setLogoUrl(data.logo_url)
+        localStorage.setItem('lumio_company_logo', data.logo_url)
+        localStorage.setItem('workspace_company_logo', data.logo_url)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+      }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
   }
@@ -205,7 +213,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             title="Upload company logo"
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
+              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-contain" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
@@ -1055,7 +1063,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
                 {(() => {
                   const logo = typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') : null
                   return logo
-                    ? <img src={logo} alt="" className="rounded" style={{ width: 24, height: 24, objectFit: 'cover' }} />
+                    ? <img src={logo} alt="" className="rounded" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                     : <div className="flex items-center justify-center rounded text-[9px] font-bold" style={{ width: 24, height: 24, backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}>{company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
                 })()}
                 <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>{company}</span>
@@ -2899,17 +2907,18 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (!file) return
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
-    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
-    const ext = file.name.split('.').pop() || 'png'
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      const path = `${slug}/logo.${ext}`
-      await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
-      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
-      setLogoUrl(publicUrl)
-      localStorage.setItem('workspace_company_logo', publicUrl)
-      localStorage.setItem('lumio_company_logo', publicUrl)
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setLogoUrl(data.logo_url)
+        localStorage.setItem('workspace_company_logo', data.logo_url)
+        localStorage.setItem('lumio_company_logo', data.logo_url)
+      }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
   }
@@ -3050,7 +3059,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           <div className="flex items-center justify-between px-5 py-3">
             <span className="text-sm" style={{ color: '#9CA3AF' }}>Company logo</span>
             <div className="flex items-center gap-3">
-              {logoUrl && <img src={logoUrl} alt="" className="rounded-lg" style={{ width: 32, height: 32, objectFit: 'cover' }} />}
+              {logoUrl && <img src={logoUrl} alt="" className="rounded-lg" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
               <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
               <button onClick={() => logoFileRef.current?.click()} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
                 {logoUrl ? 'Change' : 'Upload'}
@@ -3909,6 +3918,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const avatarFileRef = useRef<HTMLInputElement>(null)
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -3939,7 +3949,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       const userPhoto2 = localStorage.getItem('lumio_user_photo')
       if (userPhoto2 && !userPhoto2.startsWith('data:')) setUserPhoto(userPhoto2)
     }
-    // Listen for photo updates
+    // Listen for photo updates (cross-tab via StorageEvent)
     function onPhotoUpdate() {
       const e = localStorage.getItem('lumio_user_email')
       if (e) {
@@ -3949,7 +3959,13 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         setUserPhoto(photo)
       }
     }
+    // Listen for same-tab avatar updates (e.g. from dropdown upload)
+    function onAvatarUpdated(e: Event) {
+      const url = (e as CustomEvent).detail
+      setUserPhoto(url || null)
+    }
     window.addEventListener('storage', onPhotoUpdate)
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
 
     // Handle Microsoft SSO callback — store session from query params
     const urlParams = new URLSearchParams(window.location.search)
@@ -3995,11 +4011,19 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (!data || data.status !== 'active') {
             // Don't boot fresh purchases — session may still be propagating
             if (justPurchased) {
-              // Skip onboarding if workspace already has a name, or was previously completed
               const alreadySetUp = localStorage.getItem(`lumio_onboarding_done_${slug}`)
                 || localStorage.getItem('lumio_onboarding_shown')
                 || localStorage.getItem('workspace_company_name')
-              if (alreadySetUp) return // Already onboarded — just show the page
+                || localStorage.getItem(`onboarding-dismissed-${slug}`)
+                || localStorage.getItem('lumio_tour_completed')
+              if (alreadySetUp) return
+              // Extra guard: check if lumio_company_active was set more than 10 minutes ago
+              const purchaseTs = parseInt(localStorage.getItem('lumio_purchase_timestamp') || '0', 10)
+              if (purchaseTs > 0 && (Date.now() - purchaseTs) > 10 * 60 * 1000) {
+                // Stale purchase flag — clear it and don't show onboarding
+                localStorage.removeItem('lumio_company_active')
+                return
+              }
               if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
                 setShowWelcome(true)
               } else {
@@ -4048,14 +4072,19 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
-          // Live tenant onboarding wizard — only show if NEVER completed
+          // Live tenant onboarding wizard — only show if NEVER completed AND recently created
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
-          if (alreadyOnboarded) {
-            // DB says done — persist to localStorage so we never check again
-            localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
+          const dismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
+          if (alreadyOnboarded || dismissed) {
+            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
-          } else if (!data.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
-            setShowLiveOnboarding(true)
+          } else if (!data.demo_data_active) {
+            // Only show if created less than 10 minutes ago AND no local flags set
+            const createdAt = data.created_at ? new Date(data.created_at).getTime() : 0
+            const isNewTenant = createdAt > 0 && (Date.now() - createdAt) < 10 * 60 * 1000
+            if (isNewTenant && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+              setShowLiveOnboarding(true)
+            }
           }
         })
         .catch(() => {
@@ -4085,11 +4114,16 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.id) setBusinessId(data.business.id)
               if (data.business?.demo_data_active) setDemoDataActive(true)
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
-              if (bizOnboarded) {
-                localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
+              const bizDismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
+              if (bizOnboarded || bizDismissed) {
+                localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
                 localStorage.setItem('lumio_onboarding_shown', 'true')
-              } else if (!data.business?.demo_data_active && !localStorage.getItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
-                setShowLiveOnboarding(true)
+              } else if (!data.business?.demo_data_active) {
+                const bizCreated = data.business?.created_at ? new Date(data.business.created_at).getTime() : 0
+                const bizIsNew = bizCreated > 0 && (Date.now() - bizCreated) < 10 * 60 * 1000
+                if (bizIsNew && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+                  setShowLiveOnboarding(true)
+                }
               }
             })
             .catch(() => router.replace('/login?redirectTo=/' + slug))
@@ -4112,9 +4146,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   async function handleTabGuideComplete() {
     setShowTabGuide(false)
     localStorage.setItem('lumio_tour_completed', 'true')
-    localStorage.setItem(`lumio_tour_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
+    localStorage.setItem(`lumio_tour_done_${slug}`, 'true')
     localStorage.setItem('lumio_onboarding_shown', 'true')
-    localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
+    localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    localStorage.setItem(`onboarding-dismissed-${slug}`, 'true')
     // Mark onboarding as complete in Supabase
     try {
       await fetch('/api/onboarding/complete', {
@@ -4129,6 +4164,36 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <ImpersonationBanner />
       <Toast message={toast} />
+
+      {/* Hidden file input for avatar upload */}
+      <input ref={avatarFileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (file.size > 2 * 1024 * 1024) { fireToast('File too large (max 2MB)'); return }
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+        if (!validTypes.includes(file.type)) { fireToast('Invalid file type'); return }
+        const blobUrl = URL.createObjectURL(file)
+        setUserPhoto(blobUrl)
+        const token = localStorage.getItem('workspace_session_token')
+        const userEmail = localStorage.getItem('lumio_user_email')
+        if (!token || !userEmail) return
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('email', userEmail)
+        try {
+          const res = await fetch('/api/workspace/upload-profile-photo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+          const data = await res.json()
+          if (data.url) {
+            setUserPhoto(data.url)
+            localStorage.setItem('lumio_user_photo', data.url)
+            localStorage.setItem(`lumio_staff_photo_${userEmail}`, data.url)
+            window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: data.url }))
+            fireToast('Photo updated')
+          }
+          URL.revokeObjectURL(blobUrl)
+        } catch { fireToast('Upload failed'); URL.revokeObjectURL(blobUrl) }
+        e.target.value = ''
+      }} />
 
       {/* Top-right: role switcher + bell + avatar */}
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -4145,18 +4210,48 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             onClick={() => setAvatarDropdownOpen(o => !o)}
             style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
             {userPhoto ? (
-              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
             ) : (
               userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
             )}
           </button>
           {avatarDropdownOpen && (
-            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-              <button onClick={() => { setAvatarDropdownOpen(false); fireToast('Profile settings coming soon') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 200, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
+              {/* User info with larger avatar */}
+              <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, overflow: 'hidden', flexShrink: 0 }}>
+                  {userPhoto ? (
+                    <img src={userPhoto} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} onError={() => setUserPhoto(null)} />
+                  ) : (
+                    userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
+                  )}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
+                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{ownerEmail || ''}</p>
+                </div>
+              </div>
+              <button onClick={() => { setAvatarDropdownOpen(false); avatarFileRef.current?.click() }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                👤 Profile
+                📷 {userPhoto ? 'Change photo' : 'Upload photo'}
               </button>
+              {userPhoto && (
+                <button onClick={() => {
+                  const email = localStorage.getItem('lumio_user_email')
+                  if (email) localStorage.removeItem(`lumio_staff_photo_${email}`)
+                  localStorage.removeItem('lumio_user_photo')
+                  setUserPhoto(null)
+                  window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: null }))
+                  setAvatarDropdownOpen(false)
+                  fireToast('Photo removed')
+                }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
+                  🗑️ Remove photo
+                </button>
+              )}
+              <div style={{ height: 1, backgroundColor: '#1F2937', margin: '4px 12px' }} />
               <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
@@ -4202,8 +4297,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           tenantId={businessId}
           onComplete={() => {
             setShowLiveOnboarding(false)
-            localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
+            localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
+            localStorage.setItem(`onboarding-dismissed-${slug}`, 'true')
           }}
         />
       )}

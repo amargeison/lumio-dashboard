@@ -1038,25 +1038,29 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             localStorage.setItem('lumio_school_role_level', '1')
             localStorage.setItem('lumio_school_is_owner', 'true')
           }
-          // Live onboarding wizard — show if not completed and no localStorage guard
-          if (data.onboarding_completed === false && !localStorage.getItem('lumio_onboarding_shown')) {
-            setShowLiveOnboarding(true)
-            return // don't show the old onboarding modal
+          // Live onboarding wizard — only show if NEVER completed AND recently created
+          const schoolOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
+          const schoolDismissed = localStorage.getItem(`onboarding-dismissed-${_slug}`)
+          if (schoolOnboarded || schoolDismissed) {
+            localStorage.setItem(`lumio_onboarded_${_slug}`, 'true')
+            localStorage.setItem('lumio_onboarding_shown', 'true')
+          } else if (!data.demo_data_active) {
+            const createdAt = data.created_at ? new Date(data.created_at).getTime() : 0
+            const isNewTenant = createdAt > 0 && (Date.now() - createdAt) < 10 * 60 * 1000
+            if (isNewTenant && !localStorage.getItem(`lumio_onboarded_${_slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+              setShowLiveOnboarding(true)
+              return
+            }
           }
         }
-        // Existing onboarding modal check
+        // Only show old onboarding modal if no localStorage guard AND no dismiss
         const key = `lumio_onboarded_${_slug}`
-        if (!localStorage.getItem(key)) {
-          setShowOnboarding(true)
+        if (!localStorage.getItem(key) && !localStorage.getItem(`onboarding-dismissed-${_slug}`) && !localStorage.getItem('lumio_onboarding_shown')) {
+          // Don't show — existing tenants should not see onboarding; set the guard
+          localStorage.setItem(key, 'true')
         }
       })
-      .catch(() => {
-        // Existing onboarding modal check
-        const key = `lumio_onboarded_${_slug}`
-        if (!localStorage.getItem(key)) {
-          setShowOnboarding(true)
-        }
-      })
+      .catch(() => {})
       .finally(() => {
         // If API didn't return data, build from localStorage (set during checkout)
         setSchoolData(prev => {
@@ -1418,7 +1422,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <OnboardingWizard
           type="school"
           tenantId={schoolId}
-          onComplete={() => setShowLiveOnboarding(false)}
+          onComplete={() => {
+            setShowLiveOnboarding(false)
+            localStorage.setItem(`lumio_onboarded_${_slug}`, 'true')
+            localStorage.setItem('lumio_onboarding_shown', 'true')
+            localStorage.setItem(`onboarding-dismissed-${_slug}`, 'true')
+          }}
         />
       )}
 

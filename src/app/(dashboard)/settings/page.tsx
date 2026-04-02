@@ -95,6 +95,8 @@ function LogoUpload() {
         setLogo(data.logo_url)
         localStorage.setItem('lumio_company_logo', data.logo_url)
         localStorage.setItem('workspace_company_logo', data.logo_url)
+        // Dispatch custom event so same-tab components (Sidebar) pick up the change
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
         setToast('✓ Logo updated')
         setTimeout(() => setToast(''), 3000)
       }
@@ -106,7 +108,7 @@ function LogoUpload() {
     <SectionCard title="Company Logo">
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: logo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
-          {logo ? <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogo('')} /> : <span className="text-xl font-bold">{initials}</span>}
+          {logo ? <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={() => setLogo('')} /> : <span className="text-xl font-bold">{initials}</span>}
         </div>
         <div>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]) }} />

@@ -545,17 +545,21 @@ export default function CompanyCheckoutPage() {
 
       const targetSlug = data.slug || slug
 
-      // Upload logo if provided
+      // Upload logo if provided — use server endpoint to persist to DB
       if (logoFile && targetSlug) {
-        try {
-          const { createClient } = await import('@supabase/supabase-js')
-          const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-          const ext = logoFile.name.split('.').pop() || 'png'
-          const path = `${targetSlug}/logo.${ext}`
-          await supabase.storage.from('company-logos').upload(path, logoFile, { upsert: true })
-          const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
-          localStorage.setItem('lumio_company_logo', publicUrl)
-        } catch (err) { console.error('Logo upload failed:', err) }
+        const token = localStorage.getItem('workspace_session_token')
+        if (token) {
+          try {
+            const fd = new FormData()
+            fd.append('logo', logoFile)
+            const logoRes = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+            const logoData = await logoRes.json()
+            if (logoData.logo_url) {
+              localStorage.setItem('lumio_company_logo', logoData.logo_url)
+              localStorage.setItem('workspace_company_logo', logoData.logo_url)
+            }
+          } catch (err) { console.error('Logo upload failed:', err) }
+        }
       }
 
       if (targetSlug && targetSlug !== 'my-company') {

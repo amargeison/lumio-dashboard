@@ -262,3 +262,23 @@ export const PUPILS = [
     nextSteps:["End-of-year EYFS profile","Consider gifted & talented provision in Year 1"],
     class:"B"},
 ];
+
+export const CLASSES = [
+  { id: 'A', name: 'Reception A', teacher: 'Miss H. Thompson', ta: 'Mrs J. Okafor', room: 'Room 1' },
+  { id: 'B', name: 'Reception B', teacher: 'Mrs S. Ahmed', ta: 'Mr D. Chen', room: 'Room 2' },
+]
+
+export const ELG_AREAS = [
+  { key: 'la', label: 'Communication & Language', short: 'C&L', prime: true, goals: ['Listening, Attention & Understanding', 'Speaking'] },
+  { key: 'psed', label: 'Personal, Social & Emotional', short: 'PSED', prime: true, goals: ['Self-Regulation', 'Managing Self', 'Building Relationships'] },
+  { key: 'pd', label: 'Physical Development', short: 'PD', prime: true, goals: ['Gross Motor Skills', 'Fine Motor Skills'] },
+  { key: 'lit', label: 'Literacy', short: 'Lit', prime: false, goals: ['Comprehension', 'Word Reading', 'Writing'] },
+  { key: 'maths', label: 'Mathematics', short: 'Maths', prime: false, goals: ['Number', 'Numerical Patterns'] },
+  { key: 'utw', label: 'Understanding the World', short: 'UTW', prime: false, goals: ['Past & Present', 'People, Culture & Communities', 'The Natural World'] },
+  { key: 'ead', label: 'Expressive Arts & Design', short: 'EAD', prime: false, goals: ['Creating with Materials', 'Being Imaginative & Expressive'] },
+]
+
+export function getLight(s: number) { return s < 85 ? 'red' : s < 96 ? 'amber' : 'green' }
+export function bandColor(l: string) { return l === 'red' ? '#B91C1C' : l === 'amber' ? '#B45309' : '#15803D' }
+export function bandBg(l: string) { return l === 'red' ? '#FEF2F2' : l === 'amber' ? '#FFFBEB' : '#DCFCE7' }
+export function bandLabel(l: string) { return l === 'red' ? 'Needs Support' : l === 'amber' ? 'Monitor' : 'On Track' }
