@@ -205,9 +205,9 @@ export default function CompaniesPage() {
           <h1 className="text-2xl font-bold" style={{ color: '#F1F3FA' }}>Companies</h1>
           <p className="text-sm mt-1" style={{ color: '#6B7299' }}>{companies.length} companies</p>
         </div>
-        <button onClick={() => { resetWizard(); setShowWizard(true) }} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold" style={{ backgroundColor: PURPLE, color: '#F9FAFB' }}>
-          <Search size={14} /> Find Companies
-        </button>
+        <a href="/crm/company-finder" className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold" style={{ backgroundColor: PURPLE, color: '#F9FAFB', textDecoration: 'none' }}>
+          <Search size={14} /> Company Finder
+        </a>
       </div>
       <div className="flex items-center gap-2 rounded-xl px-4 py-2.5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
         <Search size={16} style={{ color: '#6B7299' }} />

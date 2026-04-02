@@ -16,7 +16,15 @@ export default function IntelligencePage() {
   const workspaceId = useCRMWorkspaceId()
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
   const [insights, setInsights] = useState<ARIAInsight[]>(isDemoActive ? DEMO_INSIGHTS : [])
-  const [crmContext, setCrmContext] = useState<CRMContext | null>(isDemoActive ? { pipeline_value: 284000, open_deals: 8, win_rate: 34, avg_deal_size: 35500, contacts_count: 12, activities_today: 8 } as any : null)
+  const [crmContext, setCrmContext] = useState<CRMContext | null>(isDemoActive ? {
+    userName: (typeof window !== 'undefined' && localStorage.getItem('lumio_user_name')) || 'there',
+    contacts: [],
+    deals: [],
+    totalPipelineValue: 284000,
+    winRate: 34,
+    openDealsCount: 8,
+    pipeline_value: 284000, open_deals: 8, win_rate: 34, avg_deal_size: 35500, contacts_count: 12, activities_today: 8,
+  } as any : null)
   const [loading, setLoading] = useState(!isDemoActive)
 
   useEffect(() => {
