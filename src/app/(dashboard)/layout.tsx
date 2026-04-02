@@ -102,8 +102,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         )}
-        {/* Top-right: bell + avatar — fixed overlay matching Schools portal */}
-        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
+        {/* Top-right: bell + avatar — fixed overlay, shifts below demo banner */}
+        <div className="fixed hidden md:flex items-center gap-2" style={{ top: demoActive && !demoDismissed ? 52 : 12, right: 20, zIndex: 60, transition: 'top 0.2s ease' }}>
           <button
             onClick={() => setNotificationsOpen(o => !o)}
             className="relative flex items-center justify-center rounded-full transition-colors"
