@@ -1162,12 +1162,8 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   // Sync photos to demoDataActive state
   useEffect(() => {
     if (photoImpCtx.isImpersonating) return
-    // Read user-uploaded photos from localStorage
-    try {
-      const s = localStorage.getItem('lumio-photo-frame')
-      if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) { setPhotos(p.map((x: any) => typeof x === 'string' ? x : x.src)); return } }
-    } catch { /* ignore */ }
     setPhotos(demoDataActive ? DEMO_PHOTOS : [])
+    if (!demoDataActive) localStorage.removeItem('lumio-photo-frame')
   }, [demoDataActive])
 
   useEffect(() => {
