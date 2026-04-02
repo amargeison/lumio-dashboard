@@ -14,6 +14,7 @@ import {
   CircleDot, Hash, Printer,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import NLSetPiecesView from '@/components/football/NLSetPiecesView'
 
 // ─── Colors (Amber theme for Non-League) ────────────────────────────────────
 
@@ -30,18 +31,20 @@ const TEXT_SEC = '#94A3B8'
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type NLDeptId =
-  | 'nl-overview' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
-  | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
+  | 'nl-overview' | 'nl-club-profile' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
+  | 'nl-set-pieces' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
 
 type NLSection = null | 'Football' | 'Operations' | 'Club'
 
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
   { id: 'nl-overview',      label: 'Overview',                icon: Home,           section: null },
+  { id: 'nl-club-profile',  label: 'Club Profile',            icon: MapPin,         section: null },
   { id: 'nl-squad',         label: 'Squad',                   icon: Shirt,          section: 'Football' },
   { id: 'nl-fixtures',      label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
   { id: 'nl-training',      label: 'Training',                icon: Target,         section: 'Football' },
   { id: 'nl-tactics',       label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
+  { id: 'nl-set-pieces',    label: 'Set Pieces',              icon: Target,         section: 'Football' },
   { id: 'nl-medical',       label: 'Medical',                 icon: Heart,          section: 'Football' },
   { id: 'nl-transfers',     label: 'Transfers & Recruitment', icon: UserPlus,       section: 'Football' },
   { id: 'nl-finance',       label: 'Finance',                 icon: DollarSign,     section: 'Operations' },
@@ -1987,6 +1990,619 @@ function NLCommitteeView() {
   )
 }
 
+// ─── Club Profile View ──────────────────────────────────────────────────────
+
+type ClubProfileTab = 'info' | 'history' | 'ground' | 'honours' | 'committee' | 'kit' | 'sponsors' | 'media'
+
+function NLClubProfileView() {
+  const [tab, setTab] = useState<ClubProfileTab>('info')
+
+  const tabs: { id: ClubProfileTab; label: string }[] = [
+    { id: 'info', label: 'Info' },
+    { id: 'history', label: 'History' },
+    { id: 'ground', label: 'Ground' },
+    { id: 'honours', label: 'Honours' },
+    { id: 'committee', label: 'Committee' },
+    { id: 'kit', label: 'Kit & Badge' },
+    { id: 'sponsors', label: 'Sponsors' },
+    { id: 'media', label: 'Media' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Tab bar */}
+      <div className="flex gap-1 flex-wrap rounded-xl p-1" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+            style={{
+              backgroundColor: tab === t.id ? PRIMARY : 'transparent',
+              color: tab === t.id ? '#fff' : TEXT_SEC,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── INFO TAB ── */}
+      {tab === 'info' && (
+        <div className="space-y-4">
+          {/* Crest */}
+          <div className="flex justify-center">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="66" fill={DARK} stroke={GOLD} strokeWidth="3" />
+              <circle cx="70" cy="70" r="56" fill="none" stroke={ACCENT} strokeWidth="1" />
+              <text x="70" y="62" textAnchor="middle" fill={ACCENT} fontSize="22" fontWeight="bold" fontFamily="serif">H&#183;F&#183;C</text>
+              <text x="70" y="84" textAnchor="middle" fill={GOLD} fontSize="13" fontFamily="serif">1887</text>
+              <text x="70" y="120" textAnchor="middle" fill={TEXT_SEC} fontSize="8" fontFamily="sans-serif">Pride, Passion, Community</text>
+            </svg>
+          </div>
+
+          {/* Club Details */}
+          <SectionCard title="Club Details">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+              {[
+                ['Full name', 'Harfield FC'],
+                ['Nickname', 'The Amber Army'],
+                ['Founded', '1887'],
+                ['Ground', 'Harfield Community Stadium'],
+                ['Capacity', '1,200 (180 seated)'],
+                ['League', 'Northern Premier League West Division (Step 4)'],
+                ['FA affiliation', 'West Riding County FA'],
+                ['Club colours', 'Amber & Black'],
+                ['Home kit', 'Amber shirts, black shorts, amber socks'],
+                ['Away kit', 'All black with amber trim'],
+                ['WGS Club ID', 'WGS-48821'],
+                ['Affiliated since', '1891'],
+                ['Club motto', '"Pride, Passion, Community"'],
+              ].map(([label, value], i) => (
+                <div key={i} className="flex justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ color: TEXT_SEC }}>{label}</span>
+                  <span className="font-medium text-right" style={{ color: TEXT }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Contact */}
+          <SectionCard title="Contact">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Users size={14} style={{ color: PRIMARY }} />
+                <span style={{ color: TEXT }}>Club Secretary — Brian Hartley</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Send size={14} style={{ color: PRIMARY }} />
+                <span style={{ color: GOLD }}>secretary@harfieldfc.co.uk</span>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Social Links */}
+          <SectionCard title="Social Links">
+            <div className="flex gap-3">
+              {['Twitter / X', 'Facebook', 'Instagram'].map((s, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>
+                  <ExternalLink size={12} />
+                  {s}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── HISTORY TAB ── */}
+      {tab === 'history' && (
+        <div className="space-y-4">
+          <SectionCard title="Club Timeline">
+            <div className="relative pl-6">
+              {/* Connecting line */}
+              <div className="absolute left-[7px] top-2 bottom-2 w-0.5" style={{ backgroundColor: BORDER }} />
+              {[
+                { year: '1887', text: 'Club founded by mill workers in Harfield' },
+                { year: '1923', text: 'First county cup win' },
+                { year: '1967', text: 'Joined Northern League' },
+                { year: '1989', text: 'Promoted to Northern Premier League for first time' },
+                { year: '1994', text: 'Record attendance: 3,200 vs Bradford City (FA Cup 1st Round)' },
+                { year: '2003', text: 'Relegated to county level' },
+                { year: '2011', text: 'Promoted back to Step 5' },
+                { year: '2019', text: 'Promoted to Step 4 (current level)' },
+                { year: '2023', text: 'Ground redevelopment: new seated stand added' },
+              ].map((e, i) => (
+                <div key={i} className="relative flex items-start gap-3 pb-4">
+                  <div className="absolute left-[-20px] top-1 w-3 h-3 rounded-full" style={{ backgroundColor: PRIMARY, border: `2px solid ${GOLD}` }} />
+                  <div>
+                    <span className="text-xs font-bold" style={{ color: GOLD }}>{e.year}</span>
+                    <span className="text-xs ml-2" style={{ color: TEXT }}>{e.text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Club Records">
+            <div className="space-y-2">
+              {[
+                ['Record win', '9-0 vs Skelton United (1978)'],
+                ['Record defeat', '1-7 vs Farsley Celtic (2001)'],
+                ['Record attendance', '3,200'],
+                ['Most appearances', 'Terry Booth — 412 (1978-1994)'],
+                ['All-time top scorer', 'Mick Hannigan — 187 goals (1983-1995)'],
+                ['Current longest-serving', 'Danny Kershaw — 8 seasons'],
+              ].map(([label, value], i) => (
+                <div key={i} className="flex justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ color: TEXT_SEC }}>{label}</span>
+                  <span className="font-medium" style={{ color: TEXT }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── GROUND TAB ── */}
+      {tab === 'ground' && (
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <h2 className="text-sm font-bold" style={{ color: TEXT }}>Harfield Community Stadium</h2>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>Mill Lane, Harfield, HF4 2RR</p>
+          </div>
+
+          {/* Facilities grid */}
+          <SectionCard title="Facilities">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {[
+                { name: 'Main Stand (seated)', cap: '180', ok: true },
+                { name: 'Covered terrace (standing)', cap: '600', ok: true },
+                { name: 'Open terrace', cap: '420', ok: true },
+                { name: 'Floodlights (180 lux)', cap: null, ok: false, warn: 'Inspection due' },
+                { name: 'Club bar & function room', cap: null, ok: true },
+                { name: 'Home changing rooms', cap: null, ok: true },
+                { name: 'Away changing rooms', cap: null, ok: true },
+                { name: 'Referee changing room', cap: null, ok: true },
+                { name: 'Medical room', cap: null, ok: true },
+                { name: 'Disabled access', cap: null, ok: false, warn: 'Improvement needed' },
+                { name: 'Turnstiles (x3)', cap: null, ok: true },
+                { name: 'PA system', cap: null, ok: true },
+                { name: 'Scoreboard', cap: null, ok: true },
+                { name: 'Club shop (matchday)', cap: null, ok: true },
+                { name: 'Car parking (60 spaces)', cap: null, ok: true },
+              ].map((f, i) => (
+                <div key={i} className="rounded-lg p-2 text-xs" style={{ backgroundColor: `${CARD_BG}`, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center gap-1.5">
+                    {f.ok ? <CheckCircle2 size={12} style={{ color: '#22C55E' }} /> : <AlertTriangle size={12} style={{ color: GOLD }} />}
+                    <span style={{ color: TEXT }}>{f.name}</span>
+                  </div>
+                  {f.cap && <span className="text-[10px] ml-4" style={{ color: TEXT_SEC }}>Cap: {f.cap}</span>}
+                  {f.warn && <span className="text-[10px] ml-4 block" style={{ color: GOLD }}>{f.warn}</span>}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Ground Grading */}
+          <SectionCard title="Ground Grading">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span style={{ color: TEXT_SEC }}>Required grade:</span>
+                <Badge color={PRIMARY}>Grade C</Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span style={{ color: TEXT_SEC }}>Status:</span>
+                <Badge color={GOLD}>CONDITIONAL PASS</Badge>
+                <AlertTriangle size={12} style={{ color: GOLD }} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span style={{ color: TEXT_SEC }}>Next inspection:</span>
+                <span style={{ color: TEXT }}>14 days</span>
+              </div>
+              <div style={{ color: TEXT_SEC }}>Outstanding items: floodlight inspection, disabled access improvements</div>
+            </div>
+          </SectionCard>
+
+          {/* Pitch */}
+          <SectionCard title="Pitch Information">
+            <div className="space-y-1 text-xs">
+              {[
+                ['Dimensions', '105m x 68m'],
+                ['Surface', 'Natural grass'],
+                ['Groundsman', 'Keith Barlow'],
+              ].map(([l, v], i) => (
+                <div key={i} className="flex justify-between py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ color: TEXT_SEC }}>{l}</span>
+                  <span style={{ color: TEXT }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Map placeholder */}
+          <div className="rounded-xl h-48 flex items-center justify-center" style={{ backgroundColor: '#1a2332', border: `1px solid ${BORDER}` }}>
+            <div className="text-center">
+              <MapPin size={24} style={{ color: TEXT_SEC, margin: '0 auto' }} />
+              <p className="text-xs mt-2" style={{ color: TEXT_SEC }}>Google Maps — Mill Lane, Harfield, HF4 2RR</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── HONOURS TAB ── */}
+      {tab === 'honours' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-6" style={{ backgroundColor: '#2C1810', border: `2px solid #8B6914` }}>
+            <h2 className="text-center text-lg font-bold mb-6" style={{ color: '#F1C40F', fontFamily: 'serif' }}>Honours Board</h2>
+
+            <div className="space-y-6">
+              {/* League */}
+              <div>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: '#F1C40F' }}>League Titles</h3>
+                <div className="space-y-1 text-xs" style={{ color: '#D4A843' }}>
+                  <div>NPL West Runners Up — 2019/20</div>
+                  <div>NCEL Champions — 2018/19</div>
+                  <div>WRCFA League Champions — 1967, 1971, 1988</div>
+                </div>
+              </div>
+
+              {/* Cups */}
+              <div>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: '#F1C40F' }}>Cup Wins</h3>
+                <div className="space-y-1 text-xs" style={{ color: '#D4A843' }}>
+                  <div>WRCFA Cup Winners — 1923, 1967, 1988, 2004</div>
+                  <div>NPL Cup Semi-finalists — 2022</div>
+                  <div>FA Vase 3rd Round — 2021, 2023</div>
+                  <div>FA Cup 1st Round — 1994</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current season targets */}
+          <SectionCard title="Current Season Targets">
+            <div className="space-y-2 text-xs">
+              {[
+                'League Top 4',
+                'FA Vase 4th Round',
+                'County Cup Win',
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-2 py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <Target size={12} style={{ color: GOLD }} />
+                  <span style={{ color: TEXT }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── COMMITTEE TAB ── */}
+      {tab === 'committee' && (
+        <div className="space-y-4">
+          <SectionCard title="Committee Members">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <th className="text-left py-2 pr-4 font-semibold" style={{ color: TEXT_SEC }}>Name</th>
+                    <th className="text-left py-2 pr-4 font-semibold" style={{ color: TEXT_SEC }}>Role</th>
+                    <th className="text-right py-2 font-semibold" style={{ color: TEXT_SEC }}>Years at club</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: 'Alan Barker', role: 'Chairman', years: 12 },
+                    { name: 'Brian Hartley', role: 'Secretary', years: 8 },
+                    { name: 'Sandra Moss', role: 'Treasurer', years: 5 },
+                    { name: 'Mike Chambers', role: 'Fixtures Secretary', years: 3 },
+                    { name: 'Jess Patel', role: 'Welfare Officer', years: 2 },
+                    { name: 'Keith Barlow', role: 'Groundsman', years: 15 },
+                    { name: 'Dave Ingram', role: 'Commercial Manager', years: 6 },
+                    { name: 'Paul Wright', role: 'Programme Editor', years: 4 },
+                    { name: 'Linda Chen', role: 'Social Media', years: 1 },
+                  ].map((m, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <td className="py-2 pr-4" style={{ color: TEXT }}>{m.name}</td>
+                      <td className="py-2 pr-4" style={{ color: TEXT_SEC }}>{m.role}</td>
+                      <td className="py-2 text-right" style={{ color: TEXT }}>{m.years}</td>
+                    </tr>
+                  ))}
+                  <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <td className="py-2 pr-4" style={{ color: TEXT_SEC }}>—</td>
+                    <td className="py-2 pr-4">
+                      <span style={{ color: TEXT_SEC }}>Volunteer Steward Coordinator</span>
+                      <AlertTriangle size={10} className="inline ml-1" style={{ color: GOLD }} />
+                    </td>
+                    <td className="py-2 text-right"><Badge color={GOLD}>OPEN</Badge></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
+
+          {/* Next meeting */}
+          <SectionCard title="Next Committee Meeting">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} style={{ color: PRIMARY }} />
+                <span className="font-medium" style={{ color: TEXT }}>14 Apr 2026, 7:30pm</span>
+              </div>
+              <div style={{ color: TEXT_SEC }}>
+                <p className="font-semibold mb-1" style={{ color: TEXT }}>Agenda preview:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Ground grading inspection update</li>
+                  <li>End-of-season budget review</li>
+                  <li>Volunteer steward recruitment</li>
+                  <li>Summer pre-season planning</li>
+                </ul>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── KIT & BADGE TAB ── */}
+      {tab === 'kit' && (
+        <div className="space-y-4">
+          {/* Kit display */}
+          <SectionCard title="Match Kits 2025/26">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Home kit */}
+              <div className="text-center">
+                <p className="text-xs font-semibold mb-2" style={{ color: TEXT }}>Home</p>
+                <svg width="120" height="140" viewBox="0 0 120 140" className="mx-auto">
+                  {/* Body */}
+                  <rect x="25" y="30" width="70" height="80" rx="8" fill={PRIMARY} />
+                  {/* Sleeves */}
+                  <rect x="5" y="30" width="25" height="40" rx="6" fill={PRIMARY} />
+                  <rect x="90" y="30" width="25" height="40" rx="6" fill={PRIMARY} />
+                  {/* Collar */}
+                  <rect x="40" y="26" width="40" height="8" rx="4" fill="#1a1a1a" />
+                  {/* Sponsor text */}
+                  <text x="60" y="70" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="bold">Harfield</text>
+                  <text x="60" y="80" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="bold">Brewery</text>
+                  {/* Number on back representation */}
+                  <text x="60" y="100" textAnchor="middle" fill={ACCENT} fontSize="16" fontWeight="bold">10</text>
+                  {/* Shorts */}
+                  <rect x="30" y="112" width="25" height="24" rx="4" fill="#1a1a1a" />
+                  <rect x="65" y="112" width="25" height="24" rx="4" fill="#1a1a1a" />
+                </svg>
+                <p className="text-[10px] mt-1" style={{ color: TEXT_SEC }}>Amber shirt, black shorts</p>
+              </div>
+
+              {/* Away kit */}
+              <div className="text-center">
+                <p className="text-xs font-semibold mb-2" style={{ color: TEXT }}>Away</p>
+                <svg width="120" height="140" viewBox="0 0 120 140" className="mx-auto">
+                  {/* Body */}
+                  <rect x="25" y="30" width="70" height="80" rx="8" fill="#1a1a1a" />
+                  {/* Sleeves */}
+                  <rect x="5" y="30" width="25" height="40" rx="6" fill="#1a1a1a" />
+                  <rect x="90" y="30" width="25" height="40" rx="6" fill="#1a1a1a" />
+                  {/* Amber trim */}
+                  <rect x="25" y="30" width="70" height="3" rx="1" fill={PRIMARY} />
+                  <rect x="5" y="30" width="25" height="3" rx="1" fill={PRIMARY} />
+                  <rect x="90" y="30" width="25" height="3" rx="1" fill={PRIMARY} />
+                  {/* Collar */}
+                  <rect x="40" y="26" width="40" height="8" rx="4" fill={PRIMARY} />
+                  {/* Sponsor text */}
+                  <text x="60" y="70" textAnchor="middle" fill={PRIMARY} fontSize="7" fontWeight="bold">Harfield</text>
+                  <text x="60" y="80" textAnchor="middle" fill={PRIMARY} fontSize="7" fontWeight="bold">Brewery</text>
+                  {/* Number */}
+                  <text x="60" y="100" textAnchor="middle" fill={PRIMARY} fontSize="16" fontWeight="bold">10</text>
+                  {/* Shorts */}
+                  <rect x="30" y="112" width="25" height="24" rx="4" fill="#1a1a1a" />
+                  <rect x="65" y="112" width="25" height="24" rx="4" fill="#1a1a1a" />
+                </svg>
+                <p className="text-[10px] mt-1" style={{ color: TEXT_SEC }}>All black with amber trim</p>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Kit info */}
+          <SectionCard title="Kit Details">
+            <div className="space-y-1 text-xs">
+              {[
+                ['Kit supplier', 'Joma'],
+                ['Shirt front sponsor', 'Harfield Brewery'],
+                ['Shirt back sponsor', 'Mason & Co. Solicitors'],
+                ['Ordered', 'July 2024'],
+                ['Next review', 'May 2026'],
+              ].map(([l, v], i) => (
+                <div key={i} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ color: TEXT_SEC }}>{l}</span>
+                  <span style={{ color: TEXT }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Badge history */}
+          <SectionCard title="Club Badge">
+            <div className="flex items-center gap-4">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="36" fill={DARK} stroke={GOLD} strokeWidth="2" />
+                <text x="40" y="38" textAnchor="middle" fill={ACCENT} fontSize="14" fontWeight="bold" fontFamily="serif">H&#183;F&#183;C</text>
+                <text x="40" y="54" textAnchor="middle" fill={GOLD} fontSize="8" fontFamily="serif">Est. 1887</text>
+              </svg>
+              <div className="text-xs" style={{ color: TEXT_SEC }}>
+                Badge redesigned in 2015 to mark 125th anniversary.
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Squad numbers */}
+          <SectionCard title="Squad Numbers">
+            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
+              {NL_SQUAD.sort((a, b) => a.number - b.number).slice(0, 25).map((p, i) => (
+                <div key={i} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `${PRIMARY}1a`, border: `1px solid ${BORDER}` }}>
+                  <div className="text-sm font-bold" style={{ color: GOLD }}>{p.number}</div>
+                  <div className="text-[8px] truncate" style={{ color: TEXT_SEC }}>{p.name.split(' ').pop()}</div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── SPONSORS TAB ── */}
+      {tab === 'sponsors' && (
+        <div className="space-y-4">
+          <SectionCard title="Current Sponsors">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { name: 'Harfield Brewery', type: 'Shirt front', value: '\u00A38,000/yr', renewal: 'May 2026', warn: false },
+                { name: 'Mason & Co. Solicitors', type: 'Shirt back', value: '\u00A33,500/yr', renewal: 'May 2025', warn: true },
+                { name: 'Northfields Toyota', type: 'Board sponsor', value: '\u00A32,000/yr', renewal: '', warn: false },
+                { name: 'Harfield Tandoori', type: 'Programme', value: '\u00A3800/yr', renewal: '', warn: false },
+                { name: 'County Scaffolding', type: 'Perimeter', value: '\u00A3600/yr', renewal: '', warn: false },
+                { name: 'Sportsform Betting', type: 'PA announcements', value: '\u00A31,200/yr', renewal: '', warn: false },
+              ].map((s, i) => (
+                <div key={i} className="rounded-lg p-3" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold" style={{ color: TEXT }}>{s.name}</span>
+                    {s.warn && <Badge color="#EF4444">RENEWAL DUE</Badge>}
+                  </div>
+                  <div className="text-[10px]" style={{ color: TEXT_SEC }}>{s.type}</div>
+                  <div className="text-sm font-bold mt-1" style={{ color: GOLD }}>{s.value}</div>
+                  {s.renewal && <div className="text-[10px] mt-0.5" style={{ color: TEXT_SEC }}>Renewal: {s.renewal}</div>}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Totals */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <div className="flex items-center justify-between text-xs">
+              <span style={{ color: TEXT_SEC }}>Total sponsorship income</span>
+              <span className="text-lg font-bold" style={{ color: GOLD }}>&pound;16,100/yr</span>
+            </div>
+            <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>+&pound;2,100 vs last season</div>
+          </div>
+
+          {/* Opportunities */}
+          <SectionCard title="Sponsorship Opportunities">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ color: TEXT }}>Sleeve sponsor</span>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: GOLD }}>&pound;2,500/yr</span>
+                  <Badge color={PRIMARY}>1 remaining</Badge>
+                </div>
+              </div>
+              <div className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ color: TEXT }}>Match ball sponsor</span>
+                <span style={{ color: GOLD }}>&pound;150/match</span>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── MEDIA TAB ── */}
+      {tab === 'media' && (
+        <div className="space-y-4">
+          {/* Social stats */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { platform: 'Twitter / X', followers: '1,840' },
+              { platform: 'Facebook', followers: '2,210' },
+              { platform: 'Instagram', followers: '940' },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                <div className="text-lg font-bold" style={{ color: GOLD }}>{s.followers}</div>
+                <div className="text-[10px]" style={{ color: TEXT_SEC }}>{s.platform}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent posts */}
+          <SectionCard title="Recent Posts">
+            <div className="space-y-2">
+              {[
+                { date: '30 Mar 2026', text: 'FT: Harfield 2-1 Clitheroe. Grady with the winner in stoppage time! What a finish!' },
+                { date: '28 Mar 2026', text: 'Training cancelled tonight due to waterlogged pitch. Thursday session confirmed.' },
+                { date: '26 Mar 2026', text: 'Matchday programme for Saturday now available online. Vol. 38 No. 14.' },
+              ].map((p, i) => (
+                <div key={i} className="rounded-lg p-2.5" style={{ backgroundColor: `${CARD_BG}`, border: `1px solid ${BORDER}` }}>
+                  <div className="text-[10px] mb-0.5" style={{ color: TEXT_SEC }}>{p.date}</div>
+                  <div className="text-xs" style={{ color: TEXT }}>{p.text}</div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Programme archive */}
+          <SectionCard title="Programme Archive — 2025/26">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+              {[
+                'Vol.38 No.1 — vs Glossop NE',
+                'Vol.38 No.2 — vs Mossley',
+                'Vol.38 No.3 — vs Colne',
+                'Vol.38 No.4 — vs Hyde United',
+                'Vol.38 No.5 — vs Ramsbottom Utd',
+                'Vol.38 No.6 — vs Marine',
+                'Vol.38 No.7 — vs Prescot Cables',
+                'Vol.38 No.8 — vs Widnes',
+                'Vol.38 No.9 — vs Trafford',
+                'Vol.38 No.10 — vs Radcliffe',
+                'Vol.38 No.11 — vs Bamber Bridge',
+                'Vol.38 No.12 — vs Droylsden',
+                'Vol.38 No.13 — vs Atherton Colls',
+                'Vol.38 No.14 — vs Clitheroe',
+              ].map((p, i) => (
+                <div key={i} className="flex items-center gap-1.5 rounded-lg p-1.5 text-[10px]" style={{ backgroundColor: `${PRIMARY}0d`, border: `1px solid ${BORDER}`, color: TEXT_SEC }}>
+                  <Printer size={10} style={{ color: PRIMARY }} />
+                  {p}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Press coverage */}
+          <SectionCard title="Press Coverage">
+            <div className="space-y-2">
+              {[
+                { outlet: 'Harfield Gazette', headline: 'Grady fires Harfield to vital win', date: '31 Mar 2026' },
+                { outlet: 'Non-League Paper', headline: 'NPL West round-up: Harfield push for play-offs', date: '29 Mar 2026' },
+                { outlet: 'BBC Radio Leeds', headline: 'Non-league round-up featuring Harfield FC', date: '27 Mar 2026' },
+                { outlet: 'The NLP Online', headline: 'Step 4 form guide: Harfield in the mix', date: '24 Mar 2026' },
+                { outlet: 'Harfield Gazette', headline: 'Chairman Barker: "We believe in promotion"', date: '20 Mar 2026' },
+              ].map((c, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <div>
+                    <span style={{ color: TEXT }}>{c.headline}</span>
+                    <span className="ml-2 text-[10px]" style={{ color: TEXT_SEC }}>— {c.outlet}</span>
+                  </div>
+                  <span className="text-[10px] whitespace-nowrap" style={{ color: TEXT_SEC }}>{c.date}</span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Media contacts */}
+          <SectionCard title="Media Contacts">
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Send size={12} style={{ color: PRIMARY }} />
+                <span style={{ color: TEXT }}>Harfield Gazette</span>
+                <span style={{ color: GOLD }}>sports@harfieldgazette.co.uk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileText size={12} style={{ color: PRIMARY }} />
+                <span style={{ color: TEXT }}>Non-League Paper correspondent</span>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function NonLeagueContent({ activeDept, onToast }: { activeDept: NLDeptId; onToast: (m: string) => void }) {
@@ -2002,10 +2618,12 @@ export default function NonLeagueContent({ activeDept, onToast }: { activeDept: 
       </div>
 
       {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} />}
+      {activeDept === 'nl-club-profile' && <NLClubProfileView />}
       {activeDept === 'nl-squad' && <NLSquadView />}
       {activeDept === 'nl-fixtures' && <NLFixturesView />}
       {activeDept === 'nl-training' && <NLTrainingView />}
       {activeDept === 'nl-tactics' && <NLTacticsView />}
+      {activeDept === 'nl-set-pieces' && <NLSetPiecesView />}
       {activeDept === 'nl-medical' && <NLMedicalView />}
       {activeDept === 'nl-transfers' && <NLTransfersView />}
       {activeDept === 'nl-finance' && <NLFinanceView />}

@@ -16,12 +16,14 @@ import {
   Mail, Globe, Info, CircleDot, Circle,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import GrassrootsTacticsView from '@/components/football/GrassrootsTacticsView'
+import GrassrootsSetPiecesView from '@/components/football/GrassrootsSetPiecesView'
 
 // ─── Types ────────────────────────────────────────────��──────────────────────
 
 type DeptId =
-  | 'overview' | 'squad' | 'matchday' | 'fixtures' | 'finances'
-  | 'welfare' | 'communications' | 'referee' | 'pitch' | 'kit'
+  | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
+  | 'finances' | 'welfare' | 'communications' | 'referee' | 'pitch' | 'kit'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
 
 type SidebarSection = null | 'Club' | 'Operations' | 'Resources' | 'Club Info'
@@ -40,9 +42,12 @@ const TEXT_SEC = '#94A3B8'
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',        label: 'Overview',           icon: Home,           section: null },
+  { id: 'club-profile',    label: 'Club Profile',       icon: MapPin,         section: null },
   { id: 'squad',           label: 'Squad',              icon: Shirt,          section: 'Club' },
   { id: 'matchday',        label: 'Match Day',          icon: Trophy,         section: 'Club' },
   { id: 'fixtures',        label: 'Fixtures & Results', icon: Calendar,       section: 'Club' },
+  { id: 'tactics',         label: 'Tactics',            icon: Clipboard,      section: 'Club' },
+  { id: 'set-pieces',      label: 'Set Pieces',         icon: Target,         section: 'Club' },
   { id: 'finances',        label: 'Finances',           icon: DollarSign,     section: 'Operations' },
   { id: 'welfare',         label: 'Welfare',            icon: Shield,         section: 'Operations' },
   { id: 'communications',  label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
@@ -1895,6 +1900,491 @@ function SettingsView() {
 
 // ─── Main Page Component ────────���────────────────────────────────────────────
 
+// ─── Club Profile View ──────────────────────────────────────────────────────
+
+type ClubProfileTab = 'info' | 'history' | 'ground' | 'honours' | 'committee' | 'kit' | 'sponsors'
+
+function ClubProfileView() {
+  const [tab, setTab] = useState<ClubProfileTab>('info')
+
+  const tabs: { id: ClubProfileTab; label: string; icon: React.ElementType }[] = [
+    { id: 'info', label: 'Club Info', icon: Info },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'ground', label: 'Ground', icon: MapPin },
+    { id: 'honours', label: 'Honours', icon: Trophy },
+    { id: 'committee', label: 'Committee', icon: Users },
+    { id: 'kit', label: 'Kit', icon: Shirt },
+    { id: 'sponsors', label: 'Sponsors', icon: DollarSign },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Tab bar */}
+      <div className="flex gap-1 overflow-x-auto pb-1 amateur-quickactions-hide-scroll">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+            style={{
+              backgroundColor: tab === t.id ? PRIMARY : CARD_BG,
+              color: tab === t.id ? '#fff' : TEXT_SEC,
+              border: `1px solid ${tab === t.id ? PRIMARY : BORDER}`,
+            }}
+          >
+            <t.icon size={13} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'info' && <ClubInfoTab />}
+      {tab === 'history' && <ClubHistoryTab />}
+      {tab === 'ground' && <ClubGroundTab />}
+      {tab === 'honours' && <ClubHonoursTab />}
+      {tab === 'committee' && <ClubCommitteeTab />}
+      {tab === 'kit' && <ClubKitTab />}
+      {tab === 'sponsors' && <ClubSponsorsTab />}
+    </div>
+  )
+}
+
+/* ── Tab 1: Club Info ──────────────────────────────────────────────────────── */
+
+function ClubInfoTab() {
+  const details = [
+    { label: 'Full Name', value: 'Sunday Rovers FC' },
+    { label: 'Nickname', value: 'The Rovers' },
+    { label: 'Founded', value: '1994 \u2014 "Started by mates, still going strong"' },
+    { label: 'Home Ground', value: 'Millfield Recreation Ground, Westshire' },
+    { label: 'Changing Rooms', value: 'Millfield Rec pavilion (shared facility)' },
+    { label: 'League', value: 'Westshire Sunday League Division 2' },
+    { label: 'County FA', value: 'Westshire County FA' },
+    { label: 'WGS Club ID', value: 'WGS-92341' },
+    { label: 'Club Colours', value: 'Green and white' },
+    { label: 'Club WhatsApp Group', value: '"Ask Pete for the link"' },
+    { label: 'Contact', value: 'Club Secretary \u2014 Pete Walsh, 07712 334 891' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Badge + name */}
+      <SectionCard title="Club Badge & Identity">
+        <div className="flex flex-col sm:flex-row items-center gap-5">
+          {/* Badge placeholder */}
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="56" fill={PRIMARY} stroke={ACCENT} strokeWidth="3" />
+            <circle cx="60" cy="60" r="46" fill="none" stroke={ACCENT} strokeWidth="1.5" />
+            <text x="60" y="52" textAnchor="middle" fill="#fff" fontWeight="700" fontSize="16" fontFamily="sans-serif">{'S\u00B7R\u00B7F\u00B7C'}</text>
+            <text x="60" y="72" textAnchor="middle" fill={ACCENT} fontWeight="500" fontSize="11" fontFamily="sans-serif">Est. 1994</text>
+          </svg>
+          <div>
+            <p className="text-lg font-bold" style={{ color: TEXT }}>Sunday Rovers FC</p>
+            <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>Westshire Sunday League Division 2</p>
+            <div className="flex gap-2 mt-2">
+              <Badge color={PRIMARY}>Grassroots</Badge>
+              <Badge color={GOLD}>Est. 1994</Badge>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Detail grid */}
+      <SectionCard title="Club Details">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {details.map(d => (
+            <div key={d.label} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>{d.label}</p>
+              <p className="text-sm font-medium" style={{ color: TEXT }}>{d.value}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+/* ── Tab 2: History ────────────────────────────────────────────────────────── */
+
+function ClubHistoryTab() {
+  const timeline = [
+    { year: '1994', text: 'Founded by a group of mates from The Crown pub' },
+    { year: '1997', text: 'First ever trophy \u2014 Westshire Sunday Vase runners-up' },
+    { year: '2003', text: 'Promoted to Division 1 for the first time' },
+    { year: '2006', text: "Relegated back to Division 2 (don't mention the manager)" },
+    { year: '2011', text: 'Club nearly folded \u2014 8 players turned up one Sunday, but somehow survived' },
+    { year: '2014', text: 'Best ever season \u2014 3rd in Division 1' },
+    { year: '2018', text: 'Relegated to Division 2 again' },
+    { year: '2023', text: 'New committee took over, fresh start' },
+    { year: '2024', text: 'Current season \u2014 looking up' },
+  ]
+
+  const records = [
+    { label: 'Biggest Win', value: '8-1 vs Harwick Wanderers (2014)' },
+    { label: 'Biggest Loss', value: '0-9 vs Millfield Athletic (2007) \u2014 "We don\'t talk about that"' },
+    { label: 'Top Scorer (All Time)', value: 'Gaz Mullins \u2014 94 goals' },
+    { label: 'Most Appearances', value: 'Pete Walsh \u2014 287 (also club secretary)' },
+    { label: 'Longest Losing Streak', value: '11 games (2006 \u2014 "the dark times")' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Club Timeline">
+        <div className="relative pl-6">
+          {/* Vertical line */}
+          <div className="absolute left-[7px] top-2 bottom-2 w-0.5" style={{ backgroundColor: BORDER }} />
+          <div className="space-y-5">
+            {timeline.map((e, i) => (
+              <div key={i} className="relative">
+                {/* Dot */}
+                <div
+                  className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2"
+                  style={{ backgroundColor: i === timeline.length - 1 ? PRIMARY : CARD_BG, borderColor: PRIMARY }}
+                />
+                <p className="text-xs font-bold" style={{ color: PRIMARY }}>{e.year}</p>
+                <p className="text-sm mt-0.5" style={{ color: TEXT }}>{e.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Club Records">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {records.map(r => (
+            <div key={r.label} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>{r.label}</p>
+              <p className="text-sm font-medium" style={{ color: TEXT }}>{r.value}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+/* ── Tab 3: Ground ─────────────────────────────────────────────────────────── */
+
+function ClubGroundTab() {
+  const facilities = [
+    { name: 'Pitch', available: true, note: 'Decent grass pitch \u2014 gets muddy in winter' },
+    { name: 'Changing Rooms', available: true, note: 'Pavilion \u2014 cold showers, bring flip flops' },
+    { name: 'Car Park', available: true, note: 'Free, 30 spaces' },
+    { name: 'Floodlights', available: false, note: 'None \u2014 all games before dark' },
+    { name: 'Bar', available: false, note: 'None on site \u2014 Crown pub nearby' },
+    { name: 'Covered Spectator Area', available: false, note: '' },
+    { name: 'Toilets', available: true, note: '(in pavilion)' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Millfield Recreation Ground">
+        <div className="space-y-3">
+          <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>Address</p>
+            <p className="text-sm font-medium" style={{ color: TEXT }}>Millfield Lane, Westshire, WS4 7TR</p>
+          </div>
+          <div className="space-y-2">
+            {facilities.map(f => (
+              <div key={f.name} className="flex items-start gap-2.5 p-2.5 rounded-lg" style={{ backgroundColor: BG }}>
+                <span className="mt-0.5 text-sm">{f.available ? '\u2705' : '\u274C'}</span>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: TEXT }}>{f.name}</p>
+                  {f.note && <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{f.note}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Pitch Hire & Booking">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>Pitch Hire</p>
+            <p className="text-sm font-medium" style={{ color: TEXT }}>{'\u00A3'}35/session</p>
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>Booking</p>
+            <p className="text-sm font-medium" style={{ color: TEXT }}>Millfield Rec \u2014 01922 445 512</p>
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>Groundsman</p>
+            <p className="text-sm font-medium" style={{ color: TEXT }}>Council maintained</p>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Weather warning */}
+      <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: '#78350F33', border: '1px solid #F59E0B44' }}>
+        <AlertTriangle size={18} style={{ color: GOLD, flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <p className="text-sm font-semibold" style={{ color: GOLD }}>Weather Note</p>
+          <p className="text-xs mt-1" style={{ color: TEXT }}>Pitch gets waterlogged after heavy rain \u2014 always check before Saturday morning</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Tab 4: Honours ────────────────────────────────────────────────────────── */
+
+function ClubHonoursTab() {
+  const honours = [
+    {
+      category: 'League',
+      items: [
+        'Westshire Sunday League Div 1 Runners Up \u2014 2014',
+        'Westshire Sunday League Div 2 Champions \u2014 2003',
+        'Westshire Sunday League Div 2 Champions \u2014 2012',
+      ],
+    },
+    {
+      category: 'Cups',
+      items: [
+        'Westshire Sunday Vase Runners Up \u2014 1997',
+        'Westshire Sunday Cup Quarter-final \u2014 2014',
+      ],
+    },
+    {
+      category: 'Awards',
+      items: [
+        'Fair Play Award \u2014 2019',
+        'Club of the Month \u2014 November 2022',
+      ],
+    },
+    {
+      category: 'Individual',
+      items: [
+        'Golden Boot \u2014 Gaz Mullins 2013 (22 goals)',
+      ],
+    },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#2C1810', border: '1px solid #5C3A1E' }}>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid #5C3A1E' }}>
+          <p className="text-sm font-bold tracking-wide" style={{ color: '#F1C40F' }}>
+            <Trophy size={14} className="inline mr-1.5 -mt-0.5" />
+            Honours Board
+          </p>
+        </div>
+        <div className="p-4 space-y-5">
+          {honours.map(h => (
+            <div key={h.category}>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#F1C40F' }}>{h.category}</p>
+              <div className="space-y-1.5">
+                {h.items.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 pl-2">
+                    <Star size={10} style={{ color: '#F1C40F', flexShrink: 0 }} />
+                    <p className="text-sm" style={{ color: '#FDE68A' }}>{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Tab 5: Committee ──────────────────────────────────────────────────────── */
+
+function ClubCommitteeTab() {
+  const committee = [
+    { name: 'Pete Walsh', role: 'Secretary', desc: 'Does everything', phone: '07712 334 891' },
+    { name: 'Dave Higgins', role: 'Manager', desc: 'Centre half / Complains about referees', phone: '' },
+    { name: 'Carol Walsh', role: 'Treasurer', desc: "Pete's wife / Keeps the money straight", phone: '' },
+    { name: 'Jonesy (Steve Jones)', role: 'Kit Man', desc: 'WhatsApp admin / Brings the bibs', phone: '' },
+    { name: 'Robbo (Rob Davies)', role: 'Social Secretary', desc: 'Books the curry house', phone: '' },
+  ]
+
+  const openRoles = [
+    { role: 'Welfare Officer', note: 'Required by FA \u2014 nobody has volunteered yet', urgent: true },
+    { role: 'Fixture Secretary', note: 'Pete does it but would love help', urgent: false },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Who Runs the Club">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" style={{ color: TEXT }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider font-semibold" style={{ color: TEXT_SEC }}>Name</th>
+                <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider font-semibold" style={{ color: TEXT_SEC }}>Role</th>
+                <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider font-semibold hidden sm:table-cell" style={{ color: TEXT_SEC }}>Notes</th>
+                <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider font-semibold" style={{ color: TEXT_SEC }}>Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {committee.map(c => (
+                <tr key={c.name} style={{ borderBottom: `1px solid ${BORDER}22` }}>
+                  <td className="py-2.5 px-2 font-medium">{c.name}</td>
+                  <td className="py-2.5 px-2"><Badge color={PRIMARY}>{c.role}</Badge></td>
+                  <td className="py-2.5 px-2 hidden sm:table-cell" style={{ color: TEXT_SEC }}>{c.desc}</td>
+                  <td className="py-2.5 px-2" style={{ color: TEXT_SEC }}>{c.phone || '\u2014'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Open Roles">
+        <div className="space-y-2">
+          {openRoles.map(r => (
+            <div key={r.role} className="flex items-start gap-2.5 p-3 rounded-lg" style={{ backgroundColor: r.urgent ? '#7F1D1D33' : BG, border: r.urgent ? '1px solid #EF444444' : 'none' }}>
+              {r.urgent && <AlertTriangle size={14} style={{ color: '#EF4444', flexShrink: 0, marginTop: 2 }} />}
+              <div>
+                <p className="text-sm font-medium" style={{ color: TEXT }}>{r.role} {r.urgent && <span style={{ color: '#EF4444' }}>{'\u26A0\uFE0F'}</span>}</p>
+                <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{r.note}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <div className="p-3 rounded-lg" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+        <p className="text-xs" style={{ color: TEXT_SEC }}>
+          <Calendar size={12} className="inline mr-1 -mt-0.5" />
+          Next committee meeting: <span style={{ color: TEXT }} className="font-medium">Post-match at The Crown, first Sunday of the month</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Tab 6: Kit ────────────────────────────────────────────────────────────── */
+
+function ClubKitTab() {
+  const kitInfo = [
+    { label: 'Kit Supplier', value: 'Pro:Direct (bulk order)' },
+    { label: 'Sponsor', value: "Walsh's Plumbing (Pete's business \u2014 on the shirts for free)" },
+    { label: 'Last Order', value: 'Aug 2023' },
+    { label: 'Condition', value: "Most of it's fine. Number 7 shirt has a tear \u2014 needs replacing" },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Kit Design">
+        <div className="flex flex-wrap gap-8 justify-center py-2">
+          {/* Home kit */}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs font-semibold" style={{ color: TEXT }}>Home</p>
+            <svg width="120" height="140" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M30 30 L10 50 L10 60 L25 55 L25 130 L95 130 L95 55 L110 60 L110 50 L90 30 L75 25 L60 32 L45 25 Z" fill={PRIMARY} stroke={ACCENT} strokeWidth="1.5"/>
+              <path d="M45 25 L60 32 L75 25" fill="none" stroke="#fff" strokeWidth="2.5"/>
+              <text x="60" y="72" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="600" fontFamily="sans-serif">{"Walsh's"}</text>
+              <text x="60" y="82" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="600" fontFamily="sans-serif">Plumbing</text>
+              <text x="60" y="110" textAnchor="middle" fill={ACCENT} fontSize="20" fontWeight="700" fontFamily="sans-serif" opacity="0.4">9</text>
+            </svg>
+            <p className="text-[10px]" style={{ color: TEXT_SEC }}>Green body, white collar</p>
+          </div>
+
+          {/* Away kit */}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs font-semibold" style={{ color: TEXT }}>Away</p>
+            <svg width="120" height="140" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M30 30 L10 50 L10 60 L25 55 L25 130 L95 130 L95 55 L110 60 L110 50 L90 30 L75 25 L60 32 L45 25 Z" fill="#fff" stroke={PRIMARY} strokeWidth="1.5"/>
+              <path d="M45 25 L60 32 L75 25" fill="none" stroke={PRIMARY} strokeWidth="2.5"/>
+              <line x1="25" y1="55" x2="25" y2="130" stroke={PRIMARY} strokeWidth="1" opacity="0.5"/>
+              <line x1="95" y1="55" x2="95" y2="130" stroke={PRIMARY} strokeWidth="1" opacity="0.5"/>
+              <text x="60" y="72" textAnchor="middle" fill={DARK} fontSize="7" fontWeight="600" fontFamily="sans-serif">{"Walsh's"}</text>
+              <text x="60" y="82" textAnchor="middle" fill={DARK} fontSize="7" fontWeight="600" fontFamily="sans-serif">Plumbing</text>
+            </svg>
+            <p className="text-[10px]" style={{ color: TEXT_SEC }}>White body, green trim</p>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Kit Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {kitInfo.map(k => (
+            <div key={k.label} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: TEXT_SEC }}>{k.label}</p>
+              <p className="text-sm font-medium" style={{ color: TEXT }}>{k.value}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Squad Numbers">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          {SQUAD.filter(p => p.number >= 1 && p.number <= 18).sort((a, b) => a.number - b.number).map(p => (
+            <div key={p.number} className="p-2 rounded-lg text-center" style={{ backgroundColor: BG }}>
+              <p className="text-lg font-bold" style={{ color: PRIMARY }}>#{p.number}</p>
+              <p className="text-xs font-medium truncate" style={{ color: TEXT }}>{p.name}</p>
+              <p className="text-[10px]" style={{ color: TEXT_SEC }}>{p.position}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <div className="p-3 rounded-lg" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+        <p className="text-xs" style={{ color: TEXT_SEC }}>
+          <Shirt size={12} className="inline mr-1 -mt-0.5" />
+          Spare kit: <span style={{ color: TEXT }} className="font-medium">{"3 shirts in the boot of Pete's car"}</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Tab 7: Sponsors ───────────────────────────────────────────────────────── */
+
+function ClubSponsorsTab() {
+  const sponsors = [
+    { name: "Walsh's Plumbing", type: 'Shirt Sponsor', value: 'In kind (Pete owns it)', amount: 0 },
+    { name: 'The Crown Pub', type: 'Match Ball Sponsor', value: '\u00A320/match (pays for the ball)', amount: 220 },
+    { name: 'Westshire Car Wash', type: 'Training Kit', value: '\u00A3300 one-off', amount: 300 },
+  ]
+  const totalText = '\u00A3620 this season'
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Club Sponsors \u2014 Small but Vital">
+        <div className="space-y-3">
+          {sponsors.map(s => (
+            <div key={s.name} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <div>
+                <p className="text-sm font-medium" style={{ color: TEXT }}>{s.name}</p>
+                <p className="text-xs" style={{ color: TEXT_SEC }}>{s.type}</p>
+              </div>
+              <Badge color={PRIMARY}>{s.value}</Badge>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${BORDER}` }}>
+          <p className="text-xs font-semibold" style={{ color: TEXT_SEC }}>Total Sponsorship</p>
+          <p className="text-sm font-bold" style={{ color: PRIMARY }}>{totalText}</p>
+        </div>
+        <p className="text-xs mt-2 italic" style={{ color: TEXT_SEC }}>{"\"Every bit helps \u2014 covers the referee fees\""}</p>
+      </SectionCard>
+
+      {/* CTA panel */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: `${PRIMARY}15`, border: `1px solid ${PRIMARY}44` }}>
+        <div className="p-4 space-y-4">
+          <p className="text-sm font-bold" style={{ color: PRIMARY }}>Want to Support the Rovers?</p>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 p-3 rounded-lg" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+              <p className="text-sm font-semibold" style={{ color: TEXT }}>{"Sponsor a Match Ball \u2014 \u00A320"}</p>
+              <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>{"\"Talk to Pete\""}</p>
+            </div>
+            <div className="flex-1 p-3 rounded-lg" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+              <p className="text-sm font-semibold" style={{ color: TEXT }}>Sponsor the Kit Next Season</p>
+              <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>{"\"Interested? We'll put your logo everywhere\""}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GrassrootsPortal({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
@@ -1952,9 +2442,12 @@ export default function GrassrootsPortal({ params }: { params: Promise<{ slug: s
               </div>
             </div>
             {activeDept === 'overview' && <OverviewView clubName="Sunday Rovers FC" onAction={handleQuickAction} />}
+            {activeDept === 'club-profile' && <ClubProfileView />}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'matchday' && <MatchDayView onToast={fireToast} />}
             {activeDept === 'fixtures' && <FixturesView />}
+            {activeDept === 'tactics' && <GrassrootsTacticsView />}
+            {activeDept === 'set-pieces' && <GrassrootsSetPiecesView />}
             {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
             {activeDept === 'welfare' && <WelfareView />}
             {activeDept === 'communications' && <CommsView onToast={fireToast} />}

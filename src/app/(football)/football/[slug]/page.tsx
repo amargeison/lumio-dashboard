@@ -14,7 +14,7 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
@@ -24,12 +24,15 @@ import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
+import ProSetPiecesView from '@/components/football/ProSetPiecesView'
+import { EmailActions } from '@/components/overview/MessageActions'
+import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
@@ -72,8 +75,10 @@ const BG_GRADIENTS = [
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
   { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
+  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
+  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
   { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
   { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
@@ -92,6 +97,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+]
+
+const FOOTBALL_ROLE_OPTIONS = [
+  { key: 'chairman', label: 'Chairman/CEO', emoji: '👑', level: 1 },
+  { key: 'dof', label: 'Director of Football', emoji: '⚽', level: 1 },
+  { key: 'head_coach', label: 'Head Coach', emoji: '🎽', level: 2 },
+  { key: 'dept_head', label: 'Department Head', emoji: '📋', level: 3 },
+  { key: 'support', label: 'Support Staff', emoji: '🔍', level: 4 },
 ]
 
 // ─── Squad Data ──────────────────────────────────────────────────────────────
@@ -468,14 +481,16 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
               )}
               {sec.items.map(item => {
                 const active = activeDept === item.id
+                const isBoard = item.id === 'board'
+                const accent = isBoard ? '#F1C40F' : PRIMARY
                 return (
                   <button key={item.id}
                     onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
                     className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
                     style={{
-                      backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
-                      color: active ? PRIMARY : '#9CA3AF',
-                      borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
+                      backgroundColor: active ? `${accent}1f` : 'transparent',
+                      color: active ? accent : isBoard ? '#F1C40F99' : '#9CA3AF',
+                      borderLeft: active ? `2px solid ${accent}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
                     }}
@@ -662,6 +677,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
 const FOOTBALL_QUICK_ACTIONS = [
   { label: 'Team Sheet', icon: Clipboard },
   { label: 'Log Injury', icon: Heart },
+  { label: 'Send Email', icon: MessageSquare },
   { label: 'Transfer Hub', icon: ArrowUpDown },
   { label: 'Book Video Room', icon: Video },
   { label: 'Press Conf', icon: Newspaper },
@@ -752,7 +768,8 @@ function MorningRoundup() {
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
                   {item.messages.map(msg => (
-                    <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
+                    <div key={msg.id} className="rounded-lg p-3 relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.75 : 1 }}>
+                      {!msg.read && <span className="absolute top-2 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Unread</span>}
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-2">
                           <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>
@@ -760,34 +777,17 @@ function MorningRoundup() {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              <span className={`text-xs truncate ${msg.read ? 'font-normal' : 'font-bold'}`} style={{ color: '#F9FAFB' }}>{msg.from}</span>
                               {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
                               {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
                             </div>
-                            <div className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{msg.subject}</div>
+                            <div className={`text-xs ${msg.read ? 'font-normal' : 'font-semibold'}`} style={{ color: msg.read ? '#6B7280' : '#D1D5DB' }}>{msg.subject}</div>
                           </div>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
                       </div>
                       <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
-                      {replied.includes(msg.id) ? (
-                        <span className="text-xs" style={{ color: '#C0392B' }}>Replied</span>
-                      ) : (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button onClick={() => setShowReply(showReply === msg.id ? null : msg.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>Reply</button>
-                          <button className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
-                        </div>
-                      )}
-                      {showReply === msg.id && (
-                        <div className="mt-2">
-                          <textarea value={replyText[msg.id] || ''} onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))} placeholder="Write your reply..." rows={2}
-                            className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
-                          <div className="flex gap-2 mt-1.5">
-                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Send</button>
-                            <button onClick={() => setShowReply(null)} className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
-                          </div>
-                        </div>
-                      )}
+                      <EmailActions msgId={msg.id} source="outlook" senderEmail={msg.from} subject={msg.subject} preview={msg.preview} isRead={msg.read} onToast={() => {}} />
                     </div>
                   ))}
                 </div>
@@ -4259,6 +4259,183 @@ function ClubProfileView() {
   )
 }
 
+// ─── Board Suite View ────────────────────────────────────────────────────────
+
+function BoardSuiteView() {
+  const [tab, setTab] = useState<'overview' | 'notes' | 'meetings' | 'financial' | 'transfers'>('overview')
+  const [noteContent, setNoteContent] = useState('')
+  const TABS = [
+    { id: 'overview' as const, label: 'Club Overview', icon: '🏟️' },
+    { id: 'notes' as const, label: 'Confidential Notes', icon: '🔒' },
+    { id: 'meetings' as const, label: 'Board Meetings', icon: '📅' },
+    { id: 'financial' as const, label: 'Financial Strategy', icon: '💰' },
+    { id: 'transfers' as const, label: 'Transfer Strategy', icon: '🎯' },
+  ]
+
+  function StatCard({ label, value, sub, color = '#F1C40F' }: { label: string; value: string; sub?: string; color?: string }) {
+    return (
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+        <p className="text-xs" style={{ color: '#9CA3AF' }}>{label}</p>
+        <p className="text-xl font-black mt-1" style={{ color }}>{value}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(241,196,15,0.12)' }}>
+          <Crown size={20} style={{ color: '#F1C40F' }} />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Board Suite</h1>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>Confidential board-level information</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+            style={{ backgroundColor: tab === t.id ? 'rgba(241,196,15,0.15)' : 'transparent', color: tab === t.id ? '#F1C40F' : '#6B7280', border: `1px solid ${tab === t.id ? 'rgba(241,196,15,0.3)' : '#1F2937'}` }}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Club Overview */}
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <StatCard label="League Position" value="8th" sub="Championship" />
+            <StatCard label="Transfer Budget" value="£2.4m" sub="£1.8m remaining" />
+            <StatCard label="Squad Value" value="£14.2m" sub="+£1.8m vs last season" color="#22C55E" />
+            <StatCard label="PSR Headroom" value="£3.1m" sub="Within limits" color="#22C55E" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Revenue vs Expenditure</h3>
+              <div className="space-y-2">
+                {[{ label: 'Matchday Revenue', value: '£1.2m', pct: 60 }, { label: 'Broadcast Income', value: '£3.8m', pct: 85 }, { label: 'Commercial', value: '£2.1m', pct: 70 }, { label: 'Player Sales', value: '£600k', pct: 30 }].map(r => (
+                  <div key={r.label}>
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.value}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: '#F1C40F' }} /></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Match</h3>
+              <div className="text-center py-4">
+                <p className="text-2xl font-black" style={{ color: '#F9FAFB' }}>vs Sheffield Wednesday</p>
+                <p className="text-sm mt-1" style={{ color: '#F1C40F' }}>Saturday 3pm · Home</p>
+                <p className="text-xs mt-2" style={{ color: '#6B7280' }}>Championship · Matchday 38</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confidential Notes */}
+      {tab === 'notes' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>📝 Board Notes (Confidential)</h3>
+          <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} rows={10} placeholder="Type confidential board notes here..." className="w-full text-sm rounded-lg p-4 outline-none resize-vertical" style={{ backgroundColor: '#0F0505', border: '1px solid #2D1515', color: '#F9FAFB' }} />
+          <button className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#F1C40F', color: '#0A0A0A' }}>Save Notes</button>
+        </div>
+      )}
+
+      {/* Board Meetings */}
+      {tab === 'meetings' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Board Meetings</h3>
+            {[{ date: '15 Apr', title: 'Monthly Board Meeting', attendees: 'All Board Members', status: 'Confirmed' }, { date: '1 May', title: 'Transfer Strategy Review', attendees: 'Chairman, DoF, Head Coach', status: 'Pending' }, { date: '20 May', title: 'End of Season Review', attendees: 'All Board Members + Senior Staff', status: 'Draft' }].map(m => (
+              <div key={m.title} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #2D1515' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.title}</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>{m.date} · {m.attendees}</p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: m.status === 'Confirmed' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: m.status === 'Confirmed' ? '#22C55E' : '#F59E0B' }}>{m.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financial Strategy */}
+      {tab === 'financial' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+            <StatCard label="Wage Bill" value="£4.8m/yr" sub="62% of revenue" color="#EF4444" />
+            <StatCard label="Player Amortisation" value="£1.2m" sub="Annual charge" />
+            <StatCard label="Net Spend (Season)" value="-£800k" sub="Transfer deficit" color="#EF4444" />
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>PSR/FFP Breakdown</h3>
+            <div className="space-y-2">
+              {[{ label: 'Allowable Losses (3yr)', limit: '£39m', current: '£12.4m', pct: 32, ok: true }, { label: 'Squad Cost Ratio', limit: '70%', current: '62%', pct: 89, ok: true }, { label: 'Agent Fees', limit: '£500k', current: '£380k', pct: 76, ok: true }].map(r => (
+                <div key={r.label} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.current} / {r.limit}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.ok ? '#22C55E' : '#EF4444' }} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Strategy */}
+      {tab === 'transfers' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔒 Confidential Transfer Targets</h3>
+            <div className="space-y-2">
+              {[
+                { pos: 'ST', name: 'Target A', club: 'League One', fee: '£400k', priority: 'High', status: 'Agent contacted' },
+                { pos: 'CB', name: 'Target B', club: 'Championship', fee: '£200k loan', priority: 'High', status: 'Terms discussed' },
+                { pos: 'CM', name: 'Target C', club: 'Abroad', fee: '£150k', priority: 'Medium', status: 'Scouted 3x' },
+                { pos: 'LW', name: 'Target D', club: 'Free Agent', fee: 'Free', priority: 'Low', status: 'Monitoring' },
+              ].map(t => (
+                <div key={t.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(241,196,15,0.15)', color: '#F1C40F' }}>{t.pos}</span>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{t.name}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{t.club} · {t.fee}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{t.status}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: t.priority === 'High' ? 'rgba(239,68,68,0.1)' : t.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(107,114,128,0.1)', color: t.priority === 'High' ? '#EF4444' : t.priority === 'Medium' ? '#F59E0B' : '#6B7280' }}>{t.priority}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>💸 Offload Pipeline</h3>
+            <div className="space-y-2">
+              {[
+                { name: 'Player X', reason: 'Surplus to requirements', value: '£300k', interest: '2 clubs' },
+                { name: 'Player Y', reason: 'High wages, low output', value: '£150k', interest: '1 club (loan)' },
+              ].map(p => (
+                <div key={p.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.reason}</p></div>
+                  <div className="text-right"><p className="text-xs font-semibold" style={{ color: '#F1C40F' }}>{p.value}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.interest}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SettingsView() {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
@@ -4379,6 +4556,50 @@ function SettingsView() {
           <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
         </div>
       </div>
+
+      {/* Integrations */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Connect your email and calendar</p>
+        </div>
+        <div className="p-5 space-y-2">
+          {[
+            { key: 'outlook', label: 'Outlook / Microsoft 365', desc: 'Email sync', icon: '📧', type: 'microsoft' as const },
+            { key: 'outlook_cal', label: 'Outlook Calendar', desc: 'Calendar sync', icon: '📅', type: 'microsoft' as const },
+            { key: 'gmail', label: 'Gmail', desc: 'Email sync', icon: '📨', type: 'google' as const },
+            { key: 'gcal', label: 'Google Calendar', desc: 'Calendar sync', icon: '📅', type: 'google' as const },
+          ].map(integ => {
+            const connected = typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${integ.key}`) === 'true'
+            return (
+              <div key={integ.key} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: connected ? '1px solid rgba(34,197,94,0.3)' : '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>{integ.icon}</span>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.label}</p><p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                </div>
+                {connected ? (
+                  <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
+                ) : (
+                  <button onClick={() => {
+                    const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+                    if (integ.type === 'microsoft') {
+                      const cid = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: 'microsoft_all', slug })
+                      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft', scope: 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite', state, response_mode: 'query', prompt: 'consent' })}`
+                    } else {
+                      const cid = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: integ.key, slug })
+                      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/google', scope: `openid email profile ${integ.key === 'gmail' ? 'https://www.googleapis.com/auth/gmail.readonly' : 'https://www.googleapis.com/auth/calendar.readonly'}`, state, access_type: 'offline', prompt: 'consent' })}`
+                    }
+                  }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>
+                    Connect
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -4416,6 +4637,20 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+  const [footballRole, setFootballRole] = useState<string | null>(null)
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [showMeetingBook, setShowMeetingBook] = useState(false)
+
+  useEffect(() => {
+    setFootballRole(localStorage.getItem('lumio_football_impersonated_role'))
+    const email = localStorage.getItem('lumio_user_email')
+    if (email) {
+      const p = localStorage.getItem(`lumio_staff_photo_${email}`)
+      if (p && !p.startsWith('data:')) setUserPhoto(p)
+    }
+  }, [])
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -4441,6 +4676,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
   function handleActionClick(label: string) {
     if (label === 'Dept Insights') { setShowAIInsights(true); return }
+    if (label === 'Send Email') { setShowEmailCompose(true); return }
+    if (label === 'Book Video Room' || label === 'Book Meeting') { setShowMeetingBook(true); return }
+    if (label === 'Press Conf') { setShowMeetingBook(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
@@ -4460,14 +4698,50 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
-      {/* Top-right avatar */}
+      {/* Impersonation banner */}
+      {footballRole && footballRole !== 'chairman' && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
+          <Eye size={14} style={{ color: '#F59E0B' }} />
+          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+            Previewing as: {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.label} — your actual role is Chairman
+          </span>
+          <button onClick={() => { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role'); window.location.reload() }} className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <X size={10} /> Exit Preview
+          </button>
+        </div>
+      )}
+
+      {/* Top-right role switcher + avatar */}
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Football role switcher */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+            style={{ backgroundColor: footballRole ? 'rgba(245,158,11,0.15)' : 'rgba(241,196,15,0.1)', color: footballRole ? '#F59E0B' : '#F1C40F', border: `1px solid ${footballRole ? 'rgba(245,158,11,0.3)' : 'rgba(241,196,15,0.2)'}` }}>
+            <Eye size={12} /> {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.label} <ChevronDown size={10} />
+          </button>
+          {roleSwitcherOpen && (
+            <div className="absolute top-full right-0 mt-1.5 rounded-xl py-1.5 shadow-xl" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515', zIndex: 100, minWidth: 200 }}>
+              {FOOTBALL_ROLE_OPTIONS.map(r => (
+                <button key={r.key} onClick={() => {
+                  if (r.key === 'chairman') { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role') }
+                  else { setFootballRole(r.key); localStorage.setItem('lumio_football_impersonated_role', r.key) }
+                  setRoleSwitcherOpen(false); window.location.reload()
+                }} className="flex w-full items-center gap-2 px-4 py-2 text-xs transition-colors"
+                  style={{ color: (footballRole || 'chairman') === r.key ? '#F9FAFB' : '#9CA3AF', backgroundColor: (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2D1515' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}>
+                  <span>{r.emoji}</span> {r.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          {initials}
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden' }}>
+          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : initials}
         </button>
       </div>
 
@@ -4504,6 +4778,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             )}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'set-pieces' && <ProSetPiecesView />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {activeDept === 'medical' && <MedicalView />}
             {activeDept === 'scouting' && <ScoutingView />}
@@ -4521,6 +4796,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'psr' && <PSRView />}
             {activeDept === 'squad-planner' && <SquadPlannerView />}
             {activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'board' && <BoardSuiteView />}
             {activeDept === 'settings' && <SettingsView />}
           </main>
         </div>
@@ -4533,6 +4809,8 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           onToast={fireToast}
         />
       )}
+      {showEmailCompose && <EmailComposeModal onClose={() => setShowEmailCompose(false)} onToast={fireToast} />}
+      {showMeetingBook && <MeetingBookModal onClose={() => setShowMeetingBook(false)} onToast={fireToast} />}
       <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )

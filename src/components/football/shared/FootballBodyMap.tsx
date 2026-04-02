@@ -264,54 +264,22 @@ const BACK_BODY_PATH = `
 // ─── CSS keyframes (injected once) ──────────────────────────────────────────
 
 const PULSE_KEYFRAMES = `
-@keyframes bodyMapPulseRed {
-  0%, 100% { box-shadow: 0 0 4px 2px rgba(192,57,43,0.3); }
-  50% { box-shadow: 0 0 12px 6px rgba(192,57,43,0.6); }
+@keyframes svgGlowPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
 }
-@keyframes bodyMapPulseOrange {
-  0%, 100% { box-shadow: 0 0 4px 2px rgba(230,126,34,0.3); }
-  50% { box-shadow: 0 0 12px 6px rgba(230,126,34,0.6); }
-}
-@keyframes bodyMapPulseGold {
-  0%, 100% { box-shadow: 0 0 4px 2px rgba(241,196,15,0.3); }
-  50% { box-shadow: 0 0 12px 6px rgba(241,196,15,0.6); }
-}
-@keyframes bodyMapPulsePurple {
-  0%, 100% { box-shadow: 0 0 4px 2px rgba(142,68,173,0.3); }
-  50% { box-shadow: 0 0 12px 6px rgba(142,68,173,0.6); }
-}
-@keyframes svgPulseRed {
-  0%, 100% { r: 7; opacity: 0.85; }
-  50% { r: 9; opacity: 1; }
-}
-@keyframes svgPulseOrange {
-  0%, 100% { r: 7; opacity: 0.85; }
-  50% { r: 9; opacity: 1; }
-}
-@keyframes svgPulseGold {
-  0%, 100% { r: 7; opacity: 0.85; }
-  50% { r: 9; opacity: 1; }
-}
-@keyframes svgPulsePurple {
-  0%, 100% { r: 7; opacity: 0.85; }
-  50% { r: 9; opacity: 1; }
+@keyframes svgDotPulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
 }
 `
-
-const PULSE_ANIM: Record<InjurySeverity, string> = {
-  serious:   'svgPulseRed 2s ease-in-out infinite',
-  moderate:  'svgPulseOrange 2s ease-in-out infinite',
-  minor:     'svgPulseGold 2s ease-in-out infinite',
-  doubtful:  'svgPulsePurple 2s ease-in-out infinite',
-  recovered: 'none',
-}
 
 // ─── Size presets ───────────────────────────────────────────────────────────
 
 const SIZE_PRESETS = {
-  mini:  { figW: 40, figH: 70, gap: 4, dotR: 3.5, fontSize: 0, showLabels: false },
-  small: { figW: 120, figH: 220, gap: 16, dotR: 7, fontSize: 9, showLabels: true },
-  large: { figW: 160, figH: 290, gap: 24, dotR: 9, fontSize: 11, showLabels: true },
+  mini:  { figW: 40, figH: 70, gap: 4, dotR: 5, fontSize: 0, showLabels: false },
+  small: { figW: 120, figH: 220, gap: 16, dotR: 9, fontSize: 9, showLabels: true },
+  large: { figW: 160, figH: 290, gap: 24, dotR: 11, fontSize: 11, showLabels: true },
 }
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
@@ -380,13 +348,30 @@ function BodyFigure({ side, injuries, preset, highlightPlayer, onHover }: Figure
     return coords && coords[side] !== null
   })
 
+  // Collect unique severities for SVG filter defs
+  const activeSeverities = [...new Set(dots.map(d => d.severity))].filter(s => SEVERITY_CONFIG[s].pulse)
+
   // Offset overlapping dots in the same zone
   const zoneCount: Record<string, number> = {}
 
   return (
     <svg width={figW} height={figH} viewBox={`0 0 ${figW} ${figH}`} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        {activeSeverities.map(sev => (
+          <filter key={sev} id={`glow-${sev}-${side}`} x="-80%" y="-80%" width="260%" height="260%">
+            <feFlood floodColor={SEVERITY_CONFIG[sev].color} floodOpacity="0.6" result="color" />
+            <feComposite in="color" in2="SourceGraphic" operator="in" result="colored" />
+            <feGaussianBlur in="colored" stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        ))}
+      </defs>
       <g transform={`scale(${sx}, ${sy})`}>
-        <path d={path} fill="none" stroke="#CBD5E1" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke="#E2E8F0" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
       </g>
       {dots.map((inj, i) => {
         const coords = ZONE_COORDS[inj.zone][side]!
@@ -403,19 +388,20 @@ function BodyFigure({ side, injuries, preset, highlightPlayer, onHover }: Figure
 
         return (
           <g key={`${inj.playerName}-${inj.zone}-${i}`}>
-            {/* Glow circle behind */}
+            {/* Pulsing glow ring behind the dot */}
             {sev.pulse && !dimmed && (
-              <circle cx={cx} cy={cy} r={r + 3} fill={sev.color} opacity={0.2}
-                style={{ animation: PULSE_ANIM[inj.severity] }} />
+              <circle cx={cx} cy={cy} r={r + 5} fill={sev.color} opacity={0.35}
+                style={{ animation: 'svgGlowPulse 2s ease-in-out infinite' }} />
             )}
             <circle
               cx={cx} cy={cy} r={r}
               fill={sev.color}
-              opacity={dimmed ? 0.2 : 0.9}
+              opacity={dimmed ? 0.2 : 0.95}
+              filter={sev.pulse && !dimmed ? `url(#glow-${inj.severity}-${side})` : undefined}
               style={{
                 cursor: 'pointer',
                 transition: 'opacity 0.3s',
-                ...(sev.pulse && !dimmed ? { animation: PULSE_ANIM[inj.severity] } : {}),
+                ...(sev.pulse && !dimmed ? { animation: 'svgDotPulse 2s ease-in-out infinite' } : {}),
               }}
               onMouseEnter={e => onHover(inj, e)}
               onMouseLeave={() => onHover(null, {} as React.MouseEvent)}
