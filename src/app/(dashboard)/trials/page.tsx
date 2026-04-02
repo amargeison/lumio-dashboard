@@ -84,21 +84,14 @@ export default function TrialsPage() {
   if (!hasData) return (
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="trials" />}
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.1)' }}>
-          <FlaskConical size={28} style={{ color: '#0D9488' }} />
-        </div>
-        <h2 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>No trial data yet</h2>
-        <p className="text-sm text-center max-w-md mb-6" style={{ color: '#6B7280' }}>Track your trial signups, conversion rates, and time-to-value across your trial pipeline.</p>
-        <button onClick={() => {
-          const ALL_PAGES = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','accounts','support','success','trials','operations','it']
-          ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
-          localStorage.setItem('lumio_demo_active', 'true')
-          window.location.reload()
-        }} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-          Load Demo Data
-        </button>
-      </div>
+      <DashboardEmptyState pageKey="trials"
+        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your trials data` : 'No trial data yet'}
+        description="Track your trial signups, conversion rates, and time-to-value across your trial pipeline."
+        uploads={[
+          { key: 'trials', label: 'Upload Trial Signups (CSV)' },
+          { key: 'onboarding', label: 'Upload Onboarding Data (CSV)' },
+        ]}
+      />
     </>
   )
 

@@ -10,7 +10,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ReferenceLine,
 } from 'recharts'
-import { useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import DeptStaffHeader from '@/components/dashboard/DeptStaffHeader'
 import { getDeptStaff, getDeptLead } from '@/lib/staff/deptMatch'
 
@@ -680,12 +680,14 @@ export default function PartnersPage() {
   if (!hasData) return (
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="partners" />}
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.1)' }}><Users size={28} style={{ color: TEAL }} /></div>
-        <h2 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>No partner data yet</h2>
-        <p className="text-sm text-center max-w-md mb-6" style={{ color: '#6B7280' }}>Manage your partnerships, track referred revenue, and monitor deal pipelines.</p>
-        <button onClick={() => { ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','accounts','support','success','trials','operations','it'].forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true')); localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: TEAL, color: '#F9FAFB' }}>Load Demo Data</button>
-      </div>
+      <DashboardEmptyState pageKey="partners"
+        title="No partner data yet"
+        description="Manage your partnerships, track referred revenue, and monitor deal pipelines across all your partner relationships."
+        uploads={[
+          { key: 'partners', label: 'Upload Partner Data (CSV)' },
+          { key: 'deals', label: 'Upload Partner Deals (CSV)' },
+        ]}
+      />
     </>
   )
 
