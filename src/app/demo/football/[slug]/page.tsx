@@ -35,7 +35,7 @@ type DeptId =
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
 
-type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
+type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff' | 'team-info'
 
 type SidebarSection = null | 'Departments' | 'Tools'
 
@@ -707,6 +707,7 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
   { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'dont-miss', label: "Don't Miss", icon: '🔴' },
   { id: 'staff', label: 'Staff', icon: '👥' },
+  { id: 'team-info', label: 'Team Info', icon: '🃏' },
 ]
 
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
@@ -1319,6 +1320,49 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           </div>
         </div>
       )}
+    </div>
+  )
+
+  if (tab === 'team-info') return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+      <p className="text-xs" style={{ color: '#6B7280' }}>Player cards — first team squad</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { name: 'Marcus Reid', role: 'ST', overall: 87, color: '#C0392B', avatar: 'MR', stats: { PAC: 91, SHO: 88, PAS: 72, DRI: 84, DEF: 35, PHY: 79 } },
+          { name: 'Jamie Torres', role: 'CM', overall: 84, color: '#0D9488', avatar: 'JT', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 } },
+          { name: 'Kyle Brennan', role: 'CB', overall: 82, color: '#1B3060', avatar: 'KB', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 } },
+          { name: 'Sam Fletcher', role: 'GK', overall: 79, color: '#22C55E', avatar: 'SF', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 } },
+          { name: 'Dele Adeyemi', role: 'LW', overall: 85, color: '#7C3AED', avatar: 'DA', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 } },
+          { name: 'Ryan Cole', role: 'RB', overall: 81, color: '#EF4444', avatar: 'RC', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 } },
+        ].map(card => (
+          <div key={card.name} className="rounded-2xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${card.color}20 0%, #111318 60%)`, border: `1px solid ${card.color}40` }}>
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-3xl font-black" style={{ color: card.color }}>{card.overall}</p>
+                  <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>{card.role}</p>
+                </div>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: card.color + '25', color: card.color, border: `2px solid ${card.color}50` }}>{card.avatar}</div>
+              </div>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{card.name}</p>
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.role === 'ST' ? 'Striker' : card.role === 'CM' ? 'Midfielder' : card.role === 'CB' ? 'Centre Back' : card.role === 'GK' ? 'Goalkeeper' : card.role === 'LW' ? 'Left Wing' : 'Right Back'}</p>
+            </div>
+            <div className="grid grid-cols-6 gap-px mx-4 mb-3" style={{ backgroundColor: '#1F2937', borderRadius: 8, overflow: 'hidden' }}>
+              {Object.entries(card.stats).map(([key, val]) => (
+                <div key={key} className="flex flex-col items-center py-2" style={{ backgroundColor: '#0A0B10' }}>
+                  <span className="text-[10px] font-bold" style={{ color: val >= 85 ? '#22C55E' : val >= 70 ? '#F59E0B' : '#9CA3AF' }}>{val}</span>
+                  <span className="text-[8px] font-semibold" style={{ color: '#4B5563' }}>{key}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 px-4 pb-4">
+              <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: card.color + '20', color: card.color, border: `1px solid ${card.color}40` }}>Message</button>
+              <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Profile</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 

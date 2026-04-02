@@ -18,7 +18,7 @@ import {
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
-import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
+// ClearDemoBar replaced by inline banner in the right column
 import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -2586,7 +2586,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
-    localStorage.removeItem('lumio_demo_active')
+    localStorage.setItem('lumio_demo_active', 'false')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
@@ -3938,7 +3938,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           } else {
             // Force-clear stale demo flags for real businesses
             setDemoDataActive(false)
-            localStorage.removeItem('lumio_demo_active')
+            localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
@@ -3982,7 +3982,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
               if (data.business?.user_avatar_url) { setUserPhoto(data.business.user_avatar_url); localStorage.setItem('lumio_user_photo', data.business.user_avatar_url); if (data.business.owner_email) localStorage.setItem(`lumio_staff_photo_${data.business.owner_email}`, data.business.user_avatar_url) }
               if (data.business?.id) setBusinessId(data.business.id)
-              if (data.business?.demo_data_active) setDemoDataActive(true)
+              if (data.business?.demo_data_active) { setDemoDataActive(true); localStorage.setItem('lumio_demo_active', 'true') }
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
               const bizDismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
               if (bizOnboarded || bizDismissed) {
@@ -4187,7 +4187,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
               <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setDemoDataActive(false); localStorage.removeItem('lumio_demo_active') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+                <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
               </div>
             </div>
           )}
