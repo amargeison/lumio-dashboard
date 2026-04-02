@@ -274,7 +274,6 @@ const QUICK_ACTIONS = [
   { label: 'Student Report',      icon: '📄', color: '#0D9488', action: 'report' },
   { label: 'Class Report',        icon: '📊', color: '#0D9488', action: 'report' },
   { label: 'School Report',       icon: '🏫', color: '#0D9488', action: 'report' },
-  { label: 'Resources',           icon: '📚', color: '#7C3AED', action: 'resources' },
   { label: 'Add Teacher',         icon: '👤', color: '#3B82F6', action: 'add' },
   { label: 'Add Student',         icon: '➕', color: '#3B82F6', action: 'add' },
   { label: 'Test LanguageScreen', icon: '🧪', color: '#B45309', action: 'test' },
@@ -1831,24 +1830,24 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         onMouseLeave={handleMouseLeave}
       >
         {/* Logo area */}
-        <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          {!expanded && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#B45309', color: '#F9FAFB' }}>TT</div>
-          )}
-          {expanded && (
-            <>
-              <div className="flex-1 min-w-0">
-                <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                <p className="text-[10px] truncate mt-1" style={{ color: '#6B7280' }}>OxEd &amp; Assessment</p>
-              </div>
-              <button onClick={togglePin} className="flex items-center justify-center rounded p-1 shrink-0"
-                style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }}
-                title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
-                <Pin size={14} strokeWidth={2} />
-              </button>
-            </>
-          )}
-        </div>
+        {!expanded && (
+          <div className="shrink-0 flex items-center justify-center py-3" style={{ borderBottom: '1px solid #1E2E45', minHeight: 56 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E87722', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: 'white' }}>HE</div>
+          </div>
+        )}
+        {expanded && (
+          <div className="shrink-0 flex items-center gap-2" style={{ padding: '12px 16px', borderBottom: '1px solid #1E2E45' }}>
+            <div className="flex-1 min-w-0">
+              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, height: 'auto', maxHeight: 52, objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
+            </div>
+            <button onClick={togglePin} className="flex items-center justify-center rounded p-1 shrink-0"
+              style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }}
+              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <Pin size={14} strokeWidth={2} />
+            </button>
+          </div>
+        )}
 
         {/* School info */}
         {expanded && (
@@ -1907,10 +1906,10 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       {/* Mobile sidebar */}
       {mobileOpen && (
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
-          <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex shrink-0 items-center gap-2.5" style={{ padding: '12px 16px', borderBottom: '1px solid #1E2E45' }}>
             <div className="flex-1 min-w-0">
-              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              <p className="text-[10px] truncate mt-1" style={{ color: '#6B7280' }}>OxEd &amp; Assessment</p>
+              <img src="/telted_rgb_logo.jpg" alt="TEL TED" style={{ width: '100%', maxWidth: 140, height: 'auto', maxHeight: 52, objectFit: 'contain', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <p style={{ fontSize: 10, color: '#8BA4C7', margin: '4px 0 0', letterSpacing: '0.04em' }}>OxEd &amp; Assessment</p>
             </div>
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
