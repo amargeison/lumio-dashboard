@@ -79,6 +79,7 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
     return () => { document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [])
 
+  const [demoActive, setDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const [mainSidebarOpen, setMainSidebarOpen] = useState(false)
   const sidebarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const slug = typeof window !== 'undefined' ? (localStorage.getItem('lumio_workspace_slug') || localStorage.getItem('lumio_slug') || '') : ''
@@ -142,6 +143,13 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
 
       <CRMSidebar />
       <main className="flex-1 overflow-x-hidden min-w-0" style={{ backgroundColor: '#0F1019' }}>
+        {/* Demo banner */}
+        {demoActive && (
+          <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+            <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span></div>
+            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); localStorage.removeItem('lumio-photo-frame'); setDemoActive(false); window.location.reload() }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+          </div>
+        )}
         {/* Avatar + bell row — top-right of CRM content */}
         <div className="flex items-center justify-end gap-3 px-6 pt-4 pb-2">
           <div ref={avatarRef} className="relative">

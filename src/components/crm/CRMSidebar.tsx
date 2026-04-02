@@ -14,6 +14,8 @@ import {
   Calendar,
   Settings,
   Building2,
+  Search,
+  UserSearch,
 } from 'lucide-react';
 
 interface CRMSidebarProps {
@@ -26,6 +28,8 @@ const BASE_NAV = [
   { label: 'Contacts', path: '/crm/contacts', icon: Users },
   { label: 'Companies', path: '/crm/companies', icon: Building2 },
   { label: 'Intelligence', path: '/crm/intelligence', icon: Sparkles, hasBadge: true },
+  { label: 'Company Finder', path: '/crm/companies#finder', icon: Search },
+  { label: 'Contact Finder', path: '/crm/contacts#finder', icon: UserSearch },
   { label: 'Reports', path: '/crm/reports', icon: BarChart2 },
 ];
 

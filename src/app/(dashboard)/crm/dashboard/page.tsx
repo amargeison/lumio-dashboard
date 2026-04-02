@@ -217,19 +217,50 @@ export default function CRMDashboardPage() {
     )
   }
 
-  // No workspace and resolution timed out — show empty state (skip if demo active)
+  // No workspace and resolution timed out — show proper empty state
   if (!workspaceId && wsResolved && !hasData && !isDemoActive) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
-          <p className="text-sm font-semibold mb-2" style={{ color: '#F1F3FA' }}>No workspace connected</p>
-          <p className="text-xs mb-4" style={{ color: '#6B7299' }}>Sign into a workspace to view your CRM dashboard, or enable demo mode to explore.</p>
+      <div className="flex flex-col items-center justify-center min-h-[65vh] px-6 relative">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(139,92,246,0.06) 0%, transparent 65%)' }} />
+        <div className="relative text-center max-w-lg">
+          <div className="text-5xl mb-4">📊</div>
+          <h1 className="text-2xl font-black mb-2" style={{ color: '#F1F3FA' }}>Welcome to Lumio CRM</h1>
+          <p className="text-sm mb-8" style={{ color: '#6B7299', lineHeight: 1.6 }}>Your AI-powered pipeline, contacts and revenue intelligence platform.</p>
+
+          <div className="space-y-3 mb-6">
+            <div className="flex gap-3">
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+                📤 Import Contacts (CSV)
+              </button>
+              <button className="px-4 py-3 rounded-xl text-xs" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#6B7299' }}>
+                📋 Template
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+                📤 Import Pipeline (CSV)
+              </button>
+              <button className="px-4 py-3 rounded-xl text-xs" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#6B7299' }}>
+                📋 Template
+              </button>
+            </div>
+            <button className="w-full px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+              🔗 Connect an Integration (HubSpot, Salesforce + more)
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px" style={{ background: '#2D3154' }} />
+            <span className="text-xs" style={{ color: '#6B7299' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#2D3154' }} />
+          </div>
+
           <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: '#8B5CF6', color: '#F1F3FA' }}
+            onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }}
+            className="px-6 py-3 rounded-xl text-sm font-bold"
+            style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', color: '#F1F3FA' }}
           >
-            Refresh
+            ✨ Explore with Demo Data
           </button>
         </div>
       </div>
