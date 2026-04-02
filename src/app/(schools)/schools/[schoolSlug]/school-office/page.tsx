@@ -160,8 +160,11 @@ export default function SchoolOfficePage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Absences, admissions, communications and trips — Oakridge Primary</p>
       </div>
 
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="school-office" portal="schools" />
+        <AIHighlights items={HIGHLIGHTS} />
+      </div>
 
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({
@@ -174,8 +177,6 @@ export default function SchoolOfficePage() {
           : a.label === 'Log Maintenance' ? () => setShowMaintenance(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
-
-      <DeptAISummary dept="school-office" portal="schools" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

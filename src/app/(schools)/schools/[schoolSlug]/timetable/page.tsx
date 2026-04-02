@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3 } from 'lucide-react'
+import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3, Sparkles } from 'lucide-react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -79,6 +79,35 @@ function findClashes(lessons: Lesson[]): { type: string; detail: string; lessons
 }
 
 const INPUT_S: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none', width: '100%' }
+
+const TIMETABLE_HIGHLIGHTS = [
+  '2 cover lessons needed tomorrow — Year 4 and Year 6',
+  'Room conflict: Hall double-booked Wednesday PM',
+  '1 supply booking confirmed for Thursday',
+  'No exam schedule clashes this week',
+  '3 timetable change requests pending approval',
+]
+
+function AIHighlights({ items }: { items: string[] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function TimetablePage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
@@ -201,7 +230,11 @@ export default function TimetablePage() {
         </div>
       </div>
 
-      <DeptAISummary dept="timetable" portal="schools" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="timetable" portal="schools" />
+        <AIHighlights items={TIMETABLE_HIGHLIGHTS} />
+      </div>
 
       {/* Quick Actions */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none">

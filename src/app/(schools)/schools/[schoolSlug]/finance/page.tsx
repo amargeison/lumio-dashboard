@@ -163,10 +163,11 @@ export default function FinancePage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Budget overview, invoice approval, grants and financial deadlines</p>
       </div>
 
-      <DeptAISummary dept="finance-school" portal="schools" />
-
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="finance-school" portal="schools" />
+        <AIHighlights items={HIGHLIGHTS} />
+      </div>
 
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({

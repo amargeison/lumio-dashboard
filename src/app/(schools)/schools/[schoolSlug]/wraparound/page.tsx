@@ -939,7 +939,33 @@ export default function WraparoundPage() {
         </p>
       </div>
 
-      <DeptAISummary dept="wraparound" portal="schools" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="wraparound" portal="schools" />
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+            <Sparkles size={14} style={{ color: '#0D9488' }} />
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+          </div>
+          <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+            {[
+              'Breakfast club attended by 22 of 28 registered pupils this morning (78.6%) — on track for DfE data return due 31 March.',
+              'After school club: 4 pupils still in club, 4 already collected. All staff:child ratios met. No incidents today.',
+              '2 families have overdue payments totalling £195 — S. Williams (£117, 3 weeks) and C. Osei (£78, 1 week). Automated reminders sent.',
+              'Mrs. Okafor has 3 outstanding statutory training requirements (first aid, safeguarding, food hygiene) — action before next session.',
+              'Easter HAF: 14 of 18 FSM-eligible pupils booked. 4 families not yet engaged — contact recommended before end of term.',
+              'Children\'s Wellbeing & Schools Bill: free breakfast clubs are now statutory from April 2026. This school is already an Early Adopter — national rollout now begins.',
+            ].map((item, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+                <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
         style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
@@ -947,31 +973,6 @@ export default function WraparoundPage() {
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
         <BarChart3 size={14} />Dept Insights
       </button>
-
-      {/* AI highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
-          <Sparkles size={14} style={{ color: '#0D9488' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Summary</span>
-          <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
-        </div>
-        <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
-          {[
-            'Breakfast club attended by 22 of 28 registered pupils this morning (78.6%) — on track for DfE data return due 31 March.',
-            'After school club: 4 pupils still in club, 4 already collected. All staff:child ratios met. No incidents today.',
-            '2 families have overdue payments totalling £195 — S. Williams (£117, 3 weeks) and C. Osei (£78, 1 week). Automated reminders sent.',
-            'Mrs. Okafor has 3 outstanding statutory training requirements (first aid, safeguarding, food hygiene) — action before next session.',
-            'Easter HAF: 14 of 18 FSM-eligible pupils booked. 4 families not yet engaged — contact recommended before end of term.',
-            'Children\'s Wellbeing & Schools Bill: free breakfast clubs are now statutory from April 2026. This school is already an Early Adopter — national rollout now begins.',
-          ].map((item, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Tabs */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect, useMemo } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3 } from 'lucide-react'
+import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3, Sparkles } from 'lucide-react'
 import { AddStudentModal, StudentNoteModal, BehaviourLogModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -659,6 +659,35 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: string }[] = [
 
 const YEARS = ['All Years', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6']
 
+const STUDENTS_HIGHLIGHTS = [
+  '3 students attendance below 90% — requires pastoral follow-up',
+  '2 new admissions this week — induction packs sent',
+  '1 exclusion pending review — governor meeting Thursday',
+  '4 pastoral concerns flagged by class teachers',
+  '6 achievement awards to present at assembly',
+]
+
+function AIHighlights({ items }: { items: string[] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function StudentsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
@@ -732,7 +761,11 @@ export default function StudentsPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>All pupils · Profiles, SEND, safeguarding, attendance and contacts</p>
       </div>
 
-      <DeptAISummary dept="students" portal="schools" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="students" portal="schools" />
+        <AIHighlights items={STUDENTS_HIGHLIGHTS} />
+      </div>
 
       <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
         style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}

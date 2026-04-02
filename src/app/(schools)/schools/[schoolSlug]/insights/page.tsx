@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell, ReferenceLine, AreaChart, Area,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+} from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -187,6 +192,186 @@ const mockData = {
       { area: 'Governor visit records', ready: true },
     ],
   },
+}
+
+// ─── Shared chart data ──────────────────────────────────────────────────────
+
+const TIP: React.CSSProperties = { backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }
+const COLORS = ['#0D9488', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#22C55E', '#EC4899', '#6366F1']
+
+const ATTENDANCE_WEEKLY = [
+  { w: 'W1', school: 95.1, national: 94.5 }, { w: 'W2', school: 94.8, national: 94.5 }, { w: 'W3', school: 93.2, national: 94.5 },
+  { w: 'W4', school: 94.6, national: 94.5 }, { w: 'W5', school: 95.3, national: 94.5 }, { w: 'W6', school: 93.8, national: 94.5 },
+  { w: 'W7', school: 94.1, national: 94.5 }, { w: 'W8', school: 95.0, national: 94.5 }, { w: 'W9', school: 94.7, national: 94.5 },
+  { w: 'W10', school: 93.5, national: 94.5 }, { w: 'W11', school: 94.4, national: 94.5 }, { w: 'W12', school: 94.2, national: 94.5 },
+]
+
+const PROGRESS_BY_YEAR = [
+  { year: 'Rec', above: 28, expected: 42, below: 30 }, { year: 'Y1', above: 32, expected: 38, below: 30 },
+  { year: 'Y2', above: 25, expected: 40, below: 35 }, { year: 'Y3', above: 35, expected: 37, below: 28 },
+  { year: 'Y4', above: 30, expected: 36, below: 34 }, { year: 'Y5', above: 33, expected: 35, below: 32 },
+  { year: 'Y6', above: 38, expected: 33, below: 29 },
+]
+
+const BUDGET_CATS = [
+  { cat: 'Teaching Staff', pct: 52, color: '#0D9488' }, { cat: 'Support Staff', pct: 22, color: '#3B82F6' },
+  { cat: 'Premises', pct: 11, color: '#8B5CF6' }, { cat: 'Resources', pct: 8, color: '#F59E0B' },
+  { cat: 'CPD', pct: 4, color: '#EC4899' }, { cat: 'Other', pct: 3, color: '#6B7280' },
+]
+
+const TIMELINE_EVENTS = [
+  { date: '8 Apr', event: 'Governor visit — safeguarding focus', type: 'governance' },
+  { date: '14 Apr', event: 'Year 6 SATs preparation week begins', type: 'academic' },
+  { date: '22 Apr', event: 'EHCP annual review — Pupil A', type: 'send' },
+  { date: '1 May', event: 'Pupil Premium strategy review deadline', type: 'pp' },
+  { date: '12 May', event: 'KS2 SATs week', type: 'academic' },
+  { date: '19 May', event: 'Staff wellbeing survey closes', type: 'staff' },
+  { date: '2 Jun', event: 'Possible Ofsted inspection window opens', type: 'ofsted' },
+  { date: '15 Jul', event: 'End of academic year', type: 'term' },
+]
+
+function AttendanceChart() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Attendance Trend (12 Weeks)</h4>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={ATTENDANCE_WEEKLY} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+          <XAxis dataKey="w" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <YAxis domain={[90, 98]} tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <Tooltip contentStyle={TIP} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line type="monotone" dataKey="school" name="School" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="monotone" dataKey="national" name="National Avg" stroke="#6B7280" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function ProgressChart() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Pupil Progress by Year Group</h4>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={PROGRESS_BY_YEAR} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+          <XAxis dataKey="year" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <Tooltip contentStyle={TIP} />
+          <Legend wrapperStyle={{ fontSize: 10 }} />
+          <Bar dataKey="above" name="Above Expected" stackId="a" fill="#22C55E" />
+          <Bar dataKey="expected" name="Expected" stackId="a" fill="#3B82F6" />
+          <Bar dataKey="below" name="Below Expected" stackId="a" fill="#EF4444" radius={[3, 3, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function OfstedReadiness() {
+  const readyCount = mockData.ofsted.evidenceReadiness.filter(e => e.ready).length
+  const total = mockData.ofsted.evidenceReadiness.length
+  const pct = Math.round((readyCount / total) * 100)
+  return (
+    <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Ofsted Readiness</h4>
+      <div className="relative inline-flex items-center justify-center" style={{ width: 100, height: 100 }}>
+        <svg width={100} height={100} className="-rotate-90"><circle cx={50} cy={50} r={40} fill="none" stroke="#1F2937" strokeWidth={8} /><circle cx={50} cy={50} r={40} fill="none" stroke={pct >= 75 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#EF4444'} strokeWidth={8} strokeDasharray={`${(pct / 100) * 251} 251`} strokeLinecap="round" /></svg>
+        <span className="absolute text-xl font-black" style={{ color: '#F9FAFB' }}>{pct}%</span>
+      </div>
+      <p className="text-xs mt-2" style={{ color: '#6B7280' }}>{readyCount}/{total} evidence areas ready</p>
+    </div>
+  )
+}
+
+function SENDonut() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>SEND by Need Type</h4>
+      <ResponsiveContainer width="100%" height={160}>
+        <PieChart><Pie data={mockData.sen.byNeed} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="count" label={({ type, count }: any) => `${type}: ${count}`}>
+          {mockData.sen.byNeed.map((d, i) => <Cell key={i} fill={d.color} />)}
+        </Pie><Tooltip contentStyle={TIP} /></PieChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function BudgetBars() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Budget Utilisation</h4>
+      <div className="space-y-2">
+        {BUDGET_CATS.map(b => (
+          <div key={b.cat}>
+            <div className="flex justify-between text-[10px] mb-0.5"><span style={{ color: '#9CA3AF' }}>{b.cat}</span><span style={{ color: '#F9FAFB' }}>{b.pct}%</span></div>
+            <div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${b.pct}%`, backgroundColor: b.color }} /></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AlertsPanel({ alerts }: { alerts: { text: string; urgency: 'high' | 'medium' | 'low' }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Alerts & Actions</h4>
+      <div className="space-y-2">
+        {alerts.map((a, i) => (
+          <div key={i} className="flex items-start gap-2 py-1.5" style={{ borderBottom: i < alerts.length - 1 ? '1px solid #1F293740' : 'none' }}>
+            <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: a.urgency === 'high' ? '#EF4444' : a.urgency === 'medium' ? '#F59E0B' : '#22C55E' }} />
+            <p className="text-xs" style={{ color: '#D1D5DB' }}>{a.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TimelinePanel() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Key Dates</h4>
+      <div className="space-y-2">
+        {TIMELINE_EVENTS.map((e, i) => (
+          <div key={i} className="flex items-center gap-3 py-1.5" style={{ borderBottom: i < TIMELINE_EVENTS.length - 1 ? '1px solid #1F293740' : 'none' }}>
+            <span className="text-xs font-bold w-12 flex-shrink-0" style={{ color: '#0D9488' }}>{e.date}</span>
+            <p className="text-xs" style={{ color: '#D1D5DB' }}>{e.event}</p>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{e.type}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function BenchmarkTable() {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Benchmarking — School vs National vs Similar Schools</h4></div>
+      <table className="w-full text-xs">
+        <thead><tr style={{ backgroundColor: '#0D0E14' }}>{['Metric', 'School', 'National', 'Similar', 'Gap'].map(h => <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[
+          { metric: 'Attendance', school: '94.2%', national: '94.5%', similar: '94.1%', gap: '-0.3%' },
+          { metric: 'KS2 Combined', school: '62%', national: '65%', similar: '63%', gap: '-3%' },
+          { metric: 'Phonics Pass', school: '78%', national: '79%', similar: '77%', gap: '-1%' },
+          { metric: 'SEND %', school: '26.2%', national: '20%', similar: '22%', gap: '+6.2%' },
+          { metric: 'PP Gap', school: '14%', national: '18%', similar: '16%', gap: '-4%' },
+          { metric: 'Staff Absence', school: '4.2%', national: '5.1%', similar: '4.8%', gap: '-0.9%' },
+        ].map((r, i) => (
+          <tr key={i} style={{ borderBottom: '1px solid #1F293740' }}>
+            <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{r.metric}</td>
+            <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{r.school}</td>
+            <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{r.national}</td>
+            <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{r.similar}</td>
+            <td className="px-3 py-2.5 font-bold" style={{ color: r.gap.startsWith('+') ? '#F59E0B' : '#22C55E' }}>{r.gap}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
 }
 
 // ─── Helper components ────────────────────────────────────────────────────────
@@ -430,6 +615,32 @@ function TrustView() {
           </div>
         </div>
       </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AttendanceChart />
+        <ProgressChart />
+      </div>
+
+      {/* Three column row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <OfstedReadiness />
+        <SENDonut />
+        <BudgetBars />
+      </div>
+
+      <BenchmarkTable />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Riverside Academy attendance at 91.4% — below national average for 3 consecutive weeks', urgency: 'high' },
+          { text: 'Riverside Academy rated Requires Improvement — support plan due', urgency: 'high' },
+          { text: '3 EHCP annual reviews overdue across trust', urgency: 'medium' },
+          { text: 'Trust-wide SEND CPD plan not yet agreed — deadline May', urgency: 'medium' },
+          { text: 'Governor safeguarding visit scheduled 8 Apr', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -532,6 +743,27 @@ function HeadteacherView() {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AttendanceChart />
+        <ProgressChart />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <OfstedReadiness />
+        <SENDonut />
+        <BudgetBars />
+      </div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Year 6 attendance dipped to 91.8% — SATs window approaching', urgency: 'high' },
+          { text: 'DBS check renewal overdue for 1 staff member', urgency: 'high' },
+          { text: 'Parent satisfaction survey results due — 72% response rate so far', urgency: 'medium' },
+          { text: '2 exclusions this term — review behaviour policy effectiveness', urgency: 'medium' },
+          { text: 'Staff wellbeing score 7.4/10 — above national average', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -633,6 +865,17 @@ function HeadOfYearView() {
           </table>
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><OfstedReadiness /><SENDonut /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Year 5 attendance below 94% target for 2 weeks', urgency: 'high' },
+          { text: '3 pastoral concern logs open — follow-up due', urgency: 'medium' },
+          { text: 'Rewards ratio 3:1 positive — target is 5:1', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -716,6 +959,16 @@ function TeacherView() {
             <CheckItem key={t.task} label={t.task} done={t.done} />
           ))}
         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: '4 assessments overdue for marking — Year 3 writing', urgency: 'high' },
+          { text: 'CPD session on differentiation scheduled Thursday', urgency: 'low' },
+          { text: 'Marking workload above 12 hrs/week — review policy', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
       </div>
     </div>
   )
@@ -1388,6 +1641,18 @@ function SENView() {
 
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><SENDonut /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'EHCP annual review overdue — Pupil A (Y4)', urgency: 'high' },
+          { text: 'CAMHS referral awaiting 8 weeks — Pupil B (Y2)', urgency: 'high' },
+          { text: 'Transition plan not started — Pupil C (Y6)', urgency: 'high' },
+          { text: 'ISP review overdue 2 weeks — Pupil D (Y5)', urgency: 'medium' },
+          { text: 'SEND budget 76% committed — review remaining allocation', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -1921,6 +2186,18 @@ function SafeguardingView() {
 
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Open case — neglect concern — DSL review required today', urgency: 'high' },
+          { text: 'LA referral for Pupil X — outcome pending', urgency: 'high' },
+          { text: 'DBS renewal due for 2 staff members this month', urgency: 'medium' },
+          { text: 'Safer recruitment training — 1 governor outstanding', urgency: 'medium' },
+          { text: 'SCR last checked 20 Jan — next check due', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -2004,6 +2281,17 @@ function PupilPremiumView() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><ProgressChart /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'PP attainment gap narrowed to 14% — was 17% last year', urgency: 'low' },
+          { text: 'PP strategy review due by 1 May — draft incomplete', urgency: 'high' },
+          { text: '£5,160 PP funding remaining — allocate before term end', urgency: 'medium' },
+          { text: 'Ofsted evidence log needs PP impact section updating', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
       </div>
     </div>
   )
@@ -2111,6 +2399,19 @@ function InspectionsView() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><OfstedReadiness /><SENDonut /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Attendance improvement plan not yet complete — evidence gap', urgency: 'high' },
+          { text: 'Disadvantaged gap action plan missing — critical for inspection', urgency: 'high' },
+          { text: 'Inspection window opens June 2026 — 60 days to prepare', urgency: 'medium' },
+          { text: 'Quality of Education self-assessment due for update', urgency: 'medium' },
+          { text: '6/8 evidence areas ready — 2 outstanding', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
       </div>
     </div>
   )

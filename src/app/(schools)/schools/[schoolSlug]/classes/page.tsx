@@ -1,6 +1,35 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { Sparkles, ClipboardList, UserPlus, Eye, Calendar, BarChart3 } from 'lucide-react'
+
+const CLASSES_HIGHLIGHTS = [
+  '2 classes without updated cover plans',
+  '1 set change pending — Year 3 Maths',
+  '4 intervention groups currently active',
+  'Year 6 exam group flagged for additional support',
+  '3 new starters allocated to classes this term',
+]
+
+function AIHighlights({ items }: { items: string[] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -99,21 +128,10 @@ export default function ClassesPage() {
         <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Manage timetables, registers and class groups</p>
       </div>
 
-      <DeptAISummary dept="classes" portal="schools" />
-
-      {/* AI Highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-2 px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-          <Sparkles size={13} style={{ color: '#0D9488' }} />
-          <span className="text-xs font-semibold" style={{ color: '#0D9488' }}>AI Key Highlights</span>
-        </div>
-        <div className="px-5 py-3 space-y-2">
-          {HIGHLIGHTS.map((h, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}>
-              <span className="flex-shrink-0 mt-0.5" style={{ color: '#0D9488' }}>\u2022</span>{h}
-            </div>
-          ))}
-        </div>
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="classes" portal="schools" />
+        <AIHighlights items={CLASSES_HIGHLIGHTS} />
       </div>
 
       <QuickActions actions={ACTIONS} onAction={handleAction} />

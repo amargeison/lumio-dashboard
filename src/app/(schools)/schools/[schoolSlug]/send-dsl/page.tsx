@@ -154,7 +154,11 @@ export default function SendDslPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Safeguarding, SEND register, EHCP reviews and attendance concerns</p>
       </div>
 
-      <DeptAISummary dept="send-dsl" portal="schools" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="send-dsl" portal="schools" />
+        <AIHighlights items={HIGHLIGHTS} />
+      </div>
 
       {/* White Paper link */}
       <Link href={`/schools/${slug}/send-dsl/white-paper`}
@@ -171,9 +175,6 @@ export default function SendDslPage() {
         </div>
         <span className="shrink-0 text-sm font-semibold" style={{ color: '#0D9488' }}>Open →</span>
       </Link>
-
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
 
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({

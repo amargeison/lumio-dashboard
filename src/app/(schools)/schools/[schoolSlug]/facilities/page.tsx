@@ -133,14 +133,10 @@ export default function FacilitiesPage() {
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Maintenance jobs, compliance certificates, room bookings and contractor access</p>
       </div>
 
-      <DeptAISummary dept="facilities" portal="schools" />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Open Jobs" value="4" sub="Maintenance" color="#F59E0B" />
-        <StatCard label="Compliance Due" value="2" sub="Certs expiring" color="#EF4444" />
-        <StatCard label="Room Bookings Today" value="8" sub="Hall & classrooms" />
-        <StatCard label="Last Fire Drill" value="✓" sub="14 Mar 2026" color="#22C55E" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="facilities" portal="schools" />
+        <AIHighlights items={aiHighlights} />
       </div>
 
       {/* Quick Actions */}
@@ -153,8 +149,13 @@ export default function FacilitiesPage() {
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
       ]} />
 
-      {/* AI Highlights */}
-      <AIHighlights items={aiHighlights} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Open Jobs" value="4" sub="Maintenance" color="#F59E0B" />
+        <StatCard label="Compliance Due" value="2" sub="Certs expiring" color="#EF4444" />
+        <StatCard label="Room Bookings Today" value="8" sub="Hall & classrooms" />
+        <StatCard label="Last Fire Drill" value="✓" sub="14 Mar 2026" color="#22C55E" />
+      </div>
 
       {/* Open Maintenance Jobs */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
