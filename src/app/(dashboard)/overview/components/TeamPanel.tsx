@@ -112,15 +112,59 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
         ))}
       </div>
 
-      {/* ═══ EMPTY STATE — no team data ═══ */}
+      {/* ═══ PREVIEW OVERLAY — shown when no real team data ═══ */}
       {team.length === 0 && subTab !== 'company' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16, textAlign: 'center', padding: 40 }}>
-          <div style={{ fontSize: 48 }}>👥</div>
-          <h3 style={{ color: '#F9FAFB', fontSize: 18, fontWeight: 700, margin: 0 }}>No team members yet</h3>
-          <p style={{ color: '#9CA3AF', fontSize: 14, maxWidth: 360, lineHeight: 1.6, margin: 0 }}>Add your team by importing a CSV or inviting staff members in Settings. Your team will appear here once added.</p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Import Team CSV</button>
-            <button style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Invite Members</button>
+        <div className="relative">
+          {/* Ghost preview at reduced opacity */}
+          <div style={{ opacity: 0.35, filter: 'blur(1px)', pointerEvents: 'none', userSelect: 'none' }}>
+            {subTab === 'today' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {TEAM.slice(0, 6).map(m => {
+                  const sc = SC[m.status]
+                  return (
+                    <div key={m.id} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start gap-3">
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: sc.dot, borderColor: '#111318' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-sm" style={{ color: '#E5E7EB' }}>{m.name}</span>
+                          <p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.department}</p>
+                          <span className="text-xs" style={{ color: sc.color }}>{sc.label}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {subTab === 'orgchart' && (
+              <div className="space-y-4">
+                <div className="flex justify-center"><div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', width: 180 }}><div className="w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2" style={{ backgroundColor: '#0D948815', color: '#0D9488' }}>JH</div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>James Hartley</p><p className="text-xs" style={{ color: '#6B7280' }}>CEO & Founder</p></div></div>
+                <div className="flex justify-center gap-3">{TEAM.filter(m => m.level === 2).slice(0, 4).map(m => <div key={m.id} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', width: 140 }}><div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div><p className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{m.name}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</p></div>)}</div>
+              </div>
+            )}
+            {subTab === 'cards' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {DEMO_STAFF.map((s, i) => (
+                  <div key={i} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between mb-3"><div><p className="text-2xl font-black" style={{ color: '#6B7280' }}>93</p><p className="text-[10px]" style={{ color: '#4B5563' }}>CEO</p></div><div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{s.first_name?.[0]}{s.last_name?.[0]}</div></div>
+                    <p className="text-sm font-bold" style={{ color: '#9CA3AF' }}>{s.first_name} {s.last_name}</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{s.job_title}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Overlay banner */}
+          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+            <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', maxWidth: 400, border: '1px solid #1F2937' }}>
+              <p className="text-2xl mb-2">👀</p>
+              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>This is how your team will look</h3>
+              <p className="text-xs mb-4" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>Import your team to unlock your org chart, staff cards and team intelligence</p>
+              <a href="/settings" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+            </div>
           </div>
         </div>
       )}
