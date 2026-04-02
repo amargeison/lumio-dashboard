@@ -2584,6 +2584,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_staff_ids')
     localStorage.removeItem('lumio_staff_profiles')
     localStorage.removeItem('lumio_demo_active')
+    localStorage.removeItem('lumio-photo-frame')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
@@ -2605,6 +2606,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     setLoading(true)
     await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
     localStorage.setItem('lumio_demo_active', 'true')
+    localStorage.setItem('lumio-photo-frame', JSON.stringify([
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+    ]))
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
     allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     onDemoToggle(true)

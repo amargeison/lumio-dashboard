@@ -24,6 +24,7 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
+    localStorage.removeItem('lumio-photo-frame')
     invalidateWorkspaceCache()
     window.location.reload()
   }

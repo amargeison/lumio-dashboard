@@ -230,6 +230,10 @@ export function DashboardEmptyState({
     // Set localStorage flags for immediate UI update
     ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     localStorage.setItem('lumio_demo_active', 'true')
+    localStorage.setItem('lumio-photo-frame', JSON.stringify([
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+    ]))
 
     invalidateWorkspaceCache()
     window.location.reload()
