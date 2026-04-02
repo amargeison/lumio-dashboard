@@ -68,9 +68,9 @@ function processTelTedCommand(transcript: string): { handled: boolean; response:
     return { handled: true, response }
   }
 
-  // COMMAND 4 — Andrew Mendoza easter egg
-  if (/andrew\s*mendoza|what\s*do\s*you\s*think\s*of\s*andrew|tell\s*me\s*about\s*andrew|who\s*is\s*andrew/i.test(t)) {
-    const response = "Andrew Mendoza... hmm, let me think. I know a few Andrews. If you mean Andrew Mendoza, then I only have good words. Top man. Knows his stuff. Good looking too — I probably should stop there in case he's listening. I'm starting to blush."
+  // COMMAND 4 — James Hartley easter egg
+  if (/james\s*hartley|what\s*do\s*you\s*think\s*of\s*james|tell\s*me\s*about\s*james|who\s*is\s*james/i.test(t)) {
+    const response = "James Hartley... hmm, let me think. I know a few Andrews. If you mean James Hartley, then I only have good words. Top man. Knows his stuff. Good looking too — I probably should stop there in case he's listening. I'm starting to blush."
     return { handled: true, response, isAndrew: true }
   }
 
@@ -611,16 +611,16 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
       // Speak — Andrew gets the chunked pause effect
       if (telted.isAndrew) {
         const andrewLines = [
-          "Andrew Mendoza...",
-          "Hmm, let me think. I know a few Andrews.",
-          "If you mean Andrew Mendoza, then I only have good words.",
+          "James Hartley...",
+          "Hmm, let me think.",
+          "If you mean James Hartley, then I only have good words.",
           "Top man.",
           "Knows his stuff.",
           "Good looking too —",
           "I probably should stop there in case he is listening.",
           "I am starting to blush.",
         ]
-        // 600ms pause before "If you mean Andrew Mendoza" (index 2), 150ms elsewhere
+        // 600ms pause before "If you mean James Hartley" (index 2), 150ms elsewhere
         const delays = [150, 150, 600, 150, 150, 150, 150, 150]
         window.speechSynthesis.cancel()
         setTimeout(() => speakChunked(andrewLines, 0, delays), 100)

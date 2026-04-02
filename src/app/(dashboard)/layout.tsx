@@ -20,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [demoActive, setDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const avatarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -88,6 +89,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="min-h-screen transition-[padding] duration-250"
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
+        {/* Demo banner */}
+        {demoActive && (
+          <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+            <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setDemoActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Clear Demo Data</button>
+            </div>
+          </div>
+        )}
         {/* Top header row: avatar + bell */}
         <div className="flex items-center justify-end gap-3 px-4 py-2 md:px-6">
           <div ref={avatarRef} className="relative">

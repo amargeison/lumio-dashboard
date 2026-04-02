@@ -21,7 +21,7 @@ const SC = {
 const DEPT_COLORS: Record<string, string> = { Executive: '#0D9488', Sales: '#8B5CF6', Marketing: '#F59E0B', Finance: '#3B82F6', HR: '#22C55E', IT: '#EF4444' }
 
 const TEAM: TeamMember[] = [
-  { id: '0', name: 'Arron Margeison', role: 'CEO & Founder', department: 'Executive', avatar: 'AM', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'arron@lumiocms.com', level: 1 },
+  { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Executive', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
   { id: '1', name: 'Sarah Mitchell', role: 'Head of HR', department: 'HR', avatar: 'SM', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sarah@lumiocms.com', managerId: '0', level: 2 },
   { id: '2', name: 'Oliver Bennett', role: 'Head of Sales', department: 'Sales', avatar: 'OB', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'oliver@lumiocms.com', managerId: '0', level: 2 },
   { id: '3', name: 'George Harrison', role: 'Head of Finance', department: 'Finance', avatar: 'GH', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'george@lumiocms.com', managerId: '0', level: 2 },
@@ -155,7 +155,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
           <div className="flex justify-center mb-8">
             <div onClick={() => setSelectedMember(TEAM[0])} className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #0D9488' }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>AM</div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Arron Margeison</p>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>James Hartley</p>
               <p className="text-[10px]" style={{ color: '#0D9488' }}>CEO & Founder</p>
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['CEO', 'Arron Margeison'], ['HR', 'Sarah Mitchell'], ['IT Support', 'Alexander Jones'], ['Finance', 'George Harrison']].map(([r, n]) => (
+              {[['CEO', 'James Hartley'], ['HR', 'Sarah Mitchell'], ['IT Support', 'Alexander Jones'], ['Finance', 'George Harrison']].map(([r, n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>

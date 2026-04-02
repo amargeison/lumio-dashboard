@@ -35,7 +35,7 @@ export function buildDemoData(businessId: string) {
   // ── Employees (10) ──────────────────────────────────────────────────────
 
   const employees = [
-    { business_id: businessId, name: 'Arron Margeison', email: 'arron@lumiodemo.co.uk', role: 'CEO & Founder', department: 'Executive', salary: 85000, start_date: '2024-01-15', leave_balance_days: 28, status: 'active', avatar: 'AM', is_demo: true },
+    { business_id: businessId, name: 'James Hartley', email: 'james@lumiodemo.com', role: 'CEO & Founder', department: 'Executive', salary: 85000, start_date: '2024-01-15', leave_balance_days: 28, status: 'active', avatar: 'AM', is_demo: true },
     { business_id: businessId, name: 'Sarah Mitchell', email: 'sarah@lumiodemo.co.uk', role: 'Head of HR', department: 'HR', salary: 62000, start_date: '2024-03-01', leave_balance_days: 25, status: 'active', avatar: 'SM', is_demo: true },
     { business_id: businessId, name: 'Oliver Bennett', email: 'oliver@lumiodemo.co.uk', role: 'Head of Sales', department: 'Sales', salary: 65000, start_date: '2024-02-15', leave_balance_days: 22, status: 'active', avatar: 'OB', is_demo: true },
     { business_id: businessId, name: 'Charlotte Davies', email: 'charlotte@lumiodemo.co.uk', role: 'Senior Account Executive', department: 'Sales', salary: 48000, start_date: '2024-06-01', leave_balance_days: 25, status: 'active', avatar: 'CD', is_demo: true },
@@ -82,11 +82,11 @@ export function buildDemoData(businessId: string) {
 
   const tasks = [
     { business_id: businessId, title: 'Review and respond to Bramble Hill invoice dispute', description: 'They queried the September charge. Email from George Harrison at 11pm.', due: '12:00', priority: 'critical', category: 'Finance', source: 'lumio', assignee: 'George Harrison', done: false, overdue: false, is_demo: true },
-    { business_id: businessId, title: 'Finalise testing guide sign-off', description: 'Phase 5 review due today. 13 flagged gaps to resolve.', due: '14:00', priority: 'high', category: 'Operations', source: 'notion', assignee: 'Arron Margeison', done: false, overdue: false, is_demo: true },
-    { business_id: businessId, title: 'Send investor deck to Marcus', description: 'Promised by end of day.', due: '17:00', priority: 'high', category: 'Finance', source: 'manual', assignee: 'Arron Margeison', done: false, overdue: false, is_demo: true },
+    { business_id: businessId, title: 'Finalise testing guide sign-off', description: 'Phase 5 review due today. 13 flagged gaps to resolve.', due: '14:00', priority: 'high', category: 'Operations', source: 'notion', assignee: 'James Hartley', done: false, overdue: false, is_demo: true },
+    { business_id: businessId, title: 'Send investor deck to Marcus', description: 'Promised by end of day.', due: '17:00', priority: 'high', category: 'Finance', source: 'manual', assignee: 'James Hartley', done: false, overdue: false, is_demo: true },
     { business_id: businessId, title: 'Approve payroll pack for review', description: 'HR-07 generated the pack. Needs sign-off before Friday.', due: '16:00', priority: 'medium', category: 'HR', source: 'workflow', assignee: 'Sarah Mitchell', done: false, overdue: false, linked_workflow: 'HR-07', is_demo: true },
     { business_id: businessId, title: 'Update Calendly link in nav buttons', description: 'Currently showing placeholder URL.', due: 'Any time', priority: 'medium', category: 'Tech', source: 'manual', assignee: 'Priya Kapoor', done: false, overdue: false, is_demo: true },
-    { business_id: businessId, title: 'Register Lumio Ltd at Companies House', description: 'Required before signing any customer contracts. £12 online, instant.', due: 'Any time', priority: 'high', category: 'Legal', source: 'manual', assignee: 'Arron Margeison', done: false, overdue: false, is_demo: true },
+    { business_id: businessId, title: 'Register Lumio Ltd at Companies House', description: 'Required before signing any customer contracts. £12 online, instant.', due: 'Any time', priority: 'high', category: 'Legal', source: 'manual', assignee: 'James Hartley', done: false, overdue: false, is_demo: true },
   ]
 
   // ── Compliance logs (3) ─────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export function buildDemoData(businessId: string) {
     { business_id: businessId, first_name: 'Tom', last_name: 'Ashworth', job_title: 'Marketing Executive', department: 'Marketing', start_date: '2025-03-17', manager: 'Sophia Brown', equipment: ['MacBook Air'], software: ['HubSpot', 'Canva', 'Slack'], status: 'In Progress', is_demo: true },
     { business_id: businessId, first_name: 'James', last_name: 'Okafor', job_title: 'Sales Development Rep', department: 'Sales', start_date: '2025-03-03', manager: 'Oliver Bennett', equipment: ['MacBook Air', 'Headset'], software: ['HubSpot', 'Slack', 'Zoom'], status: 'In Progress', is_demo: true },
     { business_id: businessId, first_name: 'Fatima', last_name: 'Al-Hassan', job_title: 'Data Analyst', department: 'Engineering', start_date: isoDate(addDays(now, 25)), manager: 'Alexander Jones', equipment: ['MacBook Pro', 'Monitor'], software: ['Python', 'Jupyter', 'Slack'], status: 'Pending', is_demo: true },
-    { business_id: businessId, first_name: 'Liam', last_name: 'Brennan', job_title: 'Head of Partnerships', department: 'Sales', start_date: isoDate(addDays(now, 11)), manager: 'Arron Margeison', equipment: ['MacBook Pro'], software: ['HubSpot', 'Slack', 'Notion'], status: 'Pending', is_demo: true },
+    { business_id: businessId, first_name: 'Liam', last_name: 'Brennan', job_title: 'Head of Partnerships', department: 'Sales', start_date: isoDate(addDays(now, 11)), manager: 'James Hartley', equipment: ['MacBook Pro'], software: ['HubSpot', 'Slack', 'Notion'], status: 'Pending', is_demo: true },
   ]
 
   // ── HR leave requests ──────────────────────────────────────────────────
