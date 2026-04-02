@@ -1051,7 +1051,7 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
 }
 
 function TabContent({ tab }: { tab: OverviewTab }) {
-  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'>('today')
+  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'|'teaminfo'>('today')
   if (tab === 'today') return null // handled separately
 
   if (tab === 'quick-wins') return (
@@ -1169,7 +1169,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
     <div className="space-y-5">
       {/* Sub-tab pills */}
       <div className="flex gap-2">
-        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
+        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'teaminfo' as const, label: '🃏 Team Info' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
           <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
             style={{ backgroundColor: activeStaffTab === t.id ? '#C0392B' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
         ))}
@@ -1324,6 +1324,59 @@ function TabContent({ tab }: { tab: OverviewTab }) {
             <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming This Month</p>
             {[['🎂','Pete Morrison','Birthday 3 Apr'],['🎉','David Hughes','5 year club anniversary 8 Apr'],['🎂','Emma Clark','Birthday 22 Apr']].map(([icon,name,event]) => (
               <p key={name} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {name} — {event}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TEAM INFO (Player Cards) ═══ */}
+      {activeStaffTab === 'teaminfo' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
+              { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
+              { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
+              { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
+              { name: 'Dele Adeyemi', role: 'Left Wing', dept: 'First Team', overall: 85, initials: 'DA', color: '#7C3AED', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 }, id: 'OFC-005', date: '01/07/2025' },
+              { name: 'Ryan Cole', role: 'Right Back', dept: 'First Team', overall: 81, initials: 'RC', color: '#B91C1C', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 }, id: 'OFC-006', date: '01/07/2025' },
+              { name: 'Jamie Torres', role: 'Central Midfielder', dept: 'First Team', overall: 84, initials: 'JT', color: '#0EA5E9', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 }, id: 'OFC-007', date: '01/07/2025' },
+              { name: 'Liam Cross', role: 'Striker', dept: 'First Team', overall: 86, initials: 'LC', color: '#EA580C', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 }, id: 'OFC-008', date: '01/07/2025' },
+              { name: 'Priya Nair', role: 'Head of Medical', dept: 'Medical', overall: 91, initials: 'PN', color: '#EC4899', stats: { PAC: 61, SHO: 44, PAS: 82, DRI: 58, DEF: 77, PHY: 69 }, id: 'OFC-009', date: '01/07/2025' },
+            ].map(card => (
+              <div key={card.id} className="rounded-2xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${card.color}20 0%, #111318 60%)`, border: `1px solid ${card.color}40` }}>
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-3xl font-black" style={{ color: card.color }}>{card.overall}</p>
+                      <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>Overall</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${card.color}20`, color: card.color }}>{card.dept}</span>
+                      <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: card.color + '25', color: card.color, border: `2px solid ${card.color}50` }}>{card.initials}</div>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{card.name}</p>
+                  <p className="text-xs" style={{ color: card.color }}>{card.role}</p>
+                </div>
+                <div className="grid grid-cols-6 gap-px mx-4 mb-3" style={{ backgroundColor: '#1F2937', borderRadius: 8, overflow: 'hidden' }}>
+                  {Object.entries(card.stats).map(([key, val]) => (
+                    <div key={key} className="flex flex-col items-center py-2" style={{ backgroundColor: '#0A0B10' }}>
+                      <span className="text-[10px] font-bold" style={{ color: val >= 90 ? '#22C55E' : val >= 75 ? '#F59E0B' : '#9CA3AF' }}>{val}</span>
+                      <span className="text-[8px] font-semibold" style={{ color: '#4B5563' }}>{key}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between px-4 pb-3">
+                  <span className="text-[9px] font-mono" style={{ color: '#374151' }}>{card.id}</span>
+                  <span className="text-[9px]" style={{ color: '#374151' }}>{card.date}</span>
+                </div>
+                <div className="flex gap-2 px-4 pb-4">
+                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: card.color + '20', color: card.color, border: `1px solid ${card.color}40` }}>Message</button>
+                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Profile</button>
+                </div>
+              </div>
             ))}
           </div>
         </div>
