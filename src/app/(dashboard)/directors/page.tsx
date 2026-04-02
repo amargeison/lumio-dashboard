@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { PageShell } from '@/components/page-ui'
 import ExportPdfButton from '@/components/ExportPdfButton'
-import { useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, ReferenceLine,
@@ -221,12 +221,14 @@ export default function DirectorsSuite() {
   if (hasData === null) return null
   if (!hasData) return (
     <PageShell title="Directors Suite" subtitle="Board-level intelligence and strategic oversight">
-      <div className="flex flex-col items-center justify-center py-16 text-center max-w-lg mx-auto">
-        <div className="rounded-2xl flex items-center justify-center mb-5" style={{ width: 72, height: 72, backgroundColor: 'rgba(200,150,12,0.15)' }}><Crown size={32} style={{ color: G }} /></div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Add data to unlock Directors Suite</h2>
-        <p className="text-sm mb-6" style={{ color: '#6B7280' }}>Board-level intelligence, financial performance, risk register, and strategic planning — all in one place.</p>
-        <button onClick={() => { ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','accounts','support','success','trials','operations','it'].forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true')); localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#6D28D9', color: '#F9FAFB' }}>Explore with Demo Data</button>
-      </div>
+      <DashboardEmptyState pageKey="directors"
+        title="No board data yet"
+        description="Import board reports, financial performance and risk data to unlock Directors Suite intelligence."
+        uploads={[
+          { key: 'board', label: 'Upload Board Reports (CSV)' },
+          { key: 'finance', label: 'Upload Financial Data (CSV)' },
+        ]}
+      />
     </PageShell>
   )
 
