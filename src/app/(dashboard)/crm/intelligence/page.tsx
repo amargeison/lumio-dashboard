@@ -7,9 +7,9 @@ import ARIAInsightsPanel from '@/components/crm/ARIAInsightsPanel'
 import type { ARIAInsight, CRMContext } from '@/lib/crm/types'
 
 const DEMO_INSIGHTS: ARIAInsight[] = [
-  { id: 'i1', type: 'risk', title: 'Pipeline at Risk', description: 'Bramble Hill Trust deal (£55k) has been in Proposal stage for 8 days with no activity. Contact Oliver Bennett to progress.', score: 71, created_at: new Date().toISOString() },
-  { id: 'i2', type: 'opportunity', title: 'Best Time to Contact', description: 'Analysis of response patterns shows Tuesday/Wednesday 10-11am has 3x higher reply rate for education sector contacts.', score: 85, created_at: new Date().toISOString() },
-  { id: 'i3', type: 'recommendation', title: 'Deal Recommendations', description: 'Torchbearer Trust (£18k, 90% probability) should close this week. Schedule a final call with Charlotte Davies.', score: 95, created_at: new Date().toISOString() },
+  { id: 'i1', tenant_id: '', deal_id: 'd3', contact_id: null, type: 'warning', title: 'Pipeline at Risk', description: 'Torchbearer Trust deal (£55k) has been in Proposal stage for 8 days with no activity. Contact Ann Mehta to progress.', action_label: 'View Deal', deal_value: 55000, dismissed: false, created_at: new Date().toISOString() },
+  { id: 'i2', tenant_id: '', deal_id: null, contact_id: null, type: 'tip', title: 'Best Time to Contact', description: 'Analysis of response patterns shows Tuesday/Wednesday 10-11am has 3x higher reply rate for education sector contacts.', action_label: null, deal_value: null, dismissed: false, created_at: new Date().toISOString() },
+  { id: 'i3', tenant_id: '', deal_id: 'd8', contact_id: null, type: 'signal', title: 'Deal Recommendations', description: 'Helix Education (£18k, high momentum) should close this week. Schedule a final call with Priya Shah.', action_label: 'Schedule Call', deal_value: 18000, dismissed: false, created_at: new Date().toISOString() },
 ]
 
 export default function IntelligencePage() {
