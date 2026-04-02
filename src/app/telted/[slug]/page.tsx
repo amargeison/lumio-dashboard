@@ -1522,6 +1522,15 @@ function DontMissTab() {
 // MAIN PAGE COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 
+// ─── Dark theme override for NELI components ────────────────────────────────
+// Save original NELI theme values so we can restore on unmount
+const _originalT = {
+  bg: T.bg, card: T.card, border: T.border, text: T.text,
+  muted: T.muted, light: T.light, goldLight: T.goldLight,
+  greenBg: T.greenBg, amberBg: T.amberBg, redBg: T.redBg,
+  blueBg: T.blueBg, purpleBg: T.purpleBg,
+}
+
 export default function TelTedPortal({ params }: { params: Promise<{ slug: string }> }) {
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('today')
@@ -1540,11 +1549,44 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const [insightsSubTab, setInsightsSubTab] = useState<'school' | 'network'>('school')
   const [voiceToast, setVoiceToast] = useState<VoiceToastData | null>(null)
 
+  // Override NELI theme for dark mode — mutate T before render so NELI components pick up dark values
+  T.bg = '#07080F'; T.card = '#111318'; T.border = '#1F2937'
+  T.text = '#F9FAFB'; T.muted = '#9CA3AF'; T.light = '#1A1B23'
+  T.goldLight = 'rgba(200,150,12,0.15)'
+  T.greenBg = 'rgba(21,128,61,0.12)'; T.amberBg = 'rgba(180,83,9,0.12)'
+  T.redBg = 'rgba(185,28,28,0.12)'; T.blueBg = 'rgba(29,78,216,0.12)'
+  T.purpleBg = 'rgba(124,58,237,0.12)'
+
   const expanded = pinned || hovered
   const sidebarW = expanded ? EXPANDED_W : COLLAPSED_W
 
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
+
+    // CSS injection for hardcoded "white" backgrounds in NELI components
+    const styleId = 'telted-dark-override'
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style')
+      style.id = styleId
+      style.textContent = `
+        .telted-neli-dark [style*="background: white"],
+        .telted-neli-dark [style*="background:white"] {
+          background: #111318 !important;
+        }
+        .telted-neli-dark .recharts-cartesian-grid line { stroke: #1F2937 !important; }
+        .telted-neli-dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+          background: #111318 !important; border-color: #1F2937 !important;
+        }
+        .telted-neli-dark .recharts-default-tooltip .recharts-tooltip-label { color: #F9FAFB !important; }
+      `
+      document.head.appendChild(style)
+    }
+
+    // Restore original theme on unmount (in case user navigates to NELI portal)
+    return () => {
+      Object.assign(T, _originalT)
+      document.getElementById(styleId)?.remove()
+    }
   }, [])
 
   function togglePin() {
@@ -1872,7 +1914,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         </div>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="telted-neli-dark flex-1 overflow-y-auto p-4 md:p-6">
           {renderContent()}
         </main>
       </div>
