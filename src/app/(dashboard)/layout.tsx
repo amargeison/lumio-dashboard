@@ -85,11 +85,71 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Top-right: bell + avatar — fixed overlay matching Schools portal */}
+      <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
+        <button
+          onClick={() => setNotificationsOpen(o => !o)}
+          className="relative flex items-center justify-center rounded-full transition-colors"
+          style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
+          aria-label="Notifications"
+        >
+          <Bell size={16} strokeWidth={1.75} />
+          <span className="absolute rounded-full flex items-center justify-center" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
+        </button>
+        <div ref={avatarRef} className="relative">
+          <button
+            onClick={() => setAvatarOpen(o => !o)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80 overflow-hidden"
+            style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0, cursor: 'pointer' }}
+          >
+            {userPhoto ? (
+              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
+            ) : (
+              initials
+            )}
+          </button>
+          {avatarOpen && (
+            <div
+              className="absolute right-0 rounded-xl py-2 shadow-xl"
+              style={{ top: '100%', marginTop: 8, width: 220, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 100 }}
+            >
+              <div className="px-4 py-2" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
+                <p className="text-xs truncate" style={{ color: '#6B7280' }}>{userEmail || ''}</p>
+              </div>
+              <Link
+                href="/settings"
+                onClick={() => setAvatarOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
+                style={{ color: '#9CA3AF' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}
+              >
+                <SettingsIcon size={14} /> Settings
+              </Link>
+              <button
+                onClick={() => { localStorage.clear(); router.push('/login') }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
+                style={{ color: '#EF4444' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
+              >
+                <LogOut size={14} /> Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+
       <main
         className="min-h-screen transition-[padding] duration-250"
         style={{ backgroundColor: '#07080F', paddingLeft: pinned ? 200 : 48 }}
       >
-        {/* Demo banner */}
+        {/* Demo banner — first element, zero gap */}
         {demoActive && !demoDismissed && (
           <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, fontSize: 13, color: 'white' }}>
@@ -102,64 +162,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         )}
-        {/* Top-right: bell + avatar — fixed overlay matching Schools portal */}
-        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-          <button
-            onClick={() => setNotificationsOpen(o => !o)}
-            className="relative flex items-center justify-center rounded-full transition-colors"
-            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
-            aria-label="Notifications"
-          >
-            <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute rounded-full flex items-center justify-center" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
-          </button>
-          <div ref={avatarRef} className="relative">
-            <button
-              onClick={() => setAvatarOpen(o => !o)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80 overflow-hidden"
-              style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0, cursor: 'pointer' }}
-            >
-              {userPhoto ? (
-                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
-              ) : (
-                initials
-              )}
-            </button>
-            {avatarOpen && (
-              <div
-                className="absolute right-0 rounded-xl py-2 shadow-xl"
-                style={{ top: '100%', marginTop: 8, width: 220, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 100 }}
-              >
-                <div className="px-4 py-2" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
-                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{userEmail || ''}</p>
-                </div>
-                <Link
-                  href="/settings"
-                  onClick={() => setAvatarOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
-                  style={{ color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}
-                >
-                  <SettingsIcon size={14} /> Settings
-                </Link>
-                <button
-                  onClick={() => { localStorage.clear(); router.push('/login') }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors"
-                  style={{ color: '#EF4444' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                >
-                  <LogOut size={14} /> Sign out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
         <div className="p-4 md:p-6">
           {children}
         </div>
