@@ -2658,27 +2658,6 @@ function AnalyticsView() {
         <StatCard label="Pass Accuracy" value="84%" icon={Target} color="#F59E0B" />
       </div>
 
-      {/* AI Highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {[
-            "xG overperformance of +5.4 this season — expect regression if finishing doesn't maintain.",
-            'Right-side attacks account for 43% of all chances created (Correia influence).',
-            'Defensive shape weakest in minutes 60-75 — conceded 38% of goals in this window.',
-            'Pressing intensity dropped 12% in away games — fitness or tactical?',
-          ].map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Formation Viewer */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
