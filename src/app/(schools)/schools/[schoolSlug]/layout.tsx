@@ -60,6 +60,7 @@ export default function SchoolLayout({ children }: Props) {
   const [planLabel, setPlanLabel] = useState('Trial workspace')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem(`lumio_school_${slug}_name`)
@@ -75,12 +76,25 @@ export default function SchoolLayout({ children }: Props) {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     setUserName(localStorage.getItem('lumio_user_name') || '')
     setUserEmail(localStorage.getItem('lumio_user_email') || '')
+    // Load user avatar
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    const storedEmail = localStorage.getItem('lumio_user_email')
+    if (storedEmail) {
+      const staffPhoto = localStorage.getItem(`lumio_staff_photo_${storedEmail}`)
+      if (staffPhoto && !staffPhoto.startsWith('data:')) setUserPhoto(staffPhoto)
+    }
+    function onAvatarUpdated(e: Event) {
+      const url = (e as CustomEvent).detail
+      setUserPhoto(url || null)
+    }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
 
     function handleClick(e: MouseEvent) {
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    return () => { document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [slug])
 
   const expanded = pinned || hovered
@@ -234,8 +248,12 @@ export default function SchoolLayout({ children }: Props) {
           </button>
           <div ref={avatarRef} style={{ position: 'relative' }}>
             <button onClick={() => setAvatarOpen(o => !o)}
-              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#0D9488', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-              {initials}
+              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#0D9488', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
+              {userPhoto ? (
+                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
+              ) : (
+                initials
+              )}
             </button>
             {avatarOpen && (
               <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>

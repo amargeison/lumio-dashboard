@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   const { data: business } = await supabase
     .from('businesses')
-    .select('id, slug, company_name, owner_name, owner_email, logo_url, status, plan, onboarding_complete, onboarding_completed, demo_data_active')
+    .select('id, slug, company_name, owner_name, owner_email, logo_url, status, plan, onboarding_complete, onboarding_completed, onboarded, demo_data_active, created_at')
     .eq('id', session.business_id)
     .single()
 

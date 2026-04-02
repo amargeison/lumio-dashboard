@@ -48,6 +48,7 @@ export default function DemoSchoolLayout({ children }: Props) {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(true)
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -58,11 +59,17 @@ export default function DemoSchoolLayout({ children }: Props) {
   useEffect(() => {
     setIsSchoolDemo(localStorage.getItem('lumio_school_demo_active') === 'true')
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    const email = localStorage.getItem('lumio_user_email')
+    if (email) { const p = localStorage.getItem(`lumio_staff_photo_${email}`); if (p && !p.startsWith('data:')) setUserPhoto(p) }
+    function onAvatarUpdated(e: Event) { setUserPhoto((e as CustomEvent).detail || null) }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
     function handleClick(e: MouseEvent) {
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    return () => { document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [])
 
   function clearSchoolDemo() {
@@ -216,8 +223,10 @@ export default function DemoSchoolLayout({ children }: Props) {
           </button>
           <div ref={avatarRef} style={{ position: 'relative' }}>
             <button onClick={() => setAvatarOpen(o => !o)}
-              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#0D9488', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-              SH
+              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#0D9488', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
+              {userPhoto ? (
+                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
+              ) : 'SH'}
             </button>
             {avatarOpen && (
               <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>

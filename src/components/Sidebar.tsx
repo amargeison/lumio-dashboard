@@ -148,7 +148,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
     if (storedEmail) setUserEmail(storedEmail)
-    // Listen for logo/name updates from other pages
+    // Listen for logo/name updates from other pages (cross-tab)
     function onStorage(e: StorageEvent) {
       if (e.key === 'lumio_company_logo' || e.key === 'workspace_company_logo') {
         const logo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
@@ -156,7 +156,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       }
       if (e.key === 'lumio_company_name') setCompanyName(e.newValue || 'Lumio')
     }
+    // Listen for same-tab logo updates (e.g. from Settings page upload)
+    function onLogoUpdated(e: Event) {
+      const url = (e as CustomEvent).detail
+      if (url) setCompanyLogo(url)
+    }
     window.addEventListener('storage', onStorage)
+    window.addEventListener('lumio-logo-updated', onLogoUpdated)
     // Detect active departments from imported staff
     const isDemoActive = localStorage.getItem('lumio_demo_active') === 'true'
     if (!isDemoActive) {
@@ -165,7 +171,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       deptKeys.forEach(d => { if (getDeptStaff(d).length > 0) active.add(d) })
       setActiveDepts(active)
     }
-    return () => window.removeEventListener('storage', onStorage)
+    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('lumio-logo-updated', onLogoUpdated) }
   }, [])
 
   const togglePin = useCallback(() => {
@@ -184,29 +190,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > 2 * 1024 * 1024) return
+    const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp']
+    if (!validTypes.includes(file.type)) return
     // Optimistic update — show the local blob URL immediately
     const blobUrl = URL.createObjectURL(file)
     setCompanyLogo(blobUrl)
-    // Save to Supabase in background
-    const slug = localStorage.getItem('lumio_workspace_slug') || 'default'
-    const ext = file.name.split('.').pop() || 'png'
+    // Upload via server endpoint (persists to DB + correct storage bucket)
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const path = `${slug}/logo.${ext}`
-      const { error } = await supabase.storage.from('company-logos').upload(path, file, { upsert: true })
-      if (error) console.error('Logo upload error:', error)
-      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
-      setCompanyLogo(publicUrl)
-      localStorage.setItem('lumio_company_logo', publicUrl)
-      localStorage.setItem('workspace_company_logo', publicUrl)
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setCompanyLogo(data.logo_url)
+        localStorage.setItem('lumio_company_logo', data.logo_url)
+        localStorage.setItem('workspace_company_logo', data.logo_url)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+      }
       URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error('Logo upload failed:', err)
-      // Keep the blob URL showing — user at least sees their upload
     }
   }, [])
 
@@ -253,7 +259,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             title="Upload company logo"
           >
             {companyLogo ? (
-              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
+              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
             ) : (
               companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
             )}
@@ -361,7 +367,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               title="Upload company logo"
             >
               {companyLogo ? (
-                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
+                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
               ) : (
                 companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
               )}

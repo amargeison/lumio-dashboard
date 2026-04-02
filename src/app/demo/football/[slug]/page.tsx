@@ -4147,6 +4147,11 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
       const p = localStorage.getItem(`lumio_staff_photo_${email}`)
       if (p && !p.startsWith('data:')) setUserPhoto(p)
     }
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    function onAvatarUpdated(e: Event) { setUserPhoto((e as CustomEvent).detail || null) }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
+    return () => window.removeEventListener('lumio-avatar-updated', onAvatarUpdated)
   }, [])
 
   function fireToast(msg: string) {
@@ -4238,7 +4243,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
         <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden' }}>
-          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : initials}
+          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} onError={() => setUserPhoto(null)} /> : initials}
         </button>
       </div>
 

@@ -160,11 +160,18 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
       .from(table)
       .update({
         onboarding_completed: true,
+        onboarding_complete: true,
+        onboarded: true,
         onboarding_completed_at: new Date().toISOString(),
         onboarding_step: TOTAL_STEPS,
       })
       .eq('id', tenantId)
     localStorage.setItem('lumio_onboarding_shown', 'true')
+    const slug = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean)[0] || '' : ''
+    if (slug) {
+      localStorage.setItem(`onboarding-dismissed-${slug}`, 'true')
+      localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
+    }
     onComplete()
   }
 
@@ -247,7 +254,7 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
           <Image src="/lumio-logo-primary.png" alt="Lumio" width={320} height={160} style={{ width: 120, height: 'auto' }} priority />
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <span style={{ fontSize: 13, color: T.muted }}>Step {step} of {TOTAL_STEPS}</span>
-            <button onClick={() => { localStorage.setItem('lumio_onboarding_shown', 'true'); onComplete() }} title="Close and skip setup" style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'color 0.15s' }}
+            <button onClick={() => { localStorage.setItem('lumio_onboarding_shown', 'true'); const slug = typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean)[0] || '' : ''; if (slug) { localStorage.setItem(`onboarding-dismissed-${slug}`, 'true'); localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true') } supabase().from(type === 'business' ? 'businesses' : 'schools').update({ onboarding_completed: true, onboarding_complete: true, onboarded: true, onboarding_completed_at: new Date().toISOString() }).eq('id', tenantId).then(() => {}); onComplete() }} title="Close and skip setup" style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'color 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.color = T.text }}
               onMouseLeave={e => { e.currentTarget.style.color = T.muted }}>
               <X size={20} />

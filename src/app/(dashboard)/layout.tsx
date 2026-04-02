@@ -19,6 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [initials, setInitials] = useState('AM')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -33,6 +34,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (storedName) setUserName(storedName)
     const storedEmail = localStorage.getItem('lumio_user_email')
     if (storedEmail) setUserEmail(storedEmail)
+    // Load user avatar
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    if (storedEmail) {
+      const staffPhoto = localStorage.getItem(`lumio_staff_photo_${storedEmail}`)
+      if (staffPhoto && !staffPhoto.startsWith('data:')) setUserPhoto(staffPhoto)
+    }
+    function onAvatarUpdated(e: Event) {
+      const url = (e as CustomEvent).detail
+      setUserPhoto(url || null)
+    }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
     function onStorage(e: StorageEvent) {
       if (e.key === 'lumio_sidebar_pinned') setPinned(e.newValue === 'true')
     }
@@ -41,7 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     window.addEventListener('storage', onStorage)
     document.addEventListener('mousedown', handleClick)
-    return () => { window.removeEventListener('storage', onStorage); document.removeEventListener('mousedown', handleClick) }
+    return () => { window.removeEventListener('storage', onStorage); document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [])
 
   // CRM has its own self-contained layout (sidebar, header, avatar, bell).
@@ -66,10 +79,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80 overflow-hidden"
+              style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0 }}
             >
-              {initials}
+              {userPhoto ? (
+                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
+              ) : (
+                initials
+              )}
             </button>
             {avatarOpen && (
               <div
