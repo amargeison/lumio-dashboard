@@ -72,34 +72,32 @@ function processTelTedCommand(transcript: string): { handled: boolean; response:
   return null
 }
 
-function speakWithPause(speak: (text: string) => void, parts: string[], delayMs: number = 400) {
-  if (parts.length === 0) return
-  speak(parts[0])
-  // For multi-part speech (Andrew easter egg), we chain via Web Speech API directly
-  if (parts.length > 1 && typeof window !== 'undefined' && window.speechSynthesis) {
-    // Cancel and use Web Speech for the pause effect
-    window.speechSynthesis.cancel()
-    const voices = window.speechSynthesis.getVoices()
-    const preferred = ['Google UK English Female', 'Microsoft Sonia Online (Natural) - en-GB']
-    const voice = preferred.reduce<SpeechSynthesisVoice | null>((found, name) => found || voices.find(v => v.name === name) || null, null)
-      || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')) || null
-
-    let index = 0
-    function speakNext() {
-      if (index >= parts.length) return
-      const utterance = new SpeechSynthesisUtterance(parts[index])
-      if (voice) utterance.voice = voice
-      utterance.rate = 0.88
-      utterance.pitch = 1.08
-      utterance.lang = 'en-GB'
-      utterance.onend = () => {
-        index++
-        if (index < parts.length) setTimeout(speakNext, delayMs)
-      }
-      window.speechSynthesis.speak(utterance)
-    }
-    speakNext()
+// Chunked speech — avoids Chrome's ~200 char cutoff bug by splitting into short lines
+function speakChunked(lines: string[], index: number = 0, delays?: number[]) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  if (index >= lines.length) return
+  const voices = window.speechSynthesis.getVoices()
+  const preferred = ['Google UK English Female', 'Microsoft Sonia Online (Natural) - en-GB']
+  const voice = preferred.reduce<SpeechSynthesisVoice | null>((found, name) => found || voices.find(v => v.name === name) || null, null)
+    || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')) || null
+  const utterance = new SpeechSynthesisUtterance(lines[index])
+  if (voice) utterance.voice = voice
+  utterance.rate = 0.9
+  utterance.pitch = 1.0
+  utterance.lang = 'en-GB'
+  utterance.onend = () => {
+    const delay = delays?.[index] ?? 150
+    setTimeout(() => speakChunked(lines, index + 1, delays), delay)
   }
+  window.speechSynthesis.speak(utterance)
+}
+
+// Split long text into sentence-sized chunks for reliable playback
+function speakText(text: string) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  window.speechSynthesis.cancel()
+  const lines = text.split(/(?<=\.)\s+/).filter(l => l.trim())
+  setTimeout(() => speakChunked(lines), 100)
 }
 
 // ─── Voice Toast Component ───────────────────────────────────────────────────
@@ -531,28 +529,37 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
       // Show toast
       onVoiceToast?.({ text: telted.response, isAndrew: telted.isAndrew })
 
-      // Speak — Andrew gets the pause effect
+      // Speak — Andrew gets the chunked pause effect
       if (telted.isAndrew) {
-        speakWithPause(speak, [
-          "Andrew Mendoza... hmm, let me think. I know a few Andrews.",
-          "If you mean Andrew Mendoza, then I only have good words. Top man. Knows his stuff. Good looking too — I probably should stop there in case he's listening. I'm starting to blush.",
-        ], 600)
+        const andrewLines = [
+          "Andrew Mendoza...",
+          "Hmm, let me think. I know a few Andrews.",
+          "If you mean Andrew Mendoza, then I only have good words.",
+          "Top man.",
+          "Knows his stuff.",
+          "Good looking too —",
+          "I probably should stop there in case he is listening.",
+          "I am starting to blush.",
+        ]
+        // 600ms pause before "If you mean Andrew Mendoza" (index 2), 150ms elsewhere
+        const delays = [150, 150, 600, 150, 150, 150, 150, 150]
+        window.speechSynthesis.cancel()
+        setTimeout(() => speakChunked(andrewLines, 0, delays), 100)
       } else {
-        speak(telted.response)
+        speakText(telted.response)
       }
       return
     }
 
     // Fall back to generic commands
     if (action === 'UNKNOWN') {
-      // Custom catch-all for TEL TED
       const catchAll = `I heard you say "${command}". I'm not sure how to help with that yet, but I'm learning. Try asking me about your TEL TED sessions, student assessments, or programme progress.`
       onVoiceToast?.({ text: catchAll })
-      speak(catchAll)
+      speakText(catchAll)
       return
     }
 
-    speak(response)
+    speakText(response)
     if (action === 'PLAY_BRIEFING') setTimeout(() => handleBriefing(), 1500)
     else if (action === 'STOP_AUDIO') stop()
   // eslint-disable-next-line react-hooks/exhaustive-deps
