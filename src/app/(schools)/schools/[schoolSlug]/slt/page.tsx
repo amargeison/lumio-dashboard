@@ -12,7 +12,6 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   RadialBarChart, RadialBar,
 } from 'recharts'
-import { getSchoolClientRole } from '@/lib/detect-school-role'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & THEME
@@ -167,23 +166,6 @@ const MAIN_TABS: { id: MainTab; label: string; icon: string }[] = [
 
 export default function SLTSuite() {
   const [tab, setTab] = useState<MainTab>('executive')
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    const { role_level, isOwner } = getSchoolClientRole()
-    setHasAccess(role_level <= 2 || isOwner)
-  }, [])
-
-  if (hasAccess === null) return null
-  if (!hasAccess) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <GraduationCap size={48} style={{ color: TEAL, marginBottom: 16 }} />
-        <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>SLT Dashboard</h2>
-        <p className="text-sm" style={{ color: '#6B7280' }}>This section is only available to the Senior Leadership Team.</p>
-      </div>
-    )
-  }
 
   const now = new Date()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening'
