@@ -1272,7 +1272,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority. Do these first.</p>
             </div>
           </div>
-          {demoDataActive ? (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
             <div className="space-y-3">
               {([
                 { id: 'qw1', title: 'Sign off open DSL concern', description: 'Logged 2 days ago, requires DSL review before end of day.', impact: 'high' as const, effort: '2min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
@@ -1315,12 +1319,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                 )
               })}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Quick Wins.</p>
-              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -1333,7 +1332,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your essential daily checklist — stay on top of operations.</p>
             </div>
           </div>
-          {demoDataActive ? (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
             <div className="space-y-3">
               {([
                 { id: 'dt1', title: 'Submit daily attendance return to DfE', description: 'Must be submitted by 12pm. 94% recorded so far.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Submit now', source: 'MIS' },
@@ -1376,12 +1379,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                 )
               })}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Daily Tasks.</p>
-              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -1448,7 +1446,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
             </div>
           </div>
-          {demoDataActive ? (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
             <div className="space-y-3">
               {([
                 { id: 'dm1', title: 'Ofsted data return due in 3 days', description: 'Annual census data must be submitted to Ofsted portal by Friday.', effort: '1min', category: 'Compliance', action: 'Submit now', source: 'DfE' },
@@ -1485,12 +1487,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see alerts and reminders.</p>
-              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
 

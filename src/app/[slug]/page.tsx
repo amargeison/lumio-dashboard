@@ -759,7 +759,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo, onBellClick, onAvatarClick, userPhoto, userName: userNameProp, roleSwitcher }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void; onBellClick?: () => void; onAvatarClick?: () => void; userPhoto?: string | null; userName?: string; roleSwitcher?: React.ReactNode }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -1059,6 +1059,20 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   return (
   <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      {onBellClick && (
+        <div className="absolute top-4 right-4 hidden md:flex items-center gap-2 z-10">
+          {roleSwitcher}
+          <button onClick={onBellClick} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={16} strokeWidth={1.75} />
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+          </button>
+          <div style={{ position: 'relative' }}>
+            <button onClick={onAvatarClick} style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
+              {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} /> : (userNameProp ? userNameProp.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM')}
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
@@ -3482,7 +3496,7 @@ function SnapshotWidgets() {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [] }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[] }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, onAvatarClick, userPhoto, userName: userNameProp, roleSwitcher }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; onAvatarClick?: () => void; userPhoto?: string | null; userName?: string; roleSwitcher?: React.ReactNode }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
@@ -3579,7 +3593,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} onAvatarClick={onAvatarClick} userPhoto={userPhoto} userName={userNameProp} roleSwitcher={roleSwitcher} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -3693,19 +3707,9 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        demoDataActive ? <QuickWins /> : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Quick Wins.</p>
-            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-          </div>
-        )
+        <QuickWins />
       ) : tab === 'tasks' ? (
-        demoDataActive ? <DailyTasks /> : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Daily Tasks.</p>
-            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-          </div>
-        )
+        <DailyTasks />
       ) : tab === 'insights' ? (
         demoDataActive ? <Insights /> : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -3713,12 +3717,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           </div>
         )
       ) : tab === 'not-to-miss' ? (
-        demoDataActive ? <NotToMiss /> : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to see personalised Don&apos;t Miss items.</p>
-            <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-          </div>
-        )
+        <NotToMiss />
       ) : tab === 'team' ? (
         demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
       ) : (
@@ -4247,19 +4246,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             </div>
           )}
-          {/* Bell + avatar — fixed overlay matching Schools portal */}
-          <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-            <RoleSwitcherPill />
-            <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-              <Bell size={16} strokeWidth={1.75} />
-              <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-            </button>
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setAvatarDropdownOpen(o => !o)} style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
-                {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} /> : (userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM')}
-              </button>
-            </div>
-          </div>
           {/* Scrollable page content */}
           <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
             {activeDept !== 'overview' && (
@@ -4268,7 +4254,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} onAvatarClick={() => setAvatarDropdownOpen(o => !o)} userPhoto={userPhoto} userName={userName} roleSwitcher={<RoleSwitcherPill />} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>

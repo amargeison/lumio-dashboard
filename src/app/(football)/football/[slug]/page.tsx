@@ -547,8 +547,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void
+function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -629,10 +629,10 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
-                { label: 'Squad', value: SQUAD.length, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-                { label: 'Fit', value: fitCount, color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
-                { label: 'Injured', value: injuredCount, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🏥' },
-                { label: 'Suspended', value: suspendedCount, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '🟨' },
+                { label: 'Squad', value: isDemo ? SQUAD.length : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+                { label: 'Fit', value: isDemo ? fitCount : '—', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
+                { label: 'Injured', value: isDemo ? injuredCount : '—', color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🏥' },
+                { label: 'Suspended', value: isDemo ? suspendedCount : '—', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '🟨' },
               ].map(item => (
                 <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                   <span className="text-base">{item.icon}</span>
@@ -1515,7 +1515,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1603,13 +1603,8 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
           </div>
           </>}
         </div>
-      ) : isDemo ? (
-        <TabContent tab={tab} />
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to explore this tab.</p>
-          <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-        </div>
+        <TabContent tab={tab} />
       )}
     </div>
   )
