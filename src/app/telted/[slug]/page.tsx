@@ -2017,7 +2017,6 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       <div className="flex flex-1 flex-col overflow-hidden transition-[padding] duration-200" style={{ paddingLeft: sidebarW }}>
         {/* Top-right header: notification + avatar */}
         <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-          <div className="text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)' }}>● EEF 5/5 Evidence Rating</div>
           <button className="relative flex items-center justify-center rounded-full" style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}>
             <Bell size={16} strokeWidth={1.75} />
             <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
