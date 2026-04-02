@@ -1485,9 +1485,28 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   return null
 }
 
+// ─── Empty State ─────────────────────────────────────────────────────────────
+
+function FootballEmptyState({ dept }: { dept: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(192,57,43,0.2), rgba(192,57,43,0.05))', border: '1px solid rgba(192,57,43,0.3)' }}>
+        <span className="text-4xl">⚽</span>
+      </div>
+      <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No {dept} data yet</h2>
+      <p className="text-sm max-w-md mb-8" style={{ color: '#9CA3AF' }}>Import your club data or explore with demo data to unlock {dept} features.</p>
+      <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }}
+        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>
+        ✨ Explore with Demo Data
+      </button>
+      <p className="text-xs mt-3" style={{ color: '#4B5563' }}>Demo data is pre-filled sample data so you can explore all features</p>
+    </div>
+  )
+}
+
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction }: { clubName: string; firstName?: string; onAction: (msg: string) => void }) {
+function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1503,6 +1522,16 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
         <div className="space-y-4">
           <QuickActionsBar onAction={onAction} />
 
+          {!isDemo && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="text-5xl mb-4">⚽</div>
+              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
+              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+          )}
+
+          {isDemo && <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
               <MorningRoundup />
@@ -1572,9 +1601,15 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
               </div>
             </div>
           </div>
+          </>}
         </div>
-      ) : (
+      ) : isDemo ? (
         <TabContent tab={tab} />
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-sm" style={{ color: '#6B7280' }}>Load demo data to explore this tab.</p>
+          <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="mt-4 px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+        </div>
       )}
     </div>
   )
@@ -4343,7 +4378,7 @@ function ClubProfileView() {
   )
 }
 
-function SettingsView() {
+function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: string }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM' : '21m00Tcm4TlvDq8ikWAM')
@@ -4463,6 +4498,31 @@ function SettingsView() {
           <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
         </div>
       </div>
+
+      {/* Demo Data */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data & Display</p>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{isDemo ? 'Demo data is active' : 'Demo data'}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+              {isDemo ? 'Your portal is showing sample data. Clear it to see your real workspace.' : 'Load sample data to explore all features before connecting your real data.'}
+            </p>
+          </div>
+          <button onClick={() => {
+            if (isDemo) { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }
+            else { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.href = `/football/${slug}` }
+          }} className="w-full rounded-xl py-2.5 text-sm font-semibold" style={{
+            backgroundColor: isDemo ? 'rgba(239,68,68,0.1)' : 'rgba(192,57,43,0.1)',
+            color: isDemo ? '#EF4444' : '#C0392B',
+            border: `1px solid ${isDemo ? 'rgba(239,68,68,0.3)' : 'rgba(192,57,43,0.3)'}`,
+          }}>
+            {isDemo ? 'Clear demo data' : 'Load demo data'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -4500,6 +4560,16 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [isFootballDemo, setIsFootballDemo] = useState(false)
+  const [fbMounted, setFbMounted] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
+    check()
+    setFbMounted(true)
+    const interval = setInterval(check, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -4540,9 +4610,19 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
   const initials = userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'FC'
 
+  if (!fbMounted) return null
+
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
+
+      {/* Demo banner */}
+      {isFootballDemo && (
+        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#C0392B', color: '#F9FAFB' }}>
+          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+        </div>
+      )}
 
       {/* Top-right avatar */}
       <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -4576,9 +4656,10 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
-            {activeDept === 'insights' && <InsightsView />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && (() => {
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} />}
+            {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
                 squad: ['Top performers this week: Dele Adeyemi (8.2 avg), Liam Cross (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
                 tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
@@ -4630,28 +4711,28 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </>
               )
             })()}
-            {activeDept === 'squad' && <SquadView />}
-            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
-            {activeDept === 'set-pieces' && <ProSetPiecesView />}
-            {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
-            {activeDept === 'board' && <div className="text-center py-20"><div className="text-5xl mb-4">👑</div><h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Board Suite</h2><p className="text-sm" style={{ color: '#6B7280' }}>Executive dashboards, financial oversight and governance tools — coming soon.</p></div>}
-            {activeDept === 'medical' && <MedicalView />}
-            {activeDept === 'scouting' && <ScoutingView />}
-            {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
-            {activeDept === 'analytics' && <AnalyticsView />}
-            {activeDept === 'media' && <MediaView />}
-            {activeDept === 'social' && <SocialMediaView />}
-            {activeDept === 'matchday' && <MatchdayView />}
-            {activeDept === 'training' && <TrainingView />}
-            {activeDept === 'performance' && <GPSPerformanceView />}
-            {activeDept === 'finance' && <FinanceView />}
-            {activeDept === 'staff' && <StaffView />}
-            {activeDept === 'facilities' && <FacilitiesView />}
-            {activeDept === 'dynamics' && <DynamicsView />}
-            {activeDept === 'psr' && <PSRView />}
-            {activeDept === 'squad-planner' && <SquadPlannerView />}
-            {activeDept === 'club-profile' && <ClubProfileView />}
-            {activeDept === 'settings' && <SettingsView />}
+            {isFootballDemo && activeDept === 'squad' && <SquadView />}
+            {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
+            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'board' && <div className="text-center py-20"><div className="text-5xl mb-4">👑</div><h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Board Suite</h2><p className="text-sm" style={{ color: '#6B7280' }}>Executive dashboards, financial oversight and governance tools — coming soon.</p></div>}
+            {isFootballDemo && activeDept === 'medical' && <MedicalView />}
+            {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
+            {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
+            {isFootballDemo && activeDept === 'media' && <MediaView />}
+            {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
+            {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
+            {isFootballDemo && activeDept === 'training' && <TrainingView />}
+            {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
+            {isFootballDemo && activeDept === 'finance' && <FinanceView />}
+            {isFootballDemo && activeDept === 'staff' && <StaffView />}
+            {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
+            {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
+            {isFootballDemo && activeDept === 'psr' && <PSRView />}
+            {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
+            {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
         </div>
       </div>
