@@ -1177,7 +1177,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     <div className="space-y-4">
 
       {/* 1. Greeting banner */}
-      <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} demoActive={demoDataActive} />
+      <SchoolGreetingBanner schoolName={schoolName} firstName={firstName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} demoActive={demoDataActive} />
 
       {/* 2. Tab bar */}
       <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
@@ -1392,48 +1392,45 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Key trends and metrics — know what&apos;s changing before it becomes a problem.</p>
             </div>
           </div>
-          {demoDataActive ? (
-            <div className="space-y-3">
-              {([
-                { id: 'in1', title: 'Attendance dropped 2.1% vs last week', description: 'Currently 91.9%. Year 3 and Year 5 showing the biggest dip.', impact: 'high' as const, category: 'Attendance', source: 'MIS' },
-                { id: 'in2', title: 'SEND cohort now 22.3% of roll', description: 'Above national average of 18.1%. EHCP requests up 3 this term.', impact: 'high' as const, category: 'SEND', source: 'SEND Register' },
-                { id: 'in3', title: 'Budget variance of £4,200 in Premises', description: 'Heating costs higher than forecast. Review recommended.', impact: 'medium' as const, category: 'Finance', source: 'Finance' },
-                { id: 'in4', title: 'Year 6 SATs prep: 67% of intervention sessions complete', description: 'On track but 4 pupils need additional support sessions.', impact: 'medium' as const, category: 'Curriculum', source: 'Curriculum' },
-              ]).map(insight => {
-                const impactColors = insight.impact === 'high'
-                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
-                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
-                return (
-                  <div key={insight.id} className="rounded-2xl p-5 transition-all"
-                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{insight.impact.toUpperCase()} IMPACT</span>
-                          <span className="text-xs" style={{ color: '#6B7280' }}>{insight.category}</span>
-                        </div>
-                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{insight.title}</h3>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{insight.description}</p>
-                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {insight.source}</p>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          <div className="space-y-3">
+            {([
+              { id: 'in1', title: 'Attendance dropped 2.1% vs last week', description: 'Currently 91.9%. Year 3 and Year 5 showing the biggest dip.', impact: 'high' as const, category: 'Attendance', source: 'MIS' },
+              { id: 'in2', title: 'SEND cohort now 22.3% of roll', description: 'Above national average of 18.1%. EHCP requests up 3 this term.', impact: 'high' as const, category: 'SEND', source: 'SEND Register' },
+              { id: 'in3', title: 'Budget variance of £4,200 in Premises', description: 'Heating costs higher than forecast. Review recommended.', impact: 'medium' as const, category: 'Finance', source: 'Finance' },
+              { id: 'in4', title: 'Year 6 SATs prep: 67% of intervention sessions complete', description: 'On track but 4 pupils need additional support sessions.', impact: 'medium' as const, category: 'Curriculum', source: 'Curriculum' },
+            ]).map(insight => {
+              const impactColors = insight.impact === 'high'
+                ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+              return (
+                <div key={insight.id} className="rounded-2xl p-5 transition-all"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{insight.impact.toUpperCase()} IMPACT</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{insight.category}</span>
                       </div>
-                      <div className="flex flex-col gap-2 flex-shrink-0">
-                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
-                          style={{ backgroundColor: '#7C3AED' }}>
-                          View detail →
-                        </button>
-                      </div>
+                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{insight.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{insight.description}</p>
+                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {insight.source}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#7C3AED' }}>
+                        View detail →
+                      </button>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Insights.</p>
-              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
-            </div>
-          )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
