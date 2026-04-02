@@ -390,6 +390,7 @@ function PhotoFrame() {
   const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
   const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
   const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
   const isDragging = useRef(false); const dragStartRef = useRef({ x: 0, y: 0 }); const posStartRef = useRef({ x: 50, y: 50 })
   useEffect(() => { if (intervalRef.current) clearInterval(intervalRef.current); if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000); return () => { if (intervalRef.current) clearInterval(intervalRef.current) } }, [isPlaying, photos.length, intervalSecs])
   useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
