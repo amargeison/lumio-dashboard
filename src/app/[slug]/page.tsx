@@ -2586,6 +2586,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
+    localStorage.removeItem('lumio_staff_imported')
     localStorage.setItem('lumio_demo_active', 'false')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {

@@ -205,6 +205,7 @@ export function DashboardEmptyState({
     Object.keys(localStorage)
       .filter(k => (k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_school_')) && k !== 'lumio_dashboard_overview_hasData')
       .forEach(k => localStorage.removeItem(k))
+    localStorage.removeItem('lumio_staff_imported')
     localStorage.setItem('lumio_demo_active', 'false')
 
     invalidateWorkspaceCache()

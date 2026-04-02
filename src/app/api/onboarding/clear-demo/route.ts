@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
     ),
   )
 
+  // Also clear workspace_staff for this business (imported staff gets re-imported by user)
+  await supabase.from('workspace_staff').delete().eq('business_id', bid)
+
   // Set flag to false
   await supabase
     .from('businesses')

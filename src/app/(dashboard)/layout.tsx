@@ -97,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span style={{ opacity: 0.8 }}>· Connect your real tools to see live insights</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'false'); setDemoActive(false) }} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>Clear Demo Data</button>
+              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'false'); setDemoActive(false); const slug = pathname?.split('/').filter(Boolean)[0]; router.push(slug ? `/${slug}` : '/') }} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>Clear Demo Data</button>
               <button onClick={() => setDemoDismissed(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>✕</button>
             </div>
           </div>
