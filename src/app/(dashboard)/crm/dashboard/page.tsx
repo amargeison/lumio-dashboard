@@ -66,7 +66,7 @@ export default function CRMDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [isDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const [wsResolved, setWsResolved] = useState(false)
-  const hasData = contacts.length > 0 || deals.length > 0
+  const hasData = contacts.length > 0 || deals.length > 0 || isDemoActive
 
   // Hydrate from sessionStorage cache after mount (avoids SSR mismatch)
   useEffect(() => {
@@ -155,8 +155,8 @@ export default function CRMDashboardPage() {
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
-  // Loading skeleton — show while workspace is resolving or data is loading
-  if (loading && contacts.length === 0 && !error) {
+  // Loading skeleton — show while workspace is resolving or data is loading (skip for demo)
+  if (loading && contacts.length === 0 && !error && !isDemoActive) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 80 }} />
@@ -193,8 +193,8 @@ export default function CRMDashboardPage() {
     )
   }
 
-  // No workspace and resolution timed out — show empty state instead of blank
-  if (!workspaceId && wsResolved && !hasData) {
+  // No workspace and resolution timed out — show empty state (skip if demo active)
+  if (!workspaceId && wsResolved && !hasData && !isDemoActive) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="rounded-xl p-8 text-center max-w-md" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
