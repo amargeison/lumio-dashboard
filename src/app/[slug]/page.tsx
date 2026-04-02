@@ -4031,6 +4031,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+      {demoDataActive && <ClearDemoBar />}
       <ImpersonationBanner />
       <Toast message={toast} />
 
@@ -4239,8 +4240,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           </button>
         </div>
       )}
-
-      {demoDataActive && <ClearDemoBar />}
 
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>

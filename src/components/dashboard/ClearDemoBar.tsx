@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Clock, UserPlus, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Clock } from 'lucide-react'
 import DataConnectionsModal from './DataConnectionsModal'
 import { invalidateWorkspaceCache } from '@/hooks/useWorkspace'
 
@@ -44,9 +43,6 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
           <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
             Clear Demo Data
           </button>
-          <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-            Buy <ArrowRight size={11} className="inline" />
-          </Link>
           <button onClick={() => setDismissed(true)} className="opacity-70 hover:opacity-100">✕</button>
         </div>
       </div>
