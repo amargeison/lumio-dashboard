@@ -49,12 +49,12 @@ const BIRTHDAYS = [
 ]
 
 const EMPLOYEE_CARDS = [
-  { name: 'Andrew Mendoza', role: 'CEO', overall: 97, color: '#7C3AED', avatar: 'AM', stats: { PAC: 86, SHO: 96, PAS: 62, DRI: 99, DEF: 99, PHY: 61 } },
-  { name: 'Hazel Carter', role: 'Marketing Director', overall: 94, color: '#EC4899', avatar: 'HC', stats: { PAC: 66, SHO: 92, PAS: 90, DRI: 71, DEF: 95, PHY: 65 } },
-  { name: 'Jen Blake', role: 'Sales Director', overall: 98, color: '#0D9488', avatar: 'JB', stats: { PAC: 95, SHO: 99, PAS: 88, DRI: 94, DEF: 72, PHY: 78 } },
-  { name: 'Christa Bell', role: 'Operations Manager', overall: 79, color: '#F59E0B', avatar: 'CB', stats: { PAC: 71, SHO: 68, PAS: 74, DRI: 65, DEF: 88, PHY: 82 } },
-  { name: 'Dawny Hall', role: 'Support Lead', overall: 85, color: '#6D28D9', avatar: 'DH', stats: { PAC: 78, SHO: 72, PAS: 91, DRI: 69, DEF: 83, PHY: 77 } },
-  { name: 'Arron Margeison', role: 'IT Director', overall: 93, color: '#0EA5E9', avatar: 'AM', stats: { PAC: 60, SHO: 70, PAS: 76, DRI: 71, DEF: 95, PHY: 65 } },
+  { name: 'James Hartley', role: 'CEO', overall: 97, color: '#7C3AED', avatar: 'JH', stats: { PAC: 86, SHO: 96, PAS: 62, DRI: 99, DEF: 99, PHY: 61 } },
+  { name: 'Sophie Brennan', role: 'Marketing Director', overall: 94, color: '#EC4899', avatar: 'SB', stats: { PAC: 66, SHO: 92, PAS: 90, DRI: 71, DEF: 95, PHY: 65 } },
+  { name: 'Marcus Webb', role: 'Sales Director', overall: 98, color: '#0D9488', avatar: 'MW', stats: { PAC: 95, SHO: 99, PAS: 88, DRI: 94, DEF: 72, PHY: 78 } },
+  { name: 'Rachel Osei', role: 'Operations Manager', overall: 79, color: '#F59E0B', avatar: 'RO', stats: { PAC: 71, SHO: 68, PAS: 74, DRI: 65, DEF: 88, PHY: 82 } },
+  { name: 'Tom Fielding', role: 'Support Lead', overall: 85, color: '#6D28D9', avatar: 'TF', stats: { PAC: 78, SHO: 72, PAS: 91, DRI: 69, DEF: 83, PHY: 77 } },
+  { name: 'Claire Donovan', role: 'IT Director', overall: 93, color: '#0EA5E9', avatar: 'CD', stats: { PAC: 60, SHO: 70, PAS: 76, DRI: 71, DEF: 95, PHY: 65 } },
 ]
 
 type SubTab = 'today' | 'orgchart' | 'company' | 'cards'
