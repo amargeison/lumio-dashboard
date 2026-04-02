@@ -1160,6 +1160,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
   const [activeTab, setActiveTab] = useState('today')
+  const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
   const TABS = [
     { id: 'today', label: 'Today', icon: '📅' },
     { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
@@ -1352,30 +1353,129 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       )}
 
       {/* TAB: Staff */}
-      {activeTab === 'staff' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>👥 Staff Overview</h3>
-          {demoDataActive ? (
-          <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {[
-              { label: 'Staff in today', value: '4 / 6', color: '#0D9488' },
-              { label: 'On cover', value: '1', color: '#F59E0B' },
-              { label: 'CPD due this term', value: '3 staff', color: '#A78BFA' },
-              { label: 'Reviews this week', value: '2', color: '#60A5FA' },
-            ].map(s => (
-              <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</p>
-                <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
-              </div>
+      {activeTab === 'staff' && (() => {
+        const SCHOOL_STAFF = [
+          { name: 'Sarah Mitchell', role: 'Headteacher', dept: 'SLT', initials: 'SM', color: '#0D9488', status: 'available', email: 'headteacher@oakridge.edu', level: 1, stats: { TEA: 92, COM: 95, PLA: 88, ENG: 91, WEL: 86, EXP: 97 }, overall: 94 },
+          { name: 'James Okafor', role: 'Deputy Head', dept: 'SLT', initials: 'JO', color: '#6D28D9', status: 'available', email: 'deputy@oakridge.edu', level: 2, stats: { TEA: 89, COM: 91, PLA: 85, ENG: 88, WEL: 90, EXP: 82 }, overall: 88 },
+          { name: 'Emma Clarke', role: 'SENCO', dept: 'SEND', initials: 'EC', color: '#EC4899', status: 'in-meeting', email: 'senco@oakridge.edu', level: 2, stats: { TEA: 84, COM: 92, PLA: 90, ENG: 79, WEL: 95, EXP: 86 }, overall: 87 },
+          { name: 'Tom Bradley', role: 'Year 6 Teacher', dept: 'Teaching', initials: 'TB', color: '#3B82F6', status: 'available', email: 'tbradley@oakridge.edu', level: 3, stats: { TEA: 86, COM: 82, PLA: 91, ENG: 93, WEL: 78, EXP: 74 }, overall: 84 },
+          { name: 'Priya Patel', role: 'DSL', dept: 'Safeguarding', initials: 'PP', color: '#EF4444', status: 'available', email: 'dsl@oakridge.edu', level: 2, stats: { TEA: 81, COM: 94, PLA: 77, ENG: 85, WEL: 92, EXP: 88 }, overall: 86 },
+          { name: 'Mark Davis', role: 'Business Manager', dept: 'Admin', initials: 'MD', color: '#F59E0B', status: 'away', email: 'bursar@oakridge.edu', level: 2, stats: { TEA: 78, COM: 85, PLA: 93, ENG: 72, WEL: 80, EXP: 91 }, overall: 83 },
+        ]
+        const statusC: Record<string, { dot: string; label: string }> = { available: { dot: '#22C55E', label: 'Available' }, 'in-meeting': { dot: '#F59E0B', label: 'In meeting' }, away: { dot: '#6B7280', label: 'Away' } }
+        return (
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'org' as const, label: '🏢 Org Chart' }, { id: 'info' as const, label: '🃏 Staff Info' }, { id: 'school' as const, label: '📋 School Info' }].map(t => (
+              <button key={t.id} onClick={() => setStaffSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: staffSubTab === t.id ? '#0D9488' : '#111318', color: staffSubTab === t.id ? '#F9FAFB' : '#6B7280', border: staffSubTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
             ))}
           </div>
-          </>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Staff data will appear here once imported or synced from your MIS.</p>
+
+          {/* STAFF TODAY */}
+          {staffSubTab === 'today' && (
+            <>
+              <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{SCHOOL_STAFF.filter(s => s.status === 'available').length} available · {SCHOOL_STAFF.filter(s => s.status !== 'available').length} away/busy</p></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {SCHOOL_STAFF.map(m => (
+                  <div key={m.name} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start gap-3">
+                      <div className="relative shrink-0">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.initials}</div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: statusC[m.status]?.dot || '#6B7280', borderColor: '#111318' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-sm" style={{ color: '#E5E7EB' }}>{m.name}</span>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p>
+                        <span className="text-xs font-medium" style={{ color: statusC[m.status]?.dot || '#6B7280' }}>{statusC[m.status]?.label || m.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ORG CHART */}
+          {staffSubTab === 'org' && (
+            <div>
+              <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Organisation Chart</h2>
+              <div className="flex justify-center mb-6">
+                <div className="rounded-xl p-4 text-center w-48" style={{ backgroundColor: '#111318', border: '2px solid #0D9488' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>SM</div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Sarah Mitchell</p>
+                  <p className="text-[10px]" style={{ color: '#0D9488' }}>Headteacher</p>
+                </div>
+              </div>
+              <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
+              <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '70%' }} /></div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {SCHOOL_STAFF.filter(s => s.level >= 2).map(m => (
+                  <div key={m.name} className="flex flex-col items-center">
+                    <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
+                    <div className="rounded-xl p-3 text-center w-full" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.initials}</div>
+                      <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
+                      <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.role}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* STAFF INFO — FIFA/Panini cards */}
+          {staffSubTab === 'info' && (
+            <div>
+              <h2 className="text-xl font-black mb-4" style={{ color: '#F9FAFB' }}>Staff Info</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {SCHOOL_STAFF.map(card => (
+                  <div key={card.name} style={{ background: `linear-gradient(135deg, ${card.color}22 0%, #0A0B10 60%)`, border: `1px solid ${card.color}44`, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 320 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div><div style={{ fontSize: 32, fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.overall}</div><div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, letterSpacing: '0.1em' }}>OVERALL</div></div>
+                      <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: `${card.color}33`, color: card.color, border: `1px solid ${card.color}55` }}>{card.dept}</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
+                      <div style={{ width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${card.color}44 0%, ${card.color}11 70%)`, border: `2px solid ${card.color}`, boxShadow: `0 0 20px ${card.color}44, 0 0 40px ${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: card.color }}>{card.initials}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 700, color: '#F9FAFB' }}>{card.name}</div><div style={{ fontSize: 13, color: card.color, fontWeight: 500, marginTop: 2 }}>{card.role}</div></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, padding: '8px 0', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
+                      {Object.entries(card.stats).map(([key, val]) => (
+                        <div key={key} style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: val >= 90 ? '#22C55E' : val >= 80 ? '#F59E0B' : '#EF4444' }}>{val}</div><div style={{ fontSize: 9, color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em' }}>{key}</div></div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', background: `${card.color}33`, color: card.color, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Message</button>
+                      <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Profile</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SCHOOL INFO */}
+          {staffSubTab === 'school' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>School Info</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>School Details</p>
+                  {[['School Name', schoolName || 'Oakridge Primary'], ['Type', 'Community Primary'], ['URN', '114286'], ['Ofsted Rating', 'Good (2023)'], ['Pupils on Roll', '412'], ['Staff', '41'], ['Address', 'Oakridge Lane, London SE15']].map(([l, v]) => (
+                    <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+                  ))}
+                </div>
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+                  {[['Headteacher', 'Sarah Mitchell'], ['Deputy Head', 'James Okafor'], ['SENCO', 'Emma Clarke'], ['DSL', 'Priya Patel'], ['Business Manager', 'Mark Davis'], ['Chair of Governors', 'Dr Helen Wright']].map(([r, n]) => (
+                    <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
-      )}
+        )
+      })()}
 
       {/* Stats row + Attendance + Workflows + Compliance — demo data only */}
       {demoDataActive ? (
