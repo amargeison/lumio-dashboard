@@ -2585,7 +2585,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
-    localStorage.setItem('lumio_demo_active', 'false')
+    localStorage.removeItem('lumio_demo_active')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
@@ -3937,7 +3937,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           } else {
             // Force-clear stale demo flags for real businesses
             setDemoDataActive(false)
-            localStorage.setItem('lumio_demo_active', 'false')
+            localStorage.removeItem('lumio_demo_active')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
