@@ -1647,16 +1647,16 @@ function DemoTeamPanel() {
   const DEPT_COLORS: Record<string, string> = { Executive: '#0D9488', Sales: '#8B5CF6', Marketing: '#F59E0B', Finance: '#3B82F6', HR: '#22C55E', IT: '#EF4444' }
 
   const TEAM = [
-    { id: '0', name: 'Demo User', role: 'CEO & Founder', department: 'Executive', avatar: 'DU', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'demo@company.com', level: 1 },
-    { id: '1', name: 'Sarah Mitchell', role: 'Head of HR', department: 'HR', avatar: 'SM', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sarah@company.com', managerId: '0', level: 2 },
-    { id: '2', name: 'Oliver Bennett', role: 'Head of Sales', department: 'Sales', avatar: 'OB', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'oliver@company.com', managerId: '0', level: 2 },
-    { id: '3', name: 'George Harrison', role: 'Head of Finance', department: 'Finance', avatar: 'GH', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'george@company.com', managerId: '0', level: 2 },
-    { id: '4', name: 'Alexander Jones', role: 'Head of IT', department: 'IT', avatar: 'AJ', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'alex@company.com', managerId: '0', level: 2 },
-    { id: '5', name: 'Charlotte Davies', role: 'Senior AE', department: 'Sales', avatar: 'CD', status: 'wfh', todayFocus: 'Client demo prep', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'charlotte@company.com', managerId: '2', level: 3 },
-    { id: '6', name: 'James Okafor', role: 'Sales Dev Rep', department: 'Sales', avatar: 'JO', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'james@company.com', managerId: '2', level: 3 },
-    { id: '7', name: 'Sophia Brown', role: 'Head of Marketing', department: 'Marketing', avatar: 'SB', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'sophia@company.com', managerId: '0', level: 2 },
-    { id: '8', name: 'Tom Ashworth', role: 'Content Lead', department: 'Marketing', avatar: 'TA', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'tom@company.com', managerId: '7', level: 3 },
-    { id: '9', name: 'Priya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'PK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'priya@company.com', managerId: '1', level: 3 },
+    { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Executive', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
+    { id: '1', name: 'Sophie Brennan', role: 'Head of HR', department: 'HR', avatar: 'SB', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sophie@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '2', name: 'Marcus Webb', role: 'Head of Sales', department: 'Sales', avatar: 'MW', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'marcus@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '3', name: 'Tom Fielding', role: 'Head of Finance', department: 'Finance', avatar: 'TF', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'tom@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '4', name: 'Claire Donovan', role: 'Head of IT', department: 'IT', avatar: 'CD', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'claire@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '5', name: 'Rachel Osei', role: 'Senior AE', department: 'Sales', avatar: 'RO', status: 'wfh', todayFocus: 'Client demo prep', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'rachel@lumiodemo.com', managerId: '2', level: 3 },
+    { id: '6', name: 'Ben Holloway', role: 'Sales Dev Rep', department: 'Sales', avatar: 'BH', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'ben@lumiodemo.com', managerId: '2', level: 3 },
+    { id: '7', name: 'Leah Thornton', role: 'Head of Marketing', department: 'Marketing', avatar: 'LT', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'leah@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '8', name: 'Nate Crawford', role: 'Content Lead', department: 'Marketing', avatar: 'NC', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'nate@lumiodemo.com', managerId: '7', level: 3 },
+    { id: '9', name: 'Anya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'AK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'anya@lumiodemo.com', managerId: '1', level: 3 },
   ]
 
   const POLICIES = [
@@ -1669,9 +1669,9 @@ function DemoTeamPanel() {
   ]
 
   const BIRTHDAYS = [
-    { name: 'James Okafor', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
-    { name: 'Charlotte Davies', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
-    { name: 'Tom Ashworth', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
+    { name: 'Ben Holloway', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
+    { name: 'Rachel Osei', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
+    { name: 'Nate Crawford', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
   ]
 
   const filtered = TEAM.filter(m => {
@@ -1790,7 +1790,7 @@ function DemoTeamPanel() {
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['CEO', 'Demo User'], ['HR', 'Sarah Mitchell'], ['IT Support', 'Alexander Jones'], ['Finance', 'George Harrison']].map(([r, n]) => (
+              {[['CEO', 'James Hartley'], ['HR', 'Sophie Brennan'], ['IT Support', 'Claire Donovan'], ['Finance', 'Tom Fielding']].map(([r, n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>

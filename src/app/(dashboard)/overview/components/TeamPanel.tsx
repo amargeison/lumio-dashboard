@@ -61,7 +61,8 @@ const DEMO_STAFF: StaffRecord[] = [
 type SubTab = 'today' | 'orgchart' | 'company' | 'cards'
 
 export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] } = {}) {
-  const [team, setTeam] = useState<TeamMember[]>(TEAM)
+  const isDemo = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [team, setTeam] = useState<TeamMember[]>(isDemo ? TEAM : [])
   const [filter, setFilter] = useState<string>('all')
   const [subTab, setSubTab] = useState<SubTab>('today')
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
@@ -111,8 +112,21 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
         ))}
       </div>
 
+      {/* ═══ EMPTY STATE — no team data ═══ */}
+      {team.length === 0 && subTab !== 'company' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16, textAlign: 'center', padding: 40 }}>
+          <div style={{ fontSize: 48 }}>👥</div>
+          <h3 style={{ color: '#F9FAFB', fontSize: 18, fontWeight: 700, margin: 0 }}>No team members yet</h3>
+          <p style={{ color: '#9CA3AF', fontSize: 14, maxWidth: 360, lineHeight: 1.6, margin: 0 }}>Add your team by importing a CSV or inviting staff members in Settings. Your team will appear here once added.</p>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Import Team CSV</button>
+            <button style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Invite Members</button>
+          </div>
+        </div>
+      )}
+
       {/* ═══ TEAM TODAY ═══ */}
-      {subTab === 'today' && <>
+      {subTab === 'today' && team.length > 0 && <>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{filtered.length} people{activeDeptNames ? ` (filtered by ${selectedDepts?.length} departments)` : ''} · {team.filter(m => m.status === 'holiday' || m.status === 'sick').length} out · {team.filter(m => m.alerts > 0).length} with alerts</p></div>
           <div className="flex gap-1 flex-wrap items-center">
@@ -149,7 +163,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       </>}
 
       {/* ═══ ORG CHART ═══ */}
-      {subTab === 'orgchart' && (
+      {subTab === 'orgchart' && team.length > 0 && (
         <div>
           <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Organisation Chart</h2>
           {/* CEO */}
@@ -195,7 +209,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       )}
 
       {/* ═══ TEAM INFO (FIFA CARDS — same component as live) ═══ */}
-      {subTab === 'cards' && (
+      {subTab === 'cards' && team.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
           <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`}>
