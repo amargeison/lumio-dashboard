@@ -4179,7 +4179,7 @@ function StatsTab() {
       {/* Bar Chart Comparison */}
       <SectionCard title="Set Piece Goal % — League Comparison">
         <div style={{ overflowX: 'auto' }}>
-          <svg width="100%" viewBox="0 0 340 200" style={{ maxWidth: 400 }}>
+          <svg width="100%" viewBox="0 0 340 200">
             {/* Background */}
             <rect x="0" y="0" width="340" height="200" fill={C.bg} rx="4" />
 
@@ -4373,9 +4373,9 @@ export default function ProSetPiecesView() {
   ]
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', padding: '24px 16px' }}>
+    <div className="w-full space-y-5">
       {/* Header */}
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div className="w-full">
         <div style={{ marginBottom: 4 }}>
           <span
             style={{
