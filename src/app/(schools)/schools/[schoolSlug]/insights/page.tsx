@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { Sparkles } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, ReferenceLine, AreaChart, Area,
@@ -460,7 +461,7 @@ function ProgressBar({
 
 function AIInsightBox({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border p-4 mb-6" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
+    <div className="rounded-xl border p-4 flex flex-col" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
           AI
@@ -469,6 +470,27 @@ function AIInsightBox({ text }: { text: string }) {
           <p className="text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: '#C4B5FD' }}>AI Summary</p>
           <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{text}</p>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function AIKeyHighlightsBox({ items, label }: { items: string[]; label: string }) {
+  return (
+    <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{label}</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -528,9 +550,12 @@ function AlertRow({
 function TrustView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Across the trust's 4 schools, average attendance is 93.3% — marginally below the national average of 94.5%. Riverside Academy is flagged for performance concerns: attendance at 91.4%, a 'Requires Improvement' Ofsted rating, and a budget overspend. Oakridge and Hillside are performing well. Trust-wide SEND cohort averages 22.3%, above the national 20% — aligned with the 2026 SEND White Paper which notes rising demand. Recommend a trust-level SEND strategy review ahead of Phase 1 compliance deadlines.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Across the trust's 4 schools, average attendance is 93.3% — marginally below the national average of 94.5%. Riverside Academy is flagged for performance concerns: attendance at 91.4%, a 'Requires Improvement' Ofsted rating, and a budget overspend. Oakridge and Hillside are performing well. Trust-wide SEND cohort averages 22.3%, above the national 20% — aligned with the 2026 SEND White Paper which notes rising demand. Recommend a trust-level SEND strategy review ahead of Phase 1 compliance deadlines.`}
+        />
+        <AIKeyHighlightsBox label="Trust Lead" items={['Cross-school attendance variance: Riverside 2.1% below trust average', 'RI school Riverside — 3 urgent actions outstanding from improvement plan', 'SEND cohort at 22.3% above national 20% — strategy review recommended', '2 schools off track on budget — combined £18k overspend', 'Governance meeting prep due — 4 agenda items awaiting submission']} />
+      </div>
 
       <div>
         <SectionTitle icon="🏫" title="School-by-School Overview" />
@@ -648,9 +673,12 @@ function TrustView() {
 function HeadteacherView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`School attendance today is 94.2%, in line with the national average. 12 pupils (8.3%) are classified as persistent absentees — this is an area to watch. KS2 combined results are 3 percentage points below national, driven by a 14-point disadvantage gap. The SEND cohort (26.2% of roll) is above national average and warrants attention given the incoming 2026 SEND White Paper ISP requirements. Behaviour incidents have dropped 26% this term — a positive trend. 2 staff are on supply cover today. Budget is currently on track.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`School attendance today is 94.2%, in line with the national average. 12 pupils (8.3%) are classified as persistent absentees — this is an area to watch. KS2 combined results are 3 percentage points below national, driven by a 14-point disadvantage gap. The SEND cohort (26.2% of roll) is above national average and warrants attention given the incoming 2026 SEND White Paper ISP requirements. Behaviour incidents have dropped 26% this term — a positive trend. 2 staff are on supply cover today. Budget is currently on track.`}
+        />
+        <AIKeyHighlightsBox label="Headteacher" items={['3 staff absence cover arrangements needed today', 'Year 6 SATs preparation — 4 weeks to go, revision timetable finalised', 'Parent evening bookings at 67% — reminder emails due', 'Exclusion review panel due Friday — papers to circulate', 'SLT agenda: 3 items outstanding from last meeting']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Attendance Today" value="94.2%" sub="National: 94.5%" color="blue" />
@@ -774,9 +802,12 @@ function HeadOfYearView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Year ${selectedYear} attendance is ${yearData.pct}% — ${yearData.pct < 94.5 ? 'below' : 'above'} the national average of 94.5%. Behaviour incidents in this year group account for 8 of 23 this term. 3 pupils in Y${selectedYear} are on the SEND register with active ISPs. 2 pupils are flagged as requiring pastoral intervention. Early communication with families of persistent absentees is recommended before the Easter break.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Year ${selectedYear} attendance is ${yearData.pct}% — ${yearData.pct < 94.5 ? 'below' : 'above'} the national average of 94.5%. Behaviour incidents in this year group account for 8 of 23 this term. 3 pupils in Y${selectedYear} are on the SEND register with active ISPs. 2 pupils are flagged as requiring pastoral intervention. Early communication with families of persistent absentees is recommended before the Easter break.`}
+        />
+        <AIKeyHighlightsBox label="Head of Year" items={['4 pupils with attendance below 85% — pastoral follow-up needed', '2 unresolved pastoral concerns — 1 escalated to DSL', 'Rewards assembly preparation due by Thursday', 'Intervention group progress review scheduled this week', 'New starter settling-in check — day 5 review due tomorrow']} />
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-2">
         <p className="text-sm mr-2 self-center" style={{ color: '#9CA3AF' }}>Viewing year group:</p>
@@ -883,9 +914,12 @@ function HeadOfYearView() {
 function TeacherView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Your class has 94.1% attendance today — 1 pupil absent. Of your 28 pupils, 6 are on the SEND register (2 with EHCPs). Maths progress data shows 31% of your class are working below expected — consider targeted small-group support. 2 assessments are due this week. Reading recovery group sessions are showing strong impact for the 3 pupils involved. A reminder: SEND reviews for Pupil A and Pupil B are due before end of term.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Your class has 94.1% attendance today — 1 pupil absent. Of your 28 pupils, 6 are on the SEND register (2 with EHCPs). Maths progress data shows 31% of your class are working below expected — consider targeted small-group support. 2 assessments are due this week. Reading recovery group sessions are showing strong impact for the 3 pupils involved. A reminder: SEND reviews for Pupil A and Pupil B are due before end of term.`}
+        />
+        <AIKeyHighlightsBox label="Teacher" items={['3 assessments unmarked — overdue since last week', 'Intervention group progress review due Wednesday', 'CPD log incomplete — 2 hours to record before term end', 'Parents evening: 4 open slots still available', 'Resource request for guided reading books pending approval']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Class Attendance Today" value="94.1%" sub="1 pupil absent" color="blue" />
@@ -989,9 +1023,12 @@ function SENView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`SEND register: 38 pupils (26.2% of roll) — above the national average of 20%. EHCPs have risen nationally by 67% since 2019; this school reflects that trend. URGENT: 1 annual review is overdue and Pupil C (Y6) has no transition plan — secondary placement must be confirmed before July. 3 EHCP assessments are approaching their 20-week statutory deadline. The 2026 SEND White Paper introduces Individual Support Plans as a statutory requirement from September 2029 — ISP templates are not yet created. Experts at Hand funding (£1.8bn nationally) and the Inclusive Mainstream Fund (£1.6bn) are now available to apply for. SEN budget on track. Recommend: create ISP templates this half-term, book Y6 transition review, and submit Inclusive Mainstream Fund application.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`SEND register: 38 pupils (26.2% of roll) — above the national average of 20%. EHCPs have risen nationally by 67% since 2019; this school reflects that trend. URGENT: 1 annual review is overdue and Pupil C (Y6) has no transition plan — secondary placement must be confirmed before July. 3 EHCP assessments are approaching their 20-week statutory deadline. The 2026 SEND White Paper introduces Individual Support Plans as a statutory requirement from September 2029 — ISP templates are not yet created. Experts at Hand funding (£1.8bn nationally) and the Inclusive Mainstream Fund (£1.6bn) are now available to apply for. SEN budget on track. Recommend: create ISP templates this half-term, book Y6 transition review, and submit Inclusive Mainstream Fund application.`}
+        />
+        <AIKeyHighlightsBox label="SENCO" items={['2 EHCP annual reviews overdue — deadline passed', '1 new referral awaiting initial assessment', 'Provision map requires end-of-term update', 'SEND training compliance: 1 staff member outstanding', 'External agency visit scheduled Thursday — SALT']} />
+      </div>
 
       {/* White Paper callout banner */}
       <div className="rounded-xl bg-gradient-to-r from-indigo-900 to-blue-800 text-white p-5">
@@ -1672,9 +1709,12 @@ function SafeguardingView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`4 open safeguarding cases: 2 Child Protection (one is a high-risk domestic abuse situation), 2 Children in Need. 3 Looked After Children enrolled. KCSIE 2024 compliance is 87% — key gaps: staff training (4 outstanding), online safety risk assessment not yet reviewed, and filtering/monitoring audit overdue. Under KCSIE 2024, the DSL holds responsibility for online safety and understanding filtering/monitoring systems — this must not be delegated. Prevent duty compliance is Met. Next TAF review is 26 March. Single Central Record is up to date. Safer recruitment compliance: 100%.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`4 open safeguarding cases: 2 Child Protection (one is a high-risk domestic abuse situation), 2 Children in Need. 3 Looked After Children enrolled. KCSIE 2024 compliance is 87% — key gaps: staff training (4 outstanding), online safety risk assessment not yet reviewed, and filtering/monitoring audit overdue. Under KCSIE 2024, the DSL holds responsibility for online safety and understanding filtering/monitoring systems — this must not be delegated. Prevent duty compliance is Met. Next TAF review is 26 March. Single Central Record is up to date. Safer recruitment compliance: 100%.`}
+        />
+        <AIKeyHighlightsBox label="Safeguarding" items={['2 open CP cases requiring immediate update', 'SCR check outstanding for 1 recently hired staff member', 'DSL supervision meeting due this week', 'Safeguarding training: 3 staff non-compliant', '1 early help referral pending decision from panel']} />
+      </div>
 
       {/* KCSIE 2024 callout */}
       <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 text-white p-5">
@@ -2206,9 +2246,12 @@ function SafeguardingView() {
 function PupilPremiumView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`31 pupils (21.4% of roll) are Pupil Premium eligible — above the national average of ~18%. The attainment gap has closed from 17 points last year to 14 points this year, and sits below the national gap of 18 points — a positive trajectory. PP funding is on track: £7,640 spent of £12,800 allocated. Reading Recovery and 1:1 tutoring are showing high impact. Breakfast Club and Homework Club are delivering medium impact. Recommend reviewing whether SEMH support spend can be extended, given its high-impact classification.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`31 pupils (21.4% of roll) are Pupil Premium eligible — above the national average of ~18%. The attainment gap has closed from 17 points last year to 14 points this year, and sits below the national gap of 18 points — a positive trajectory. PP funding is on track: £7,640 spent of £12,800 allocated. Reading Recovery and 1:1 tutoring are showing high impact. Breakfast Club and Homework Club are delivering medium impact. Recommend reviewing whether SEMH support spend can be extended, given its high-impact classification.`}
+        />
+        <AIKeyHighlightsBox label="Pupil Premium" items={['PP attainment gap widened 3% in Year 4 maths', '2 interventions showing low impact — review urgently', 'PP spending review due end of term — budget 78% spent', 'Ofsted PP evidence folder incomplete — 3 sections missing', '4 new PP-eligible pupils identified this term']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="PP Eligible Pupils" value="31" sub="21.4% of school" color="blue" />
@@ -2300,9 +2343,12 @@ function PupilPremiumView() {
 function InspectionsView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Under the new 2025 Ofsted framework (in effect Nov 2025), schools receive report cards across 6 areas — no single overall grade. Based on current data, Oakridge is performing at Strong Standard in Inclusion, Attendance & Behaviour, and Personal Development. Curriculum & Teaching, Achievement and Leadership & Governance are at Expected Standard. Next inspection is expected Autumn 2026. 2 evidence gaps are flagged: the Attendance Improvement Plan and the Disadvantage Gap Action Plan are not yet complete — these should be prioritised before summer. Safeguarding is fully compliant.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Under the new 2025 Ofsted framework (in effect Nov 2025), schools receive report cards across 6 areas — no single overall grade. Based on current data, Oakridge is performing at Strong Standard in Inclusion, Attendance & Behaviour, and Personal Development. Curriculum & Teaching, Achievement and Leadership & Governance are at Expected Standard. Next inspection is expected Autumn 2026. 2 evidence gaps are flagged: the Attendance Improvement Plan and the Disadvantage Gap Action Plan are not yet complete — these should be prioritised before summer. Safeguarding is fully compliant.`}
+        />
+        <AIKeyHighlightsBox label="Inspections" items={['Deep dive readiness rated amber in 2 subject areas', 'Last mocksted actions: 60% complete, 4 outstanding', 'Governor monitoring visit not yet scheduled this term', 'Behaviour policy review outstanding — last updated Oct 2025', 'Evidence folders last updated 6 weeks ago — refresh needed']} />
+      </div>
 
       {/* New framework explainer */}
       <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>

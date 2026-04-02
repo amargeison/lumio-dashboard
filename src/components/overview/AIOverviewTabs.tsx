@@ -202,7 +202,7 @@ function SkeletonCards({ count = 3 }: { count?: number }) {
 function hasRealData(checks: ('staff' | 'contacts' | 'integrations')[]): boolean {
   if (typeof window === 'undefined') return false
   for (const c of checks) {
-    if (c === 'staff') { try { if (JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0) return true } catch { /* */ } }
+    if (c === 'staff') return false // Staff presence is now checked via prop, not localStorage
     if (c === 'contacts') { try { if (JSON.parse(localStorage.getItem('lumio_crm_contacts') || '[]').length > 0) return true } catch { /* */ } }
     if (c === 'integrations') { if (Object.keys(localStorage).some(k => k.startsWith('lumio_integration_') && localStorage.getItem(k) === 'true')) return true }
   }
@@ -758,19 +758,9 @@ interface ImportedStaff {
   role?: string; role_level?: number
 }
 
+// Staff is now passed as a prop from Supabase — no localStorage
 function getImportedStaff(): ImportedStaff[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw: ImportedStaff[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-    // Deduplicate by email at read time
-    const seen = new Set<string>()
-    return raw.filter(s => {
-      const key = s.email?.toLowerCase() || `${s.first_name}_${s.last_name}`.toLowerCase()
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-  } catch { return [] }
+  return []
 }
 
 function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
@@ -787,15 +777,22 @@ function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
   }
 }
 
-export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: string) => void }) {
-  const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(getImportedStaff)
+export function AITeam({ ctx, onAction, staffFromSupabase = [] }: { ctx: AIContext; onAction?: (msg: string) => void; staffFromSupabase?: ImportedStaff[] }) {
+  const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(staffFromSupabase)
   const { items: aiItems, loading, error, regenerate } = useAIFetch<TeamMember>('team', ctx, importedStaff.length ? { importedStaff } : undefined)
   const [subTab, setSubTab] = useState<TeamSubTab>('staff')
-  const showBanner = !hasRealData(['staff'])
+  const showBanner = importedStaff.length === 0
 
-  // Listen for new imports
+  // Sync with prop updates (e.g. after Supabase fetch completes)
   useEffect(() => {
-    const handler = () => setImportedStaff(getImportedStaff())
+    setImportedStaff(staffFromSupabase)
+  }, [staffFromSupabase])
+
+  // Listen for new imports (re-fetch triggers)
+  useEffect(() => {
+    const handler = () => {
+      // Parent will re-fetch and pass new staffFromSupabase — this is just for the event trigger
+    }
     window.addEventListener('lumio-staff-imported', handler)
     return () => window.removeEventListener('lumio-staff-imported', handler)
   }, [])

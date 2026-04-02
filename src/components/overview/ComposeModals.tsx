@@ -123,7 +123,7 @@ export function MeetingBookModal({ onClose, onToast, onMeetingCreated }: { onClo
   useEffect(() => {
     if (meetingType !== 'team') return
     try {
-      const staff = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') as { email?: string; department?: string }[]
+      const staff: { email?: string; department?: string }[] = [] // Staff now comes from Supabase, not localStorage
       if (inviteAll) {
         setStaffEmails(staff.filter(s => s.email).map(s => s.email!))
       } else if (selectedDepts.length > 0) {

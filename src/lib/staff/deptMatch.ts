@@ -19,13 +19,13 @@ const DEPT_PATTERNS: Record<string, RegExp> = {
   projects: /\b(project|programme|pmo)\b/i,
 }
 
+// Staff is now fetched from Supabase only — no localStorage
 export function getImportedStaff(): StaffMember[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+  return []
 }
 
-export function getDeptStaff(dept: string): StaffMember[] {
-  const staff = getImportedStaff()
+export function getDeptStaff(dept: string, staffOverride?: StaffMember[]): StaffMember[] {
+  const staff = staffOverride ?? getImportedStaff()
   const pattern = DEPT_PATTERNS[dept.toLowerCase()]
   if (!pattern) return staff.filter(s => (s.department || '').toLowerCase().includes(dept.toLowerCase()))
   return staff.filter(s => {

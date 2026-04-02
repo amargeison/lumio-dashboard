@@ -60,10 +60,10 @@ export function getClientRole(): RoleResult & { isOwner: boolean; impersonating:
     return { role: roleMap[level] || 'user', role_level: (level as RoleResult['role_level']) || 4, isOwner: localStorage.getItem('lumio_user_is_owner') === 'true', impersonating: false }
   }
 
-  // Detect from imported staff
+  // Detect from imported staff — no longer uses localStorage
   try {
     const userName = (localStorage.getItem('lumio_user_name') || '').toLowerCase()
-    const staff = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
+    const staff: any[] = []
     const match = staff.find((s: any) => {
       const full = [s.first_name, s.last_name].filter(Boolean).join(' ').toLowerCase()
       return full === userName || (s.first_name && s.first_name.toLowerCase() === userName)

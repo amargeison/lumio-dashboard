@@ -467,14 +467,7 @@ export function useHasDashboardData(pageKey: string): boolean | null {
       return
     }
 
-    // Fast path 2: staff has been imported — enable HR/Accounts/IT pages
-    const staffPages = new Set(['hr', 'accounts', 'it'])
-    if (staffPages.has(pageKey)) {
-      try {
-        const imported = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-        if (imported.length > 0) { setHas(true); return }
-      } catch { /* ignore */ }
-    }
+    // Staff presence is now determined by Supabase query, not localStorage
 
     // Per-page flag ONLY trusted when demo is active (already handled above)
     // When demo is off, ignore stale lumio_dashboard_*_hasData flags

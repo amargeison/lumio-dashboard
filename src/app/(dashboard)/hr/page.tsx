@@ -197,7 +197,7 @@ export default function HRPage() {
 
   const hasData = useHasDashboardData('hr')
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
-  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+  const hasImportedStaff = false // Staff now from Supabase only
 
   const deptStaff = getDeptStaff('hr')
   const deptLead = getDeptLead(deptStaff)

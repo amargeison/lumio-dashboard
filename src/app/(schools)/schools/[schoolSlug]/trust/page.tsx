@@ -263,28 +263,56 @@ function ExecOverview() {
 
   return (
     <div className="p-5 flex flex-col gap-5">
-      {/* AI Summary */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.1)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
-          <Zap size={13} style={{ color: '#0D9488' }} />
-          <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>CEO Intelligence Summary</p>
-          <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated today · {new Date().toLocaleDateString('en-GB')}</span>
+      {/* AI Summary + AI Key Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* AI Summary */}
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.1)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+            <Zap size={13} style={{ color: '#0D9488' }} />
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Summary</p>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated today · {new Date().toLocaleDateString('en-GB')}</span>
+          </div>
+          <div className="p-4 flex flex-col gap-2" style={{ backgroundColor: '#07080F' }}>
+            {[
+              { r:'red' as RAG, t:'Riverside Academy requires urgent attention — RI Ofsted grade, 19.4% PA rate, 4 vacancies, SCR non-compliant, 3 active CP cases and £38k budget deficit. Director of Education visit recommended this week.' },
+              { r:'amber' as RAG, t:"Highfield Junior is trending amber — attendance has dropped 2.1pp this half term, 3 vacancies unfilled and PA rate at 15.8%. Risk of Ofsted reinspection (last Good: Feb 2022 — now overdue)." },
+              { r:'amber' as RAG, t:"St. Clement's asbestos management plan overdue — statutory ATH 2025 requirement. Estates Director must resolve within 14 days. Red estates RAG." },
+              { r:'amber' as RAG, t:"Trust-wide PA rate is 12.3% — above the national 12% threshold. Riverside (19.4%) and Highfield (15.8%) are driving this. EWO engagement required at both schools." },
+              { r:'green' as RAG, t:"Meadowbrook Primary continues as the trust's outstanding school. Recommend using as a CPD and curriculum hub — deploy Meadowbrook leads to support Riverside and Highfield." },
+              { r:'green' as RAG, t:"Trust total budget surplus: £39,200. The Valley Academy and Meadowbrook are in surplus; Riverside and Highfield carrying deficits. CFO to review Riverside position at next Finance Committee." },
+            ].map((a,i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: rag(a.r).bg, color: rag(a.r).color }}>{i+1}</span>
+                <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{a.t}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="p-4 flex flex-col gap-2" style={{ backgroundColor: '#07080F' }}>
-          {[
-            { r:'red' as RAG, t:'Riverside Academy requires urgent attention — RI Ofsted grade, 19.4% PA rate, 4 vacancies, SCR non-compliant, 3 active CP cases and £38k budget deficit. Director of Education visit recommended this week.' },
-            { r:'amber' as RAG, t:"Highfield Junior is trending amber — attendance has dropped 2.1pp this half term, 3 vacancies unfilled and PA rate at 15.8%. Risk of Ofsted reinspection (last Good: Feb 2022 — now overdue)." },
-            { r:'amber' as RAG, t:"St. Clement's asbestos management plan overdue — statutory ATH 2025 requirement. Estates Director must resolve within 14 days. Red estates RAG." },
-            { r:'amber' as RAG, t:"Trust-wide PA rate is 12.3% — above the national 12% threshold. Riverside (19.4%) and Highfield (15.8%) are driving this. EWO engagement required at both schools." },
-            { r:'green' as RAG, t:"Meadowbrook Primary continues as the trust's outstanding school. Recommend using as a CPD and curriculum hub — deploy Meadowbrook leads to support Riverside and Highfield." },
-            { r:'green' as RAG, t:"Trust total budget surplus: £39,200. The Valley Academy and Meadowbrook are in surplus; Riverside and Highfield carrying deficits. CFO to review Riverside position at next Finance Committee." },
-          ].map((a,i) => (
-            <div key={i} className="flex gap-3 items-start">
-              <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: rag(a.r).bg, color: rag(a.r).color }}>{i+1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{a.t}</p>
-            </div>
-          ))}
+
+        {/* AI Key Highlights */}
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #0D9488' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.3)' }}>
+            <Zap size={13} style={{ color: '#0D9488' }} />
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+          </div>
+          <div className="px-4 py-3 space-y-2" style={{ backgroundColor: '#0f0e17' }}>
+            {[
+              `Attendance across the trust is ${(SCHOOLS.reduce((s,sc)=>s+sc.attendance,0)/SCHOOLS.length).toFixed(1)}% today — ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).name} is lowest at ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).attendance}%`,
+              `${SCHOOLS.reduce((s,sc)=>s+sc.safeguardingCases,0)} open safeguarding concerns across the trust — ${SCHOOLS.filter(s=>s.safeguardingCases>0).length} schools affected`,
+              `${SCHOOLS.filter(s=>!s.scrCompliant).length > 0 ? SCHOOLS.filter(s=>!s.scrCompliant).map(s=>s.name).join(', ') + ' SCR non-compliant — action required' : 'All SCR checks compliant across the trust'}`,
+              `Trust-wide EHCP caseload: ${SCHOOLS.reduce((s,sc)=>s+sc.ehcps,0)} pupils — ${SCHOOLS.filter(s=>s.ehcps>5).length} schools above 5 EHCPs`,
+              `Budget position: £39,200 surplus trust-wide. 2 schools in deficit (Riverside -£38k, Highfield -£12k)`,
+              `Next governance deadline: Finance Committee 15 Apr — budget papers due 8 Apr`,
+              `Staff vacancy rate: ${SCHOOLS.reduce((s,sc)=>s+sc.vacancies,0)} open positions — Riverside has ${SCHOOLS.find(s=>s.name.includes('Riverside'))?.vacancies || 0} of these`,
+              `Ofsted risk: Riverside RI (last inspected Nov 2023) — monitoring visit likely within 12 months`,
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#99F6E4' }}>
+                <span className="flex-shrink-0 mt-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>{i+1}</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1334,24 +1362,7 @@ export default function TrustDashboard() {
         ))}
       </div>
 
-      {/* AI Trust Morning Summary */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #0D9488' }}>
-        <div className="flex items-center gap-2 px-5 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.3)' }}>
-          <Zap size={13} style={{ color: '#0D9488' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Trust Morning Summary</span>
-        </div>
-        <div className="px-5 py-3 space-y-2" style={{ backgroundColor: '#0f0e17' }}>
-          {[
-            `Attendance across the trust is ${(SCHOOLS.reduce((s,sc)=>s+sc.attendance,0)/SCHOOLS.length).toFixed(1)}% today — ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).name} is lowest at ${SCHOOLS.reduce((w,s)=>s.attendance<w.attendance?s:w).attendance}%`,
-            `${SCHOOLS.reduce((s,sc)=>s+sc.safeguardingCases,0)} open safeguarding concerns across the trust — ${SCHOOLS.filter(s=>s.safeguardingCases>0).length} schools affected`,
-            `${SCHOOLS.filter(s=>!s.scrCompliant).length > 0 ? SCHOOLS.filter(s=>!s.scrCompliant).map(s=>s.name).join(', ') + ' SCR non-compliant — action required' : 'All SCR checks compliant across the trust'}`,
-          ].map((item, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#99F6E4' }}>
-              <span className="flex-shrink-0 mt-0.5" style={{ color: '#0D9488' }}>•</span>{item}
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* AI Key Highlights moved to top — see grid above */}
 
       {/* School pill nav */}
       <div className="flex flex-wrap gap-2">

@@ -47,9 +47,9 @@ interface StaffMember {
   job_title?: string; department?: string; phone?: string; start_date?: string
 }
 
+// Staff is now fetched from Supabase only — no localStorage
 function getImportedStaff(): StaffMember[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+  return []
 }
 
 const DIRECTOR_TITLES = /\b(director|ceo|coo|cto|cfo|chief|founder|owner|president|vp|vice president|head of|managing director|md)\b/i
@@ -898,14 +898,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       parts.push('No messages connected yet — connect your email in Settings to see live updates.')
     }
 
-    // Staff
-    try {
-      const staffRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_staff_imported') : null
-      if (staffRaw) {
-        const staff = JSON.parse(staffRaw) as unknown[]
-        if (staff.length > 0) parts.push(`Your team has ${staff.length} ${staff.length === 1 ? 'member' : 'members'}.`)
-      }
-    } catch { /* ignore */ }
+    // Staff count — no longer read from localStorage
 
     // HR platform mention
     if (typeof window !== 'undefined' && ['bamboohr', 'sage_hr', 'breathe', 'worksmarter'].some(k => localStorage.getItem(`lumio_integration_${k}`) === 'true')) {
@@ -2715,22 +2708,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         })
         const data = await res.json()
         if (res.ok) {
-          // Deduplicate by email on merge, or replace entirely
-          if (replaceOnImport) {
-            localStorage.setItem('lumio_staff_imported', JSON.stringify(rows))
-          } else {
-            const existing: Record<string, unknown>[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-            const merged = [...existing]
-            for (const s of rows as Record<string, unknown>[]) {
-              const email = s.email as string | undefined
-              if (email) {
-                const idx = merged.findIndex(e => e.email === email)
-                if (idx >= 0) merged[idx] = s; else merged.push(s)
-              } else { merged.push(s) }
-            }
-            localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
-          }
-          localStorage.setItem('lumio_staff_imported_source', 'supabase')
+          // Re-fetch staff from Supabase after successful import
           window.dispatchEvent(new Event('lumio-staff-imported'))
           const parts: string[] = []
           if (data.added > 0) parts.push(`${data.added} added`)
@@ -3495,7 +3473,7 @@ function SnapshotWidgets() {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [] }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[] }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
@@ -3540,8 +3518,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
   const [tab, setTab] = useState<OverviewTab>('today')
 
-  // Staff data + director detection — re-reads localStorage on every render to stay in sync
-  const allStaff = getImportedStaff()
+  // Staff data + director detection — from Supabase via prop
+  const allStaff = supabaseStaff
   const currentUserStaff = React.useMemo(() => {
     const name = (firstName || '').toLowerCase()
     if (!name) return null
@@ -3617,8 +3595,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
           {/* Active Departments — shows when staff imported and demo off */}
           {!demoDataActive && (() => {
-            const allStaff = getImportedStaff()
-            if (!allStaff.length) return null
+            if (!supabaseStaff.length) return null
             const DEPTS = [
               { key: 'sales', icon: '💼', route: '/sales' }, { key: 'marketing', icon: '📊', route: '/marketing' },
               { key: 'hr', icon: '👥', route: '/hr' }, { key: 'accounts', icon: '💰', route: '/accounts' },
@@ -3627,7 +3604,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
               { key: 'partners', icon: '🤝', route: '/partners' },
             ]
             const activeDepts = DEPTS.map(d => {
-              const staff = getDeptStaff(d.key)
+              const staff = getDeptStaff(d.key, supabaseStaff)
               if (!staff.length) return null
               const lead = getDeptLead(staff)
               return { ...d, lead, count: staff.length }
@@ -3706,7 +3683,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       ) : tab === 'not-to-miss' ? (
         demoDataActive ? <NotToMiss /> : <AIDontMiss ctx={aiCtx} />
       ) : tab === 'team' ? (
-        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} />
+        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
@@ -3785,6 +3762,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [businessId, setBusinessId] = useState('')
+  const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
+  const [staffRefreshKey, setStaffRefreshKey] = useState(0)
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(true)
@@ -3951,10 +3930,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
-          // Sync staff: if DB has 0 staff, clear stale localStorage imports
-          if (data.staff_count === 0) {
-            localStorage.removeItem('lumio_staff_imported')
-          }
+          // Staff is now fetched from Supabase only — no localStorage sync needed
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
           const dismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
@@ -4015,6 +3991,35 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
     }
   }, [slug, router])
+
+  // Clear stale localStorage staff data — Supabase is now the only source
+  useEffect(() => {
+    localStorage.removeItem('lumio_staff_imported')
+    localStorage.removeItem('lumio_staff_imported_source')
+    localStorage.removeItem('lumio_staff_ids')
+    localStorage.removeItem('lumio_staff_profiles')
+  }, [])
+
+  // Fetch staff from Supabase when session is ready or after import
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') : null
+    if (!token) return
+    fetch('/api/workspace/staff', { headers: { 'x-workspace-token': token } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.staff) {
+          setSupabaseStaff(data.staff)
+        }
+      })
+      .catch(() => {})
+  }, [businessId, staffRefreshKey])
+
+  // Re-fetch staff when new staff is imported via CSV
+  useEffect(() => {
+    const handler = () => setStaffRefreshKey(k => k + 1)
+    window.addEventListener('lumio-staff-imported', handler)
+    return () => window.removeEventListener('lumio-staff-imported', handler)
+  }, [])
 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
   const sessionToken = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
@@ -4226,7 +4231,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
