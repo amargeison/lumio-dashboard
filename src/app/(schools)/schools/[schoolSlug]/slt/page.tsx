@@ -166,10 +166,32 @@ const MAIN_TABS: { id: MainTab; label: string; icon: string }[] = [
 
 export default function SLTSuite() {
   const [tab, setTab] = useState<MainTab>('executive')
+  const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+
+  useEffect(() => {
+    const check = () => {
+      const demo = localStorage.getItem('lumio_schools_demo_loaded') === 'true' || localStorage.getItem('lumio_demo_active') === 'true'
+      setIsSchoolDemo(demo)
+    }
+    check()
+    const interval = setInterval(check, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const now = new Date()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening'
   const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  if (!isSchoolDemo) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="text-5xl mb-4">🏫</div>
+        <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>SLT Suite</h3>
+        <p className="text-sm max-w-md mb-6" style={{ color: '#9CA3AF' }}>Your executive dashboard with attendance, safeguarding, SEND, staff and Ofsted data all in one place. Load demo data to explore.</p>
+        <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-6 py-3 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
