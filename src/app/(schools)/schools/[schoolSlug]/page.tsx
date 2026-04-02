@@ -10,6 +10,7 @@ import {
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1541,35 +1542,27 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             </div>
           )}
 
-          {/* STAFF INFO — FIFA/Panini cards */}
-          {staffSubTab === 'info' && (
-            <div>
-              <h2 className="text-xl font-black mb-4" style={{ color: '#F9FAFB' }}>Staff Info</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {SCHOOL_STAFF.map(card => (
-                  <div key={card.name} style={{ background: `linear-gradient(135deg, ${card.color}22 0%, #0A0B10 60%)`, border: `1px solid ${card.color}44`, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 320 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div><div style={{ fontSize: 32, fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.overall}</div><div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, letterSpacing: '0.1em' }}>OVERALL</div></div>
-                      <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: `${card.color}33`, color: card.color, border: `1px solid ${card.color}55` }}>{card.dept}</div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
-                      <div style={{ width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${card.color}44 0%, ${card.color}11 70%)`, border: `2px solid ${card.color}`, boxShadow: `0 0 20px ${card.color}44, 0 0 40px ${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: card.color }}>{card.initials}</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 700, color: '#F9FAFB' }}>{card.name}</div><div style={{ fontSize: 13, color: card.color, fontWeight: 500, marginTop: 2 }}>{card.role}</div></div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, padding: '8px 0', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-                      {Object.entries(card.stats).map(([key, val]) => (
-                        <div key={key} style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: val >= 90 ? '#22C55E' : val >= 80 ? '#F59E0B' : '#EF4444' }}>{val}</div><div style={{ fontSize: 9, color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em' }}>{key}</div></div>
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', background: `${card.color}33`, color: card.color, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Message</button>
-                      <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Profile</button>
-                    </div>
-                  </div>
-                ))}
+          {/* STAFF INFO — FIFA/Panini cards (identical to business portal Team Info) */}
+          {staffSubTab === 'info' && (() => {
+            const SCHOOL_DEMO_STAFF: StaffRecord[] = [
+              { first_name: 'Sarah', last_name: 'Mitchell', job_title: 'Headteacher', department: 'Leadership', email: 'headteacher@oakridge.edu' },
+              { first_name: 'James', last_name: 'Okafor', job_title: 'Deputy Head', department: 'Leadership', email: 'deputy@oakridge.edu' },
+              { first_name: 'Emma', last_name: 'Clarke', job_title: 'SENCO', department: 'HR', email: 'senco@oakridge.edu' },
+              { first_name: 'Tom', last_name: 'Bradley', job_title: 'Year 6 Teacher', department: 'Support', email: 'tbradley@oakridge.edu' },
+              { first_name: 'Priya', last_name: 'Patel', job_title: 'DSL', department: 'Support', email: 'dsl@oakridge.edu' },
+              { first_name: 'Mark', last_name: 'Davis', job_title: 'Business Manager', department: 'Finance', email: 'bursar@oakridge.edu' },
+            ]
+            return (
+              <div className="space-y-4">
+                <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Info</h2>
+                <div className={`grid gap-4 justify-items-center ${getGridCols(SCHOOL_DEMO_STAFF.length)}`}>
+                  {SCHOOL_DEMO_STAFF.map((s, i) => (
+                    <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => {}} teamSize={SCHOOL_DEMO_STAFF.length} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* SCHOOL INFO */}
           {staffSubTab === 'school' && (
