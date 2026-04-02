@@ -356,6 +356,227 @@ function CornersAttacking() {
         <CoachAttribution />
       </SectionCard>
 
+      {/* Routine 4 — The Dummy Decoy Overload */}
+      <SectionCard title='Routine 4: "The Dummy Decoy Overload"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Left foot inswinger from right corner. 3 decoy sprints converge near post — primary target peels off late to back post unmarked.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Inswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>Martinez</strong> (left foot)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Ball flight — inswinger from right corner to back post */}
+            <BallFlight x1={315} y1={15} x2={120} y2={65} cx={240} cy={10} color={C.gold} />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* 3 decoy runners converging near post */}
+            <PlayerDot x={240} y={110} label={1} type="attack" size={9} />
+            <MovementArrow x1={240} y1={108} x2={225} y2={55} dashed color={C.textSec} />
+            <PitchLabel x={248} y={80} text="Decoy" color={C.textSec} size={7} />
+
+            <PlayerDot x={210} y={120} label={2} type="attack" size={9} />
+            <MovementArrow x1={210} y1={118} x2={220} y2={50} dashed color={C.textSec} />
+            <PitchLabel x={200} y={95} text="Decoy" color={C.textSec} size={7} />
+
+            <PlayerDot x={260} y={100} label={3} type="attack" size={9} />
+            <MovementArrow x1={260} y1={98} x2={230} y2={48} dashed color={C.textSec} />
+            <PitchLabel x={270} y={80} text="Decoy" color={C.textSec} size={7} />
+
+            {/* Near post zone */}
+            <ZoneHighlight x={210} y={35} width={40} height={35} color="rgba(148,163,184,0.15)" />
+
+            {/* Primary target — peels off late to back post */}
+            <PlayerDot x={180} y={120} label={4} type="attack" size={10} />
+            <MovementArrow x1={180} y1={118} x2={120} y2={68} dashed color={C.gold} />
+            <PitchLabel x={120} y={55} text="Back Post" color={C.gold} size={7} />
+
+            {/* Zone highlight back post */}
+            <ZoneHighlight x={100} y={50} width={45} height={35} color="rgba(241,196,15,0.15)" />
+
+            {/* Penalty spot holder */}
+            <PlayerDot x={170} y={90} label={5} type="attack" size={9} />
+            <PitchLabel x={170} y={103} text="2nd Ball" color={C.textSec} size={7} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>Decoys must sell their runs convincingly. Primary target delays run by half a second.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5 — Flick-On Chain */}
+      <SectionCard title='Routine 5: "Flick-On Chain"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Outswinger to near post flick-on specialist (shortest player). Flick directed to penalty spot runner. Back post safety option.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Ball flight — outswinger to near post */}
+            <BallFlight x1={315} y1={15} x2={230} y2={50} cx={290} cy={10} color={C.gold} />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Near post flick-on specialist */}
+            <PlayerDot x={230} y={50} label={1} type="attack" size={9} />
+            <PitchLabel x={230} y={38} text="Flick" color={C.gold} size={7} />
+
+            {/* Flick arrow to penalty spot */}
+            <MovementArrow x1={228} y1={52} x2={170} y2={85} dashed={false} color={C.gold} />
+
+            {/* Penalty spot runner arriving at pace */}
+            <PlayerDot x={170} y={130} label={2} type="attack" size={10} />
+            <MovementArrow x1={170} y1={128} x2={170} y2={89} dashed color={C.gold} />
+            <PitchLabel x={170} y={143} text="Runner" color={C.gold} size={7} />
+
+            {/* Back post safety */}
+            <PlayerDot x={110} y={65} label={3} type="attack" size={9} />
+            <PitchLabel x={110} y={53} text="Back Post" color={C.textSec} size={7} />
+            <MovementArrow x1={228} y1={54} x2={115} y2={65} dashed color={C.textSec} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 6 — Blockers + Back Post Bullet */}
+      <SectionCard title='Routine 6: "Blockers + Back Post Bullet"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          2 blockers screen opposition&apos;s best headers. Flat, driven delivery to back post at pace. One attacker sprints to back post, one holds 6 yards.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Ball flight — flat driven to back post */}
+            <BallFlight x1={315} y1={15} x2={110} y2={55} cx={220} cy={5} color={C.gold} />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Blockers screening opposition */}
+            <PlayerDot x={190} y={70} label="B1" type="attack" size={9} />
+            <PlayerDot x={200} y={55} label="X" type="defend" size={8} />
+            <MarkingLine x1={190} y1={70} x2={200} y2={55} color={C.primary} />
+
+            <PlayerDot x={220} y={80} label="B2" type="attack" size={9} />
+            <PlayerDot x={230} y={65} label="X" type="defend" size={8} />
+            <MarkingLine x1={220} y1={80} x2={230} y2={65} color={C.primary} />
+
+            <PitchLabel x={235} y={90} text="Blockers" color={C.primary} size={7} />
+
+            {/* Back post attacker at full sprint */}
+            <PlayerDot x={130} y={120} label={1} type="attack" size={10} />
+            <MovementArrow x1={130} y1={118} x2={112} y2={59} dashed color={C.gold} />
+            <PitchLabel x={110} y={43} text="Back Post" color={C.gold} size={7} />
+
+            {/* 6-yard holder */}
+            <PlayerDot x={170} y={45} label={2} type="attack" size={9} />
+            <PitchLabel x={170} y={33} text="6yd" color={C.textSec} size={7} />
+
+            {/* Back post zone */}
+            <ZoneHighlight x={90} y={40} width={45} height={35} color="rgba(241,196,15,0.15)" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 7 — The Pull-Back Cross */}
+      <SectionCard title='Routine 7: "The Pull-Back Cross"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Short corner — taker passes to overlapping full back. Full back drives to byline and pulls back low.
+          2 shooters arriving from outside the box.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker at corner */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Phase 1: Short pass to full back */}
+            <PlayerDot x={295} y={50} label="FB" type="attack" size={10} />
+            <MovementArrow x1={316} y1={22} x2={298} y2={48} dashed={false} color={C.text} />
+            <PitchLabel x={305} y={65} text="Phase 1" color={C.textSec} size={7} />
+
+            {/* Phase 2: Full back drives to byline */}
+            <MovementArrow x1={295} y1={48} x2={290} y2={18} dashed color={C.gold} />
+
+            {/* Pull-back low cross */}
+            <MovementArrow x1={290} y1={20} x2={200} y2={100} dashed={false} color={C.gold} />
+            <PitchLabel x={260} y={55} text="Cutback" color={C.gold} size={7} />
+
+            {/* Shooter 1 — 12 yards */}
+            <PlayerDot x={200} y={140} label={1} type="attack" size={10} />
+            <MovementArrow x1={200} y1={138} x2={200} y2={104} dashed color={C.gold} />
+            <PitchLabel x={200} y={153} text="12yds" color={C.gold} size={7} />
+
+            {/* Shooter 2 — edge of box */}
+            <PlayerDot x={160} y={155} label={2} type="attack" size={10} />
+            <MovementArrow x1={160} y1={153} x2={170} y2={120} dashed color={C.gold} />
+            <PitchLabel x={145} y={165} text="Edge" color={C.gold} size={7} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 8 — Second Phase Press-On */}
+      <SectionCard title='Routine 8: "Second Phase Press-On"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery to edge of box intentionally. 6 players positioned around the box edge to win second ball and shoot. No aerial threat — purely a second-ball routine.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Ball flight — to edge of box */}
+            <BallFlight x1={315} y1={15} x2={200} y2={130} cx={280} cy={60} color={C.gold} />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Edge of box delivery zone */}
+            <ZoneHighlight x={170} y={115} width={65} height={40} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={200} y={112} text="Delivery" color={C.gold} size={7} />
+
+            {/* 6 players in arc around box edge */}
+            <PlayerDot x={100} y={140} label={1} type="attack" size={9} />
+            <PlayerDot x={140} y={150} label={2} type="attack" size={9} />
+            <PlayerDot x={180} y={155} label={3} type="attack" size={9} />
+            <PlayerDot x={220} y={150} label={4} type="attack" size={9} />
+            <PlayerDot x={255} y={140} label={5} type="attack" size={9} />
+            <PlayerDot x={170} y={170} label={6} type="attack" size={9} />
+
+            {/* Shooting zones */}
+            <ZoneHighlight x={80} y={40} width={180} height={80} color="rgba(192,57,43,0.08)" />
+            <PitchLabel x={170} y={185} text="Shoot Zone" color={C.primary} size={7} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
       {/* Corner Stats */}
       <SectionCard title="Attacking Corner Statistics">
         <StatGrid
@@ -509,6 +730,213 @@ function CornersDefending() {
         <CoachAttribution />
       </SectionCard>
 
+      {/* Setup 4 — Aggressive Front 2 Press */}
+      <SectionCard title='Setup 4: "Aggressive Front 2 Press"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          2 players press the corner taker immediately on delivery. Remaining 9 set up zonal in the box.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Corner taker (opposition) */}
+            <PlayerDot x={318} y={18} label="A" type="attack" size={8} />
+
+            {/* 2 press players rushing corner */}
+            <PlayerDot x={280} y={60} label="P1" type="defend" size={9} />
+            <MovementArrow x1={280} y1={58} x2={314} y2={22} dashed color={C.primary} />
+            <PlayerDot x={295} y={45} label="P2" type="defend" size={9} />
+            <MovementArrow x1={295} y1={43} x2={316} y2={20} dashed color={C.primary} />
+
+            {/* 9 zonal in box */}
+            <ZoneHighlight x={100} y={30} width={160} height={80} color="rgba(192,57,43,0.1)" />
+
+            <PlayerDot x={120} y={45} label="D1" type="defend" size={8} />
+            <PlayerDot x={150} y={45} label="D2" type="defend" size={8} />
+            <PlayerDot x={180} y={45} label="D3" type="defend" size={8} />
+            <PlayerDot x={210} y={45} label="D4" type="defend" size={8} />
+            <PlayerDot x={240} y={45} label="D5" type="defend" size={8} />
+            <PlayerDot x={135} y={75} label="D6" type="defend" size={8} />
+            <PlayerDot x={170} y={75} label="D7" type="defend" size={8} />
+            <PlayerDot x={205} y={75} label="D8" type="defend" size={8} />
+            <PlayerDot x={170} y={105} label="D9" type="defend" size={8} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 5 — Back 5 Zonal Wall */}
+      <SectionCard title='Setup 5: "Back 5 Zonal Wall"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          5 players in rigid zonal line across 6-yard box. 3 man-markers on identified aerial threats. 1 sweeper outside box. GK front post.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* 6-yard box zonal wall highlight */}
+            <ZoneHighlight x={110} y={28} width={140} height={28} color="rgba(192,57,43,0.2)" />
+
+            {/* 5-player zonal wall */}
+            <PlayerDot x={125} y={42} label="Z1" type="defend" size={9} />
+            <PlayerDot x={150} y={42} label="Z2" type="defend" size={9} />
+            <PlayerDot x={175} y={42} label="Z3" type="defend" size={9} />
+            <PlayerDot x={200} y={42} label="Z4" type="defend" size={9} />
+            <PlayerDot x={225} y={42} label="Z5" type="defend" size={9} />
+
+            {/* 3 man-markers on aerial threats */}
+            <PlayerDot x={110} y={80} label="M1" type="defend" size={9} />
+            <PlayerDot x={110} y={72} label="A1" type="attack" size={7} />
+            <MarkingLine x1={110} y1={80} x2={110} y2={72} color={C.gold} />
+
+            <PlayerDot x={240} y={70} label="M2" type="defend" size={9} />
+            <PlayerDot x={245} y={62} label="A2" type="attack" size={7} />
+            <MarkingLine x1={240} y1={70} x2={245} y2={62} color={C.gold} />
+
+            <PlayerDot x={170} y={90} label="M3" type="defend" size={9} />
+            <PlayerDot x={175} y={82} label="A3" type="attack" size={7} />
+            <MarkingLine x1={170} y1={90} x2={175} y2={82} color={C.gold} />
+
+            {/* Sweeper outside box */}
+            <PlayerDot x={170} y={135} label="S" type="defend" size={9} />
+            <PitchLabel x={170} y={148} text="Sweeper" color={C.textSec} size={7} />
+
+            {/* GK front post */}
+            <PlayerDot x={155} y={15} label="GK" type="gk" size={9} />
+            <PitchLabel x={155} y={28} text="Front Post" color={C.textSec} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 6 — Counter-Attack Corner Defence */}
+      <SectionCard title='Setup 6: "Counter-Attack Corner Defence"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Pack box defensively but designate 2 fast forwards to stay high on halfway. On clearance: immediate long ball to 2 runners.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Defensive shape in box */}
+            <ZoneHighlight x={110} y={30} width={140} height={70} color="rgba(192,57,43,0.1)" />
+
+            <PlayerDot x={130} y={45} label="D1" type="defend" size={8} />
+            <PlayerDot x={160} y={45} label="D2" type="defend" size={8} />
+            <PlayerDot x={190} y={45} label="D3" type="defend" size={8} />
+            <PlayerDot x={220} y={45} label="D4" type="defend" size={8} />
+            <PlayerDot x={145} y={70} label="D5" type="defend" size={8} />
+            <PlayerDot x={175} y={70} label="D6" type="defend" size={8} />
+            <PlayerDot x={205} y={70} label="D7" type="defend" size={8} />
+            <PlayerDot x={170} y={100} label="D8" type="defend" size={8} />
+
+            {/* 2 fast forwards staying high — near halfway line */}
+            <PlayerDot x={100} y={240} label="F1" type="defend" size={10} />
+            <PitchLabel x={100} y={228} text="Stay High" color={C.gold} size={7} />
+            <MovementArrow x1={100} y1={238} x2={100} y2={200} dashed color={C.gold} />
+
+            <PlayerDot x={240} y={240} label="F2" type="defend" size={10} />
+            <PitchLabel x={240} y={228} text="Stay High" color={C.gold} size={7} />
+            <MovementArrow x1={240} y1={238} x2={240} y2={200} dashed color={C.gold} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 7 — Near Post Trap */}
+      <SectionCard title='Setup 7: "Near Post Trap"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Intentionally leave near post slightly open as a trap. Strongest header positioned just behind the near post zone to intercept.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Deliberate gap at near post */}
+            <ZoneHighlight x={215} y={25} width={40} height={35} color="rgba(241,196,15,0.2)" />
+            <PitchLabel x={235} y={22} text="Trap Gap" color={C.gold} size={7} />
+
+            {/* Interceptor positioned behind the gap */}
+            <PlayerDot x={225} y={65} label="H" type="defend" size={10} />
+            <PitchLabel x={225} y={78} text="Interceptor" color={C.primary} size={7} />
+            <MovementArrow x1={225} y1={63} x2={230} y2={40} dashed color={C.primary} />
+
+            {/* Other defenders in box */}
+            <PlayerDot x={140} y={45} label="D1" type="defend" size={8} />
+            <PlayerDot x={165} y={45} label="D2" type="defend" size={8} />
+            <PlayerDot x={190} y={45} label="D3" type="defend" size={8} />
+            <PlayerDot x={150} y={75} label="D4" type="defend" size={8} />
+            <PlayerDot x={180} y={75} label="D5" type="defend" size={8} />
+            <PlayerDot x={210} y={90} label="D6" type="defend" size={8} />
+            <PlayerDot x={140} y={100} label="D7" type="defend" size={8} />
+            <PlayerDot x={170} y={130} label="D8" type="defend" size={8} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 8 — Full Man-Mark Press */}
+      <SectionCard title='Setup 8: "Full Man-Mark Press"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Every opposition player in the box is man-marked. No zonal element — GK takes full responsibility for crosses. 2 post players regardless.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Opposition attackers + our man-markers paired */}
+            <PlayerDot x={130} y={55} label="A1" type="attack" size={7} />
+            <PlayerDot x={135} y={63} label="D1" type="defend" size={8} />
+            <MarkingLine x1={135} y1={63} x2={130} y2={55} color={C.primary} />
+
+            <PlayerDot x={170} y={60} label="A2" type="attack" size={7} />
+            <PlayerDot x={175} y={68} label="D2" type="defend" size={8} />
+            <MarkingLine x1={175} y1={68} x2={170} y2={60} color={C.primary} />
+
+            <PlayerDot x={210} y={50} label="A3" type="attack" size={7} />
+            <PlayerDot x={215} y={58} label="D3" type="defend" size={8} />
+            <MarkingLine x1={215} y1={58} x2={210} y2={50} color={C.primary} />
+
+            <PlayerDot x={240} y={70} label="A4" type="attack" size={7} />
+            <PlayerDot x={245} y={78} label="D4" type="defend" size={8} />
+            <MarkingLine x1={245} y1={78} x2={240} y2={70} color={C.primary} />
+
+            <PlayerDot x={150} y={85} label="A5" type="attack" size={7} />
+            <PlayerDot x={155} y={93} label="D5" type="defend" size={8} />
+            <MarkingLine x1={155} y1={93} x2={150} y2={85} color={C.primary} />
+
+            <PlayerDot x={200} y={90} label="A6" type="attack" size={7} />
+            <PlayerDot x={205} y={98} label="D6" type="defend" size={8} />
+            <MarkingLine x1={205} y1={98} x2={200} y2={90} color={C.primary} />
+
+            <PlayerDot x={120} y={110} label="A7" type="attack" size={7} />
+            <PlayerDot x={125} y={118} label="D7" type="defend" size={8} />
+            <MarkingLine x1={125} y1={118} x2={120} y2={110} color={C.primary} />
+
+            <PlayerDot x={250} y={105} label="A8" type="attack" size={7} />
+            <PlayerDot x={255} y={113} label="D8" type="defend" size={8} />
+            <MarkingLine x1={255} y1={113} x2={250} y2={105} color={C.primary} />
+
+            {/* 2 post players */}
+            <PlayerDot x={148} y={22} label="P1" type="defend" size={8} />
+            <PlayerDot x={192} y={22} label="P2" type="defend" size={8} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
+          <div style={{ background: C.bg, borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: C.primary, display: 'inline-block' }} />
+            <span style={{ color: C.textSec, fontSize: 12 }}>Man-marking lines</span>
+          </div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
       {/* Defensive Corner Stats */}
       <SectionCard title="Defensive Corner Statistics">
         <StatGrid
@@ -653,6 +1081,152 @@ function FKZoneA() {
 
             {/* Shot from edge */}
             <BallFlight x1={232} y1={140} x2={175} y2={18} cx={210} cy={70} color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 4: The One-Two Wall Beater */}
+      <SectionCard title='Routine 4: "The One-Two Wall Beater"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Player 1 taps sideways 3 yards to Player 2, who shoots first time as the wall is still jumping.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={6} />
+
+            {/* Player 1 taps sideways */}
+            <PlayerDot x={165} y={160} label={1} type="attack" size={9} />
+            <MovementArrow x1={170} y1={155} x2={200} y2={153} dashed={false} color={C.text} />
+
+            {/* Player 2 shoots from new angle */}
+            <PlayerDot x={205} y={160} label={2} type="attack" size={10} />
+            <PitchLabel x={220} y={168} text="Shoot" color={C.gold} size={7} />
+
+            {/* Shot past wall */}
+            <BallFlight x1={202} y1={153} x2={160} y2={18} cx={170} cy={80} color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5: Triple Dummy — Real Shooter Arrives Late */}
+      <SectionCard title='Routine 5: "Triple Dummy — Real Shooter Arrives Late"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          3 players stand over the ball and all dummy. 4th player runs in from 10 yards behind and strikes.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={6} />
+
+            {/* 3 dummies standing over ball */}
+            <PlayerDot x={155} y={162} label={1} type="attack" size={8} />
+            <PitchLabel x={135} y={162} text="Dummy" color={C.textSec} size={7} />
+            <PlayerDot x={170} y={165} label={2} type="attack" size={8} />
+            <PitchLabel x={170} y={178} text="Dummy" color={C.textSec} size={7} />
+            <PlayerDot x={185} y={162} label={3} type="attack" size={8} />
+            <PitchLabel x={205} y={162} text="Dummy" color={C.textSec} size={7} />
+
+            {/* Late runner arriving from deep */}
+            <PlayerDot x={170} y={220} label={4} type="attack" size={10} />
+            <MovementArrow x1={170} y1={218} x2={170} y2={160} dashed color={C.gold} />
+            <PitchLabel x={190} y={210} text="Late Runner" color={C.gold} size={7} />
+
+            {/* Shot */}
+            <BallFlight x1={170} y1={155} x2={180} y2={18} cx={130} cy={75} color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 6: Low Driven Under the Wall */}
+      <SectionCard title='Routine 6: "Low Driven Under the Wall"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Wall instructed to jump — ball driven hard and low beneath jumping feet.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Wall — shown jumping (higher position) */}
+            <DefensiveWall x={170} y={95} count={4} />
+            <PitchLabel x={170} y={85} text="Wall jumps" color={C.textSec} size={7} />
+
+            {/* Shooter */}
+            <PlayerDot x={170} y={155} label="S" type="attack" size={10} />
+
+            {/* Low driven shot under wall */}
+            <MovementArrow x1={170} y1={153} x2={170} y2={105} dashed={false} color={C.gold} />
+            <MovementArrow x1={170} y1={100} x2={168} y2={20} dashed={false} color={C.gold} />
+            <PitchLabel x={145} y={115} text="Under" color={C.gold} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 7: Far Post Swerve */}
+      <SectionCard title='Routine 7: "Far Post Swerve"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Right-footer from left side — natural outswinger swerves away from keeper towards far post. Tall player at far post to head in if needed.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={150} y={100} count={4} />
+
+            {/* Shooter — left of centre */}
+            <PlayerDot x={130} y={155} label="S" type="attack" size={10} />
+            <PitchLabel x={130} y={168} text="Right foot" color={C.gold} size={7} />
+
+            {/* Swerve trajectory — curving to far post */}
+            <BallFlight x1={130} y1={153} x2={200} y2={18} cx={90} cy={60} color={C.gold} />
+
+            {/* Far post zone */}
+            <ZoneHighlight x={185} y={10} width={40} height={25} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={205} y={38} text="Far Post" color={C.gold} size={7} />
+
+            {/* Tall player at far post */}
+            <PlayerDot x={210} y={40} label="H" type="attack" size={9} />
+            <PitchLabel x={225} y={48} text="Header" color={C.textSec} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 8: Quick Free Kick — Catch Them Cold */}
+      <SectionCard title='Routine 8: "Quick Free Kick — Catch Them Cold"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          No routine — just take it immediately before opposition set up. Condition: only when taker signals thumbs up. Pass into space behind disorganised defence.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* No wall formed yet */}
+            <PitchLabel x={170} y={105} text="No wall yet" color={C.textSec} size={8} />
+
+            {/* Taker with ball */}
+            <PlayerDot x={170} y={155} label="T" type="attack" size={10} />
+            <PitchLabel x={190} y={160} text="Quick!" color={C.gold} size={8} />
+
+            {/* Space behind defence */}
+            <ZoneHighlight x={130} y={50} width={80} height={40} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={170} y={48} text="Space" color={C.gold} size={8} />
+
+            {/* Pass into space */}
+            <MovementArrow x1={170} y1={153} x2={170} y2={65} dashed={false} color={C.gold} />
+
+            {/* Runner */}
+            <PlayerDot x={200} y={100} label={1} type="attack" size={9} />
+            <MovementArrow x1={200} y1={98} x2={180} y2={65} dashed color={C.gold} />
           </PitchSVG>
         </div>
         <CoachAttribution />
@@ -1017,6 +1591,149 @@ function FKDefending() {
         ))}
         <CoachAttribution />
       </SectionCard>
+
+      {/* Setup 4: Floating Wall + Zonal Box */}
+      <SectionCard title='Setup 4: "Floating Wall + Zonal Box"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Wall is set slightly off-line to cover near post curl. Box behind wall set up zonally. GK covers far post.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={185} y={15} label="GK" type="gk" size={10} />
+            <PitchLabel x={200} y={25} text="Far Post" color={C.textSec} size={7} />
+
+            {/* Wall offset from direct line */}
+            <DefensiveWall x={155} y={100} count={4} />
+            <PitchLabel x={155} y={118} text="Offset Wall" color={C.textSec} size={7} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={7} />
+
+            {/* Zonal coverage behind wall */}
+            <ZoneHighlight x={100} y={55} width={150} height={40} color="rgba(192,57,43,0.12)" />
+            <PlayerDot x={120} y={72} label="Z1" type="defend" size={8} />
+            <PlayerDot x={160} y={72} label="Z2" type="defend" size={8} />
+            <PlayerDot x={200} y={72} label="Z3" type="defend" size={8} />
+            <PlayerDot x={230} y={72} label="Z4" type="defend" size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 5: 5-Man Wall for Power Shooters */}
+      <SectionCard title='Setup 5: "5-Man Wall for Power Shooters"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Against known power free kick specialists use 5-man wall. Remaining 6 pack box tightly.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
+
+            {/* 5-man wall */}
+            <DefensiveWall x={170} y={100} count={5} />
+            <PitchLabel x={170} y={118} text="Wall (5)" color={C.textSec} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={7} />
+
+            {/* 6 defenders packed in box */}
+            <ZoneHighlight x={100} y={40} width={150} height={50} color="rgba(192,57,43,0.1)" />
+            <PlayerDot x={115} y={55} label="D1" type="defend" size={8} />
+            <PlayerDot x={145} y={55} label="D2" type="defend" size={8} />
+            <PlayerDot x={195} y={55} label="D3" type="defend" size={8} />
+            <PlayerDot x={225} y={55} label="D4" type="defend" size={8} />
+            <PlayerDot x={155} y={75} label="D5" type="defend" size={8} />
+            <PlayerDot x={195} y={75} label="D6" type="defend" size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 6: Wall Runner — Block Layoff */}
+      <SectionCard title='Setup 6: "Wall Runner — Block Layoff"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          1 player positioned at wall end sprints towards anticipated layoff target on delivery.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
+
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={7} />
+
+            {/* Wall runner at end of wall */}
+            <PlayerDot x={210} y={100} label="WR" type="defend" size={9} />
+            <MovementArrow x1={212} y1={100} x2={250} y2={140} dashed color={C.primary} />
+            <PitchLabel x={255} y={148} text="Block Layoff" color={C.primary} size={7} />
+
+            {/* Layoff zone */}
+            <ZoneHighlight x={230} y={125} width={50} height={35} color="rgba(192,57,43,0.15)" />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 7: GK Near Post Positioning */}
+      <SectionCard title='Setup 7: "GK Near Post Positioning"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          GK positioned very narrow — near post covered by GK. Wall covers far post channel instead (reverses traditional setup).
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* GK positioned near post */}
+            <PlayerDot x={155} y={15} label="GK" type="gk" size={10} />
+            <PitchLabel x={155} y={28} text="Near Post" color={C.gold} size={7} />
+
+            {/* Wall angled to far post */}
+            <DefensiveWall x={195} y={100} count={4} />
+            <PitchLabel x={195} y={118} text="Far Post Wall" color={C.textSec} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={7} />
+
+            {/* Cover defenders */}
+            <PlayerDot x={120} y={75} label="D1" type="defend" size={8} />
+            <PlayerDot x={250} y={80} label="D2" type="defend" size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Setup 8: Drop Deep + Sprint Line */}
+      <SectionCard title='Setup 8: "Drop Deep + Sprint Line"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          All defenders drop 2 yards deeper than normal. Sprint line to ball on delivery — more aggressive press forward.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={175} y={15} label="GK" type="gk" size={10} />
+
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={7} />
+
+            {/* Defenders in deeper starting positions */}
+            <PlayerDot x={110} y={85} label="D1" type="defend" size={8} />
+            <PlayerDot x={150} y={80} label="D2" type="defend" size={8} />
+            <PlayerDot x={200} y={80} label="D3" type="defend" size={8} />
+            <PlayerDot x={240} y={85} label="D4" type="defend" size={8} />
+
+            <PitchLabel x={100} y={95} text="Deep start" color={C.textSec} size={7} />
+
+            {/* Sprint arrows forward */}
+            <MovementArrow x1={110} y1={83} x2={110} y2={55} dashed color={C.primary} />
+            <MovementArrow x1={150} y1={78} x2={150} y2={50} dashed color={C.primary} />
+            <MovementArrow x1={200} y1={78} x2={200} y2={50} dashed color={C.primary} />
+            <MovementArrow x1={240} y1={83} x2={240} y2={55} dashed color={C.primary} />
+
+            <PitchLabel x={170} y={45} text="Sprint Line" color={C.primary} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
     </>
   )
 }
@@ -1173,6 +1890,176 @@ function ThrowAttacking() {
         </div>
         <CoachAttribution />
       </SectionCard>
+
+      {/* Routine 4: Flick-On Header Into Box */}
+      <SectionCard title='Routine 4: "Flick-On Header Into Box"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Throw to tall player at edge of box, headed flick-on over defenders into 6-yard box. Runner anticipates and attacks the flick.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Thrower on touchline */}
+            <ThrowInMarker x={320} y={90} side="left" />
+
+            {/* Throw to tall player */}
+            <MovementArrow x1={315} y1={88} x2={260} y2={75} dashed={false} color={C.text} />
+
+            {/* Tall player — flick header */}
+            <PlayerDot x={260} y={75} label={1} type="attack" size={10} />
+            <PitchLabel x={260} y={63} text="Flick" color={C.gold} size={7} />
+
+            {/* Header flick arc into 6-yard box */}
+            <BallFlight x1={258} y1={73} x2={195} y2={45} cx={230} cy={40} color={C.gold} />
+
+            {/* Runner attacking the flick */}
+            <PlayerDot x={220} y={100} label={2} type="attack" size={10} />
+            <MovementArrow x1={220} y1={98} x2={197} y2={49} dashed color={C.gold} />
+            <PitchLabel x={197} y={35} text="6-yd box" color={C.gold} size={7} />
+
+            <ZoneHighlight x={175} y={30} width={45} height={30} color="rgba(241,196,15,0.12)" />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5: Dummy Run — Peel Off */}
+      <SectionCard title='Routine 5: "Dummy Run — Peel Off"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          First player makes run and shouts for ball as decoy. Second player peels off in opposite direction and receives in space.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <ThrowInMarker x={320} y={100} side="left" />
+
+            {/* Decoy run — towards thrower */}
+            <PlayerDot x={270} y={90} label={1} type="attack" size={9} />
+            <MovementArrow x1={270} y1={88} x2={300} y2={80} dashed color={C.textSec} />
+            <PitchLabel x={285} y={72} text="Decoy" color={C.textSec} size={7} />
+
+            {/* Real receiver peeling away */}
+            <PlayerDot x={260} y={110} label={2} type="attack" size={10} />
+            <MovementArrow x1={258} y1={108} x2={220} y2={75} dashed color={C.gold} />
+            <PitchLabel x={215} y={65} text="Peel Off" color={C.gold} size={7} />
+
+            {/* Throw goes to second player */}
+            <MovementArrow x1={315} y1={98} x2={225} y2={78} dashed={false} color={C.gold} />
+
+            <PlayerDot x={200} y={80} label={3} type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 6: Third Man — Overlap */}
+      <SectionCard title='Routine 6: "Third Man — Overlap"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Short throw to feet, immediate lay-off, third player overlaps wide and receives for cross.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <ThrowInMarker x={320} y={100} side="left" />
+
+            {/* Short throw to feet */}
+            <PlayerDot x={280} y={90} label={1} type="attack" size={9} />
+            <MovementArrow x1={315} y1={98} x2={285} y2={92} dashed={false} color={C.text} />
+
+            {/* Lay-off to second player */}
+            <PlayerDot x={260} y={115} label={2} type="attack" size={9} />
+            <MovementArrow x1={278} y1={92} x2={264} y2={113} dashed color={C.gold} />
+
+            {/* Third player overlaps wide */}
+            <PlayerDot x={300} y={120} label={3} type="attack" size={10} />
+            <MovementArrow x1={300} y1={118} x2={295} y2={55} dashed color={C.gold} />
+            <PitchLabel x={305} y={50} text="Overlap" color={C.gold} size={7} />
+
+            {/* Pass to overlapping runner */}
+            <MovementArrow x1={262} y1={113} x2={293} y2={60} dashed={false} color={C.gold} />
+
+            {/* Cross from wide */}
+            <BallFlight x1={293} y1={58} x2={180} y2={55} cx={240} cy={30} color={C.gold} />
+
+            <PlayerDot x={180} y={60} label={4} type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 7: Reverse Throw */}
+      <SectionCard title='Routine 7: "Reverse Throw"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Player shapes to throw up the line, reverses and throws inside to playmaker.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Thrower — body shape facing up the line */}
+            <ThrowInMarker x={320} y={100} side="left" />
+
+            {/* Fake direction arrow (up the line) */}
+            <MovementArrow x1={315} y1={98} x2={305} y2={55} dashed color={C.textSec} />
+            <PitchLabel x={298} y={48} text="Fake" color={C.textSec} size={7} />
+
+            {/* Real throw — opposite direction, inside */}
+            <MovementArrow x1={315} y1={100} x2={240} y2={115} dashed={false} color={C.gold} />
+            <PitchLabel x={250} y={128} text="Reverse!" color={C.gold} size={7} />
+
+            {/* Playmaker receiving */}
+            <PlayerDot x={240} y={115} label="PM" type="attack" size={10} />
+
+            <PlayerDot x={200} y={80} label={1} type="attack" size={9} />
+            <PlayerDot x={260} y={70} label={2} type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 8: Long Throw — Second Phase */}
+      <SectionCard title='Routine 8: "Long Throw — Second Phase"' onEdit={() => {}}>
+        <div style={{ marginBottom: 8 }}>
+          <Badge text="Long Throw Specialist" color={C.gold} />
+        </div>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Long throw into box headed clear, 3 players immediately press the clearance zone.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Thrower — long throw */}
+            <PlayerDot x={320} y={70} label="C" type="attack" size={10} />
+            <PitchLabel x={308} y={85} text="Collins" color={C.gold} size={7} />
+
+            {/* Long throw arc into box */}
+            <BallFlight x1={315} y1={68} x2={190} y2={55} cx={260} cy={25} color={C.gold} />
+
+            {/* Clearance zone */}
+            <ZoneHighlight x={150} y={100} width={80} height={50} color="rgba(192,57,43,0.15)" />
+            <PitchLabel x={190} y={98} text="Clearance Zone" color={C.primary} size={7} />
+
+            {/* 3 pressing players */}
+            <PlayerDot x={140} y={160} label={1} type="attack" size={9} />
+            <MovementArrow x1={140} y1={158} x2={160} y2={125} dashed color={C.gold} />
+
+            <PlayerDot x={190} y={165} label={2} type="attack" size={9} />
+            <MovementArrow x1={190} y1={163} x2={190} y2={130} dashed color={C.gold} />
+
+            <PlayerDot x={240} y={160} label={3} type="attack" size={9} />
+            <MovementArrow x1={240} y1={158} x2={220} y2={125} dashed color={C.gold} />
+
+            <PitchLabel x={190} y={155} text="Press" color={C.gold} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
     </>
   )
 }
@@ -1296,6 +2183,160 @@ function ThrowDefensive() {
         </div>
         <CoachAttribution />
       </SectionCard>
+
+      {/* Routine 4: Triangle Escape */}
+      <SectionCard title='Routine 4: "Triangle Escape"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          3-man triangle — throw to nearest man, immediate third-man pass out wide.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <PlayerDot x={20} y={380} label="T" type="attack" size={9} />
+            <PitchLabel x={35} y={395} text="Thrower" color={C.gold} size={7} />
+
+            {/* Triangle player 1 — nearest */}
+            <PlayerDot x={80} y={370} label={1} type="attack" size={9} />
+            <MovementArrow x1={25} y1={380} x2={75} y2={372} dashed={false} color={C.text} />
+
+            {/* Triangle player 2 — third man */}
+            <PlayerDot x={120} y={400} label={2} type="attack" size={9} />
+            <MovementArrow x1={82} y1={372} x2={118} y2={398} dashed color={C.gold} />
+
+            {/* Pass out wide */}
+            <PlayerDot x={40} y={340} label={3} type="attack" size={9} />
+            <MovementArrow x1={118} y1={398} x2={45} y2={342} dashed color={C.gold} />
+            <PitchLabel x={55} y={332} text="Wide" color={C.gold} size={7} />
+
+            {/* Triangle zone */}
+            <ZoneHighlight x={30} y={355} width={110} height={55} color="rgba(241,196,15,0.08)" />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5: Switch Under Pressure */}
+      <SectionCard title='Routine 5: "Switch Under Pressure"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          If pressed on nearside — throw long to opposite full back to switch play.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
+
+            {/* Thrower on left */}
+            <PlayerDot x={20} y={380} label="T" type="attack" size={9} />
+
+            {/* Long switch arrow across pitch */}
+            <MovementArrow x1={25} y1={378} x2={300} y2={365} dashed={false} color={C.gold} />
+            <PitchLabel x={170} y={358} text="Long Switch" color={C.gold} size={8} />
+
+            {/* Opposite full back */}
+            <PlayerDot x={305} y={365} label="RB" type="attack" size={10} />
+            <PitchLabel x={290} y={355} text="Receives" color={C.gold} size={7} />
+
+            {/* Press indicators on nearside */}
+            <PlayerDot x={60} y={375} label="X" type="defend" size={7} />
+            <PlayerDot x={80} y={390} label="X" type="defend" size={7} />
+            <PitchLabel x={70} y={405} text="Press" color={C.primary} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 6: GK Short — Reset */}
+      <SectionCard title='Routine 6: "GK Short — Reset"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Throw back to GK to reset and play out from back calmly.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <PlayerDot x={20} y={400} label="T" type="attack" size={9} />
+
+            {/* Back pass to GK */}
+            <MovementArrow x1={25} y1={402} x2={165} y2={478} dashed={false} color={C.text} />
+            <PitchLabel x={95} y={445} text="Back to GK" color={C.gold} size={7} />
+
+            {/* Build out arrows from GK */}
+            <PlayerDot x={80} y={430} label="CB" type="attack" size={9} />
+            <MovementArrow x1={168} y1={478} x2={85} y2={432} dashed color={C.gold} />
+
+            <PlayerDot x={260} y={430} label="CB" type="attack" size={9} />
+            <MovementArrow x1={172} y1={478} x2={255} y2={432} dashed color={C.gold} />
+
+            <PlayerDot x={170} y={380} label="CM" type="attack" size={9} />
+            <MovementArrow x1={170} y1={478} x2={170} y2={385} dashed color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 7: Lay-Off — Keeper to Feet */}
+      <SectionCard title='Routine 7: "Lay-Off — Keeper to Feet"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Short throw to CB, CB lays back to keeper&apos;s feet, keeper distributes long.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <PlayerDot x={20} y={410} label="T" type="attack" size={9} />
+
+            {/* Short throw to CB */}
+            <PlayerDot x={100} y={420} label="CB" type="attack" size={9} />
+            <MovementArrow x1={25} y1={410} x2={95} y2={418} dashed={false} color={C.text} />
+
+            {/* CB lays back to GK */}
+            <MovementArrow x1={100} y1={422} x2={168} y2={478} dashed color={C.gold} />
+            <PitchLabel x={135} y={455} text="Lay-off" color={C.gold} size={7} />
+
+            {/* GK distributes long */}
+            <BallFlight x1={172} y1={478} x2={170} y2={250} cx={100} cy={360} color={C.gold} />
+            <PitchLabel x={120} y={340} text="Long Ball" color={C.gold} size={8} />
+
+            <PlayerDot x={170} y={250} label="ST" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 8: Drive Into Space — Bypass Press */}
+      <SectionCard title='Routine 8: "Drive Into Space — Bypass Press"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Thrower plays into space ahead of running player rather than to feet.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={480} label="GK" type="gk" size={9} />
+
+            {/* Thrower */}
+            <PlayerDot x={20} y={390} label="T" type="attack" size={9} />
+
+            {/* Running player */}
+            <PlayerDot x={100} y={385} label={1} type="attack" size={10} />
+            <MovementArrow x1={100} y1={383} x2={100} y2={340} dashed color={C.gold} />
+
+            {/* Space ahead of player highlighted */}
+            <ZoneHighlight x={75} y={330} width={55} height={40} color="rgba(241,196,15,0.18)" />
+            <PitchLabel x={100} y={325} text="Space" color={C.gold} size={8} />
+
+            {/* Throw into space, not to feet */}
+            <MovementArrow x1={25} y1={388} x2={95} y2={345} dashed={false} color={C.gold} />
+            <PitchLabel x={55} y={360} text="Into Space" color={C.gold} size={7} />
+
+            {/* Press being bypassed */}
+            <PlayerDot x={70} y={380} label="X" type="defend" size={7} />
+            <PlayerDot x={130} y={375} label="X" type="defend" size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
     </>
   )
 }
@@ -1311,6 +2352,11 @@ function PenaltiesTab() {
     { order: 3, name: 'Santos', side: 'Centre', style: 'Placement' },
     { order: 4, name: 'Martinez', side: 'Left', style: 'Power' },
     { order: 5, name: 'Collins', side: 'Right', style: 'Power' },
+    { order: 6, name: 'Marcus Webb', side: 'Right', style: 'Placed — low right', note: 'Hesitates under pressure — consider moving down', composure: '7/10' },
+    { order: 7, name: 'Lee Nakamura', side: 'Left', style: 'Power — driven', note: 'Ice cold. Should be higher in the order', composure: '9/10' },
+    { order: 8, name: 'Jamie Collins', side: 'Centre (Panenka)', style: 'Chip', note: "Only use if 3-0 up. Don't let him Panenka in a final", composure: '6/10' },
+    { order: 9, name: 'Dion Fletcher', side: 'Right', style: 'Placed — top right', note: 'Strong record in training — not tested in a real shootout', composure: '8/10' },
+    { order: 10, name: 'Ryan Santos (injured)', side: 'Left', style: 'Power — low driven', note: 'First choice when fit — currently injured', composure: '9/10' },
   ]
 
   return (
@@ -1351,7 +2397,13 @@ function PenaltiesTab() {
                 <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{t.name}</div>
                 <div style={{ color: C.textSec, fontSize: 12 }}>
                   {t.side} &middot; {t.style}
+                  {(t as any).composure && <> &middot; Composure: <strong style={{ color: C.gold }}>{(t as any).composure}</strong></>}
                 </div>
+                {(t as any).note && (
+                  <div style={{ color: C.textSec, fontSize: 11, fontStyle: 'italic', marginTop: 2 }}>
+                    {(t as any).note}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -1386,6 +2438,55 @@ function PenaltiesTab() {
           <div style={{ color: C.text, fontSize: 13 }}>
             <strong>Riverside United</strong> — last 5 penalties: 4/5 scored, 3 to GK&apos;s right
           </div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Opposition Penalty Tendencies Log */}
+      <SectionCard title="Opposition Penalty Tendencies Log" onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 10px' }}>
+          Last 5 opponents faced — their designated taker, preferred side, how Oakridge GK set up, and outcome.
+        </p>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr>
+                {['Opponent', 'Taker', 'Preferred Side', 'GK Setup', 'Outcome'].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: 'left',
+                      padding: '8px 10px',
+                      color: C.gold,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderBottom: `2px solid ${C.border}`,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { opp: 'Riverside United', taker: 'J. Kane', side: 'Right', gk: 'Stayed central', outcome: 'Saved' },
+                { opp: 'Northgate City', taker: 'R. Alvarez', side: 'Left', gk: 'Dived left', outcome: 'Goal (right)' },
+                { opp: 'Borough Town', taker: 'M. Hussain', side: 'Centre', gk: 'Dived right', outcome: 'Goal (centre)' },
+                { opp: 'Hartfield Rovers', taker: 'P. Dixon', side: 'Right', gk: 'Stayed central', outcome: 'Hit post' },
+                { opp: 'Crestwood AFC', taker: 'S. Oduya', side: 'Left', gk: 'Dived left', outcome: 'Saved' },
+              ].map((row, i) => (
+                <tr key={i}>
+                  <td style={{ padding: '8px 10px', color: C.text, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{row.opp}</td>
+                  <td style={{ padding: '8px 10px', color: C.text, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{row.taker}</td>
+                  <td style={{ padding: '8px 10px', color: C.textSec, borderBottom: `1px solid ${C.border}` }}>{row.side}</td>
+                  <td style={{ padding: '8px 10px', color: C.textSec, borderBottom: `1px solid ${C.border}` }}>{row.gk}</td>
+                  <td style={{ padding: '8px 10px', color: row.outcome.startsWith('Goal') ? C.primary : '#27AE60', fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>{row.outcome}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         <CoachAttribution />
       </SectionCard>
@@ -1487,6 +2588,165 @@ function GoalKicksTab() {
 
             {/* Long ball trajectory */}
             <BallFlight x1={170} y1={458} x2={170} y2={205} cx={100} cy={330} color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 3: Diagonal Switch — Bypass Midfield */}
+      <SectionCard title='Routine 3: "Diagonal Switch — Bypass Midfield"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          GK diagonal ball from left to right winger (or vice versa) — bypasses congested midfield press.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
+
+            {/* Our GK */}
+            <PlayerDot x={170} y={460} label="GK" type="gk" size={10} />
+
+            {/* Diagonal ball flight across pitch */}
+            <BallFlight x1={170} y1={458} x2={290} y2={260} cx={100} cy={350} color={C.gold} />
+
+            {/* Right winger receiving */}
+            <PlayerDot x={290} y={258} label="RW" type="attack" size={10} />
+            <PitchLabel x={290} y={248} text="Receives" color={C.gold} size={8} />
+
+            {/* Congested midfield */}
+            <ZoneHighlight x={110} y={310} width={120} height={60} color="rgba(148,163,184,0.1)" />
+            <PitchLabel x={170} y={340} text="Congested" color={C.textSec} size={7} />
+
+            {/* Other players */}
+            <PlayerDot x={80} y={420} label="CB" type="attack" size={9} />
+            <PlayerDot x={260} y={420} label="CB" type="attack" size={9} />
+            <PlayerDot x={50} y={280} label="LW" type="attack" size={9} />
+            <PlayerDot x={170} y={200} label="ST" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 4: Target Man — Flick to Feet */}
+      <SectionCard title='Routine 4: "Target Man — Flick to Feet"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Driven ball to target man who flicks into path of runner.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
+
+            {/* Our GK */}
+            <PlayerDot x={170} y={460} label="GK" type="gk" size={10} />
+
+            {/* Ball to target man */}
+            <BallFlight x1={170} y1={458} x2={170} y2={220} cx={120} cy={340} color={C.gold} />
+
+            {/* Target man */}
+            <PlayerDot x={170} y={218} label="TM" type="attack" size={10} />
+            <PitchLabel x={170} y={206} text="Target Man" color={C.gold} size={8} />
+
+            {/* Flick arrow */}
+            <MovementArrow x1={172} y1={216} x2={210} y2={190} dashed={false} color={C.gold} />
+
+            {/* Runner */}
+            <PlayerDot x={220} y={240} label="R" type="attack" size={10} />
+            <MovementArrow x1={220} y1={238} x2={212} y2={194} dashed color={C.gold} />
+            <PitchLabel x={230} y={195} text="Runner" color={C.gold} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5: GK Roll to CB — Quick Play */}
+      <SectionCard title='Routine 5: "GK Roll to CB — Quick Play"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          GK rolls ball short to CB before opposition press organises.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
+
+            {/* Our GK */}
+            <PlayerDot x={170} y={460} label="GK" type="gk" size={10} />
+
+            {/* Short roll to CB */}
+            <MovementArrow x1={168} y1={458} x2={100} y2={425} dashed={false} color={C.text} />
+            <PitchLabel x={125} y={445} text="Roll" color={C.gold} size={7} />
+
+            {/* CB receiving */}
+            <PlayerDot x={100} y={423} label="CB" type="attack" size={9} />
+
+            {/* Immediate passing options */}
+            <PlayerDot x={170} y={380} label="CM" type="attack" size={9} />
+            <MovementArrow x1={102} y1={421} x2={165} y2={382} dashed color={C.gold} />
+
+            <PlayerDot x={40} y={370} label="LB" type="attack" size={9} />
+            <MovementArrow x1={98} y1={423} x2={45} y2={372} dashed color={C.gold} />
+
+            <PlayerDot x={260} y={420} label="CB" type="attack" size={9} />
+            <MovementArrow x1={105} y1={423} x2={255} y2={422} dashed color={C.gold} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 6: Lofted to Channel — Wide Pressure */}
+      <SectionCard title='Routine 6: "Lofted to Channel — Wide Pressure"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          High lofted ball into wide channel for winger to chase.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
+
+            {/* Our GK */}
+            <PlayerDot x={170} y={460} label="GK" type="gk" size={10} />
+
+            {/* Ball arc into wide channel */}
+            <BallFlight x1={170} y1={458} x2={300} y2={230} cx={170} cy={320} color={C.gold} />
+
+            {/* Wide channel zone */}
+            <ZoneHighlight x={275} y={210} width={55} height={60} color="rgba(241,196,15,0.12)" />
+            <PitchLabel x={300} y={205} text="Channel" color={C.gold} size={8} />
+
+            {/* Winger sprinting */}
+            <PlayerDot x={290} y={290} label="RW" type="attack" size={10} />
+            <MovementArrow x1={290} y1={288} x2={298} y2={240} dashed color={C.gold} />
+            <PitchLabel x={280} y={275} text="Sprint" color={C.gold} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 7: Over Pressing Line — Long Ball */}
+      <SectionCard title='Routine 7: "Over Pressing Line — Long Ball"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Opposition presses high — GK lifts ball over the press line to striker running in behind.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            <PlayerDot x={170} y={15} label="GK" type="defend" size={8} />
+
+            {/* Our GK */}
+            <PlayerDot x={170} y={460} label="GK" type="gk" size={10} />
+
+            {/* Pressing line shown */}
+            <ZoneHighlight x={40} y={360} width={260} height={8} color="rgba(192,57,43,0.4)" />
+            <PitchLabel x={170} y={355} text="Press Line" color={C.primary} size={8} />
+
+            {/* Opposition press players */}
+            <PlayerDot x={100} y={370} label="X" type="defend" size={7} />
+            <PlayerDot x={170} y={368} label="X" type="defend" size={7} />
+            <PlayerDot x={240} y={370} label="X" type="defend" size={7} />
+
+            {/* Ball over the top */}
+            <BallFlight x1={170} y1={458} x2={170} y2={200} cx={90} cy={320} color={C.gold} />
+            <PitchLabel x={100} y={310} text="Over the top" color={C.gold} size={8} />
+
+            {/* Striker run in behind */}
+            <PlayerDot x={170} y={280} label="ST" type="attack" size={10} />
+            <MovementArrow x1={170} y1={278} x2={170} y2={210} dashed color={C.gold} />
+            <PitchLabel x={190} y={240} text="In behind" color={C.gold} size={7} />
           </PitchSVG>
         </div>
         <CoachAttribution />
@@ -1600,6 +2860,102 @@ function KOAttacking() {
         </div>
         <CoachAttribution />
       </SectionCard>
+
+      {/* Routine 3: Press Immediately — Win Ball High */}
+      <SectionCard title='Routine 3: "Press Immediately — Win Ball High"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Knock forward instantly, entire team presses opposition.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Striker kicks forward */}
+            <PlayerDot x={165} y={235} label="ST" type="attack" size={9} />
+            <MovementArrow x1={170} y1={236} x2={170} y2={180} dashed={false} color={C.text} />
+
+            {/* Press arrows from all positions */}
+            <PlayerDot x={80} y={200} label="LW" type="attack" size={9} />
+            <MovementArrow x1={80} y1={198} x2={90} y2={130} dashed color={C.gold} />
+
+            <PlayerDot x={260} y={200} label="RW" type="attack" size={9} />
+            <MovementArrow x1={260} y1={198} x2={250} y2={130} dashed color={C.gold} />
+
+            <PlayerDot x={130} y={210} label="CM" type="attack" size={9} />
+            <MovementArrow x1={130} y1={208} x2={130} y2={140} dashed color={C.gold} />
+
+            <PlayerDot x={210} y={210} label="CM" type="attack" size={9} />
+            <MovementArrow x1={210} y1={208} x2={210} y2={140} dashed color={C.gold} />
+
+            <PlayerDot x={170} y={195} label="AM" type="attack" size={9} />
+            <MovementArrow x1={170} y1={193} x2={170} y2={120} dashed color={C.gold} />
+
+            <ZoneHighlight x={70} y={100} width={200} height={50} color="rgba(241,196,15,0.10)" />
+            <PitchLabel x={170} y={98} text="Press zone" color={C.gold} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 4: Wide Quick Release */}
+      <SectionCard title='Routine 4: "Wide Quick Release"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Knock back, immediate switch to wide player on half-turn — drives forward.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Striker kicks off */}
+            <PlayerDot x={165} y={235} label="ST" type="attack" size={9} />
+
+            {/* Knock back */}
+            <MovementArrow x1={170} y1={236} x2={170} y2={210} dashed={false} color={C.text} />
+            <PlayerDot x={170} y={205} label="CM" type="attack" size={9} />
+
+            {/* Wide switch arrow */}
+            <MovementArrow x1={172} y1={203} x2={50} y2={180} dashed color={C.gold} />
+            <PitchLabel x={110} y={180} text="Switch" color={C.gold} size={8} />
+
+            {/* Wide player */}
+            <PlayerDot x={50} y={178} label="LW" type="attack" size={10} />
+
+            {/* Drive forward */}
+            <MovementArrow x1={50} y1={176} x2={60} y2={100} dashed color={C.gold} />
+            <PitchLabel x={40} y={130} text="Drive" color={C.gold} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 5: Through the Lines */}
+      <SectionCard title='Routine 5: "Through the Lines"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Ball played back, midfielder turns and plays first time through the lines to striker.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Striker kicks off */}
+            <PlayerDot x={165} y={235} label="ST" type="attack" size={9} />
+
+            {/* Knock back to CM */}
+            <MovementArrow x1={170} y1={236} x2={170} y2={210} dashed={false} color={C.text} />
+            <PlayerDot x={170} y={205} label="CM" type="attack" size={9} />
+
+            {/* Through ball to striker */}
+            <MovementArrow x1={170} y1={203} x2={170} y2={100} dashed={false} color={C.gold} />
+            <PitchLabel x={185} y={150} text="Through Ball" color={C.gold} size={7} />
+
+            {/* Striker running in behind */}
+            <PlayerDot x={170} y={140} label="ST2" type="attack" size={10} />
+            <MovementArrow x1={170} y1={138} x2={170} y2={80} dashed color={C.gold} />
+            <PitchLabel x={190} y={105} text="In behind" color={C.gold} size={7} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
     </>
   )
 }
@@ -1636,6 +2992,74 @@ function KODefending() {
             <PlayerDot x={280} y={110} label="RB" type="attack" size={9} />
 
             <PitchLabel x={170} y={130} text="Mid-block" color={C.gold} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 3: Mid-Block Instant Shape */}
+      <SectionCard title='Routine 3: "Mid-Block Instant Shape"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Drop into organised mid-block immediately on opposition kick-off.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Opposition kicking off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+            <PlayerDot x={165} y={235} label="A" type="defend" size={8} />
+
+            {/* Mid-block shape — compact */}
+            <PlayerDot x={140} y={180} label="ST" type="attack" size={9} />
+            <PlayerDot x={200} y={180} label="AM" type="attack" size={9} />
+
+            {/* Midfield line */}
+            <PlayerDot x={70} y={145} label="LM" type="attack" size={9} />
+            <PlayerDot x={140} y={145} label="CM" type="attack" size={9} />
+            <PlayerDot x={200} y={145} label="CM" type="attack" size={9} />
+            <PlayerDot x={270} y={145} label="RM" type="attack" size={9} />
+
+            {/* Defensive line */}
+            <PlayerDot x={60} y={100} label="LB" type="attack" size={9} />
+            <PlayerDot x={140} y={95} label="CB" type="attack" size={9} />
+            <PlayerDot x={200} y={95} label="CB" type="attack" size={9} />
+            <PlayerDot x={280} y={100} label="RB" type="attack" size={9} />
+
+            {/* Compact zone */}
+            <ZoneHighlight x={50} y={85} width={240} height={110} color="rgba(192,57,43,0.06)" />
+            <PitchLabel x={170} y={120} text="Mid-block" color={C.gold} size={8} />
+          </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 4: High Press Trigger */}
+      <SectionCard title='Routine 4: "High Press Trigger"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          If opposition play short kick-off — press immediately.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Opposition short kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+            <PlayerDot x={165} y={235} label="A1" type="defend" size={8} />
+            <PlayerDot x={180} y={220} label="A2" type="defend" size={8} />
+            <MovementArrow x1={170} y1={236} x2={178} y2={222} dashed={false} color={C.textSec} />
+            <PitchLabel x={195} y={228} text="Short" color={C.textSec} size={7} />
+
+            {/* Immediate press arrows */}
+            <PlayerDot x={140} y={195} label="ST" type="attack" size={9} />
+            <MovementArrow x1={140} y1={193} x2={165} y2={225} dashed color={C.primary} />
+
+            <PlayerDot x={200} y={195} label="AM" type="attack" size={9} />
+            <MovementArrow x1={200} y1={193} x2={185} y2={220} dashed color={C.primary} />
+
+            <PlayerDot x={80} y={190} label="LW" type="attack" size={9} />
+            <MovementArrow x1={80} y1={188} x2={120} y2={210} dashed color={C.primary} />
+
+            <PlayerDot x={260} y={190} label="RW" type="attack" size={9} />
+            <MovementArrow x1={260} y1={188} x2={220} y2={210} dashed color={C.primary} />
+
+            <PitchLabel x={170} y={175} text="Press!" color={C.primary} size={9} />
           </PitchSVG>
         </div>
         <CoachAttribution />
