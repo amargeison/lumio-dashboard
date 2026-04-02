@@ -44,5 +44,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ...business, user_avatar_url })
+  // Count workspace_staff rows for this business
+  const { count: staff_count } = await supabase
+    .from('workspace_staff')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', session.business_id)
+
+  return NextResponse.json({ ...business, user_avatar_url, staff_count: staff_count ?? 0 })
 }

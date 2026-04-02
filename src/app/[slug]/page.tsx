@@ -3951,6 +3951,10 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
+          // Sync staff: if DB has 0 staff, clear stale localStorage imports
+          if (data.staff_count === 0) {
+            localStorage.removeItem('lumio_staff_imported')
+          }
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
           const dismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
@@ -4201,8 +4205,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             </div>
           )}
-          {/* Header bar — in flow, below banner */}
-          <div className="hidden md:flex items-center justify-end shrink-0" style={{ height: 48, minHeight: 48, padding: '0 20px', gap: 8 }}>
+          {/* Bell + avatar — fixed overlay matching Schools portal */}
+          <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
             <RoleSwitcherPill />
             <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
               <Bell size={16} strokeWidth={1.75} />
