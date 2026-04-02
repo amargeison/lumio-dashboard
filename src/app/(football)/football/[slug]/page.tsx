@@ -14,7 +14,7 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
@@ -24,12 +24,14 @@ import AIInsightsReport from '@/components/AIInsightsReport'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import ProSetPiecesView from '@/components/football/ProSetPiecesView'
+import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'insights' | 'squad' | 'tactics' | 'transfers'
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
@@ -72,8 +74,10 @@ const BG_GRADIENTS = [
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
   { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
+  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
+  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
   { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
   { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
@@ -92,6 +96,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+]
+
+const FOOTBALL_ROLE_OPTIONS = [
+  { key: 'chairman', label: 'Chairman/CEO', emoji: '👑', level: 1 },
+  { key: 'dof', label: 'Director of Football', emoji: '⚽', level: 1 },
+  { key: 'head_coach', label: 'Head Coach', emoji: '🎽', level: 2 },
+  { key: 'dept_head', label: 'Department Head', emoji: '📋', level: 3 },
+  { key: 'support', label: 'Support Staff', emoji: '🔍', level: 4 },
 ]
 
 // ─── Squad Data ──────────────────────────────────────────────────────────────
@@ -4507,7 +4519,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             })()}
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'set-pieces' && <ProSetPiecesView />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {activeDept === 'board' && <div className="text-center py-20"><div className="text-5xl mb-4">👑</div><h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Board Suite</h2><p className="text-sm" style={{ color: '#6B7280' }}>Executive dashboards, financial oversight and governance tools — coming soon.</p></div>}
             {activeDept === 'medical' && <MedicalView />}
             {activeDept === 'scouting' && <ScoutingView />}
             {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
