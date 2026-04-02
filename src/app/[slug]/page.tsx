@@ -1071,18 +1071,6 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            {/* Company logo + name */}
-            {company && (
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const logo = typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') : null
-                  return logo
-                    ? <img src={logo} alt="" className="rounded" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-                    : <div className="flex items-center justify-center rounded text-[9px] font-bold" style={{ width: 24, height: 24, backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}>{company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
-                })()}
-                <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>{company}</span>
-              </div>
-            )}
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
@@ -1161,253 +1149,114 @@ const DEMO_PHOTOS = [
   'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
-// Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const photoImpCtx = getImpersonationContext()
   const [photos, setPhotos] = useState<string[]>(() => {
-    if (photoImpCtx.isImpersonating) return [] // Don't show owner's photos when impersonating
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
-      if (saved) { const parsed = JSON.parse(saved); if (parsed.length > 0) return parsed }
-      return demoDataActive ? DEMO_PHOTOS : []
-    } catch { return [] }
+    if (photoImpCtx.isImpersonating) return []
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {}
+    return demoDataActive ? DEMO_PHOTOS : DEMO_PHOTOS
   })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
-  const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    if (isPlaying && photos.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setCurrentIdx(i => (i + 1) % photos.length)
-      }, intervalSecs * 1000)
-    }
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
 
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || [])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string
-        setPhotos(prev => {
-          const next = [...prev, url].slice(-20)
-          localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
-          return next
-        })
-      }
-      reader.readAsDataURL(file)
-    })
-    e.target.value = ''
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
   }
-
-  function removePhoto(idx: number) {
-    setPhotos(prev => {
-      const next = prev.filter((_, i) => i !== idx)
-      localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
-      if (currentIdx >= next.length) setCurrentIdx(Math.max(0, next.length - 1))
-      return next
-    })
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
   }
-
-  // Zoom + pan state
-  const [zoom, setZoom] = useState(100)
-  const [panX, setPanX] = useState(0)
-  const [panY, setPanY] = useState(0)
-  const [dragging, setDragging] = useState(false)
-  const [hoveringFrame, setHoveringFrame] = useState(false)
-  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
-  const frameRef = useRef<HTMLDivElement>(null)
-
-  // Load saved transform for current photo
-  useEffect(() => {
-    if (typeof window === 'undefined' || !photos[currentIdx]) return
-    try {
-      const saved = localStorage.getItem(`lumio_photoframe_transform_${currentIdx}`)
-      if (saved) { const t = JSON.parse(saved); setZoom(t.zoom || 100); setPanX(t.x || 0); setPanY(t.y || 0) }
-      else { setZoom(100); setPanX(0); setPanY(0) }
-    } catch { setZoom(100); setPanX(0); setPanY(0) }
-  }, [currentIdx, photos])
-
-  function saveTransform(z: number, x: number, y: number) {
-    if (typeof window !== 'undefined') localStorage.setItem(`lumio_photoframe_transform_${currentIdx}`, JSON.stringify({ zoom: z, x, y }))
-  }
-
-  function handleZoomChange(val: number) {
-    const clamped = Math.max(100, Math.min(300, val))
-    setZoom(clamped)
-    // Clamp pan when zooming out
-    if (clamped === 100) { setPanX(0); setPanY(0); saveTransform(clamped, 0, 0) }
-    else saveTransform(clamped, panX, panY)
-  }
-
-  function resetPosition() { setZoom(100); setPanX(0); setPanY(0); saveTransform(100, 0, 0) }
-
-  function startDrag(clientX: number, clientY: number) {
-    if (zoom <= 100) return
-    setDragging(true)
-    dragStart.current = { x: clientX, y: clientY, panX, panY }
-  }
-
-  function moveDrag(clientX: number, clientY: number) {
-    if (!dragging) return
-    const dx = clientX - dragStart.current.x
-    const dy = clientY - dragStart.current.y
-    const maxPan = (zoom - 100) / 100 * 150 // limit pan range proportional to zoom
-    const nx = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panX + dx))
-    const ny = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panY + dy))
-    setPanX(nx); setPanY(ny)
-  }
-
-  function endDrag() {
-    if (dragging) { setDragging(false); saveTransform(zoom, panX, panY) }
-  }
-
-  const isTransformed = zoom > 100 || panX !== 0 || panY !== 0
-  const showControls = hoveringFrame && photos.length > 0
-
-  function prev() { setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }
-  function next() { setCurrentIdx(i => (i + 1) % photos.length) }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 280 }}>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
         <div className="flex items-center gap-2">
-          <span className="text-base">🖼️</span>
-          <span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {photos.length > 1 && (
-            <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg"
-              style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280', border: `1px solid ${isPlaying ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
-          )}
-          <button onClick={() => fileInputRef.current?.click()} className="text-xs px-2 py-1 rounded-lg"
-            style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-            + Add Photo
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
-
       {photos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 mx-4 mb-4 rounded-xl cursor-pointer"
-          style={{ border: '2px dashed #374151', backgroundColor: 'rgba(255,255,255,0.02)' }}
-          onClick={() => fileInputRef.current?.click()}>
-          <div className="text-4xl">📷</div>
-          <div className="text-sm font-medium" style={{ color: '#9CA3AF' }}>Add your photos</div>
-          <div className="text-xs text-center px-4" style={{ color: '#6B7280' }}>Upload from device, or connect Google Photos or iCloud below</div>
-          <div className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-            + Upload Photos
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div ref={frameRef} className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden"
-          style={{ minHeight: 180, cursor: zoom > 100 ? (dragging ? 'grabbing' : 'grab') : 'default' }}
-          onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); endDrag() }}
-          onMouseDown={e => { e.preventDefault(); startDrag(e.clientX, e.clientY) }}
-          onMouseMove={e => moveDrag(e.clientX, e.clientY)}
-          onMouseUp={endDrag}
-          onTouchStart={e => { const t = e.touches[0]; if (t) startDrag(t.clientX, t.clientY) }}
-          onTouchMove={e => { const t = e.touches[0]; if (t) moveDrag(t.clientX, t.clientY) }}
-          onTouchEnd={endDrag}>
-          <img src={photos[currentIdx]} alt="Photo frame" draggable={false} style={{
-            width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0,
-            transition: dragging ? 'none' : 'transform 0.2s ease, opacity 0.5s ease',
-            transform: `scale(${zoom / 100}) translate(${panX / (zoom / 100)}px, ${panY / (zoom / 100)}px)`,
-            userSelect: 'none', pointerEvents: 'none',
-          }} />
-          {photos.length > 1 && (
-            <>
-              <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
-                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>‹</button>
-              <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
-                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>›</button>
-            </>
-          )}
-          {photos.length > 1 && photos.length <= 10 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {photos.map((_, i) => (
-                <button key={i} onClick={() => setCurrentIdx(i)}
-                  style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === currentIdx ? '#0D9488' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
-              ))}
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
+      )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
+          </button>
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
+      </div>
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
             </div>
-          )}
-          {/* Remove button — visible on hover */}
-          <button onClick={e => { e.stopPropagation(); setConfirmRemoveIdx(currentIdx) }}
-            className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs transition-opacity"
-            style={{ width: 24, height: 24, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none', fontWeight: 700 }}>✕</button>
-          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
-            {currentIdx + 1} / {photos.length}
-          </div>
-          {/* Remove confirmation dialog */}
-          {confirmRemoveIdx !== null && (
-            <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10 }}>
-              <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 260 }}>
-                <p className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Remove this photo?</p>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>This cannot be undone.</p>
-                <div className="flex gap-2 justify-center">
-                  <button onClick={() => setConfirmRemoveIdx(null)} className="px-4 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Cancel</button>
-                  <button onClick={() => { removePhoto(confirmRemoveIdx); setConfirmRemoveIdx(null) }} className="px-4 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: '#EF4444', color: '#fff' }}>Remove</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Zoom/pan controls — appear on hover */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full transition-opacity"
-            style={{ backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none' }}>
-            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom - 20) }} className="text-xs font-bold" style={{ color: zoom <= 100 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>−</button>
-            <span className="text-[10px] font-semibold" style={{ color: '#D1D5DB', minWidth: 32, textAlign: 'center' }}>{zoom}%</span>
-            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom + 20) }} className="text-xs font-bold" style={{ color: zoom >= 300 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>+</button>
-            {isTransformed && (
-              <button onClick={e => { e.stopPropagation(); resetPosition() }} className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: '#A78BFA', backgroundColor: 'rgba(108,63,197,0.2)' }}>Reset</button>
-            )}
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
           </div>
         </div>
       )}
-
-      <div className="px-4 pb-3 flex-shrink-0">
-        {photos.length > 1 && (
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>
-            {[3, 5, 10, 30].map(s => (
-              <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded"
-                style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280', border: `1px solid ${intervalSecs === s ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
-                {s}s
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <div className="relative flex-1 group">
-            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
-              <span>📷</span> Google Photos <span>✨</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
-              Coming soon — upload photos directly for now
-            </div>
-          </div>
-          <div className="relative flex-1 group">
-            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
-              <span>☁️</span> iCloud <span>✨</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
-              Coming soon — upload photos directly for now
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -4406,9 +4255,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-lg font-bold">{deptLabel}</h1>
-            </div>
+            {activeDept !== 'overview' && (
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-lg font-bold">{deptLabel}</h1>
+              </div>
+            )}
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}

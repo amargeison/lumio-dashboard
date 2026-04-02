@@ -1434,55 +1434,81 @@ const DEMO_DEFAULT_PHOTOS = [
 ]
 
 function DemoPhotoFrame() {
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return DEMO_DEFAULT_PHOTOS })
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [intervalSecs, setIntervalSecs] = useState(5)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [photos, setPhotos] = useState<string[]>(() => {
-    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return DEMO_DEFAULT_PHOTOS
-  })
-  const [idx, setIdx] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
   const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
   const [hoveringFrame, setHoveringFrame] = useState(false)
   const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
-  const isDragging = useRef(false); const dragStartRef = useRef({ x: 0, y: 0 }); const posStartRef = useRef({ x: 50, y: 50 })
-  useEffect(() => { if (photos.length > 1) { const t = setInterval(() => setIdx(i => (i + 1) % photos.length), 5000); return () => clearInterval(t) } }, [photos.length])
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [isPlaying, photos.length, intervalSecs])
   useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
   useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
-  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
-  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== idx)); setIdx(prev => Math.max(0, prev - 1)) }
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
+  }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
+  }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
+
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 200 }}>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
         <div className="flex items-center gap-2">
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
           {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
-          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#A78BFA', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
       {photos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151', backgroundColor: 'rgba(255,255,255,0.02)' }} onClick={() => fileInputRef.current?.click()}>
-          <div className="text-3xl">📷</div>
-          <div className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Upload your photos</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div className="flex-1 relative mx-4 mb-4 rounded-xl overflow-hidden" style={{ minHeight: 140, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
-          onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); isDragging.current = false }}
-          onMouseDown={e => { e.preventDefault(); isDragging.current = true; dragStartRef.current = { x: e.clientX, y: e.clientY }; posStartRef.current = photoPositions[idx] || { x: 50, y: 50 }; if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') } }}
-          onMouseMove={e => { if (!isDragging.current) return; const r = e.currentTarget.getBoundingClientRect(); const dx = (e.clientX - dragStartRef.current.x) / r.width * 100; const dy = (e.clientY - dragStartRef.current.y) / r.height * 100; setPhotoPositions(p => ({ ...p, [idx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } })) }}
-          onMouseUp={() => { isDragging.current = false }}
-          onTouchStart={e => { const t = e.touches[0]; if (t) { isDragging.current = true; dragStartRef.current = { x: t.clientX, y: t.clientY }; posStartRef.current = photoPositions[idx] || { x: 50, y: 50 } } }}
-          onTouchMove={e => { const t = e.touches[0]; if (!isDragging.current || !t) return; const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); const dx = (t.clientX - dragStartRef.current.x) / r.width * 100; const dy = (t.clientY - dragStartRef.current.y) / r.height * 100; setPhotoPositions(p => ({ ...p, [idx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } })) }}
-          onTouchEnd={() => { isDragging.current = false }}>
-          <img src={photos[idx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${(photoPositions[idx] || { x: 50, y: 50 }).x}% ${(photoPositions[idx] || { x: 50, y: 50 }).y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
-          {photos.length > 1 && (<>
-            <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
-            <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
-          </>)}
-          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{idx + 1} / {photos.length}</div>
-          {((photoPositions[idx]?.x ?? 50) !== 50 || (photoPositions[idx]?.y ?? 50) !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); setPhotoPositions(p => { const n = { ...p }; delete n[idx]; return n }) }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
-          {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
-        </div>
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
       )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
       <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
         <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1502,7 +1528,10 @@ function DemoPhotoFrame() {
             <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
             <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
             <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}><span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span><div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div></div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
+            </div>
             <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
           </div>
         </div>
@@ -4176,8 +4205,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>
+                {activeDept !== 'overview' && <h1 className="text-lg font-bold">{deptLabel}</h1>}
+                {activeDept !== 'overview' && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>}
               </div>
               <div className="flex items-center gap-2" style={{ paddingRight: 24 }}>
                 {/* Mobile invite */}
