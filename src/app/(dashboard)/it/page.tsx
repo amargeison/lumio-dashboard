@@ -103,6 +103,8 @@ export default function ITPage() {
     )
   }
 
+  const itHighlights = ['3 new provisioning requests this week — all within SLA', 'Software licence audit: 12 unused seats identified', 'System uptime: 99.97% — exceeds target', '2 DBS checks pending IT clearance', 'Backup verification passed for all production systems']
+
   return (
     <PageShell title="IT & Systems" subtitle="Infrastructure, security and system management">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -110,7 +112,24 @@ export default function ITPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <DeptAISummary dept="it" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="it" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>IT</span>
+          </div>
+          <ul className="space-y-2.5">
+            {itHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 

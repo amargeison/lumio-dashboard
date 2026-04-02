@@ -126,10 +126,14 @@ function LogoUpload() {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const [redirecting, setRedirecting] = useState(true)
   useEffect(() => {
     const slug = localStorage.getItem('lumio_workspace_slug') || document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
-    if (slug) { localStorage.setItem('lumio_active_dept', 'settings'); router.replace(`/${slug}`) }
+    if (slug) { localStorage.setItem('lumio_active_dept', 'settings'); router.replace(`/${slug}`); return }
+    setRedirecting(false)
   }, [router])
+
+  if (redirecting) return null
 
   return (
     <PageShell>

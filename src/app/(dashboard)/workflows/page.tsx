@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle, Star, Building2 } from 'lucide-react'
+import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -156,9 +156,28 @@ export default function WorkflowsPage() {
 
   const otherDepts = [...new Set(OTHER_WORKFLOWS.map(w => w.dept))]
 
+  const wfHighlights = ['1,847 workflow executions this month — 0 critical failures', 'Most triggered: Invoice Chase (saves £2,400/month)', '3 workflows running slower than baseline', 'Automation coverage up to 67% across departments', '23 active workflows, 2 paused, 4 erroring']
+
   return (
     <PageShell title="Workflows" subtitle="Automations, integrations and workflow management">
-      <DeptAISummary dept="workflows" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="workflows" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Workflows</span>
+          </div>
+          <ul className="space-y-2.5">
+            {wfHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>

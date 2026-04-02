@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Activity, Send, FileText, AlertCircle, BarChart2, Star, Building2 } from 'lucide-react'
+import { Users, Activity, Send, FileText, AlertCircle, BarChart2, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, SectionCard, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -119,6 +119,8 @@ export default function SuccessPage() {
     items: customers.filter((c) => c.rag === rag),
   }))
 
+  const successHighlights = ['Customer health: 132 healthy, 29 at risk, 10 critical', 'NPS score increased to 67 — up 8 points this quarter', '3 expansion opportunities identified this month', 'Onboarding completion rate: 94%', 'Churn risk: 4 accounts flagged for immediate outreach']
+
   return (
     <PageShell title="Success" subtitle="Customer health, renewals and expansion">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -126,7 +128,24 @@ export default function SuccessPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <DeptAISummary dept="success" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="success" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Success</span>
+          </div>
+          <ul className="space-y-2.5">
+            {successHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 

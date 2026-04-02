@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, Shield, Star, Building2 } from 'lucide-react'
+import { Package, AlertCircle, Truck, Receipt, Plus, RefreshCw, Phone, ClipboardList, FileText, PackagePlus, Shield, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -92,6 +92,8 @@ export default function OperationsPage() {
     </>
   )
 
+  const opsHighlights = ['47 workflow hours saved this month — £2,350 equivalent', 'Automation rate: 67% of manual tasks now automated', '3 workflows flagged for review — support SLA at risk', 'Process documentation: 87% coverage', 'Most triggered: New Joiner Onboarding (248 runs)']
+
   return (
     <PageShell title="Operations" subtitle="Workflows, supply chain and process management">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -99,7 +101,24 @@ export default function OperationsPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <DeptAISummary dept="operations" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="operations" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Operations</span>
+          </div>
+          <ul className="space-y-2.5">
+            {opsHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 
