@@ -5,6 +5,7 @@ import {
   GraduationCap, FileText, Calendar, Target, Users, Shield, Plus, Save, X,
   RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, TrendingDown,
   DollarSign, Award, Eye, BookOpen, Heart, BarChart2, Loader2, Download,
+  Database, Upload,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -184,11 +185,47 @@ export default function SLTSuite() {
 
   if (!isSchoolDemo) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="text-5xl mb-4">🏫</div>
-        <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>SLT Suite</h3>
-        <p className="text-sm max-w-md mb-6" style={{ color: '#9CA3AF' }}>Your executive dashboard with attendance, safeguarding, SEND, staff and Ofsted data all in one place. Load demo data to explore.</p>
-        <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-6 py-3 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(13,148,136,0.06) 0%, transparent 70%)' }} />
+        <div className="relative flex flex-col items-center text-center max-w-lg w-full">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.2), rgba(13,148,136,0.05))', border: '1px solid rgba(13,148,136,0.3)' }}>
+            <Database size={36} style={{ color: '#0D9488' }} />
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No SLT data yet</h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: '#9CA3AF' }}>Connect your MIS or upload school data to unlock your executive dashboard with attendance, safeguarding, SEND and Ofsted intelligence.</p>
+          <div className="flex flex-col gap-3 w-full mb-4">
+            <button className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#D1D5DB'; e.currentTarget.style.backgroundColor = '#111318' }}>
+              <Upload size={15} /> Upload Attendance Data (CSV)
+            </button>
+            <button className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#D1D5DB'; e.currentTarget.style.backgroundColor = '#111318' }}>
+              <Upload size={15} /> Upload Assessment Results (CSV)
+            </button>
+            <button className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#D1D5DB'; e.currentTarget.style.backgroundColor = '#111318' }}>
+              <Upload size={15} /> Upload Pupil Data (CSV)
+            </button>
+            <button className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.color = '#0D9488' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
+              <Database size={15} /> Connect MIS (Arbor / SIMS / Bromcom)
+            </button>
+          </div>
+          <div className="flex items-center gap-3 w-full mb-4">
+            <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+            <span className="text-xs" style={{ color: '#4B5563' }}>or</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+          </div>
+          <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }}
+            className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            ✨ Explore with Demo Data
+          </button>
+          <p className="text-xs mt-3" style={{ color: '#4B5563' }}>Demo data is pre-filled sample data so you can explore all features</p>
+        </div>
       </div>
     )
   }
