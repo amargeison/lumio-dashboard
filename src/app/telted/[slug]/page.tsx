@@ -672,10 +672,10 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Students', value: 423, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: 41, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: 3, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Reports', value: 2, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+              { label: 'Children Assessed', value: 87, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👶' },
+              { label: 'Schools Active', value: 6, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '🏫' },
+              { label: 'Concerns Flagged', value: 14, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '⚠️' },
+              { label: 'Reports Due', value: 3, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
