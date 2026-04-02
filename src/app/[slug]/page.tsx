@@ -13,7 +13,7 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
-  Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban,
+  Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -115,6 +115,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'success',    label: 'Success',            icon: Award       },
   { id: 'it',         label: 'IT & Systems',       icon: Monitor     },
   { id: 'workflows',  label: 'Workflows Library',  icon: GitBranch   },
+  { id: 'directors',  label: 'Directors Suite',    icon: Crown       },
   { id: 'settings',   label: 'Settings',           icon: Settings    },
 ]
 
