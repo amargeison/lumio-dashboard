@@ -1498,21 +1498,6 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         ))}
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {highlights.map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {children && (
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           {children}
@@ -2255,28 +2240,6 @@ function MedicalView() {
         <StatCard label="Modified Training" value="1" icon={Activity} color="#06B6D4" />
         <StatCard label="Full Recovery (7d)" value="1" icon={CheckCircle2} color="#22C55E" />
         <StatCard label="Season Injuries" value="9" icon={AlertCircle} color="#F59E0B" />
-      </div>
-
-      {/* AI Highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {[
-            'Santos (knee) cleared for light training — expected return 7 Apr.',
-            'Martinez (hamstring Grade 2) — jogging resumed. Target: 14 Apr.',
-            "O'Brien (ankle ligament) still in boot. Earliest return: 21 Apr.",
-            'Silva on modified programme — light contact only until Thursday assessment.',
-            'Overall squad injury rate this season: 3.2%. League average: 4.1%.',
-          ].map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Injury Tracker Table */}

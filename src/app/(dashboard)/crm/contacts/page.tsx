@@ -7,15 +7,31 @@ import ContactDrawer from '@/components/crm/ContactDrawer'
 import AddContactModal from '@/components/crm/AddContactModal'
 import type { CRMContact } from '@/lib/crm/types'
 
+const DEMO_CONTACTS: CRMContact[] = [
+  { id: 'dc1', workspace_id: '', first_name: 'Sarah', last_name: 'Mitchell', email: 'sarah@greenfield.edu', company: 'Greenfield Academy', job_title: 'Head of IT', phone: '+44 7700 900123', status: 'active', last_contacted: '2026-03-28', aria_score: 92, created_at: '' },
+  { id: 'dc2', workspace_id: '', first_name: 'James', last_name: 'Harlow', email: 'james@oakridge.edu', company: 'Oakridge Schools Ltd', job_title: 'CFO', phone: '+44 7700 900456', status: 'active', last_contacted: '2026-03-25', aria_score: 78, created_at: '' },
+  { id: 'dc3', workspace_id: '', first_name: 'Oliver', last_name: 'Bennett', email: 'oliver@bramblehill.org', company: 'Bramble Hill Trust', job_title: 'COO', phone: '+44 7700 900789', status: 'active', last_contacted: '2026-03-20', aria_score: 71, created_at: '' },
+  { id: 'dc4', workspace_id: '', first_name: 'Raj', last_name: 'Patel', email: 'raj@hopscotch.edu', company: 'Hopscotch Learning', job_title: 'Director', phone: '+44 7700 901234', status: 'active', last_contacted: '2026-03-22', aria_score: 68, created_at: '' },
+  { id: 'dc5', workspace_id: '', first_name: 'Sophie', last_name: 'Bell', email: 'sophie@crestview.edu', company: 'Crestview Academy', job_title: 'Head of School', phone: '+44 7700 901567', status: 'active', last_contacted: '2026-03-18', aria_score: 65, created_at: '' },
+  { id: 'dc6', workspace_id: '', first_name: 'Dan', last_name: 'Marsh', email: 'dan@meadowbrook.edu', company: 'Meadowbrook Primary', job_title: 'Headteacher', phone: '+44 7700 901890', status: 'new', last_contacted: '2026-03-30', aria_score: 55, created_at: '' },
+  { id: 'dc7', workspace_id: '', first_name: 'Marcus', last_name: 'Chen', email: 'marcus@starling.edu', company: 'Starling Schools', job_title: 'IT Lead', phone: '+44 7700 902123', status: 'new', last_contacted: '2026-03-15', aria_score: 48, created_at: '' },
+  { id: 'dc8', workspace_id: '', first_name: 'Charlotte', last_name: 'Davies', email: 'charlotte@torch.edu', company: 'Torchbearer Trust', job_title: 'CEO', phone: '+44 7700 902456', status: 'active', last_contacted: '2026-03-29', aria_score: 95, created_at: '' },
+  { id: 'dc9', workspace_id: '', first_name: 'Amara', last_name: 'Diallo', email: 'amara@fernview.edu', company: 'Fernview College', job_title: 'VP Education', phone: '+44 7700 902789', status: 'active', last_contacted: '2026-03-27', aria_score: 88, created_at: '' },
+  { id: 'dc10', workspace_id: '', first_name: 'Rachel', last_name: 'Fox', email: 'rachel@lakewood.edu', company: 'Lakewood Schools', job_title: 'Deputy Head', phone: '+44 7700 903012', status: 'new', last_contacted: '2026-03-10', aria_score: 42, created_at: '' },
+  { id: 'dc11', workspace_id: '', first_name: 'Tom', last_name: 'Wallace', email: 'tom@brightfields.edu', company: 'Brightfields MAT', job_title: 'Operations Director', phone: '+44 7700 903345', status: 'active', last_contacted: '2026-03-26', aria_score: 76, created_at: '' },
+  { id: 'dc12', workspace_id: '', first_name: 'Priya', last_name: 'Kapoor', email: 'priya@whitestone.edu', company: 'Whitestone MAT', job_title: 'Business Manager', phone: '+44 7700 903678', status: 'active', last_contacted: '2026-03-24', aria_score: 82, created_at: '' },
+]
+
 export default function ContactsPage() {
   const workspaceId = useCRMWorkspaceId()
-  const [contacts, setContacts] = useState<CRMContact[]>([])
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [contacts, setContacts] = useState<CRMContact[]>(isDemoActive && !workspaceId ? DEMO_CONTACTS : [])
   const [selectedContact, setSelectedContact] = useState<CRMContact | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isDemoActive)
 
   useEffect(() => {
-    if (!workspaceId) return
+    if (!workspaceId) { if (isDemoActive) { setContacts(DEMO_CONTACTS); setLoading(false) }; return }
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')

@@ -6,14 +6,21 @@ import ARIAChat from '@/components/crm/ARIAChat'
 import ARIAInsightsPanel from '@/components/crm/ARIAInsightsPanel'
 import type { ARIAInsight, CRMContext } from '@/lib/crm/types'
 
+const DEMO_INSIGHTS: ARIAInsight[] = [
+  { id: 'i1', type: 'risk', title: 'Pipeline at Risk', description: 'Bramble Hill Trust deal (£55k) has been in Proposal stage for 8 days with no activity. Contact Oliver Bennett to progress.', score: 71, created_at: new Date().toISOString() },
+  { id: 'i2', type: 'opportunity', title: 'Best Time to Contact', description: 'Analysis of response patterns shows Tuesday/Wednesday 10-11am has 3x higher reply rate for education sector contacts.', score: 85, created_at: new Date().toISOString() },
+  { id: 'i3', type: 'recommendation', title: 'Deal Recommendations', description: 'Torchbearer Trust (£18k, 90% probability) should close this week. Schedule a final call with Charlotte Davies.', score: 95, created_at: new Date().toISOString() },
+]
+
 export default function IntelligencePage() {
   const workspaceId = useCRMWorkspaceId()
-  const [insights, setInsights] = useState<ARIAInsight[]>([])
-  const [crmContext, setCrmContext] = useState<CRMContext | null>(null)
-  const [loading, setLoading] = useState(true)
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [insights, setInsights] = useState<ARIAInsight[]>(isDemoActive ? DEMO_INSIGHTS : [])
+  const [crmContext, setCrmContext] = useState<CRMContext | null>(isDemoActive ? { pipeline_value: 284000, open_deals: 8, win_rate: 34, avg_deal_size: 35500, contacts_count: 12, activities_today: 8 } as any : null)
+  const [loading, setLoading] = useState(!isDemoActive)
 
   useEffect(() => {
-    if (!workspaceId) return
+    if (!workspaceId) { if (isDemoActive) setLoading(false); return }
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')

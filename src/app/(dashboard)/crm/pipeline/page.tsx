@@ -6,15 +6,37 @@ import KanbanBoard from '@/components/crm/KanbanBoard'
 import DealDNA from '@/components/crm/DealDNA'
 import type { CRMDeal, PipelineStage } from '@/lib/crm/types'
 
+const DEMO_STAGES: PipelineStage[] = [
+  { id: 's1', name: 'Prospecting', position: 1, color: '#6366F1', workspace_id: '' },
+  { id: 's2', name: 'Qualified', position: 2, color: '#8B5CF6', workspace_id: '' },
+  { id: 's3', name: 'Proposal', position: 3, color: '#A78BFA', workspace_id: '' },
+  { id: 's4', name: 'Negotiation', position: 4, color: '#C084FC', workspace_id: '' },
+  { id: 's5', name: 'Closed Won', position: 5, color: '#22C55E', workspace_id: '' },
+  { id: 's6', name: 'Closed Lost', position: 6, color: '#EF4444', workspace_id: '' },
+]
+const DEMO_DEALS: CRMDeal[] = [
+  { id: 'd1', company_name: 'Greenfield Academy', contact_name: 'Sarah Mitchell', value: 91000, stage_id: 's4', probability: 80, days_in_stage: 5, aria_score: 92, workspace_id: '', created_at: '' },
+  { id: 'd2', company_name: 'Oakridge Schools Ltd', contact_name: 'James Harlow', value: 76000, stage_id: 's3', probability: 60, days_in_stage: 12, aria_score: 78, workspace_id: '', created_at: '' },
+  { id: 'd3', company_name: 'Bramble Hill Trust', contact_name: 'Oliver Bennett', value: 55000, stage_id: 's3', probability: 50, days_in_stage: 8, aria_score: 71, workspace_id: '', created_at: '' },
+  { id: 'd4', company_name: 'Hopscotch Learning', contact_name: 'Raj Patel', value: 42000, stage_id: 's2', probability: 40, days_in_stage: 3, aria_score: 68, workspace_id: '', created_at: '' },
+  { id: 'd5', company_name: 'Crestview Academy', contact_name: 'Sophie Bell', value: 33400, stage_id: 's2', probability: 35, days_in_stage: 7, aria_score: 65, workspace_id: '', created_at: '' },
+  { id: 'd6', company_name: 'Meadowbrook Primary', contact_name: 'Dan Marsh', value: 28000, stage_id: 's1', probability: 20, days_in_stage: 2, aria_score: 55, workspace_id: '', created_at: '' },
+  { id: 'd7', company_name: 'Starling Schools', contact_name: 'Marcus Chen', value: 24000, stage_id: 's1', probability: 15, days_in_stage: 14, aria_score: 48, workspace_id: '', created_at: '' },
+  { id: 'd8', company_name: 'Torchbearer Trust', contact_name: 'Charlotte Davies', value: 18000, stage_id: 's4', probability: 90, days_in_stage: 3, aria_score: 95, workspace_id: '', created_at: '' },
+  { id: 'd9', company_name: 'Fernview College', contact_name: 'Amara Diallo', value: 15000, stage_id: 's5', probability: 100, days_in_stage: 0, aria_score: 99, workspace_id: '', created_at: '' },
+  { id: 'd10', company_name: 'Lakewood Schools', contact_name: 'Rachel Fox', value: 12000, stage_id: 's1', probability: 10, days_in_stage: 21, aria_score: 42, workspace_id: '', created_at: '' },
+]
+
 export default function PipelinePage() {
   const workspaceId = useCRMWorkspaceId()
-  const [deals, setDeals] = useState<CRMDeal[]>([])
-  const [stages, setStages] = useState<PipelineStage[]>([])
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [deals, setDeals] = useState<CRMDeal[]>(isDemoActive && !workspaceId ? DEMO_DEALS : [])
+  const [stages, setStages] = useState<PipelineStage[]>(isDemoActive && !workspaceId ? DEMO_STAGES : [])
   const [selectedDeal, setSelectedDeal] = useState<CRMDeal | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isDemoActive)
 
   useEffect(() => {
-    if (!workspaceId) return
+    if (!workspaceId) { if (isDemoActive) { setDeals(DEMO_DEALS); setStages(DEMO_STAGES); setLoading(false) }; return }
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')

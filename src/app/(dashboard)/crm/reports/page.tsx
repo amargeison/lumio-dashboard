@@ -35,16 +35,17 @@ function CRMTooltip({ active, payload, label }: any) {
 
 export default function ReportsPage() {
   const workspaceId = useCRMWorkspaceId()
-  const [stats, setStats] = useState({
+  const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [stats, setStats] = useState(isDemoActive ? { winRate: 34, forecast: 284000, velocity: 38, savedValue: 142000 } : {
     winRate: 0,
     forecast: 0,
     velocity: 0,
     savedValue: 0,
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isDemoActive)
 
   useEffect(() => {
-    if (!workspaceId) return
+    if (!workspaceId) { if (isDemoActive) { setStats({ winRate: 34, forecast: 284000, velocity: 38, savedValue: 142000 }); setLoading(false) }; return }
     async function load() {
       try {
         const { getCRMData, seedDemoData } = await import('@/lib/crm/actions')
