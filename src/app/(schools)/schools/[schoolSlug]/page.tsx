@@ -1157,7 +1157,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const ownerName = isAdminImpersonating
     ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
     : (localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
-  const firstName = ownerName ? ownerName.split(' ')[0] : undefined
+  const userEmail = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_email') || '' : ''
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_name') || '' : ''
+  const firstName = ownerName ? ownerName.split(' ')[0] : userName ? userName.split(' ')[0] : userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1) : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
   const [activeTab, setActiveTab] = useState('today')
@@ -1314,7 +1316,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               })}
             </div>
           ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Quick wins will appear here once your data is connected.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Quick Wins.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
           )}
         </div>
       )}
@@ -1372,7 +1377,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               })}
             </div>
           ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Daily tasks will appear here once your data is connected.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Daily Tasks.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
           )}
         </div>
       )}
@@ -1423,7 +1431,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               })}
             </div>
           ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see personalised Insights.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
           )}
         </div>
       )}
@@ -1475,7 +1486,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               ))}
             </div>
           ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Alerts and reminders will appear here once your data is connected.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm mb-4" style={{ color: '#6B7280' }}>Load demo data to see alerts and reminders.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
           )}
         </div>
       )}

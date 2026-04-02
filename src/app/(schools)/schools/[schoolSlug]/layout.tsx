@@ -65,7 +65,7 @@ export default function SchoolLayout({ children }: Props) {
 
   const [schoolName, setSchoolName] = useState(slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
   const [initials, setInitials] = useState('SC')
-  const [planLabel, setPlanLabel] = useState('Trial workspace')
+  const [planLabel, setPlanLabel] = useState('Live workspace')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
