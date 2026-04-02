@@ -387,9 +387,19 @@ function PhotoFrame() {
   const [intervalSecs, setIntervalSecs] = useState(5)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const isDragging = useRef(false); const dragStartRef = useRef({ x: 0, y: 0 }); const posStartRef = useRef({ x: 50, y: 50 })
   useEffect(() => { if (intervalRef.current) clearInterval(intervalRef.current); if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000); return () => { if (intervalRef.current) clearInterval(intervalRef.current) } }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) { Array.from(e.target.files || []).forEach(file => { const reader = new FileReader(); reader.onload = (ev) => setPhotos(prev => { const next = [...prev, ev.target?.result as string].slice(-20); localStorage.setItem('lumio_photo_frame', JSON.stringify(next)); return next }); reader.readAsDataURL(file) }); e.target.value = '' }
   function removePhoto(idx: number) { setPhotos(prev => { const next = prev.filter((_, i) => i !== idx); localStorage.setItem('lumio_photo_frame', JSON.stringify(next)); if (currentIdx >= next.length) setCurrentIdx(Math.max(0, next.length - 1)); return next }) }
+  function onDragStart(cx: number, cy: number) { isDragging.current = true; dragStartRef.current = { x: cx, y: cy }; posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }; if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') } }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) { if (!isDragging.current) return; const r = el.getBoundingClientRect(); const dx = (cx - dragStartRef.current.x) / r.width * 100; const dy = (cy - dragStartRef.current.y) / r.height * 100; setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } })) }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
@@ -405,11 +415,16 @@ function PhotoFrame() {
           <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150 }}>
-          <img src={photos[currentIdx]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-          {photos.length > 1 && (<><button onClick={() => setCurrentIdx(i => (i - 1 + photos.length) % photos.length)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u2039'}</button><button onClick={() => setCurrentIdx(i => (i + 1) % photos.length)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u203A'}</button></>)}
-          <button onClick={() => removePhoto(currentIdx)} className="absolute top-2 right-2 rounded-full flex items-center justify-center text-xs" style={{ width: 20, height: 20, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>{'\u00D7'}</button>
+        <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+          onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+          onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }} onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)} onMouseUp={onDragEnd}
+          onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }} onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }} onTouchEnd={onDragEnd}>
+          <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+          {photos.length > 1 && (<><button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u2039'}</button><button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u203A'}</button></>)}
+          <button onClick={e => { e.stopPropagation(); removePhoto(currentIdx) }} className="absolute top-2 right-2 rounded-full flex items-center justify-center text-xs" style={{ width: 20, height: 20, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>{'\u00D7'}</button>
           <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+          {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute bottom-2 right-2 text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+          {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
         </div>
       )}
       {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
