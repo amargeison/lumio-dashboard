@@ -3540,8 +3540,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
   const [tab, setTab] = useState<OverviewTab>('today')
 
-  // Staff data + director detection
-  const allStaff = React.useMemo(() => getImportedStaff(), [])
+  // Staff data + director detection — re-reads localStorage on every render to stay in sync
+  const allStaff = getImportedStaff()
   const currentUserStaff = React.useMemo(() => {
     const name = (firstName || '').toLowerCase()
     if (!name) return null
