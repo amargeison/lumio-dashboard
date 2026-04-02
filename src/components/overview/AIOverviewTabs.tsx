@@ -812,10 +812,10 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
   }, [importedStaff])
 
   const hasImported = dedupedStaff.length > 0
-  // Use imported staff as primary source (single source of truth); AI items as fallback only
+  // Use imported staff as primary source (single source of truth); no AI fallback for empty workspaces
   const items: TeamMember[] = hasImported
     ? dedupedStaff.map((s, i) => importedToTeamMember(s, i))
-    : aiItems
+    : []
 
   const statusColor: Record<string, string> = { available: '#22C55E', 'in-meeting': '#F59E0B', busy: '#EF4444', away: '#6B7280' }
   const statusLabel: Record<string, string> = { available: 'Available', 'in-meeting': 'In meeting', busy: 'Busy', away: 'Away' }
@@ -859,7 +859,17 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <>
           {/* Staff Today */}
-          {subTab === 'staff' && (
+          {subTab === 'staff' && !hasImported && items.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex items-center justify-center rounded-2xl mb-4" style={{ width: 64, height: 64, backgroundColor: 'rgba(108,63,197,0.1)' }}>
+                <Users size={28} style={{ color: '#6C3FC5' }} />
+              </div>
+              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>No team members yet</h3>
+              <p className="text-sm mb-5 max-w-sm" style={{ color: '#6B7280' }}>Upload a CSV or connect your HR system in Settings to get started.</p>
+              <a href="/settings" className="text-sm font-semibold px-5 py-2.5 rounded-xl" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Go to Settings</a>
+            </div>
+          )}
+          {subTab === 'staff' && (hasImported || items.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {items.map(member => {
                 const initials = member.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
