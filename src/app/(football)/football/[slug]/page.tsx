@@ -1333,7 +1333,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
       {activeStaffTab === 'teaminfo' && (
         <div className="space-y-4">
           <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
               { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
               { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
@@ -1345,36 +1345,42 @@ function TabContent({ tab }: { tab: OverviewTab }) {
               { name: 'Liam Cross', role: 'Striker', dept: 'First Team', overall: 86, initials: 'LC', color: '#EA580C', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 }, id: 'OFC-008', date: '01/07/2025' },
               { name: 'Priya Nair', role: 'Head of Medical', dept: 'Medical', overall: 91, initials: 'PN', color: '#EC4899', stats: { PAC: 61, SHO: 44, PAS: 82, DRI: 58, DEF: 77, PHY: 69 }, id: 'OFC-009', date: '01/07/2025' },
             ].map(card => (
-              <div key={card.id} className="rounded-2xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${card.color}20 0%, #111318 60%)`, border: `1px solid ${card.color}40` }}>
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-3xl font-black" style={{ color: card.color }}>{card.overall}</p>
-                      <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>Overall</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${card.color}20`, color: card.color }}>{card.dept}</span>
-                      <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: card.color + '25', color: card.color, border: `2px solid ${card.color}50` }}>{card.initials}</div>
-                    </div>
+              <div key={card.id} style={{ background: `linear-gradient(135deg, ${card.color}22 0%, #0A0B10 60%)`, border: `1px solid ${card.color}44`, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', minHeight: 320 }}>
+                {/* Top row: overall left, dept pill right */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.overall}</div>
+                    <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, letterSpacing: '0.1em' }}>OVERALL</div>
                   </div>
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{card.name}</p>
-                  <p className="text-xs" style={{ color: card.color }}>{card.role}</p>
+                  <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: `${card.color}33`, color: card.color, border: `1px solid ${card.color}55` }}>{card.dept}</div>
                 </div>
-                <div className="grid grid-cols-6 gap-px mx-4 mb-3" style={{ backgroundColor: '#1F2937', borderRadius: 8, overflow: 'hidden' }}>
+                {/* Large centred avatar with glowing ring */}
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${card.color}44 0%, ${card.color}11 70%)`, border: `2px solid ${card.color}`, boxShadow: `0 0 20px ${card.color}44, 0 0 40px ${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: card.color }}>{card.initials}</div>
+                </div>
+                {/* Name and role */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#F9FAFB' }}>{card.name}</div>
+                  <div style={{ fontSize: 13, color: card.color, fontWeight: 500, marginTop: 2 }}>{card.role}</div>
+                </div>
+                {/* Stats — 6 columns */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, padding: '8px 0', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
                   {Object.entries(card.stats).map(([key, val]) => (
-                    <div key={key} className="flex flex-col items-center py-2" style={{ backgroundColor: '#0A0B10' }}>
-                      <span className="text-[10px] font-bold" style={{ color: val >= 90 ? '#22C55E' : val >= 75 ? '#F59E0B' : '#9CA3AF' }}>{val}</span>
-                      <span className="text-[8px] font-semibold" style={{ color: '#4B5563' }}>{key}</span>
+                    <div key={key} style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: val >= 85 ? '#22C55E' : val >= 70 ? '#F59E0B' : '#EF4444' }}>{val}</div>
+                      <div style={{ fontSize: 9, color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em' }}>{key}</div>
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between px-4 pb-3">
-                  <span className="text-[9px] font-mono" style={{ color: '#374151' }}>{card.id}</span>
-                  <span className="text-[9px]" style={{ color: '#374151' }}>{card.date}</span>
+                {/* ID and date */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#4B5563' }}>
+                  <span>{card.id}</span>
+                  <span>{card.date}</span>
                 </div>
-                <div className="flex gap-2 px-4 pb-4">
-                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: card.color + '20', color: card.color, border: `1px solid ${card.color}40` }}>Message</button>
-                  <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Profile</button>
+                {/* Buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', background: `${card.color}33`, color: card.color, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Message</button>
+                  <button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Profile</button>
                 </div>
               </div>
             ))}
