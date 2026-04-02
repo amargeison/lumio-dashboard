@@ -23,14 +23,27 @@ export default function AvatarDropdown({ initials, onConvert }: Props) {
     setName(localStorage.getItem('lumio_company_name') || '')
     setEmail(localStorage.getItem('lumio_user_email') || '')
     setShowGoLive(localStorage.getItem('lumio_demo_active') === 'true')
-    // Load avatar from localStorage cache
+    // Load avatar — instant from localStorage cache
     const cached = localStorage.getItem('lumio_user_photo')
     if (cached && !cached.startsWith('data:')) setAvatarUrl(cached)
-    // Also check staff photo key
     const userEmail = localStorage.getItem('lumio_user_email')
     if (userEmail) {
       const staffPhoto = localStorage.getItem(`lumio_staff_photo_${userEmail}`)
       if (staffPhoto && !staffPhoto.startsWith('data:')) setAvatarUrl(staffPhoto)
+    }
+    // Always fetch from Supabase in background to confirm/update avatar
+    const wsToken = localStorage.getItem('workspace_session_token')
+    if (wsToken) {
+      fetch('/api/workspace/status', { headers: { 'x-workspace-token': wsToken } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.user_avatar_url) {
+            setAvatarUrl(data.user_avatar_url)
+            localStorage.setItem('lumio_user_photo', data.user_avatar_url)
+            if (data.owner_email) localStorage.setItem(`lumio_staff_photo_${data.owner_email}`, data.user_avatar_url)
+          }
+        })
+        .catch(() => {})
     }
     // Listen for avatar updates
     function onAvatarUpdated(e: Event) {

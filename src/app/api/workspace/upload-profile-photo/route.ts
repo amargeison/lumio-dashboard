@@ -48,6 +48,17 @@ export async function POST(req: NextRequest) {
         .then(({ error: dbErr }) => { if (dbErr) console.warn('[upload-profile-photo] DB update note:', dbErr.message) })
     }
 
+    // Also save to auth user metadata so it persists across sessions
+    if (email) {
+      const { data: authUsers } = await supabase.auth.admin.listUsers()
+      const authUser = authUsers?.users?.find((u: { email?: string }) => u.email === email)
+      if (authUser) {
+        await supabase.auth.admin.updateUserById(authUser.id, {
+          user_metadata: { avatar_url: publicUrl }
+        }).then(({ error: authErr }) => { if (authErr) console.warn('[upload-profile-photo] Auth metadata update note:', authErr.message) })
+      }
+    }
+
     return NextResponse.json({ success: true, url: publicUrl })
   } catch (err) {
     console.error('[upload-profile-photo] Error:', err)

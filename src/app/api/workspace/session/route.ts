@@ -58,8 +58,22 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .maybeSingle()
 
+    // Look up user avatar from workspace_staff
+    let user_avatar_url: string | null = null
+    const { data: staffRow } = await supabase
+      .from('workspace_staff')
+      .select('profile_photo_url')
+      .eq('business_id', business.id)
+      .eq('email', email.toLowerCase())
+      .maybeSingle()
+    if (staffRow?.profile_photo_url) {
+      user_avatar_url = staffRow.profile_photo_url
+    }
+
+    const businessWithAvatar = { ...business, user_avatar_url }
+
     if (existingSession) {
-      return NextResponse.json({ session_token: existingSession.token, business })
+      return NextResponse.json({ session_token: existingSession.token, business: businessWithAvatar })
     }
 
     // Create new session
@@ -76,7 +90,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
     }
 
-    return NextResponse.json({ session_token: sessionToken, business })
+    return NextResponse.json({ session_token: sessionToken, business: businessWithAvatar })
   } catch (err) {
     console.error('[workspace/session] Error:', err)
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
