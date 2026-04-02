@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Maximize2, Printer, Share2, X } from 'lucide-react'
 import {
   PitchSVG,
   PlayerDot,
@@ -43,46 +44,74 @@ function SectionCard({
   children: React.ReactNode
   onEdit?: () => void
 }) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [toast, setToast] = useState(false)
+
+  const closeFullscreen = useCallback(() => setFullscreen(false), [])
+  useEffect(() => {
+    if (!fullscreen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeFullscreen() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [fullscreen, closeFullscreen])
+
+  const routineId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+  function handlePrint() {
+    const el = cardRef.current
+    if (!el) return
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(`<html><head><title>${title}</title><style>body{font-family:system-ui;background:#fff;color:#111;padding:24px}svg{max-width:100%}h1{font-size:20px}</style></head><body>${el.innerHTML}</body></html>`)
+    win.document.close()
+    win.print()
+  }
+
+  function handleShare() {
+    const url = `${window.location.href.split('#')[0]}#${routineId}`
+    if (navigator.share) {
+      navigator.share({ title, url }).catch(() => {})
+    } else {
+      navigator.clipboard.writeText(url).catch(() => {})
+    }
+    setToast(true)
+    setTimeout(() => setToast(false), 2000)
+  }
+
+  const btnStyle: React.CSSProperties = { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.textSec, cursor: 'pointer', padding: 0, position: 'relative' }
+
   return (
-    <div
-      style={{
-        background: C.cardBg,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: 20,
-        marginBottom: 16,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 14,
-        }}
-      >
-        <h3 style={{ color: C.text, fontSize: 16, fontWeight: 600, margin: 0 }}>
-          {title}
-        </h3>
-        {onEdit && (
-          <button
-            onClick={onEdit}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${C.border}`,
-              color: C.primary,
-              borderRadius: 6,
-              padding: '4px 12px',
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Edit
-          </button>
-        )}
+    <>
+      <div ref={cardRef} id={routineId} style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <h3 style={{ color: C.text, fontSize: 16, fontWeight: 600, margin: 0 }}>{title}</h3>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {onEdit && <button onClick={onEdit} style={{ ...btnStyle, padding: '4px 10px', width: 'auto', fontSize: 12, color: C.primary }} title="Edit">Edit</button>}
+            <button onClick={() => setFullscreen(true)} style={btnStyle} title="Fullscreen"><Maximize2 size={14} /></button>
+            <button onClick={handlePrint} style={btnStyle} title="Print"><Printer size={14} /></button>
+            <button onClick={handleShare} style={btnStyle} title="Share"><Share2 size={14} /></button>
+          </div>
+        </div>
+        {children}
+        {toast && <div style={{ position: 'absolute', bottom: 8, right: 8, padding: '4px 12px', borderRadius: 8, backgroundColor: '#22C55E', color: '#fff', fontSize: 11, fontWeight: 600, zIndex: 10 }}>Link copied!</div>}
       </div>
-      {children}
-    </div>
+
+      {/* Fullscreen overlay */}
+      {fullscreen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: '#0A0B10', overflowY: 'auto', padding: 32 }} onClick={closeFullscreen}>
+          <div style={{ maxWidth: 900, margin: '0 auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ color: C.text, fontSize: 22, fontWeight: 700, margin: 0 }}>{title}</h2>
+              <button onClick={closeFullscreen} style={{ ...btnStyle, width: 36, height: 36 }}><X size={18} /></button>
+            </div>
+            <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28 }}>
+              {children}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
