@@ -585,19 +585,17 @@ function OperationsView() {
 
 // ─── Filter options ────────────────────────────────────────────────────────────
 
-const REGIONS    = ['All Regions',   'South East', 'North West', 'Yorkshire', 'West Midlands', 'East of England', 'South West', 'North East', 'London', 'East Midlands']
-const COUNTRIES  = ['All Countries', 'England', 'Wales', 'Scotland', 'N. Ireland']
-const PRODUCTS   = ['All Products',  'Lumio Core', 'Lumio Pro', 'Lumio Lite']
-const DISTRICTS  = ['All Districts', 'Oxfordshire', 'Manchester', 'West Yorkshire', 'Cardiff', 'Edinburgh', 'Suffolk', 'Norfolk', 'West Midlands', 'North Yorkshire', 'Bristol']
-const TRUSTS     = ['All Trusts',    'Greenfield MAT', 'Bramble Hill Trust', 'Independent', 'Oakridge MAT', 'Whitestone MAT', 'Riverdale MAT', 'Starling Trust']
+const REGIONS    = ['All Regions',   'North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East & Africa', 'United Kingdom', 'United States', 'Canada', 'Australia']
+const COUNTRIES  = ['All Countries', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Netherlands', 'Singapore', 'UAE', 'South Africa', 'Brazil', 'India', 'Japan']
+const SECTORS    = ['All Sectors',   'Education', 'Healthcare', 'Finance', 'Technology', 'Retail', 'Non-profit', 'Government', 'Sport & Leisure']
+const ORG_TYPES  = ['All Types',     'Enterprise (500+ staff)', 'Mid-Market (50-500 staff)', 'SME (10-50 staff)', 'Startup (<10 staff)', 'Public Sector', 'Non-profit']
 
 function FilterSelect({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-lg px-3 py-2 text-sm"
-      style={{ backgroundColor: '#07080F', border: '1px solid #1F2937', color: value === options[0] ? '#9CA3AF' : '#F9FAFB', minWidth: 140 }}
+      style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #1F2937', background: '#111318', color: value === options[0] ? '#9CA3AF' : '#F9FAFB', cursor: 'pointer', height: 28 }}
     >
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -610,9 +608,8 @@ export default function InsightsPage() {
   const [role,     setRole]     = useState<Role>('Director')
   const [region,   setRegion]   = useState('All Regions')
   const [country,  setCountry]  = useState('All Countries')
-  const [product,  setProduct]  = useState('All Products')
-  const [district, setDistrict] = useState('All Districts')
-  const [trust,    setTrust]    = useState('All Trusts')
+  const [sector,   setSector]   = useState('All Sectors')
+  const [orgType,  setOrgType]  = useState('All Types')
 
   const hasData = useHasDashboardData('insights')
 
@@ -635,44 +632,31 @@ export default function InsightsPage() {
   )
 
   const isFiltered = region !== 'All Regions' || country !== 'All Countries' ||
-                     product !== 'All Products' || district !== 'All Districts' || trust !== 'All Trusts'
+                     sector !== 'All Sectors' || orgType !== 'All Types'
 
-  const activeFilters = [region, country, product, district, trust].filter((v) => !v.startsWith('All'))
+  const activeFilters = [region, country, sector, orgType].filter((v) => !v.startsWith('All'))
 
   return (
     <PageShell title="Insights" subtitle="Analytics, reporting and performance data">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>Insights</h1>
-          <p className="mt-0.5 text-sm" style={{ color: '#9CA3AF' }}>Performance metrics and analysis across all departments</p>
-        </div>
-        <ExportPdfButton />
-      </div>
-
-      {/* Global filter bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl px-5 py-4"
-        style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <span className="text-xs font-semibold uppercase tracking-widest mr-1" style={{ color: '#9CA3AF' }}>Filter by</span>
+      {/* Compact filter + role + export row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, whiteSpace: 'nowrap' }}>FILTER BY</span>
         <FilterSelect options={REGIONS}   value={region}   onChange={setRegion}   />
         <FilterSelect options={COUNTRIES} value={country}  onChange={setCountry}  />
-        <FilterSelect options={PRODUCTS}  value={product}  onChange={setProduct}  />
-        <FilterSelect options={DISTRICTS} value={district} onChange={setDistrict} />
-        <FilterSelect options={TRUSTS}    value={trust}    onChange={setTrust}    />
+        <FilterSelect options={SECTORS}   value={sector}   onChange={setSector}   />
+        <FilterSelect options={ORG_TYPES} value={orgType}  onChange={setOrgType}  />
         {isFiltered && (
           <>
-            <span className="rounded-md px-2 py-0.5 text-xs font-semibold"
-              style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#6C3FC5' }}>
-              Filtered view
-            </span>
-            <button
-              onClick={() => { setRegion('All Regions'); setCountry('All Countries'); setProduct('All Products'); setDistrict('All Districts'); setTrust('All Trusts') }}
-              className="text-xs" style={{ color: '#9CA3AF' }}
-            >
-              Clear
-            </button>
+            <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#6C3FC5' }}>Filtered</span>
+            <button onClick={() => { setRegion('All Regions'); setCountry('All Countries'); setSector('All Sectors'); setOrgType('All Types') }} className="text-xs" style={{ color: '#9CA3AF' }}>Clear</button>
           </>
         )}
+        <div style={{ width: 1, height: 20, background: '#1F2937', margin: '0 4px' }} />
+        <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, whiteSpace: 'nowrap' }}>VIEW AS</span>
+        {ROLES.map((r) => (
+          <button key={r} onClick={() => setRole(r)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: `1px solid ${role === r ? '#7C3AED' : '#1F2937'}`, background: role === r ? '#7C3AED' : 'transparent', color: role === r ? 'white' : '#9CA3AF', cursor: 'pointer', height: 28, fontWeight: role === r ? 700 : 400 }}>{r}</button>
+        ))}
+        <div style={{ marginLeft: 'auto' }}><ExportPdfButton /></div>
       </div>
 
       {isFiltered && (
@@ -680,28 +664,6 @@ export default function InsightsPage() {
           Data filtered by: {activeFilters.join(' · ')} — figures shown are indicative for this segment.
         </p>
       )}
-
-      {/* Role switcher */}
-      <div className="flex items-center gap-3 rounded-xl p-4"
-        style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <span className="text-xs font-semibold uppercase tracking-widest mr-2" style={{ color: '#9CA3AF' }}>
-          Viewing as
-        </span>
-        {ROLES.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRole(r)}
-            className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
-            style={{
-              backgroundColor: role === r ? '#6C3FC5' : 'transparent',
-              color: role === r ? '#F9FAFB' : '#9CA3AF',
-              border: `1px solid ${role === r ? '#6C3FC5' : '#1F2937'}`,
-            }}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
 
       {role === 'Director'   && <DirectorView />}
       {role === 'Manager'    && <ManagerView />}
