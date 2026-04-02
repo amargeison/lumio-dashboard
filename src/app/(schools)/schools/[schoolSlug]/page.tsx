@@ -381,7 +381,7 @@ const SCHOOL_DEMO_PHOTOS = [
 ]
 
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return SCHOOL_DEMO_PHOTOS })
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true' ? SCHOOL_DEMO_PHOTOS : [] })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
@@ -557,7 +557,7 @@ function SchoolMeetingsToday() {
   )
 }
 
-function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { schoolName: string; firstName?: string; pupils?: number; staff?: number }) {
+function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive }: { schoolName: string; firstName?: string; pupils?: number; staff?: number; demoActive?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -618,10 +618,10 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Pupils', value: pupils || 423, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: staff || 41, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: 3, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Reports', value: 2, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+              { label: 'Pupils', value: demoActive ? (pupils || 423) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { label: 'Staff', value: demoActive ? (staff || 41) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { label: 'Alerts', value: demoActive ? 3 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Reports', value: demoActive ? 2 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
@@ -1174,8 +1174,16 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   return (
     <div className="space-y-4">
 
+      {/* 0. Demo banner */}
+      {demoDataActive && (
+        <div className="flex items-center justify-between px-4 -mx-1 shrink-0 rounded-xl" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span></div>
+          <button onClick={() => { localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); window.location.reload() }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+        </div>
+      )}
+
       {/* 1. Greeting banner */}
-      <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} />
+      <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} demoActive={demoDataActive} />
 
       {/* 2. Tab bar */}
       <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
@@ -1224,6 +1232,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* TAB: Today */}
       {activeTab === 'today' && (
         <>
+          {demoDataActive ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col"><SchoolMorningRoundup /></div>
             <div className="lg:col-span-1 flex flex-col"><SchoolMeetingsToday /></div>
@@ -1249,6 +1258,14 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               </div>
             </div>
           </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-6">
+              <div className="text-5xl mb-4">🏫</div>
+              <h2 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Connect your tools to get started</h2>
+              <p className="text-sm text-center mb-6" style={{ color: '#6B7280', maxWidth: 400 }}>Your daily overview, AI insights and schedule will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+          )}
         </>
       )}
 
