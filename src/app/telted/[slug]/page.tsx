@@ -635,6 +635,594 @@ function ComingSoonPage({ title }: { title: string }) {
   )
 }
 
+// ─── TEL TED Settings ───────────────────────────────────────────────────────
+
+const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
+
+const SETTINGS_TABS = [
+  { id: 'profile', label: 'School Profile', icon: '🏫' },
+  { id: 'sso', label: 'Single Sign-On (SSO)', icon: '🔐' },
+  { id: 'rostering', label: 'Rostering', icon: '📋' },
+  { id: 'voice', label: 'Voice & Audio', icon: '🎙️' },
+  { id: 'users', label: 'Staff & Users', icon: '👤' },
+  { id: 'notifications', label: 'Notifications', icon: '🔔' },
+  { id: 'integrations', label: 'Integrations', icon: '🔗' },
+  { id: 'privacy', label: 'Data & Privacy', icon: '🛡️' },
+] as const
+
+const VOICE_OPTIONS = [
+  { id: 'browser', name: 'Default Browser Voice', desc: 'Free — uses your browser\'s built-in speech synthesis', premium: false, voiceId: '' },
+  { id: 'rachel', name: 'Rachel', desc: 'Warm, professional female voice', premium: true, voiceId: 'rachel' },
+  { id: 'josh', name: 'Josh', desc: 'Clear, authoritative male voice', premium: true, voiceId: 'josh' },
+  { id: 'bella', name: 'Bella', desc: 'Friendly, approachable female voice', premium: true, voiceId: 'bella' },
+  { id: 'dallin', name: 'Dallin', desc: 'Confident male voice, great for summaries', premium: true, voiceId: 'alFofuDn3cOwyoz1i44T' },
+  { id: 'vincent', name: 'Vincent', desc: 'Deep, calm male voice', premium: true, voiceId: 'Qe9WSybioZxssVEwlBSo' },
+  { id: 'jessica', name: 'Jessica', desc: 'Energetic, warm female voice', premium: true, voiceId: 'flHkNRp1BlvT73UL6gyz' },
+]
+
+const SETTINGS_STAFF = [
+  { name: 'Sarah Mitchell', role: 'TEL TED Coordinator', email: 'sarah@parkside.edu', access: 'Admin' },
+  { name: 'James Okafor', role: 'Paraprofessional', email: 'james@parkside.edu', access: 'Staff' },
+  { name: 'Hannah Brooks', role: 'Kindergarten Teacher', email: 'hannah@parkside.edu', access: 'Teacher' },
+  { name: 'David Chen', role: 'Special Ed Coordinator', email: 'david@parkside.edu', access: 'SENCO' },
+]
+
+function TelTedSettings() {
+  const [activeTab, setActiveTab] = useState<string>('profile')
+  const [toast, setToast] = useState('')
+
+  // Profile state
+  const [schoolName, setSchoolName] = useState('Parkside Elementary')
+  const [district, setDistrict] = useState('Oak Valley District')
+  const [state, setState] = useState('Texas')
+  const [grades, setGrades] = useState<string[]>(['Pre-K', 'K', '1', '2'])
+  const [principal, setPrincipal] = useState('')
+  const [coordinator, setCoordinator] = useState('Sarah Mitchell')
+  const [academicYear, setAcademicYear] = useState('2025-26')
+
+  // SSO state
+  const [googleExpanded, setGoogleExpanded] = useState(false)
+  const [msExpanded, setMsExpanded] = useState(false)
+  const [googleDomain, setGoogleDomain] = useState('')
+  const [googleClientId, setGoogleClientId] = useState('')
+  const [googleSecret, setGoogleSecret] = useState('')
+  const [showGoogleSecret, setShowGoogleSecret] = useState(false)
+  const [azureTenant, setAzureTenant] = useState('')
+  const [azureClientId, setAzureClientId] = useState('')
+  const [azureSecret, setAzureSecret] = useState('')
+  const [showAzureSecret, setShowAzureSecret] = useState(false)
+  const [ssoTesting, setSsoTesting] = useState(false)
+  const [ssoSuccess, setSsoSuccess] = useState(false)
+
+  // Rostering state
+  const [rosterUrl, setRosterUrl] = useState('')
+  const [rosterClientId, setRosterClientId] = useState('')
+  const [rosterSecret, setRosterSecret] = useState('')
+  const [rosterFreq, setRosterFreq] = useState('Daily')
+  const [cleverConnecting, setCleverConnecting] = useState(false)
+  const [cleverConnected, setCleverConnected] = useState(false)
+
+  // Voice state
+  const [selectedVoice, setSelectedVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('telted-voice-preference') || 'browser' : 'browser')
+  const [speakRate, setSpeakRate] = useState(0.9)
+  const [speakPitch, setSpeakPitch] = useState(1.0)
+  const [speakVolume, setSpeakVolume] = useState(1.0)
+  const [wakeWord, setWakeWord] = useState('Lumio')
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
+  const [audioResponses, setAudioResponses] = useState(true)
+  const [showTextCard, setShowTextCard] = useState(true)
+  const [autoListen, setAutoListen] = useState(false)
+
+  // Notifications state
+  const [dailySummary, setDailySummary] = useState(true)
+  const [atRiskAlerts, setAtRiskAlerts] = useState(true)
+  const [sessionReminders, setSessionReminders] = useState(true)
+  const [assessmentReminders, setAssessmentReminders] = useState(true)
+  const [weeklyDigest, setWeeklyDigest] = useState(false)
+  const [parentReminders, setParentReminders] = useState(false)
+  const [notifEmail, setNotifEmail] = useState('sarah@parkside.edu')
+  const [quietFrom, setQuietFrom] = useState('19:00')
+  const [quietTo, setQuietTo] = useState('07:00')
+
+  // Integrations state
+  const [connectedIntegrations, setConnectedIntegrations] = useState<Record<string, boolean>>({ languagescreen: true })
+  const [connectingIntegration, setConnectingIntegration] = useState<string | null>(null)
+
+  // Invite state
+  const [inviteName, setInviteName] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('Teacher')
+  const [inviteAccess, setInviteAccess] = useState('Teacher')
+  const [showInviteModal, setShowInviteModal] = useState(false)
+
+  // Delete confirm
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  function fireToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
+
+  function handleSelectVoice(id: string) {
+    setSelectedVoice(id)
+    localStorage.setItem('telted-voice-preference', id)
+    fireToast(`Voice set to ${VOICE_OPTIONS.find(v => v.id === id)?.name}`)
+  }
+
+  function previewVoice(id: string) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance("Hello, I'm your TEL TED assistant. I'm here to help you track student progress.")
+    u.rate = speakRate; u.pitch = speakPitch; u.volume = speakVolume; u.lang = 'en-GB'
+    if (id !== 'browser') {
+      const voices = window.speechSynthesis.getVoices()
+      const preferred = ['Google UK English Female', 'Microsoft Sonia Online (Natural) - en-GB']
+      const voice = preferred.reduce<SpeechSynthesisVoice | null>((f, n) => f || voices.find(v => v.name === n) || null, null)
+        || voices.find(v => v.lang === 'en-GB') || null
+      if (voice) u.voice = voice
+    }
+    window.speechSynthesis.speak(u)
+  }
+
+  function testCurrentSettings() {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance("Top man. Knows his stuff.")
+    u.rate = speakRate; u.pitch = speakPitch; u.volume = speakVolume; u.lang = 'en-GB'
+    window.speechSynthesis.speak(u)
+  }
+
+  function mockConnectIntegration(key: string) {
+    setConnectingIntegration(key)
+    setTimeout(() => {
+      setConnectedIntegrations(prev => ({ ...prev, [key]: true }))
+      setConnectingIntegration(null)
+      fireToast(`${key} connected successfully`)
+    }, 2000)
+  }
+
+  // ── Shared styles ──
+  const cardStyle: React.CSSProperties = { backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: '24px' }
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', fontSize: 14, outline: 'none' }
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: '#9CA3AF', marginBottom: 6 }
+  const goldBtn: React.CSSProperties = { padding: '10px 24px', borderRadius: 10, backgroundColor: '#C8960C', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }
+  const tealBtn: React.CSSProperties = { padding: '10px 24px', borderRadius: 10, backgroundColor: '#0D9488', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }
+  const blueBtn: React.CSSProperties = { padding: '10px 24px', borderRadius: 10, backgroundColor: '#2563EB', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }
+  const badge = (color: string, text: string) => <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: `${color}20`, color, border: `1px solid ${color}40` }}>{text}</span>
+
+  function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+    return (
+      <label className="flex items-center gap-3 cursor-pointer py-2">
+        <div onClick={onToggle} style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#0D9488' : '#374151', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+          <div style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: 3, left: on ? 23 : 3, transition: 'left 0.2s' }} />
+        </div>
+        <span style={{ color: '#D1D5DB', fontSize: 14 }}>{label}</span>
+      </label>
+    )
+  }
+
+  // ── Tab: School Profile ──
+  function ProfileTab() {
+    const allGrades = ['Pre-K', 'K', '1', '2', '3', '4', '5']
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>School Profile</h2><p className="text-sm" style={{ color: '#6B7280' }}>Basic information about your school</p></div>
+        <div style={cardStyle} className="space-y-5">
+          <div><label style={labelStyle}>School Name</label><input style={inputStyle} value={schoolName} onChange={e => setSchoolName(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label style={labelStyle}>District</label><input style={inputStyle} value={district} onChange={e => setDistrict(e.target.value)} /></div>
+            <div><label style={labelStyle}>State</label><select style={{ ...inputStyle, appearance: 'auto' as any }} value={state} onChange={e => setState(e.target.value)}>{US_STATES.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+          </div>
+          <div>
+            <label style={labelStyle}>Grade Levels Served</label>
+            <div className="flex flex-wrap gap-2">{allGrades.map(g => (
+              <label key={g} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer text-sm" style={{ backgroundColor: grades.includes(g) ? 'rgba(13,148,136,0.15)' : '#0A0B10', border: `1px solid ${grades.includes(g) ? '#0D9488' : '#1F2937'}`, color: grades.includes(g) ? '#2DD4BF' : '#9CA3AF' }}>
+                <input type="checkbox" className="hidden" checked={grades.includes(g)} onChange={() => setGrades(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])} />{g}
+              </label>
+            ))}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label style={labelStyle}>Principal Name</label><input style={inputStyle} value={principal} onChange={e => setPrincipal(e.target.value)} placeholder="Enter principal name" /></div>
+            <div><label style={labelStyle}>TEL TED Coordinator</label><input style={inputStyle} value={coordinator} onChange={e => setCoordinator(e.target.value)} /></div>
+          </div>
+          <div><label style={labelStyle}>Academic Year</label><select style={{ ...inputStyle, appearance: 'auto' as any, maxWidth: 200 }} value={academicYear} onChange={e => setAcademicYear(e.target.value)}><option>2025-26</option><option>2026-27</option></select></div>
+        </div>
+        <button style={goldBtn} onClick={() => fireToast('School profile saved')}>Save Profile</button>
+      </div>
+    )
+  }
+
+  // ── Tab: SSO ──
+  function SsoTab() {
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Single Sign-On</h2><p className="text-sm" style={{ color: '#6B7280' }}>Allow staff to log in with their existing school accounts. No separate passwords needed.</p></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Google */}
+          <div style={cardStyle}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335)', color: '#fff' }}>G</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Google Workspace for Education</h3>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Staff sign in with their school Google accounts</p>
+              </div>
+              {badge('#F59E0B', 'Not configured')}
+            </div>
+            <button onClick={() => setGoogleExpanded(!googleExpanded)} className="text-xs font-medium mb-3" style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{googleExpanded ? '▾ Hide fields' : '▸ Configure'}</button>
+            {googleExpanded && (
+              <div className="space-y-3 mt-2">
+                <div><label style={labelStyle}>Google Workspace Domain</label><input style={inputStyle} value={googleDomain} onChange={e => setGoogleDomain(e.target.value)} placeholder="oakvalley.edu" /></div>
+                <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={googleClientId} onChange={e => setGoogleClientId(e.target.value)} placeholder="Enter Client ID" /></div>
+                <div><label style={labelStyle}>Client Secret</label><div className="relative"><input type={showGoogleSecret ? 'text' : 'password'} style={inputStyle} value={googleSecret} onChange={e => setGoogleSecret(e.target.value)} placeholder="Enter Client Secret" /><button onClick={() => setShowGoogleSecret(!showGoogleSecret)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>{showGoogleSecret ? 'Hide' : 'Show'}</button></div></div>
+                <button style={blueBtn} onClick={() => fireToast('Google SSO configuration saved')}>Configure Google SSO</button>
+              </div>
+            )}
+            <p className="text-xs mt-2" style={{ color: '#4B5563' }}>Requires Google Workspace for Education account</p>
+          </div>
+          {/* Microsoft */}
+          <div style={cardStyle}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0,120,212,0.15)', border: '1px solid rgba(0,120,212,0.3)' }}>
+                <div className="grid grid-cols-2 gap-0.5" style={{ width: 18, height: 18 }}><div style={{ backgroundColor: '#F25022', borderRadius: 1 }} /><div style={{ backgroundColor: '#7FBA00', borderRadius: 1 }} /><div style={{ backgroundColor: '#00A4EF', borderRadius: 1 }} /><div style={{ backgroundColor: '#FFB900', borderRadius: 1 }} /></div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Microsoft 365 / Azure AD</h3>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Staff sign in with their Microsoft school accounts</p>
+              </div>
+              {badge('#F59E0B', 'Not configured')}
+            </div>
+            <button onClick={() => setMsExpanded(!msExpanded)} className="text-xs font-medium mb-3" style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{msExpanded ? '▾ Hide fields' : '▸ Configure'}</button>
+            {msExpanded && (
+              <div className="space-y-3 mt-2">
+                <div><label style={labelStyle}>Azure Tenant ID</label><input style={inputStyle} value={azureTenant} onChange={e => setAzureTenant(e.target.value)} placeholder="Enter Tenant ID" /></div>
+                <div><label style={labelStyle}>Application (Client) ID</label><input style={inputStyle} value={azureClientId} onChange={e => setAzureClientId(e.target.value)} placeholder="Enter Client ID" /></div>
+                <div><label style={labelStyle}>Client Secret</label><div className="relative"><input type={showAzureSecret ? 'text' : 'password'} style={inputStyle} value={azureSecret} onChange={e => setAzureSecret(e.target.value)} placeholder="Enter Client Secret" /><button onClick={() => setShowAzureSecret(!showAzureSecret)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>{showAzureSecret ? 'Hide' : 'Show'}</button></div></div>
+                <button style={blueBtn} onClick={() => fireToast('Microsoft SSO configuration saved')}>Configure Microsoft SSO</button>
+              </div>
+            )}
+            <p className="text-xs mt-2" style={{ color: '#4B5563' }}>Requires Microsoft 365 Education subscription</p>
+          </div>
+        </div>
+        {/* SSO benefits */}
+        <div style={{ ...cardStyle, borderColor: '#C8960C40', background: 'linear-gradient(135deg, rgba(200,150,12,0.06), rgba(200,150,12,0.02))' }}>
+          <p className="text-sm font-semibold mb-1" style={{ color: '#C8960C' }}>SSO Benefits</p>
+          <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>When SSO is enabled: Staff log in with one click using their existing school account. No forgotten passwords. No separate Lumio credentials. Works with Google Classroom and Microsoft Teams integrations.</p>
+        </div>
+        <button style={tealBtn} onClick={() => { setSsoTesting(true); setTimeout(() => { setSsoTesting(false); setSsoSuccess(true); setTimeout(() => setSsoSuccess(false), 3000) }, 2000) }}>{ssoTesting ? 'Testing...' : 'Test SSO Connection'}</button>
+        {ssoSuccess && <p className="text-sm font-medium" style={{ color: '#22C55E' }}>✓ SSO connection successful. Staff can now log in with their Google/Microsoft accounts.</p>}
+      </div>
+    )
+  }
+
+  // ── Tab: Rostering ──
+  function RosteringTab() {
+    const compatibleSystems = ['Infinite Campus', 'PowerSchool', 'Skyward', 'Clever', 'ClassLink']
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Rostering</h2><p className="text-sm" style={{ color: '#6B7280' }}>Automatically sync your student and staff rosters from your district&apos;s systems.</p></div>
+        <div className="space-y-4">
+          {/* OneRoster */}
+          <div style={cardStyle}>
+            <div className="flex items-center gap-2 mb-2"><h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>OneRoster (IMS Global Standard)</h3>{badge('#22C55E', 'Recommended')}</div>
+            <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Automatically sync students, teachers, classes, and enrollments using the OneRoster 1.1 standard.</p>
+            <div className="space-y-3">
+              <div><label style={labelStyle}>OneRoster API URL</label><input style={inputStyle} value={rosterUrl} onChange={e => setRosterUrl(e.target.value)} placeholder="https://your-district.oneroster.com/api" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={rosterClientId} onChange={e => setRosterClientId(e.target.value)} /></div>
+                <div><label style={labelStyle}>Client Secret</label><input type="password" style={inputStyle} value={rosterSecret} onChange={e => setRosterSecret(e.target.value)} /></div>
+              </div>
+              <div><label style={labelStyle}>Sync Frequency</label><select style={{ ...inputStyle, appearance: 'auto' as any, maxWidth: 200 }} value={rosterFreq} onChange={e => setRosterFreq(e.target.value)}><option>Daily</option><option>Weekly</option><option>Manual</option></select></div>
+              <button style={tealBtn} onClick={() => fireToast('OneRoster connection saved')}>Connect OneRoster</button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">{compatibleSystems.map(s => <span key={s} className="text-xs px-2.5 py-1 rounded-full" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{s}</span>)}</div>
+          </div>
+          {/* Clever */}
+          <div style={cardStyle}>
+            <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>Clever</h3>
+            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Sync via Clever&apos;s rostering platform. Common in US districts.</p>
+            {cleverConnected ? badge('#22C55E', 'Connected') : <button style={{ ...tealBtn, backgroundColor: '#F26B21' }} onClick={() => { setCleverConnecting(true); setTimeout(() => { setCleverConnecting(false); setCleverConnected(true) }, 2000) }}>{cleverConnecting ? 'Connecting...' : 'Connect with Clever'}</button>}
+            <p className="text-xs mt-2" style={{ color: '#4B5563' }}>Requires your district to have Clever configured</p>
+          </div>
+          {/* CSV */}
+          <div style={cardStyle}>
+            <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>CSV Import</h3>
+            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Upload a CSV file of students and staff. Use this if your district doesn&apos;t support OneRoster or Clever.</p>
+            <div className="flex gap-2">
+              <button style={tealBtn} onClick={() => fireToast('Template downloaded')}>Download CSV Template</button>
+              <button style={{ ...tealBtn, backgroundColor: '#374151' }} onClick={() => fireToast('Upload coming soon')}>Upload CSV</button>
+            </div>
+            <p className="text-xs mt-2" style={{ color: '#4B5563' }}>Accepted: .csv files with headers: name, grade, class, dob, ell_status, frl_status</p>
+          </div>
+        </div>
+        {/* Sync status */}
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Sync Status</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div><p className="text-xs" style={{ color: '#6B7280' }}>Last synced</p><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Never</p></div>
+            <div><p className="text-xs" style={{ color: '#6B7280' }}>Next scheduled</p><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Not configured</p></div>
+            <div><p className="text-xs" style={{ color: '#6B7280' }}>Students</p><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>28</p></div>
+            <div><p className="text-xs" style={{ color: '#6B7280' }}>Staff</p><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>4</p></div>
+          </div>
+          <button style={{ ...tealBtn, marginTop: 16 }} onClick={() => fireToast('Sync initiated')}>Sync Now</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Tab: Voice & Audio ──
+  function VoiceTab() {
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Voice & Audio Settings</h2><p className="text-sm" style={{ color: '#6B7280' }}>Customise how Lumio speaks to you. All voices use ElevenLabs or Web Speech API.</p></div>
+        {/* Wake word */}
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Wake Word</h3>
+          <div className="flex items-center gap-3">
+            <input style={{ ...inputStyle, maxWidth: 200 }} value={wakeWord} onChange={e => setWakeWord(e.target.value)} />
+            <button style={goldBtn} onClick={() => fireToast('Wake word saved')}>Save</button>
+          </div>
+          <p className="text-xs mt-2" style={{ color: '#4B5563' }}>Say &quot;{wakeWord}&quot; followed by your question</p>
+        </div>
+        {/* Voice selection */}
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Choose Your Preferred Voice</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {VOICE_OPTIONS.map(v => (
+              <div key={v.id} className="rounded-xl p-4 cursor-pointer transition-all" onClick={() => handleSelectVoice(v.id)}
+                style={{ backgroundColor: selectedVoice === v.id ? 'rgba(200,150,12,0.08)' : '#0A0B10', border: `1px solid ${selectedVoice === v.id ? '#C8960C' : '#1F2937'}` }}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{v.name}</span>
+                    {v.premium && <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold" style={{ backgroundColor: 'rgba(200,150,12,0.15)', color: '#C8960C' }}>Premium</span>}
+                  </div>
+                  {selectedVoice === v.id && <span style={{ color: '#C8960C', fontSize: 16 }}>✓</span>}
+                </div>
+                <p className="text-xs mb-2" style={{ color: '#6B7280' }}>{v.desc}</p>
+                <button onClick={(e) => { e.stopPropagation(); previewVoice(v.id) }} className="text-xs font-medium" style={{ color: '#0D9488', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▶ Preview</button>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Speech settings */}
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Speech Settings</h3>
+          <div className="space-y-4">
+            <div><label style={labelStyle}>Speaking Rate: {speakRate.toFixed(1)}</label><input type="range" min="0.7" max="1.3" step="0.1" value={speakRate} onChange={e => setSpeakRate(parseFloat(e.target.value))} style={{ width: '100%', accentColor: '#0D9488' }} /></div>
+            <div><label style={labelStyle}>Pitch: {speakPitch.toFixed(1)}</label><input type="range" min="0.8" max="1.2" step="0.1" value={speakPitch} onChange={e => setSpeakPitch(parseFloat(e.target.value))} style={{ width: '100%', accentColor: '#0D9488' }} /></div>
+            <div><label style={labelStyle}>Volume: {speakVolume.toFixed(1)}</label><input type="range" min="0" max="1" step="0.1" value={speakVolume} onChange={e => setSpeakVolume(parseFloat(e.target.value))} style={{ width: '100%', accentColor: '#0D9488' }} /></div>
+            <button style={tealBtn} onClick={testCurrentSettings}>Test Current Settings</button>
+          </div>
+        </div>
+        {/* Voice commands */}
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Voice Commands</h3>
+          <div className="space-y-1">
+            <Toggle on={voiceEnabled} onToggle={() => setVoiceEnabled(!voiceEnabled)} label="Voice commands enabled" />
+            <Toggle on={audioResponses} onToggle={() => setAudioResponses(!audioResponses)} label="Play audio responses" />
+            <Toggle on={showTextCard} onToggle={() => setShowTextCard(!showTextCard)} label="Show text response card alongside audio" />
+            <Toggle on={autoListen} onToggle={() => setAutoListen(!autoListen)} label="Auto-listen after wake word detected" />
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280' }}>RECOGNISED COMMANDS</p>
+            <div className="space-y-1">
+              {[
+                { cmd: '"TEL TED sessions today"', desc: 'Lists today\'s scheduled sessions' },
+                { cmd: '"Language Screen / who needs assessing"', desc: 'Students due for LanguageScreen' },
+                { cmd: '"What week are we on"', desc: 'Current programme week & progress' },
+                { cmd: '"What do you think of Andrew" 😄', desc: 'Easter egg' },
+              ].map(c => (
+                <div key={c.cmd} className="flex items-center gap-2 py-1.5 px-3 rounded-lg" style={{ backgroundColor: '#0A0B10' }}>
+                  <code className="text-xs" style={{ color: '#2DD4BF' }}>{c.cmd}</code>
+                  <span className="text-xs" style={{ color: '#4B5563' }}>— {c.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Tab: Staff & Users ──
+  function UsersTab() {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Staff & Users</h2><p className="text-sm" style={{ color: '#6B7280' }}>Manage who has access to the TEL TED portal</p></div>
+          <button style={tealBtn} onClick={() => setShowInviteModal(true)}>+ Invite Staff Member</button>
+        </div>
+        <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>
+              {['Name', 'Role', 'Email', 'SSO Status', 'Access Level', 'Actions'].map(h => <th key={h} className="text-left text-xs font-semibold px-4 py-3" style={{ color: '#6B7280' }}>{h}</th>)}
+            </tr></thead>
+            <tbody>{SETTINGS_STAFF.map((s, i) => (
+              <tr key={i} style={{ borderBottom: i < SETTINGS_STAFF.length - 1 ? '1px solid #1F2937' : 'none' }}>
+                <td className="px-4 py-3 text-sm font-medium" style={{ color: '#F9FAFB' }}>{s.name}</td>
+                <td className="px-4 py-3 text-xs" style={{ color: '#9CA3AF' }}>{s.role}</td>
+                <td className="px-4 py-3 text-xs" style={{ color: '#9CA3AF' }}>{s.email}</td>
+                <td className="px-4 py-3 text-xs" style={{ color: '#4B5563' }}>—</td>
+                <td className="px-4 py-3">{badge(s.access === 'Admin' ? '#C8960C' : '#0D9488', s.access)}</td>
+                <td className="px-4 py-3"><button className="text-xs" style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', marginRight: 8 }}>Edit</button><button className="text-xs" style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div style={{ ...cardStyle, borderColor: '#1F293780' }}>
+          <p className="text-xs" style={{ color: '#6B7280' }}><strong style={{ color: '#9CA3AF' }}>Admin:</strong> full access&ensp;|&ensp;<strong style={{ color: '#9CA3AF' }}>Teacher:</strong> classes + reports&ensp;|&ensp;<strong style={{ color: '#9CA3AF' }}>Staff:</strong> assessment + sessions only&ensp;|&ensp;<strong style={{ color: '#9CA3AF' }}>View only:</strong> reports only</p>
+        </div>
+        {/* Invite modal */}
+        {showInviteModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowInviteModal(false)}>
+            <div style={{ ...cardStyle, width: 420, maxWidth: '90vw' }} onClick={e => e.stopPropagation()}>
+              <h3 className="text-base font-bold mb-4" style={{ color: '#F9FAFB' }}>Invite Staff Member</h3>
+              <div className="space-y-3">
+                <div><label style={labelStyle}>Name</label><input style={inputStyle} value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Full name" /></div>
+                <div><label style={labelStyle}>Email</label><input style={inputStyle} value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@school.edu" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label style={labelStyle}>Role</label><select style={{ ...inputStyle, appearance: 'auto' as any }} value={inviteRole} onChange={e => setInviteRole(e.target.value)}><option>Teacher</option><option>TA</option><option>SENCO</option><option>Admin</option></select></div>
+                  <div><label style={labelStyle}>Access Level</label><select style={{ ...inputStyle, appearance: 'auto' as any }} value={inviteAccess} onChange={e => setInviteAccess(e.target.value)}><option>Admin</option><option>Teacher</option><option>Staff</option><option>View only</option></select></div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <button style={{ ...tealBtn, backgroundColor: '#374151' }} onClick={() => setShowInviteModal(false)}>Cancel</button>
+                <button style={tealBtn} onClick={() => { setShowInviteModal(false); fireToast(`Invite sent to ${inviteEmail || 'staff member'}`) }}>Send Invite</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Tab: Notifications ──
+  function NotificationsTab() {
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Notifications</h2><p className="text-sm" style={{ color: '#6B7280' }}>Control when and how you receive alerts</p></div>
+        <div style={cardStyle}>
+          <Toggle on={dailySummary} onToggle={() => setDailySummary(!dailySummary)} label="Daily TEL TED AI Summary (morning briefing)" />
+          <Toggle on={atRiskAlerts} onToggle={() => setAtRiskAlerts(!atRiskAlerts)} label="Student at-risk alerts (score below threshold)" />
+          <Toggle on={sessionReminders} onToggle={() => setSessionReminders(!sessionReminders)} label="Session reminders (30 min before scheduled session)" />
+          <Toggle on={assessmentReminders} onToggle={() => setAssessmentReminders(!assessmentReminders)} label="Assessment due reminders" />
+          <Toggle on={weeklyDigest} onToggle={() => setWeeklyDigest(!weeklyDigest)} label="Weekly progress digest email" />
+          <Toggle on={parentReminders} onToggle={() => setParentReminders(!parentReminders)} label="Parent communication reminders" />
+        </div>
+        <div style={cardStyle} className="space-y-4">
+          <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Notification Delivery</h3>
+          <div><label style={labelStyle}>Email</label><input style={{ ...inputStyle, maxWidth: 300 }} value={notifEmail} onChange={e => setNotifEmail(e.target.value)} /></div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>In-app notifications: always on</p>
+        </div>
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Quiet Hours</h3>
+          <div className="flex items-center gap-3">
+            <span className="text-xs" style={{ color: '#6B7280' }}>From</span>
+            <input type="time" style={{ ...inputStyle, maxWidth: 130 }} value={quietFrom} onChange={e => setQuietFrom(e.target.value)} />
+            <span className="text-xs" style={{ color: '#6B7280' }}>to</span>
+            <input type="time" style={{ ...inputStyle, maxWidth: 130 }} value={quietTo} onChange={e => setQuietTo(e.target.value)} />
+          </div>
+        </div>
+        <button style={goldBtn} onClick={() => fireToast('Notification settings saved')}>Save Preferences</button>
+      </div>
+    )
+  }
+
+  // ── Tab: Integrations ──
+  function IntegrationsTab() {
+    const integrations = [
+      { key: 'languagescreen', name: 'OxEd LanguageScreen', desc: 'Assessment data syncs automatically', icon: '📊' },
+      { key: 'gclassroom', name: 'Google Classroom', desc: 'Sync class lists and assignments', icon: '📚' },
+      { key: 'teams', name: 'Microsoft Teams', desc: 'Share session reports via Teams', icon: '💬' },
+      { key: 'infinitecampus', name: 'Infinite Campus', desc: 'Sync student roster from SIS', icon: '🏫' },
+      { key: 'powerschool', name: 'PowerSchool', desc: 'Sync grades and attendance', icon: '📝' },
+      { key: 'skyward', name: 'Skyward', desc: 'Student information sync', icon: '☁️' },
+    ]
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Integrations</h2><p className="text-sm" style={{ color: '#6B7280' }}>Connect your tools and platforms</p></div>
+        <div className="space-y-3">
+          {integrations.map(ig => {
+            const connected = connectedIntegrations[ig.key]
+            const connecting = connectingIntegration === ig.key
+            return (
+              <div key={ig.key} style={cardStyle} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: connected ? 'rgba(13,148,136,0.1)' : '#1F2937' }}>{ig.icon}</div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{ig.name}</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{ig.desc}</p>
+                  </div>
+                </div>
+                {connected ? badge('#22C55E', 'Connected') : (
+                  <button style={tealBtn} onClick={() => mockConnectIntegration(ig.key)} disabled={!!connecting}>
+                    {connecting ? <span className="flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Connecting...</span> : 'Connect'}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Tab: Data & Privacy ──
+  function PrivacyTab() {
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Data & Privacy</h2><p className="text-sm" style={{ color: '#6B7280' }}>Data residency, compliance, and export controls</p></div>
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Data Residency</h3>
+          <p className="text-sm" style={{ color: '#D1D5DB' }}>Current: <span className="font-semibold">European Union (eu-west-2)</span> 🇪🇺</p>
+          <p className="text-xs mt-1" style={{ color: '#4B5563' }}>To request US data residency, contact support.</p>
+        </div>
+        <div style={cardStyle} className="space-y-3">
+          <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Compliance</h3>
+          <div className="flex items-center gap-2"><span style={{ color: '#22C55E' }}>✓</span><span className="text-sm" style={{ color: '#D1D5DB' }}>FERPA Compliant</span></div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>Student data is never sold or shared with third parties. All data encrypted at rest and in transit.</p>
+          <div className="flex items-center gap-2"><span style={{ color: '#22C55E' }}>✓</span><span className="text-sm" style={{ color: '#D1D5DB' }}>COPPA Compliant for students under 13</span></div>
+        </div>
+        <div style={cardStyle} className="space-y-3">
+          <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Data Export</h3>
+          <div className="flex gap-2">
+            <button style={tealBtn} onClick={() => fireToast('Export initiated — you will receive a download link by email')}>Export All School Data</button>
+            <button style={{ ...tealBtn, backgroundColor: '#374151' }} onClick={() => fireToast('Student records CSV downloading...')}>Export Student Records</button>
+          </div>
+        </div>
+        <div style={cardStyle}>
+          <h3 className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>Data Deletion</h3>
+          {!showDeleteConfirm ? (
+            <button style={{ ...tealBtn, backgroundColor: '#374151' }} onClick={() => setShowDeleteConfirm(true)}>Request Data Deletion</button>
+          ) : (
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <p className="text-sm font-semibold mb-2" style={{ color: '#EF4444' }}>Are you sure?</p>
+              <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>This will permanently delete all school data including student records, assessment history, and session data. This action cannot be undone.</p>
+              <div className="flex gap-2">
+                <button style={{ ...tealBtn, backgroundColor: '#EF4444' }} onClick={() => { setShowDeleteConfirm(false); fireToast('Deletion request submitted — support will be in touch') }}>Confirm Deletion</button>
+                <button style={{ ...tealBtn, backgroundColor: '#374151' }} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+        <p className="text-xs" style={{ color: '#4B5563' }}>Support contact: support@lumiocms.com</p>
+      </div>
+    )
+  }
+
+  // ── Render ──
+  function renderTab() {
+    switch (activeTab) {
+      case 'profile': return <ProfileTab />
+      case 'sso': return <SsoTab />
+      case 'rostering': return <RosteringTab />
+      case 'voice': return <VoiceTab />
+      case 'users': return <UsersTab />
+      case 'notifications': return <NotificationsTab />
+      case 'integrations': return <IntegrationsTab />
+      case 'privacy': return <PrivacyTab />
+      default: return <ProfileTab />
+    }
+  }
+
+  return (
+    <div className="flex gap-6 min-h-[calc(100vh-120px)]">
+      {/* Left tab list */}
+      <div className="shrink-0 w-52 space-y-1 py-2">
+        {SETTINGS_TABS.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className="flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors"
+            style={{ backgroundColor: activeTab === tab.id ? 'rgba(200,150,12,0.1)' : 'transparent', color: activeTab === tab.id ? '#C8960C' : '#9CA3AF', fontWeight: activeTab === tab.id ? 600 : 400, border: activeTab === tab.id ? '1px solid rgba(200,150,12,0.2)' : '1px solid transparent' }}>
+            <span>{tab.icon}</span> {tab.label}
+          </button>
+        ))}
+      </div>
+      {/* Right content */}
+      <div className="flex-1 min-w-0 py-2 max-w-3xl">
+        {renderTab()}
+      </div>
+      {/* Toast */}
+      {toast && <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, padding: '12px 20px', borderRadius: 12, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#22C55E', fontSize: 14, fontWeight: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>{toast}</div>}
+    </div>
+  )
+}
+
 // ─── District Overview ───────────────────────────────────────────────────────
 
 const DISTRICT_SCHOOLS = [
@@ -1124,7 +1712,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       case 'reports':
         return <ReportsPanel />
       case 'settings':
-        return <ComingSoonPage title="Settings" />
+        return <TelTedSettings />
       default:
         return null
     }
