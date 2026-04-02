@@ -76,13 +76,27 @@ export default function SchoolLayout({ children }: Props) {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     setUserName(localStorage.getItem('lumio_user_name') || '')
     setUserEmail(localStorage.getItem('lumio_user_email') || '')
-    // Load user avatar
+    // Load user avatar — instant from localStorage cache
     const cachedPhoto = localStorage.getItem('lumio_user_photo')
     if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
     const storedEmail = localStorage.getItem('lumio_user_email')
     if (storedEmail) {
       const staffPhoto = localStorage.getItem(`lumio_staff_photo_${storedEmail}`)
       if (staffPhoto && !staffPhoto.startsWith('data:')) setUserPhoto(staffPhoto)
+    }
+    // Always fetch from Supabase in background to confirm/update avatar
+    const wsToken = localStorage.getItem('workspace_session_token')
+    if (wsToken) {
+      fetch('/api/workspace/status', { headers: { 'x-workspace-token': wsToken } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.user_avatar_url) {
+            setUserPhoto(data.user_avatar_url)
+            localStorage.setItem('lumio_user_photo', data.user_avatar_url)
+            if (data.owner_email) localStorage.setItem(`lumio_staff_photo_${data.owner_email}`, data.user_avatar_url)
+          }
+        })
+        .catch(() => {})
     }
     function onAvatarUpdated(e: Event) {
       const url = (e as CustomEvent).detail

@@ -1,0 +1,4 @@
+school_name,slug,admin_email,admin_name,city,state,district,portal_type,plan
+Parkside Elementary,parkside-elementary,principal@parkside.edu,Sarah Mitchell,Austin,TX,Oak Valley District,telted,enterprise
+Riverside Academy,riverside-academy,admin@riverside.edu,James Okafor,Austin,TX,Oak Valley District,telted,enterprise
+Greenfields School,greenfields-school,head@greenfields.edu,Hannah Brooks,Dallas,TX,Oak Valley District,telted,enterprise

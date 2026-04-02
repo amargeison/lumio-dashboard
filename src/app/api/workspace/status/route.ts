@@ -30,5 +30,19 @@ export async function GET(req: NextRequest) {
 
   if (!business) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  return NextResponse.json(business)
+  // Also look up the owner's avatar from workspace_staff or auth metadata
+  let user_avatar_url: string | null = null
+  if (business.owner_email) {
+    const { data: staffRow } = await supabase
+      .from('workspace_staff')
+      .select('profile_photo_url')
+      .eq('business_id', session.business_id)
+      .eq('email', business.owner_email)
+      .maybeSingle()
+    if (staffRow?.profile_photo_url) {
+      user_avatar_url = staffRow.profile_photo_url
+    }
+  }
+
+  return NextResponse.json({ ...business, user_avatar_url })
 }

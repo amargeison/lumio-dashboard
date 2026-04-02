@@ -140,13 +140,27 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     if (initialLogo) setLogoUrl(initialLogo)
   }, [initialLogo])
 
-  // Also read from localStorage as fallback (in case prop is empty but localStorage has it)
+  // Read from localStorage as instant cache, then always refresh from Supabase
   useEffect(() => {
     if (!logoUrl) {
       const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
       if (stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
         setLogoUrl(stored)
       }
+    }
+    // Always fetch from Supabase in background to confirm/update logo
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.logo_url) {
+            setLogoUrl(data.logo_url)
+            localStorage.setItem('lumio_company_logo', data.logo_url)
+            localStorage.setItem('workspace_company_logo', data.logo_url)
+          }
+        })
+        .catch(() => {})
     }
     // Listen for same-tab logo updates (e.g. from Settings page upload)
     function onLogoUpdated(e: Event) {
@@ -4062,6 +4076,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('workspace_company_logo', data.logo_url)
             localStorage.setItem('lumio_company_logo', data.logo_url)
           }
+          // Restore avatar from Supabase (workspace_staff.profile_photo_url)
+          if (data.user_avatar_url) {
+            setUserPhoto(data.user_avatar_url)
+            localStorage.setItem('lumio_user_photo', data.user_avatar_url)
+            if (data.owner_email) localStorage.setItem(`lumio_staff_photo_${data.owner_email}`, data.user_avatar_url)
+          }
           if (data.id) setBusinessId(data.id)
           if (data.demo_data_active) {
             setDemoDataActive(true)
@@ -4111,6 +4131,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.owner_name) { if (localStorage.getItem('lumio_impersonated_from_admin') !== 'true') setUserName(data.business.owner_name); localStorage.setItem('workspace_user_name', data.business.owner_name); localStorage.setItem('lumio_user_name', data.business.owner_name) }
               if (data.business?.owner_email) { setOwnerEmail(data.business.owner_email); localStorage.setItem('lumio_user_email', data.business.owner_email) }
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
+              if (data.business?.user_avatar_url) { setUserPhoto(data.business.user_avatar_url); localStorage.setItem('lumio_user_photo', data.business.user_avatar_url); if (data.business.owner_email) localStorage.setItem(`lumio_staff_photo_${data.business.owner_email}`, data.business.user_avatar_url) }
               if (data.business?.id) setBusinessId(data.business.id)
               if (data.business?.demo_data_active) setDemoDataActive(true)
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
