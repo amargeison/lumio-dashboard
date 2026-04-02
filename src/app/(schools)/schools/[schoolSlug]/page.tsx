@@ -1176,7 +1176,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* 1. Greeting banner */}
       <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} />
 
-      {/* 2. Quick actions */}
+      {/* 2. Tab bar */}
+      <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+        <div className="flex items-center gap-0 min-w-max px-2">
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              style={{ borderBottomColor: activeTab === t.id ? '#0D9488' : 'transparent', color: activeTab === t.id ? '#2DD4BF' : '#6B7280', backgroundColor: activeTab === t.id ? 'rgba(13,148,136,0.05)' : 'transparent' }}>
+              <span className="text-base">{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Quick actions */}
       <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
         <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
         {[
@@ -1194,18 +1206,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             <span>{a.icon}</span>{a.label}
           </button>
         ))}
-      </div>
-
-      {/* 3. Tab bar */}
-      <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
-        <div className="flex items-center gap-0 min-w-max px-2">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-              style={{ borderBottomColor: activeTab === t.id ? '#0D9488' : 'transparent', color: activeTab === t.id ? '#2DD4BF' : '#6B7280', backgroundColor: activeTab === t.id ? 'rgba(13,148,136,0.05)' : 'transparent' }}>
-              <span className="text-base">{t.icon}</span>{t.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 4. Safeguarding alert — only when demo data is active */}
@@ -1253,23 +1253,55 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* TAB: Quick Wins */}
       {activeTab === 'quick-wins' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h3>
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority. Do these first.</p>
+            </div>
+          </div>
           {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                { text: 'Take register for Year 4B — overdue', urgent: true },
-                { text: 'Sign off DSL concern logged 2 days ago', urgent: true },
-                { text: 'Chase 3 outstanding trip permission slips', urgent: false },
-                { text: 'Review EHCP draft for student review tomorrow', urgent: false },
-                { text: 'Send parent callback — missed call logged this morning', urgent: false },
-              ].map((w, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                  <span className="text-sm flex-1" style={{ color: '#F9FAFB' }}>{w.text}</span>
-                  {w.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
-                </div>
-              ))}
+            <div className="space-y-3">
+              {([
+                { id: 'qw1', title: 'Sign off open DSL concern', description: 'Logged 2 days ago, requires DSL review before end of day.', impact: 'high' as const, effort: '2min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
+                { id: 'qw2', title: 'Chase 4 pupils below 85% attendance', description: 'Persistent absence threshold reached. Trigger parent contact.', impact: 'high' as const, effort: '2min', category: 'Attendance', action: 'Send letters', source: 'MIS' },
+                { id: 'qw3', title: 'Approve 3 pending expense claims', description: 'Staff claims submitted this week awaiting sign-off.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Review claims', source: 'Finance' },
+                { id: 'qw4', title: "Complete EHCP draft for tomorrow's review", description: 'Annual review meeting at 9am, draft must be submitted today.', impact: 'medium' as const, effort: '5min', category: 'SEND', action: 'Open EHCP', source: 'SEND Register' },
+                { id: 'qw5', title: 'Chase 3 outstanding trip permission slips', description: "Year 5 trip is Friday. 3 families haven't responded.", impact: 'medium' as const, effort: '10min', category: 'Curriculum', action: 'Send reminders', source: 'Trips' },
+              ]).map(win => {
+                const impactColors = win.impact === 'high'
+                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+                return (
+                  <div key={win.id} className="rounded-2xl p-5 transition-all"
+                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{win.impact.toUpperCase()} IMPACT</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {win.effort}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
+                        </div>
+                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{win.description}</p>
+                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          {win.action} →
+                        </button>
+                        <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                          Mark done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Quick wins will appear here once your data is connected.</p>
@@ -1279,22 +1311,55 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* TAB: Daily Tasks */}
       {activeTab === 'tasks' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h3>
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your essential daily checklist — stay on top of operations.</p>
+            </div>
+          </div>
           {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                'Morning register check — all classes',
-                'Review attendance alerts',
-                'Check safeguarding log',
-                'Staff briefing notes',
-                'End of day behaviour summary',
-              ].map((t, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{t}</span>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {([
+                { id: 'dt1', title: 'Submit daily attendance return to DfE', description: 'Must be submitted by 12pm. 94% recorded so far.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Submit now', source: 'MIS' },
+                { id: 'dt2', title: 'Review and respond to parent concern logged yesterday', description: 'Mrs. Clarke raised a concern via Parent Portal at 4:32pm.', impact: 'high' as const, effort: '10min', category: 'Safeguarding', action: 'Open concern', source: 'Parent Portal' },
+                { id: 'dt3', title: 'Approve cover arrangement for Period 3', description: 'Mr. Davies absence — cover not yet confirmed.', impact: 'medium' as const, effort: '5min', category: 'HR', action: 'Assign cover', source: 'Cover Manager' },
+                { id: 'dt4', title: 'Prepare agenda for Thursday SLT meeting', description: 'Meeting in 2 days. No agenda submitted yet.', impact: 'medium' as const, effort: '15min', category: 'SLT', action: 'Create agenda', source: 'Calendar' },
+                { id: 'dt5', title: 'Respond to 2 new admissions enquiries', description: 'Both received yesterday via website form.', impact: 'medium' as const, effort: '5min', category: 'Admissions', action: 'View enquiries', source: 'Admissions' },
+              ]).map(task => {
+                const impactColors = task.impact === 'high'
+                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+                return (
+                  <div key={task.id} className="rounded-2xl p-5 transition-all"
+                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{task.impact.toUpperCase()} IMPACT</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {task.effort}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
+                        </div>
+                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{task.description}</p>
+                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          {task.action} →
+                        </button>
+                        <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                          Mark done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Daily tasks will appear here once your data is connected.</p>
@@ -1304,21 +1369,48 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* TAB: Insights */}
       {activeTab === 'insights' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>📊 Insights</h3>
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📊 Insights</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Key trends and metrics — know what&apos;s changing before it becomes a problem.</p>
+            </div>
+          </div>
           {demoDataActive ? (
             <div className="space-y-3">
-              {[
-                { label: 'Attendance trend this week', value: '94.3% → 96.1%', color: '#22C55E', trend: '↑' },
-                { label: 'Behaviour incidents vs last week', value: '7 vs 12', color: '#0D9488', trend: '↓' },
-                { label: 'SEND review deadlines approaching', value: '3 this month', color: '#F59E0B', trend: '' },
-                { label: 'FSM uptake this term', value: '18.2%', color: '#A78BFA', trend: '' },
-              ].map(s => (
-                <div key={s.label} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>{s.label}</span>
-                  <span className="text-sm font-bold" style={{ color: s.color }}>{s.trend} {s.value}</span>
-                </div>
-              ))}
+              {([
+                { id: 'in1', title: 'Attendance dropped 2.1% vs last week', description: 'Currently 91.9%. Year 3 and Year 5 showing the biggest dip.', impact: 'high' as const, category: 'Attendance', source: 'MIS' },
+                { id: 'in2', title: 'SEND cohort now 22.3% of roll', description: 'Above national average of 18.1%. EHCP requests up 3 this term.', impact: 'high' as const, category: 'SEND', source: 'SEND Register' },
+                { id: 'in3', title: 'Budget variance of £4,200 in Premises', description: 'Heating costs higher than forecast. Review recommended.', impact: 'medium' as const, category: 'Finance', source: 'Finance' },
+                { id: 'in4', title: 'Year 6 SATs prep: 67% of intervention sessions complete', description: 'On track but 4 pupils need additional support sessions.', impact: 'medium' as const, category: 'Curriculum', source: 'Curriculum' },
+              ]).map(insight => {
+                const impactColors = insight.impact === 'high'
+                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+                return (
+                  <div key={insight.id} className="rounded-2xl p-5 transition-all"
+                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{insight.impact.toUpperCase()} IMPACT</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{insight.category}</span>
+                        </div>
+                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{insight.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{insight.description}</p>
+                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {insight.source}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          View detail →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
@@ -1328,21 +1420,47 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* TAB: Don't Miss */}
       {activeTab === 'dont-miss' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>🔴 Don't Miss</h3>
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
+            </div>
+          </div>
           {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                { text: 'EHCP annual review overdue — 2 students', level: 'critical' },
-                { text: 'DBS expiry — 1 staff member in 7 days', level: 'critical' },
-                { text: 'Ofsted data return due Friday', level: 'warning' },
-                { text: 'Year 6 SATs prep — resources not uploaded', level: 'warning' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${item.level === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, borderLeft: `3px solid ${item.level === 'critical' ? '#EF4444' : '#F59E0B'}` }}>
-                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.text}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded ml-auto flex-shrink-0" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: item.level === 'critical' ? '#F87171' : '#FBBF24' }}>
-                    {item.level === 'critical' ? 'Critical' : 'Warning'}
-                  </span>
+            <div className="space-y-3">
+              {([
+                { id: 'dm1', title: 'Ofsted data return due in 3 days', description: 'Annual census data must be submitted to Ofsted portal by Friday.', effort: '1min', category: 'Compliance', action: 'Submit now', source: 'DfE' },
+                { id: 'dm2', title: 'SCR check outstanding for 1 new staff member', description: 'Started 2 weeks ago. Single Central Record incomplete.', effort: '2min', category: 'Safeguarding', action: 'Complete SCR', source: 'SCR' },
+                { id: 'dm3', title: 'Grant claim deadline: Tomorrow 5pm', description: 'PE & Sport Premium claim worth £18,500 must be submitted.', effort: '5min', category: 'Finance', action: 'Open claim', source: 'Finance' },
+                { id: 'dm4', title: '3 staff DBS renewals overdue', description: 'All 3 exceeded 3-year renewal window. Action required immediately.', effort: '2min', category: 'HR', action: 'Review now', source: 'HR' },
+              ]).map(item => (
+                <div key={item.id} className="rounded-2xl p-5 transition-all"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {item.effort}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+                      </div>
+                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.description}</p>
+                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#7C3AED' }}>
+                        {item.action} →
+                      </button>
+                      <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                        Mark done
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
