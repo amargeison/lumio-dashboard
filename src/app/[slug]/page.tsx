@@ -3771,7 +3771,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
-  const [demoDataActive, setDemoDataActive] = useState(false)
+  const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [businessId, setBusinessId] = useState('')
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
@@ -4031,7 +4031,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
-      {demoDataActive && <ClearDemoBar />}
       <ImpersonationBanner />
       <Toast message={toast} />
 
@@ -4065,77 +4064,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         e.target.value = ''
       }} />
 
-      {/* Top-right: role switcher + bell + avatar — positioned in content flow, see below */}
-      <div style={{ display: 'none' }}>
-        <RoleSwitcherPill />
-        <button
-          onClick={() => setNotificationsOpen(o => !o)}
-          title="Notifications"
-          style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-        </button>
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setAvatarDropdownOpen(o => !o)}
-            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
-            {userPhoto ? (
-              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
-            ) : (
-              userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
-            )}
-          </button>
-          {avatarDropdownOpen && (
-            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 200, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-              {/* User info with larger avatar */}
-              <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, overflow: 'hidden', flexShrink: 0 }}>
-                  {userPhoto ? (
-                    <img src={userPhoto} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} onError={() => setUserPhoto(null)} />
-                  ) : (
-                    userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
-                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{ownerEmail || ''}</p>
-                </div>
-              </div>
-              <button onClick={() => { setAvatarDropdownOpen(false); avatarFileRef.current?.click() }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                📷 {userPhoto ? 'Change photo' : 'Upload photo'}
-              </button>
-              {userPhoto && (
-                <button onClick={() => {
-                  const email = localStorage.getItem('lumio_user_email')
-                  if (email) localStorage.removeItem(`lumio_staff_photo_${email}`)
-                  localStorage.removeItem('lumio_user_photo')
-                  setUserPhoto(null)
-                  window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: null }))
-                  setAvatarDropdownOpen(false)
-                  fireToast('Photo removed')
-                }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                  🗑️ Remove photo
-                </button>
-              )}
-              <div style={{ height: 1, backgroundColor: '#1F2937', margin: '4px 12px' }} />
-              <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                ⚙️ Settings
-              </button>
-              <button onClick={() => { localStorage.removeItem('lumio_impersonated_role'); Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
-                🚪 Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
       {/* SSO Welcome Modal */}
