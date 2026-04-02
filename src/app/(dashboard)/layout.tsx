@@ -102,13 +102,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         )}
-        {/* Top header row: avatar + bell */}
-        <div className="flex items-center justify-end gap-3 px-4 py-2 md:px-6">
+        {/* Top-right: bell + avatar — fixed overlay matching Schools portal */}
+        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
+          <button
+            onClick={() => setNotificationsOpen(o => !o)}
+            className="relative flex items-center justify-center rounded-full transition-colors"
+            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
+            aria-label="Notifications"
+          >
+            <Bell size={16} strokeWidth={1.75} />
+            <span className="absolute rounded-full flex items-center justify-center" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
+          </button>
           <div ref={avatarRef} className="relative">
             <button
               onClick={() => setAvatarOpen(o => !o)}
               className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80 overflow-hidden"
-              style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0 }}
+              style={{ backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0, cursor: 'pointer' }}
             >
               {userPhoto ? (
                 <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
@@ -147,20 +158,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             )}
           </div>
-          <button
-            onClick={() => setNotificationsOpen(o => !o)}
-            className="relative flex items-center justify-center rounded-full transition-colors"
-            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}
-            aria-label="Notifications"
-          >
-            <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute rounded-full flex items-center justify-center" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
-          </button>
         </div>
         {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 pt-2 md:pt-4">
           {children}
         </div>
       </main>
