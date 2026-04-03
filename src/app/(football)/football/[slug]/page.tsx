@@ -46,7 +46,7 @@ type DeptId =
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools' | 'Integrations'
+type SidebarSection = null | 'Departments' | 'Tools' | 'Leagues' | 'Integrations'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -106,9 +106,9 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
   { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
   { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
-  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Integrations' },
-  { id: 'find-player', label: 'Find Player',    icon: Users,          section: 'Integrations' },
-  { id: 'pyramid',     label: 'Football Pyramid', icon: Trophy,        section: 'Tools' },
+  { id: 'pyramid',     label: 'All Leagues',    icon: Trophy,         section: 'Leagues' },
+  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
+  { id: 'find-player', label: 'Find Player',    icon: Users,          section: 'Leagues' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -496,6 +496,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
     { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
     { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
+    { label: 'Leagues', items: SIDEBAR_ITEMS.filter(i => i.section === 'Leagues') },
     { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
   ]
 
