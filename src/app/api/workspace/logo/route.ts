@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getWorkspaceSession } from '@/lib/auth/workspace-auth'
 
 function getSupabase() {
   return createClient(
@@ -10,22 +11,14 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
-  const token = req.headers.get('x-workspace-token')
-  if (!token) return NextResponse.json({ error: 'No token' }, { status: 401 })
-
-  const { data: session } = await supabase
-    .from('business_sessions')
-    .select('business_id')
-    .eq('token', token)
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle()
-
+  const session = await getWorkspaceSession(req)
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+  const { business_id } = session
 
   const { data: business } = await supabase
     .from('businesses')
     .select('slug')
-    .eq('id', session.business_id)
+    .eq('id', business_id)
     .single()
 
   if (!business) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
@@ -73,7 +66,7 @@ export async function POST(req: NextRequest) {
   const { error: updateError } = await supabase
     .from('businesses')
     .update({ logo_url: logoUrl })
-    .eq('id', session.business_id)
+    .eq('id', business_id)
 
   if (updateError) {
     console.error('[workspace/logo] Update failed:', updateError)
