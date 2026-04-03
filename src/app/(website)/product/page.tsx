@@ -7,7 +7,7 @@ import {
   ArrowRight, Users, TrendingUp, Megaphone, Headphones,
   Activity, Sparkles, GitBranch, Server, DollarSign,
   Check, ChevronRight, Zap, LayoutDashboard, FileDown,
-  Shield, Sliders,
+  Shield, Sliders, BarChart2,
 } from 'lucide-react'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -158,6 +158,10 @@ const AI_FEATURES = [
   { label: 'Health scoring',      desc: 'RAG status calculated daily from usage, support, NPS, and engagement signals.' },
   { label: 'Weekly summaries',    desc: 'Plain-English reports generated for finance, support, and pipeline — every Monday, automatically.' },
   { label: 'Recovery planning',   desc: 'When an account turns Red, Claude drafts a personalised recovery plan from account data.' },
+  { label: 'Executive Insights', desc: 'KPI strip, 12-week revenue trend chart, pipeline by stage, business health score gauge, activity feed, and team performance leaderboard — all in one dashboard.' },
+  { label: 'Team Intelligence', desc: 'FIFA-style staff cards, smart org chart with hierarchy detection, Staff Today availability view, and Company Info — all auto-generated from your data.' },
+  { label: 'Morning Briefing', desc: 'Compact banner with voice briefing: meetings, tasks, urgent items, and personalised AI summary read aloud via ElevenLabs or Web Speech.' },
+  { label: 'AI-powered tabs', desc: 'Quick Wins, Daily Tasks, Insights, Don\'t Miss — each tab AI-generated from your connected tools, refreshed daily, personalised to your role.' },
 ]
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -380,6 +384,18 @@ export default function ProductPage() {
                 color: '#6C3FC5',
                 title: 'Built to your exact spec',
                 desc: 'Every dashboard is built from scratch for your specific relationship — your metrics, your layout, your branding. Tabbed navigation, charts, trend lines, monthly comparisons, AI highlights — whatever you need.',
+              },
+              {
+                icon: BarChart2,
+                color: '#0D9488',
+                title: 'Revenue & forecasting charts',
+                desc: 'Client acquisition vs churn, revenue by department donut, Q2 forecasting with variance analysis, and market intelligence cards — all built-in Recharts visualisations.',
+              },
+              {
+                icon: Users,
+                color: '#6C3FC5',
+                title: 'Team cards & org chart',
+                desc: 'Panini-style employee cards with ratings, stats and department colours. Smart org chart auto-detects hierarchy from job titles. Photo Frame widget with drag-to-reposition.',
               },
             ].map(card => {
               const Icon = card.icon

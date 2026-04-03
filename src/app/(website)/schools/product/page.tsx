@@ -126,6 +126,11 @@ const AI_FEATURES = [
   { label: 'Absence parent messaging', desc: 'School-branded parent messages personalised per pupil. Not a generic template — actual context from the register.' },
   { label: 'SEN progress summaries',   desc: 'Intervention impact summarised automatically from tracking data, ready for annual reviews and parent meetings.' },
   { label: 'Ofsted preparation',       desc: 'Pulls the data Ofsted typically requests — safeguarding audit trail, attendance by cohort, EHCP compliance — in seconds.' },
+  { label: 'Insights always-on',      desc: 'Attendance trend chart, pupil progress by year group, Ofsted readiness gauge, SEND by need type donut, budget utilisation bars — no demo gate, always available.' },
+  { label: 'Google Workspace + Microsoft 365 SSO', desc: 'Staff sign in with existing school accounts. No separate passwords. Phase 1 with full provider configuration.' },
+  { label: '8 role-based views',       desc: 'Headteacher, Trust Lead, Head of Year, Teacher, SEN/SENCO, Safeguarding, Pupil Premium, Inspections — each with tailored KPIs and AI highlights.' },
+  { label: 'AI-powered overview tabs', desc: 'Quick Wins, Daily Tasks, Don\'t Miss — AI-generated from your school data, always showing, with personalised greeting using authenticated user name.' },
+  { label: 'SLT Suite',               desc: 'Executive dashboard with attendance, safeguarding, SEND, staff, finance, school improvement, and governance — all in 8 tabs.' },
 ]
 
 const MIS_INTEGRATIONS = [
