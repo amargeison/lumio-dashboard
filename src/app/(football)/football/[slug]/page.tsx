@@ -647,17 +647,14 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
 
   return (
     <>
-      <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      <div className={`relative bg-gradient-to-r ${bg} overflow-visible rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <div className="relative z-10 px-6 py-5">
+        <img src="/AFC Wimbledon badge PNG transparent.png" alt="Club badge" className="absolute left-5 top-1/2 -translate-y-1/2 z-10" style={{ height: 96, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))' }} />
+        <div className="relative z-10 px-6 py-5 pl-28">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              {clubLogo && (
-                <img src={clubLogo} alt="Club badge" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))', borderRadius: 8, mixBlendMode: 'screen' as any }} />
-              )}
-              <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
@@ -680,7 +677,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
               </div>
               <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{date}</p>
               <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
-              </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
