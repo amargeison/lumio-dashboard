@@ -4237,6 +4237,15 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
 
+      {/* Bell + Avatar — fixed overlay, always on top */}
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
+        <NotificationBell />
+        <AvatarDropdown
+          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+          onConvert={() => setShowConvert(true)}
+        />
+      </div>
+
       <Toast message={toast} />
       {showCoachMarks && <CoachMarks bannerRef={bannerRef} navRef={navRef} actionsRef={actionsRef} statsRef={statsRef} onComplete={handleTipsComplete} />}
       {showDeptInsights && <DeptInsightsModal dept={activeDept} onClose={() => setShowDeptInsights(false)} />}
@@ -4426,14 +4435,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         </div>
       )}
 
-      {/* Top-right: bell + avatar — fixed overlay, z-100 to stay above all content */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 100, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <NotificationBell />
-        <AvatarDropdown
-          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-          onConvert={() => setShowConvert(true)}
-        />
-      </div>
+      {/* bell + avatar moved to top of return as first fixed child */}
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
