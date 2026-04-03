@@ -19,6 +19,16 @@ const PORTALS = [
     desc: "OWGR & Race to Dubai tracker, strokes gained analysis, caddie workflow, course fit scoring, sponsorship manager, prize money ledger, multi-jurisdiction tax tracker, and AI morning briefing for player and full team. Built for DP World Tour and PGA Tour professionals.",
     cta: 'Explore Golf Tour', href: '/golf/golf-demo',
   },
+  {
+    icon: '🟡', title: 'Grassroots', subtitle: 'Lumio Grassroots', color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.25)',
+    desc: 'Availability tracking, squad management, pitch booking, subs collection, DBS monitoring, weather alerts, training schedules, match results, and an AI morning briefing for your manager — all in one place. Built for Sunday league, veterans, youth clubs, and amateur football at every level.',
+    cta: 'Explore Grassroots', href: '/football/grassroots/sunday-rovers-fc',
+  },
+  {
+    icon: '🏟️', title: 'Non-League', subtitle: 'Lumio Non-League', color: '#475569', bg: 'rgba(71,85,105,0.08)', border: 'rgba(71,85,105,0.25)',
+    desc: 'Squad management, injury tracking, loan player administration, ground grading compliance, sponsorship management, match fees, training planning, and live league tables. Built for National League, Northern Premier League, Southern League, and Isthmian League clubs.',
+    cta: 'Explore Non-League', href: '/football/nonleague/harfield-fc',
+  },
 ]
 
 const FEATURES = [
@@ -45,7 +55,7 @@ export default function SportsPage() {
         <div className="max-w-6xl mx-auto px-6 text-center relative">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
             <span className="text-sm">🏆</span>
-            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Three sports. One platform.</span>
+            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Five portals. One platform.</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
             The operating system for<br />
@@ -60,7 +70,24 @@ export default function SportsPage() {
       {/* Three portal cards */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PORTALS.map(p => (
+          {PORTALS.slice(0, 3).map(p => (
+            <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">{p.icon}</span>
+                <div>
+                  <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{p.title}</h3>
+                  <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
+                </div>
+              </div>
+              <p className="text-sm leading-relaxed flex-1 mb-6" style={{ color: '#9CA3AF' }}>{p.desc}</p>
+              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
+                {p.cta} <ArrowRight size={14} />
+              </Link>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {PORTALS.slice(3).map(p => (
             <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{p.icon}</span>
