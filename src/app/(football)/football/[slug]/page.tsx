@@ -661,8 +661,8 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <img src="/AFC_Wimbledon_badge_PNG_transparent.png" alt="Club badge" className="absolute left-5 top-1/2 -translate-y-1/2 z-10" style={{ height: 96, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))' }} />
-        <div className="relative z-10 px-6 py-5 pl-28">
+        <img src="/wimbledon-afc-logo-png_seeklogo-213494.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
+        <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -5292,7 +5292,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   // Set default badge when demo is active — state only, no localStorage
   useEffect(() => {
     if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
-      setClubLogo('/AFC_Wimbledon_badge_PNG_transparent.png')
+      setClubLogo('/wimbledon-afc-logo-png_seeklogo-213494.png')
     } else if (!isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
       setClubLogo(null)
     }
