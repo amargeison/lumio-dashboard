@@ -66,10 +66,10 @@ export default function VoiceSettings({ commands }: VoiceSettingsProps) {
         </div>
         <div className="mt-4">
           <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280' }}>RECOGNISED COMMANDS</p>
-          <div className="space-y-1">
+          <div className="space-y-1" style={{ maxHeight: 400, overflowY: 'auto' }}>
             {commands.map(c => (
               <div key={c.phrase} className="flex items-center gap-2 py-1.5 px-3 rounded-lg" style={{ backgroundColor: '#0A0B10' }}>
-                <code className="text-xs" style={{ color: '#2DD4BF' }}>&ldquo;{c.phrase}&rdquo;</code>
+                <code className="text-xs shrink-0" style={{ color: '#2DD4BF' }}>&ldquo;{c.phrase}&rdquo;</code>
                 <span className="text-xs" style={{ color: '#4B5563' }}>— {c.description}</span>
               </div>
             ))}
