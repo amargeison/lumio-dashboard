@@ -1945,7 +1945,7 @@ export default function GolfTourPage() {
       case 'shotlink':    return <ShotLinkView />;
       case 'lpga':        return <LPGAView />;
       case 'mobileapp':   return <MobileAppView />;
-      default:            return <DashboardView player={player} />;
+      default:            return <DashboardView player={player} setActiveSection={setActiveSection} />;
     }
   };
 
