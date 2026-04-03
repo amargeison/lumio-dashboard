@@ -2624,7 +2624,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     const savedLogo = localStorage.getItem('lumio_company_logo')
     const savedWsLogo = localStorage.getItem('workspace_company_logo')
     const savedPhoto = localStorage.getItem('lumio_user_photo')
-    await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    const demoRes = await fetch('/api/onboarding/load-demo', { method: 'POST', headers: sessionToken ? { 'x-workspace-token': sessionToken } : {} }).catch(() => null)
+    if (!demoRes?.ok) { setLoading(false); return }
     localStorage.setItem('lumio_demo_active', 'true')
     localStorage.setItem('lumio-photo-frame', JSON.stringify([
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
