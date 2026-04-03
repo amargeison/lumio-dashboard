@@ -27,6 +27,7 @@ import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
+import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView } from '@/components/football/IntegrationViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -40,10 +41,11 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
+  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools'
+type SidebarSection = null | 'Departments' | 'Tools' | 'Integrations'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -99,6 +101,10 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
+  { id: 'wyscout',     label: 'Wyscout / Video', icon: Video,          section: 'Integrations' },
+  { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
+  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
+  { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -486,6 +492,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
     { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
     { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
+    { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
   ]
 
   return (
@@ -5444,6 +5451,10 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {isFootballDemo && activeDept === 'psr' && <PSRView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'wyscout' && <WyscoutView />}
+            {activeDept === 'scouting-db' && <ScoutingDBView />}
+            {activeDept === 'gps-hardware' && <GPSHardwareView />}
+            {activeDept === 'opta' && <OptaStatsBombView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
         </div>
