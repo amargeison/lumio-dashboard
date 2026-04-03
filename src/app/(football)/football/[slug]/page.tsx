@@ -1176,9 +1176,10 @@ function TeamInfoTab() {
           </div>
 
           {/* Pitch + Squad Panel */}
-          <div className="flex gap-0 rounded-2xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+          <div className="flex gap-0 rounded-2xl overflow-visible" style={{ border: '1px solid #1F2937' }}>
             {/* Left: Pitch */}
-            <div className="flex-1 relative" style={{ aspectRatio: '68/100', maxHeight: 700, background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)' }}>
+            <div className="flex-1" style={{ position: 'relative', minHeight: 0 }}>
+              <div style={{ position: 'relative', width: '100%', paddingBottom: '147%', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: '16px 0 0 16px', overflow: 'visible' }}>
               <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
                 <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
                 <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
@@ -1218,6 +1219,7 @@ function TeamInfoTab() {
                   </div>
                 )
               })}
+              </div>
             </div>
 
             {/* Right: Squad Panel */}
