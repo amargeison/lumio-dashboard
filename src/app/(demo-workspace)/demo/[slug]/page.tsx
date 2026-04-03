@@ -374,6 +374,55 @@ function Toast({ message }: { message: string | null }) {
   )
 }
 
+// ─── Notification Bell ───────────────────────────────────────────────────────
+
+function NotificationBell() {
+  const [open, setOpen] = useState(false)
+  const [read, setRead] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const items = [
+    { icon: '🟢', text: 'Demo data loaded successfully', time: 'Just now' },
+    { icon: '📋', text: 'Board meeting scheduled — 18 Apr', time: '2h ago' },
+    { icon: '⚠️', text: 'Contract renewal due: James Hartley', time: '1d ago' },
+  ]
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(o => !o)} className="relative flex items-center justify-center rounded-full transition-colors"
+        style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}
+        onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB'; e.currentTarget.style.borderColor = '#374151' }}
+        onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#1F2937' }}>
+        <Bell size={16} strokeWidth={1.75} />
+        {!read && <span className="absolute" style={{ top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 rounded-xl shadow-xl overflow-hidden" style={{ width: 320, backgroundColor: '#0D1017', border: '1px solid #1F2937', zIndex: 100 }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Notifications</p>
+            <button onClick={() => { setRead(true) }} className="text-xs font-medium" style={{ color: '#0D9488' }}>Mark all read</button>
+          </div>
+          {items.map((n, i) => (
+            <div key={i} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: i < items.length - 1 ? '1px solid #1F2937' : undefined, opacity: read ? 0.5 : 1 }}>
+              <span className="text-sm mt-0.5">{n.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs" style={{ color: '#D1D5DB' }}>{n.text}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: '#4B5563' }}>{n.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, companyName, companyLogo }: {
@@ -418,7 +467,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, comp
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
         <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           {companyLogo ? (
-            <>{typeof window !== 'undefined' && console.log('Rendering logo:', companyLogo)}<img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" onError={e => { console.error('Logo failed to load:', companyLogo); (e.target as HTMLImageElement).style.display = 'none' }} /></>
+            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
           ) : (
             <div className="flex items-center justify-center rounded-lg text-xs font-bold"
               style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
@@ -3884,9 +3933,12 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (!data) { setWorkspaceStatus('trial'); return }
-          if (data.logo_url && !companyLogo) {
-            setCompanyLogo(data.logo_url)
-            localStorage.setItem('demo_company_logo', data.logo_url)
+          if (data.logo_url) {
+            const currentLogo = localStorage.getItem('demo_company_logo') || ''
+            if (!currentLogo || currentLogo !== data.logo_url) {
+              setCompanyLogo(data.logo_url)
+              localStorage.setItem('demo_company_logo', data.logo_url)
+            }
           }
           if (data.status === 'converted') {
             if (data.live_slug) { router.replace(`/${data.live_slug}`); return }
@@ -4174,11 +4226,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
                 {/* Mobile invite */}
                 <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
                 {/* Bell + avatar (desktop) */}
-                <div className="hidden md:flex items-center gap-2">
-                  <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-                    <Bell size={16} strokeWidth={1.75} />
-                    <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488' }} />
-                  </button>
+                <div className="hidden md:flex items-center gap-3">
+                  <NotificationBell />
                   <AvatarDropdown
                     initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
                     onConvert={() => setShowConvert(true)}
