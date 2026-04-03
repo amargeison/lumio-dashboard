@@ -1059,16 +1059,6 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   return (
   <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
-      {onBellClick && (
-        <div className="absolute top-4 right-4 hidden md:flex items-center gap-2 z-10">
-          {roleSwitcher}
-          <button onClick={onBellClick} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-            <Bell size={16} strokeWidth={1.75} />
-            <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-          </button>
-          <AvatarDropdown initials={userNameProp ? userNameProp.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={settingsHref} />
-        </div>
-      )}
       <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
@@ -4098,6 +4088,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+      {/* Bell + Avatar — fixed top-right */}
+      <div className="hidden md:flex" style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, alignItems: 'center', gap: 8 }}>
+        <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Bell size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+        </button>
+        <AvatarDropdown initials={userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={`/${slug}/settings`} />
+      </div>
+
       <ImpersonationBanner />
       <Toast message={toast} />
 
