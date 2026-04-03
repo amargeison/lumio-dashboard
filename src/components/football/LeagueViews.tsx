@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const LEAGUE_IDS: Record<string, number> = { 'Premier League': 39, 'Championship': 40, 'League One': 41, 'League Two': 42, 'National League': 43 }
 
@@ -30,6 +30,10 @@ const colourMap: Record<string, string> = {
 const posColour = (pos: string) => pos === 'Goalkeeper' ? 'bg-yellow-600/20 text-yellow-400' : pos === 'Defender' ? 'bg-blue-600/20 text-blue-400' : pos === 'Midfielder' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'
 const posShort = (pos: string) => pos === 'Goalkeeper' ? 'GK' : pos === 'Defender' ? 'DEF' : pos === 'Midfielder' ? 'MID' : 'FWD'
 
+interface SBCompetition { competition_id: number; season_id: number; competition_name: string; season_name: string; country_name: string; competition_gender: string; match_updated: string }
+interface SBMatch { match_id: number; match_date: string; home_team: { home_team_name: string }; away_team: { away_team_name: string }; home_score: number; away_score: number; competition_stage?: { name: string } }
+interface SBEvent { id: string; type: { id: number; name: string }; minute: number; second: number; location?: number[]; shot?: { statsbomb_xg: number; outcome: { name: string }; end_location?: number[] }; pass?: { outcome?: { name: string } }; team: { name: string }; player?: { name: string }; possession_team?: { name: string } }
+
 // ─── TEAMS VIEW ──────────────────────────────────────────────────────────────
 export function TeamsView() {
   const [selectedLeague, setSelectedLeague] = useState<typeof TIER_LEAGUES[0] | null>(null)
@@ -40,7 +44,7 @@ export function TeamsView() {
   const [squadLoading, setSquadLoading] = useState(false)
   const [standingsData, setStandingsData] = useState<any[]>([])
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results'>('squad')
+  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb'>('squad')
 
   async function loadLeague(league: typeof TIER_LEAGUES[0]) {
     setSelectedLeague(league); setSelectedTeam(null); setSquadData([]); setLoading(true)
@@ -105,8 +109,8 @@ export function TeamsView() {
             ))}</div>
             {selectedTeam.form && <div className="flex items-center gap-1.5 mt-3"><span className="text-xs mr-1" style={{ color: C.muted }}>Form:</span>{selectedTeam.form.split('').slice(-5).map((r: string, i: number) => (<div key={i} className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.2)' : r === 'D' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div>}
           </div>
-          <div className="flex gap-2">{(['squad', 'fixtures', 'results'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : 'Squad'}</button>
+          <div className="flex gap-2">{(['squad', 'fixtures', 'results', 'statsbomb'] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 rounded-full animate-spin mr-2" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading...</span></div>}
           {activeTab === 'squad' && !squadLoading && (
@@ -139,6 +143,226 @@ export function TeamsView() {
               {teamFixtures.filter((f: any) => activeTab === 'fixtures' ? f.fixture?.status?.short === 'NS' : f.fixture?.status?.short !== 'NS').length === 0 && <div className="p-8 text-center text-sm" style={{ color: C.muted }}>No data — connect API-Football key</div>}
             </div>
           )}
+          {activeTab === 'statsbomb' && <StatsBombPanel teamName={selectedTeam.team?.name || ''} />}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── STATSBOMB PANEL (Club Profile) ─────────────────────────────────────────
+function StatsBombPanel({ teamName }: { teamName: string }) {
+  const [competitions, setCompetitions] = useState<SBCompetition[]>([])
+  const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
+  const [matches, setMatches] = useState<SBMatch[]>([])
+  const [filteredMatches, setFilteredMatches] = useState<SBMatch[]>([])
+  const [selectedMatch, setSelectedMatch] = useState<SBMatch | null>(null)
+  const [events, setEvents] = useState<SBEvent[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch('/api/football/statsbomb?type=competitions')
+      .then(r => r.json())
+      .then((data: SBCompetition[]) => {
+        const male = data.filter((c: SBCompetition) => c.competition_gender === 'male')
+        const unique = male.reduce((acc: Map<string, SBCompetition>, c: SBCompetition) => {
+          const key = `${c.competition_id}-${c.season_id}`
+          if (!acc.has(key)) acc.set(key, c)
+          return acc
+        }, new Map<string, SBCompetition>())
+        setCompetitions(Array.from(unique.values()).sort((a: SBCompetition, b: SBCompetition) => a.competition_name.localeCompare(b.competition_name) || b.season_name.localeCompare(a.season_name)))
+      })
+      .catch(() => setCompetitions([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function loadMatches(comp: SBCompetition) {
+    setSelectedComp(comp); setSelectedMatch(null); setEvents([]); setLoading(true)
+    try {
+      const res = await fetch(`/api/football/statsbomb?type=matches&compId=${comp.competition_id}&seasonId=${comp.season_id}`)
+      const data: SBMatch[] = await res.json()
+      const clubMatches = data.filter((m: SBMatch) =>
+        m.home_team?.home_team_name?.toLowerCase().includes(teamName.toLowerCase()) ||
+        m.away_team?.away_team_name?.toLowerCase().includes(teamName.toLowerCase())
+      ).sort((a: SBMatch, b: SBMatch) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
+      setMatches(data)
+      setFilteredMatches(clubMatches)
+    } catch { setMatches([]); setFilteredMatches([]) }
+    setLoading(false)
+  }
+
+  async function loadEvents(match: SBMatch) {
+    setSelectedMatch(match); setEvents([]); setLoading(true)
+    try {
+      const res = await fetch(`/api/football/statsbomb?type=events&matchId=${match.match_id}`)
+      const data: SBEvent[] = await res.json()
+      setEvents(data)
+    } catch { setEvents([]) }
+    setLoading(false)
+  }
+
+  const homeTeam = selectedMatch?.home_team?.home_team_name || ''
+  const awayTeam = selectedMatch?.away_team?.away_team_name || ''
+  const shots = events.filter((e: SBEvent) => e.type?.name === 'Shot')
+  const homeShots = shots.filter((s: SBEvent) => s.team?.name === homeTeam)
+  const awayShots = shots.filter((s: SBEvent) => s.team?.name === awayTeam)
+  const homeXG = homeShots.reduce((t: number, s: SBEvent) => t + (s.shot?.statsbomb_xg || 0), 0)
+  const awayXG = awayShots.reduce((t: number, s: SBEvent) => t + (s.shot?.statsbomb_xg || 0), 0)
+  const passes = events.filter((e: SBEvent) => e.type?.name === 'Pass')
+  const homePasses = passes.filter((p: SBEvent) => p.team?.name === homeTeam)
+  const awayPasses = passes.filter((p: SBEvent) => p.team?.name === awayTeam)
+  const homePassComp = homePasses.length > 0 ? Math.round((homePasses.filter((p: SBEvent) => !p.pass?.outcome).length / homePasses.length) * 100) : 0
+  const awayPassComp = awayPasses.length > 0 ? Math.round((awayPasses.filter((p: SBEvent) => !p.pass?.outcome).length / awayPasses.length) * 100) : 0
+  const pressures = events.filter((e: SBEvent) => e.type?.name === 'Pressure')
+  const homePressures = pressures.filter((p: SBEvent) => p.team?.name === homeTeam)
+  const awayPressures = pressures.filter((p: SBEvent) => p.team?.name === awayTeam)
+  const totalEvents = events.length || 1
+  const homePossession = Math.round((events.filter((e: SBEvent) => e.possession_team?.name === homeTeam || e.team?.name === homeTeam).length / totalEvents) * 100)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data — available for selected competitions</span>
+      </div>
+      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>StatsBomb open data covers historical seasons of selected competitions. For current season data, a StatsBomb Pro licence is required.</div>
+
+      {loading && <div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 rounded-full animate-spin mr-2" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading...</span></div>}
+
+      {!selectedComp && !loading && (
+        <div className="space-y-2" style={{ maxHeight: 400, overflowY: 'auto' }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: C.muted }}>Select a competition to find {teamName} matches</div>
+          {competitions.map((comp, i) => (
+            <button key={i} onClick={() => loadMatches(comp)} className="w-full p-3 rounded-xl border text-left transition-all hover:border-blue-600/40" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold" style={{ color: C.text }}>{comp.competition_name}</div>
+              <div className="text-xs mt-0.5" style={{ color: C.muted }}>{comp.country_name} · {comp.season_name}</div>
+            </button>
+          ))}
+          {competitions.length === 0 && <div className="text-center py-6 text-sm" style={{ color: C.muted }}>No competitions available</div>}
+        </div>
+      )}
+
+      {selectedComp && !selectedMatch && !loading && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => { setSelectedComp(null); setMatches([]); setFilteredMatches([]) }} className="text-xs hover:underline" style={{ color: '#60A5FA' }}>← Back to competitions</button>
+            <span className="text-xs" style={{ color: C.muted }}>{selectedComp.competition_name} · {selectedComp.season_name}</span>
+          </div>
+          <div className="text-xs" style={{ color: C.muted }}>{filteredMatches.length} matches involving {teamName}</div>
+          <div className="space-y-2" style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {filteredMatches.map((m, i) => (
+              <button key={i} onClick={() => loadEvents(m)} className="w-full p-3 rounded-xl border text-left flex items-center gap-4 transition-all hover:border-blue-600/40" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                <div className="text-xs w-16 shrink-0" style={{ color: C.muted }}>{new Date(m.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+                <span className="text-sm font-semibold flex-1" style={{ color: C.text }}>{m.home_team?.home_team_name}</span>
+                <span className="text-sm font-black w-12 text-center" style={{ color: C.text }}>{m.home_score}–{m.away_score}</span>
+                <span className="text-sm font-semibold flex-1" style={{ color: C.text }}>{m.away_team?.away_team_name}</span>
+              </button>
+            ))}
+            {filteredMatches.length === 0 && <div className="text-center py-6 text-sm" style={{ color: C.muted }}>No matches found for {teamName} in this competition</div>}
+          </div>
+        </div>
+      )}
+
+      {selectedMatch && !loading && events.length > 0 && (
+        <div className="space-y-4">
+          <button onClick={() => { setSelectedMatch(null); setEvents([]) }} className="text-xs hover:underline" style={{ color: '#60A5FA' }}>← Back to matches</button>
+
+          {/* Score header */}
+          <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.12), rgba(0,0,0,0.1))', border: '1px solid rgba(0,61,165,0.25)' }}>
+            <div className="flex items-center justify-center gap-4 mb-3">
+              <div className="text-right flex-1"><div className="text-sm font-bold" style={{ color: C.text }}>{homeTeam}</div></div>
+              <div className="text-2xl font-black" style={{ color: C.text }}>{selectedMatch.home_score} – {selectedMatch.away_score}</div>
+              <div className="text-left flex-1"><div className="text-sm font-bold" style={{ color: C.text }}>{awayTeam}</div></div>
+            </div>
+          </div>
+
+          {/* xG summary */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: C.text }}>xG For vs xG Against</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xl font-black" style={{ color: '#60A5FA' }}>{homeXG.toFixed(2)}</div><div className="text-xs mt-1" style={{ color: C.muted }}>{homeTeam} xG</div></div>
+              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xl font-black" style={{ color: '#F87171' }}>{awayXG.toFixed(2)}</div><div className="text-xs mt-1" style={{ color: C.muted }}>{awayTeam} xG</div></div>
+            </div>
+          </div>
+
+          {/* Shot map */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: C.text }}>Shot Map</div>
+            <div className="flex items-center gap-3 mb-2 text-xs">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#60A5FA' }} />{homeTeam}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F87171' }} />{awayTeam}</span>
+              <span className="flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} />Goal</span>
+            </div>
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '120/80', backgroundColor: '#1a472a', borderRadius: 8, overflow: 'hidden', border: '2px solid #2d5a3a' }}>
+              <svg viewBox="0 0 120 80" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                <rect x={1} y={1} width={118} height={78} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                <line x1={60} y1={1} x2={60} y2={79} stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                <circle cx={60} cy={40} r={9.15} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                <rect x={1} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                <rect x={101} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                {shots.map((s: SBEvent, i: number) => {
+                  if (!s.location) return null
+                  const isHome = s.team?.name === homeTeam
+                  const x = isHome ? s.location[0] : 120 - s.location[0]
+                  const y = s.location[1]
+                  const xg = s.shot?.statsbomb_xg || 0
+                  const isGoal = s.shot?.outcome?.name === 'Goal'
+                  const r = Math.max(1, Math.min(3.5, xg * 8))
+                  return <circle key={i} cx={x} cy={y} r={r} fill={isGoal ? 'rgba(34,197,94,0.7)' : isHome ? 'rgba(96,165,250,0.6)' : 'rgba(248,113,113,0.6)'} stroke={isGoal ? '#22C55E' : isHome ? '#60A5FA' : '#F87171'} strokeWidth={isGoal ? 0.8 : 0.4} />
+                })}
+              </svg>
+            </div>
+            <div className="text-xs mt-2 text-center" style={{ color: C.muted }}>Dot size = xG value. Green = goal scored.</div>
+          </div>
+
+          {/* Pass completion */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: C.text }}>Pass Completion %</div>
+            <div className="grid grid-cols-2 gap-4">
+              {[{ team: homeTeam, comp: homePassComp, total: homePasses.length, colour: '#60A5FA' }, { team: awayTeam, comp: awayPassComp, total: awayPasses.length, colour: '#F87171' }].map((t, i) => (
+                <div key={i} className="text-center">
+                  <div className="mx-auto mb-2" style={{ width: 80, height: 80 }}>
+                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%' }}>
+                      <circle cx={18} cy={18} r={15.9} fill="none" stroke="#1F2937" strokeWidth={3} />
+                      <circle cx={18} cy={18} r={15.9} fill="none" stroke={t.colour} strokeWidth={3} strokeDasharray={`${t.comp} ${100 - t.comp}`} strokeDashoffset={25} strokeLinecap="round" />
+                      <text x={18} y={18} textAnchor="middle" dominantBaseline="central" fill={C.text} fontSize={7} fontWeight="bold">{t.comp}%</text>
+                    </svg>
+                  </div>
+                  <div className="text-xs font-semibold" style={{ color: C.text }}>{t.team}</div>
+                  <div className="text-xs" style={{ color: C.muted }}>{t.total} passes</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Possession & Pressure */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-xs font-semibold mb-2" style={{ color: C.text }}>Possession %</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: '#1F2937' }}>
+                  <div className="h-full rounded-l-full" style={{ width: `${homePossession}%`, backgroundColor: '#60A5FA' }} />
+                  <div className="h-full rounded-r-full" style={{ width: `${100 - homePossession}%`, backgroundColor: '#F87171' }} />
+                </div>
+              </div>
+              <div className="flex justify-between text-xs mt-1"><span style={{ color: '#60A5FA' }}>{homePossession}%</span><span style={{ color: '#F87171' }}>{100 - homePossession}%</span></div>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-xs font-semibold mb-2" style={{ color: C.text }}>Pressure Events</div>
+              <div className="flex justify-between items-end">
+                <div className="text-center"><div className="text-lg font-black" style={{ color: '#60A5FA' }}>{homePressures.length}</div><div className="text-xs" style={{ color: C.muted }}>{homeTeam}</div></div>
+                <div className="text-center"><div className="text-lg font-black" style={{ color: '#F87171' }}>{awayPressures.length}</div><div className="text-xs" style={{ color: C.muted }}>{awayTeam}</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedMatch && !loading && events.length === 0 && (
+        <div className="rounded-xl p-8 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="text-3xl mb-2">📊</div>
+          <div className="text-sm font-semibold" style={{ color: C.text }}>No event data available</div>
+          <div className="text-xs mt-1" style={{ color: C.muted }}>This match may not have detailed event data in the StatsBomb open dataset</div>
         </div>
       )}
     </div>
@@ -148,11 +372,12 @@ export function TeamsView() {
 // ─── LEAGUES VIEW ────────────────────────────────────────────────────────────
 export function LeaguesView() {
   const [selectedLeague, setSelectedLeague] = useState<typeof TIER_LEAGUES[0] | null>(null)
-  const [activeTab, setActiveTab] = useState<'table' | 'scorers' | 'assists'>('table')
+  const [activeTab, setActiveTab] = useState<'table' | 'scorers' | 'assists' | 'advanced'>('table')
   const [standings, setStandings] = useState<any[]>([])
   const [scorers, setScorers] = useState<any[]>([])
   const [assists, setAssists] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
 
   async function loadLeagueData(league: typeof TIER_LEAGUES[0]) {
     setSelectedLeague(league); setLoading(true); setStandings([]); setScorers([]); setAssists([])
@@ -180,8 +405,8 @@ export function LeaguesView() {
       ))}</div>
       {loading && <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 rounded-full animate-spin mr-3" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading {selectedLeague?.name}...</span></div>}
       {selectedLeague && !loading && (<>
-        <div className="flex gap-2">{(['table', 'scorers', 'assists'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'table' ? 'League Table' : tab === 'scorers' ? 'Top Scorers' : 'Top Assists'}</button>
+        <div className="flex gap-2 flex-wrap">{(['table', 'scorers', 'assists', 'advanced'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'table' ? 'League Table' : tab === 'scorers' ? 'Top Scorers' : tab === 'assists' ? 'Top Assists' : '\u{1F4CA} Advanced Stats'}</button>
         ))}</div>
         {activeTab === 'table' && standings.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
@@ -202,9 +427,9 @@ export function LeaguesView() {
         )}
         {activeTab === 'scorers' && scorers.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
-            <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedLeague.name} — Top Scorers</div></div>
+            <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedLeague.name} — Top Scorers</div><div className="text-xs mt-1" style={{ color: C.muted }}>Click a player for extended analytics</div></div>
             {scorers.slice(0, 20).map((s: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 p-4" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div key={i} onClick={() => setSelectedPlayer(s)} className="flex items-center gap-3 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <div className="font-bold w-6 text-center text-sm" style={{ color: C.muted }}>{i + 1}</div>
                 {s.player?.photo && <img src={s.player.photo} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />}
                 <div className="flex-1 min-w-0"><div className="text-sm font-semibold" style={{ color: C.text }}>{s.player?.name}</div><div className="flex items-center gap-2 mt-0.5">{s.statistics?.[0]?.team?.logo && <img src={s.statistics[0].team.logo} alt="" className="w-4 h-4 object-contain" />}<span className="text-xs" style={{ color: C.muted }}>{s.statistics?.[0]?.team?.name}</span></div></div>
@@ -216,9 +441,9 @@ export function LeaguesView() {
         )}
         {activeTab === 'assists' && assists.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
-            <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedLeague.name} — Top Assists</div></div>
+            <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedLeague.name} — Top Assists</div><div className="text-xs mt-1" style={{ color: C.muted }}>Click a player for extended analytics</div></div>
             {assists.slice(0, 20).map((s: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 p-4" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div key={i} onClick={() => setSelectedPlayer(s)} className="flex items-center gap-3 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <div className="font-bold w-6 text-center text-sm" style={{ color: C.muted }}>{i + 1}</div>
                 {s.player?.photo && <img src={s.player.photo} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />}
                 <div className="flex-1 min-w-0"><div className="text-sm font-semibold" style={{ color: C.text }}>{s.player?.name}</div><div className="flex items-center gap-2 mt-0.5">{s.statistics?.[0]?.team?.logo && <img src={s.statistics[0].team.logo} alt="" className="w-4 h-4 object-contain" />}<span className="text-xs" style={{ color: C.muted }}>{s.statistics?.[0]?.team?.name}</span></div></div>
@@ -228,10 +453,214 @@ export function LeaguesView() {
             ))}
           </div>
         )}
+        {activeTab === 'advanced' && <AdvancedStatsPanel />}
         {((activeTab === 'table' && standings.length === 0) || (activeTab === 'scorers' && scorers.length === 0) || (activeTab === 'assists' && assists.length === 0)) && !loading && (
           <div className="rounded-xl p-8 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-sm" style={{ color: C.muted }}>Connect API-Football key to see live data</div></div>
         )}
       </>)}
+
+      {/* Player Stats Modal */}
+      {selectedPlayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedPlayer(null)}>
+          <div className="rounded-2xl p-6 w-full max-w-md mx-4 space-y-4" style={{ backgroundColor: '#111318', border: `1px solid ${C.border}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {selectedPlayer.player?.photo && <img src={selectedPlayer.player.photo} alt="" className="w-12 h-12 rounded-full object-cover" />}
+                <div>
+                  <div className="text-lg font-bold" style={{ color: C.text }}>{selectedPlayer.player?.name}</div>
+                  <div className="flex items-center gap-2 text-xs" style={{ color: C.muted }}>
+                    {selectedPlayer.statistics?.[0]?.team?.logo && <img src={selectedPlayer.statistics[0].team.logo} alt="" className="w-4 h-4 object-contain" />}
+                    {selectedPlayer.statistics?.[0]?.team?.name}
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedPlayer(null)} className="text-xl" style={{ color: C.muted }}>x</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Nationality</div><div className="text-sm font-semibold mt-1" style={{ color: C.text }}>{selectedPlayer.player?.nationality || '—'}</div></div>
+              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Goals</div><div className="text-lg font-black mt-1" style={{ color: C.text }}>{selectedPlayer.statistics?.[0]?.goals?.total || 0}</div></div>
+              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Assists</div><div className="text-lg font-black mt-1" style={{ color: C.teal }}>{selectedPlayer.statistics?.[0]?.goals?.assists || 0}</div></div>
+            </div>
+
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">📊</span>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>StatsBomb Data</div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span style={{ color: C.muted }}>Avg xG per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
+                <div className="flex justify-between"><span style={{ color: C.muted }}>Avg xA per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
+                <div className="flex justify-between"><span style={{ color: C.muted }}>Progressive passes per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
+                <div className="flex justify-between"><span style={{ color: C.muted }}>Pressure success rate</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
+              </div>
+              <div className="mt-3 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>Extended analytics available with StatsBomb Pro licence</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── ADVANCED STATS PANEL (League View) ─────────────────────────────────────
+function AdvancedStatsPanel() {
+  const [competitions, setCompetitions] = useState<SBCompetition[]>([])
+  const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [stats, setStats] = useState<{
+    avgXG: number; highestXGMatch: { home: string; away: string; xg: number; date: string } | null;
+    topXGTeams: { team: string; xg: number }[]; topPressureTeam: { team: string; count: number } | null;
+    totalMatches: number;
+  } | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch('/api/football/statsbomb?type=competitions')
+      .then(r => r.json())
+      .then((data: SBCompetition[]) => {
+        const male = data.filter((c: SBCompetition) => c.competition_gender === 'male')
+        const unique = male.reduce((acc: Map<string, SBCompetition>, c: SBCompetition) => {
+          const key = `${c.competition_id}-${c.season_id}`
+          if (!acc.has(key)) acc.set(key, c)
+          return acc
+        }, new Map<string, SBCompetition>())
+        setCompetitions(Array.from(unique.values()).sort((a: SBCompetition, b: SBCompetition) => a.competition_name.localeCompare(b.competition_name) || b.season_name.localeCompare(a.season_name)))
+      })
+      .catch(() => setCompetitions([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function loadAdvancedStats(comp: SBCompetition) {
+    setSelectedComp(comp); setStats(null); setLoading(true)
+    try {
+      const matchRes = await fetch(`/api/football/statsbomb?type=matches&compId=${comp.competition_id}&seasonId=${comp.season_id}`)
+      const matchData: SBMatch[] = await matchRes.json()
+
+      // Sample up to 10 matches for event analysis (to avoid too many requests)
+      const sample = matchData.slice(0, 10)
+      const teamXGMap = new Map<string, number>()
+      const teamPressureMap = new Map<string, number>()
+      let totalXG = 0
+      let highestXGMatch: { home: string; away: string; xg: number; date: string } | null = null
+
+      for (const m of sample) {
+        try {
+          const evtRes = await fetch(`/api/football/statsbomb?type=events&matchId=${m.match_id}`)
+          const evts: SBEvent[] = await evtRes.json()
+
+          const shots = evts.filter((e: SBEvent) => e.type?.name === 'Shot')
+          const matchXG = shots.reduce((t: number, s: SBEvent) => t + (s.shot?.statsbomb_xg || 0), 0)
+          totalXG += matchXG
+
+          if (!highestXGMatch || matchXG > highestXGMatch.xg) {
+            highestXGMatch = { home: m.home_team?.home_team_name, away: m.away_team?.away_team_name, xg: matchXG, date: m.match_date }
+          }
+
+          const homeTeam = m.home_team?.home_team_name
+          const awayTeam = m.away_team?.away_team_name
+          const homeXG = shots.filter((s: SBEvent) => s.team?.name === homeTeam).reduce((t: number, s: SBEvent) => t + (s.shot?.statsbomb_xg || 0), 0)
+          const awayXG = shots.filter((s: SBEvent) => s.team?.name === awayTeam).reduce((t: number, s: SBEvent) => t + (s.shot?.statsbomb_xg || 0), 0)
+          teamXGMap.set(homeTeam, (teamXGMap.get(homeTeam) || 0) + homeXG)
+          teamXGMap.set(awayTeam, (teamXGMap.get(awayTeam) || 0) + awayXG)
+
+          const pressures = evts.filter((e: SBEvent) => e.type?.name === 'Pressure')
+          const homePressures = pressures.filter((p: SBEvent) => p.team?.name === homeTeam).length
+          const awayPressures = pressures.filter((p: SBEvent) => p.team?.name === awayTeam).length
+          teamPressureMap.set(homeTeam, (teamPressureMap.get(homeTeam) || 0) + homePressures)
+          teamPressureMap.set(awayTeam, (teamPressureMap.get(awayTeam) || 0) + awayPressures)
+        } catch { /* skip match */ }
+      }
+
+      const topXGTeams = Array.from(teamXGMap.entries()).map(([team, xg]) => ({ team, xg })).sort((a, b) => b.xg - a.xg).slice(0, 5)
+      const topPressure = Array.from(teamPressureMap.entries()).sort((a, b) => b[1] - a[1])
+      const topPressureTeam = topPressure.length > 0 ? { team: topPressure[0][0], count: topPressure[0][1] } : null
+
+      setStats({
+        avgXG: sample.length > 0 ? totalXG / sample.length : 0,
+        highestXGMatch,
+        topXGTeams,
+        topPressureTeam,
+        totalMatches: matchData.length,
+      })
+    } catch { setStats(null) }
+    setLoading(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data</span>
+      </div>
+      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>StatsBomb open data covers historical seasons of selected competitions. For current season data, a StatsBomb Pro licence is required.</div>
+
+      {loading && <div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 rounded-full animate-spin mr-2" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading...</span></div>}
+
+      {!selectedComp && !loading && (
+        <div className="space-y-2" style={{ maxHeight: 400, overflowY: 'auto' }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: C.muted }}>Select a competition to view advanced stats</div>
+          {competitions.map((comp, i) => (
+            <button key={i} onClick={() => loadAdvancedStats(comp)} className="w-full p-3 rounded-xl border text-left transition-all hover:border-blue-600/40" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold" style={{ color: C.text }}>{comp.competition_name}</div>
+              <div className="text-xs mt-0.5" style={{ color: C.muted }}>{comp.country_name} · {comp.season_name}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedComp && !loading && stats && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => { setSelectedComp(null); setStats(null) }} className="text-xs hover:underline" style={{ color: '#60A5FA' }}>← Back to competitions</button>
+            <span className="text-xs" style={{ color: C.muted }}>{selectedComp.competition_name} · {selectedComp.season_name} ({stats.totalMatches} matches, sampled 10)</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-xs" style={{ color: C.muted }}>Avg xG per Match</div>
+              <div className="text-2xl font-black mt-1" style={{ color: '#FBBF24' }}>{stats.avgXG.toFixed(2)}</div>
+            </div>
+            {stats.highestXGMatch && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                <div className="text-xs" style={{ color: C.muted }}>Highest xG Single Match</div>
+                <div className="text-2xl font-black mt-1" style={{ color: '#FBBF24' }}>{stats.highestXGMatch.xg.toFixed(2)}</div>
+                <div className="text-xs mt-1" style={{ color: C.muted }}>{stats.highestXGMatch.home} vs {stats.highestXGMatch.away}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Top xG producers */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: C.text }}>Top xG Producers (by team)</div>
+            <div className="space-y-2">
+              {stats.topXGTeams.map((t, i) => {
+                const maxXG = stats.topXGTeams[0]?.xg || 1
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs w-4 font-bold" style={{ color: C.muted }}>{i + 1}</span>
+                    <span className="text-sm flex-1" style={{ color: C.text }}>{t.team}</span>
+                    <div className="w-32 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                      <div className="h-full rounded-full" style={{ width: `${(t.xg / maxXG) * 100}%`, backgroundColor: '#60A5FA' }} />
+                    </div>
+                    <span className="text-xs font-mono w-10 text-right" style={{ color: '#FBBF24' }}>{t.xg.toFixed(2)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Most pressures */}
+          {stats.topPressureTeam && (
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-xs font-semibold mb-2" style={{ color: C.text }}>Most Pressures Applied</div>
+              <div className="flex items-center gap-3">
+                <div className="text-2xl font-black" style={{ color: '#60A5FA' }}>{stats.topPressureTeam.count}</div>
+                <div><div className="text-sm font-semibold" style={{ color: C.text }}>{stats.topPressureTeam.team}</div><div className="text-xs" style={{ color: C.muted }}>total pressure events (sampled matches)</div></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -292,6 +721,386 @@ export function FixturesView() {
       )}
       {!loading && filteredFixtures.length === 0 && selectedLeague && <div className="rounded-xl p-10 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-4xl mb-3">📅</div><div className="font-semibold mb-1" style={{ color: C.text }}>No fixtures found</div><div className="text-sm" style={{ color: C.muted }}>Connect API-Football key to load live data</div></div>}
       {!selectedLeague && <div className="rounded-xl p-10 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-4xl mb-3">📅</div><div className="font-semibold mb-2" style={{ color: C.text }}>Select a league above</div><div className="text-sm" style={{ color: C.muted }}>Choose any tier to load fixtures and results</div></div>}
+    </div>
+  )
+}
+
+// ─── STATSBOMB VIEW ─────────────────────────────────────────────────────────
+export function StatsBombView() {
+  const [competitions, setCompetitions] = useState<SBCompetition[]>([])
+  const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
+  const [matches, setMatches] = useState<SBMatch[]>([])
+  const [selectedMatch, setSelectedMatch] = useState<SBMatch | null>(null)
+  const [events, setEvents] = useState<SBEvent[]>([])
+  const [loading, setLoading] = useState(false)
+  const [compSearch, setCompSearch] = useState('')
+  const [matchSearch, setMatchSearch] = useState('')
+  const [activeTab, setActiveTab] = useState<'xg' | 'shots' | 'passing' | 'pressure'>('xg')
+  const pitchRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch('/api/football/statsbomb?type=competitions')
+      .then(r => r.json())
+      .then((data: SBCompetition[]) => {
+        const male = data.filter(c => c.competition_gender === 'male')
+        const unique = male.reduce((acc, c) => {
+          const key = `${c.competition_id}-${c.season_id}`
+          if (!acc.has(key)) acc.set(key, c)
+          return acc
+        }, new Map<string, SBCompetition>())
+        setCompetitions(Array.from(unique.values()).sort((a, b) => a.competition_name.localeCompare(b.competition_name) || b.season_name.localeCompare(a.season_name)))
+      })
+      .catch(() => setCompetitions([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function loadMatches(comp: SBCompetition) {
+    setSelectedComp(comp); setSelectedMatch(null); setEvents([]); setMatches([]); setLoading(true)
+    try {
+      const res = await fetch(`/api/football/statsbomb?type=matches&compId=${comp.competition_id}&seasonId=${comp.season_id}`)
+      const data: SBMatch[] = await res.json()
+      setMatches(data.sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime()))
+    } catch { setMatches([]) }
+    setLoading(false)
+  }
+
+  async function loadEvents(match: SBMatch) {
+    setSelectedMatch(match); setEvents([]); setLoading(true); setActiveTab('xg')
+    try {
+      const res = await fetch(`/api/football/statsbomb?type=events&matchId=${match.match_id}`)
+      const data: SBEvent[] = await res.json()
+      setEvents(data)
+    } catch { setEvents([]) }
+    setLoading(false)
+  }
+
+  // Computed stats from events
+  const homeTeam = selectedMatch?.home_team?.home_team_name || ''
+  const awayTeam = selectedMatch?.away_team?.away_team_name || ''
+  const shots = events.filter(e => e.type?.name === 'Shot')
+  const homeShots = shots.filter(s => s.team?.name === homeTeam)
+  const awayShots = shots.filter(s => s.team?.name === awayTeam)
+  const homeXG = homeShots.reduce((t, s) => t + (s.shot?.statsbomb_xg || 0), 0)
+  const awayXG = awayShots.reduce((t, s) => t + (s.shot?.statsbomb_xg || 0), 0)
+
+  const passes = events.filter(e => e.type?.name === 'Pass')
+  const homePasses = passes.filter(p => p.team?.name === homeTeam)
+  const awayPasses = passes.filter(p => p.team?.name === awayTeam)
+  const homePassComp = homePasses.length > 0 ? Math.round((homePasses.filter(p => !p.pass?.outcome).length / homePasses.length) * 100) : 0
+  const awayPassComp = awayPasses.length > 0 ? Math.round((awayPasses.filter(p => !p.pass?.outcome).length / awayPasses.length) * 100) : 0
+
+  const pressures = events.filter(e => e.type?.name === 'Pressure')
+  const homePressures = pressures.filter(p => p.team?.name === homeTeam)
+  const awayPressures = pressures.filter(p => p.team?.name === awayTeam)
+
+  // xG timeline — build cumulative xG minute by minute
+  const maxMinute = events.length > 0 ? Math.max(...events.map(e => e.minute), 90) : 90
+  const xgTimeline: { minute: number; homeXG: number; awayXG: number }[] = []
+  let hCum = 0, aCum = 0
+  for (let m = 0; m <= maxMinute; m++) {
+    const mShots = shots.filter(s => s.minute === m)
+    mShots.forEach(s => { if (s.team?.name === homeTeam) hCum += s.shot?.statsbomb_xg || 0; else aCum += s.shot?.statsbomb_xg || 0 })
+    xgTimeline.push({ minute: m, homeXG: hCum, awayXG: aCum })
+  }
+
+  const filteredComps = compSearch ? competitions.filter(c => c.competition_name.toLowerCase().includes(compSearch.toLowerCase()) || c.country_name.toLowerCase().includes(compSearch.toLowerCase()) || c.season_name.includes(compSearch)) : competitions
+  const filteredMatches = matchSearch ? matches.filter(m => m.home_team?.home_team_name?.toLowerCase().includes(matchSearch.toLowerCase()) || m.away_team?.away_team_name?.toLowerCase().includes(matchSearch.toLowerCase())) : matches
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xl">📊</span>
+        <h2 className="text-xl font-bold" style={{ color: C.text }}>StatsBomb Open Data</h2>
+      </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data</span>
+      </div>
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs" style={{ color: C.muted }}>
+        <button onClick={() => { setSelectedComp(null); setSelectedMatch(null); setEvents([]) }} className="hover:underline" style={{ color: selectedComp ? '#60A5FA' : C.text }}>Competitions</button>
+        {selectedComp && <><span>/</span><button onClick={() => { setSelectedMatch(null); setEvents([]) }} className="hover:underline" style={{ color: selectedMatch ? '#60A5FA' : C.text }}>{selectedComp.competition_name} {selectedComp.season_name}</button></>}
+        {selectedMatch && <><span>/</span><span style={{ color: C.text }}>{homeTeam} vs {awayTeam}</span></>}
+      </div>
+
+      {loading && <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 rounded-full animate-spin mr-3" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading...</span></div>}
+
+      {/* Competition list */}
+      {!selectedComp && !loading && (<>
+        <input value={compSearch} onChange={e => setCompSearch(e.target.value)} placeholder="Search competitions..." className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ maxHeight: 600, overflowY: 'auto' }}>
+          {filteredComps.map((comp, i) => (
+            <button key={i} onClick={() => loadMatches(comp)} className="p-4 rounded-xl border text-left transition-all hover:border-blue-600/40" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold" style={{ color: C.text }}>{comp.competition_name}</div>
+              <div className="text-xs mt-0.5" style={{ color: C.muted }}>{comp.country_name} · {comp.season_name}</div>
+            </button>
+          ))}
+        </div>
+        {filteredComps.length === 0 && <div className="text-center py-8 text-sm" style={{ color: C.muted }}>No competitions found</div>}
+      </>)}
+
+      {/* Match list */}
+      {selectedComp && !selectedMatch && !loading && (<>
+        <input value={matchSearch} onChange={e => setMatchSearch(e.target.value)} placeholder="Search by team name..." className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
+        <div className="space-y-2" style={{ maxHeight: 600, overflowY: 'auto' }}>
+          {filteredMatches.map((m, i) => (
+            <button key={i} onClick={() => loadEvents(m)} className="w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all hover:border-blue-600/40" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-xs w-20 shrink-0" style={{ color: C.muted }}>{new Date(m.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+              <div className="flex-1 flex items-center gap-3">
+                <span className="text-sm font-semibold text-right flex-1" style={{ color: C.text }}>{m.home_team?.home_team_name}</span>
+                <span className="text-lg font-black w-16 text-center" style={{ color: C.text }}>{m.home_score} – {m.away_score}</span>
+                <span className="text-sm font-semibold flex-1" style={{ color: C.text }}>{m.away_team?.away_team_name}</span>
+              </div>
+              {m.competition_stage?.name && <span className="text-xs shrink-0 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#60A5FA' }}>{m.competition_stage.name}</span>}
+            </button>
+          ))}
+        </div>
+        {filteredMatches.length === 0 && <div className="text-center py-8 text-sm" style={{ color: C.muted }}>No matches found</div>}
+      </>)}
+
+      {/* Match analysis */}
+      {selectedMatch && !loading && events.length > 0 && (
+        <div className="space-y-6">
+          {/* Score header */}
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.12), rgba(0,0,0,0.1))', border: '1px solid rgba(0,61,165,0.25)' }}>
+            <div className="flex items-center justify-center gap-6 mb-4">
+              <div className="text-right flex-1"><div className="text-lg font-bold" style={{ color: C.text }}>{homeTeam}</div></div>
+              <div className="text-3xl font-black" style={{ color: C.text }}>{selectedMatch.home_score} – {selectedMatch.away_score}</div>
+              <div className="text-left flex-1"><div className="text-lg font-bold" style={{ color: C.text }}>{awayTeam}</div></div>
+            </div>
+            <div className="flex items-center justify-center gap-8 text-xs" style={{ color: C.muted }}>
+              <span>xG: <span className="font-bold" style={{ color: '#60A5FA' }}>{homeXG.toFixed(2)}</span></span>
+              <span>xG: <span className="font-bold" style={{ color: '#F87171' }}>{awayXG.toFixed(2)}</span></span>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 flex-wrap">
+            {([['xg', 'xG Timeline'], ['shots', 'Shot Map'], ['passing', 'Passing'], ['pressure', 'Pressure']] as const).map(([key, label]) => (
+              <button key={key} onClick={() => setActiveTab(key as any)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: activeTab === key ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === key ? C.yellow : C.muted, border: `1px solid ${activeTab === key ? 'rgba(0,61,165,0.3)' : C.border}` }}>{label}</button>
+            ))}
+          </div>
+
+          {/* xG Timeline */}
+          {activeTab === 'xg' && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold mb-4" style={{ color: C.text }}>Cumulative xG Timeline</div>
+              <div className="flex items-center gap-4 mb-3 text-xs">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#60A5FA' }} />{homeTeam} ({homeXG.toFixed(2)})</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#F87171' }} />{awayTeam} ({awayXG.toFixed(2)})</span>
+              </div>
+              <div style={{ height: 200, position: 'relative' }}>
+                <svg viewBox={`0 0 ${maxMinute} ${Math.max(homeXG, awayXG, 1) * 1.2}`} style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
+                  {/* Grid lines */}
+                  {[0.5, 1, 1.5, 2, 2.5, 3].filter(v => v <= Math.max(homeXG, awayXG, 1) * 1.2).map(v => (
+                    <line key={v} x1={0} y1={Math.max(homeXG, awayXG, 1) * 1.2 - v} x2={maxMinute} y2={Math.max(homeXG, awayXG, 1) * 1.2 - v} stroke="#1F2937" strokeWidth={0.3} />
+                  ))}
+                  {/* Half time line */}
+                  <line x1={45} y1={0} x2={45} y2={Math.max(homeXG, awayXG, 1) * 1.2} stroke="#374151" strokeWidth={0.3} strokeDasharray="2,2" />
+                  {/* Home xG line */}
+                  <polyline fill="none" stroke="#60A5FA" strokeWidth={0.8} points={xgTimeline.map(p => `${p.minute},${Math.max(homeXG, awayXG, 1) * 1.2 - p.homeXG}`).join(' ')} />
+                  {/* Away xG line */}
+                  <polyline fill="none" stroke="#F87171" strokeWidth={0.8} points={xgTimeline.map(p => `${p.minute},${Math.max(homeXG, awayXG, 1) * 1.2 - p.awayXG}`).join(' ')} />
+                  {/* Goal markers */}
+                  {shots.filter(s => s.shot?.outcome?.name === 'Goal').map((s, i) => {
+                    const isHome = s.team?.name === homeTeam
+                    const cumXG = xgTimeline.find(t => t.minute === s.minute)
+                    const y = cumXG ? (isHome ? cumXG.homeXG : cumXG.awayXG) : 0
+                    return <circle key={i} cx={s.minute} cy={Math.max(homeXG, awayXG, 1) * 1.2 - y} r={1.2} fill={isHome ? '#60A5FA' : '#F87171'} stroke="#fff" strokeWidth={0.3} />
+                  })}
+                </svg>
+                {/* Axis labels */}
+                <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] px-1" style={{ color: C.muted }}>
+                  <span>0&apos;</span><span>45&apos;</span><span>{maxMinute}&apos;</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Shot Map */}
+          {activeTab === 'shots' && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold mb-4" style={{ color: C.text }}>Shot Map</div>
+              <div className="flex items-center gap-4 mb-3 text-xs">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#60A5FA' }} />{homeTeam} ({homeShots.length} shots)</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F87171' }} />{awayTeam} ({awayShots.length} shots)</span>
+                <span className="flex items-center gap-1.5 ml-2"><span className="w-2 h-2 rounded-full border-2" style={{ borderColor: '#22C55E' }} />Goal</span>
+              </div>
+              <div ref={pitchRef} style={{ position: 'relative', width: '100%', aspectRatio: '120/80', backgroundColor: '#1a472a', borderRadius: 8, overflow: 'hidden', border: '2px solid #2d5a3a' }}>
+                {/* Pitch markings */}
+                <svg viewBox="0 0 120 80" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  {/* Outline */}
+                  <rect x={1} y={1} width={118} height={78} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {/* Centre line */}
+                  <line x1={60} y1={1} x2={60} y2={79} stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {/* Centre circle */}
+                  <circle cx={60} cy={40} r={9.15} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {/* Left penalty area */}
+                  <rect x={1} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <rect x={1} y={30} width={6} height={20} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {/* Right penalty area */}
+                  <rect x={101} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <rect x={113} y={30} width={6} height={20} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {/* Penalty spots */}
+                  <circle cx={12} cy={40} r={0.5} fill="rgba(255,255,255,0.4)" />
+                  <circle cx={108} cy={40} r={0.5} fill="rgba(255,255,255,0.4)" />
+
+                  {/* Shot dots */}
+                  {shots.map((s, i) => {
+                    if (!s.location) return null
+                    const isHome = s.team?.name === homeTeam
+                    const x = isHome ? s.location[0] : 120 - s.location[0]
+                    const y = s.location[1]
+                    const xg = s.shot?.statsbomb_xg || 0
+                    const isGoal = s.shot?.outcome?.name === 'Goal'
+                    const r = Math.max(1, Math.min(3.5, xg * 8))
+                    return (
+                      <circle key={i} cx={x} cy={y} r={r}
+                        fill={isGoal ? 'rgba(34,197,94,0.7)' : isHome ? 'rgba(96,165,250,0.6)' : 'rgba(248,113,113,0.6)'}
+                        stroke={isGoal ? '#22C55E' : isHome ? '#60A5FA' : '#F87171'}
+                        strokeWidth={isGoal ? 0.8 : 0.4}
+                      />
+                    )
+                  })}
+                </svg>
+              </div>
+              <div className="text-xs mt-2 text-center" style={{ color: C.muted }}>Dot size = xG value. Green = goal scored.</div>
+
+              {/* Shot list */}
+              <div className="mt-4 space-y-1" style={{ maxHeight: 200, overflowY: 'auto' }}>
+                {shots.sort((a, b) => (b.shot?.statsbomb_xg || 0) - (a.shot?.statsbomb_xg || 0)).map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ backgroundColor: '#0A0B10' }}>
+                    <span className="text-xs w-8" style={{ color: C.muted }}>{s.minute}&apos;</span>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.team?.name === homeTeam ? '#60A5FA' : '#F87171' }} />
+                    <span className="text-xs flex-1" style={{ color: C.text }}>{s.player?.name}</span>
+                    <span className="text-xs font-bold" style={{ color: s.shot?.outcome?.name === 'Goal' ? '#22C55E' : C.muted }}>{s.shot?.outcome?.name}</span>
+                    <span className="text-xs font-mono w-12 text-right" style={{ color: '#FBBF24' }}>{(s.shot?.statsbomb_xg || 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Passing */}
+          {activeTab === 'passing' && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold mb-4" style={{ color: C.text }}>Pass Completion</div>
+              <div className="grid grid-cols-2 gap-6">
+                {[{ team: homeTeam, total: homePasses.length, comp: homePassComp, colour: '#60A5FA' }, { team: awayTeam, total: awayPasses.length, comp: awayPassComp, colour: '#F87171' }].map((t, i) => (
+                  <div key={i} className="text-center">
+                    <div className="text-sm font-semibold mb-3" style={{ color: C.text }}>{t.team}</div>
+                    {/* Donut */}
+                    <div className="mx-auto mb-3" style={{ width: 100, height: 100 }}>
+                      <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%' }}>
+                        <circle cx={18} cy={18} r={15.9} fill="none" stroke="#1F2937" strokeWidth={3} />
+                        <circle cx={18} cy={18} r={15.9} fill="none" stroke={t.colour} strokeWidth={3}
+                          strokeDasharray={`${t.comp} ${100 - t.comp}`} strokeDashoffset={25}
+                          strokeLinecap="round" />
+                        <text x={18} y={18} textAnchor="middle" dominantBaseline="central" fill={C.text} fontSize={7} fontWeight="bold">{t.comp}%</text>
+                      </svg>
+                    </div>
+                    <div className="text-xs" style={{ color: C.muted }}>{t.total} passes attempted</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Comparison bars */}
+              <div className="mt-6 space-y-3">
+                {[
+                  { label: 'Total Passes', home: homePasses.length, away: awayPasses.length },
+                  { label: 'Completed', home: homePasses.filter(p => !p.pass?.outcome).length, away: awayPasses.filter(p => !p.pass?.outcome).length },
+                  { label: 'Failed', home: homePasses.filter(p => p.pass?.outcome).length, away: awayPasses.filter(p => p.pass?.outcome).length },
+                ].map((row, i) => {
+                  const max = Math.max(row.home, row.away, 1)
+                  return (
+                    <div key={i}>
+                      <div className="flex justify-between text-xs mb-1"><span style={{ color: '#60A5FA' }}>{row.home}</span><span style={{ color: C.muted }}>{row.label}</span><span style={{ color: '#F87171' }}>{row.away}</span></div>
+                      <div className="flex gap-1 h-2">
+                        <div className="flex-1 rounded-l-full overflow-hidden flex justify-end" style={{ backgroundColor: '#1F2937' }}>
+                          <div className="rounded-l-full" style={{ width: `${(row.home / max) * 100}%`, backgroundColor: '#60A5FA' }} />
+                        </div>
+                        <div className="flex-1 rounded-r-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                          <div className="rounded-r-full" style={{ width: `${(row.away / max) * 100}%`, backgroundColor: '#F87171' }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Pressure */}
+          {activeTab === 'pressure' && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+              <div className="text-sm font-semibold mb-4" style={{ color: C.text }}>Pressure Events</div>
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#0A0B10' }}>
+                  <div className="text-2xl font-black" style={{ color: '#60A5FA' }}>{homePressures.length}</div>
+                  <div className="text-xs mt-1" style={{ color: C.muted }}>{homeTeam}</div>
+                </div>
+                <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#0A0B10' }}>
+                  <div className="text-2xl font-black" style={{ color: '#F87171' }}>{awayPressures.length}</div>
+                  <div className="text-xs mt-1" style={{ color: C.muted }}>{awayTeam}</div>
+                </div>
+              </div>
+
+              {/* Pressure heatmap on pitch */}
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '120/80', backgroundColor: '#1a472a', borderRadius: 8, overflow: 'hidden', border: '2px solid #2d5a3a' }}>
+                <svg viewBox="0 0 120 80" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  <rect x={1} y={1} width={118} height={78} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <line x1={60} y1={1} x2={60} y2={79} stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <circle cx={60} cy={40} r={9.15} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <rect x={1} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  <rect x={101} y={18} width={18} height={44} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={0.5} />
+                  {pressures.map((p, i) => {
+                    if (!p.location) return null
+                    const isHome = p.team?.name === homeTeam
+                    const x = isHome ? p.location[0] : 120 - p.location[0]
+                    const y = p.location[1]
+                    return <circle key={i} cx={x} cy={y} r={0.8} fill={isHome ? 'rgba(96,165,250,0.35)' : 'rgba(248,113,113,0.35)'} />
+                  })}
+                </svg>
+              </div>
+              <div className="text-xs mt-2 text-center" style={{ color: C.muted }}>Each dot represents a pressure event location</div>
+
+              {/* Pressure by 15-min buckets */}
+              <div className="mt-4">
+                <div className="text-xs font-semibold mb-2" style={{ color: C.text }}>Pressure by Period</div>
+                <div className="space-y-2">
+                  {[[0, 15], [15, 30], [30, 45], [45, 60], [60, 75], [75, 90]].map(([start, end], i) => {
+                    const h = homePressures.filter(p => p.minute >= start && p.minute < end).length
+                    const a = awayPressures.filter(p => p.minute >= start && p.minute < end).length
+                    const max = Math.max(h, a, 1)
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-xs mb-0.5"><span style={{ color: '#60A5FA' }}>{h}</span><span style={{ color: C.muted }}>{start}&apos;–{end}&apos;</span><span style={{ color: '#F87171' }}>{a}</span></div>
+                        <div className="flex gap-1 h-1.5">
+                          <div className="flex-1 rounded-l-full overflow-hidden flex justify-end" style={{ backgroundColor: '#1F2937' }}>
+                            <div className="rounded-l-full" style={{ width: `${(h / max) * 100}%`, backgroundColor: '#60A5FA' }} />
+                          </div>
+                          <div className="flex-1 rounded-r-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                            <div className="rounded-r-full" style={{ width: `${(a / max) * 100}%`, backgroundColor: '#F87171' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedMatch && !loading && events.length === 0 && (
+        <div className="rounded-xl p-10 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="text-4xl mb-3">📊</div>
+          <div className="font-semibold mb-1" style={{ color: C.text }}>No event data available</div>
+          <div className="text-sm" style={{ color: C.muted }}>This match may not have detailed event data in the StatsBomb open dataset</div>
+        </div>
+      )}
     </div>
   )
 }
