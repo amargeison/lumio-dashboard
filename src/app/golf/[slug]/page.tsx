@@ -55,6 +55,12 @@ const SIDEBAR_ITEMS = [
   { id: 'career',        label: 'Career Planning',      icon: '🚀', group: 'OPERATIONS' },
   { id: 'video',         label: 'Video Library',        icon: '🎬', group: 'OPERATIONS' },
   { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'OPERATIONS' },
+  { id: 'arccos',        label: 'Arccos Integration',   icon: '📡', group: 'INTEGRATIONS' },
+  { id: 'datagolf',      label: 'DataGolf Integration', icon: '🌐', group: 'INTEGRATIONS' },
+  { id: 'trackman',      label: 'TrackMan Integration', icon: '🎯', group: 'INTEGRATIONS' },
+  { id: 'shotlink',      label: 'ShotLink (Phase 3)',   icon: '🔗', group: 'INTEGRATIONS' },
+  { id: 'lpga',          label: 'LPGA / LET Mode',      icon: '🏆', group: 'INTEGRATIONS' },
+  { id: 'mobileapp',     label: 'Mobile App',           icon: '📲', group: 'INTEGRATIONS' },
 ];
 
 // ─── DEMO PLAYER ─────────────────────────────────────────────────────────────
@@ -1245,12 +1251,644 @@ function PlaceholderView({ title, icon, description }: { title: string; icon: st
   );
 }
 
+// ─── ARCCOS INTEGRATION VIEW ──────────────────────────────────────────────────
+function ArccosView() {
+  const [connected, setConnected] = useState(false);
+  const sgFeed = [
+    { date: 'Jul 5 — R2 BMW International', ott: 0.6, atg: 0.8, arg: 0.2, putt: -1.4, total: 0.2, rounds: 1 },
+    { date: 'Jul 4 — R1 BMW International', ott: 0.4, atg: 1.1, arg: -0.1, putt: -0.9, total: 0.5, rounds: 1 },
+    { date: 'Jul 2 — Practice (Eichenried)', ott: null, atg: null, arg: null, putt: -1.2, total: null, rounds: 0 },
+    { date: 'Jun 29 — R4 KLM Open', ott: 0.9, atg: 1.3, arg: 0.4, putt: -0.8, total: 1.8, rounds: 1 },
+    { date: 'Jun 28 — R3 KLM Open', ott: 0.3, atg: 0.7, arg: 0.2, putt: -1.6, total: -0.4, rounds: 1 },
+  ];
+  const tourUsers = [
+    { name: 'Matt Fitzpatrick', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Used Arccos Pro to win US Open 2022 & DP World Championship 2025' },
+    { name: 'Viktor Hovland', flag: '🇳🇴', tour: 'PGA Tour', note: 'SG Approach analytics for course-specific prep' },
+    { name: 'Nelly Korda', flag: '🇺🇸', tour: 'LPGA', note: 'Full Arccos Pro suite for competitive analytics' },
+    { name: 'Kristoffer Reitan', flag: '🇳🇴', tour: 'DP World Tour', note: '2× DP World Tour winner in 2025 using Arccos Pro Insights' },
+    { name: 'Rasmus Neergaard-Petersen', flag: '🇩🇰', tour: 'DP World Tour', note: 'First title at Crown Australian Open 2025 — Arccos Pro user' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📡" title="Arccos Integration" subtitle="Connect your Arccos sensors to pipe real on-course SG data directly into Lumio Tour." />
+      {/* Status Banner */}
+      <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>📡</div>
+            <div>
+              <div className="text-white font-semibold">Arccos Pro Insights</div>
+              <div className="text-xs text-gray-400">Built by Edoardo Molinari · 35+ PGA / DP World / LPGA players</div>
+            </div>
+          </div>
+          <button onClick={() => setConnected(!connected)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+            {connected ? 'Disconnect' : 'Connect Arccos'}
+          </button>
+        </div>
+        {connected ? (
+          <div className="grid grid-cols-4 gap-3">
+            {[{ label: 'Last Sync', value: '8 min ago' }, { label: 'Rounds Synced', value: '147' }, { label: 'Shots Tracked', value: '12,483' }, { label: 'Sensors', value: '14 active' }].map((s, i) => (
+              <div key={i} className="bg-black/20 rounded-lg p-3 text-center">
+                <div className="text-white font-bold text-sm">{s.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400">Connect your Arccos account to automatically sync on-course SG data from every competitive round — no manual entry required.</div>
+        )}
+      </div>
+      {/* What Arccos unlocks */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">What Arccos Integration Unlocks</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            { icon: '📈', title: 'Automatic SG data', desc: 'Every competitive round syncs to your Strokes Gained dashboard without manual entry. Shot-by-shot data from all 14 sensors.' },
+            { icon: '🎯', title: 'AI Strategy on-course', desc: 'Tour-proven club recommendations for every hole, powered by 1.5 billion shots and your own dispersion profile.' },
+            { icon: '🗺️', title: 'Course fit refinement', desc: 'Your Arccos shot history at a course updates your Course Fit score automatically — no estimate, real data.' },
+            { icon: '📋', title: 'Practice session import', desc: 'Arccos tracks practice sessions too. Putting sessions, approach drills, and range work all flow into your Practice Log.' },
+            { icon: '📉', title: 'Trend alerts', desc: 'Arccos detects SG deterioration patterns before they become crises. Lumio\'s morning briefing flags them before Pete does.' },
+            { icon: '🤝', title: 'Caddie data share', desc: 'Your Arccos dispersion data populates the Caddie Workflow hole strategy notes automatically — sharing becomes instant.' },
+          ].map((f, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 bg-black/20 rounded-lg">
+              <span className="text-xl">{f.icon}</span>
+              <div><div className="text-sm font-medium text-white">{f.title}</div><div className="text-xs text-gray-400 mt-0.5">{f.desc}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Live SG feed */}
+      {connected && (
+        <div className="bg-[#0d0f1a] border border-teal-600/30 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+            <div className="text-sm font-semibold text-white">Live SG Feed — Arccos Data</div>
+            <span className="text-xs text-teal-400 bg-teal-400/10 px-2 py-0.5 rounded-full">● Auto-syncing</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead><tr className="text-gray-500 border-b border-gray-800 bg-gray-900/30">
+                <th className="text-left p-3">Session</th>
+                <th className="text-right p-3">OTT</th><th className="text-right p-3">ATG</th>
+                <th className="text-right p-3">ARG</th><th className="text-right p-3">PUTT</th>
+                <th className="text-right p-3">TOTAL</th>
+              </tr></thead>
+              <tbody>{sgFeed.map((r, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-300">{r.date}</td>
+                  {[r.ott, r.atg, r.arg, r.putt, r.total].map((v, j) => (
+                    <td key={j} className={`p-3 text-right font-medium ${v === null ? 'text-gray-700' : v! >= 0 ? 'text-teal-400' : 'text-red-400'}`}>
+                      {v === null ? '—' : `${v! > 0 ? '+' : ''}${v!.toFixed(1)}`}
+                    </td>
+                  ))}
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {/* Tour players using it */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Tour Players Using Arccos Pro Insights</div>
+        <div className="space-y-3">
+          {tourUsers.map((u, i) => (
+            <div key={i} className="flex items-start gap-3 py-2 border-b border-gray-800/50">
+              <span className="text-xl">{u.flag}</span>
+              <div className="flex-1"><div className="text-sm font-medium text-white">{u.name}</div><div className="text-xs text-gray-400">{u.tour}</div></div>
+              <div className="text-xs text-gray-500 max-w-xs text-right">{u.note}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-xs text-gray-600">35+ players total across PGA Tour, DP World Tour, and LPGA. Arccos Pro Insights led by Edoardo Molinari (Arccos Chief Data Strategist).</div>
+      </div>
+      {/* Pricing note */}
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
+        <div className="text-sm font-semibold text-blue-400 mb-1">ℹ️ Arccos Pro Insights — Access Model</div>
+        <div className="text-xs text-gray-400">Arccos Pro Insights is invitation-only for touring professionals — not purchased like the consumer app ($155/yr). Molinari's team recruits players directly. Lumio Tour's integration works with both: Arccos Pro data flows in for invited tour players, consumer Arccos data flows in for all others. The integration requires an Arccos account (consumer or Pro).</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DATAGOLF INTEGRATION VIEW ────────────────────────────────────────────────
+function DataGolfView() {
+  const [connected, setConnected] = useState(false);
+  const coverage = [
+    { tour: 'DP World Tour', events: '42+', sg: '✓ Round-level', owgr: '✓ Full', courseHistory: '✓', odds: '✓' },
+    { tour: 'PGA Tour', events: '47+', sg: '✓ Shot-level (ShotLink)', owgr: '✓ Full', courseHistory: '✓', odds: '✓' },
+    { tour: 'Korn Ferry Tour', events: '25+', sg: '✓ Round-level', owgr: '✓ Full', courseHistory: '✓', odds: 'Partial' },
+    { tour: 'LIV Golf', events: '14', sg: '✓ Shot-level (2024+)', owgr: 'N/A', courseHistory: '✓', odds: '✓' },
+    { tour: 'Asian Tour', events: '20+', sg: '✓ Round-level', owgr: '✓ Full', courseHistory: 'Partial', odds: 'Partial' },
+    { tour: 'Challenge Tour', events: '30+', sg: 'Round-level', owgr: '✓ Full', courseHistory: 'Partial', odds: '—' },
+  ];
+  const owgrEndpoints = [
+    { endpoint: 'Live Rankings', desc: 'Real-time OWGR position updated every Monday', status: 'Live' },
+    { endpoint: 'Points Decay Calculator', desc: 'Rolling 104-week decay — powers expiry calendar', status: 'Live' },
+    { endpoint: 'Course History & Fit', desc: 'Player SG history per course, fit score calculation', status: 'Live' },
+    { endpoint: 'Field Ratings', desc: 'Strength-of-field data for every DP World Tour event', status: 'Live' },
+    { endpoint: 'Skill Ratings', desc: 'Adjusted SG vs tour average — driving, approach, around green, putting', status: 'Live' },
+    { endpoint: 'Tournament Schedule', desc: 'Season schedule with event IDs, course names, and coordinates', status: 'Live' },
+    { endpoint: 'Historical Results', desc: 'All past results with SG data for scenario modelling', status: 'Live' },
+    { endpoint: 'Win Probability', desc: 'Live win probability during rounds — tournament tracker feed', status: 'Beta' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🌐" title="DataGolf Integration" subtitle="Real OWGR data, SG benchmarks, and course history from the world's best golf analytics API." />
+      {/* Status */}
+      <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>🌐</div>
+            <div>
+              <div className="text-white font-semibold">DataGolf API</div>
+              <div className="text-xs text-gray-400">PGA Tour ShotLink partnership · DP World, Korn Ferry, LIV, Asian Tour coverage</div>
+            </div>
+          </div>
+          <button onClick={() => setConnected(!connected)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+            {connected ? 'Disconnect' : 'Connect DataGolf'}
+          </button>
+        </div>
+        {connected ? (
+          <div className="grid grid-cols-4 gap-3">
+            {[{ label: 'API Status', value: '✓ Connected' }, { label: 'OWGR Updated', value: 'Mon 06:00 GMT' }, { label: 'Tours Covered', value: '6 tours' }, { label: 'Events in DB', value: '2,800+' }].map((s, i) => (
+              <div key={i} className="bg-black/20 rounded-lg p-3 text-center">
+                <div className="text-white font-bold text-sm">{s.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400">DataGolf is the most important single integration for Lumio Tour. It powers the live OWGR tracker, the 104-week points expiry calendar, course fit scores, and SG benchmarks with real competition data — not estimates.</div>
+        )}
+      </div>
+      {/* Why this matters */}
+      <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Why DataGolf Is the Highest-Priority Integration</div>
+        <div className="text-sm text-gray-300 leading-relaxed">Without DataGolf, Lumio Tour's OWGR tracker relies on user-entered data. With it, every Monday morning the platform automatically pulls the updated ranking, calculates which historical points are now in their 13th week (no longer at full value), flags points entering the final quarter of their 104-week window, and updates the scenario model for the current week's event. The difference between "manually checked" and "automatically updated" is the difference between a tool and an operating system.</div>
+      </div>
+      {/* API endpoints */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">API Endpoints Used by Lumio Tour</div></div>
+        <div className="divide-y divide-gray-800/50">
+          {owgrEndpoints.map((e, i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${e.status === 'Live' ? 'bg-teal-500' : 'bg-yellow-500'}`}></div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-white">{e.endpoint}</div>
+                <div className="text-xs text-gray-500">{e.desc}</div>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded ${e.status === 'Live' ? 'bg-teal-600/20 text-teal-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{e.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tour coverage */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Tour Coverage — DataGolf API</div></div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr className="text-gray-500 border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Tour</th><th className="text-left p-3">Events</th><th className="text-left p-3">SG Data</th><th className="text-left p-3">OWGR</th><th className="text-left p-3">Course History</th><th className="text-left p-3">Odds</th>
+            </tr></thead>
+            <tbody>{coverage.map((c, i) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-white font-medium">{c.tour}</td>
+                <td className="p-3 text-gray-400">{c.events}</td>
+                {[c.sg, c.owgr, c.courseHistory, c.odds].map((v, j) => (
+                  <td key={j} className={`p-3 ${v.startsWith('✓') ? 'text-teal-400' : v === 'N/A' || v === '—' ? 'text-gray-600' : 'text-yellow-400'}`}>{v}</td>
+                ))}
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
+        <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ Pricing & Access</div>
+        <div className="text-xs text-gray-400">DataGolf offers a free tier for public data. The paid API tier (needed for SG categories, course history, and real-time data) starts at approximately $150–$500/month depending on call volume and data depth. For Lumio Tour, this is a backend cost — not charged to players — absorbed as product infrastructure.</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRACKMAN INTEGRATION VIEW ────────────────────────────────────────────────
+function TrackManView() {
+  const [connected, setConnected] = useState(false);
+  const sessions = [
+    { date: 'Jul 2 — Pre-tournament range (Eichenried)', club: '7-Iron', balls: 48, ballSpeed: 118, launchAngle: 17.2, spinRate: 7140, carry: 168, dispersion: '±8yd', smash: 1.34 },
+    { date: 'Jun 25 — Short game (NTC London)', club: 'SW (54°)', balls: 60, ballSpeed: 76, launchAngle: 24.8, spinRate: 9800, carry: 84, dispersion: '±6yd', smash: 1.19 },
+    { date: 'Jun 18 — Full bag fitting review', club: 'Driver', balls: 30, ballSpeed: 164, launchAngle: 10.4, spinRate: 2280, carry: 284, dispersion: '±18yd', smash: 1.48 },
+  ];
+  const insights = [
+    { finding: '7-iron carry averages 168yd — 4yd less than assumed', impact: 'Corrects club selection at 170–175yd range. Directly linked to -0.28 SG:Approach.', action: 'Pete flagged: commit to 6-iron from 172yd. Note added to caddie book.' },
+    { finding: 'Driver spin rate 2,280rpm — optimal for current ball speed', impact: 'Ball flight is efficient. No change needed. Carry consistent.', action: 'No action. Maintain current shaft and loft.' },
+    { finding: 'SW face angle: 1.2° open at impact (most sessions)', impact: 'Causes slightly right ball flight on wedge approaches — explains occasional short-siding right.', action: 'Pete: grip check before next practice. Note in swing log.' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎯" title="TrackMan Integration" subtitle="Import practice session data from TrackMan into the practice log — bridging range work to on-course SG." />
+      {/* Status */}
+      <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>🎯</div>
+            <div>
+              <div className="text-white font-semibold">TrackMan 4 / TrackMan iO</div>
+              <div className="text-xs text-gray-400">Pete Larsen's unit · Serial: TM4-2847 · NTC London + on-site at events</div>
+            </div>
+          </div>
+          <button onClick={() => setConnected(!connected)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+            {connected ? 'Disconnect' : 'Connect TrackMan'}
+          </button>
+        </div>
+        {connected ? (
+          <div className="grid grid-cols-4 gap-3">
+            {[{ label: 'Last Session', value: 'Jul 2, 2026' }, { label: 'Sessions Synced', value: '34' }, { label: 'Balls Tracked', value: '4,820' }, { label: 'Unit', value: 'TM4 (outdoor)' }].map((s, i) => (
+              <div key={i} className="bg-black/20 rounded-lg p-3 text-center">
+                <div className="text-white font-bold text-sm">{s.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400">Connect Pete's TrackMan unit to automatically import every practice session. Ball speed, launch angle, spin rate, carry distance, and dispersion all flow into your Practice Log — and link to your on-course SG trends.</div>
+        )}
+      </div>
+      {/* Why it matters */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">The Practice ↔ Competition Bridge</div>
+        <div className="text-sm text-gray-300 leading-relaxed">Most touring professionals have excellent TrackMan data from practice — and no way to connect it to their on-course performance. Pete knows your ball speed has dropped 2mph on 7-iron. He doesn't know whether that's causing the -0.28 SG:Approach on-course, or whether it's a different problem. Lumio Tour connects these: when your TrackMan carry distance changes, the system flags whether it correlates with a shift in your competition SG:Approach. That's a genuine marginal gain.</div>
+      </div>
+      {/* Sessions */}
+      {connected && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Recent TrackMan Sessions</div></div>
+          <div className="divide-y divide-gray-800/50">
+            {sessions.map((s, i) => (
+              <div key={i} className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-white">{s.date}</div>
+                  <div className="text-xs text-gray-500">{s.balls} balls · {s.club}</div>
+                </div>
+                <div className="grid grid-cols-5 gap-3">
+                  {[{ label: 'Ball Speed', val: `${s.ballSpeed}mph` }, { label: 'Launch Angle', val: `${s.launchAngle}°` }, { label: 'Spin Rate', val: `${s.spinRate}rpm` }, { label: 'Carry', val: `${s.carry}yd` }, { label: 'Dispersion', val: s.dispersion }].map((m, j) => (
+                    <div key={j} className="bg-black/20 rounded p-2 text-center">
+                      <div className="text-white font-bold text-sm">{m.val}</div>
+                      <div className="text-xs text-gray-600">{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Insights */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">📊 TrackMan Insights — Pete's Flagged Findings</div>
+        <div className="space-y-4">
+          {insights.map((ins, i) => (
+            <div key={i} className="p-4 bg-black/20 rounded-lg border border-gray-800">
+              <div className="text-sm font-medium text-white mb-1">🔍 {ins.finding}</div>
+              <div className="text-xs text-gray-400 mb-2">Impact: {ins.impact}</div>
+              <div className="text-xs text-teal-400">→ {ins.action}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
+        <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ TrackMan API — Phase 2</div>
+        <div className="text-xs text-gray-400">TrackMan has a developer API for authorised integrations. Connection requires the coach or player to authorise Lumio Tour as a connected app within their TrackMan Performance Studio account. Data shared: session metadata, club averages, ball flight parameters, and dispersion charts. No video data transferred. This is scoped as a Phase 2 integration.</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SHOTLINK VIEW ────────────────────────────────────────────────────────────
+function ShotLinkView() {
+  const phases = [
+    { phase: 'Phase 1 (Now)', label: 'DP World Tour — Arccos + DataGolf', desc: 'Arccos sensors provide on-course shot data. DataGolf API provides round-level SG benchmarks. No ShotLink required — DP World Tour doesn\'t use it.', status: 'active', icon: '✓' },
+    { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — DataGolf SG', desc: 'Scottish Open, BMW International, and other co-sanctioned events have PGA Tour fields. DataGolf\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
+    { phase: 'Phase 3 (2027+)', label: 'PGA Tour Elite — Full ShotLink Integration', desc: 'Direct ShotLink partnership for PGA Tour Elite tier (£699/mo). Every shot tracked at every PGA Tour event. 256,000 data points per tournament week. Full hole strategy intelligence.', status: 'future', icon: '🔗' },
+  ];
+  const shotlinkData = [
+    { metric: 'Shot location (x, y coordinates)', frequency: 'Every shot', accuracy: 'Sub-metre', notes: 'Powered by laser rangefinders + handheld operators at every PGA Tour event' },
+    { metric: 'Ball speed at impact', frequency: 'Measured holes', accuracy: 'High', notes: 'Available where radar equipment deployed (not all holes)' },
+    { metric: 'Carry distance by lie type', frequency: 'Fairway, rough, bunker', accuracy: 'High', notes: 'Allows SG:Approach breakdown by lie condition' },
+    { metric: 'Putt location + length', frequency: 'Every putt', accuracy: 'High', notes: 'Powers SG:Putting from all distances and break directions' },
+    { metric: 'Miss direction (left/right)', frequency: 'Every approach', accuracy: 'High', notes: 'Used for hole strategy: where misses cost most on each hole' },
+    { metric: 'Historical hole mean scores', frequency: 'Per event, 5yr avg', accuracy: 'Exact', notes: 'Foundation of hole strategy intelligence in TourIQ and DataGolf models' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🔗" title="ShotLink Access (Phase 3)" subtitle="PGA Tour's proprietary shot-tracking system. Irrelevant for DP World Tour — essential for the PGA Tour Elite tier." />
+      {/* Critical context box */}
+      <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-green-400 mb-2">The Most Important Context for DP World Tour</div>
+        <div className="text-sm text-gray-300 leading-relaxed">ShotLink does not exist on the DP World Tour. It is a PGA Tour system. Every DP World Tour player (Lumio Tour's primary market) competes without ShotLink coverage at non-co-sanctioned events. This means TourIQ — which is ShotLink-dependent — simply doesn't work for these players. Lumio Tour uses DataGolf (round-level SG) and Arccos (shot-level SG) as its data layer, which covers DP World Tour completely. ShotLink is only relevant when Lumio Tour expands to a PGA Tour Elite tier.</div>
+      </div>
+      {/* Phase roadmap */}
+      <div className="space-y-3">
+        {phases.map((p, i) => (
+          <div key={i} className={`border rounded-xl p-5 ${p.status === 'active' ? 'bg-teal-900/20 border-teal-600/40' : p.status === 'planned' ? 'bg-blue-900/10 border-blue-600/30' : 'bg-gray-900/20 border-gray-700'}`}>
+            <div className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${p.status === 'active' ? 'bg-teal-600/30 text-teal-400' : p.status === 'planned' ? 'bg-blue-600/30 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>{p.icon}</div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-white font-semibold">{p.phase}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-teal-600/20 text-teal-400' : p.status === 'planned' ? 'bg-blue-600/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>{p.label}</span>
+                </div>
+                <div className="text-sm text-gray-400">{p.desc}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* What ShotLink actually tracks */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">What ShotLink Captures — PGA Tour Data Layer</div></div>
+        <div className="divide-y divide-gray-800/50">
+          {shotlinkData.map((s, i) => (
+            <div key={i} className="p-3 flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1.5"></div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-white">{s.metric}</div>
+                <div className="text-xs text-gray-500">{s.notes}</div>
+              </div>
+              <div className="text-xs text-gray-600 text-right w-24">{s.frequency}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Partnership path */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Path to ShotLink Partnership</div>
+        <div className="space-y-2">
+          {[
+            { step: '1', action: 'Establish DataGolf API integration (Phase 1) — DataGolf already has PGA Tour ShotLink access via existing partnership' },
+            { step: '2', action: 'Build DP World Tour player base to 100+ (Phase 1–2) — credibility for PGA Tour conversations' },
+            { step: '3', action: 'Approach PGA Tour Innovation team (Phase 2) — position as the career OS layer above ShotLink, not a competitor' },
+            { step: '4', action: 'Formalise ShotLink data agreement at the Elite tier pricing level (£699/mo) — cost of ShotLink access built into tier margin' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-start gap-3 text-sm text-gray-400">
+              <span className="w-6 h-6 rounded-full bg-green-600/20 text-green-400 text-xs font-bold flex items-center justify-center flex-shrink-0">{s.step}</span>
+              <span>{s.action}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── LPGA / LET MODE VIEW ─────────────────────────────────────────────────────
+function LPGAView() {
+  const [activeTab, setActiveTab] = useState<'overview'|'rankings'|'schedule'|'roadmap'>('overview');
+  const lpgaTours = [
+    { tour: 'LPGA Tour', players: '~170 active', rankings: 'Rolex Women\'s World Golf Rankings (RWGR)', analytic: 'No dedicated analytics platform', platform: 'Nothing beyond LPGA.com portal' },
+    { tour: 'Ladies European Tour (LET)', players: '~200 active', rankings: 'RWGR + LET Order of Merit', analytic: 'No analytics platform', platform: 'Nothing beyond LET portal' },
+    { tour: 'LPGA Epson Tour (Dev)', players: '~120 active', rankings: 'RWGR', analytic: 'No analytics platform', platform: 'Spreadsheets and email' },
+    { tour: 'Symetra Tour', players: 'Merged into Epson', rankings: 'Historical', analytic: 'No analytics platform', platform: 'Dissolved' },
+  ];
+  const rwgrSchedule = [
+    { event: 'AIG Women\'s Open', cat: 'Major', venue: 'Lytham & St Annes', date: 'Aug 2026', rwgr: '100 pts (winner)', prize: '$10M' },
+    { event: 'Chevron Championship', cat: 'Major', venue: 'The Club at Carlton Woods', date: 'Apr 2026', rwgr: '100 pts', prize: '$10M' },
+    { event: 'US Women\'s Open', cat: 'Major', venue: 'Quaker Ridge GC', date: 'Jun 2026', rwgr: '100 pts', prize: '$12M' },
+    { event: 'The Annika (Rolex Series)', cat: 'LPGA Rolex', venue: 'Pelican GC, Florida', date: 'Nov 2026', rwgr: '65 pts', prize: '$4M' },
+    { event: 'BMW Ladies Championship', cat: 'LET Rolex', venue: 'Seomjin River CC, Korea', date: 'Oct 2026', rwgr: '60 pts', prize: '$3.25M' },
+  ];
+  const arccosWomen = [
+    { name: 'Nelly Korda', flag: '🇺🇸', rank: '#1 RWGR', note: 'Full Arccos Pro analytics suite' },
+    { name: 'Lydia Ko', flag: '🇳🇿', rank: 'Top 10 RWGR', note: 'SG tracking across LPGA season' },
+    { name: 'Brooke Henderson', flag: '🇨🇦', rank: 'Top 15 RWGR', note: 'Arccos course strategy tools' },
+    { name: 'Georgia Hall', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 'Top 40 RWGR', note: 'LET + LPGA Arccos user' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🏆" title="LPGA / LET Mode" subtitle="The women's golf gap is total — no analytics platform, no career OS, nothing beyond the tour portal. Lumio Tour is first." />
+      <div className="flex gap-2 flex-wrap">
+        {(['overview','rankings','schedule','roadmap'] as const).map(t => (
+          <button key={t} onClick={() => setActiveTab(t)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${activeTab === t ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-[#0d0f1a] border border-gray-800 text-gray-400 hover:text-white'}`}>
+            {t === 'overview' ? 'Market Overview' : t === 'rankings' ? 'RWGR System' : t === 'schedule' ? 'Schedule & Points' : 'Build Roadmap'}
+          </button>
+        ))}
+      </div>
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
+          <div className="bg-[#0d0f1a] border border-red-600/30 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-3">The Women's Golf Technology Gap — Total</div>
+            <div className="text-sm text-gray-300 leading-relaxed">For women's professional golfers, the gap is not partial — it is total. There is no dedicated analytics platform for LPGA or LET players. No performance OS. No RWGR tracker. No sponsorship manager. No caddie workflow module. Nothing beyond the tour portal for entries and rankings. Arccos Pro Insights has 35+ women (Nelly Korda, etc.) getting on-course analytics — but nothing commercial. Lumio Tour would be the first technology platform ever built specifically for the women's professional golf career. The WTA gap in tennis is identical, and it's exactly Lumio Tour's strongest entry point in tennis. The same play is available in golf.</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+              <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+                <th className="text-left p-3">Tour</th><th className="text-left p-3">Players</th><th className="text-left p-3">Analytics</th><th className="text-left p-3">Career OS</th>
+              </tr></thead>
+              <tbody>{lpgaTours.map((t, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-white font-medium">{t.tour}</td>
+                  <td className="p-3 text-gray-400 text-xs">{t.players}</td>
+                  <td className="p-3 text-red-400 text-xs">{t.analytic}</td>
+                  <td className="p-3 text-red-400 text-xs">{t.platform}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Women Using Arccos Pro (Confirmation the Market Exists)</div>
+            {arccosWomen.map((p, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+                <span className="text-xl">{p.flag}</span>
+                <div className="flex-1"><div className="text-sm text-white">{p.name}</div><div className="text-xs text-gray-500">{p.rank}</div></div>
+                <div className="text-xs text-gray-400">{p.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {activeTab === 'rankings' && (
+        <div className="space-y-4">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-3">Rolex Women's World Golf Rankings (RWGR)</div>
+            <div className="space-y-2 text-sm text-gray-300">
+              <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Updated weekly (Monday). Same 104-week rolling average system as OWGR — identical calculation framework.</span></div>
+              <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Points awarded based on field strength and finishing position. Major winners earn 100 points. LET wins earn proportionally less.</span></div>
+              <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Top 50 RWGR qualify for LPGA Majors. Olympic qualification uses RWGR top 15 (max 4 per country).</span></div>
+              <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Race to the CME Globe (LPGA) runs parallel — season-long points race ending at the CME Group Tour Championship in November.</span></div>
+              <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>LET Order of Merit runs separately — determines LET category for following season and Solheim Cup qualification.</span></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'How it differs from OWGR', val: 'Same 104-week rolling average formula. Different field strength multipliers for LPGA vs LET events.' },
+              { label: 'Points decay', val: 'Identical 13-week full value then 91-week linear decay — 1/92 lost per week from week 14 to 104.' },
+              { label: 'Minimum events', val: '35 minimum (vs 40 for OWGR). Maximum divisor 50 (vs 52 for OWGR).' },
+              { label: 'Race to the CME Globe', val: 'Season-long LPGA points race. £1.5M winner\'s bonus at CME Group Championship to top-8 qualified.' },
+            ].map((s, i) => (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+                <div className="text-xs text-green-400 font-semibold mb-1">{s.label}</div>
+                <div className="text-sm text-gray-300">{s.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {activeTab === 'schedule' && (
+        <div className="space-y-4">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">LPGA / LET Key Events 2026</div></div>
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+                <th className="text-left p-3">Event</th><th className="text-left p-3">Category</th><th className="text-left p-3">Date</th><th className="text-left p-3">RWGR Points</th><th className="text-left p-3">Prize Fund</th>
+              </tr></thead>
+              <tbody>{rwgrSchedule.map((e, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-white font-medium">{e.event}</td>
+                  <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${e.cat === 'Major' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-purple-600/20 text-purple-400'}`}>{e.cat}</span></td>
+                  <td className="p-3 text-gray-400 text-xs">{e.date}</td>
+                  <td className="p-3 text-teal-400 font-medium text-xs">{e.rwgr}</td>
+                  <td className="p-3 text-gray-400 text-xs">{e.prize}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {activeTab === 'roadmap' && (
+        <div className="space-y-4">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">What Adapting Lumio Tour for LPGA / LET Requires</div>
+            <div className="space-y-3">
+              {[
+                { effort: 'Low', item: 'RWGR tracker replaces OWGR tracker', desc: 'Same rolling 104-week formula, different data source. DataGolf API covers RWGR.' },
+                { effort: 'Low', item: 'Race to the CME Globe replaces Race to Dubai', desc: 'Season-long points race. Identical UI — just different data feed.' },
+                { effort: 'Low', item: 'LPGA / LET tournament calendar', desc: 'Replace DP World Tour schedule with LPGA / LET events. DataGolf covers the full LPGA calendar.' },
+                { effort: 'Med', item: 'Female player profile and team structure', desc: 'Same team roles but caddie dynamics differ slightly. Player card adapted.' },
+                { effort: 'Med', item: 'Solheim Cup / Olympic qualification tracker', desc: 'Replaces Davis Cup / Ryder Cup module. Solheim Cup uses RWGR + LET Order of Merit.' },
+                { effort: 'High', item: 'LPGA ShotLink equivalent data', desc: 'LPGA has introduced more advanced shot tracking but not at PGA Tour ShotLink level. Use Arccos + DataGolf initially.' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 bg-black/20 rounded-lg">
+                  <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 mt-0.5 ${s.effort === 'Low' ? 'bg-teal-600/20 text-teal-400' : s.effort === 'Med' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.effort}</span>
+                  <div><div className="text-sm font-medium text-white">{s.item}</div><div className="text-xs text-gray-400 mt-0.5">{s.desc}</div></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
+            <div className="text-sm font-semibold text-green-400 mb-2">Route In</div>
+            <div className="text-xs text-gray-400">The LPGA route in is via player agents (IMG, Hambric, Excel also manage women's players). Approaching Arccos directly — Edoardo Molinari already works with 35+ women — could fast-track access to the warmest leads. One well-known LPGA player on Lumio Tour is the equivalent of Kristoffer Reitan on the DP World Tour side.</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MOBILE APP VIEW ──────────────────────────────────────────────────────────
+function MobileAppView() {
+  const features = [
+    { section: 'OVERVIEW', items: ['Morning Briefing (voice playback)', 'Dashboard — today\'s schedule and alerts', 'Notification centre'] },
+    { section: 'ON COURSE', items: ['Caddie Workflow — hole strategy + carry sheet', 'In-round stat logging (fairways, GIR, putts, sand saves)', 'Post-round debrief voice note', 'WHOOP recovery check-in'] },
+    { section: 'PERFORMANCE', items: ['OWGR position and Race to Dubai standing', 'SG dashboard — last 5 rounds', 'Points expiry alert view', 'Arccos SG sync status'] },
+    { section: 'COMMERCIAL', items: ['Sponsor obligation due today', 'Contract expiry alerts', 'Prize money + quick financial summary', 'Agent pipeline quick view'] },
+    { section: 'TEAM', items: ['Team message feed (coach notes, physio log)', 'Practice session log (quick entry)', 'Recovery score and injury status', 'Stringer contact card (direct call)'] },
+  ];
+  const mobileFirst = [
+    { why: 'Caddie needs carry sheet at first tee', solution: 'Caddie Workflow fully functional on mobile — loads offline if signal lost on course' },
+    { why: 'Morning briefing plays before player leaves hotel', solution: 'Audio briefing auto-plays at set time. Player sees bullet summary on lock screen notification.' },
+    { why: 'Physio logs treatment at 7am before range session', solution: 'Quick injury log entry — one screen, 30 seconds. Clearance status updates player view instantly.' },
+    { why: 'Agent needs sponsor obligation reminder on event day', solution: 'Agent mobile view shows obligations due today. Deadline alerts push-notified 48h, 24h, and 2h before.' },
+    { why: 'Player enters post-round SG on the drive back', solution: 'Quick round entry: score + SG categories in under 2 minutes. Voice-to-text for coach notes.' },
+    { why: 'No reliable WiFi in caddie lounge at many venues', solution: 'Core data cached offline. Caddie yardage book, carry sheet, and hole strategy work without connectivity.' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📲" title="Mobile App" subtitle="A hard launch requirement, not a roadmap item. Touring professionals travel 30+ weeks per year." />
+      {/* Critical context */}
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-red-400 mb-2">🚨 Non-Negotiable Launch Requirement</div>
+        <div className="text-sm text-gray-300 leading-relaxed">The caddie needs hole strategy notes on their phone at the first tee at 9:42am Thursday. The player needs the morning briefing before they step into the car. The physio needs to log treatment at 7am on the physio table. None of this happens on a desktop. Lumio Tour must be fully functional on iOS and Android from day one — not a stripped-down version, not "coming soon", not a mobile-optimised web view without offline support. Full feature parity with offline capability is the bar.</div>
+      </div>
+      {/* Feature parity matrix */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Mobile Feature Scope — Day One</div>
+        <div className="space-y-4">
+          {features.map((sec, i) => (
+            <div key={i}>
+              <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-2">{sec.section}</div>
+              <div className="space-y-1">
+                {sec.items.map((item, j) => (
+                  <div key={j} className="flex items-center gap-2 text-sm text-gray-300">
+                    <div className="w-4 h-4 rounded flex items-center justify-center bg-teal-600/20 flex-shrink-0">
+                      <span className="text-teal-400 text-xs">✓</span>
+                    </div>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Why mobile-first */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">The Mobile Use Cases — Why Each One Matters</div>
+        <div className="space-y-3">
+          {mobileFirst.map((m, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg border border-gray-800">
+              <div className="text-xs text-yellow-400 font-medium mb-1">👤 {m.why}</div>
+              <div className="text-xs text-teal-400">→ {m.solution}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tech approach */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
+        <div className="space-y-2">
+          {[
+            { opt: 'React Native (Expo)', pros: 'Single codebase for iOS + Android. Shares component logic with Next.js web portal. Fastest time to market.', cons: 'Some native features need bridging. Performance slightly below fully native.' },
+            { opt: 'Progressive Web App (PWA)', pros: 'Zero extra codebase. Installable from browser. Service workers enable offline.', cons: 'iOS PWA limitations (push notifications restricted). App Store visibility limited.' },
+            { opt: 'Native Swift + Kotlin', pros: 'Best performance and OS integration. Full App Store presence.', cons: 'Two separate codebases. Significantly slower to build and maintain.' },
+          ].map((o, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg">
+              <div className="text-sm font-medium text-white mb-1">{o.opt}</div>
+              <div className="text-xs text-teal-400 mb-0.5">✓ {o.pros}</div>
+              <div className="text-xs text-red-400">✗ {o.cons}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-xs text-gray-500">Recommendation: React Native (Expo) for Phase 1 mobile — fastest path to full iOS + Android coverage with shared logic from the existing Next.js codebase. Upgrade to fully native components where performance demands it in Phase 2.</div>
+      </div>
+      {/* Download placeholder */}
+      <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-6 flex flex-col items-center text-center">
+        <div className="text-4xl mb-3">📲</div>
+        <div className="text-white font-semibold mb-1">Lumio Tour — Mobile App</div>
+        <div className="text-sm text-gray-400 mb-4">Coming in Phase 1B · iOS + Android</div>
+        <div className="flex gap-3">
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl"></span>
+            <div className="text-left"><div className="text-xs text-gray-500">Download on the</div><div className="text-sm font-semibold text-white">App Store</div></div>
+          </div>
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl">▶</span>
+            <div className="text-left"><div className="text-xs text-gray-500">Get it on</div><div className="text-sm font-semibold text-white">Google Play</div></div>
+          </div>
+        </div>
+        <div className="mt-4 text-xs text-gray-600">Register your interest at lumiotour.com — early access for pilot players from Month 5</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function GolfTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const player = DEMO_PLAYER;
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
 
   const renderView = () => {
     switch (activeSection) {
@@ -1278,6 +1916,12 @@ export default function GolfTourPage() {
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." />;
       case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." />;
       case 'settings':    return <PlaceholderView icon="⚙️" title="Settings" description="Profile, notifications, team access, data integrations (Arccos, WHOOP, TrackMan), and billing." />;
+      case 'arccos':      return <ArccosView />;
+      case 'datagolf':    return <DataGolfView />;
+      case 'trackman':    return <TrackManView />;
+      case 'shotlink':    return <ShotLinkView />;
+      case 'lpga':        return <LPGAView />;
+      case 'mobileapp':   return <MobileAppView />;
       default:            return <DashboardView player={player} />;
     }
   };
