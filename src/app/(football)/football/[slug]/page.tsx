@@ -464,6 +464,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
   const PRIMARY = '#003DA5'
   const DARK = '#002D7A'
+  const SECONDARY = '#F1C40F'
 
   // group items by section
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
@@ -651,7 +652,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
                   <Mic size={14} strokeWidth={1.75} />
                 </button>
               </div>
-              <p className="text-red-300 text-sm mb-2">{date}</p>
+              <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{date}</p>
               <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
@@ -673,7 +674,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
                 <span className="text-3xl">{weather.icon}</span>
                 <div>
                   <div className="text-xl font-black text-white">{weather.temp}</div>
-                  <div className="text-xs text-red-300">{weather.condition}</div>
+                  <div className="text-xs" style={{ color: '#F1C40F' }}>{weather.condition}</div>
                 </div>
               </div>
               <WorldClock />
@@ -716,7 +717,7 @@ function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
       {FOOTBALL_QUICK_ACTIONS.map(a => (
         <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
           <a.icon size={12} />{a.label}
         </button>
       ))}
@@ -822,7 +823,7 @@ function MorningRoundup() {
                           <textarea value={replyText[msg.id] || ''} onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))} placeholder="Write your reply..." rows={2}
                             className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
                           <div className="flex gap-2 mt-1.5">
-                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#003DA5', color: '#fff' }}>Send</button>
+                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>Send</button>
                             <button onClick={() => setShowReply(null)} className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
                           </div>
                         </div>
@@ -882,7 +883,7 @@ function FixturesPanel() {
 const DEMO_PHOTOS = [
   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
   'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80',
+  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
 ]
 
 function PhotoFrame() {
@@ -1086,7 +1087,7 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
     <div className="flex items-start gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <span className="text-lg mt-0.5">{priority}</span>
       <div className="flex-1 min-w-0"><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{title}</p><p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{desc}</p></div>
-      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F9FAFB' }}>{action}</button>
+      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>{action}</button>
     </div>
   )
 }
@@ -1665,7 +1666,7 @@ function FootballEmptyState({ dept }: { dept: string }) {
       <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No {dept} data yet</h2>
       <p className="text-sm max-w-md mb-8" style={{ color: '#9CA3AF' }}>Import your club data or explore with demo data to unlock {dept} features.</p>
       <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }}
-        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>
+        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
         ✨ Explore with Demo Data
       </button>
       <p className="text-xs mt-3" style={{ color: '#4B5563' }}>Demo data is pre-filled sample data so you can explore all features</p>
@@ -1697,7 +1698,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
               <div className="text-5xl mb-4">⚽</div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
               <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
-              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>✨ Explore with Demo Data</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
               <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1839,7 +1840,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         <div className="flex items-center gap-2 flex-wrap">
           {actionButtons.map((a, i) => (
             <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}
@@ -1858,7 +1859,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         </div>
       )}
 
-      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>{toast}</div>}
+      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{toast}</div>}
     </div>
   )
 }
@@ -2330,7 +2331,7 @@ function SquadView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -2492,7 +2493,7 @@ function SquadView() {
           { label: 'Contract Manager', icon: FileText },
           { label: 'Log Injury', icon: Heart },
         ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -2724,7 +2725,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 </select>
               </div>
             </div>
-            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#fff' }}>
+            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
               Start Research →
             </button>
           </div>
@@ -2743,7 +2744,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 }}>{i < 2 ? '✓' : '...'} {stage}</span>
               ))}
             </div>
-            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#fff' }}>
+            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
               Skip to Results →
             </button>
           </div>
@@ -2770,7 +2771,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 <p className="text-xs" style={{ color: '#9CA3AF' }}>{t.summary}</p>
               </div>
             ))}
-            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#fff' }}>
+            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
               Take Action →
             </button>
           </div>
@@ -2819,7 +2820,7 @@ function MedicalView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => medAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -2997,7 +2998,7 @@ function MedicalView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3024,7 +3025,7 @@ function ScoutingView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3235,7 +3236,7 @@ function AnalyticsView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -3388,7 +3389,7 @@ function AnalyticsView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3413,7 +3414,7 @@ function MediaView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3525,7 +3526,7 @@ function MatchdayView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3685,7 +3686,7 @@ function PerformanceGPSView() {
         ].map((a, i) => (
           <button key={i} onClick={() => { setToast(`${a.label} — opening workflow...`); setTimeout(() => setToast(null), 2500) }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4061,7 +4062,7 @@ function PerformanceGPSView() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold" style={{ backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
           {toast}
         </div>
       )}
@@ -4087,7 +4088,7 @@ function TrainingView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4195,7 +4196,7 @@ function FinanceView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4293,7 +4294,7 @@ function _OriginalStaffView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4390,7 +4391,7 @@ function FacilitiesView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4522,7 +4523,7 @@ function SocialMediaView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4595,7 +4596,7 @@ function SocialMediaView() {
         </div>
       </div>
 
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>{socToast}</div>}
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
     </div>
   )
 }
@@ -4621,7 +4622,7 @@ function DynamicsView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4657,7 +4658,7 @@ function DynamicsView() {
         <tbody>{[{ p: 'Marcus Webb', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Danny Okafor', o: 'Missed training', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Kenji Nakamura', o: 'Red card reaction', d: '22 Mar', pun: 'Fine: £1,000', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
       </div>
 
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>{socToast}</div>}
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
     </div>
   )
 }
@@ -4677,7 +4678,7 @@ function PSRView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4708,7 +4709,7 @@ function PSRView() {
         </div>
       </div>
 
-      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>{psrToast}</div>}
+      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{psrToast}</div>}
     </div>
   )
 }
@@ -4725,7 +4726,7 @@ function SquadPlannerView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4764,7 +4765,7 @@ function SquadPlannerView() {
         {ACADEMY_STANDOUTS.map(p => <div key={p.name} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#F9FAFB' }}>{p.name} — {p.position}</span><span className="text-xs" style={{ color: '#F1C40F' }}>Ready: {p.pathway === 'First Team Ready' ? 'Now' : '2027'}</span></div>)}
       </div>
 
-      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>{spToast}</div>}
+      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{spToast}</div>}
     </div>
   )
 }
@@ -4962,7 +4963,7 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 function Toast({ message }: { message: string | null }) {
   if (!message) return null
   return (
-    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F9FAFB' }}>
+    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
       {message}
     </div>
   )
@@ -5061,9 +5062,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
       {/* Demo banner */}
       {isFootballDemo && (
-        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F9FAFB' }}>
+        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F' }}>
           <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F' }}>Clear Demo Data</button>
         </div>
       )}
 
