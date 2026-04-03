@@ -1221,9 +1221,10 @@ function TeamInfoTab() {
             </div>
           </div>
 
-          {/* Pitch */}
-          <div className="rounded-2xl" style={{ border: '1px solid #1F2937', overflow: 'visible' }}>
-            <div style={{ position: 'relative', width: '100%', paddingBottom: '120%', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: 16, overflow: 'visible' }}>
+          {/* Pitch + Squad Panel — 2 columns */}
+          <div className="flex gap-0 rounded-2xl overflow-hidden" style={{ border: '1px solid #1F2937', height: 500 }}>
+            {/* Left: Pitch (50%) */}
+            <div style={{ width: '50%', position: 'relative', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)' }}>
               <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.3 }}>
                 <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
                 <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
@@ -1235,6 +1236,47 @@ function TeamInfoTab() {
               </svg>
               {starters.map(p => { const pos = positions[p.id]; if (!pos) return null; return (<div key={p.id} style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: selectedPlayer === p.id ? 20 : 10 }}><FifaCard p={p} size="pitch" selected={selectedPlayer === p.id} onClick={() => handlePitchClick(p.id)} /></div>) })}
             </div>
+
+            {/* Right: Squad Panel (50%) */}
+            <div style={{ width: '50%', backgroundColor: '#0a0d13', borderLeft: '1px solid #1F2937', overflowY: 'auto' }}>
+              <div className="px-3 py-2.5" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Squad ({ALL_SQUAD.length})</p>
+                <p className="text-[10px]" style={{ color: '#6B7280' }}>{starters.length} starting · {bench.length} bench</p>
+              </div>
+              {[
+                { label: '🧤 GOALKEEPERS', positions: ['GK'] },
+                { label: '⬛ DEFENDERS', positions: ['RB', 'CB', 'LB'] },
+                { label: '🟦 MIDFIELDERS', positions: ['CM', 'DM', 'CAM', 'AM'] },
+                { label: '🔴 ATTACKERS', positions: ['RW', 'LW', 'ST', 'CF'] },
+              ].map(group => {
+                const players = ALL_SQUAD.filter(p => group.positions.includes(p.pos))
+                if (!players.length) return null
+                const starterIds = new Set(starters.map(p => p.id))
+                return (
+                  <div key={group.label}>
+                    <div className="px-3 pt-3 pb-1 flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>{group.label}</span>
+                      <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+                    </div>
+                    {players.map(p => {
+                      const isStarting = starterIds.has(p.id)
+                      const c = posColor[p.pos] || '#6B7280'
+                      return (
+                        <div key={p.id} className="flex items-center gap-2.5 px-3 py-1.5">
+                          <div className="flex items-center justify-center rounded-full text-[9px] font-bold shrink-0" style={{ width: 32, height: 32, backgroundColor: `${c}25`, color: c }}>{p.initials}</div>
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                            <span className="text-xs truncate" style={{ color: isStarting ? '#F9FAFB' : '#6B7280' }}>{p.name}</span>
+                            <span className="text-[8px] font-bold px-1 rounded shrink-0" style={{ backgroundColor: `${c}20`, color: c }}>{p.pos}</span>
+                          </div>
+                          <span className="text-[11px] font-black w-6 text-center shrink-0" style={{ color: c }}>{p.overall}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: isStarting ? 'rgba(13,148,136,0.12)' : 'rgba(255,255,255,0.03)', color: isStarting ? '#0D9488' : '#4B5563' }}>{isStarting ? 'Starting' : 'Sub'}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Dugout */}
@@ -1243,7 +1285,7 @@ function TeamInfoTab() {
             {COACHES.map(c => (<div key={c.name} className="flex items-center gap-2"><div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: c.color + '25', color: c.color, border: '1px solid ' + c.color + '50' }}>{c.initials}</div><div><p className="text-[10px] font-bold" style={{ color: '#F9FAFB' }}>{c.name}</p><p className="text-[8px]" style={{ color: '#6B7280' }}>{c.role}</p></div></div>))}
           </div>
 
-          {/* Bench & Squad */}
+          {/* Bench Cards */}
           <div>
             <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>BENCH &amp; SQUAD</p>
             <div className="flex flex-wrap gap-2">
