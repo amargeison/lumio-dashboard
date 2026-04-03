@@ -2030,3 +2030,4 @@ export default function GolfTourPage() {
     </div>
   );
 }
+
