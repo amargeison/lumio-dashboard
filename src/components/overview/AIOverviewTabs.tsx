@@ -855,15 +855,36 @@ export function AITeam({ ctx, onAction, staffFromSupabase = [] }: { ctx: AIConte
 
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <>
-          {/* Staff Today */}
+          {/* Staff Today — teaser preview when no staff imported */}
           {subTab === 'staff' && !hasImported && items.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex items-center justify-center rounded-2xl mb-4" style={{ width: 64, height: 64, backgroundColor: 'rgba(108,63,197,0.1)' }}>
-                <Users size={28} style={{ color: '#6C3FC5' }} />
+            <div className="relative">
+              <div style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { name: 'James Hartley', role: 'CEO', dept: 'Executive', initials: 'JH', color: '#7C3AED' },
+                    { name: 'Sophie Brennan', role: 'Marketing Director', dept: 'Marketing', initials: 'SB', color: '#EC4899' },
+                    { name: 'Marcus Webb', role: 'Sales Director', dept: 'Sales', initials: 'MW', color: '#0D9488' },
+                    { name: 'Rachel Osei', role: 'Operations Manager', dept: 'Operations', initials: 'RO', color: '#F59E0B' },
+                    { name: 'Tom Fielding', role: 'Support Lead', dept: 'Support', initials: 'TF', color: '#6D28D9' },
+                    { name: 'Claire Donovan', role: 'IT Director', dept: 'IT', initials: 'CD', color: '#0EA5E9' },
+                  ].map(m => (
+                    <div key={m.name} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex items-center justify-center rounded-full text-xs font-bold shrink-0" style={{ width: 40, height: 40, backgroundColor: m.color, color: '#F9FAFB' }}>{m.initials}</div>
+                        <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{m.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p><div className="flex items-center gap-1.5 mt-1"><span className="inline-block rounded-full" style={{ width: 6, height: 6, backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Available</span></div></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>No team members yet</h3>
-              <p className="text-sm mb-5 max-w-sm" style={{ color: '#6B7280' }}>Upload a CSV or connect your HR system in Settings to get started.</p>
-              <a href="/settings" className="text-sm font-semibold px-5 py-2.5 rounded-xl" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Go to Settings</a>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', maxWidth: 360, backdropFilter: 'blur(4px)' }}>
+                  <p className="text-2xl mb-2">👀</p>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: '#F9FAFB' }}>This is how your team will look</h3>
+                  <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Import your team to unlock staff cards, org chart and team intelligence</p>
+                  <a href="/settings" className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+                </div>
+              </div>
             </div>
           )}
           {subTab === 'staff' && (hasImported || items.length > 0) && (
@@ -1028,7 +1049,12 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
   if (staffCards.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm" style={{ color: '#6B7280' }}>No team members yet — import staff via Settings.</p>
+        <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.4)', maxWidth: 360 }}>
+          <p className="text-2xl mb-2">🃏</p>
+          <h3 className="font-bold text-base mb-2" style={{ color: '#F9FAFB' }}>Team Info cards will appear here</h3>
+          <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Import your team to see FIFA-style staff cards with stats and profiles</p>
+          <a href="/settings" className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+        </div>
       </div>
     )
   }

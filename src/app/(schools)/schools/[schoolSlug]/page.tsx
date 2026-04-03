@@ -1507,6 +1507,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             ))}
           </div>
 
+          {/* AI suggestions banner */}
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-0" style={{ backgroundColor: 'rgba(108,63,197,0.08)', border: '1px solid rgba(108,63,197,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#A78BFA' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+
           {/* STAFF TODAY */}
           {staffSubTab === 'today' && (
             <>
