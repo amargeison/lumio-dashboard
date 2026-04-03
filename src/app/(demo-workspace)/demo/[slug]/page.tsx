@@ -1262,6 +1262,239 @@ function DemoMorningRoundup() {
   )
 }
 
+// ─── Insights Hub ─────────────────────────────────────────────────────────────
+
+function InsightCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937' }}>{children}</div>
+}
+function SectionHead({ text }: { text: string }) {
+  return <h3 className="text-sm font-bold mb-4" style={{ color: '#F9FAFB', borderLeft: '3px solid #6C3FC5', paddingLeft: 10 }}>{text}</h3>
+}
+
+function DemoInsightsHub() {
+  // Revenue trend data
+  const revWeeks = [82,79,85,91,88,94,97,93,99,102,98,107]
+  const revAvg = Math.round(revWeeks.reduce((a,b)=>a+b,0)/revWeeks.length)
+  const revMax = Math.max(...revWeeks)
+  const revMin = Math.min(...revWeeks)
+  const chartW = 500, chartH = 140, padL = 40, padB = 20
+  const usableW = chartW - padL, usableH = chartH - padB
+  const points = revWeeks.map((v,i) => `${padL + (i/(revWeeks.length-1))*usableW},${usableH - ((v-revMin)/(revMax-revMin))*usableH}`).join(' ')
+  const avgY = usableH - ((revAvg-revMin)/(revMax-revMin))*usableH
+
+  // Acquisition chart
+  const acqData = [{m:'Oct',n:14,c:3},{m:'Nov',n:11,c:2},{m:'Dec',n:18,c:4},{m:'Jan',n:9,c:2},{m:'Feb',n:13,c:1},{m:'Mar',n:16,c:3}]
+  const acqMax = Math.max(...acqData.map(d=>Math.max(d.n,d.c)))
+
+  return (
+    <div className="space-y-5">
+      {/* Existing AI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{l:'MRR',v:'£28,400',t:'+12% MoM',c:'#22C55E'},{l:'Active Customers',v:'171',t:'+8 this month',c:'#0D9488'},{l:'Pipeline Value',v:'£128k',t:'34 open deals',c:'#8B5CF6'},{l:'Team Utilisation',v:'78%',t:'vs 72% last month',c:'#F59E0B'}].map(m=>(
+          <div key={m.l} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}><p className="text-xs" style={{color:'#6B7280'}}>{m.l}</p><p className="text-xl font-black mt-1" style={{color:'#F9FAFB'}}>{m.v}</p><p className="text-xs mt-1" style={{color:m.c}}>{m.t}</p></div>
+        ))}
+      </div>
+      <InsightCard>
+        <div className="flex items-center gap-2 mb-3"><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-sm font-bold" style={{color:'#F9FAFB'}}>AI Observations</span></div>
+        <div className="space-y-2.5">
+          {[{dot:'#22C55E',text:'MRR growth accelerating — 12% month-on-month, strongest since launch'},{dot:'#EF4444',text:'3 high-value deals stalled in pipeline — combined value £42k. Schedule follow-ups this week.'},{dot:'#F59E0B',text:'Support ticket volume up 18% — consider adding a self-serve knowledge base'},{dot:'#0D9488',text:'Trial conversion rate improved to 34% after day-3 email sequence was activated'},{dot:'#8B5CF6',text:'Marketing ROI: LinkedIn outbound generating 3x the conversion rate of cold email'},{dot:'#3B82F6',text:'HR onboarding backlog: 3 new starters pending equipment provisioning from IT'}].map((o,i)=>(
+            <div key={i} className="flex items-start gap-2.5"><div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{backgroundColor:o.dot}}/><p className="text-xs leading-relaxed" style={{color:'#D1D5DB'}}>{o.text}</p></div>
+          ))}
+        </div>
+      </InsightCard>
+
+      {/* S1 — Executive KPI Strip */}
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {[
+          {l:'Monthly Revenue',v:'£380K',t:'▲+8%',up:true,ic:'💰'},{l:'Active Clients',v:'142',t:'▲+12',up:true,ic:'👥'},
+          {l:'Pipeline Value',v:'£2.4M',t:'▲+£180K',up:true,ic:'📊'},{l:'Avg Deal Size',v:'£16,900',t:'▲+5%',up:true,ic:'📈'},
+          {l:'Team Utilisation',v:'87%',t:'▼-2%',up:false,ic:'⚡'},{l:'NPS Score',v:'72',t:'▲+4',up:true,ic:'⭐'},
+        ].map(k=>(
+          <InsightCard key={k.l} className="min-w-[150px] shrink-0">
+            <span className="text-lg">{k.ic}</span>
+            <p className="text-xl font-black mt-1" style={{color:'#F9FAFB'}}>{k.v}</p>
+            <p className="text-[10px]" style={{color:'#6B7280'}}>{k.l}</p>
+            <p className="text-xs font-bold mt-1" style={{color:k.up?'#10B981':'#EF4444'}}>{k.t}</p>
+          </InsightCard>
+        ))}
+      </div>
+
+      {/* S2 — Revenue Trend + Pipeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <InsightCard>
+          <div className="flex items-center justify-between mb-3">
+            <SectionHead text="Revenue Trend (12 Weeks)" />
+            <span className="text-xs font-bold" style={{color:'#10B981'}}>↑ 30% vs same period last year</span>
+          </div>
+          <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{maxHeight:160}}>
+            <line x1={padL} y1={avgY} x2={chartW} y2={avgY} stroke="#6C3FC5" strokeWidth={1} strokeDasharray="4 4" opacity={0.5}/>
+            <text x={padL-4} y={avgY+3} textAnchor="end" fill="#6B7280" fontSize={8}>£{revAvg}K</text>
+            <polyline points={points} fill="none" stroke="#0D9488" strokeWidth={2} strokeLinejoin="round"/>
+            {revWeeks.map((v,i)=>{const x=padL+(i/(revWeeks.length-1))*usableW;const y=usableH-((v-revMin)/(revMax-revMin))*usableH;return <circle key={i} cx={x} cy={y} r={3} fill="#0D9488" stroke="#0D1017" strokeWidth={1.5}/>})}
+            {revWeeks.map((v,i)=>{const x=padL+(i/(revWeeks.length-1))*usableW;return <text key={`l${i}`} x={x} y={chartH-2} textAnchor="middle" fill="#4B5563" fontSize={7}>W{i+1}</text>})}
+            <text x={padL-4} y={8} textAnchor="end" fill="#6B7280" fontSize={8}>£{revMax}K</text>
+            <text x={padL-4} y={usableH} textAnchor="end" fill="#6B7280" fontSize={8}>£{revMin}K</text>
+          </svg>
+        </InsightCard>
+        <InsightCard>
+          <SectionHead text="Pipeline by Stage" />
+          <div className="space-y-2">
+            {[{s:'Prospecting',v:680,p:28},{s:'Qualification',v:520,p:22},{s:'Proposal',v:440,p:18},{s:'Negotiation',v:380,p:16},{s:'Closing',v:380,p:16}].map(st=>(
+              <div key={st.s}>
+                <div className="flex justify-between mb-0.5"><span className="text-xs" style={{color:'#9CA3AF'}}>{st.s}</span><span className="text-xs font-bold" style={{color:'#F9FAFB'}}>£{st.v}K — {st.p}%</span></div>
+                <div className="h-6 rounded" style={{backgroundColor:'#1F2937'}}><div className="h-full rounded" style={{width:`${st.p*2.5}%`,backgroundColor:'#6C3FC5'}}/></div>
+              </div>
+            ))}
+          </div>
+        </InsightCard>
+      </div>
+
+      {/* S3 — Health Score + Activity + Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <InsightCard>
+          <SectionHead text="Business Health Score" />
+          <div className="flex justify-center mb-4">
+            <svg width={120} height={120}>
+              <defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#0D9488"/><stop offset="100%" stopColor="#6C3FC5"/></linearGradient></defs>
+              <circle cx={60} cy={60} r={52} fill="none" stroke="#1F2937" strokeWidth={8}/>
+              <circle cx={60} cy={60} r={52} fill="none" stroke="url(#hg)" strokeWidth={8} strokeDasharray={`${2*Math.PI*52}`} strokeDashoffset={`${2*Math.PI*52*(1-0.81)}`} strokeLinecap="round" transform="rotate(-90 60 60)"/>
+              <text x="60" y="56" textAnchor="middle" fill="#F9FAFB" fontSize={26} fontWeight={900}>81</text>
+              <text x="60" y="72" textAnchor="middle" fill="#6B7280" fontSize={10}>/100</text>
+            </svg>
+          </div>
+          <div className="space-y-2">
+            {[{l:'Revenue Health',v:84,c:'#10B981'},{l:'Client Retention',v:88,c:'#10B981'},{l:'Team Performance',v:79,c:'#F59E0B'},{l:'Pipeline Coverage',v:74,c:'#F59E0B'}].map(s=>(
+              <div key={s.l}><div className="flex justify-between mb-0.5"><span className="text-[10px]" style={{color:'#6B7280'}}>{s.l}</span><span className="text-[10px] font-bold" style={{color:s.c}}>{s.v}</span></div><div className="h-1.5 rounded-full overflow-hidden" style={{backgroundColor:'#1F2937'}}><div className="h-full rounded-full" style={{width:`${s.v}%`,backgroundColor:s.c}}/></div></div>
+            ))}
+          </div>
+        </InsightCard>
+        <InsightCard>
+          <SectionHead text="Activity Feed (7 Days)" />
+          <div className="space-y-3">
+            {[{i:'📞',t:'Call logged — Meridian Corp',tm:'2h ago'},{i:'✅',t:'Deal closed — Apex Solutions £24K',tm:'4h ago'},{i:'📧',t:'Proposal sent — TechStart Ltd',tm:'Yesterday'},{i:'👤',t:'New contact — Sarah Bloom, CFO',tm:'Yesterday'},{i:'📋',t:'Task completed — Q1 report filed',tm:'2d ago'},{i:'🤝',t:'Meeting — Riverside Capital',tm:'2d ago'},{i:'💰',t:'Invoice paid — Hartley £8,400',tm:'3d ago'},{i:'🔔',t:'Contract renewal due — Okafor Inc',tm:'3d ago'}].map((a,i)=>(
+              <div key={i} className="flex items-start gap-2.5"><span className="text-sm mt-0.5">{a.i}</span><div className="flex-1 min-w-0"><p className="text-xs truncate" style={{color:'#D1D5DB'}}>{a.t}</p><p className="text-[10px]" style={{color:'#4B5563'}}>{a.tm}</p></div></div>
+            ))}
+          </div>
+        </InsightCard>
+        <InsightCard>
+          <SectionHead text="Team Performance (Top 5)" />
+          <table className="w-full text-xs">
+            <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['','Name','Deals','Revenue','Rating'].map(h=><th key={h} className="text-left py-1.5 px-1 font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+            <tbody>
+              {[{n:'M. Webb',d:8,r:'£142K',rt:9.2,c:'#10B981',m:'🥇'},{n:'S. Brennan',d:6,r:'£118K',rt:8.8,c:'#10B981',m:'🥈'},{n:'T. Fielding',d:5,r:'£96K',rt:8.1,c:'#F59E0B',m:'🥉'},{n:'L. Santos',d:4,r:'£74K',rt:7.6,c:'#F59E0B',m:''},{n:'J. Park',d:3,r:'£51K',rt:6.9,c:'#EF4444',m:''}].map(p=>(
+                <tr key={p.n} style={{borderBottom:'1px solid #1F2937'}}>
+                  <td className="py-2 px-1">{p.m}</td>
+                  <td className="py-2 px-1 font-bold" style={{color:'#F9FAFB'}}>{p.n}</td>
+                  <td className="py-2 px-1" style={{color:'#9CA3AF'}}>{p.d}</td>
+                  <td className="py-2 px-1 font-bold" style={{color:'#F9FAFB'}}>{p.r}</td>
+                  <td className="py-2 px-1"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{backgroundColor:p.c}}/><span style={{color:p.c}}>{p.rt}</span></span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </InsightCard>
+      </div>
+
+      {/* S4 — Client Acquisition vs Churn */}
+      <InsightCard>
+        <SectionHead text="Client Acquisition vs Churn (6 Months)" />
+        <div className="flex items-end justify-center gap-6" style={{height:180}}>
+          {acqData.map(d=>(
+            <div key={d.m} className="flex flex-col items-center">
+              <div className="flex items-end gap-1" style={{height:140}}>
+                <div className="rounded-t" style={{width:20,height:Math.max(4,(d.n/acqMax)*130),backgroundColor:'#0D9488'}}/>
+                <div className="rounded-t" style={{width:20,height:Math.max(4,(d.c/acqMax)*130),backgroundColor:'#EF4444'}}/>
+              </div>
+              <span className="text-[10px] mt-1 font-bold" style={{color:'#6B7280'}}>{d.m}</span>
+              <span className="text-[10px]" style={{color:'#10B981'}}>+{d.n-d.c} net</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 mt-3 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#6B7280'}}><span className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor:'#0D9488'}}/>New clients</span>
+          <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#6B7280'}}><span className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor:'#EF4444'}}/>Churned</span>
+        </div>
+        <div className="flex gap-3 mt-3">
+          {[{l:'Retention rate',v:'96.8%',c:'#10B981'},{l:'Avg client tenure',v:'2.4 years',c:'#F9FAFB'},{l:'LTV estimate',v:'£48,200',c:'#F9FAFB'}].map(p=>(
+            <span key={p.l} className="text-xs px-3 py-1.5 rounded-full" style={{backgroundColor:'#111318',border:'1px solid #1F2937',color:p.c}}>{p.l}: <b>{p.v}</b></span>
+          ))}
+        </div>
+      </InsightCard>
+
+      {/* S5 — Revenue by Category + Deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <InsightCard>
+          <SectionHead text="Revenue by Category" />
+          <div className="flex items-center gap-6">
+            <div className="shrink-0" style={{width:110,height:110,borderRadius:'50%',background:'conic-gradient(#6C3FC5 0% 38%, #0D9488 38% 62%, #F59E0B 62% 80%, #3B82F6 80% 92%, #6B7280 92% 100%)'}}>
+              <div className="flex items-center justify-center rounded-full" style={{width:70,height:70,backgroundColor:'#0D1017',margin:'20px auto 0'}}>
+                <span className="text-xs font-black" style={{color:'#F9FAFB'}}>£1.14M</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {[{l:'Consulting',v:'38%',c:'#6C3FC5'},{l:'SaaS/Licences',v:'24%',c:'#0D9488'},{l:'Support & Retainers',v:'18%',c:'#F59E0B'},{l:'Training',v:'12%',c:'#3B82F6'},{l:'Other',v:'8%',c:'#6B7280'}].map(s=>(
+                <div key={s.l} className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor:s.c}}/><span className="text-xs" style={{color:'#9CA3AF'}}>{s.l} — <span style={{color:'#F9FAFB',fontWeight:700}}>{s.v}</span></span></div>
+              ))}
+            </div>
+          </div>
+        </InsightCard>
+        <InsightCard>
+          <SectionHead text="Upcoming Deadlines & Actions" />
+          <div className="space-y-2">
+            {[
+              {t:'Contract renewal — Meridian Corp — due in 3 days',u:'URGENT',c:'#EF4444'},
+              {t:'Q1 invoices outstanding — £28,400 — overdue',u:'URGENT',c:'#EF4444'},
+              {t:'Proposal follow-up — TechStart Ltd — due Fri',u:'THIS WEEK',c:'#F59E0B'},
+              {t:'Board report submission — due 15 Apr',u:'THIS WEEK',c:'#F59E0B'},
+              {t:'Client check-in — Apex Solutions — 18 Apr',u:'UPCOMING',c:'#10B981'},
+              {t:'Team performance review — 22 Apr',u:'UPCOMING',c:'#10B981'},
+            ].map((d,i)=>(
+              <div key={i} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5" style={{backgroundColor:'#0A0B10',border:'1px solid #1F2937'}}>
+                <span className="text-xs flex-1" style={{color:'#D1D5DB'}}>{d.t}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{backgroundColor:`${d.c}15`,color:d.c}}>{d.u}</span>
+              </div>
+            ))}
+          </div>
+        </InsightCard>
+      </div>
+
+      {/* S6 — Forecast */}
+      <InsightCard>
+        <SectionHead text="Q2 Forecast vs Q1 Actuals" />
+        <table className="w-full text-xs mb-4">
+          <thead><tr style={{borderBottom:'1px solid #1F2937'}}>{['Metric','Q1 Actual','Q2 Forecast','Change'].map(h=><th key={h} className="text-left py-2 px-3 font-semibold" style={{color:'#6B7280'}}>{h}</th>)}</tr></thead>
+          <tbody>
+            {[{m:'Total Revenue',q1:'£1.14M',q2:'£1.31M',ch:'▲+15%',ok:true},{m:'New Clients',q1:'52',q2:'61',ch:'▲+17%',ok:true},{m:'Avg Deal Size',q1:'£16,900',q2:'£18,200',ch:'▲+8%',ok:true},{m:'Churn Rate',q1:'3.2%',q2:'2.8%',ch:'▼ improving',ok:true},{m:'Team headcount',q1:'18',q2:'21',ch:'▲+3 hires',ok:true},{m:'Gross Margin',q1:'64%',q2:'67%',ch:'▲+3pts',ok:true}].map(r=>(
+              <tr key={r.m} style={{borderBottom:'1px solid #1F2937'}}><td className="py-2 px-3" style={{color:'#F9FAFB'}}>{r.m}</td><td className="py-2 px-3" style={{color:'#6B7280'}}>{r.q1}</td><td className="py-2 px-3 font-bold" style={{color:'#F9FAFB'}}>{r.q2}</td><td className="py-2 px-3 font-bold" style={{color:r.ok?'#10B981':'#F59E0B'}}>{r.ch}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex gap-3 flex-wrap">
+          {[{i:'✅',t:'On track to exceed Q2 revenue target by ~12%',c:'#10B981'},{i:'⚠️',t:'2 enterprise deals in negotiation — close by 30 Apr to hit forecast',c:'#F59E0B'},{i:'💡',t:'Hiring 3 new roles Q2 — onboarding cost ~£18K budgeted',c:'#3B82F6'}].map((a,i)=>(
+            <div key={i} className="flex items-start gap-2 rounded-lg px-3 py-2" style={{backgroundColor:'#111318',border:'1px solid #1F2937',flex:'1 1 200px'}}><span>{a.i}</span><p className="text-[10px] leading-relaxed" style={{color:a.c}}>{a.t}</p></div>
+          ))}
+        </div>
+      </InsightCard>
+
+      {/* S7 — Market Intelligence */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          {l:'Market Position',v:'3rd in region',d:'Gap to #2: 8 clients',c:'#6C3FC5'},
+          {l:'Win Rate',v:'64%',d:'▲+7% vs Q1 last year',c:'#10B981'},
+          {l:'Avg Sales Cycle',v:'23 days',d:'▼-4 days vs last quarter',c:'#0D9488'},
+          {l:'Competitor Activity',v:'2 clients',d:'Approached by competitor this month',c:'#EF4444'},
+        ].map(m=>(
+          <InsightCard key={m.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{color:'#6B7280'}}>{m.l}</p>
+            <p className="text-xl font-black mt-1" style={{color:m.c}}>{m.v}</p>
+            <p className="text-[10px] mt-1" style={{color:'#9CA3AF'}}>{m.d}</p>
+          </InsightCard>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
   if (tab === 'quick-wins') return (
     <div className="space-y-3">
@@ -1306,30 +1539,7 @@ function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
     </div>
   )
 
-  if (tab === 'insights') return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{l:'MRR',v:'£28,400',t:'+12% MoM',c:'#22C55E'},{l:'Active Customers',v:'171',t:'+8 this month',c:'#0D9488'},{l:'Pipeline Value',v:'£128k',t:'34 open deals',c:'#8B5CF6'},{l:'Team Utilisation',v:'78%',t:'vs 72% last month',c:'#F59E0B'}].map(m=>(
-          <div key={m.l} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}><p className="text-xs" style={{color:'#6B7280'}}>{m.l}</p><p className="text-xl font-black mt-1" style={{color:'#F9FAFB'}}>{m.v}</p><p className="text-xs mt-1" style={{color:m.c}}>{m.t}</p></div>
-        ))}
-      </div>
-      <div className="rounded-xl p-5" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
-        <div className="flex items-center gap-2 mb-3"><Sparkles size={14} style={{color:'#A78BFA'}}/><span className="text-sm font-bold" style={{color:'#F9FAFB'}}>AI Observations</span></div>
-        <div className="space-y-2.5">
-          {[
-            {dot:'#22C55E',text:'MRR growth accelerating — 12% month-on-month, strongest since launch'},
-            {dot:'#EF4444',text:'3 high-value deals stalled in pipeline — combined value £42k. Schedule follow-ups this week.'},
-            {dot:'#F59E0B',text:'Support ticket volume up 18% — consider adding a self-serve knowledge base'},
-            {dot:'#0D9488',text:'Trial conversion rate improved to 34% after day-3 email sequence was activated'},
-            {dot:'#8B5CF6',text:'Marketing ROI: LinkedIn outbound generating 3x the conversion rate of cold email'},
-            {dot:'#3B82F6',text:'HR onboarding backlog: 3 new starters pending equipment provisioning from IT'},
-          ].map((o,i)=>(
-            <div key={i} className="flex items-start gap-2.5"><div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{backgroundColor:o.dot}}/><p className="text-xs leading-relaxed" style={{color:'#D1D5DB'}}>{o.text}</p></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+  if (tab === 'insights') return <DemoInsightsHub />
 
   if (tab === 'not-to-miss') return (
     <div className="space-y-3">
