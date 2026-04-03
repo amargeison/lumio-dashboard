@@ -223,8 +223,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             onClick={() => fileRef.current?.click()}
             onMouseEnter={() => setIconHover(true)}
             onMouseLeave={() => setIconHover(false)}
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
-            style={{ backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
+            className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
+            style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}
             title="Upload company logo"
           >
             {logoUrl ? (
