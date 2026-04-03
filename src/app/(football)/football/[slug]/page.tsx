@@ -308,6 +308,35 @@ const FOOTBALL_ROUNDUP_ITEMS = [
       { id: 'ac2', from: 'Academy Director', avatar: 'AD', subject: 'Scholarship intake review', preview: 'We have 4 offers out for next season\'s scholarship cohort. 2 have accepted, 2 pending.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
+  {
+    id: 'sms', icon: '💬', label: 'SMS / Text', count: 3, urgent: true,
+    color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',
+    messages: [
+      { id: 'sms1', from: 'Nathan Bishop', avatar: 'NB', subject: 'Contract chat', preview: 'Gaffer, can we chat about my contract situation?', time: '7:45am', urgent: false, read: false },
+      { id: 'sms2', from: 'Unknown Number', avatar: '??', subject: 'Agent interest', preview: 'My client is very interested — call me', time: '8:12am', urgent: true, read: false },
+      { id: 'sms3', from: 'Marcus Browne', avatar: 'MB', subject: 'Match ready', preview: 'Feeling sharp today. Ready for Saturday 💪', time: '8:30am', urgent: false, read: false },
+    ]
+  },
+  {
+    id: 'whatsapp', icon: '💚', label: 'WhatsApp Business', count: 4, urgent: false,
+    color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)',
+    messages: [
+      { id: 'wa1', from: 'Plough Lane Staff', avatar: 'PL', subject: 'Pitch inspection', preview: 'Pitch inspection at 09:00 — all clear for training', time: '7:30am', urgent: false, read: false },
+      { id: 'wa2', from: 'Kit Man Dave', avatar: 'KD', subject: 'Away kit ready', preview: 'Away kit packed and loaded onto coach', time: '8:00am', urgent: false, read: false },
+      { id: 'wa3', from: 'Club Doctor', avatar: 'CD', subject: 'Hughes update', preview: 'Hughes cleared for light training today', time: '8:45am', urgent: false, read: false },
+      { id: 'wa4', from: 'Fan Trust Rep', avatar: 'FT', subject: 'Supporter Q&A', preview: 'Q&A with supporters confirmed for Tuesday', time: '9:00am', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'slack', icon: '🔷', label: 'Slack', count: 4, urgent: false,
+    color: '#4A154B', bg: 'rgba(74,21,75,0.08)', border: 'rgba(74,21,75,0.2)',
+    messages: [
+      { id: 'sl1', from: '#analyst-room', avatar: 'AN', subject: 'Stockport stats', preview: 'Stockport County pressing stats uploaded to shared drive', time: '8:10am', urgent: false, read: false },
+      { id: 'sl2', from: '#scouting', avatar: 'SC', subject: 'Peterborough winger', preview: 'Video package on Peterborough winger ready for review', time: '8:25am', urgent: false, read: false },
+      { id: 'sl3', from: '#medical', avatar: 'ME', subject: 'GPS report', preview: 'Weekly GPS load report available in Medical channel', time: '8:40am', urgent: false, read: false },
+      { id: 'sl4', from: '#board', avatar: 'BD', subject: 'Q3 review', preview: 'Q3 financial review scheduled for next Monday', time: '9:05am', urgent: false, read: true },
+    ]
+  },
 ]
 
 // ─── Football Opening / Closing Lines ───────────────────────────────────────
