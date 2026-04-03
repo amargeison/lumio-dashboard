@@ -1137,12 +1137,12 @@ function TeamInfoTab() {
     '4-4-2': { gk: { top: '14%', left: '45%' }, rb: { top: '32%', left: '78%' }, cb1: { top: '32%', left: '56%' }, cb2: { top: '32%', left: '34%' }, lb: { top: '32%', left: '12%' }, cdm1: { top: '55%', left: '75%' }, cdm2: { top: '55%', left: '55%' }, cam: { top: '55%', left: '35%' }, rm: { top: '55%', left: '15%' }, lm: { top: '82%', left: '35%' }, st: { top: '82%', left: '55%' } },
   }
   const SUBS = [
-    { id: 'gk2', name: 'Aiden Park', pos: 'GK', initials: 'AP', overall: 74, color: '#F59E0B' },
-    { id: 'cb3', name: 'Jake Morris', pos: 'CB', initials: 'JM', overall: 75, color: '#3B82F6' },
-    { id: 'rb2', name: 'Leo Grant', pos: 'RB', initials: 'LG', overall: 73, color: '#3B82F6' },
-    { id: 'cm3', name: 'Finn Carey', pos: 'CM', initials: 'FC', overall: 76, color: '#22C55E' },
-    { id: 'lw2', name: 'Omar Diallo', pos: 'LW', initials: 'OD', overall: 78, color: '#EF4444' },
-    { id: 'st2', name: 'Rafe Adeyemi', pos: 'ST', initials: 'RA', overall: 77, color: '#EF4444' },
+    { id: 'gk2', name: 'Aiden Park', pos: 'GK', initials: 'AP', overall: 74, color: '#F59E0B', stats: { PAC: 52, SHO: 24, PAS: 60, DRI: 44, DEF: 78, PHY: 80 } },
+    { id: 'cb3', name: 'Jake Morris', pos: 'CB', initials: 'JM', overall: 75, color: '#3B82F6', stats: { PAC: 65, SHO: 30, PAS: 58, DRI: 52, DEF: 82, PHY: 81 } },
+    { id: 'rb2', name: 'Leo Grant', pos: 'RB', initials: 'LG', overall: 73, color: '#3B82F6', stats: { PAC: 78, SHO: 42, PAS: 64, DRI: 68, DEF: 74, PHY: 72 } },
+    { id: 'cm3', name: 'Finn Carey', pos: 'CM', initials: 'FC', overall: 76, color: '#22C55E', stats: { PAC: 70, SHO: 58, PAS: 78, DRI: 72, DEF: 66, PHY: 74 } },
+    { id: 'lw2', name: 'Omar Diallo', pos: 'LW', initials: 'OD', overall: 78, color: '#EF4444', stats: { PAC: 90, SHO: 72, PAS: 68, DRI: 82, DEF: 34, PHY: 68 } },
+    { id: 'st2', name: 'Rafe Adeyemi', pos: 'ST', initials: 'RA', overall: 77, color: '#EF4444', stats: { PAC: 84, SHO: 80, PAS: 62, DRI: 76, DEF: 28, PHY: 74 } },
   ]
   const [starters, setStarters] = useState(PLAYERS)
   const [bench, setBench] = useState(SUBS)
