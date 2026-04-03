@@ -4729,7 +4729,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <AvatarDropdown initials={initials} logoutRedirect="/" settingsHref={`/football/${slug}/settings`} />
+        <AvatarDropdown initials={initials} settingsHref={`/football/${slug}/settings`} />
       </div>
 
       {/* Mobile menu button */}
