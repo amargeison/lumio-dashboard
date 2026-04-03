@@ -1089,6 +1089,26 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
   )
 }
 
+function FifaCard({ p, size = 'pitch', selected, onClick }: { p: { id: string; name: string; pos: string; initials: string; overall: number; color: string; stats: Record<string, number> }; size?: 'pitch' | 'bench'; selected?: boolean; onClick?: () => void }) {
+  const w = size === 'pitch' ? 64 : 56
+  const h = size === 'pitch' ? 80 : 70
+  const ratingColor = p.overall >= 80 ? '#F59E0B' : p.overall >= 70 ? '#F9FAFB' : '#6B7280'
+  const topStats = Object.entries(p.stats).slice(0, 3)
+  return (
+    <div onClick={onClick} style={{ width: w, height: h, background: 'linear-gradient(135deg, #0D0D1A 0%, #1a1a2e 100%)', border: selected ? '2px solid #0D9488' : '1px solid rgba(255,255,255,0.1)', borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3px 2px', cursor: onClick ? 'pointer' : 'default', boxShadow: selected ? '0 0 12px #0D9488' : 'none', opacity: size === 'bench' ? 0.7 : 1, transition: 'box-shadow 0.2s, border 0.2s' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 3px' }}>
+        <span style={{ fontSize: size === 'pitch' ? 13 : 11, fontWeight: 900, color: ratingColor, lineHeight: 1 }}>{p.overall}</span>
+        <span style={{ fontSize: 7, fontWeight: 700, color: p.color }}>{p.pos}</span>
+      </div>
+      <div style={{ width: size === 'pitch' ? 28 : 24, height: size === 'pitch' ? 28 : 24, borderRadius: '50%', backgroundColor: `${p.color}30`, border: `1.5px solid ${p.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size === 'pitch' ? 9 : 8, fontWeight: 800, color: p.color, margin: '2px 0' }}>{p.initials}</div>
+      <span style={{ fontSize: size === 'pitch' ? 8 : 7, fontWeight: 700, color: '#F9FAFB', textAlign: 'center', lineHeight: 1.1, maxWidth: w - 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name.split(' ').pop()}</span>
+      <div style={{ display: 'flex', gap: 2, marginTop: 'auto' }}>
+        {topStats.map(([k, v]) => (<div key={k} style={{ textAlign: 'center' }}><div style={{ fontSize: 8, fontWeight: 700, color: '#F9FAFB' }}>{v}</div><div style={{ fontSize: 6, color: '#6B7280' }}>{k}</div></div>))}
+      </div>
+    </div>
+  )
+}
+
 function TeamInfoTab() {
   const PLAYERS = [
     { id: 'gk', name: 'Sam Fletcher', pos: 'GK', initials: 'SF', overall: 79, color: '#F59E0B', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 } },
@@ -1123,14 +1143,39 @@ function TeamInfoTab() {
     { id: 'lw2', name: 'Omar Diallo', pos: 'LW', initials: 'OD', overall: 78, color: '#EF4444' },
     { id: 'st2', name: 'Rafe Adeyemi', pos: 'ST', initials: 'RA', overall: 77, color: '#EF4444' },
   ]
-  const ALL_SQUAD = [...PLAYERS, ...SUBS]
+  const [starters, setStarters] = useState(PLAYERS)
+  const [bench, setBench] = useState(SUBS)
   const [formation, setFormation] = useState<Formation>('4-2-3-1')
   const [viewMode, setViewMode] = useState<'pitch' | 'grid'>('pitch')
-  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null)
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [swapToast, setSwapToast] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  function handlePitchClick(playerId: string) {
+    if (selectedPlayer === playerId) { setSelectedPlayer(null); return }
+    if (selectedPlayer) {
+      // selectedPlayer is on pitch, playerId is also on pitch — just switch selection
+      setSelectedPlayer(playerId)
+    } else {
+      setSelectedPlayer(playerId)
+    }
+  }
+  function handleBenchClick(benchPlayerId: string) {
+    if (!selectedPlayer) return
+    const pitchIdx = starters.findIndex(p => p.id === selectedPlayer)
+    const benchIdx = bench.findIndex(p => p.id === benchPlayerId)
+    if (pitchIdx < 0 || benchIdx < 0) { setSelectedPlayer(null); return }
+    const newStarters = [...starters]; const newBench = [...bench]
+    const temp = newStarters[pitchIdx]
+    newStarters[pitchIdx] = { ...newBench[benchIdx], id: temp.id }
+    newBench[benchIdx] = { ...temp, id: bench[benchIdx].id }
+    setStarters(newStarters); setBench(newBench)
+    setSelectedPlayer(null); setSwapToast(true)
+    setTimeout(() => setSwapToast(false), 1500)
+  }
 
   const positions = FORMATIONS[formation]
   const posColor: Record<string, string> = { GK: '#F59E0B', CB: '#3B82F6', RB: '#3B82F6', LB: '#3B82F6', CM: '#22C55E', CAM: '#22C55E', LW: '#EF4444', RW: '#EF4444', ST: '#EF4444' }
@@ -1161,11 +1206,11 @@ function TeamInfoTab() {
 
       {viewMode === 'pitch' ? (
         <>
-          {/* Toolbar */}
+          {/* Formation + Toolbar */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex gap-2">
               {(['4-2-3-1', '4-3-3', '3-5-2', '4-4-2'] as Formation[]).map(f => (
-                <button key={f} onClick={() => setFormation(f)} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
+                <button key={f} onClick={() => { setFormation(f); setSelectedPlayer(null) }} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
               ))}
             </div>
             <div className="flex gap-1.5">
@@ -1175,126 +1220,38 @@ function TeamInfoTab() {
             </div>
           </div>
 
-          {/* Pitch + Squad Panel */}
-          <div className="flex gap-0 rounded-2xl overflow-visible" style={{ border: '1px solid #1F2937' }}>
-            {/* Left: Pitch */}
-            <div className="flex-1" style={{ position: 'relative', minHeight: 0 }}>
-              <div style={{ position: 'relative', width: '100%', paddingBottom: '147%', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: '16px 0 0 16px', overflow: 'visible' }}>
-              <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
+          {/* Pitch */}
+          <div className="rounded-2xl" style={{ border: '1px solid #1F2937', overflow: 'visible' }}>
+            <div style={{ position: 'relative', width: '100%', paddingBottom: '120%', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: 16, overflow: 'visible' }}>
+              <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.3 }}>
                 <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
                 <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
                 <circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" />
-                <circle cx="34" cy="50" r="0.5" fill="white" />
                 <rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
                 <rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
                 <rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
                 <rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
-                <circle cx="34" cy="12" r="0.5" fill="white" />
-                <circle cx="34" cy="88" r="0.5" fill="white" />
               </svg>
-              {PLAYERS.map(p => {
-                const pos = positions[p.id]
-                if (!pos) return null
-                const c = posColor[p.pos] || '#6B7280'
-                return (
-                  <div key={p.id} onMouseEnter={() => setHoveredPlayer(p.id)} onMouseLeave={() => setHoveredPlayer(null)}
-                    className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: hoveredPlayer === p.id ? 20 : 10 }}>
-                    {hoveredPlayer === p.id && (
-                      <div className="absolute bottom-full mb-2 rounded-xl p-3 w-36 pointer-events-none" style={{ backgroundColor: '#111318ee', border: `1px solid ${c}60`, backdropFilter: 'blur(8px)' }}>
-                        <div className="grid grid-cols-3 gap-1 text-center">
-                          {Object.entries(p.stats).map(([k, v]) => (
-                            <div key={k}><span className="text-[10px] font-bold block" style={{ color: v >= 85 ? '#22C55E' : v >= 70 ? '#F59E0B' : '#EF4444' }}>{v}</span><span className="text-[7px]" style={{ color: '#9CA3AF' }}>{k}</span></div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="rounded-xl flex flex-col items-center p-1.5 w-[72px]" style={{ backgroundColor: '#111318cc', border: `1.5px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
-                      <div className="flex items-center justify-between w-full px-1 mb-0.5">
-                        <span className="text-[10px] font-black" style={{ color: c }}>{p.overall}</span>
-                        <span className="text-[7px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span>
-                      </div>
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `1.5px solid ${c}`, boxShadow: `0 0 8px ${c}40` }}>{p.initials}</div>
-                      <span className="text-[8px] font-bold text-center leading-tight" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
-                    </div>
-                  </div>
-                )
-              })}
-              </div>
-            </div>
-
-            {/* Right: Squad Panel */}
-            <div className="w-[280px] shrink-0 overflow-y-auto" style={{ backgroundColor: '#0a0d13', borderLeft: '1px solid #1F2937', maxHeight: 700 }}>
-              <div className="px-3 py-2.5" style={{ borderBottom: '1px solid #1F2937' }}>
-                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Squad ({ALL_SQUAD.length})</p>
-                <p className="text-[10px]" style={{ color: '#6B7280' }}>{PLAYERS.length} starting · {SUBS.length} bench</p>
-              </div>
-              {[
-                { label: 'GOALKEEPERS', positions: ['GK'] },
-                { label: 'RIGHT BACKS', positions: ['RB'] },
-                { label: 'CENTRE BACKS', positions: ['CB'] },
-                { label: 'LEFT BACKS', positions: ['LB'] },
-                { label: 'CENTRAL MIDFIELDERS', positions: ['CM', 'DM'] },
-                { label: 'ATTACKING MIDFIELDERS', positions: ['CAM', 'AM'] },
-                { label: 'RIGHT WINGERS', positions: ['RW'] },
-                { label: 'LEFT WINGERS', positions: ['LW'] },
-                { label: 'STRIKERS', positions: ['ST', 'CF'] },
-              ].map(group => {
-                const players = ALL_SQUAD.filter(p => group.positions.includes(p.pos))
-                if (!players.length) return null
-                const startingIds = new Set(PLAYERS.map(p => p.id))
-                return (
-                  <div key={group.label}>
-                    <div className="px-3 pt-3 pb-1 flex items-center gap-2">
-                      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>{group.label}</span>
-                      <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
-                    </div>
-                    {players.map(p => {
-                      const isStarting = startingIds.has(p.id)
-                      const c = posColor[p.pos] || '#6B7280'
-                      return (
-                        <div key={p.id} className="flex items-center gap-2.5 px-3 py-1.5">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0" style={{ backgroundColor: `${c}25`, color: c }}>{p.initials}</div>
-                          <span className="text-xs flex-1 truncate" style={{ color: isStarting ? '#F9FAFB' : '#6B7280' }}>{p.name}</span>
-                          <span className="text-[10px] font-black w-6 text-center" style={{ color: c }}>{p.overall}</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isStarting ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)', color: isStarting ? '#22C55E' : '#4B5563' }}>{isStarting ? 'Starting' : 'Sub'}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
+              {starters.map(p => { const pos = positions[p.id]; if (!pos) return null; return (<div key={p.id} style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: selectedPlayer === p.id ? 20 : 10 }}><FifaCard p={p} size="pitch" selected={selectedPlayer === p.id} onClick={() => handlePitchClick(p.id)} /></div>) })}
             </div>
           </div>
 
-          {/* Fullscreen overlay */}
-          {fullscreen && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-8" style={{ backgroundColor: 'rgba(0,0,0,0.92)' }}>
-              <button onClick={() => setFullscreen(false)} className="absolute top-6 right-6 text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#111318', color: '#F9FAFB', border: '1px solid #1F2937' }}>✕ Close</button>
-              <div className="relative w-full max-w-3xl" style={{ aspectRatio: '68/100', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: 16, border: '3px solid #fff3' }}>
-                <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
-                  <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" /><line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" /><circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" /><circle cx="34" cy="50" r="0.5" fill="white" /><rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" /><rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" /><rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" /><rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
-                </svg>
-                {PLAYERS.map(p => { const pos = positions[p.id]; if (!pos) return null; const c = posColor[p.pos] || '#6B7280'; return (
-                  <div key={p.id} className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}>
-                    <div className="rounded-xl flex flex-col items-center p-2 w-[80px]" style={{ backgroundColor: '#111318dd', border: `2px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
-                      <div className="flex items-center justify-between w-full px-1 mb-0.5"><span className="text-xs font-black" style={{ color: c }}>{p.overall}</span><span className="text-[8px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span></div>
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `2px solid ${c}` }}>{p.initials}</div>
-                      <span className="text-[9px] font-bold" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
-                    </div>
-                  </div>
-                )})}
-              </div>
-            </div>
-          )}
+          {/* Dugout */}
           <div className="rounded-xl p-3 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Dugout</span>
-            {COACHES.map(c => (
-              <div key={c.name} className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: `${c.color}25`, color: c.color, border: `1px solid ${c.color}50` }}>{c.initials}</div>
-                <div><p className="text-[10px] font-bold" style={{ color: '#F9FAFB' }}>{c.name}</p><p className="text-[8px]" style={{ color: '#6B7280' }}>{c.role}</p></div>
-              </div>
-            ))}
+            {COACHES.map(c => (<div key={c.name} className="flex items-center gap-2"><div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: c.color + '25', color: c.color, border: '1px solid ' + c.color + '50' }}>{c.initials}</div><div><p className="text-[10px] font-bold" style={{ color: '#F9FAFB' }}>{c.name}</p><p className="text-[8px]" style={{ color: '#6B7280' }}>{c.role}</p></div></div>))}
           </div>
+
+          {/* Bench & Squad */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>BENCH &amp; SQUAD</p>
+            <div className="flex flex-wrap gap-2">
+              {bench.map(p => (<FifaCard key={p.id} p={{ ...p, stats: { PAC: 70 + (p.overall % 10), SHO: 60 + (p.overall % 12), PAS: 65 + (p.overall % 8) } }} size="bench" selected={false} onClick={() => handleBenchClick(p.id)} />))}
+            </div>
+          </div>
+
+          {/* Swap toast */}
+          {swapToast && <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0D9488', color: '#fff', padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>Swapped!</div>}
         </>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
