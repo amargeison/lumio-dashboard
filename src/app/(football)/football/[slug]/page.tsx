@@ -15,6 +15,7 @@ import {
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown, Camera,
+  Maximize2, Printer, Share2,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
@@ -1114,10 +1115,21 @@ function TeamInfoTab() {
     '3-5-2': { gk: { top: '86%', left: '45%' }, rb: { top: '55%', left: '82%' }, cb1: { top: '70%', left: '55%' }, cb2: { top: '70%', left: '35%' }, lb: { top: '55%', left: '8%' }, cdm1: { top: '70%', left: '75%' }, cdm2: { top: '48%', left: '45%' }, cam: { top: '70%', left: '15%' }, rm: { top: '48%', left: '65%' }, lm: { top: '48%', left: '25%' }, st: { top: '18%', left: '55%' } },
     '4-4-2': { gk: { top: '86%', left: '45%' }, rb: { top: '68%', left: '78%' }, cb1: { top: '68%', left: '56%' }, cb2: { top: '68%', left: '34%' }, lb: { top: '68%', left: '12%' }, cdm1: { top: '45%', left: '75%' }, cdm2: { top: '45%', left: '55%' }, cam: { top: '45%', left: '35%' }, rm: { top: '45%', left: '15%' }, lm: { top: '18%', left: '35%' }, st: { top: '18%', left: '55%' } },
   }
+  const SUBS = [
+    { id: 'gk2', name: 'Aiden Park', pos: 'GK', initials: 'AP', overall: 74, color: '#F59E0B' },
+    { id: 'cb3', name: 'Jake Morris', pos: 'CB', initials: 'JM', overall: 75, color: '#3B82F6' },
+    { id: 'rb2', name: 'Leo Grant', pos: 'RB', initials: 'LG', overall: 73, color: '#3B82F6' },
+    { id: 'cm3', name: 'Finn Carey', pos: 'CM', initials: 'FC', overall: 76, color: '#22C55E' },
+    { id: 'lw2', name: 'Omar Diallo', pos: 'LW', initials: 'OD', overall: 78, color: '#EF4444' },
+    { id: 'st2', name: 'Rafe Adeyemi', pos: 'ST', initials: 'RA', overall: 77, color: '#EF4444' },
+  ]
+  const ALL_SQUAD = [...PLAYERS, ...SUBS]
   const [formation, setFormation] = useState<Formation>('4-2-3-1')
   const [viewMode, setViewMode] = useState<'pitch' | 'grid'>('pitch')
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
   useEffect(() => setMounted(true), [])
 
   const positions = FORMATIONS[formation]
@@ -1149,52 +1161,129 @@ function TeamInfoTab() {
 
       {viewMode === 'pitch' ? (
         <>
-          <div className="flex gap-2">
-            {(['4-2-3-1', '4-3-3', '3-5-2', '4-4-2'] as Formation[]).map(f => (
-              <button key={f} onClick={() => setFormation(f)} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
-            ))}
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex gap-2">
+              {(['4-2-3-1', '4-3-3', '3-5-2', '4-4-2'] as Formation[]).map(f => (
+                <button key={f} onClick={() => setFormation(f)} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              <button onClick={() => setFullscreen(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#6B7280', border: '1px solid #1F2937' }}><Maximize2 size={12} /> Fullscreen</button>
+              <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#6B7280', border: '1px solid #1F2937' }}><Printer size={12} /> Print</button>
+              <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000) }} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: copiedLink ? '#22C55E' : '#6B7280', border: '1px solid #1F2937' }}><Share2 size={12} /> {copiedLink ? 'Copied!' : 'Share'}</button>
+            </div>
           </div>
-          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '68/100', maxHeight: 700, background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', border: '3px solid #fff3' }}>
-            <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
-              <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
-              <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
-              <circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" />
-              <circle cx="34" cy="50" r="0.5" fill="white" />
-              <rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
-              <rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
-              <rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
-              <rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
-              <circle cx="34" cy="12" r="0.5" fill="white" />
-              <circle cx="34" cy="88" r="0.5" fill="white" />
-            </svg>
-            {PLAYERS.map(p => {
-              const pos = positions[p.id]
-              if (!pos) return null
-              const c = posColor[p.pos] || '#6B7280'
-              return (
-                <div key={p.id} onMouseEnter={() => setHoveredPlayer(p.id)} onMouseLeave={() => setHoveredPlayer(null)}
-                  className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: hoveredPlayer === p.id ? 20 : 10 }}>
-                  {hoveredPlayer === p.id && (
-                    <div className="absolute bottom-full mb-2 rounded-xl p-3 w-36 pointer-events-none" style={{ backgroundColor: '#111318ee', border: `1px solid ${c}60`, backdropFilter: 'blur(8px)' }}>
-                      <div className="grid grid-cols-3 gap-1 text-center">
-                        {Object.entries(p.stats).map(([k, v]) => (
-                          <div key={k}><span className="text-[10px] font-bold block" style={{ color: v >= 85 ? '#22C55E' : v >= 70 ? '#F59E0B' : '#EF4444' }}>{v}</span><span className="text-[7px]" style={{ color: '#9CA3AF' }}>{k}</span></div>
-                        ))}
+
+          {/* Pitch + Squad Panel */}
+          <div className="flex gap-0 rounded-2xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+            {/* Left: Pitch */}
+            <div className="flex-1 relative" style={{ aspectRatio: '68/100', maxHeight: 700, background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)' }}>
+              <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
+                <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
+                <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
+                <circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" />
+                <circle cx="34" cy="50" r="0.5" fill="white" />
+                <rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
+                <rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
+                <rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
+                <rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
+                <circle cx="34" cy="12" r="0.5" fill="white" />
+                <circle cx="34" cy="88" r="0.5" fill="white" />
+              </svg>
+              {PLAYERS.map(p => {
+                const pos = positions[p.id]
+                if (!pos) return null
+                const c = posColor[p.pos] || '#6B7280'
+                return (
+                  <div key={p.id} onMouseEnter={() => setHoveredPlayer(p.id)} onMouseLeave={() => setHoveredPlayer(null)}
+                    className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: hoveredPlayer === p.id ? 20 : 10 }}>
+                    {hoveredPlayer === p.id && (
+                      <div className="absolute bottom-full mb-2 rounded-xl p-3 w-36 pointer-events-none" style={{ backgroundColor: '#111318ee', border: `1px solid ${c}60`, backdropFilter: 'blur(8px)' }}>
+                        <div className="grid grid-cols-3 gap-1 text-center">
+                          {Object.entries(p.stats).map(([k, v]) => (
+                            <div key={k}><span className="text-[10px] font-bold block" style={{ color: v >= 85 ? '#22C55E' : v >= 70 ? '#F59E0B' : '#EF4444' }}>{v}</span><span className="text-[7px]" style={{ color: '#9CA3AF' }}>{k}</span></div>
+                          ))}
+                        </div>
                       </div>
+                    )}
+                    <div className="rounded-xl flex flex-col items-center p-1.5 w-[72px]" style={{ backgroundColor: '#111318cc', border: `1.5px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
+                      <div className="flex items-center justify-between w-full px-1 mb-0.5">
+                        <span className="text-[10px] font-black" style={{ color: c }}>{p.overall}</span>
+                        <span className="text-[7px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span>
+                      </div>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `1.5px solid ${c}`, boxShadow: `0 0 8px ${c}40` }}>{p.initials}</div>
+                      <span className="text-[8px] font-bold text-center leading-tight" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
                     </div>
-                  )}
-                  <div className="rounded-xl flex flex-col items-center p-1.5 w-[72px]" style={{ backgroundColor: '#111318cc', border: `1.5px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
-                    <div className="flex items-center justify-between w-full px-1 mb-0.5">
-                      <span className="text-[10px] font-black" style={{ color: c }}>{p.overall}</span>
-                      <span className="text-[7px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span>
-                    </div>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `1.5px solid ${c}`, boxShadow: `0 0 8px ${c}40` }}>{p.initials}</div>
-                    <span className="text-[8px] font-bold text-center leading-tight" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+
+            {/* Right: Squad Panel */}
+            <div className="w-[280px] shrink-0 overflow-y-auto" style={{ backgroundColor: '#0a0d13', borderLeft: '1px solid #1F2937', maxHeight: 700 }}>
+              <div className="px-3 py-2.5" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Squad ({ALL_SQUAD.length})</p>
+                <p className="text-[10px]" style={{ color: '#6B7280' }}>{PLAYERS.length} starting · {SUBS.length} bench</p>
+              </div>
+              {[
+                { label: 'GOALKEEPERS', positions: ['GK'] },
+                { label: 'RIGHT BACKS', positions: ['RB'] },
+                { label: 'CENTRE BACKS', positions: ['CB'] },
+                { label: 'LEFT BACKS', positions: ['LB'] },
+                { label: 'CENTRAL MIDFIELDERS', positions: ['CM', 'DM'] },
+                { label: 'ATTACKING MIDFIELDERS', positions: ['CAM', 'AM'] },
+                { label: 'RIGHT WINGERS', positions: ['RW'] },
+                { label: 'LEFT WINGERS', positions: ['LW'] },
+                { label: 'STRIKERS', positions: ['ST', 'CF'] },
+              ].map(group => {
+                const players = ALL_SQUAD.filter(p => group.positions.includes(p.pos))
+                if (!players.length) return null
+                const startingIds = new Set(PLAYERS.map(p => p.id))
+                return (
+                  <div key={group.label}>
+                    <div className="px-3 pt-3 pb-1 flex items-center gap-2">
+                      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>{group.label}</span>
+                      <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
+                    </div>
+                    {players.map(p => {
+                      const isStarting = startingIds.has(p.id)
+                      const c = posColor[p.pos] || '#6B7280'
+                      return (
+                        <div key={p.id} className="flex items-center gap-2.5 px-3 py-1.5">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0" style={{ backgroundColor: `${c}25`, color: c }}>{p.initials}</div>
+                          <span className="text-xs flex-1 truncate" style={{ color: isStarting ? '#F9FAFB' : '#6B7280' }}>{p.name}</span>
+                          <span className="text-[10px] font-black w-6 text-center" style={{ color: c }}>{p.overall}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: isStarting ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)', color: isStarting ? '#22C55E' : '#4B5563' }}>{isStarting ? 'Starting' : 'Sub'}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
           </div>
+
+          {/* Fullscreen overlay */}
+          {fullscreen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-8" style={{ backgroundColor: 'rgba(0,0,0,0.92)' }}>
+              <button onClick={() => setFullscreen(false)} className="absolute top-6 right-6 text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#111318', color: '#F9FAFB', border: '1px solid #1F2937' }}>✕ Close</button>
+              <div className="relative w-full max-w-3xl" style={{ aspectRatio: '68/100', background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', borderRadius: 16, border: '3px solid #fff3' }}>
+                <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
+                  <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" /><line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" /><circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" /><circle cx="34" cy="50" r="0.5" fill="white" /><rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" /><rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" /><rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" /><rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
+                </svg>
+                {PLAYERS.map(p => { const pos = positions[p.id]; if (!pos) return null; const c = posColor[p.pos] || '#6B7280'; return (
+                  <div key={p.id} className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}>
+                    <div className="rounded-xl flex flex-col items-center p-2 w-[80px]" style={{ backgroundColor: '#111318dd', border: `2px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
+                      <div className="flex items-center justify-between w-full px-1 mb-0.5"><span className="text-xs font-black" style={{ color: c }}>{p.overall}</span><span className="text-[8px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span></div>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `2px solid ${c}` }}>{p.initials}</div>
+                      <span className="text-[9px] font-bold" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
+                    </div>
+                  </div>
+                )})}
+              </div>
+            </div>
+          )}
           <div className="rounded-xl p-3 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Dugout</span>
             {COACHES.map(c => (
