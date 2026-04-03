@@ -467,12 +467,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, comp
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
         <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           {companyLogo ? (
-            <div className="flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, border: '1px solid #1F2937' }}>
-              <img src={companyLogo} alt={companyName || 'Company'} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            <div className="flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 48, height: 48, borderRadius: 8, border: '1px solid #1F2937' }}>
+              <img src={companyLogo} alt={companyName || 'Company'} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 7 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
           ) : (
             <div className="flex items-center justify-center text-sm font-bold shrink-0"
-              style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
+              style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
               {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
             </div>
           )}
@@ -4239,13 +4239,13 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
 
-      {/* Bell + Avatar — fixed overlay, always on top */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
-        <NotificationBell />
-        <AvatarDropdown
-          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-          onConvert={() => setShowConvert(true)}
-        />
+      {/* Bell + Avatar — fixed overlay, first child, z-9999 */}
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Bell size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+        </button>
+        <AvatarDropdown initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()} onConvert={() => setShowConvert(true)} />
       </div>
 
       <Toast message={toast} />
