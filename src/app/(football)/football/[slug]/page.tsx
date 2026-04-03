@@ -4980,6 +4980,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [isFootballDemo, setIsFootballDemo] = useState(false)
   const [fbMounted, setFbMounted] = useState(false)
+  const [clubLogo, setClubLogo] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null
+  )
 
   useEffect(() => {
     const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
@@ -4989,15 +4992,17 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     return () => clearInterval(interval)
   }, [])
 
-  // Set default badge in localStorage when demo activates so Sidebar picks it up
+  // Set default badge when demo is active
   useEffect(() => {
     if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
+      setClubLogo('/badges/afc-wimbledon.png')
       localStorage.setItem('lumio_football_logo', '/badges/afc-wimbledon.png')
       window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_football_logo', newValue: '/badges/afc-wimbledon.png' }))
     } else if (!isFootballDemo) {
       const userLogo = localStorage.getItem('lumio_football_logo')
       if (userLogo === '/badges/afc-wimbledon.png') {
         localStorage.removeItem('lumio_football_logo')
+        setClubLogo(null)
       }
     }
   }, [isFootballDemo])
