@@ -28,6 +28,7 @@ import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView, FindClubView, FindPlayerView, FootballPyramidView } from '@/components/football/IntegrationViews'
+import { TeamsView, LeaguesView, FixturesView } from '@/components/football/LeagueViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -43,6 +44,7 @@ type DeptId =
   | 'staff' | 'facilities' | 'settings'
   | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
   | 'find-club' | 'find-player' | 'pyramid'
+  | 'teams' | 'leagues' | 'fixtures-results'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -106,9 +108,12 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
   { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
   { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
-  { id: 'pyramid',     label: 'All Leagues',    icon: Trophy,         section: 'Leagues' },
+  { id: 'teams',        label: 'Teams',          icon: Users,          section: 'Leagues' },
+  { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'Leagues' },
+  { id: 'fixtures-results', label: 'Fixtures & Results', icon: Calendar, section: 'Leagues' },
+  { id: 'pyramid',     label: 'All Leagues',    icon: BarChart3,      section: 'Leagues' },
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
-  { id: 'find-player', label: 'Find Player',    icon: Users,          section: 'Leagues' },
+  { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -5458,6 +5463,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'opta' && <OptaStatsBombView />}
             {activeDept === 'find-club' && <FindClubView />}
             {activeDept === 'find-player' && <FindPlayerView />}
+            {activeDept === 'teams' && <TeamsView />}
+            {activeDept === 'leagues' && <LeaguesView />}
+            {activeDept === 'fixtures-results' && <FixturesView />}
             {activeDept === 'pyramid' && <FootballPyramidView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
