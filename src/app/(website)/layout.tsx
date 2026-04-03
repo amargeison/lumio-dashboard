@@ -12,7 +12,7 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
   { label: 'Workflows',    href: '/product#workflows' },
   { label: 'Schools',      href: '/schools' },
-  { label: 'Football',     href: '/football' },
+  { label: 'Sports',       href: '/sports' },
   { label: 'CRM',          href: '/lumio-crm' },
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
@@ -54,7 +54,7 @@ function Nav() {
     : NAV_LINKS
   const navLinks = baseLinks
     .filter(l => {
-      if (isSchools && (l.label === 'CRM' || l.label === 'Football')) return false
+      if (isSchools && (l.label === 'CRM' || l.label === 'Sports')) return false
       if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
       return true
     })
