@@ -926,111 +926,38 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
 
   return (
     <>
-    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
-      <div className="absolute right-40 bottom-0 w-40 h-40 bg-teal-500 rounded-full opacity-10 blur-2xl" />
-
-      <div className="relative z-10 px-6 py-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-
-          {/* LEFT: greeting */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-black text-white tracking-tight">
-                {greeting}, {firstName || 'there'} 👋
-              </h1>
-
-              {/* Speaker 1: Active TTS */}
-              <button
-                onClick={handleBriefing}
-                title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud"
-                className="flex items-center justify-center rounded-lg transition-all"
-                style={{
-                  width: 32, height: 32, flexShrink: 0,
-                  backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)',
-                  border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                  color: isPlaying ? '#2DD4BF' : '#9CA3AF',
-                  animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                }}
-              >
-                <Volume2 size={15} strokeWidth={1.75} />
-              </button>
-
-              {/* Mic: Voice Commands */}
-              <button
-                onClick={openVoiceModal}
-                className="flex items-center justify-center rounded-lg transition-all"
-                title="Voice Commands — say 'Hi Lumio' or tap the mic"
-                style={{
-                  width: 32, height: 32, flexShrink: 0,
-                  backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)',
-                  border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`,
-                  color: '#A78BFA',
-                  transition: 'background-color 0.3s, border-color 0.3s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.35)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.2)' }}
-              >
-                <Mic size={15} strokeWidth={1.75} />
-              </button>
-
-              {/* Wake word status pill */}
-              {wakeWordEnabled && (
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium select-none"
-                  style={{
-                    backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)',
-                    color: showVoiceModal ? '#4ADE80' : '#A78BFA',
-                    border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}`,
-                  }}
-                >
-                  <span
-                    className="inline-block w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA',
-                      animation: 'pulse 2s ease-in-out infinite',
-                    }}
-                  />
-                  {showVoiceModal ? 'Listening\u2026' : 'Wake word active'}
-                </span>
-              )}
-            </div>
-            <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
-          </div>
-
-          {/* CENTRE: summary chips */}
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            {[
-              { label: 'Meetings', value: 4,  color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',     icon: '📅' },
-              { label: 'Tasks',    value: 7,  color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
-              { label: 'Urgent',   value: 2,  color: 'bg-red-500/20 text-red-300 border-red-500/30',         icon: '🔴' },
-              { label: 'Emails',   value: 12, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',      icon: '📧' },
-            ].map(item => (
-              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
-                <span className="text-base">{item.icon}</span>
-                <span className="text-lg font-black text-white">{item.value}</span>
-                <span className="text-xs opacity-70">{item.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* RIGHT: weather + world clock */}
-          <div className="flex items-start gap-3 flex-shrink-0">
-            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-              <span className="text-3xl">⛅</span>
-              <div>
-                <div className="text-xl font-black text-white">11°C</div>
-                <div className="text-xs text-purple-300">Partly cloudy</div>
-                <div className="text-xs text-purple-300/60">Demo City</div>
-              </div>
-            </div>
-            <WorldClock />
-          </div>
-
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl border border-white/5 mx-1`}>
+      <div className="relative z-10 flex items-center justify-between px-5 py-3 gap-4">
+        {/* Left: greeting + date */}
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="text-sm font-bold text-white whitespace-nowrap">{greeting}, {firstName || 'there'} 👋</h1>
+          <span className="text-xs text-purple-300/70 hidden sm:inline">{date}</span>
         </div>
-
+        {/* Centre: TTS + Voice buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button onClick={handleBriefing} title="Morning briefing" className="flex items-center justify-center rounded-lg transition-all"
+            style={{ width: 28, height: 28, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+            <Volume2 size={13} strokeWidth={1.75} />
+          </button>
+          <button onClick={openVoiceModal} title="Voice Commands" className="flex items-center justify-center rounded-lg transition-all"
+            style={{ width: 28, height: 28, backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)', border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`, color: '#A78BFA' }}>
+            <Mic size={13} strokeWidth={1.75} />
+          </button>
+          {wakeWordEnabled && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-medium select-none"
+              style={{ backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)', color: showVoiceModal ? '#4ADE80' : '#A78BFA', border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}` }}>
+              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA', animation: 'pulse 2s ease-in-out infinite' }} />
+              {showVoiceModal ? 'Listening\u2026' : 'Wake word'}
+            </span>
+          )}
+        </div>
+        {/* Right: weather + clock */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+            <span className="text-lg">⛅</span>
+            <div><span className="text-sm font-bold text-white">11°C</span><span className="text-xs text-purple-300/60 ml-1.5">Partly cloudy</span></div>
+          </div>
+        </div>
       </div>
     </div>
 

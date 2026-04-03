@@ -3707,11 +3707,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
       ) : tab === 'tasks' ? (
         <DailyTasks />
       ) : tab === 'insights' ? (
-        demoDataActive ? <Insights /> : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
-          </div>
-        )
+        <Insights />
       ) : tab === 'not-to-miss' ? (
         <NotToMiss />
       ) : tab === 'team' ? (
