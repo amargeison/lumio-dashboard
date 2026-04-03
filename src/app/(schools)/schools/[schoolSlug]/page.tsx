@@ -376,8 +376,8 @@ function SchoolWorldClock() {
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const SCHOOL_DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+  'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80',
+  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80',
 ]
 
 function PhotoFrame() {
