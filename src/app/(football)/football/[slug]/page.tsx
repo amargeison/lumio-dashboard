@@ -470,21 +470,17 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const expanded = pinned || hovered
 
 
-  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || file.size > 2 * 1024 * 1024) return
     if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
-    const blobUrl = URL.createObjectURL(file)
-    setClubLogo(blobUrl)
-    const token = localStorage.getItem('workspace_session_token')
-    const fd = new FormData()
-    fd.append('logo', file)
-    try {
-      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: token ? { 'x-workspace-token': token } : {}, body: fd })
-      const data = await res.json()
-      if (data.logo_url) { setClubLogo(data.logo_url); localStorage.setItem('lumio_football_logo', data.logo_url) }
-      URL.revokeObjectURL(blobUrl)
-    } catch { /* ignore */ }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setClubLogo(dataUrl)
+      localStorage.setItem('lumio_football_logo', dataUrl)
+    }
+    reader.readAsDataURL(file)
   }
 
   function togglePin() {
@@ -921,14 +917,14 @@ const DEMO_PHOTOS = [
 ]
 
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && localStorage.getItem('lumio_football_demo_active') === 'true' ? DEMO_PHOTOS : [] })
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-football-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && localStorage.getItem('lumio_football_demo_active') === 'true' ? DEMO_PHOTOS : [] })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
-  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-football-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-football-photo-dragged') === 'true')
   const [hoveringFrame, setHoveringFrame] = useState(false)
   const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
   const isDragging = useRef(false)
@@ -940,15 +936,15 @@ function PhotoFrame() {
     if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
-  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
-  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  useEffect(() => { localStorage.setItem('lumio-football-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-football-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
   function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
   function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
 
   function onDragStart(cx: number, cy: number) {
     isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
     posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
-    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-football-photo-dragged', 'true') }
   }
   function onDragMove(cx: number, cy: number, el: HTMLElement) {
     if (!isDragging.current) return
