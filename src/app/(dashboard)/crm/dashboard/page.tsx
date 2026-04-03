@@ -66,7 +66,7 @@ export default function CRMDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [isDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')
   const [wsResolved, setWsResolved] = useState(false)
-  const hasData = contacts.length > 0 || deals.length > 0
+  const hasData = contacts.length > 0 || deals.length > 0 || isDemoActive
 
   // Hydrate from sessionStorage cache after mount (avoids SSR mismatch)
   useEffect(() => {
@@ -92,7 +92,31 @@ export default function CRMDashboardPage() {
 
   // Fetch CRM data
   useEffect(() => {
-    if (!workspaceId) return
+    if (!workspaceId) {
+      // Demo fallback: load static demo data when no workspace but demo is active
+      if (isDemoActive) {
+        setContacts([
+          { id: 'dc1', first_name: 'Rachel', last_name: 'Fox', email: 'rachel@greenfield.edu', company: 'Greenfield Academy', job_title: 'Head of IT', phone: '+44 7700 900123', status: 'active', last_contacted: '2026-03-28', aria_score: 92, created_at: '' },
+          { id: 'dc2', first_name: 'Gary', last_name: 'Stone', email: 'gary@fernview.edu', company: 'Fernview College', job_title: 'Deputy Head', phone: '+44 7700 900124', status: 'active', last_contacted: '2026-03-25', aria_score: 78, created_at: '' },
+          { id: 'dc3', first_name: 'Ann', last_name: 'Mehta', email: 'ann@torchbearer.edu', company: 'Torchbearer Trust', job_title: 'CEO', phone: '+44 7700 900125', status: 'active', last_contacted: '2026-03-20', aria_score: 85, created_at: '' },
+        ] as any)
+        setDeals([
+          { id: 'dd1', name: 'Oakridge Academy', company: 'Oakridge Academy', value: 45000, stage: 'Prospecting', owner: 'Marcus W.', expected_close: '2026-06-30', days_in_stage: 5, workspace_id: '', created_at: '' },
+          { id: 'dd2', name: 'Alliance Trust', company: 'Alliance Trust', value: 340000, stage: 'Proposal', owner: 'Rachel O.', expected_close: '2026-05-15', days_in_stage: 12, workspace_id: '', created_at: '' },
+          { id: 'dd3', name: 'Riverside MAT', company: 'Riverside MAT', value: 280000, stage: 'Negotiation', owner: 'Marcus W.', expected_close: '2026-04-30', days_in_stage: 8, workspace_id: '', created_at: '' },
+          { id: 'dd4', name: 'Hillside Primary', company: 'Hillside Primary', value: 62000, stage: 'Closed Won', owner: 'Tom F.', expected_close: '2026-03-15', days_in_stage: 0, workspace_id: '', created_at: '' },
+        ] as any)
+        setStages([
+          { id: 's1', name: 'Prospecting', order: 1, color: '#6B7280', workspace_id: '' },
+          { id: 's2', name: 'Qualified', order: 2, color: '#3B82F6', workspace_id: '' },
+          { id: 's3', name: 'Proposal', order: 3, color: '#F59E0B', workspace_id: '' },
+          { id: 's4', name: 'Negotiation', order: 4, color: '#EF4444', workspace_id: '' },
+          { id: 's5', name: 'Closed Won', order: 5, color: '#22C55E', workspace_id: '' },
+        ] as any)
+        setLoading(false)
+      }
+      return
+    }
 
     async function loadData() {
       try {
@@ -155,8 +179,8 @@ export default function CRMDashboardPage() {
 
   const topDeals = [...openDeals].sort((a, b) => b.aria_score - a.aria_score).slice(0, 5)
 
-  // Loading skeleton — show while workspace is resolving or data is loading
-  if (loading && contacts.length === 0 && !error) {
+  // Loading skeleton — show while workspace is resolving or data is loading (skip for demo)
+  if (loading && contacts.length === 0 && !error && !isDemoActive) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse rounded-xl" style={{ background: CRM_CARD, height: 80 }} />
@@ -193,19 +217,50 @@ export default function CRMDashboardPage() {
     )
   }
 
-  // No workspace and resolution timed out — show empty state instead of blank
-  if (!workspaceId && wsResolved && !hasData) {
+  // No workspace and resolution timed out — show proper empty state
+  if (!workspaceId && wsResolved && !hasData && !isDemoActive) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="rounded-xl p-8 text-center max-w-md" style={{ background: CRM_BG, border: `1px solid ${CRM_BORDER}` }}>
-          <p className="text-sm font-semibold mb-2" style={{ color: '#F1F3FA' }}>No workspace connected</p>
-          <p className="text-xs mb-4" style={{ color: '#6B7299' }}>Sign into a workspace to view your CRM dashboard, or enable demo mode to explore.</p>
+      <div className="flex flex-col items-center justify-center min-h-[65vh] px-6 relative">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(139,92,246,0.06) 0%, transparent 65%)' }} />
+        <div className="relative text-center max-w-lg">
+          <div className="text-5xl mb-4">📊</div>
+          <h1 className="text-2xl font-black mb-2" style={{ color: '#F1F3FA' }}>Welcome to Lumio CRM</h1>
+          <p className="text-sm mb-8" style={{ color: '#6B7299', lineHeight: 1.6 }}>Your AI-powered pipeline, contacts and revenue intelligence platform.</p>
+
+          <div className="space-y-3 mb-6">
+            <div className="flex gap-3">
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+                📤 Import Contacts (CSV)
+              </button>
+              <button className="px-4 py-3 rounded-xl text-xs" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#6B7299' }}>
+                📋 Template
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+                📤 Import Pipeline (CSV)
+              </button>
+              <button className="px-4 py-3 rounded-xl text-xs" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#6B7299' }}>
+                📋 Template
+              </button>
+            </div>
+            <button className="w-full px-4 py-3 rounded-xl text-sm font-semibold" style={{ background: '#1E2035', border: '1px solid #2D3154', color: '#F1F3FA' }}>
+              🔗 Connect an Integration (HubSpot, Salesforce + more)
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px" style={{ background: '#2D3154' }} />
+            <span className="text-xs" style={{ color: '#6B7299' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#2D3154' }} />
+          </div>
+
           <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ background: '#8B5CF6', color: '#F1F3FA' }}
+            onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }}
+            className="px-6 py-3 rounded-xl text-sm font-bold"
+            style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', color: '#F1F3FA' }}
           >
-            Refresh
+            ✨ Explore with Demo Data
           </button>
         </div>
       </div>

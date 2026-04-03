@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield, Star, Building2 } from 'lucide-react'
+import { FlaskConical, Clock, TrendingUp, Calendar, UserPlus, Send, FileText, AlertCircle, Shield, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import { ChartSection, parseNum } from '@/components/chart-ui'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -86,7 +86,7 @@ export default function TrialsPage() {
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="trials" />}
       <DashboardEmptyState pageKey="trials"
         title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your trials data` : 'No trial data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Trials Lead'}. Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline.` : 'Upload your trial signups and onboarding data to track conversion, activation and time-to-value across your trial pipeline.'}
+        description="Track your trial signups, conversion rates, and time-to-value across your trial pipeline."
         uploads={[
           { key: 'trials', label: 'Upload Trial Signups (CSV)' },
           { key: 'onboarding', label: 'Upload Onboarding Data (CSV)' },
@@ -95,6 +95,8 @@ export default function TrialsPage() {
     </>
   )
 
+  const trialsHighlights = ['23 active trials — 5 ending this week', 'Conversion rate: 62% — up 5% vs last quarter', 'Avg trial length: 14 days — stable', '3 trials with high engagement ready for conversion call', 'Day 3 email sequence: 78% open rate']
+
   return (
     <PageShell title="Trials" subtitle="Trial management, conversions and pipeline">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -102,7 +104,24 @@ export default function TrialsPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <DeptAISummary dept="trials" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="trials" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Trials</span>
+          </div>
+          <ul className="space-y-2.5">
+            {trialsHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 

@@ -134,14 +134,10 @@ export default function SafeguardingPage() {
         </div>
       </div>
 
-      <DeptAISummary dept="safeguarding" portal="schools" />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Open Cases" value="1" sub="Review overdue" color="#EF4444" />
-        <StatCard label="Closed This Term" value="4" sub="Resolved" />
-        <StatCard label="Staff Trained" value="39" sub="of 41 staff" color="#F59E0B" />
-        <StatCard label="Next Review" value="Apr" sub="April 2026" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="safeguarding" portal="schools" />
+        <AIHighlights items={aiHighlights} />
       </div>
 
       {/* Quick Actions */}
@@ -154,8 +150,13 @@ export default function SafeguardingPage() {
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
-      {/* AI Highlights */}
-      <AIHighlights items={aiHighlights} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Open Cases" value="1" sub="Review overdue" color="#EF4444" />
+        <StatCard label="Closed This Term" value="4" sub="Resolved" />
+        <StatCard label="Staff Trained" value="39" sub="of 41 staff" color="#F59E0B" />
+        <StatCard label="Next Review" value="Apr" sub="April 2026" />
+      </div>
 
       {/* Open Cases */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(239,68,68,0.3)' }}>

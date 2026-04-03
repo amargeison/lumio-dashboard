@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { Sparkles } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell, ReferenceLine, AreaChart, Area,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+} from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -189,6 +195,186 @@ const mockData = {
   },
 }
 
+// ─── Shared chart data ──────────────────────────────────────────────────────
+
+const TIP: React.CSSProperties = { backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }
+const COLORS = ['#0D9488', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#22C55E', '#EC4899', '#6366F1']
+
+const ATTENDANCE_WEEKLY = [
+  { w: 'W1', school: 95.1, national: 94.5 }, { w: 'W2', school: 94.8, national: 94.5 }, { w: 'W3', school: 93.2, national: 94.5 },
+  { w: 'W4', school: 94.6, national: 94.5 }, { w: 'W5', school: 95.3, national: 94.5 }, { w: 'W6', school: 93.8, national: 94.5 },
+  { w: 'W7', school: 94.1, national: 94.5 }, { w: 'W8', school: 95.0, national: 94.5 }, { w: 'W9', school: 94.7, national: 94.5 },
+  { w: 'W10', school: 93.5, national: 94.5 }, { w: 'W11', school: 94.4, national: 94.5 }, { w: 'W12', school: 94.2, national: 94.5 },
+]
+
+const PROGRESS_BY_YEAR = [
+  { year: 'Rec', above: 28, expected: 42, below: 30 }, { year: 'Y1', above: 32, expected: 38, below: 30 },
+  { year: 'Y2', above: 25, expected: 40, below: 35 }, { year: 'Y3', above: 35, expected: 37, below: 28 },
+  { year: 'Y4', above: 30, expected: 36, below: 34 }, { year: 'Y5', above: 33, expected: 35, below: 32 },
+  { year: 'Y6', above: 38, expected: 33, below: 29 },
+]
+
+const BUDGET_CATS = [
+  { cat: 'Teaching Staff', pct: 52, color: '#0D9488' }, { cat: 'Support Staff', pct: 22, color: '#3B82F6' },
+  { cat: 'Premises', pct: 11, color: '#8B5CF6' }, { cat: 'Resources', pct: 8, color: '#F59E0B' },
+  { cat: 'CPD', pct: 4, color: '#EC4899' }, { cat: 'Other', pct: 3, color: '#6B7280' },
+]
+
+const TIMELINE_EVENTS = [
+  { date: '8 Apr', event: 'Governor visit — safeguarding focus', type: 'governance' },
+  { date: '14 Apr', event: 'Year 6 SATs preparation week begins', type: 'academic' },
+  { date: '22 Apr', event: 'EHCP annual review — Pupil A', type: 'send' },
+  { date: '1 May', event: 'Pupil Premium strategy review deadline', type: 'pp' },
+  { date: '12 May', event: 'KS2 SATs week', type: 'academic' },
+  { date: '19 May', event: 'Staff wellbeing survey closes', type: 'staff' },
+  { date: '2 Jun', event: 'Possible Ofsted inspection window opens', type: 'ofsted' },
+  { date: '15 Jul', event: 'End of academic year', type: 'term' },
+]
+
+function AttendanceChart() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Attendance Trend (12 Weeks)</h4>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={ATTENDANCE_WEEKLY} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+          <XAxis dataKey="w" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <YAxis domain={[90, 98]} tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <Tooltip contentStyle={TIP} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line type="monotone" dataKey="school" name="School" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="monotone" dataKey="national" name="National Avg" stroke="#6B7280" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function ProgressChart() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Pupil Progress by Year Group</h4>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={PROGRESS_BY_YEAR} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+          <XAxis dataKey="year" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+          <Tooltip contentStyle={TIP} />
+          <Legend wrapperStyle={{ fontSize: 10 }} />
+          <Bar dataKey="above" name="Above Expected" stackId="a" fill="#22C55E" />
+          <Bar dataKey="expected" name="Expected" stackId="a" fill="#3B82F6" />
+          <Bar dataKey="below" name="Below Expected" stackId="a" fill="#EF4444" radius={[3, 3, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function OfstedReadiness() {
+  const readyCount = mockData.ofsted.evidenceReadiness.filter(e => e.ready).length
+  const total = mockData.ofsted.evidenceReadiness.length
+  const pct = Math.round((readyCount / total) * 100)
+  return (
+    <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Ofsted Readiness</h4>
+      <div className="relative inline-flex items-center justify-center" style={{ width: 100, height: 100 }}>
+        <svg width={100} height={100} className="-rotate-90"><circle cx={50} cy={50} r={40} fill="none" stroke="#1F2937" strokeWidth={8} /><circle cx={50} cy={50} r={40} fill="none" stroke={pct >= 75 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#EF4444'} strokeWidth={8} strokeDasharray={`${(pct / 100) * 251} 251`} strokeLinecap="round" /></svg>
+        <span className="absolute text-xl font-black" style={{ color: '#F9FAFB' }}>{pct}%</span>
+      </div>
+      <p className="text-xs mt-2" style={{ color: '#6B7280' }}>{readyCount}/{total} evidence areas ready</p>
+    </div>
+  )
+}
+
+function SENDonut() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>SEND by Need Type</h4>
+      <ResponsiveContainer width="100%" height={160}>
+        <PieChart><Pie data={mockData.sen.byNeed} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="count" label={({ type, count }: any) => `${type}: ${count}`}>
+          {mockData.sen.byNeed.map((d, i) => <Cell key={i} fill={d.color} />)}
+        </Pie><Tooltip contentStyle={TIP} /></PieChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function BudgetBars() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Budget Utilisation</h4>
+      <div className="space-y-2">
+        {BUDGET_CATS.map(b => (
+          <div key={b.cat}>
+            <div className="flex justify-between text-[10px] mb-0.5"><span style={{ color: '#9CA3AF' }}>{b.cat}</span><span style={{ color: '#F9FAFB' }}>{b.pct}%</span></div>
+            <div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${b.pct}%`, backgroundColor: b.color }} /></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AlertsPanel({ alerts }: { alerts: { text: string; urgency: 'high' | 'medium' | 'low' }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Alerts & Actions</h4>
+      <div className="space-y-2">
+        {alerts.map((a, i) => (
+          <div key={i} className="flex items-start gap-2 py-1.5" style={{ borderBottom: i < alerts.length - 1 ? '1px solid #1F293740' : 'none' }}>
+            <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: a.urgency === 'high' ? '#EF4444' : a.urgency === 'medium' ? '#F59E0B' : '#22C55E' }} />
+            <p className="text-xs" style={{ color: '#D1D5DB' }}>{a.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TimelinePanel() {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Key Dates</h4>
+      <div className="space-y-2">
+        {TIMELINE_EVENTS.map((e, i) => (
+          <div key={i} className="flex items-center gap-3 py-1.5" style={{ borderBottom: i < TIMELINE_EVENTS.length - 1 ? '1px solid #1F293740' : 'none' }}>
+            <span className="text-xs font-bold w-12 flex-shrink-0" style={{ color: '#0D9488' }}>{e.date}</span>
+            <p className="text-xs" style={{ color: '#D1D5DB' }}>{e.event}</p>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{e.type}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function BenchmarkTable() {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Benchmarking — School vs National vs Similar Schools</h4></div>
+      <table className="w-full text-xs">
+        <thead><tr style={{ backgroundColor: '#0D0E14' }}>{['Metric', 'School', 'National', 'Similar', 'Gap'].map(h => <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[
+          { metric: 'Attendance', school: '94.2%', national: '94.5%', similar: '94.1%', gap: '-0.3%' },
+          { metric: 'KS2 Combined', school: '62%', national: '65%', similar: '63%', gap: '-3%' },
+          { metric: 'Phonics Pass', school: '78%', national: '79%', similar: '77%', gap: '-1%' },
+          { metric: 'SEND %', school: '26.2%', national: '20%', similar: '22%', gap: '+6.2%' },
+          { metric: 'PP Gap', school: '14%', national: '18%', similar: '16%', gap: '-4%' },
+          { metric: 'Staff Absence', school: '4.2%', national: '5.1%', similar: '4.8%', gap: '-0.9%' },
+        ].map((r, i) => (
+          <tr key={i} style={{ borderBottom: '1px solid #1F293740' }}>
+            <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{r.metric}</td>
+            <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{r.school}</td>
+            <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{r.national}</td>
+            <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{r.similar}</td>
+            <td className="px-3 py-2.5 font-bold" style={{ color: r.gap.startsWith('+') ? '#F59E0B' : '#22C55E' }}>{r.gap}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
+}
+
 // ─── Helper components ────────────────────────────────────────────────────────
 
 function StatCard({
@@ -275,7 +461,7 @@ function ProgressBar({
 
 function AIInsightBox({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border p-4 mb-6" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
+    <div className="rounded-xl border p-4 flex flex-col" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
           AI
@@ -284,6 +470,27 @@ function AIInsightBox({ text }: { text: string }) {
           <p className="text-xs font-semibold mb-1 uppercase tracking-wide" style={{ color: '#C4B5FD' }}>AI Summary</p>
           <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{text}</p>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function AIKeyHighlightsBox({ items, label }: { items: string[]; label: string }) {
+  return (
+    <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{label}</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -343,9 +550,12 @@ function AlertRow({
 function TrustView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Across the trust's 4 schools, average attendance is 93.3% — marginally below the national average of 94.5%. Riverside Academy is flagged for performance concerns: attendance at 91.4%, a 'Requires Improvement' Ofsted rating, and a budget overspend. Oakridge and Hillside are performing well. Trust-wide SEND cohort averages 22.3%, above the national 20% — aligned with the 2026 SEND White Paper which notes rising demand. Recommend a trust-level SEND strategy review ahead of Phase 1 compliance deadlines.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Across the trust's 4 schools, average attendance is 93.3% — marginally below the national average of 94.5%. Riverside Academy is flagged for performance concerns: attendance at 91.4%, a 'Requires Improvement' Ofsted rating, and a budget overspend. Oakridge and Hillside are performing well. Trust-wide SEND cohort averages 22.3%, above the national 20% — aligned with the 2026 SEND White Paper which notes rising demand. Recommend a trust-level SEND strategy review ahead of Phase 1 compliance deadlines.`}
+        />
+        <AIKeyHighlightsBox label="Trust Lead" items={['Cross-school attendance variance: Riverside 2.1% below trust average', 'RI school Riverside — 3 urgent actions outstanding from improvement plan', 'SEND cohort at 22.3% above national 20% — strategy review recommended', '2 schools off track on budget — combined £18k overspend', 'Governance meeting prep due — 4 agenda items awaiting submission']} />
+      </div>
 
       <div>
         <SectionTitle icon="🏫" title="School-by-School Overview" />
@@ -430,6 +640,32 @@ function TrustView() {
           </div>
         </div>
       </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AttendanceChart />
+        <ProgressChart />
+      </div>
+
+      {/* Three column row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <OfstedReadiness />
+        <SENDonut />
+        <BudgetBars />
+      </div>
+
+      <BenchmarkTable />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Riverside Academy attendance at 91.4% — below national average for 3 consecutive weeks', urgency: 'high' },
+          { text: 'Riverside Academy rated Requires Improvement — support plan due', urgency: 'high' },
+          { text: '3 EHCP annual reviews overdue across trust', urgency: 'medium' },
+          { text: 'Trust-wide SEND CPD plan not yet agreed — deadline May', urgency: 'medium' },
+          { text: 'Governor safeguarding visit scheduled 8 Apr', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -437,9 +673,12 @@ function TrustView() {
 function HeadteacherView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`School attendance today is 94.2%, in line with the national average. 12 pupils (8.3%) are classified as persistent absentees — this is an area to watch. KS2 combined results are 3 percentage points below national, driven by a 14-point disadvantage gap. The SEND cohort (26.2% of roll) is above national average and warrants attention given the incoming 2026 SEND White Paper ISP requirements. Behaviour incidents have dropped 26% this term — a positive trend. 2 staff are on supply cover today. Budget is currently on track.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`School attendance today is 94.2%, in line with the national average. 12 pupils (8.3%) are classified as persistent absentees — this is an area to watch. KS2 combined results are 3 percentage points below national, driven by a 14-point disadvantage gap. The SEND cohort (26.2% of roll) is above national average and warrants attention given the incoming 2026 SEND White Paper ISP requirements. Behaviour incidents have dropped 26% this term — a positive trend. 2 staff are on supply cover today. Budget is currently on track.`}
+        />
+        <AIKeyHighlightsBox label="Headteacher" items={['3 staff absence cover arrangements needed today', 'Year 6 SATs preparation — 4 weeks to go, revision timetable finalised', 'Parent evening bookings at 67% — reminder emails due', 'Exclusion review panel due Friday — papers to circulate', 'SLT agenda: 3 items outstanding from last meeting']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Attendance Today" value="94.2%" sub="National: 94.5%" color="blue" />
@@ -532,6 +771,27 @@ function HeadteacherView() {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AttendanceChart />
+        <ProgressChart />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <OfstedReadiness />
+        <SENDonut />
+        <BudgetBars />
+      </div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Year 6 attendance dipped to 91.8% — SATs window approaching', urgency: 'high' },
+          { text: 'DBS check renewal overdue for 1 staff member', urgency: 'high' },
+          { text: 'Parent satisfaction survey results due — 72% response rate so far', urgency: 'medium' },
+          { text: '2 exclusions this term — review behaviour policy effectiveness', urgency: 'medium' },
+          { text: 'Staff wellbeing score 7.4/10 — above national average', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -542,9 +802,12 @@ function HeadOfYearView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Year ${selectedYear} attendance is ${yearData.pct}% — ${yearData.pct < 94.5 ? 'below' : 'above'} the national average of 94.5%. Behaviour incidents in this year group account for 8 of 23 this term. 3 pupils in Y${selectedYear} are on the SEND register with active ISPs. 2 pupils are flagged as requiring pastoral intervention. Early communication with families of persistent absentees is recommended before the Easter break.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Year ${selectedYear} attendance is ${yearData.pct}% — ${yearData.pct < 94.5 ? 'below' : 'above'} the national average of 94.5%. Behaviour incidents in this year group account for 8 of 23 this term. 3 pupils in Y${selectedYear} are on the SEND register with active ISPs. 2 pupils are flagged as requiring pastoral intervention. Early communication with families of persistent absentees is recommended before the Easter break.`}
+        />
+        <AIKeyHighlightsBox label="Head of Year" items={['4 pupils with attendance below 85% — pastoral follow-up needed', '2 unresolved pastoral concerns — 1 escalated to DSL', 'Rewards assembly preparation due by Thursday', 'Intervention group progress review scheduled this week', 'New starter settling-in check — day 5 review due tomorrow']} />
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-2">
         <p className="text-sm mr-2 self-center" style={{ color: '#9CA3AF' }}>Viewing year group:</p>
@@ -633,6 +896,17 @@ function HeadOfYearView() {
           </table>
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><OfstedReadiness /><SENDonut /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Year 5 attendance below 94% target for 2 weeks', urgency: 'high' },
+          { text: '3 pastoral concern logs open — follow-up due', urgency: 'medium' },
+          { text: 'Rewards ratio 3:1 positive — target is 5:1', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -640,9 +914,12 @@ function HeadOfYearView() {
 function TeacherView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Your class has 94.1% attendance today — 1 pupil absent. Of your 28 pupils, 6 are on the SEND register (2 with EHCPs). Maths progress data shows 31% of your class are working below expected — consider targeted small-group support. 2 assessments are due this week. Reading recovery group sessions are showing strong impact for the 3 pupils involved. A reminder: SEND reviews for Pupil A and Pupil B are due before end of term.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Your class has 94.1% attendance today — 1 pupil absent. Of your 28 pupils, 6 are on the SEND register (2 with EHCPs). Maths progress data shows 31% of your class are working below expected — consider targeted small-group support. 2 assessments are due this week. Reading recovery group sessions are showing strong impact for the 3 pupils involved. A reminder: SEND reviews for Pupil A and Pupil B are due before end of term.`}
+        />
+        <AIKeyHighlightsBox label="Teacher" items={['3 assessments unmarked — overdue since last week', 'Intervention group progress review due Wednesday', 'CPD log incomplete — 2 hours to record before term end', 'Parents evening: 4 open slots still available', 'Resource request for guided reading books pending approval']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Class Attendance Today" value="94.1%" sub="1 pupil absent" color="blue" />
@@ -717,6 +994,16 @@ function TeacherView() {
           ))}
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: '4 assessments overdue for marking — Year 3 writing', urgency: 'high' },
+          { text: 'CPD session on differentiation scheduled Thursday', urgency: 'low' },
+          { text: 'Marking workload above 12 hrs/week — review policy', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -736,9 +1023,12 @@ function SENView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`SEND register: 38 pupils (26.2% of roll) — above the national average of 20%. EHCPs have risen nationally by 67% since 2019; this school reflects that trend. URGENT: 1 annual review is overdue and Pupil C (Y6) has no transition plan — secondary placement must be confirmed before July. 3 EHCP assessments are approaching their 20-week statutory deadline. The 2026 SEND White Paper introduces Individual Support Plans as a statutory requirement from September 2029 — ISP templates are not yet created. Experts at Hand funding (£1.8bn nationally) and the Inclusive Mainstream Fund (£1.6bn) are now available to apply for. SEN budget on track. Recommend: create ISP templates this half-term, book Y6 transition review, and submit Inclusive Mainstream Fund application.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`SEND register: 38 pupils (26.2% of roll) — above the national average of 20%. EHCPs have risen nationally by 67% since 2019; this school reflects that trend. URGENT: 1 annual review is overdue and Pupil C (Y6) has no transition plan — secondary placement must be confirmed before July. 3 EHCP assessments are approaching their 20-week statutory deadline. The 2026 SEND White Paper introduces Individual Support Plans as a statutory requirement from September 2029 — ISP templates are not yet created. Experts at Hand funding (£1.8bn nationally) and the Inclusive Mainstream Fund (£1.6bn) are now available to apply for. SEN budget on track. Recommend: create ISP templates this half-term, book Y6 transition review, and submit Inclusive Mainstream Fund application.`}
+        />
+        <AIKeyHighlightsBox label="SENCO" items={['2 EHCP annual reviews overdue — deadline passed', '1 new referral awaiting initial assessment', 'Provision map requires end-of-term update', 'SEND training compliance: 1 staff member outstanding', 'External agency visit scheduled Thursday — SALT']} />
+      </div>
 
       {/* White Paper callout banner */}
       <div className="rounded-xl bg-gradient-to-r from-indigo-900 to-blue-800 text-white p-5">
@@ -1388,6 +1678,18 @@ function SENView() {
 
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><SENDonut /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'EHCP annual review overdue — Pupil A (Y4)', urgency: 'high' },
+          { text: 'CAMHS referral awaiting 8 weeks — Pupil B (Y2)', urgency: 'high' },
+          { text: 'Transition plan not started — Pupil C (Y6)', urgency: 'high' },
+          { text: 'ISP review overdue 2 weeks — Pupil D (Y5)', urgency: 'medium' },
+          { text: 'SEND budget 76% committed — review remaining allocation', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -1407,9 +1709,12 @@ function SafeguardingView() {
 
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`4 open safeguarding cases: 2 Child Protection (one is a high-risk domestic abuse situation), 2 Children in Need. 3 Looked After Children enrolled. KCSIE 2024 compliance is 87% — key gaps: staff training (4 outstanding), online safety risk assessment not yet reviewed, and filtering/monitoring audit overdue. Under KCSIE 2024, the DSL holds responsibility for online safety and understanding filtering/monitoring systems — this must not be delegated. Prevent duty compliance is Met. Next TAF review is 26 March. Single Central Record is up to date. Safer recruitment compliance: 100%.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`4 open safeguarding cases: 2 Child Protection (one is a high-risk domestic abuse situation), 2 Children in Need. 3 Looked After Children enrolled. KCSIE 2024 compliance is 87% — key gaps: staff training (4 outstanding), online safety risk assessment not yet reviewed, and filtering/monitoring audit overdue. Under KCSIE 2024, the DSL holds responsibility for online safety and understanding filtering/monitoring systems — this must not be delegated. Prevent duty compliance is Met. Next TAF review is 26 March. Single Central Record is up to date. Safer recruitment compliance: 100%.`}
+        />
+        <AIKeyHighlightsBox label="Safeguarding" items={['2 open CP cases requiring immediate update', 'SCR check outstanding for 1 recently hired staff member', 'DSL supervision meeting due this week', 'Safeguarding training: 3 staff non-compliant', '1 early help referral pending decision from panel']} />
+      </div>
 
       {/* KCSIE 2024 callout */}
       <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 text-white p-5">
@@ -1921,6 +2226,18 @@ function SafeguardingView() {
 
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Open case — neglect concern — DSL review required today', urgency: 'high' },
+          { text: 'LA referral for Pupil X — outcome pending', urgency: 'high' },
+          { text: 'DBS renewal due for 2 staff members this month', urgency: 'medium' },
+          { text: 'Safer recruitment training — 1 governor outstanding', urgency: 'medium' },
+          { text: 'SCR last checked 20 Jan — next check due', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -1929,9 +2246,12 @@ function SafeguardingView() {
 function PupilPremiumView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`31 pupils (21.4% of roll) are Pupil Premium eligible — above the national average of ~18%. The attainment gap has closed from 17 points last year to 14 points this year, and sits below the national gap of 18 points — a positive trajectory. PP funding is on track: £7,640 spent of £12,800 allocated. Reading Recovery and 1:1 tutoring are showing high impact. Breakfast Club and Homework Club are delivering medium impact. Recommend reviewing whether SEMH support spend can be extended, given its high-impact classification.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`31 pupils (21.4% of roll) are Pupil Premium eligible — above the national average of ~18%. The attainment gap has closed from 17 points last year to 14 points this year, and sits below the national gap of 18 points — a positive trajectory. PP funding is on track: £7,640 spent of £12,800 allocated. Reading Recovery and 1:1 tutoring are showing high impact. Breakfast Club and Homework Club are delivering medium impact. Recommend reviewing whether SEMH support spend can be extended, given its high-impact classification.`}
+        />
+        <AIKeyHighlightsBox label="Pupil Premium" items={['PP attainment gap widened 3% in Year 4 maths', '2 interventions showing low impact — review urgently', 'PP spending review due end of term — budget 78% spent', 'Ofsted PP evidence folder incomplete — 3 sections missing', '4 new PP-eligible pupils identified this term']} />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="PP Eligible Pupils" value="31" sub="21.4% of school" color="blue" />
@@ -2005,6 +2325,17 @@ function PupilPremiumView() {
           </div>
         </div>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><ProgressChart /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'PP attainment gap narrowed to 14% — was 17% last year', urgency: 'low' },
+          { text: 'PP strategy review due by 1 May — draft incomplete', urgency: 'high' },
+          { text: '£5,160 PP funding remaining — allocate before term end', urgency: 'medium' },
+          { text: 'Ofsted evidence log needs PP impact section updating', urgency: 'medium' },
+        ]} />
+        <TimelinePanel />
+      </div>
     </div>
   )
 }
@@ -2012,9 +2343,12 @@ function PupilPremiumView() {
 function InspectionsView() {
   return (
     <div className="space-y-6">
-      <AIInsightBox
-        text={`Under the new 2025 Ofsted framework (in effect Nov 2025), schools receive report cards across 6 areas — no single overall grade. Based on current data, Oakridge is performing at Strong Standard in Inclusion, Attendance & Behaviour, and Personal Development. Curriculum & Teaching, Achievement and Leadership & Governance are at Expected Standard. Next inspection is expected Autumn 2026. 2 evidence gaps are flagged: the Attendance Improvement Plan and the Disadvantage Gap Action Plan are not yet complete — these should be prioritised before summer. Safeguarding is fully compliant.`}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-6">
+        <AIInsightBox
+          text={`Under the new 2025 Ofsted framework (in effect Nov 2025), schools receive report cards across 6 areas — no single overall grade. Based on current data, Oakridge is performing at Strong Standard in Inclusion, Attendance & Behaviour, and Personal Development. Curriculum & Teaching, Achievement and Leadership & Governance are at Expected Standard. Next inspection is expected Autumn 2026. 2 evidence gaps are flagged: the Attendance Improvement Plan and the Disadvantage Gap Action Plan are not yet complete — these should be prioritised before summer. Safeguarding is fully compliant.`}
+        />
+        <AIKeyHighlightsBox label="Inspections" items={['Deep dive readiness rated amber in 2 subject areas', 'Last mocksted actions: 60% complete, 4 outstanding', 'Governor monitoring visit not yet scheduled this term', 'Behaviour policy review outstanding — last updated Oct 2025', 'Evidence folders last updated 6 weeks ago — refresh needed']} />
+      </div>
 
       {/* New framework explainer */}
       <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
@@ -2111,6 +2445,19 @@ function InspectionsView() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><AttendanceChart /><ProgressChart /></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><OfstedReadiness /><SENDonut /><BudgetBars /></div>
+      <BenchmarkTable />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsPanel alerts={[
+          { text: 'Attendance improvement plan not yet complete — evidence gap', urgency: 'high' },
+          { text: 'Disadvantaged gap action plan missing — critical for inspection', urgency: 'high' },
+          { text: 'Inspection window opens June 2026 — 60 days to prepare', urgency: 'medium' },
+          { text: 'Quality of Education self-assessment due for update', urgency: 'medium' },
+          { text: '6/8 evidence areas ready — 2 outstanding', urgency: 'low' },
+        ]} />
+        <TimelinePanel />
       </div>
     </div>
   )

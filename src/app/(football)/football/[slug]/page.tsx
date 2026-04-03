@@ -14,19 +14,20 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink, Crown,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown, Camera,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
-import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
+import BoardSuiteView from '@/components/football/BoardSuiteView'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
-import { EmailActions } from '@/components/overview/MessageActions'
-import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
+import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -430,7 +431,28 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const logoFileRef = useRef<HTMLInputElement>(null)
+  const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null)
+  const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const blobUrl = URL.createObjectURL(file)
+    setClubLogo(blobUrl)
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) { setClubLogo(data.logo_url); localStorage.setItem('lumio_football_logo', data.logo_url) }
+      URL.revokeObjectURL(blobUrl)
+    } catch { /* ignore */ }
+  }
 
   function togglePin() {
     setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
@@ -457,10 +479,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: PRIMARY, color: '#F9FAFB' }}>
-            FC
-          </div>
+          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden" style={{ backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB' }} title="Upload club badge">
+            {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={() => setClubLogo(null)} /> : 'FC'}
+            {logoHover && <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><Camera size={14} color="#fff" /></div>}
+          </button>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -481,16 +505,14 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
               )}
               {sec.items.map(item => {
                 const active = activeDept === item.id
-                const isBoard = item.id === 'board'
-                const accent = isBoard ? '#F1C40F' : PRIMARY
                 return (
                   <button key={item.id}
                     onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
                     className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
                     style={{
-                      backgroundColor: active ? `${accent}1f` : 'transparent',
-                      color: active ? accent : isBoard ? '#F1C40F99' : '#9CA3AF',
-                      borderLeft: active ? `2px solid ${accent}` : '2px solid transparent',
+                      backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
+                      color: active ? PRIMARY : '#9CA3AF',
+                      borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
                     }}
@@ -550,8 +572,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void
+function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -632,10 +654,10 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
-                { label: 'Squad', value: SQUAD.length, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-                { label: 'Fit', value: fitCount, color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
-                { label: 'Injured', value: injuredCount, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🏥' },
-                { label: 'Suspended', value: suspendedCount, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '🟨' },
+                { label: 'Squad', value: isDemo ? SQUAD.length : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+                { label: 'Fit', value: isDemo ? fitCount : '—', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
+                { label: 'Injured', value: isDemo ? injuredCount : '—', color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🏥' },
+                { label: 'Suspended', value: isDemo ? suspendedCount : '—', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '🟨' },
               ].map(item => (
                 <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                   <span className="text-base">{item.icon}</span>
@@ -677,7 +699,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
 const FOOTBALL_QUICK_ACTIONS = [
   { label: 'Team Sheet', icon: Clipboard },
   { label: 'Log Injury', icon: Heart },
-  { label: 'Send Email', icon: MessageSquare },
   { label: 'Transfer Hub', icon: ArrowUpDown },
   { label: 'Book Video Room', icon: Video },
   { label: 'Press Conf', icon: Newspaper },
@@ -768,8 +789,7 @@ function MorningRoundup() {
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
                   {item.messages.map(msg => (
-                    <div key={msg.id} className="rounded-lg p-3 relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.75 : 1 }}>
-                      {!msg.read && <span className="absolute top-2 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Unread</span>}
+                    <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-2">
                           <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>
@@ -777,17 +797,34 @@ function MorningRoundup() {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className={`text-xs truncate ${msg.read ? 'font-normal' : 'font-bold'}`} style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
                               {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
                               {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
                             </div>
-                            <div className={`text-xs ${msg.read ? 'font-normal' : 'font-semibold'}`} style={{ color: msg.read ? '#6B7280' : '#D1D5DB' }}>{msg.subject}</div>
+                            <div className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{msg.subject}</div>
                           </div>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
                       </div>
                       <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
-                      <EmailActions msgId={msg.id} source="outlook" senderEmail={msg.from} subject={msg.subject} preview={msg.preview} isRead={msg.read} onToast={() => {}} />
+                      {replied.includes(msg.id) ? (
+                        <span className="text-xs" style={{ color: '#C0392B' }}>Replied</span>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button onClick={() => setShowReply(showReply === msg.id ? null : msg.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>Reply</button>
+                          <button className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
+                        </div>
+                      )}
+                      {showReply === msg.id && (
+                        <div className="mt-2">
+                          <textarea value={replyText[msg.id] || ''} onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))} placeholder="Write your reply..." rows={2}
+                            className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+                          <div className="flex gap-2 mt-1.5">
+                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Send</button>
+                            <button onClick={() => setShowReply(null)} className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -841,50 +878,113 @@ function FixturesPanel() {
 // ─── Photo Frame ─────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
 function PhotoFrame() {
-  const [photos] = useState<string[]>(DEMO_PHOTOS)
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true' ? DEMO_PHOTOS : [] })
   const [currentIdx, setCurrentIdx] = useState(0)
-  const [isPlayingSlideshow, setIsPlayingSlideshow] = useState(true)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [intervalSecs, setIntervalSecs] = useState(5)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    if (isPlayingSlideshow && photos.length > 1) {
-      intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), 5000)
-    }
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [isPlayingSlideshow, photos.length])
+  }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
+  }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
+  }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 200 }}>
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
         <div className="flex items-center gap-2">
-          <span className="text-base">🖼️</span>
-          <span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span>
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
-        {photos.length > 1 && (
-          <button onClick={() => setIsPlayingSlideshow(p => !p)} className="text-xs px-2 py-1 rounded-lg"
-            style={{ backgroundColor: isPlayingSlideshow ? 'rgba(192,57,43,0.15)' : 'rgba(255,255,255,0.05)', color: isPlayingSlideshow ? '#C0392B' : '#6B7280', border: `1px solid ${isPlayingSlideshow ? 'rgba(192,57,43,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
-            {isPlayingSlideshow ? 'Pause' : 'Play'}
+      </div>
+      {photos.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
+        </div>
+      ) : (
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
+      )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
           </button>
-        )}
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
       </div>
-      <div className="flex-1 relative mx-4 mb-4 rounded-xl overflow-hidden" style={{ minHeight: 140 }}>
-        <img src={photos[currentIdx]} alt="Photo frame" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, transition: 'opacity 0.5s ease' }} />
-        {photos.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {photos.map((_, i) => (
-              <button key={i} onClick={() => setCurrentIdx(i)}
-                style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === currentIdx ? '#C0392B' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
-            ))}
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
+            </div>
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -988,76 +1088,233 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
   )
 }
 
+function TeamInfoTab() {
+  const PLAYERS = [
+    { id: 'gk', name: 'Sam Fletcher', pos: 'GK', initials: 'SF', overall: 79, color: '#F59E0B', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 } },
+    { id: 'rb', name: 'Ryan Cole', pos: 'RB', initials: 'RC', overall: 81, color: '#3B82F6', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 } },
+    { id: 'cb1', name: 'Kyle Brennan', pos: 'CB', initials: 'KB', overall: 82, color: '#3B82F6', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 } },
+    { id: 'cb2', name: 'Nate Ward', pos: 'CB', initials: 'NW', overall: 78, color: '#3B82F6', stats: { PAC: 68, SHO: 35, PAS: 62, DRI: 55, DEF: 85, PHY: 84 } },
+    { id: 'lb', name: 'Tyler Shaw', pos: 'LB', initials: 'TS', overall: 76, color: '#3B82F6', stats: { PAC: 84, SHO: 48, PAS: 70, DRI: 72, DEF: 78, PHY: 74 } },
+    { id: 'cdm1', name: 'Jamie Torres', pos: 'CM', initials: 'JT', overall: 84, color: '#22C55E', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 } },
+    { id: 'cdm2', name: 'Ben Hardy', pos: 'CM', initials: 'BH', overall: 77, color: '#22C55E', stats: { PAC: 72, SHO: 62, PAS: 80, DRI: 74, DEF: 72, PHY: 78 } },
+    { id: 'cam', name: 'Kai Ellis', pos: 'CAM', initials: 'KE', overall: 83, color: '#22C55E', stats: { PAC: 80, SHO: 78, PAS: 86, DRI: 88, DEF: 42, PHY: 68 } },
+    { id: 'lm', name: 'Dele Adeyemi', pos: 'LW', initials: 'DA', overall: 85, color: '#EF4444', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 } },
+    { id: 'rm', name: 'Zak Osei', pos: 'RW', initials: 'ZO', overall: 80, color: '#EF4444', stats: { PAC: 88, SHO: 74, PAS: 72, DRI: 84, DEF: 38, PHY: 70 } },
+    { id: 'st', name: 'Liam Cross', pos: 'ST', initials: 'LC', overall: 86, color: '#EF4444', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 } },
+  ]
+  const COACHES = [
+    { name: 'Marcus Reid', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
+    { name: 'Danny Hughes', role: 'Asst Coach', initials: 'DH', color: '#0D9488' },
+    { name: 'Priya Nair', role: 'Head Medical', initials: 'PN', color: '#EC4899' },
+  ]
+  type Formation = '4-2-3-1' | '4-3-3' | '3-5-2' | '4-4-2'
+  const FORMATIONS: Record<Formation, Record<string, { top: string; left: string }>> = {
+    '4-2-3-1': { gk: { top: '86%', left: '45%' }, rb: { top: '68%', left: '78%' }, cb1: { top: '68%', left: '56%' }, cb2: { top: '68%', left: '34%' }, lb: { top: '68%', left: '12%' }, cdm1: { top: '52%', left: '56%' }, cdm2: { top: '52%', left: '34%' }, cam: { top: '35%', left: '45%' }, rm: { top: '35%', left: '74%' }, lm: { top: '35%', left: '16%' }, st: { top: '14%', left: '45%' } },
+    '4-3-3': { gk: { top: '86%', left: '45%' }, rb: { top: '68%', left: '80%' }, cb1: { top: '68%', left: '58%' }, cb2: { top: '68%', left: '32%' }, lb: { top: '68%', left: '10%' }, cdm1: { top: '48%', left: '60%' }, cdm2: { top: '48%', left: '45%' }, cam: { top: '48%', left: '30%' }, rm: { top: '20%', left: '76%' }, lm: { top: '20%', left: '14%' }, st: { top: '14%', left: '45%' } },
+    '3-5-2': { gk: { top: '86%', left: '45%' }, rb: { top: '55%', left: '82%' }, cb1: { top: '70%', left: '55%' }, cb2: { top: '70%', left: '35%' }, lb: { top: '55%', left: '8%' }, cdm1: { top: '70%', left: '75%' }, cdm2: { top: '48%', left: '45%' }, cam: { top: '70%', left: '15%' }, rm: { top: '48%', left: '65%' }, lm: { top: '48%', left: '25%' }, st: { top: '18%', left: '55%' } },
+    '4-4-2': { gk: { top: '86%', left: '45%' }, rb: { top: '68%', left: '78%' }, cb1: { top: '68%', left: '56%' }, cb2: { top: '68%', left: '34%' }, lb: { top: '68%', left: '12%' }, cdm1: { top: '45%', left: '75%' }, cdm2: { top: '45%', left: '55%' }, cam: { top: '45%', left: '35%' }, rm: { top: '45%', left: '15%' }, lm: { top: '18%', left: '35%' }, st: { top: '18%', left: '55%' } },
+  }
+  const [formation, setFormation] = useState<Formation>('4-2-3-1')
+  const [viewMode, setViewMode] = useState<'pitch' | 'grid'>('pitch')
+  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const positions = FORMATIONS[formation]
+  const posColor: Record<string, string> = { GK: '#F59E0B', CB: '#3B82F6', RB: '#3B82F6', LB: '#3B82F6', CM: '#22C55E', CAM: '#22C55E', LW: '#EF4444', RW: '#EF4444', ST: '#EF4444' }
+
+  if (!mounted) return null
+
+  const GRID_CARDS = [
+    { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
+    { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
+    { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
+    { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
+    { name: 'Dele Adeyemi', role: 'Left Wing', dept: 'First Team', overall: 85, initials: 'DA', color: '#7C3AED', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 }, id: 'OFC-005', date: '01/07/2025' },
+    { name: 'Ryan Cole', role: 'Right Back', dept: 'First Team', overall: 81, initials: 'RC', color: '#B91C1C', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 }, id: 'OFC-006', date: '01/07/2025' },
+    { name: 'Jamie Torres', role: 'Central Midfielder', dept: 'First Team', overall: 84, initials: 'JT', color: '#0EA5E9', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 }, id: 'OFC-007', date: '01/07/2025' },
+    { name: 'Liam Cross', role: 'Striker', dept: 'First Team', overall: 86, initials: 'LC', color: '#EA580C', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 }, id: 'OFC-008', date: '01/07/2025' },
+    { name: 'Priya Nair', role: 'Head of Medical', dept: 'Medical', overall: 91, initials: 'PN', color: '#EC4899', stats: { PAC: 61, SHO: 44, PAS: 82, DRI: 58, DEF: 77, PHY: 69 }, id: 'OFC-009', date: '01/07/2025' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setViewMode('pitch')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'pitch' ? '#C0392B' : '#111318', color: viewMode === 'pitch' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Pitch View">⚽</button>
+          <button onClick={() => setViewMode('grid')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'grid' ? '#C0392B' : '#111318', color: viewMode === 'grid' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Grid View">🃏</button>
+        </div>
+      </div>
+
+      {viewMode === 'pitch' ? (
+        <>
+          <div className="flex gap-2">
+            {(['4-2-3-1', '4-3-3', '3-5-2', '4-4-2'] as Formation[]).map(f => (
+              <button key={f} onClick={() => setFormation(f)} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
+            ))}
+          </div>
+          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '68/100', maxHeight: 700, background: 'linear-gradient(180deg, #1a6b3c 0%, #1f7a44 25%, #1a6b3c 50%, #1f7a44 75%, #1a6b3c 100%)', border: '3px solid #fff3' }}>
+            <svg viewBox="0 0 68 100" className="absolute inset-0 w-full h-full" style={{ opacity: 0.35 }}>
+              <rect x="1" y="1" width="66" height="98" fill="none" stroke="white" strokeWidth="0.5" />
+              <line x1="1" y1="50" x2="67" y2="50" stroke="white" strokeWidth="0.3" />
+              <circle cx="34" cy="50" r="9" fill="none" stroke="white" strokeWidth="0.3" />
+              <circle cx="34" cy="50" r="0.5" fill="white" />
+              <rect x="14" y="1" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
+              <rect x="22" y="1" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
+              <rect x="14" y="83" width="40" height="16" fill="none" stroke="white" strokeWidth="0.3" />
+              <rect x="22" y="93" width="24" height="6" fill="none" stroke="white" strokeWidth="0.3" />
+              <circle cx="34" cy="12" r="0.5" fill="white" />
+              <circle cx="34" cy="88" r="0.5" fill="white" />
+            </svg>
+            {PLAYERS.map(p => {
+              const pos = positions[p.id]
+              if (!pos) return null
+              const c = posColor[p.pos] || '#6B7280'
+              return (
+                <div key={p.id} onMouseEnter={() => setHoveredPlayer(p.id)} onMouseLeave={() => setHoveredPlayer(null)}
+                  className="absolute flex flex-col items-center" style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', transition: 'top 0.5s ease, left 0.5s ease', zIndex: hoveredPlayer === p.id ? 20 : 10 }}>
+                  {hoveredPlayer === p.id && (
+                    <div className="absolute bottom-full mb-2 rounded-xl p-3 w-36 pointer-events-none" style={{ backgroundColor: '#111318ee', border: `1px solid ${c}60`, backdropFilter: 'blur(8px)' }}>
+                      <div className="grid grid-cols-3 gap-1 text-center">
+                        {Object.entries(p.stats).map(([k, v]) => (
+                          <div key={k}><span className="text-[10px] font-bold block" style={{ color: v >= 85 ? '#22C55E' : v >= 70 ? '#F59E0B' : '#EF4444' }}>{v}</span><span className="text-[7px]" style={{ color: '#9CA3AF' }}>{k}</span></div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="rounded-xl flex flex-col items-center p-1.5 w-[72px]" style={{ backgroundColor: '#111318cc', border: `1.5px solid ${c}60`, backdropFilter: 'blur(4px)' }}>
+                    <div className="flex items-center justify-between w-full px-1 mb-0.5">
+                      <span className="text-[10px] font-black" style={{ color: c }}>{p.overall}</span>
+                      <span className="text-[7px] font-bold px-1 rounded" style={{ backgroundColor: `${c}30`, color: c }}>{p.pos}</span>
+                    </div>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold mb-0.5" style={{ backgroundColor: `${c}30`, color: c, border: `1.5px solid ${c}`, boxShadow: `0 0 8px ${c}40` }}>{p.initials}</div>
+                    <span className="text-[8px] font-bold text-center leading-tight" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[1] || p.name}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="rounded-xl p-3 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Dugout</span>
+            {COACHES.map(c => (
+              <div key={c.name} className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: `${c.color}25`, color: c.color, border: `1px solid ${c.color}50` }}>{c.initials}</div>
+                <div><p className="text-[10px] font-bold" style={{ color: '#F9FAFB' }}>{c.name}</p><p className="text-[8px]" style={{ color: '#6B7280' }}>{c.role}</p></div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {GRID_CARDS.map(card => (
+            <div key={card.id} style={{ background: `linear-gradient(135deg, ${card.color}22 0%, #0A0B10 60%)`, border: `1px solid ${card.color}44`, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 320 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}><div><div style={{ fontSize: 32, fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.overall}</div><div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, letterSpacing: '0.1em' }}>OVERALL</div></div><div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: `${card.color}33`, color: card.color, border: `1px solid ${card.color}55` }}>{card.dept}</div></div>
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}><div style={{ width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${card.color}44 0%, ${card.color}11 70%)`, border: `2px solid ${card.color}`, boxShadow: `0 0 20px ${card.color}44, 0 0 40px ${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: card.color }}>{card.initials}</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 700, color: '#F9FAFB' }}>{card.name}</div><div style={{ fontSize: 13, color: card.color, fontWeight: 500, marginTop: 2 }}>{card.role}</div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4, padding: '8px 0', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>{Object.entries(card.stats).map(([key, val]) => (<div key={key} style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: val >= 85 ? '#22C55E' : val >= 70 ? '#F59E0B' : '#EF4444' }}>{val}</div><div style={{ fontSize: 9, color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em' }}>{key}</div></div>))}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#4B5563' }}><span>{card.id}</span><span>{card.date}</span></div>
+              <div style={{ display: 'flex', gap: 8 }}><button style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Profile</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TabContent({ tab }: { tab: OverviewTab }) {
-  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'>('today')
+  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'|'teaminfo'>('today')
   if (tab === 'today') return null // handled separately
 
   if (tab === 'quick-wins') return (
-    <div className="space-y-3">
-      <QWItem priority="🔴" title="Tyler James contract — expires June" desc="No offer made yet. Board approval needed. Player could leave on free." action="Open Contract" />
-      <QWItem priority="🔴" title="GPS flags Okafor as overloaded" desc="3 consecutive high-load sessions. Rest recommended before Saturday." action="View Load" />
-      <QWItem priority="🟡" title="Agent for Diallo called twice" desc="Transfer interest from Championship rivals. Call back today." action="Log Call" />
-      <QWItem priority="🟡" title="Press conference prep — 2pm today" desc="AI notes ready but manager hasn't reviewed." action="View Prep" />
-      <QWItem priority="🟡" title="Tyler James eligible for first team squad" desc="Academy standout — include in squad for Saturday?" action="Add to Squad" />
-      <QWItem priority="🟢" title="Scout report on target overdue" desc="Report on Martinez (Valencia B) assigned to Clarke, 3 days overdue." action="Chase Scout" />
-      <QWItem priority="🟢" title="EPPP quarterly report — 80% complete" desc="Submission due Friday. Academy director needs to finalise." action="Complete Report" />
-      <QWItem priority="🟢" title="Kit sponsor deliverables" desc="2 social posts owed this month, 0 delivered." action="Schedule Posts" />
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority.</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
+      </div>
+      <div className="space-y-3">
+        {([
+          { id: 'fqw1', title: 'Kyle Brennan fitness check overdue', description: 'Last GPS session flagged fatigue risk. Clear for Saturday?', impact: 'high' as const, effort: '2min', category: 'Squad', action: 'Check fitness', source: 'GPS' },
+          { id: 'fqw2', title: 'Opposition report not reviewed', description: 'Riverside United match in 3 days. Scout report ready.', impact: 'high' as const, effort: '5min', category: 'Tactics', action: 'View report', source: 'Scouting' },
+          { id: 'fqw3', title: 'Agent contact overdue — Diallo deal', description: 'No contact logged in 4 days. Window closes in 11 days.', impact: 'medium' as const, effort: '5min', category: 'Transfers', action: 'Log contact', source: 'CRM' },
+          { id: 'fqw4', title: 'Press conference prep outstanding', description: 'Match day press conf tomorrow at 10am. No notes prepared.', impact: 'medium' as const, effort: '10min', category: 'Media', action: 'Prepare notes', source: 'Calendar' },
+          { id: 'fqw5', title: '3 player expense claims pending', description: 'Awaiting manager approval for over 72 hours.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Approve', source: 'Finance' },
+        ]).map(win => {
+          const ic = win.impact === 'high' ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' } : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+          return (
+            <div key={win.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{win.impact.toUpperCase()} IMPACT</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {win.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{win.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{win.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 
   if (tab === 'match-week') return (
-    <div className="space-y-5">
-      {/* Match Card */}
-      <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #922B21, #C0392B)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <p className="text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>CHAMPIONSHIP · MATCHDAY 19</p>
-        <div className="flex items-center justify-center gap-6">
-          <div><p className="text-lg font-black text-white">Oakridge FC</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Home</p></div>
-          <div className="text-2xl font-black" style={{ color: '#F1C40F' }}>vs</div>
-          <div><p className="text-lg font-black text-white">Bristol City</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Away</p></div>
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📅 Match Week</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your match preparation checklist — everything that needs doing.</p>
         </div>
-        <p className="text-sm mt-3 font-semibold text-white">Saturday 3:00pm · Bet365 Stadium</p>
-        <p className="text-xs mt-1" style={{ color: '#F1C40F' }}>3 days · 14 hours remaining</p>
       </div>
-      {/* Preparation Timeline */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Match Week Preparation</p>
-        {[
-          { day: 'Mon', status: '✅', tasks: 'Recovery session, opposition video sent to squad' },
-          { day: 'Tue', status: '✅', tasks: 'Tactical training, set piece work' },
-          { day: 'Wed', status: '🔄', tasks: 'Press conference 2pm, training 10am (TODAY)' },
-          { day: 'Thu', status: '⬜', tasks: 'Final preparation session, team meeting' },
-          { day: 'Fri', status: '⬜', tasks: "Travel/rest day, captain's meeting" },
-          { day: 'Sat', status: '⬜', tasks: 'MATCH DAY' },
-        ].map(d => (
-          <div key={d.day} className="flex items-center gap-3 py-2">
-            <span className="text-sm w-8 font-bold" style={{ color: '#C0392B' }}>{d.day}</span>
-            <span className="text-sm w-6">{d.status}</span>
-            <span className="text-xs flex-1" style={{ color: d.status === '⬜' ? '#6B7280' : '#D1D5DB', fontWeight: d.status === '🔄' ? 700 : 400 }}>{d.tasks}</span>
-          </div>
-        ))}
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
       </div>
-      {/* Squad Availability */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
-        <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
-          {SQUAD.map(p => {
-            const playerInjury = (p.fitness === 'injured' || p.fitness === 'doubt') ? DEMO_INJURIES.filter(d => p.name.includes(d.playerName)) : []
-            return (
-              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
-                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
-                {playerInjury.length > 0 && (
-                  <div className="flex justify-center mt-1"><FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} /></div>
-                )}
+      <div className="space-y-3">
+        {([
+          { id: 'fmw1', title: 'Finalise starting XI for Saturday', description: 'Formation set, but 2 positions undecided. Confirm by Thursday.', impact: 'high' as const, effort: '15min', category: 'Tactics', action: 'Set lineup', source: 'Squad Planner' },
+          { id: 'fmw2', title: 'Pre-match fitness assessment', description: 'Four players require sign-off from physio before training today.', impact: 'high' as const, effort: '10min', category: 'Medical', action: 'View assessments', source: 'Medical' },
+          { id: 'fmw3', title: 'Post training video clips ready', description: "Three clips uploaded from today's session. Review before posting.", impact: 'medium' as const, effort: '5min', category: 'Media', action: 'Review clips', source: 'Social Media' },
+          { id: 'fmw4', title: 'Opposition set piece analysis', description: 'Riverside United scored 3 set piece goals last 5 games.', impact: 'medium' as const, effort: '30min', category: 'Tactics', action: 'View analysis', source: 'Analytics' },
+          { id: 'fmw5', title: 'Under-18 match report overdue', description: "Tuesday fixture. Coach hasn't submitted report yet.", impact: 'medium' as const, effort: '5min', category: 'Academy', action: 'Chase report', source: 'Academy' },
+        ]).map(task => {
+          const ic = task.impact === 'high' ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' } : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+          return (
+            <div key={task.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{task.impact.toUpperCase()} IMPACT</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {task.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{task.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{task.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
               </div>
-            )
-          })}
-        </div>
-      </div>
-      {/* Weather */}
-      <div className="rounded-xl p-4 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <span className="text-3xl">🌧️</span>
-        <div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Saturday 3pm — 12°C, Light rain</p><p className="text-xs" style={{ color: '#6B7280' }}>Wind 15mph NW · Pitch: Good</p></div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1090,22 +1347,44 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'dont-miss') return (
-    <div className="space-y-5">
-      {[
-        { level: '🔴 URGENT', items: ['Transfer deadline: 11 days remaining — Diallo bid not yet submitted. Rivals circling.', 'Tyler James contract expires June — no renewal offer. Player could leave on free.', 'Work permit application for Santos — deadline Friday or signing falls through.'] },
-        { level: '🟡 THIS WEEK', items: ['Mensah fitness: scan results back Thursday — decide if available Saturday.', 'Board meeting Thursday: DoF presentation on winter window activity required.', 'Kit manufacturer deadline: squad numbers and names for new kit by Friday.', 'FA registration: loan player window closes 5pm Thursday.'] },
-        { level: '🟢 THIS MONTH', items: ['Pre-season friendlies: 3 venues need confirming by month end.', 'Academy scholarship decisions: 4 players need contracts or release by 30th.', 'Annual accounts submission: finance team needs commercial data by 28th.'] },
-      ].map(group => (
-        <div key={group.level}>
-          <p className="text-xs font-bold mb-2" style={{ color: group.level.includes('URGENT') ? '#EF4444' : group.level.includes('WEEK') ? '#F59E0B' : '#22C55E' }}>{group.level}</p>
-          <div className="space-y-2">{group.items.map((item, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <span className="text-xs mt-0.5">{group.level.includes('URGENT') ? '🔴' : group.level.includes('WEEK') ? '🟡' : '🟢'}</span>
-              <p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p>
-            </div>
-          ))}</div>
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
         </div>
-      ))}
+      </div>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
+      </div>
+      <div className="space-y-3">
+        {([
+          { id: 'fdm1', title: 'Diallo negotiation stalled — counter offer needed', description: 'Transfer window closes in 11 days. Rivals have tabled £140k. Our last offer was £120k.', effort: '15min', category: 'Transfers', action: 'Send offer', source: 'CRM' },
+          { id: 'fdm2', title: 'Press conference 10am — no prep completed', description: 'Tomorrow morning. Manager expects AI-generated talking points by tonight.', effort: '10min', category: 'Media', action: 'Prepare now', source: 'Calendar' },
+          { id: 'fdm3', title: '3 player contracts expiring in 60 days', description: 'No renewal talks started for James, Ward, or Shaw. Free agent risk.', effort: '30min', category: 'Contracts', action: 'Start talks', source: 'HR' },
+          { id: 'fdm4', title: 'PSR compliance check — quarterly submission missed', description: 'Deadline was last Friday. Finance team needs to submit immediately.', effort: '10min', category: 'Finance', action: 'Submit now', source: 'Finance' },
+        ]).map(item => (
+          <div key={item.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {item.effort}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+                </div>
+                <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.description}</p>
+                <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
+              </div>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{item.action} →</button>
+                <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 
@@ -1113,7 +1392,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
     <div className="space-y-5">
       {/* Sub-tab pills */}
       <div className="flex gap-2">
-        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
+        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'teaminfo' as const, label: '🃏 Team Info' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
           <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
             style={{ backgroundColor: activeStaffTab === t.id ? '#C0392B' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
         ))}
@@ -1272,15 +1551,37 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           </div>
         </div>
       )}
+
+      {/* ═══ TEAM INFO — Pitch Lineup + Grid toggle ═══ */}
+      {activeStaffTab === 'teaminfo' && <TeamInfoTab />}
     </div>
   )
 
   return null
 }
 
+// ─── Empty State ─────────────────────────────────────────────────────────────
+
+function FootballEmptyState({ dept }: { dept: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(192,57,43,0.2), rgba(192,57,43,0.05))', border: '1px solid rgba(192,57,43,0.3)' }}>
+        <span className="text-4xl">⚽</span>
+      </div>
+      <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No {dept} data yet</h2>
+      <p className="text-sm max-w-md mb-8" style={{ color: '#9CA3AF' }}>Import your club data or explore with demo data to unlock {dept} features.</p>
+      <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }}
+        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>
+        ✨ Explore with Demo Data
+      </button>
+      <p className="text-xs mt-3" style={{ color: '#4B5563' }}>Demo data is pre-filled sample data so you can explore all features</p>
+    </div>
+  )
+}
+
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction }: { clubName: string; firstName?: string; onAction: (msg: string) => void }) {
+function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1289,13 +1590,53 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
         <div className="space-y-4">
           <QuickActionsBar onAction={onAction} />
 
+          {!isDemo && (
+            <>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="text-5xl mb-4">⚽</div>
+              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
+              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📨 Match Inbox</h3>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your communications to see WhatsApp, email and Slack messages in one place.</p>
+                <div className="space-y-2">
+                  {['WhatsApp Group Chat', 'Club Email', 'Slack Channel'].map(s => (
+                    <div key={s} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{s}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>Connect</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📅 Fixtures This Week</h3>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your calendar to see training sessions, matches and meetings.</p>
+                <div className="flex items-center justify-center py-6">
+                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C', border: '1px solid rgba(192,57,43,0.3)' }}>Connect Calendar →</button>
+                </div>
+              </div>
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                <PhotoFrame />
+                <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>🤖 AI Match Summary</h3>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your tools to generate your AI match day summary with squad news, form analysis and tactical suggestions.</p>
+                </div>
+              </div>
+            </div>
+            </>
+          )}
+
+          {isDemo && <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
               <MorningRoundup />
@@ -1365,6 +1706,7 @@ function OverviewView({ clubName, firstName, onAction }: { clubName: string; fir
               </div>
             </div>
           </div>
+          </>}
         </div>
       ) : (
         <TabContent tab={tab} />
@@ -1414,21 +1756,6 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         {stats.map((s, i) => (
           <StatCard key={i} label={s.label} value={s.value} icon={s.icon} color={s.color} />
         ))}
-      </div>
-
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {highlights.map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {children && (
@@ -1564,18 +1891,12 @@ function InsightsView() {
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
           <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
-            {SQUAD.map(p => {
-              const playerInjury = (p.fitness === 'injured' || p.fitness === 'doubt') ? DEMO_INJURIES.filter(d => p.name.includes(d.playerName)) : []
-              return (
-                <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-                  <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
-                  <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
-                  {playerInjury.length > 0 && (
-                    <div className="flex justify-center mt-1"><FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} /></div>
-                  )}
-                </div>
-              )
-            })}
+            {SQUAD.map(p => (
+              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+              </div>
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1613,10 +1934,6 @@ function InsightsView() {
           <InsightCard label="Returning This Week" value="1" color="#22C55E" />
           <InsightCard label="Days Lost (Season)" value="47" />
           <InsightCard label="Injury Cost Est." value="£284k" sub="Wages during absence" color="#F59E0B" />
-        </div>
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Injury Body Map</p>
-          <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
         </div>
         <InsightTable cols={['Player', 'Injury', 'Phase', 'Injured', 'Expected Return', 'Missed', 'Physio']}
           rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Dr. J. Williams'])} />
@@ -1766,14 +2083,6 @@ function SquadView() {
         <StatCard label="Injured" value={String(SQUAD.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
         <StatCard label="Avg Age" value={(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length).toFixed(1)} icon={Users} color="#3B82F6" />
       </div>
-
-      {/* Squad Injury Overview */}
-      {SQUAD.some(p => p.fitness === 'injured') && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Current Injuries</p>
-          <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
-        </div>
-      )}
 
       {/* Top Performers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -2193,34 +2502,6 @@ function MedicalView() {
         <StatCard label="Season Injuries" value="9" icon={AlertCircle} color="#F59E0B" />
       </div>
 
-      {/* AI Highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {[
-            'Santos (knee) cleared for light training — expected return 7 Apr.',
-            'Martinez (hamstring Grade 2) — jogging resumed. Target: 14 Apr.',
-            "O'Brien (ankle ligament) still in boot. Earliest return: 21 Apr.",
-            'Silva on modified programme — light contact only until Thursday assessment.',
-            'Overall squad injury rate this season: 3.2%. League average: 4.1%.',
-          ].map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Squad Injury Body Map */}
-      <div className="rounded-xl overflow-hidden p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Injury Body Map — All Injured Players</p>
-        <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
-      </div>
-
       {/* Injury Tracker Table */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -2230,7 +2511,7 @@ function MedicalView() {
           <table className="w-full text-xs">
             <thead>
               <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                {['', 'Player', 'Injury', 'Treatment Phase', 'Expected Return', 'Days Out'].map(h => (
+                {['Player', 'Injury', 'Treatment Phase', 'Expected Return', 'Days Out'].map(h => (
                   <th key={h} className="text-left px-5 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
                 ))}
               </tr>
@@ -2239,10 +2520,8 @@ function MedicalView() {
               {INJURIES.map((inj, i) => {
                 const returnDate = new Date(inj.expectedReturn.replace(/(\d+) (\w+) (\d+)/, '$2 $1, $3'))
                 const daysOut = Math.max(0, Math.ceil((returnDate.getTime() - Date.now()) / 86400000))
-                const miniInjury = DEMO_INJURIES.filter(d => inj.player.includes(d.playerName))
                 return (
                   <tr key={i} style={{ borderBottom: i < INJURIES.length - 1 ? '1px solid #1F2937' : undefined }}>
-                    <td className="px-3 py-2"><FootballBodyMap injuries={miniInjury} size="mini" showLegend={false} /></td>
                     <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{inj.player}</td>
                     <td className="px-5 py-3" style={{ color: '#EF4444' }}>{inj.type}</td>
                     <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-lg text-xs" style={{ backgroundColor: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>{inj.phase}</span></td>
@@ -2341,28 +2620,19 @@ function MedicalView() {
             { player: 'Lucas Santos', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 3 },
             { player: 'Diego Martinez', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 2 },
             { player: "Sean O'Brien", stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 1 },
-          ].map((p, pi) => {
-            const playerInjury = DEMO_INJURIES.filter(d => p.player.includes(d.playerName))
-            return (
-              <div key={pi} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <div className="flex items-start gap-4 mb-3">
-                  <FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} />
-                  <div className="flex-1">
-                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.player}</p>
-                    {playerInjury[0] && <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{playerInjury[0].bodyPart} — {playerInjury[0].injuryType}</p>}
+          ].map((p, pi) => (
+            <div key={pi} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.player}</p>
+              <div className="flex items-center gap-1">
+                {p.stages.map((stage, si) => (
+                  <div key={si} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full h-2 rounded-full" style={{ backgroundColor: si <= p.current ? '#22C55E' : '#1F2937' }} />
+                    <span className="text-[10px]" style={{ color: si <= p.current ? '#22C55E' : '#4B5563' }}>{stage}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {p.stages.map((stage, si) => (
-                    <div key={si} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full h-2 rounded-full" style={{ backgroundColor: si <= p.current ? '#22C55E' : '#1F2937' }} />
-                      <span className="text-[10px]" style={{ color: si <= p.current ? '#22C55E' : '#4B5563' }}>{stage}</span>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -2646,27 +2916,6 @@ function AnalyticsView() {
         <StatCard label="xGA (Season)" value="28.3" icon={Shield} color="#3B82F6" />
         <StatCard label="Possession Avg" value="58%" icon={Activity} color="#22C55E" />
         <StatCard label="Pass Accuracy" value="84%" icon={Target} color="#F59E0B" />
-      </div>
-
-      {/* AI Highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
-        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-        </div>
-        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
-          {[
-            "xG overperformance of +5.4 this season — expect regression if finishing doesn't maintain.",
-            'Right-side attacks account for 43% of all chances created (Correia influence).',
-            'Defensive shape weakest in minutes 60-75 — conceded 38% of goals in this window.',
-            'Pressing intensity dropped 12% in away games — fitness or tactical?',
-          ].map((h, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Formation Viewer */}
@@ -2957,36 +3206,6 @@ function MatchdayView() {
         <StatCard label="Kick Off" value="15:00" icon={Clock} color="#3B82F6" />
         <StatCard label="Expected Attendance" value="8,200" icon={Users} color="#22C55E" />
         <StatCard label="Matchday Revenue" value="£42k" icon={DollarSign} color="#F59E0B" />
-      </div>
-
-      {/* Match Day Fitness Overview */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Match Day Fitness Overview</p>
-        </div>
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <FootballBodyMap injuries={DEMO_INJURIES} size="small" showLegend showFilter />
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-bold mb-2" style={{ color: '#6B7280' }}>UNAVAILABLE FOR SELECTION</p>
-              {SQUAD.filter(p => p.fitness === 'injured' || p.fitness === 'doubt' || p.fitness === 'suspended').map(p => {
-                const playerInjury = DEMO_INJURIES.filter(d => p.name.includes(d.playerName))
-                return (
-                  <div key={p.name} className="flex items-center gap-3 rounded-lg p-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                    {playerInjury.length > 0 && <FootballBodyMap injuries={playerInjury} size="mini" showLegend={false} />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-                      <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{p.position} · #{p.number}</p>
-                    </div>
-                    <FitnessBadge status={p.fitness} />
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Operations Checklist */}
@@ -4259,184 +4478,7 @@ function ClubProfileView() {
   )
 }
 
-// ─── Board Suite View ────────────────────────────────────────────────────────
-
-function BoardSuiteView() {
-  const [tab, setTab] = useState<'overview' | 'notes' | 'meetings' | 'financial' | 'transfers'>('overview')
-  const [noteContent, setNoteContent] = useState('')
-  const TABS = [
-    { id: 'overview' as const, label: 'Club Overview', icon: '🏟️' },
-    { id: 'notes' as const, label: 'Confidential Notes', icon: '🔒' },
-    { id: 'meetings' as const, label: 'Board Meetings', icon: '📅' },
-    { id: 'financial' as const, label: 'Financial Strategy', icon: '💰' },
-    { id: 'transfers' as const, label: 'Transfer Strategy', icon: '🎯' },
-  ]
-
-  function StatCard({ label, value, sub, color = '#F1C40F' }: { label: string; value: string; sub?: string; color?: string }) {
-    return (
-      <div className="rounded-xl p-4" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-        <p className="text-xs" style={{ color: '#9CA3AF' }}>{label}</p>
-        <p className="text-xl font-black mt-1" style={{ color }}>{value}</p>
-        {sub && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(241,196,15,0.12)' }}>
-          <Crown size={20} style={{ color: '#F1C40F' }} />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Board Suite</h1>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>Confidential board-level information</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
-            style={{ backgroundColor: tab === t.id ? 'rgba(241,196,15,0.15)' : 'transparent', color: tab === t.id ? '#F1C40F' : '#6B7280', border: `1px solid ${tab === t.id ? 'rgba(241,196,15,0.3)' : '#1F2937'}` }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Club Overview */}
-      {tab === 'overview' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-            <StatCard label="League Position" value="8th" sub="Championship" />
-            <StatCard label="Transfer Budget" value="£2.4m" sub="£1.8m remaining" />
-            <StatCard label="Squad Value" value="£14.2m" sub="+£1.8m vs last season" color="#22C55E" />
-            <StatCard label="PSR Headroom" value="£3.1m" sub="Within limits" color="#22C55E" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Revenue vs Expenditure</h3>
-              <div className="space-y-2">
-                {[{ label: 'Matchday Revenue', value: '£1.2m', pct: 60 }, { label: 'Broadcast Income', value: '£3.8m', pct: 85 }, { label: 'Commercial', value: '£2.1m', pct: 70 }, { label: 'Player Sales', value: '£600k', pct: 30 }].map(r => (
-                  <div key={r.label}>
-                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.value}</span></div>
-                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: '#F1C40F' }} /></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Match</h3>
-              <div className="text-center py-4">
-                <p className="text-2xl font-black" style={{ color: '#F9FAFB' }}>vs Sheffield Wednesday</p>
-                <p className="text-sm mt-1" style={{ color: '#F1C40F' }}>Saturday 3pm · Home</p>
-                <p className="text-xs mt-2" style={{ color: '#6B7280' }}>Championship · Matchday 38</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confidential Notes */}
-      {tab === 'notes' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>📝 Board Notes (Confidential)</h3>
-          <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} rows={10} placeholder="Type confidential board notes here..." className="w-full text-sm rounded-lg p-4 outline-none resize-vertical" style={{ backgroundColor: '#0F0505', border: '1px solid #2D1515', color: '#F9FAFB' }} />
-          <button className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#F1C40F', color: '#0A0A0A' }}>Save Notes</button>
-        </div>
-      )}
-
-      {/* Board Meetings */}
-      {tab === 'meetings' && (
-        <div className="space-y-4">
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Board Meetings</h3>
-            {[{ date: '15 Apr', title: 'Monthly Board Meeting', attendees: 'All Board Members', status: 'Confirmed' }, { date: '1 May', title: 'Transfer Strategy Review', attendees: 'Chairman, DoF, Head Coach', status: 'Pending' }, { date: '20 May', title: 'End of Season Review', attendees: 'All Board Members + Senior Staff', status: 'Draft' }].map(m => (
-              <div key={m.title} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #2D1515' }}>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.title}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{m.date} · {m.attendees}</p>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: m.status === 'Confirmed' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: m.status === 'Confirmed' ? '#22C55E' : '#F59E0B' }}>{m.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Financial Strategy */}
-      {tab === 'financial' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
-            <StatCard label="Wage Bill" value="£4.8m/yr" sub="62% of revenue" color="#EF4444" />
-            <StatCard label="Player Amortisation" value="£1.2m" sub="Annual charge" />
-            <StatCard label="Net Spend (Season)" value="-£800k" sub="Transfer deficit" color="#EF4444" />
-          </div>
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>PSR/FFP Breakdown</h3>
-            <div className="space-y-2">
-              {[{ label: 'Allowable Losses (3yr)', limit: '£39m', current: '£12.4m', pct: 32, ok: true }, { label: 'Squad Cost Ratio', limit: '70%', current: '62%', pct: 89, ok: true }, { label: 'Agent Fees', limit: '£500k', current: '£380k', pct: 76, ok: true }].map(r => (
-                <div key={r.label} className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.current} / {r.limit}</span></div>
-                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.ok ? '#22C55E' : '#EF4444' }} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Transfer Strategy */}
-      {tab === 'transfers' && (
-        <div className="space-y-4">
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔒 Confidential Transfer Targets</h3>
-            <div className="space-y-2">
-              {[
-                { pos: 'ST', name: 'Target A', club: 'League One', fee: '£400k', priority: 'High', status: 'Agent contacted' },
-                { pos: 'CB', name: 'Target B', club: 'Championship', fee: '£200k loan', priority: 'High', status: 'Terms discussed' },
-                { pos: 'CM', name: 'Target C', club: 'Abroad', fee: '£150k', priority: 'Medium', status: 'Scouted 3x' },
-                { pos: 'LW', name: 'Target D', club: 'Free Agent', fee: 'Free', priority: 'Low', status: 'Monitoring' },
-              ].map(t => (
-                <div key={t.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(241,196,15,0.15)', color: '#F1C40F' }}>{t.pos}</span>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{t.name}</p>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>{t.club} · {t.fee}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{t.status}</span>
-                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: t.priority === 'High' ? 'rgba(239,68,68,0.1)' : t.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(107,114,128,0.1)', color: t.priority === 'High' ? '#EF4444' : t.priority === 'Medium' ? '#F59E0B' : '#6B7280' }}>{t.priority}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
-            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>💸 Offload Pipeline</h3>
-            <div className="space-y-2">
-              {[
-                { name: 'Player X', reason: 'Surplus to requirements', value: '£300k', interest: '2 clubs' },
-                { name: 'Player Y', reason: 'High wages, low output', value: '£150k', interest: '1 club (loan)' },
-              ].map(p => (
-                <div key={p.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
-                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.reason}</p></div>
-                  <div className="text-right"><p className="text-xs font-semibold" style={{ color: '#F1C40F' }}>{p.value}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.interest}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SettingsView() {
+function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: string }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM' : '21m00Tcm4TlvDq8ikWAM')
@@ -4557,47 +4599,28 @@ function SettingsView() {
         </div>
       </div>
 
-      {/* Integrations */}
+      {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Connect your email and calendar</p>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data & Display</p>
         </div>
-        <div className="p-5 space-y-2">
-          {[
-            { key: 'outlook', label: 'Outlook / Microsoft 365', desc: 'Email sync', icon: '📧', type: 'microsoft' as const },
-            { key: 'outlook_cal', label: 'Outlook Calendar', desc: 'Calendar sync', icon: '📅', type: 'microsoft' as const },
-            { key: 'gmail', label: 'Gmail', desc: 'Email sync', icon: '📨', type: 'google' as const },
-            { key: 'gcal', label: 'Google Calendar', desc: 'Calendar sync', icon: '📅', type: 'google' as const },
-          ].map(integ => {
-            const connected = typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${integ.key}`) === 'true'
-            return (
-              <div key={integ.key} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: connected ? '1px solid rgba(34,197,94,0.3)' : '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span>{integ.icon}</span>
-                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.label}</p><p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
-                </div>
-                {connected ? (
-                  <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
-                ) : (
-                  <button onClick={() => {
-                    const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
-                    if (integ.type === 'microsoft') {
-                      const cid = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID; if (!cid) return
-                      const state = JSON.stringify({ key: 'microsoft_all', slug })
-                      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft', scope: 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite', state, response_mode: 'query', prompt: 'consent' })}`
-                    } else {
-                      const cid = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID; if (!cid) return
-                      const state = JSON.stringify({ key: integ.key, slug })
-                      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/google', scope: `openid email profile ${integ.key === 'gmail' ? 'https://www.googleapis.com/auth/gmail.readonly' : 'https://www.googleapis.com/auth/calendar.readonly'}`, state, access_type: 'offline', prompt: 'consent' })}`
-                    }
-                  }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>
-                    Connect
-                  </button>
-                )}
-              </div>
-            )
-          })}
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{isDemo ? 'Demo data is active' : 'Demo data'}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+              {isDemo ? 'Your portal is showing sample data. Clear it to see your real workspace.' : 'Load sample data to explore all features before connecting your real data.'}
+            </p>
+          </div>
+          <button onClick={() => {
+            if (isDemo) { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }
+            else { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.href = `/football/${slug}` }
+          }} className="w-full rounded-xl py-2.5 text-sm font-semibold" style={{
+            backgroundColor: isDemo ? 'rgba(239,68,68,0.1)' : 'rgba(192,57,43,0.1)',
+            color: isDemo ? '#EF4444' : '#C0392B',
+            border: `1px solid ${isDemo ? 'rgba(239,68,68,0.3)' : 'rgba(192,57,43,0.3)'}`,
+          }}>
+            {isDemo ? 'Clear demo data' : 'Load demo data'}
+          </button>
         </div>
       </div>
     </div>
@@ -4637,19 +4660,15 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
-  const [footballRole, setFootballRole] = useState<string | null>(null)
-  const [userPhoto, setUserPhoto] = useState<string | null>(null)
-  const [showEmailCompose, setShowEmailCompose] = useState(false)
-  const [showMeetingBook, setShowMeetingBook] = useState(false)
+  const [isFootballDemo, setIsFootballDemo] = useState(false)
+  const [fbMounted, setFbMounted] = useState(false)
 
   useEffect(() => {
-    setFootballRole(localStorage.getItem('lumio_football_impersonated_role'))
-    const email = localStorage.getItem('lumio_user_email')
-    if (email) {
-      const p = localStorage.getItem(`lumio_staff_photo_${email}`)
-      if (p && !p.startsWith('data:')) setUserPhoto(p)
-    }
+    const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
+    check()
+    setFbMounted(true)
+    const interval = setInterval(check, 1000)
+    return () => clearInterval(interval)
   }, [])
 
   function fireToast(msg: string) {
@@ -4676,9 +4695,6 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
   function handleActionClick(label: string) {
     if (label === 'Dept Insights') { setShowAIInsights(true); return }
-    if (label === 'Send Email') { setShowEmailCompose(true); return }
-    if (label === 'Book Video Room' || label === 'Book Meeting') { setShowMeetingBook(true); return }
-    if (label === 'Press Conf') { setShowMeetingBook(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
@@ -4694,55 +4710,27 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
   const initials = userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'FC'
 
+  if (!fbMounted) return null
+
   return (
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
-      {/* Impersonation banner */}
-      {footballRole && footballRole !== 'chairman' && (
-        <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
-          <Eye size={14} style={{ color: '#F59E0B' }} />
-          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
-            Previewing as: {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.label} — your actual role is Chairman
-          </span>
-          <button onClick={() => { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role'); window.location.reload() }} className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
-            <X size={10} /> Exit Preview
-          </button>
+      {/* Demo banner */}
+      {isFootballDemo && (
+        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#C0392B', color: '#F9FAFB' }}>
+          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
         </div>
       )}
 
-      {/* Top-right role switcher + avatar */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Football role switcher */}
-        <div style={{ position: 'relative' }}>
-          <button onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-            style={{ backgroundColor: footballRole ? 'rgba(245,158,11,0.15)' : 'rgba(241,196,15,0.1)', color: footballRole ? '#F59E0B' : '#F1C40F', border: `1px solid ${footballRole ? 'rgba(245,158,11,0.3)' : 'rgba(241,196,15,0.2)'}` }}>
-            <Eye size={12} /> {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.label} <ChevronDown size={10} />
-          </button>
-          {roleSwitcherOpen && (
-            <div className="absolute top-full right-0 mt-1.5 rounded-xl py-1.5 shadow-xl" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515', zIndex: 100, minWidth: 200 }}>
-              {FOOTBALL_ROLE_OPTIONS.map(r => (
-                <button key={r.key} onClick={() => {
-                  if (r.key === 'chairman') { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role') }
-                  else { setFootballRole(r.key); localStorage.setItem('lumio_football_impersonated_role', r.key) }
-                  setRoleSwitcherOpen(false); window.location.reload()
-                }} className="flex w-full items-center gap-2 px-4 py-2 text-xs transition-colors"
-                  style={{ color: (footballRole || 'chairman') === r.key ? '#F9FAFB' : '#9CA3AF', backgroundColor: (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2D1515' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}>
-                  <span>{r.emoji}</span> {r.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Top-right avatar */}
+      <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden' }}>
-          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : initials}
-        </button>
+        <AvatarDropdown initials={initials} settingsHref={`/football/${slug}/settings`} />
       </div>
 
       {/* Mobile menu button */}
@@ -4757,47 +4745,92 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Club: <span style={{ color: '#F9FAFB' }}>{clubName}</span></p>
+            {activeDept !== 'overview' && (
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-lg font-bold">{deptLabel}</h1>
+                  <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Club: <span style={{ color: '#F9FAFB' }}>{clubName}</span></p>
+                </div>
               </div>
-            </div>
+            )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
-            {activeDept === 'insights' && <InsightsView />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && (
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} />}
+            {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
+              const DEPT_HIGHLIGHTS: Record<string, string[]> = {
+                squad: ['Top performers this week: Dele Adeyemi (8.2 avg), Liam Cross (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
+                tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
+                transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for Kyle Brennan — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
+                medical: ['2 players currently in rehab — Torres (knee), Fletcher (shoulder)', 'Torres expected return: 10 days, Fletcher: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Adeyemi high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
+                scouting: ['3 new targets added to watchlist this month', '2 scouting reports due by end of week', 'Trial session scheduled Saturday AM — 2 youth prospects', 'Recommended signing: LB target rated 8/10 by chief scout', 'Watchlist updated: 14 active targets across 3 positions'],
+                academy: ['2 graduates ready for first-team consideration', 'Academy win rate this season: 71% across all age groups', '3 scholarship renewals due for review by April', 'Talent pathway review meeting scheduled next Tuesday', 'Parent liaison meetings: 4 outstanding this term'],
+                analytics: ['xG vs actual goals: +2.3 over-performance this month', 'Pressing intensity 12% above league average', 'Defensive line height 34m — 2m higher than last month', 'Set piece efficiency: 22% from corners (league avg 16%)', 'Possession vs win rate: 58% possession correlates with 68% win rate'],
+                dynamics: ['Team morale indicators: 8.2/10 — highest since October', 'Training intensity scores up 6% week-on-week', 'Leadership group action: captain meeting scheduled Friday', 'No conflict flags this week', 'Team bonding session planned for Wednesday afternoon'],
+                media: ['Press conference scheduled Friday 2pm — pre-match', 'Social media reach this week: 124k (+18% vs last week)', 'Sponsor content deadline: Thursday for matchday programme', '2 interview requests pending — local press + podcast', 'No crisis comms flags currently active'],
+                social: ['Best performing post: matchday highlight reel (42k views)', 'Follower growth: +820 this week across all platforms', 'Content schedule: 2 gaps identified in next week plan', 'Fan engagement rate: 4.8% — above 3.5% benchmark', 'Viral opportunity: behind-the-scenes training video trending'],
+                matchday: ['Pre-match prep checklist: 85% complete', 'Travel arrangements confirmed for Saturday away fixture', 'Kit and equipment check completed — all clear', 'Referee briefing notes shared with coaching staff', 'Starting XI finalised — announced Friday 3pm'],
+                training: ['Session attendance this week: 94%', 'Fitness benchmark results: 3 players improved their times', 'Tactical drill completion rate: 88%', 'Load management flag: Adeyemi recommended light session Thursday', 'Next session plan uploaded — Friday AM recovery session'],
+                performance: ['Highest load player this week: Dele Adeyemi (2,840 AU)', 'Recovery scores: squad average 7.8/10', 'Sprint distance leaders: Adeyemi 1.2km, Cole 1.1km', 'Fatigue risk players: Torres (amber), Adeyemi (amber)', 'GPS anomaly flagged: Fletcher — reduced output in last session'],
+                finance: ['PSR headroom: £85k remaining for this reporting period', 'Wage bill at 72% of revenue — target under 75%', 'Player sale target: £150k needed to balance books by June', 'Commercial revenue 8% above target year-to-date', 'Cost overrun flagged: medical department 12% over budget'],
+                staff: ['All coaching staff DBS checks current', 'Physio vacancy — interviews scheduled next week', 'CPD compliance: 2 staff outstanding', 'Staff wellbeing survey results: 7.6/10', 'Annual reviews: 3 due this month'],
+                facilities: ['Pitch maintenance scheduled Monday', 'Floodlight inspection due — annual certificate expiring', 'Changing room refurb quote received — £12k', 'Car park resurfacing flagged', 'Groundsman leave cover arranged'],
+                'squad-planner': ['Left-back position still requires cover signing', 'Squad depth: thin at centre-back if Brennan injured', '1 loan return due end of April — decision needed', '2 trialists awaiting final decision by Friday', 'Summer window priority: left-back, central midfielder, backup striker'],
+                'club-profile': ['Club rating 7.2 — above league average 6.8', 'Stadium capacity utilisation: 78% average this season', 'Academy output rank: 3rd in division', 'Fanbase growth: +4.2% year-on-year', 'Commercial partnerships: 8 active, 2 in negotiation'],
+                psr: ['PSR submission deadline: 45 days away', 'Current projected position: within limits', 'Wage-to-revenue ratio: 72% (limit 75%)', 'Amortisation schedule on track', 'No transfer embargo risk flagged'],
+              }
+              const highlights = DEPT_HIGHLIGHTS[activeDept] || ['No highlights available for this department']
+              const deptName = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || activeDept
+              return (
               <>
-                <DeptAISummary dept={activeDept} portal="football" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
+                  <DeptAISummary dept={activeDept} portal="football" />
+                  <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(192,57,43,0.4)' }}>
+                    <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.2)' }}>
+                      <Sparkles size={14} style={{ color: '#C0392B' }} />
+                      <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+                      <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>{deptName}</span>
+                    </div>
+                    <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
+                      {highlights.map((item, i) => (
+                        <div key={i} className="flex gap-3">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>{i + 1}</span>
+                          <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <div className="mb-2">
                   <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
                     📊 Insights
                   </button>
                 </div>
               </>
-            )}
-            {activeDept === 'squad' && <SquadView />}
-            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
-            {activeDept === 'set-pieces' && <ProSetPiecesView />}
-            {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
-            {activeDept === 'medical' && <MedicalView />}
-            {activeDept === 'scouting' && <ScoutingView />}
-            {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
-            {activeDept === 'analytics' && <AnalyticsView />}
-            {activeDept === 'media' && <MediaView />}
-            {activeDept === 'social' && <SocialMediaView />}
-            {activeDept === 'matchday' && <MatchdayView />}
-            {activeDept === 'training' && <TrainingView />}
-            {activeDept === 'performance' && <GPSPerformanceView />}
-            {activeDept === 'finance' && <FinanceView />}
-            {activeDept === 'staff' && <StaffView />}
-            {activeDept === 'facilities' && <FacilitiesView />}
-            {activeDept === 'dynamics' && <DynamicsView />}
-            {activeDept === 'psr' && <PSRView />}
-            {activeDept === 'squad-planner' && <SquadPlannerView />}
-            {activeDept === 'club-profile' && <ClubProfileView />}
-            {activeDept === 'board' && <BoardSuiteView />}
-            {activeDept === 'settings' && <SettingsView />}
+              )
+            })()}
+            {isFootballDemo && activeDept === 'squad' && <SquadView />}
+            {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
+            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
+            {isFootballDemo && activeDept === 'medical' && <MedicalView />}
+            {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
+            {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
+            {isFootballDemo && activeDept === 'media' && <MediaView />}
+            {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
+            {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
+            {isFootballDemo && activeDept === 'training' && <TrainingView />}
+            {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
+            {isFootballDemo && activeDept === 'finance' && <FinanceView />}
+            {isFootballDemo && activeDept === 'staff' && <StaffView />}
+            {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
+            {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
+            {isFootballDemo && activeDept === 'psr' && <PSRView />}
+            {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
+            {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
         </div>
       </div>
@@ -4809,8 +4842,6 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
           onToast={fireToast}
         />
       )}
-      {showEmailCompose && <EmailComposeModal onClose={() => setShowEmailCompose(false)} onToast={fireToast} />}
-      {showMeetingBook && <MeetingBookModal onClose={() => setShowMeetingBook(false)} onToast={fireToast} />}
       <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )

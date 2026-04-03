@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Users, CreditCard, Key, Bell, Copy, Check, Shield, Upload } from 'lucide-react'
 import { Badge, SectionCard, PageShell } from '@/components/page-ui'
 
 const teamMembers = [
-  { name: 'Arron Margeison', email: 'arron@lumio.io',     role: 'Admin',   lastLogin: '21 Mar 2026, 09:14' },
+  { name: 'James Hartley', email: 'james@lumiodemo.com',     role: 'Admin',   lastLogin: '21 Mar 2026, 09:14' },
   { name: 'Dan Marsh',       email: 'dan@lumio.io',        role: 'Admin',   lastLogin: '21 Mar 2026, 08:52' },
   { name: 'Sophie Bell',     email: 'sophie@lumio.io',     role: 'Manager', lastLogin: '20 Mar 2026, 17:30' },
   { name: 'Raj Patel',       email: 'raj@lumio.io',        role: 'Member',  lastLogin: '20 Mar 2026, 14:05' },
@@ -124,6 +125,16 @@ function LogoUpload() {
 }
 
 export default function SettingsPage() {
+  const router = useRouter()
+  const [redirecting, setRedirecting] = useState(true)
+  useEffect(() => {
+    const slug = localStorage.getItem('lumio_workspace_slug') || document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+    if (slug) { localStorage.setItem('lumio_active_dept', 'settings'); router.replace(`/${slug}`); return }
+    setRedirecting(false)
+  }, [router])
+
+  if (redirecting) return null
+
   return (
     <PageShell>
 

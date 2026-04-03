@@ -180,6 +180,7 @@ export default function ReportsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [showReport, setShowReport] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -198,8 +199,6 @@ export default function ReportsPage() {
     { key: 'data', label: 'Upload Data (CSV)' },
     { key: 'mis', label: 'Connect Data Source' },
   ]} />
-
-  const [generatingReport, setGeneratingReport] = useState<string | null>(null)
 
   const handleGenerate = (title: string) => {
     setGeneratingReport(title)

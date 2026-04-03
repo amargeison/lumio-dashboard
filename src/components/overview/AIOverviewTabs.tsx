@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil } from 'lucide-react'
+import { RotateCcw, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Minus, MessageSquare, X, Link2, ChevronRight, Users, Building2, Pencil, ExternalLink } from 'lucide-react'
 import { EmployeeProfileCard, ProfileModal, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ interface Insight { id: string; title: string; summary: string; trend: 'up' | 'd
 interface DontMissItem { id: string; title: string; description: string; urgency: 'critical' | 'high' | 'medium'; deadline: string | null; actionLabel: string; category: string }
 interface TeamMember { id: string; name: string; role: string; department: string; status: 'available' | 'in-meeting' | 'busy' | 'away'; currentFocus: string; needsAttention: boolean; attentionNote: string | null; roleLevel?: number }
 
-type TeamSubTab = 'staff' | 'org' | 'info'
+type TeamSubTab = 'staff' | 'org' | 'info' | 'company'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -202,7 +202,7 @@ function SkeletonCards({ count = 3 }: { count?: number }) {
 function hasRealData(checks: ('staff' | 'contacts' | 'integrations')[]): boolean {
   if (typeof window === 'undefined') return false
   for (const c of checks) {
-    if (c === 'staff') { try { if (JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0) return true } catch { /* */ } }
+    if (c === 'staff') return false // Staff presence is now checked via prop, not localStorage
     if (c === 'contacts') { try { if (JSON.parse(localStorage.getItem('lumio_crm_contacts') || '[]').length > 0) return true } catch { /* */ } }
     if (c === 'integrations') { if (Object.keys(localStorage).some(k => k.startsWith('lumio_integration_') && localStorage.getItem(k) === 'true')) return true }
   }
@@ -758,19 +758,9 @@ interface ImportedStaff {
   role?: string; role_level?: number
 }
 
+// Staff is now passed as a prop from Supabase — no localStorage
 function getImportedStaff(): ImportedStaff[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw: ImportedStaff[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-    // Deduplicate by email at read time
-    const seen = new Set<string>()
-    return raw.filter(s => {
-      const key = s.email?.toLowerCase() || `${s.first_name}_${s.last_name}`.toLowerCase()
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-  } catch { return [] }
+  return []
 }
 
 function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
@@ -787,15 +777,22 @@ function importedToTeamMember(s: ImportedStaff, i: number): TeamMember {
   }
 }
 
-export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: string) => void }) {
-  const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(getImportedStaff)
+export function AITeam({ ctx, onAction, staffFromSupabase = [] }: { ctx: AIContext; onAction?: (msg: string) => void; staffFromSupabase?: ImportedStaff[] }) {
+  const [importedStaff, setImportedStaff] = useState<ImportedStaff[]>(staffFromSupabase)
   const { items: aiItems, loading, error, regenerate } = useAIFetch<TeamMember>('team', ctx, importedStaff.length ? { importedStaff } : undefined)
   const [subTab, setSubTab] = useState<TeamSubTab>('staff')
-  const showBanner = !hasRealData(['staff'])
+  const showBanner = importedStaff.length === 0
 
-  // Listen for new imports
+  // Sync with prop updates (e.g. after Supabase fetch completes)
   useEffect(() => {
-    const handler = () => setImportedStaff(getImportedStaff())
+    setImportedStaff(staffFromSupabase)
+  }, [staffFromSupabase])
+
+  // Listen for new imports (re-fetch triggers)
+  useEffect(() => {
+    const handler = () => {
+      // Parent will re-fetch and pass new staffFromSupabase — this is just for the event trigger
+    }
     window.addEventListener('lumio-staff-imported', handler)
     return () => window.removeEventListener('lumio-staff-imported', handler)
   }, [])
@@ -812,10 +809,10 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
   }, [importedStaff])
 
   const hasImported = dedupedStaff.length > 0
-  // Use imported staff as primary source (single source of truth); AI items as fallback only
+  // Use imported staff as primary source (single source of truth); no AI fallback for empty workspaces
   const items: TeamMember[] = hasImported
     ? dedupedStaff.map((s, i) => importedToTeamMember(s, i))
-    : aiItems
+    : []
 
   const statusColor: Record<string, string> = { available: '#22C55E', 'in-meeting': '#F59E0B', busy: '#EF4444', away: '#6B7280' }
   const statusLabel: Record<string, string> = { available: 'Available', 'in-meeting': 'In meeting', busy: 'Busy', away: 'Away' }
@@ -824,6 +821,7 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
     { id: 'staff', label: 'Staff Today', icon: Users },
     { id: 'org', label: 'Org Chart', icon: Building2 },
     { id: 'info', label: 'Team Info', icon: AlertCircle },
+    { id: 'company', label: 'Company Info', icon: Building2 },
   ]
 
   // Group team by department for org chart
@@ -857,8 +855,39 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
 
       {error ? <ErrorCard /> : loading ? <SkeletonCards count={4} /> : (
         <>
-          {/* Staff Today */}
-          {subTab === 'staff' && (
+          {/* Staff Today — teaser preview when no staff imported */}
+          {subTab === 'staff' && !hasImported && items.length === 0 && (
+            <div className="relative">
+              <div style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { name: 'James Hartley', role: 'CEO', dept: 'Executive', initials: 'JH', color: '#7C3AED' },
+                    { name: 'Sophie Brennan', role: 'Marketing Director', dept: 'Marketing', initials: 'SB', color: '#EC4899' },
+                    { name: 'Marcus Webb', role: 'Sales Director', dept: 'Sales', initials: 'MW', color: '#0D9488' },
+                    { name: 'Rachel Osei', role: 'Operations Manager', dept: 'Operations', initials: 'RO', color: '#F59E0B' },
+                    { name: 'Tom Fielding', role: 'Support Lead', dept: 'Support', initials: 'TF', color: '#6D28D9' },
+                    { name: 'Claire Donovan', role: 'IT Director', dept: 'IT', initials: 'CD', color: '#0EA5E9' },
+                  ].map(m => (
+                    <div key={m.name} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex items-center justify-center rounded-full text-xs font-bold shrink-0" style={{ width: 40, height: 40, backgroundColor: m.color, color: '#F9FAFB' }}>{m.initials}</div>
+                        <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{m.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p><div className="flex items-center gap-1.5 mt-1"><span className="inline-block rounded-full" style={{ width: 6, height: 6, backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Available</span></div></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', maxWidth: 360, backdropFilter: 'blur(4px)' }}>
+                  <p className="text-2xl mb-2">👀</p>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: '#F9FAFB' }}>This is how your team will look</h3>
+                  <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Import your team to unlock staff cards, org chart and team intelligence</p>
+                  <a href="/settings" className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+                </div>
+              </div>
+            </div>
+          )}
+          {subTab === 'staff' && (hasImported || items.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {items.map(member => {
                 const initials = member.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -902,7 +931,92 @@ export function AITeam({ ctx, onAction }: { ctx: AIContext; onAction?: (msg: str
           {subTab === 'info' && (
             <TeamInfoCards importedStaff={importedStaff} items={items} ctx={ctx} onAction={onAction} />
           )}
+
+          {/* Company Info */}
+          {subTab === 'company' && (
+            <CompanyInfoTab items={items} />
+          )}
         </>
+      )}
+    </div>
+  )
+}
+
+// ─── Company Info Tab ────────────────────────────────────────────────────────
+
+const COMPANY_DOCS = [
+  { icon: '📋', title: 'Staff Handbook', desc: 'Employment policies, conduct, benefits' },
+  { icon: '🏖️', title: 'Leave & Holiday Policy', desc: 'Annual leave, booking, blackout dates' },
+  { icon: '💚', title: 'Health & Wellbeing', desc: 'Mental health, EAP, sick leave' },
+  { icon: '🔒', title: 'Data & Security', desc: 'GDPR, data handling, passwords' },
+  { icon: '💰', title: 'Expenses Policy', desc: 'Claims, limits, deadlines' },
+  { icon: '🎓', title: 'Learning & Development', desc: 'Training budget, study leave' },
+]
+
+function CompanyInfoTab({ items }: { items: TeamMember[] }) {
+  const [docModal, setDocModal] = useState<string | null>(null)
+  const ceo = items.find(m => /ceo|founder|director/i.test(m.role)) || items[0]
+  const hr = items.find(m => /hr|people|human/i.test(m.department || m.role))
+  const it = items.find(m => /it|tech|system/i.test(m.department || m.role))
+  const fin = items.find(m => /finance|account/i.test(m.department || m.role))
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Company Info</h2>
+
+      {/* Documents */}
+      <div>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Company Documents</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {COMPANY_DOCS.map(d => (
+            <div key={d.title} onClick={() => setDocModal(d.title)} className="rounded-xl p-4 cursor-pointer transition-all hover:-translate-y-0.5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-2xl block mb-2">{d.icon}</span>
+              <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{d.title}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{d.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Company Details + Key Contacts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Company Details</p>
+          {[['Founded', '2021'], ['Industry', 'SaaS / Technology'], ['Size', '10-50 employees'], ['HQ', 'London, UK'], ['Website', 'lumiocms.com']].map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+          {[['CEO', ceo?.name || '—'], ['HR', hr?.name || '—'], ['IT Support', it?.name || '—'], ['Finance', fin?.name || '—']].map(([r, n]) => (
+            <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Useful Links */}
+      <div>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Useful Links</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {['Slack workspace', 'Google Drive', 'HR system', 'Payroll portal', 'Benefits portal', 'IT helpdesk', 'Company calendar', 'Training platform'].map(l => (
+            <div key={l} className="flex items-center gap-2 rounded-lg p-3 cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <ExternalLink size={12} style={{ color: '#6B7280' }} />
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Document modal */}
+      {docModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setDocModal(null)}>
+          <div className="rounded-2xl p-6 w-full max-w-sm text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <p className="text-3xl mb-3">📄</p>
+            <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{docModal}</h3>
+            <p className="text-sm mb-5" style={{ color: '#6B7280' }}>Document coming soon — upload your company documents in Settings.</p>
+            <button onClick={() => setDocModal(null)} className="px-5 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', border: 'none', cursor: 'pointer' }}>Got it</button>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -935,7 +1049,12 @@ function TeamInfoCards({ importedStaff, items, ctx, onAction }: {
   if (staffCards.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm" style={{ color: '#6B7280' }}>No team members yet — import staff via Settings.</p>
+        <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.4)', maxWidth: 360 }}>
+          <p className="text-2xl mb-2">🃏</p>
+          <h3 className="font-bold text-base mb-2" style={{ color: '#F9FAFB' }}>Team Info cards will appear here</h3>
+          <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Import your team to see FIFA-style staff cards with stats and profiles</p>
+          <a href="/settings" className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+        </div>
       </div>
     )
   }

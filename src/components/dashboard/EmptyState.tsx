@@ -205,6 +205,7 @@ export function DashboardEmptyState({
     Object.keys(localStorage)
       .filter(k => (k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_school_')) && k !== 'lumio_dashboard_overview_hasData')
       .forEach(k => localStorage.removeItem(k))
+    localStorage.removeItem('lumio_staff_imported')
     localStorage.setItem('lumio_demo_active', 'false')
 
     invalidateWorkspaceCache()
@@ -229,6 +230,10 @@ export function DashboardEmptyState({
     // Set localStorage flags for immediate UI update
     ALL_PAGES.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     localStorage.setItem('lumio_demo_active', 'true')
+    localStorage.setItem('lumio-photo-frame', JSON.stringify([
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+    ]))
 
     invalidateWorkspaceCache()
     window.location.reload()
@@ -466,14 +471,7 @@ export function useHasDashboardData(pageKey: string): boolean | null {
       return
     }
 
-    // Fast path 2: staff has been imported — enable HR/Accounts/IT pages
-    const staffPages = new Set(['hr', 'accounts', 'it'])
-    if (staffPages.has(pageKey)) {
-      try {
-        const imported = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-        if (imported.length > 0) { setHas(true); return }
-      } catch { /* ignore */ }
-    }
+    // Staff presence is now determined by Supabase query, not localStorage
 
     // Per-page flag ONLY trusted when demo is active (already handled above)
     // When demo is off, ignore stale lumio_dashboard_*_hasData flags

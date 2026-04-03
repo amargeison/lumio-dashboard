@@ -197,7 +197,7 @@ export default function HRPage() {
 
   const hasData = useHasDashboardData('hr')
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
-  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+  const hasImportedStaff = false // Staff now from Supabase only
 
   const deptStaff = getDeptStaff('hr')
   const deptLead = getDeptLead(deptStaff)
@@ -207,12 +207,11 @@ export default function HRPage() {
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="hr" />}
       <DashboardEmptyState pageKey="hr"
-        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your HR data` : 'No HR data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'HR Lead'}. Import your team roster or connect BambooHR to activate the full HR & People dashboard.` : 'Upload your team roster, org chart and HR records to activate the HR & People module. Covers headcount, absences, recruitment and org structure.'}
+        title="No team data yet"
+        description="Import your staff directory to unlock onboarding checklists, leave management and people analytics."
         uploads={[
-          { key: 'people', label: 'Upload Team Roster (CSV)' },
-          { key: 'org', label: 'Upload Org Chart (CSV)' },
-          { key: 'absences', label: 'Upload Absence Records (CSV)' },
+          { key: 'people', label: 'Upload Staff CSV' },
+          { key: 'absences', label: 'Upload Leave Data (CSV)' },
         ]}
       />
     </>
@@ -368,6 +367,8 @@ export default function HRPage() {
     { label: 'Dept Info',          icon: Building2,      onClick: () => setShowDeptInfo(true) },
   ]
 
+  const hrHighlights = ['8 active onboardings in progress — all on track', '14 leave requests pending approval — 3 flagged as urgent', '3 probation reviews overdue — HR action required', 'Headcount at 187 — 2 open roles in recruitment pipeline', 'Staff wellbeing score: 7.4/10 — highest this quarter']
+
   return (
     <PageShell title="HR & People" subtitle="People management, hiring, onboarding and team workflows">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -376,7 +377,24 @@ export default function HRPage() {
         </div>
       </ChartSection>
 
-      <DeptAISummary dept="hr" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="hr" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>HR</span>
+          </div>
+          <ul className="space-y-2.5">
+            {hrHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 

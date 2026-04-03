@@ -52,8 +52,32 @@ export function HRStaffList() {
 
   if (loading) return <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 200 }} />
   if (!staff.length) return (
-    <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-      <p className="text-sm" style={{ color: '#6B7280' }}>No staff imported yet. Import via Settings &rarr; Data Import.</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="w-20 h-20 rounded-2xl bg-purple-900/40 flex items-center justify-center mb-6">
+        <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-2">No team data yet</h2>
+      <p className="text-gray-400 max-w-md mb-8">Import your staff directory to unlock onboarding checklists, leave management and people analytics.</p>
+      <div className="w-full max-w-md space-y-3">
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Staff CSV</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Leave Data (CSV)</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <button className="w-full flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⇗ Connect an Integration (BambooHR, Workday + more)</button>
+        <div className="flex items-center gap-3 py-2">
+          <div className="flex-1 h-px bg-gray-800" />
+          <span className="text-xs text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-800" />
+        </div>
+        <button className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white">✨ Explore with Demo Data</button>
+        <p className="text-xs text-gray-500">Pre-filled sample data so you can explore every feature before adding your own</p>
+      </div>
     </div>
   )
 
@@ -250,8 +274,32 @@ export function AccountsPayroll() {
 
   if (loading) return <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 200 }} />
   if (!items.length) return (
-    <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-      <p className="text-sm" style={{ color: '#6B7280' }}>No payroll data yet. Import staff to populate.</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="w-20 h-20 rounded-2xl bg-purple-900/40 flex items-center justify-center mb-6">
+        <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-2">No accounts data yet</h2>
+      <p className="text-gray-400 max-w-md mb-8">Import payroll and invoicing data to unlock financial dashboards, reporting and expense tracking.</p>
+      <div className="w-full max-w-md space-y-3">
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Payroll Data (CSV)</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Invoice Data (CSV)</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <button className="w-full flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⇗ Connect an Integration (Xero, QuickBooks + more)</button>
+        <div className="flex items-center gap-3 py-2">
+          <div className="flex-1 h-px bg-gray-800" />
+          <span className="text-xs text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-800" />
+        </div>
+        <button className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white">✨ Explore with Demo Data</button>
+        <p className="text-xs text-gray-500">Pre-filled sample data so you can explore every feature before adding your own</p>
+      </div>
     </div>
   )
 
@@ -375,8 +423,32 @@ export function ITAssets() {
 
   if (loading) return <div className="animate-pulse rounded-xl" style={{ background: '#0F1019', height: 200 }} />
   if (!items.length) return (
-    <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-      <p className="text-sm" style={{ color: '#6B7280' }}>No IT asset data yet. Import staff to populate.</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="w-20 h-20 rounded-2xl bg-purple-900/40 flex items-center justify-center mb-6">
+        <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-2">No IT data yet</h2>
+      <p className="text-gray-400 max-w-md mb-8">Import your asset register to manage equipment provisioning and system access.</p>
+      <div className="w-full max-w-md space-y-3">
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Asset Register (CSV)</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⬆ Upload Software Licences (CSV)</button>
+          <button className="px-3 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 border border-gray-700">↓ Template</button>
+        </div>
+        <button className="w-full flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white border border-gray-700">⇗ Connect an Integration (Jira, Azure + more)</button>
+        <div className="flex items-center gap-3 py-2">
+          <div className="flex-1 h-px bg-gray-800" />
+          <span className="text-xs text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-800" />
+        </div>
+        <button className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white">✨ Explore with Demo Data</button>
+        <p className="text-xs text-gray-500">Pre-filled sample data so you can explore every feature before adding your own</p>
+      </div>
     </div>
   )
 

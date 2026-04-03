@@ -13,12 +13,12 @@ import {
   Home, Receipt, Megaphone, FlaskConical, Award, Monitor,
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
-  Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban,
+  Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
-import ClearDemoBar from '@/components/dashboard/ClearDemoBar'
+// ClearDemoBar replaced by inline banner in the right column
 import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -47,9 +47,9 @@ interface StaffMember {
   job_title?: string; department?: string; phone?: string; start_date?: string
 }
 
+// Staff is now fetched from Supabase only — no localStorage
 function getImportedStaff(): StaffMember[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]') } catch { return [] }
+  return []
 }
 
 const DIRECTOR_TITLES = /\b(director|ceo|coo|cto|cfo|chief|founder|owner|president|vp|vice president|head of|managing director|md)\b/i
@@ -115,6 +115,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType }[] = 
   { id: 'success',    label: 'Success',            icon: Award       },
   { id: 'it',         label: 'IT & Systems',       icon: Monitor     },
   { id: 'workflows',  label: 'Workflows Library',  icon: GitBranch   },
+  { id: 'directors',  label: 'Directors Suite',    icon: Crown       },
   { id: 'settings',   label: 'Settings',           icon: Settings    },
 ]
 
@@ -758,7 +759,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo, onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -897,14 +898,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       parts.push('No messages connected yet — connect your email in Settings to see live updates.')
     }
 
-    // Staff
-    try {
-      const staffRaw = typeof window !== 'undefined' ? localStorage.getItem('lumio_staff_imported') : null
-      if (staffRaw) {
-        const staff = JSON.parse(staffRaw) as unknown[]
-        if (staff.length > 0) parts.push(`Your team has ${staff.length} ${staff.length === 1 ? 'member' : 'members'}.`)
-      }
-    } catch { /* ignore */ }
+    // Staff count — no longer read from localStorage
 
     // HR platform mention
     if (typeof window !== 'undefined' && ['bamboohr', 'sage_hr', 'breathe', 'worksmarter'].some(k => localStorage.getItem(`lumio_integration_${k}`) === 'true')) {
@@ -1065,24 +1059,22 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
   return (
   <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      {onBellClick && (
+        <div className="absolute top-4 right-4 hidden md:flex items-center gap-2 z-10">
+          {roleSwitcher}
+          <button onClick={onBellClick} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={16} strokeWidth={1.75} />
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+          </button>
+          <AvatarDropdown initials={userNameProp ? userNameProp.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={settingsHref} />
+        </div>
+      )}
       <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            {/* Company logo + name */}
-            {company && (
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const logo = typeof window !== 'undefined' ? localStorage.getItem('workspace_company_logo') || localStorage.getItem('lumio_company_logo') : null
-                  return logo
-                    ? <img src={logo} alt="" className="rounded" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-                    : <div className="flex items-center justify-center rounded text-[9px] font-bold" style={{ width: 24, height: 24, backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}>{company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
-                })()}
-                <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>{company}</span>
-              </div>
-            )}
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
@@ -1157,258 +1149,122 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
-// Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const photoImpCtx = getImpersonationContext()
-  const [photos, setPhotos] = useState<string[]>(() => {
-    if (photoImpCtx.isImpersonating) return [] // Don't show owner's photos when impersonating
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null
-      if (saved) { const parsed = JSON.parse(saved); if (parsed.length > 0) return parsed }
-      return demoDataActive ? DEMO_PHOTOS : []
-    } catch { return [] }
-  })
+  const [photos, setPhotos] = useState<string[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
-  const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
+
+  // Sync photos to demoDataActive state
+  useEffect(() => {
+    if (photoImpCtx.isImpersonating) return
+    setPhotos(demoDataActive ? DEMO_PHOTOS : [])
+    if (!demoDataActive) localStorage.removeItem('lumio-photo-frame')
+  }, [demoDataActive])
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    if (isPlaying && photos.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setCurrentIdx(i => (i + 1) % photos.length)
-      }, intervalSecs * 1000)
-    }
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
+  const photosInitRef = useRef(false)
+  useEffect(() => { if (!photosInitRef.current) { photosInitRef.current = true; return }; localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
 
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || [])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string
-        setPhotos(prev => {
-          const next = [...prev, url].slice(-20)
-          localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
-          return next
-        })
-      }
-      reader.readAsDataURL(file)
-    })
-    e.target.value = ''
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
   }
-
-  function removePhoto(idx: number) {
-    setPhotos(prev => {
-      const next = prev.filter((_, i) => i !== idx)
-      localStorage.setItem('lumio_photo_frame', JSON.stringify(next))
-      if (currentIdx >= next.length) setCurrentIdx(Math.max(0, next.length - 1))
-      return next
-    })
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
   }
-
-  // Zoom + pan state
-  const [zoom, setZoom] = useState(100)
-  const [panX, setPanX] = useState(0)
-  const [panY, setPanY] = useState(0)
-  const [dragging, setDragging] = useState(false)
-  const [hoveringFrame, setHoveringFrame] = useState(false)
-  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
-  const frameRef = useRef<HTMLDivElement>(null)
-
-  // Load saved transform for current photo
-  useEffect(() => {
-    if (typeof window === 'undefined' || !photos[currentIdx]) return
-    try {
-      const saved = localStorage.getItem(`lumio_photoframe_transform_${currentIdx}`)
-      if (saved) { const t = JSON.parse(saved); setZoom(t.zoom || 100); setPanX(t.x || 0); setPanY(t.y || 0) }
-      else { setZoom(100); setPanX(0); setPanY(0) }
-    } catch { setZoom(100); setPanX(0); setPanY(0) }
-  }, [currentIdx, photos])
-
-  function saveTransform(z: number, x: number, y: number) {
-    if (typeof window !== 'undefined') localStorage.setItem(`lumio_photoframe_transform_${currentIdx}`, JSON.stringify({ zoom: z, x, y }))
-  }
-
-  function handleZoomChange(val: number) {
-    const clamped = Math.max(100, Math.min(300, val))
-    setZoom(clamped)
-    // Clamp pan when zooming out
-    if (clamped === 100) { setPanX(0); setPanY(0); saveTransform(clamped, 0, 0) }
-    else saveTransform(clamped, panX, panY)
-  }
-
-  function resetPosition() { setZoom(100); setPanX(0); setPanY(0); saveTransform(100, 0, 0) }
-
-  function startDrag(clientX: number, clientY: number) {
-    if (zoom <= 100) return
-    setDragging(true)
-    dragStart.current = { x: clientX, y: clientY, panX, panY }
-  }
-
-  function moveDrag(clientX: number, clientY: number) {
-    if (!dragging) return
-    const dx = clientX - dragStart.current.x
-    const dy = clientY - dragStart.current.y
-    const maxPan = (zoom - 100) / 100 * 150 // limit pan range proportional to zoom
-    const nx = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panX + dx))
-    const ny = Math.max(-maxPan, Math.min(maxPan, dragStart.current.panY + dy))
-    setPanX(nx); setPanY(ny)
-  }
-
-  function endDrag() {
-    if (dragging) { setDragging(false); saveTransform(zoom, panX, panY) }
-  }
-
-  const isTransformed = zoom > 100 || panX !== 0 || panY !== 0
-  const showControls = hoveringFrame && photos.length > 0
-
-  function prev() { setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }
-  function next() { setCurrentIdx(i => (i + 1) % photos.length) }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 280 }}>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
         <div className="flex items-center gap-2">
-          <span className="text-base">🖼️</span>
-          <span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {photos.length > 1 && (
-            <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg"
-              style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280', border: `1px solid ${isPlaying ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
-          )}
-          <button onClick={() => fileInputRef.current?.click()} className="text-xs px-2 py-1 rounded-lg"
-            style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-            + Add Photo
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
-
       {photos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 mx-4 mb-4 rounded-xl cursor-pointer"
-          style={{ border: '2px dashed #374151', backgroundColor: 'rgba(255,255,255,0.02)' }}
-          onClick={() => fileInputRef.current?.click()}>
-          <div className="text-4xl">📷</div>
-          <div className="text-sm font-medium" style={{ color: '#9CA3AF' }}>Add your photos</div>
-          <div className="text-xs text-center px-4" style={{ color: '#6B7280' }}>Upload from device, or connect Google Photos or iCloud below</div>
-          <div className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-            + Upload Photos
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div ref={frameRef} className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden"
-          style={{ minHeight: 180, cursor: zoom > 100 ? (dragging ? 'grabbing' : 'grab') : 'default' }}
-          onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); endDrag() }}
-          onMouseDown={e => { e.preventDefault(); startDrag(e.clientX, e.clientY) }}
-          onMouseMove={e => moveDrag(e.clientX, e.clientY)}
-          onMouseUp={endDrag}
-          onTouchStart={e => { const t = e.touches[0]; if (t) startDrag(t.clientX, t.clientY) }}
-          onTouchMove={e => { const t = e.touches[0]; if (t) moveDrag(t.clientX, t.clientY) }}
-          onTouchEnd={endDrag}>
-          <img src={photos[currentIdx]} alt="Photo frame" draggable={false} style={{
-            width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0,
-            transition: dragging ? 'none' : 'transform 0.2s ease, opacity 0.5s ease',
-            transform: `scale(${zoom / 100}) translate(${panX / (zoom / 100)}px, ${panY / (zoom / 100)}px)`,
-            userSelect: 'none', pointerEvents: 'none',
-          }} />
-          {photos.length > 1 && (
-            <>
-              <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
-                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>‹</button>
-              <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
-                style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 14 }}>›</button>
-            </>
-          )}
-          {photos.length > 1 && photos.length <= 10 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {photos.map((_, i) => (
-                <button key={i} onClick={() => setCurrentIdx(i)}
-                  style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: i === currentIdx ? '#0D9488' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
-              ))}
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
+      )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
+          </button>
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
+      </div>
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
             </div>
-          )}
-          {/* Remove button — visible on hover */}
-          <button onClick={e => { e.stopPropagation(); setConfirmRemoveIdx(currentIdx) }}
-            className="absolute top-2 right-2 flex items-center justify-center rounded-full text-xs transition-opacity"
-            style={{ width: 24, height: 24, backgroundColor: '#EF4444', color: '#fff', border: '2px solid rgba(255,255,255,0.3)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none', fontWeight: 700 }}>✕</button>
-          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>
-            {currentIdx + 1} / {photos.length}
-          </div>
-          {/* Remove confirmation dialog */}
-          {confirmRemoveIdx !== null && (
-            <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10 }}>
-              <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 260 }}>
-                <p className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Remove this photo?</p>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>This cannot be undone.</p>
-                <div className="flex gap-2 justify-center">
-                  <button onClick={() => setConfirmRemoveIdx(null)} className="px-4 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Cancel</button>
-                  <button onClick={() => { removePhoto(confirmRemoveIdx); setConfirmRemoveIdx(null) }} className="px-4 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: '#EF4444', color: '#fff' }}>Remove</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Zoom/pan controls — appear on hover */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full transition-opacity"
-            style={{ backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', opacity: showControls ? 1 : 0, pointerEvents: showControls ? 'auto' : 'none' }}>
-            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom - 20) }} className="text-xs font-bold" style={{ color: zoom <= 100 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>−</button>
-            <span className="text-[10px] font-semibold" style={{ color: '#D1D5DB', minWidth: 32, textAlign: 'center' }}>{zoom}%</span>
-            <button onClick={e => { e.stopPropagation(); handleZoomChange(zoom + 20) }} className="text-xs font-bold" style={{ color: zoom >= 300 ? '#4B5563' : '#F9FAFB', width: 18, textAlign: 'center' }}>+</button>
-            {isTransformed && (
-              <button onClick={e => { e.stopPropagation(); resetPosition() }} className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: '#A78BFA', backgroundColor: 'rgba(108,63,197,0.2)' }}>Reset</button>
-            )}
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
           </div>
         </div>
       )}
-
-      <div className="px-4 pb-3 flex-shrink-0">
-        {photos.length > 1 && (
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>
-            {[3, 5, 10, 30].map(s => (
-              <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded"
-                style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280', border: `1px solid ${intervalSecs === s ? 'rgba(13,148,136,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
-                {s}s
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <div className="relative flex-1 group">
-            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
-              <span>📷</span> Google Photos <span>✨</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
-              Coming soon — upload photos directly for now
-            </div>
-          </div>
-          <div className="relative flex-1 group">
-            <button disabled className="w-full text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-not-allowed opacity-50"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid #1F2937' }}>
-              <span>☁️</span> iCloud <span>✨</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#1F2937', color: '#F9FAFB', zIndex: 10 }}>
-              Coming soon — upload photos directly for now
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -1429,7 +1285,7 @@ const ROUNDUP_ITEMS = [
     id: 'whatsapp', icon: '💬', label: 'WhatsApp Business', count: 4, urgent: false,
     color: '#25D366', bg: 'rgba(37,211,102,0.08)', border: 'rgba(37,211,102,0.2)',
     messages: [
-      { id: 'w1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
+      { id: 'w1', from: 'Sophie Brennan', avatar: 'SB', subject: 'Re: Lumio demo follow-up', preview: 'Hi, just following up on our call yesterday. When can we schedule the full team demo?', time: '9:15am', urgent: false, read: false },
       { id: 'w2', from: 'James Harlow', avatar: 'JH', subject: 'Contract query', preview: 'Quick question on the contract terms \u2014 can we jump on a call this afternoon?', time: '8:45am', urgent: false, read: false },
       { id: 'w3', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal reminder', preview: 'Our current contract ends next month. Looking forward to renewing with Lumio.', time: 'Yesterday', urgent: false, read: true },
       { id: 'w4', from: 'Dan Marsh', avatar: 'DM', subject: 'Invoice question', preview: 'Could you resend the latest invoice? Need it for our accounts team.', time: 'Yesterday', urgent: false, read: true },
@@ -1450,7 +1306,7 @@ const ROUNDUP_ITEMS = [
     id: 'slack', icon: '💬', label: 'Slack', count: 7, urgent: false,
     color: '#C084FC', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)',
     messages: [
-      { id: 's1', from: 'Charlotte Davies', avatar: 'CD', subject: '#sales-pipeline', preview: 'Lead scored 87 in SA-02 — Arron, want me to move this to Proposal stage?', time: '9:02am', urgent: false, read: false, channel: '#sales-pipeline' },
+      { id: 's1', from: 'Rachel Osei', avatar: 'RO', subject: '#sales-pipeline', preview: 'Lead scored 87 in SA-02 — James, want me to move this to Proposal stage?', time: '9:02am', urgent: false, read: false, channel: '#sales-pipeline' },
       { id: 's2', from: 'HR Bot', avatar: 'HR', subject: '#hr-alerts', preview: 'HR-01 workflow completed for new joiner Sophie Williams. Onboarding pack sent \u2713', time: '8:45am', urgent: false, read: false, channel: '#hr-alerts' },
       { id: 's3', from: 'James Harlow', avatar: 'JH', subject: '#general', preview: 'Morning all — heads up, the Wimbledon client is pushing for a demo this Friday. Anyone free?', time: '8:30am', urgent: false, read: false, channel: '#general' },
       { id: 's4', from: 'Rachel Davies', avatar: 'RD', subject: '#management', preview: 'Board pack is ready for review. Can someone sense-check the financial slides?', time: 'Yesterday', urgent: false, read: true, channel: '#management' },
@@ -1460,16 +1316,16 @@ const ROUNDUP_ITEMS = [
     id: 'teams', icon: '🟣', label: 'Microsoft Teams', count: 3, urgent: false,
     color: '#7B83EB', bg: 'rgba(123,131,235,0.08)', border: 'rgba(123,131,235,0.2)',
     messages: [
-      { id: 'tm1', from: 'Charlotte Davies', avatar: 'CD', subject: 'Sales Standup', preview: 'Quick update \u2014 the Apex deal is moving to proposal stage. Can we review pricing before EOD?', time: '9:30am', urgent: false, read: false },
-      { id: 'tm2', from: 'Sophie Williams', avatar: 'SW', subject: 'Onboarding checklist', preview: 'Hi Arron, I\u2019ve completed the first 3 items on my onboarding checklist. Where do I find the IT setup guide?', time: '8:50am', urgent: false, read: false },
-      { id: 'tm3', from: 'James Okafor', avatar: 'JO', subject: 'Client feedback', preview: 'Just got off a call with Oakridge \u2014 they love the new safeguarding module. Might be worth a case study.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'tm1', from: 'Rachel Osei', avatar: 'RO', subject: 'Sales Standup', preview: 'Quick update \u2014 the Apex deal is moving to proposal stage. Can we review pricing before EOD?', time: '9:30am', urgent: false, read: false },
+      { id: 'tm2', from: 'Sophie Williams', avatar: 'SW', subject: 'Onboarding checklist', preview: 'Hi James, I\u2019ve completed the first 3 items on my onboarding checklist. Where do I find the IT setup guide?', time: '8:50am', urgent: false, read: false },
+      { id: 'tm3', from: 'Ben Holloway', avatar: 'BH', subject: 'Client feedback', preview: 'Just got off a call with Oakridge \u2014 they love the new safeguarding module. Might be worth a case study.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
   {
     id: 'hubspot', icon: '🟠', label: 'HubSpot', count: 5, urgent: false,
     color: '#FB923C', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)',
     messages: [
-      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Charlotte Davies.', time: '9:45am', urgent: false, read: false },
+      { id: 'h1', from: 'HubSpot CRM', avatar: 'HS', subject: 'Deal update — Apex Consulting moved to Negotiation', preview: 'The deal with Apex Consulting (\u00A324,000 ARR) has been moved to Negotiation stage by Rachel Osei.', time: '9:45am', urgent: false, read: false },
       { id: 'h2', from: 'HubSpot CRM', avatar: 'HS', subject: 'New contact — Marcus Chen, Meridian Trust', preview: 'Marcus Chen (CTO, Meridian Trust) has been added as a new contact. Recommended action: schedule intro call.', time: '8:30am', urgent: false, read: false },
       { id: 'h3', from: 'HubSpot', avatar: 'HS', subject: 'Email sequence — 3 contacts opened your email', preview: 'Your "School Digital Transformation" sequence had 3 opens and 1 click-through in the last 24 hours.', time: 'Yesterday', urgent: false, read: true },
       { id: 'h4', from: 'HubSpot', avatar: 'HS', subject: 'Task reminder — follow up with Wimbledon High', preview: 'You have an overdue task: follow up with James Harlow at Wimbledon High regarding the enterprise proposal.', time: 'Yesterday', urgent: true, read: false },
@@ -1488,7 +1344,7 @@ const ROUNDUP_ITEMS = [
     id: 'linkedin', icon: '💼', label: 'LinkedIn', count: 4, urgent: false,
     color: '#2DD4BF', bg: 'rgba(45,212,191,0.08)', border: 'rgba(45,212,191,0.2)',
     messages: [
-      { id: 'l1', from: 'Sarah Mitchell', avatar: 'SM', subject: 'Connection request', preview: 'Hi, I came across Lumio and would love to connect. We\u2019re looking for a school management solution.', time: '10:15am', urgent: false, read: false },
+      { id: 'l1', from: 'Sophie Brennan', avatar: 'SB', subject: 'Connection request', preview: 'Hi, I came across Lumio and would love to connect. We\u2019re looking for a school management solution.', time: '10:15am', urgent: false, read: false },
       { id: 'l2', from: 'LinkedIn', avatar: 'LI', subject: 'Your post is gaining traction', preview: 'Your post about UK school automation got 47 reactions and 12 comments in the last 24 hours.', time: '9:30am', urgent: false, read: false },
       { id: 'l3', from: 'Marcus Chen', avatar: 'MC', subject: 'Connection request', preview: 'Hi — I\u2019m the CTO at Meridian Trust. Interested to learn more about your SSO capabilities.', time: 'Yesterday', urgent: false, read: true },
     ]
@@ -1941,8 +1797,8 @@ function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab
 
 const MEETINGS: { id: string; title: string; time: string; duration: string; attendees: string[]; location: string; type: string; status: string; link?: string }[] = [
   { id: '1', title: 'Weekly Team Check-in', time: '09:00', duration: '30 min', attendees: ['Sarah M.'], location: 'Google Meet', type: 'video', status: 'done' },
-  { id: '2', title: 'New Customer Demo', time: '11:00', duration: '45 min', attendees: ['Charlotte D.'], location: 'Zoom', type: 'video', status: 'now', link: '#' },
-  { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['Arron'], location: 'Google Meet', type: 'call', status: 'upcoming', link: '#' },
+  { id: '2', title: 'New Customer Demo', time: '11:00', duration: '45 min', attendees: ['Rachel O.'], location: 'Zoom', type: 'video', status: 'now', link: '#' },
+  { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['James'], location: 'Google Meet', type: 'call', status: 'upcoming', link: '#' },
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming' },
 ]
 
@@ -2737,7 +2593,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
-    localStorage.setItem('lumio_demo_active', 'false')
+    localStorage.removeItem('lumio_staff_imported')
+    localStorage.removeItem('lumio_staff_imported_source')
+    localStorage.removeItem('lumio_staff_ids')
+    localStorage.removeItem('lumio_staff_profiles')
+    localStorage.removeItem('lumio_demo_active')
+    localStorage.removeItem('lumio-photo-frame')
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
@@ -2759,6 +2620,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     setLoading(true)
     await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
     localStorage.setItem('lumio_demo_active', 'true')
+    localStorage.setItem('lumio-photo-frame', JSON.stringify([
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+    ]))
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
     allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     onDemoToggle(true)
@@ -2862,21 +2727,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         })
         const data = await res.json()
         if (res.ok) {
-          // Deduplicate by email on merge, or replace entirely
-          if (replaceOnImport) {
-            localStorage.setItem('lumio_staff_imported', JSON.stringify(rows))
-          } else {
-            const existing: Record<string, unknown>[] = JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]')
-            const merged = [...existing]
-            for (const s of rows as Record<string, unknown>[]) {
-              const email = s.email as string | undefined
-              if (email) {
-                const idx = merged.findIndex(e => e.email === email)
-                if (idx >= 0) merged[idx] = s; else merged.push(s)
-              } else { merged.push(s) }
-            }
-            localStorage.setItem('lumio_staff_imported', JSON.stringify(merged))
-          }
+          // Re-fetch staff from Supabase after successful import
           window.dispatchEvent(new Event('lumio-staff-imported'))
           const parts: string[] = []
           if (data.added > 0) parts.push(`${data.added} added`)
@@ -3641,7 +3492,7 @@ function SnapshotWidgets() {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
@@ -3686,8 +3537,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   }
   const [tab, setTab] = useState<OverviewTab>('today')
 
-  // Staff data + director detection
-  const allStaff = React.useMemo(() => getImportedStaff(), [])
+  // Staff data + director detection — from Supabase via prop
+  const allStaff = supabaseStaff
   const currentUserStaff = React.useMemo(() => {
     const name = (firstName || '').toLowerCase()
     if (!name) return null
@@ -3738,12 +3589,21 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} roleSwitcher={roleSwitcher} settingsHref={settingsHref} userNameProp={userNameProp} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
         <div className="space-y-4">
           <QuickActionsBar onAction={handleQuickAction} onGoSettings={onGoSettings || (() => {})} />
+
+          {!demoDataActive && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="text-5xl mb-4">🏢</div>
+              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your tools to get started</h3>
+              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and schedule will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col">
@@ -3763,8 +3623,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
           {/* Active Departments — shows when staff imported and demo off */}
           {!demoDataActive && (() => {
-            const allStaff = getImportedStaff()
-            if (!allStaff.length) return null
+            if (!supabaseStaff.length) return null
             const DEPTS = [
               { key: 'sales', icon: '💼', route: '/sales' }, { key: 'marketing', icon: '📊', route: '/marketing' },
               { key: 'hr', icon: '👥', route: '/hr' }, { key: 'accounts', icon: '💰', route: '/accounts' },
@@ -3773,7 +3632,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
               { key: 'partners', icon: '🤝', route: '/partners' },
             ]
             const activeDepts = DEPTS.map(d => {
-              const staff = getDeptStaff(d.key)
+              const staff = getDeptStaff(d.key, supabaseStaff)
               if (!staff.length) return null
               const lead = getDeptLead(staff)
               return { ...d, lead, count: staff.length }
@@ -3844,15 +3703,15 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        demoDataActive ? <QuickWins /> : <AIQuickWins ctx={aiCtx} />
+        <QuickWins />
       ) : tab === 'tasks' ? (
-        demoDataActive ? <DailyTasks /> : <AIDailyTasks ctx={aiCtx} />
+        <DailyTasks />
       ) : tab === 'insights' ? (
-        demoDataActive ? <Insights /> : <AIInsights ctx={aiCtx} />
+        <Insights />
       ) : tab === 'not-to-miss' ? (
-        demoDataActive ? <NotToMiss /> : <AIDontMiss ctx={aiCtx} />
+        <NotToMiss />
       ) : tab === 'team' ? (
-        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} />
+        demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
@@ -3913,7 +3772,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const { slug } = use(params)
   const router = useRouter()
 
-  const [activeDept, setActiveDept] = useState<DeptId>('overview')
+  const [activeDept, setActiveDept] = useState<DeptId>(() => {
+    if (typeof window === 'undefined') return 'overview'
+    const stored = localStorage.getItem('lumio_active_dept')
+    if (stored) { localStorage.removeItem('lumio_active_dept'); return (stored as DeptId) }
+    return 'overview'
+  })
   const [company, setCompany]       = useState('')
   const [userName, setUserName]     = useState('')
   const [companyLogo, setCompanyLogo] = useState('')
@@ -3923,10 +3787,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
-  const [demoDataActive, setDemoDataActive] = useState(false)
+  const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [businessId, setBusinessId] = useState('')
-  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
+  const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
+  const [staffRefreshKey, setStaffRefreshKey] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
@@ -4092,6 +3957,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
           }
+          // Staff is now fetched from Supabase only — no localStorage sync needed
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
           const alreadyOnboarded = data.onboarding_completed || data.onboarded || data.onboarding_complete
           const dismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
@@ -4133,7 +3999,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
               if (data.business?.user_avatar_url) { setUserPhoto(data.business.user_avatar_url); localStorage.setItem('lumio_user_photo', data.business.user_avatar_url); if (data.business.owner_email) localStorage.setItem(`lumio_staff_photo_${data.business.owner_email}`, data.business.user_avatar_url) }
               if (data.business?.id) setBusinessId(data.business.id)
-              if (data.business?.demo_data_active) setDemoDataActive(true)
+              if (data.business?.demo_data_active) { setDemoDataActive(true); localStorage.setItem('lumio_demo_active', 'true') }
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
               const bizDismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
               if (bizOnboarded || bizDismissed) {
@@ -4152,6 +4018,35 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
     }
   }, [slug, router])
+
+  // Clear stale localStorage staff data — Supabase is now the only source
+  useEffect(() => {
+    localStorage.removeItem('lumio_staff_imported')
+    localStorage.removeItem('lumio_staff_imported_source')
+    localStorage.removeItem('lumio_staff_ids')
+    localStorage.removeItem('lumio_staff_profiles')
+  }, [])
+
+  // Fetch staff from Supabase when session is ready or after import
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') : null
+    if (!token) return
+    fetch('/api/workspace/staff', { headers: { 'x-workspace-token': token } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.staff) {
+          setSupabaseStaff(data.staff)
+        }
+      })
+      .catch(() => {})
+  }, [businessId, staffRefreshKey])
+
+  // Re-fetch staff when new staff is imported via CSV
+  useEffect(() => {
+    const handler = () => setStaffRefreshKey(k => k + 1)
+    window.addEventListener('lumio-staff-imported', handler)
+    return () => window.removeEventListener('lumio-staff-imported', handler)
+  }, [])
 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
   const sessionToken = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
@@ -4216,77 +4111,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         e.target.value = ''
       }} />
 
-      {/* Top-right: role switcher + bell + avatar */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <RoleSwitcherPill />
-        <button
-          onClick={() => setNotificationsOpen(o => !o)}
-          title="Notifications"
-          style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
-        </button>
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setAvatarDropdownOpen(o => !o)}
-            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
-            {userPhoto ? (
-              <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
-            ) : (
-              userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
-            )}
-          </button>
-          {avatarDropdownOpen && (
-            <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 200, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-              {/* User info with larger avatar */}
-              <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, overflow: 'hidden', flexShrink: 0 }}>
-                  {userPhoto ? (
-                    <img src={userPhoto} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} onError={() => setUserPhoto(null)} />
-                  ) : (
-                    userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName || 'User'}</p>
-                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{ownerEmail || ''}</p>
-                </div>
-              </div>
-              <button onClick={() => { setAvatarDropdownOpen(false); avatarFileRef.current?.click() }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                📷 {userPhoto ? 'Change photo' : 'Upload photo'}
-              </button>
-              {userPhoto && (
-                <button onClick={() => {
-                  const email = localStorage.getItem('lumio_user_email')
-                  if (email) localStorage.removeItem(`lumio_staff_photo_${email}`)
-                  localStorage.removeItem('lumio_user_photo')
-                  setUserPhoto(null)
-                  window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: null }))
-                  setAvatarDropdownOpen(false)
-                  fireToast('Photo removed')
-                }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                  🗑️ Remove photo
-                </button>
-              )}
-              <div style={{ height: 1, backgroundColor: '#1F2937', margin: '4px 12px' }} />
-              <button onClick={() => { setAvatarDropdownOpen(false); setActiveDept('settings') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#9CA3AF' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9CA3AF' }}>
-                ⚙️ Settings
-              </button>
-              <button onClick={() => { localStorage.removeItem('lumio_impersonated_role'); Object.keys(localStorage).filter(k => k.startsWith('workspace_') || k.startsWith('demo_')).forEach(k => localStorage.removeItem(k)); router.replace('/login') }} className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
-                🚪 Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
       {/* SSO Welcome Modal */}
@@ -4392,8 +4216,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         </div>
       )}
 
-      {demoDataActive && <ClearDemoBar />}
-
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
         <button className="p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
@@ -4405,13 +4227,25 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} companyName={company} companyLogo={companyLogo}
           userInitials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : undefined} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-lg font-bold">{deptLabel}</h1>
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Demo banner — in flow, first child of right column */}
+          {demoDataActive && (
+            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+              <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+              </div>
             </div>
+          )}
+          {/* Scrollable page content */}
+          <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
+            {activeDept !== 'overview' && (
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-lg font-bold">{deptLabel}</h1>
+              </div>
+            )}
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
@@ -4420,3 +4254,4 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     </div>
   )
 }
+

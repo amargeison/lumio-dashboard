@@ -164,10 +164,11 @@ export default function HRStaffPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Staff attendance, cover, DBS compliance and professional development</p>
       </div>
 
-      <DeptAISummary dept="hr-staff" portal="schools" />
-
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="hr-staff" portal="schools" />
+        <AIHighlights items={HIGHLIGHTS} />
+      </div>
 
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({

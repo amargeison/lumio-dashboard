@@ -170,26 +170,26 @@ export default function SalesPage() {
         </div>
       </ChartSection>
 
-      <DeptAISummary dept="sales" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="sales" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Sales</span>
+          </div>
+          <ul className="space-y-2.5">
+            {highlights.map((h, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
-
-      {/* AI Highlights */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={16} style={{ color: '#6C3FC5' }} />
-          <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-          <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Sales</span>
-        </div>
-        <ul className="space-y-2.5">
-          {highlights.map((h, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
-              {h}
-            </li>
-          ))}
-        </ul>
-      </div>
 
       <TwoCol
         main={

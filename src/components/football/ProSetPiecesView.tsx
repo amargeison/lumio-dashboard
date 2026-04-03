@@ -815,6 +815,267 @@ function CornersAttacking() {
         <CoachAttribution />
       </SectionCard>
 
+      {/* Routine 14 — Delayed Delivery — Movement First */}
+      <SectionCard title='Routine 14: "Delayed Delivery — Movement First"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          All 5 attackers make simultaneous runs BEFORE the ball is delivered, dragging their markers with them. The taker holds the ball at the corner flag for 3-4 seconds, then delivers into the vacated space. One attacker peels back into the now-empty zone to meet the delivery unmarked.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Delayed Inswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>Martinez</strong> (left foot)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker holding at corner */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+            <PitchLabel x={300} y={30} text="Holds 3-4s" color={C.gold} size={7} />
+
+            {/* 5 attackers' initial positions */}
+            <PlayerDot x={200} y={80} label={1} type="attack" size={9} />
+            <PlayerDot x={160} y={70} label={2} type="attack" size={9} />
+            <PlayerDot x={230} y={65} label={3} type="attack" size={9} />
+            <PlayerDot x={140} y={90} label={4} type="attack" size={9} />
+            <PlayerDot x={180} y={100} label={5} type="attack" size={9} />
+
+            {/* Simultaneous decoy runs AWAY from target zone */}
+            <MovementArrow x1={200} y1={80} x2={200} y2={140} dashed color={C.textSec} />
+            <MovementArrow x1={160} y1={70} x2={100} y2={110} dashed color={C.textSec} />
+            <MovementArrow x1={230} y1={65} x2={270} y2={120} dashed color={C.textSec} />
+            <MovementArrow x1={140} y1={90} x2={80} y2={140} dashed color={C.textSec} />
+            <MovementArrow x1={180} y1={100} x2={180} y2={160} dashed color={C.textSec} />
+            <PitchLabel x={100} y={155} text="Drag Defenders" color={C.textSec} size={7} />
+
+            {/* Vacated zone highlight */}
+            <ZoneHighlight x={150} y={50} width={80} height={50} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={190} y={48} text="Vacated Zone" color={C.gold} size={7} />
+
+            {/* Attacker 1 peels back into vacated space */}
+            <MovementArrow x1={200} y1={138} x2={185} y2={72} dashed color={C.gold} />
+            <PitchLabel x={210} y={108} text="Peels Back" color={C.gold} size={7} />
+
+            {/* Delayed ball flight into vacated zone */}
+            <BallFlight x1={315} y1={15} x2={185} y2={70} cx={260} cy={10} color={C.gold} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The 3-4 second hold is non-negotiable — all 5 runners must clear the zone before delivery. The peel-back runner must time the return to arrive with the ball, not before it. Practise the timing until the delay feels instinctive.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 15 — Driven Low — Penalty Spot Crash */}
+      <SectionCard title='Routine 15: "Driven Low — Penalty Spot Crash"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Low, hard, flat delivery along the ground to the penalty spot. No aerial element — this is designed exclusively for a first-time shot on the deck. 3 runners crash the penalty spot from different angles, creating a chaotic shooting opportunity.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Driven Low" /> &nbsp; Taker: <strong style={{ color: C.text }}>Santos</strong> (right foot)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Flat driven ball along the ground — MovementArrow not BallFlight */}
+            <MovementArrow x1={316} y1={20} x2={172} y2={88} dashed={false} color={C.gold} />
+            <PitchLabel x={250} y={50} text="Driven Low" color={C.gold} size={7} />
+
+            {/* Penalty spot zone highlight */}
+            <ZoneHighlight x={150} y={75} width={45} height={30} color="rgba(241,196,15,0.25)" />
+            <PitchLabel x={172} y={73} text="Penalty Spot" color={C.gold} size={7} />
+
+            {/* Runner 1 — from near post side */}
+            <PlayerDot x={240} y={55} label={1} type="attack" size={10} />
+            <MovementArrow x1={238} y1={57} x2={178} y2={85} dashed color={C.gold} />
+
+            {/* Runner 2 — from far post side */}
+            <PlayerDot x={110} y={60} label={2} type="attack" size={10} />
+            <MovementArrow x1={112} y1={62} x2={165} y2={85} dashed color={C.gold} />
+
+            {/* Runner 3 — from edge of box, arriving late */}
+            <PlayerDot x={170} y={155} label={3} type="attack" size={10} />
+            <MovementArrow x1={170} y1={153} x2={170} y2={92} dashed color={C.gold} />
+            <PitchLabel x={180} y={130} text="Late Crash" color={C.gold} size={7} />
+
+            {/* Decoy runners pulling wide */}
+            <PlayerDot x={260} y={100} label={4} type="attack" size={9} />
+            <MovementArrow x1={258} y1={98} x2={280} y2={60} dashed color={C.textSec} />
+            <PlayerDot x={80} y={120} label={5} type="attack" size={9} />
+            <MovementArrow x1={82} y1={118} x2={60} y2={80} dashed color={C.textSec} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The delivery must be fast and flat — any bounce kills the routine. Runners arriving at speed should be ready for a first-time finish. If the first touch is required, redirect toward the near post.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 16 — Winger Holds Wide — Switch Play */}
+      <SectionCard title='Routine 16: "Winger Holds Wide — Switch Play"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery is deliberately overhit beyond the far post. A winger positioned outside the box on the far side collects the ball and has two options: immediate shot from a tight angle, or recycle possession back into the box for a second-phase attack.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Overhit Outswinger" /> &nbsp; Taker: <strong style={{ color: C.text }}>O&apos;Brien</strong> (right foot)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* Deliberately overhit ball flight past the box */}
+            <BallFlight x1={315} y1={15} x2={45} y2={80} cx={170} cy={5} color={C.gold} />
+            <PitchLabel x={90} y={55} text="Overhit" color={C.gold} size={7} />
+
+            {/* Winger holding wide on far side */}
+            <PlayerDot x={40} y={80} label="W" type="attack" size={10} />
+            <PitchLabel x={25} y={68} text="Winger Collects" color={C.gold} size={7} />
+
+            {/* Option A — shot from tight angle */}
+            <MovementArrow x1={42} y1={78} x2={145} y2={18} dashed={false} color={C.gold} />
+            <PitchLabel x={80} y={42} text="Option A: Shot" color={C.gold} size={7} />
+
+            {/* Option B — pass back into box */}
+            <MovementArrow x1={42} y1={82} x2={150} y2={85} dashed color={C.text} />
+            <PitchLabel x={95} y={98} text="Option B: Recycle" color={C.text} size={7} />
+
+            {/* Attackers in box for second phase */}
+            <PlayerDot x={150} y={85} label={1} type="attack" size={9} />
+            <PlayerDot x={180} y={70} label={2} type="attack" size={9} />
+            <PlayerDot x={200} y={95} label={3} type="attack" size={9} />
+
+            {/* Box attackers making runs for second phase */}
+            <MovementArrow x1={180} y1={68} x2={170} y2={45} dashed color={C.gold} />
+            <MovementArrow x1={200} y1={93} x2={185} y2={60} dashed color={C.gold} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The winger must remain wide and resist drifting into the box. The overhit delivery looks like a mistake to the opposition — by the time they realise, the winger is already on the ball with time. Option A is preferred if the keeper has committed centrally.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 17 — Centre-Back Arriving from Deep */}
+      <SectionCard title='Routine 17: "Centre-Back Arriving from Deep"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          The centre-back stays at the halfway line during corner setup, completely untracked. The delivery is timed to meet the CB arriving at pace from 40 yards out, arriving unmarked at the edge of the box with a full head of steam.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Outswinger — Edge of Box" /> &nbsp; Taker: <strong style={{ color: C.text }}>Martinez</strong> (left foot)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+
+            {/* CB starting position at halfway line (top of half pitch = deep) */}
+            <PlayerDot x={170} y={250} label="CB" type="attack" size={10} />
+            <PitchLabel x={185} y={248} text="Starts Deep" color={C.textSec} size={7} />
+
+            {/* CB sprint arrow from halfway to edge of box */}
+            <MovementArrow x1={170} y1={248} x2={170} y2={130} dashed color={C.gold} />
+            <PitchLabel x={185} y={190} text="40yd Sprint" color={C.gold} size={7} />
+
+            {/* Ball flight timed to meet CB at edge of box */}
+            <BallFlight x1={315} y1={15} x2={170} y2={128} cx={260} cy={40} color={C.gold} />
+
+            {/* Zone highlight at edge of box — meeting point */}
+            <ZoneHighlight x={145} y={115} width={50} height={30} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={170} y={113} text="Arrival Zone" color={C.gold} size={7} />
+
+            {/* Decoy attackers in the box pulling defenders */}
+            <PlayerDot x={200} y={60} label={1} type="attack" size={9} />
+            <PlayerDot x={140} y={70} label={2} type="attack" size={9} />
+            <PlayerDot x={230} y={80} label={3} type="attack" size={9} />
+            <MovementArrow x1={200} y1={58} x2={190} y2={40} dashed color={C.textSec} />
+            <MovementArrow x1={140} y1={68} x2={130} y2={50} dashed color={C.textSec} />
+            <MovementArrow x1={230} y1={78} x2={220} y2={55} dashed color={C.textSec} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The CB must not begin the sprint until the taker gives a pre-arranged signal (e.g., hand on ball). The delivery must be floated with enough hang-time to allow the 40-yard sprint. A bullet header from 18 yards with momentum is extremely difficult to save.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 18 — The Disguised Set — Mirror Switch */}
+      <SectionCard title='Routine 18: "The Disguised Set — Mirror Switch"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          The team sets up identically to Routine 1 (Near Post Flick-On) — same positions, same body language. At the last second, the taker switches to an outswinger and all runners redirect from near post to far post. The opposition, expecting the inswinger to the near post, are caught out of position.
+        </p>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 4px' }}>
+          Delivery: <Badge text="Outswinger (Disguised)" /> &nbsp; Taker: <strong style={{ color: C.text }}>O&apos;Brien</strong> (right foot, steps over Martinez)
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <CornerFlag side="right" />
+
+            {/* Taker — appears to be Martinez but O'Brien steps over */}
+            <PlayerDot x={318} y={18} label="T" type="attack" size={9} />
+            <PlayerDot x={310} y={28} label="T2" type="attack" size={8} />
+            <PitchLabel x={295} y={40} text="Switch Taker" color={C.gold} size={7} />
+
+            {/* Initial positions — identical to Routine 1 */}
+            <PlayerDot x={230} y={80} label={1} type="attack" size={9} />
+            <PlayerDot x={200} y={90} label={2} type="attack" size={9} />
+            <PlayerDot x={170} y={85} label={3} type="attack" size={9} />
+            <PlayerDot x={145} y={95} label={4} type="attack" size={9} />
+            <PlayerDot x={120} y={100} label={5} type="attack" size={9} />
+
+            {/* Initial near-post runs (dashed, textSec — these are the feints) */}
+            <MovementArrow x1={230} y1={78} x2={225} y2={55} dashed color={C.textSec} />
+            <MovementArrow x1={200} y1={88} x2={215} y2={60} dashed color={C.textSec} />
+            <MovementArrow x1={170} y1={83} x2={210} y2={58} dashed color={C.textSec} />
+            <PitchLabel x={220} y={48} text="Feint Near" color={C.textSec} size={7} />
+
+            {/* Redirect arrows — all runners switch to far post */}
+            <MovementArrow x1={225} y1={55} x2={115} y2={60} dashed color={C.gold} />
+            <MovementArrow x1={215} y1={60} x2={110} y2={65} dashed color={C.gold} />
+            <MovementArrow x1={210} y1={58} x2={120} y2={55} dashed color={C.gold} />
+            <MovementArrow x1={145} y1={93} x2={105} y2={70} dashed color={C.gold} />
+            <MovementArrow x1={120} y1={98} x2={100} y2={75} dashed color={C.gold} />
+            <PitchLabel x={95} y={50} text="Redirect Far" color={C.gold} size={7} />
+
+            {/* Far post zone */}
+            <ZoneHighlight x={85} y={45} width={50} height={40} color="rgba(241,196,15,0.15)" />
+
+            {/* Outswinger ball flight to far post */}
+            <BallFlight x1={315} y1={15} x2={110} y2={60} cx={230} cy={5} color={C.gold} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>This routine relies entirely on having run Routine 1 consistently throughout the match. The opposition must be conditioned to expect the inswinger near-post delivery. Deploy once per match, ideally in the second half. The taker switch (O&apos;Brien stepping over Martinez) must be seamless.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
       {/* Corner Stats */}
       <SectionCard title="Attacking Corner Statistics">
         <StatGrid
@@ -1671,6 +1932,214 @@ function FKZoneA() {
             {/* Second shot trajectory from rebound */}
             <BallFlight x1={140} y1={112} x2={165} y2={18} cx={130} cy={55} color={C.gold} />
           </PitchSVG>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 14: Curved Run — Blind Side Shot */}
+      <SectionCard title='Routine 14: "Curved Run — Blind Side Shot"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The shooter starts wide of the ball and makes a curved approach run. The arc of the run disguises the shot direction entirely — the goalkeeper cannot read the body shape until the moment of contact. This is a pure deception play targeting the opposite corner.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball position */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={6} />
+
+            {/* Shooter starting position — wide of ball */}
+            <PlayerDot x={100} y={170} label="S" type="attack" size={10} />
+            <PitchLabel x={80} y={180} text="Starts Wide" color={C.textSec} size={7} />
+
+            {/* Curved approach run — arcing from wide to ball */}
+            <BallFlight x1={100} y1={168} x2={168} y2={155} cx={110} cy={140} color={C.gold} />
+            <PitchLabel x={115} y={145} text="Curved Run" color={C.gold} size={7} />
+
+            {/* Shot trajectory curling to opposite corner */}
+            <BallFlight x1={170} y1={153} x2={210} y2={15} cx={230} cy={80} color={C.gold} />
+            <PitchLabel x={215} y={55} text="Shot — Far Corner" color={C.gold} size={7} />
+
+            {/* Decoy player standing over ball */}
+            <PlayerDot x={175} y={162} label="D" type="attack" size={9} />
+            <PitchLabel x={185} y={172} text="Decoy" color={C.textSec} size={7} />
+
+            {/* Keeper's expected positioning */}
+            <MovementArrow x1={170} y1={18} x2={140} y2={18} dashed color={C.primary} />
+            <PitchLabel x={130} y={28} text="GK Cheats" color={C.primary} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The curved run must be rehearsed until the arc feels natural. The keeper reads the run-up angle to anticipate direction — the curve eliminates that read entirely. Best deployed when the keeper has shown a tendency to dive early.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 15: Two-Wall Chaos */}
+      <SectionCard title='Routine 15: "Two-Wall Chaos"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Set up a second wall of 2 attackers directly in front of the defensive wall. On the whistle, the attacking wall splits in opposite directions, creating confusion, blocking the keeper&apos;s sightline, and opening a corridor for the shot.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+
+            {/* Defensive wall — 4 red */}
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Attacking wall — 2 gold, directly in front of defensive wall */}
+            <PlayerDot x={160} y={110} label="A1" type="attack" size={9} />
+            <PlayerDot x={180} y={110} label="A2" type="attack" size={9} />
+            <PitchLabel x={170} y={123} text="Attacking Wall" color={C.gold} size={7} />
+
+            {/* Split arrows — A1 goes left, A2 goes right */}
+            <MovementArrow x1={158} y1={110} x2={110} y2={100} dashed color={C.gold} />
+            <MovementArrow x1={182} y1={110} x2={230} y2={100} dashed color={C.gold} />
+            <PitchLabel x={100} y={92} text="Split" color={C.gold} size={7} />
+            <PitchLabel x={235} y={92} text="Split" color={C.gold} size={7} />
+
+            {/* Taker */}
+            <PlayerDot x={170} y={155} label="T" type="attack" size={10} />
+
+            {/* Shot through the chaos corridor */}
+            <BallFlight x1={170} y1={153} x2={170} y2={18} cx={170} cy={80} color={C.gold} />
+            <PitchLabel x={180} y={70} text="Shot Through" color={C.gold} size={7} />
+
+            {/* Keeper's view blocked indicator */}
+            <ZoneHighlight x={155} y={95} width={30} height={20} color="rgba(241,196,15,0.12)" />
+            <PitchLabel x={170} y={88} text="View Blocked" color={C.primary} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The attacking wall must not move until the taker begins the run-up. The split must be explosive and lateral — any hesitation defeats the purpose. The keeper sees the ball leave the foot approximately 0.3 seconds late due to the screening effect.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 16: Delayed Strike — Draw the Wall */}
+      <SectionCard title='Routine 16: "Delayed Strike — Draw the Wall"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          First taker walks away from the ball as if abandoning the kick or arguing with the referee. The defensive wall relaxes. A second taker arrives from the side and strikes before the wall can reset its concentration.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Ball position */}
+            <PlayerDot x={170} y={155} label="" type="ball" size={6} />
+
+            {/* First taker walking away — dashed arrow indicating departure */}
+            <PlayerDot x={185} y={160} label="T1" type="attack" size={9} />
+            <MovementArrow x1={183} y1={160} x2={240} y2={180} dashed color={C.textSec} />
+            <PitchLabel x={210} y={175} text="Walks Away" color={C.textSec} size={7} />
+
+            {/* Second taker arriving from side */}
+            <PlayerDot x={90} y={170} label="T2" type="attack" size={10} />
+            <MovementArrow x1={92} y1={168} x2={168} y2={155} dashed color={C.gold} />
+            <PitchLabel x={115} y={155} text="Arrives Fast" color={C.gold} size={7} />
+
+            {/* Shot to goal — before wall resets */}
+            <BallFlight x1={170} y1={153} x2={200} y2={15} cx={210} cy={75} color={C.gold} />
+            <PitchLabel x={210} y={50} text="Strike" color={C.gold} size={7} />
+
+            {/* Wall relaxing indicator */}
+            <PitchLabel x={170} y={88} text="Wall Relaxes" color={C.primary} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>T1&apos;s walk must be convincing — hands on hips, head shaking, looking toward the bench. T2 must be in motion before T1 fully clears. The window of wall relaxation is typically 1-2 seconds — T2 must be clinical.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 17: Cross Instead of Shot */}
+      <SectionCard title='Routine 17: "Cross Instead of Shot"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          From a clear shooting-range position, the taker delivers a cross to the far post instead of shooting. The defence drops expecting a shot, creating space at the far post. An attacker, unmarked because all eyes are on the ball, heads home.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Taker — in shooting position */}
+            <PlayerDot x={170} y={155} label="T" type="attack" size={10} />
+
+            {/* Cross trajectory curving to far post instead of at goal */}
+            <BallFlight x1={170} y1={153} x2={80} y2={45} cx={100} cy={110} color={C.gold} />
+            <PitchLabel x={85} y={70} text="Cross — Not Shot" color={C.gold} size={7} />
+
+            {/* Far post attacker — unmarked, heading */}
+            <PlayerDot x={80} y={45} label={1} type="attack" size={10} />
+            <PitchLabel x={65} y={35} text="Header" color={C.gold} size={7} />
+
+            {/* Header trajectory to goal */}
+            <MovementArrow x1={82} y1={43} x2={155} y2={18} dashed={false} color={C.gold} />
+
+            {/* Defence dropping — expecting shot */}
+            <PlayerDot x={140} y={80} label="X" type="defend" size={8} />
+            <PlayerDot x={200} y={80} label="X" type="defend" size={8} />
+            <MovementArrow x1={140} y1={78} x2={140} y2={65} dashed color={C.primary} />
+            <MovementArrow x1={200} y1={78} x2={200} y2={65} dashed color={C.primary} />
+            <PitchLabel x={170} y={60} text="Defence Drops" color={C.primary} size={7} />
+
+            {/* Far post zone */}
+            <ZoneHighlight x={60} y={30} width={45} height={30} color="rgba(241,196,15,0.15)" />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The taker&apos;s run-up must look identical to a shooting run-up. The far post attacker starts wide and drifts in late — he must not be stood in position telegraphing the delivery. Best used once per match; the element of surprise is everything.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 18: Pass Into Box — Indirect Style */}
+      <SectionCard title='Routine 18: "Pass Into Box — Indirect Style"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Despite being a direct free kick, play it like an indirect — pass the ball into the feet of an attacker positioned inside the box. The attacker turns and shoots from closer range with the goal in full view, bypassing the wall entirely.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+            <DefensiveWall x={170} y={100} count={4} />
+
+            {/* Taker */}
+            <PlayerDot x={170} y={155} label="T" type="attack" size={10} />
+
+            {/* Pass into box — not a shot, a firm pass to attacker's feet */}
+            <MovementArrow x1={170} y1={153} x2={120} y2={85} dashed={false} color={C.text} />
+            <PitchLabel x={130} y={120} text="Pass — Not Shot" color={C.text} size={7} />
+
+            {/* Attacker receiving in the box */}
+            <PlayerDot x={120} y={85} label={1} type="attack" size={10} />
+            <PitchLabel x={100} y={78} text="Receives" color={C.gold} size={7} />
+
+            {/* Attacker turns */}
+            <MovementArrow x1={118} y1={83} x2={115} y2={70} dashed color={C.gold} />
+            <PitchLabel x={98} y={68} text="Turns" color={C.gold} size={7} />
+
+            {/* Shot from inside box with goal in view */}
+            <BallFlight x1={115} y1={68} x2={165} y2={15} cx={120} cy={35} color={C.gold} />
+            <PitchLabel x={130} y={40} text="Closer Shot" color={C.gold} size={7} />
+
+            {/* Wall is bypassed — indicator */}
+            <PitchLabel x={170} y={88} text="Wall Irrelevant" color={C.primary} size={7} />
+
+            {/* Second attacker as option */}
+            <PlayerDot x={220} y={80} label={2} type="attack" size={9} />
+            <MovementArrow x1={218} y1={78} x2={200} y2={60} dashed color={C.textSec} />
+            <PitchLabel x={225} y={68} text="2nd Option" color={C.textSec} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The receiving attacker must be brave enough to hold a position inside the box where he can be hit by the pass. The turn must be pre-scanned — no looking at the goal after receiving. One touch to control, one touch to shoot. If the first touch is heavy, lay off to the second option.</div>
         </div>
         <CoachAttribution />
       </SectionCard>
@@ -2713,6 +3182,251 @@ function ThrowAttacking() {
         </div>
         <CoachAttribution />
       </SectionCard>
+
+      {/* Routine 14: Decoy Long — Actual Short */}
+      <SectionCard title='Routine 14: "Decoy Long — Actual Short"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The thrower shapes to throw long into the box — full wind-up, body angled toward the far post. At the last second, throws short to an unmarked player who drives inside at pace. The defence, anticipating the aerial delivery, has already committed bodies into the box.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Throw-in position */}
+            <ThrowInMarker x={0} y={80} side="left" />
+
+            {/* Thrower */}
+            <PlayerDot x={8} y={80} label="TH" type="attack" size={9} />
+
+            {/* Body shape arrow pointing long — dashed decoy */}
+            <MovementArrow x1={10} y1={78} x2={170} y2={50} dashed color={C.textSec} />
+            <PitchLabel x={90} y={55} text="Shapes Long (Decoy)" color={C.textSec} size={7} />
+
+            {/* Actual short throw */}
+            <MovementArrow x1={10} y1={82} x2={55} y2={85} dashed={false} color={C.gold} />
+            <PitchLabel x={35} y={95} text="Actual Short" color={C.gold} size={7} />
+
+            {/* Short receiver */}
+            <PlayerDot x={55} y={85} label={1} type="attack" size={10} />
+
+            {/* Receiver drives inside */}
+            <MovementArrow x1={57} y1={83} x2={130} y2={65} dashed color={C.gold} />
+            <PitchLabel x={95} y={70} text="Drives Inside" color={C.gold} size={7} />
+
+            {/* Defenders committed to box expecting long throw */}
+            <PlayerDot x={150} y={50} label="X" type="defend" size={8} />
+            <PlayerDot x={190} y={55} label="X" type="defend" size={8} />
+            <PlayerDot x={170} y={65} label="X" type="defend" size={8} />
+            <PitchLabel x={170} y={40} text="Committed to Box" color={C.primary} size={7} />
+
+            {/* Space created for the short receiver */}
+            <ZoneHighlight x={60} y={60} width={60} height={35} color="rgba(241,196,15,0.12)" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The wind-up must be exaggerated — the thrower should look like a long-throw specialist. The short receiver must not make eye contact with the thrower until the moment of release. Drive must be immediate; any delay allows the defence to recover.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 15: Stacked Players — Peel Off */}
+      <SectionCard title='Routine 15: "Stacked Players — Peel Off"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          3 players stack on top of each other near the touchline, making it impossible for the opposition to assign markers. On the throw, all 3 peel in different directions — one short, one wide, one into the box. The throw goes to whichever runner finds the most space.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Throw-in position */}
+            <ThrowInMarker x={0} y={70} side="left" />
+
+            {/* Thrower */}
+            <PlayerDot x={8} y={70} label="TH" type="attack" size={9} />
+
+            {/* 3 stacked players near touchline */}
+            <PlayerDot x={45} y={75} label={1} type="attack" size={10} />
+            <PlayerDot x={45} y={80} label={2} type="attack" size={10} />
+            <PlayerDot x={45} y={85} label={3} type="attack" size={10} />
+            <PitchLabel x={55} y={90} text="Stacked" color={C.gold} size={7} />
+
+            {/* Player 1 — peels short, back toward thrower */}
+            <MovementArrow x1={43} y1={73} x2={25} y2={60} dashed color={C.gold} />
+            <PitchLabel x={15} y={52} text="Short" color={C.gold} size={7} />
+
+            {/* Player 2 — peels wide, along touchline */}
+            <MovementArrow x1={47} y1={80} x2={45} y2={130} dashed color={C.gold} />
+            <PitchLabel x={50} y={135} text="Wide" color={C.gold} size={7} />
+
+            {/* Player 3 — peels into the box */}
+            <MovementArrow x1={47} y1={87} x2={150} y2={60} dashed color={C.gold} />
+            <PitchLabel x={100} y={65} text="Into Box" color={C.gold} size={7} />
+
+            {/* Throw to optimal runner (into box in this case) */}
+            <MovementArrow x1={10} y1={72} x2={148} y2={62} dashed={false} color={C.text} />
+
+            {/* Defenders confused by stack */}
+            <PlayerDot x={70} y={75} label="X" type="defend" size={8} />
+            <PlayerDot x={70} y={85} label="X" type="defend" size={8} />
+            <PitchLabel x={80} y={95} text="Can&apos;t Track" color={C.primary} size={7} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The stack must be tight — bodies touching. The peel must be simultaneous and explosive. The thrower reads which runner finds the most space and delivers accordingly. If all 3 are covered, the thrower holds and recycles.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 16: Immediate Cross */}
+      <SectionCard title='Routine 16: "Immediate Cross"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The receiver takes the throw on the chest or foot and immediately crosses first-time into the box. No dribbling, no holding, no additional touches — pure one-touch delivery designed to catch the defence before they can set.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Throw-in position */}
+            <ThrowInMarker x={0} y={90} side="left" />
+
+            {/* Thrower */}
+            <PlayerDot x={8} y={90} label="TH" type="attack" size={9} />
+
+            {/* Throw to receiver on touchline */}
+            <MovementArrow x1={10} y1={88} x2={45} y2={80} dashed={false} color={C.text} />
+
+            {/* Receiver on touchline */}
+            <PlayerDot x={45} y={80} label="R" type="attack" size={10} />
+            <PitchLabel x={50} y={95} text="One Touch" color={C.gold} size={7} />
+
+            {/* Immediate cross arc into box */}
+            <BallFlight x1={47} y1={78} x2={170} y2={55} cx={100} cy={40} color={C.gold} />
+            <PitchLabel x={110} y={42} text="1st Time Cross" color={C.gold} size={7} />
+
+            {/* 3 runners attacking the cross */}
+            <PlayerDot x={140} y={110} label={1} type="attack" size={10} />
+            <MovementArrow x1={140} y1={108} x2={150} y2={58} dashed color={C.gold} />
+
+            <PlayerDot x={170} y={120} label={2} type="attack" size={10} />
+            <MovementArrow x1={170} y1={118} x2={170} y2={58} dashed color={C.gold} />
+
+            <PlayerDot x={200} y={105} label={3} type="attack" size={10} />
+            <MovementArrow x1={200} y1={103} x2={190} y2={55} dashed color={C.gold} />
+
+            {/* Box zone */}
+            <ZoneHighlight x={135} y={40} width={70} height={30} color="rgba(241,196,15,0.12)" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The receiver must be a technically proficient wide player capable of crossing off one touch from an awkward body position. The throw must be firm and chest-height to enable the immediate cross. Runners must begin their movement as the throw leaves the hands, not when it arrives.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 17: Throw to Chest — Volley */}
+      <SectionCard title='Routine 17: "Throw to Chest — Volley"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          A precise throw to the attacker&apos;s chest at the edge of the box. The attacker cushions the ball down and volleys immediately — no second thought, no extra touch. A rehearsed, instinctive finish designed to generate a shot before the defence can close.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Throw-in position */}
+            <ThrowInMarker x={0} y={100} side="left" />
+
+            {/* Thrower */}
+            <PlayerDot x={8} y={100} label="TH" type="attack" size={9} />
+
+            {/* Throw arc to chest-height player at edge of box */}
+            <BallFlight x1={10} y1={98} x2={100} y2={115} cx={50} cy={80} color={C.text} />
+            <PitchLabel x={55} y={95} text="Chest Height" color={C.text} size={7} />
+
+            {/* Attacker at edge of box */}
+            <PlayerDot x={100} y={115} label={1} type="attack" size={10} />
+            <PitchLabel x={110} y={128} text="Cushion + Volley" color={C.gold} size={7} />
+
+            {/* Volley trajectory to goal */}
+            <BallFlight x1={102} y1={113} x2={170} y2={15} cx={115} cy={55} color={C.gold} />
+            <PitchLabel x={130} y={55} text="Volley" color={C.gold} size={7} />
+
+            {/* Defenders unable to close in time */}
+            <PlayerDot x={130} y={100} label="X" type="defend" size={8} />
+            <PlayerDot x={80} y={105} label="X" type="defend" size={8} />
+            <PitchLabel x={105} y={95} text="Too Slow" color={C.primary} size={7} />
+
+            {/* Supporting attackers */}
+            <PlayerDot x={170} y={80} label={2} type="attack" size={9} />
+            <PlayerDot x={140} y={70} label={3} type="attack" size={9} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The throw must be firm enough to reach the edge of the box but soft enough to cushion. The volleyer must pre-scan the goal position before receiving — there is no time to look up after the ball arrives. This is a pure muscle-memory finish.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 18: Set Piece from Throw — Rehearsed */}
+      <SectionCard title='Routine 18: "Set Piece from Throw — Rehearsed"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The throw-in is treated as a full set piece with specific positions, specific delivery, and specific timed runs — identical structure to a corner routine. Near-post flick, back-post header. Every player knows their role before the ball leaves the hands.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Throw-in position */}
+            <ThrowInMarker x={0} y={60} side="left" />
+
+            {/* Thrower */}
+            <PlayerDot x={8} y={60} label="TH" type="attack" size={9} />
+
+            {/* Throw into near post zone */}
+            <BallFlight x1={10} y1={58} x2={120} y2={50} cx={60} cy={35} color={C.text} />
+
+            {/* Near post zone */}
+            <ZoneHighlight x={105} y={35} width={35} height={30} color="rgba(241,196,15,0.12)" />
+
+            {/* Near post flick-on player */}
+            <PlayerDot x={120} y={50} label={1} type="attack" size={10} />
+            <PitchLabel x={125} y={40} text="Flick" color={C.gold} size={7} />
+
+            {/* Flick arrow to back post */}
+            <MovementArrow x1={122} y1={52} x2={210} y2={55} dashed={false} color={C.gold} />
+
+            {/* Back post runner arriving */}
+            <PlayerDot x={230} y={90} label={2} type="attack" size={10} />
+            <MovementArrow x1={228} y1={88} x2={212} y2={58} dashed color={C.gold} />
+            <PitchLabel x={225} y={68} text="Header" color={C.gold} size={7} />
+
+            {/* Back post zone */}
+            <ZoneHighlight x={195} y={40} width={35} height={30} color="rgba(241,196,15,0.15)" />
+
+            {/* Penalty spot safety */}
+            <PlayerDot x={170} y={90} label={3} type="attack" size={9} />
+            <PitchLabel x={170} y={103} text="2nd Ball" color={C.textSec} size={7} />
+
+            {/* Decoy runner — pulls defender wide */}
+            <PlayerDot x={60} y={80} label={4} type="attack" size={9} />
+            <MovementArrow x1={62} y1={78} x2={50} y2={50} dashed color={C.textSec} />
+            <PitchLabel x={40} y={45} text="Decoy" color={C.textSec} size={7} />
+
+            {/* GK */}
+            <PlayerDot x={170} y={15} label="GK" type="gk" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>This is a corner routine executed from a throw-in. The near-post flick must be deft — a glancing contact redirecting the ball&apos;s trajectory. The back-post runner times the arrival to meet the flick at its highest point. Rehearse weekly as a unit.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
     </>
   )
 }
@@ -3621,6 +4335,242 @@ function GoalKicksTab() {
         <CoachAttribution />
       </SectionCard>
 
+      {/* Routine 13: Overload Left — Switch Right */}
+      <SectionCard title='Routine 13: "Overload Left — Switch Right"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The GK and all build-up players position left, drawing the opposition press toward the left channel. Once the press is committed, the GK switches a long diagonal to the isolated right-back on the opposite flank, who has acres of space.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            {/* GK at goal */}
+            <PlayerDot x={170} y={475} label="GK" type="gk" size={10} />
+
+            {/* All build-up players loaded left */}
+            <PlayerDot x={60} y={420} label="LCB" type="attack" size={9} />
+            <PlayerDot x={80} y={380} label="LB" type="attack" size={9} />
+            <PlayerDot x={90} y={340} label="LCM" type="attack" size={9} />
+            <PlayerDot x={70} y={300} label="LW" type="attack" size={9} />
+            <PitchLabel x={50} y={280} text="Overload Left" color={C.gold} size={8} />
+
+            {/* Opposition pressing left */}
+            <PlayerDot x={75} y={360} label="X" type="defend" size={8} />
+            <PlayerDot x={95} y={320} label="X" type="defend" size={8} />
+            <PlayerDot x={65} y={395} label="X" type="defend" size={8} />
+            <MovementArrow x1={95} y1={322} x2={85} y2={340} dashed color={C.primary} />
+            <MovementArrow x1={75} y1={362} x2={75} y2={380} dashed color={C.primary} />
+            <PitchLabel x={100} y={365} text="Press Drawn Left" color={C.primary} size={7} />
+
+            {/* RB isolated on the right — huge space */}
+            <PlayerDot x={290} y={380} label="RB" type="attack" size={10} />
+            <PitchLabel x={295} y={370} text="Isolated — Space" color={C.gold} size={7} />
+            <ZoneHighlight x={260} y={350} width={70} height={60} color="rgba(241,196,15,0.1)" />
+
+            {/* GK long diagonal switch to RB */}
+            <BallFlight x1={170} y1={473} x2={288} y2={382} cx={250} cy={420} color={C.gold} />
+            <PitchLabel x={230} y={430} text="Switch" color={C.gold} size={8} />
+
+            {/* RCB holding shape */}
+            <PlayerDot x={200} y={430} label="RCB" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The overload must look genuine — players must actively demand the ball on the left. The RB stays wide and patient; premature movement toward the centre defeats the isolation. The GK diagonal must be hit with pace and backspin to allow the RB to control and drive forward.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 14: CM Drops Into Back Line */}
+      <SectionCard title='Routine 14: "CM Drops Into Back Line"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The central midfielder drops between the two centre-backs, forming a temporary back three. The GK plays short to the CM, who has more time and a superior passing angle to distribute forward. This creates an extra man in the build-up phase and confuses the opposition press.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            {/* GK */}
+            <PlayerDot x={170} y={475} label="GK" type="gk" size={10} />
+
+            {/* CBs split wide */}
+            <PlayerDot x={100} y={420} label="LCB" type="attack" size={9} />
+            <PlayerDot x={240} y={420} label="RCB" type="attack" size={9} />
+
+            {/* CM dropping between CBs */}
+            <PlayerDot x={170} y={360} label="CM" type="attack" size={9} />
+            <MovementArrow x1={170} y1={358} x2={170} y2={418} dashed color={C.gold} />
+            <PitchLabel x={185} y={390} text="Drops In" color={C.gold} size={7} />
+
+            {/* CM now between CBs — back 3 formed */}
+            <ZoneHighlight x={90} y={410} width={160} height={25} color="rgba(241,196,15,0.1)" />
+            <PitchLabel x={170} y={440} text="Back 3 Formed" color={C.gold} size={8} />
+
+            {/* GK pass to CM */}
+            <MovementArrow x1={170} y1={473} x2={170} y2={422} dashed={false} color={C.text} />
+            <PitchLabel x={180} y={450} text="GK Pass" color={C.text} size={7} />
+
+            {/* CM distribution arrows forward */}
+            <MovementArrow x1={170} y1={416} x2={100} y2={320} dashed color={C.gold} />
+            <MovementArrow x1={170} y1={416} x2={240} y2={320} dashed color={C.gold} />
+            <MovementArrow x1={170} y1={416} x2={170} y2={300} dashed color={C.gold} />
+            <PitchLabel x={170} y={290} text="Distribution" color={C.gold} size={7} />
+
+            {/* Full-backs high */}
+            <PlayerDot x={50} y={330} label="LB" type="attack" size={9} />
+            <PlayerDot x={290} y={330} label="RB" type="attack" size={9} />
+
+            {/* Forward options */}
+            <PlayerDot x={170} y={280} label="AM" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The CM must drop early enough to receive without pressure but late enough that the opposition cannot adjust their press. The CBs must split wider than normal to create the channel for the CM. This requires a CM comfortable receiving on the half-turn under pressure.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 15: Direct to Striker — Contested Header */}
+      <SectionCard title='Routine 15: "Direct to Striker — Contested Header"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The GK deliberately kicks long to the striker for a contested aerial duel. This is not a hopeful punt — 2 midfielders are pre-positioned underneath the striker specifically to win the second ball. The goal is territory, not possession.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            {/* GK */}
+            <PlayerDot x={170} y={475} label="GK" type="gk" size={10} />
+
+            {/* Ball flight to striker area */}
+            <BallFlight x1={170} y1={473} x2={170} y2={180} cx={200} cy={320} color={C.gold} />
+            <PitchLabel x={200} y={300} text="Long Kick" color={C.gold} size={8} />
+
+            {/* Striker contesting header */}
+            <PlayerDot x={170} y={180} label="ST" type="attack" size={10} />
+            <PlayerDot x={175} y={175} label="X" type="defend" size={8} />
+            <PitchLabel x={190} y={170} text="Contested" color={C.primary} size={7} />
+
+            {/* 2 midfielders underneath for second ball */}
+            <PlayerDot x={140} y={230} label="CM1" type="attack" size={9} />
+            <PlayerDot x={200} y={230} label="CM2" type="attack" size={9} />
+            <MovementArrow x1={140} y1={228} x2={155} y2={200} dashed color={C.gold} />
+            <MovementArrow x1={200} y1={228} x2={185} y2={200} dashed color={C.gold} />
+
+            {/* Second ball zone highlighted */}
+            <ZoneHighlight x={130} y={190} width={80} height={40} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={170} y={245} text="2nd Ball Zone" color={C.gold} size={7} />
+
+            {/* Wide players ready to exploit second ball */}
+            <PlayerDot x={60} y={220} label="LW" type="attack" size={9} />
+            <PlayerDot x={280} y={220} label="RW" type="attack" size={9} />
+
+            {/* Defensive shape behind */}
+            <PlayerDot x={120} y={400} label="LCB" type="attack" size={9} />
+            <PlayerDot x={220} y={400} label="RCB" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The striker must win the first header or at minimum disrupt the defender&apos;s clearance. The 2 midfielders underneath must read the ball&apos;s trajectory and position themselves for the knock-down. Win the second ball, and the team is in a dangerous attacking position 60 yards up the pitch.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 16: Goalkeeper Carries */}
+      <SectionCard title='Routine 16: "Goalkeeper Carries"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The GK picks up the ball, carries it to the edge of the 18-yard box, and waits for the opposition to commit forward. As the press arrives, the GK distributes short to the now-open centre-back. The carry draws the press, the pass exploits the space behind it.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            {/* GK starting position */}
+            <PlayerDot x={170} y={475} label="GK" type="gk" size={10} />
+
+            {/* GK movement to edge of box */}
+            <MovementArrow x1={170} y1={473} x2={170} y2={415} dashed color={C.gold} />
+            <PitchLabel x={185} y={445} text="GK Carries" color={C.gold} size={7} />
+
+            {/* GK at edge of box */}
+            <PlayerDot x={170} y={415} label="GK" type="gk" size={9} />
+
+            {/* Press arrows coming toward GK */}
+            <PlayerDot x={130} y={350} label="X" type="defend" size={8} />
+            <MovementArrow x1={130} y1={352} x2={150} y2={400} dashed color={C.primary} />
+            <PlayerDot x={210} y={350} label="X" type="defend" size={8} />
+            <MovementArrow x1={210} y1={352} x2={190} y2={400} dashed color={C.primary} />
+            <PitchLabel x={170} y={380} text="Press Arrives" color={C.primary} size={7} />
+
+            {/* CBs — one is now open because press committed to GK */}
+            <PlayerDot x={80} y={410} label="LCB" type="attack" size={9} />
+            <PlayerDot x={260} y={410} label="RCB" type="attack" size={9} />
+
+            {/* GK pass to now-open CB */}
+            <MovementArrow x1={168} y1={415} x2={82} y2={410} dashed={false} color={C.text} />
+            <PitchLabel x={120} y={405} text="Pass to Open CB" color={C.gold} size={7} />
+
+            {/* Open space behind the press */}
+            <ZoneHighlight x={60} y={330} width={80} height={50} color="rgba(241,196,15,0.1)" />
+            <PitchLabel x={100} y={325} text="Space Behind Press" color={C.gold} size={7} />
+
+            {/* Full-backs and midfielders holding position */}
+            <PlayerDot x={40} y={340} label="LB" type="attack" size={9} />
+            <PlayerDot x={300} y={340} label="RB" type="attack" size={9} />
+            <PlayerDot x={170} y={310} label="CM" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>This requires a GK who is comfortable with the ball at feet under pressure. The carry must be confident — any hesitation invites a turnover in a catastrophic area. The CBs must hold width and resist the urge to come toward the GK. The pass to the open CB must be disguised.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 17: Shadow Striker Run */}
+      <SectionCard title='Routine 17: "Shadow Striker Run"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          The GK kicks to the target man, but the real target is the shadow striker making a run in behind. The target man is instructed to dummy or flick the ball on for the runner arriving at pace. The opposition, focused on the aerial duel, does not track the through-runner.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={500} halfPitch={false}>
+            {/* GK */}
+            <PlayerDot x={170} y={475} label="GK" type="gk" size={10} />
+
+            {/* Ball flight to target zone */}
+            <BallFlight x1={170} y1={473} x2={170} y2={210} cx={195} cy={340} color={C.gold} />
+
+            {/* Target man position */}
+            <PlayerDot x={170} y={210} label="TM" type="attack" size={10} />
+            <PlayerDot x={175} y={205} label="X" type="defend" size={8} />
+            <PitchLabel x={190} y={200} text="Target Man" color={C.textSec} size={7} />
+
+            {/* Target man dummy/flick arrow */}
+            <MovementArrow x1={170} y1={208} x2={170} y2={155} dashed={false} color={C.gold} />
+            <PitchLabel x={180} y={180} text="Flick On" color={C.gold} size={7} />
+
+            {/* Shadow striker starting deeper */}
+            <PlayerDot x={170} y={270} label="SS" type="attack" size={10} />
+
+            {/* Through-runner arrow arriving at pace behind */}
+            <MovementArrow x1={170} y1={268} x2={170} y2={158} dashed color={C.gold} />
+            <PitchLabel x={185} y={240} text="Sprint Behind" color={C.gold} size={7} />
+
+            {/* Space behind defensive line */}
+            <ZoneHighlight x={140} y={140} width={60} height={30} color="rgba(241,196,15,0.15)" />
+            <PitchLabel x={170} y={138} text="Space In Behind" color={C.gold} size={7} />
+
+            {/* Defensive line — focused on target man */}
+            <PlayerDot x={130} y={200} label="X" type="defend" size={8} />
+            <PlayerDot x={210} y={200} label="X" type="defend" size={8} />
+
+            {/* CBs at back */}
+            <PlayerDot x={120} y={400} label="LCB" type="attack" size={9} />
+            <PlayerDot x={220} y={400} label="RCB" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The target man must be strong enough to hold position without needing to jump. The flick-on must be delicate — just enough to redirect the ball&apos;s path into the runner&apos;s stride. The shadow striker must time the run to arrive at full pace the moment the ball is flicked, staying onside until the last second.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
       {/* Press Trigger Instructions */}
       <SectionCard title="Press Trigger Instructions" onEdit={() => {}}>
         <div style={{ background: C.bg, borderRadius: 8, padding: 14 }}>
@@ -4027,6 +4977,255 @@ function KOAttacking() {
         <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
           <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
           <div style={{ color: C.text, fontSize: 13 }}>The back pass chain must look like standard build-up play to invite the opposition press forward. The GK launch is the surprise — timing is everything. Only use with a GK who can consistently hit 60+ yard passes.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 11: Immediate Long Ball — Second Phase */}
+      <SectionCard title='Routine 11: "Immediate Long Ball — Second Phase"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Kick off and immediately launch long into the opposition half. This is not designed to score — it is designed to win the second ball in their territory. 3 players press the landing zone to dominate the aerial duel and the subsequent loose ball.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Centre circle kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+            <PlayerDot x={165} y={235} label="A" type="attack" size={9} />
+            <PlayerDot x={175} y={235} label="B" type="attack" size={9} />
+
+            {/* Kick forward */}
+            <MovementArrow x1={167} y1={236} x2={170} y2={230} dashed={false} color={C.text} />
+
+            {/* Long ball arc into opposition half */}
+            <BallFlight x1={170} y1={228} x2={170} y2={100} cx={200} cy={160} color={C.gold} />
+            <PitchLabel x={195} y={155} text="Long Ball" color={C.gold} size={7} />
+
+            {/* 3 players pressing second ball zone */}
+            <PlayerDot x={140} y={180} label={1} type="attack" size={9} />
+            <MovementArrow x1={140} y1={178} x2={150} y2={110} dashed color={C.gold} />
+
+            <PlayerDot x={200} y={180} label={2} type="attack" size={9} />
+            <MovementArrow x1={200} y1={178} x2={190} y2={110} dashed color={C.gold} />
+
+            <PlayerDot x={170} y={195} label={3} type="attack" size={9} />
+            <MovementArrow x1={170} y1={193} x2={170} y2={115} dashed color={C.gold} />
+
+            {/* Second ball zone */}
+            <ZoneHighlight x={140} y={85} width={60} height={40} color="rgba(241,196,15,0.12)" />
+            <PitchLabel x={170} y={80} text="2nd Ball Zone" color={C.gold} size={7} />
+
+            {/* Opposition defenders */}
+            <PlayerDot x={160} y={95} label="X" type="defend" size={8} />
+            <PlayerDot x={180} y={100} label="X" type="defend" size={8} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The long ball must be launched within 2 seconds of kick-off. The 3 pressing players must sprint immediately — their job is to arrive at the landing zone as the ball drops. Win the second ball 60 yards up the pitch and the team is instantly in an attacking transition.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 12: Rehearsed Combination */}
+      <SectionCard title='Routine 12: "Rehearsed Combination"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          A 5-pass combination rehearsed to be completed in under 8 seconds: back pass to CM, right CM carries, striker drops to receive, lays off to left CM arriving, who plays a through ball to the winger in space. Every touch is pre-determined.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Centre circle kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+            <PlayerDot x={165} y={235} label="A" type="attack" size={9} />
+
+            {/* Pass 1: Back pass */}
+            <MovementArrow x1={167} y1={236} x2={170} y2={210} dashed={false} color={C.text} />
+            <PitchLabel x={175} y={225} text="1" color={C.gold} size={9} />
+
+            {/* RCM receives */}
+            <PlayerDot x={170} y={210} label="RCM" type="attack" size={9} />
+
+            {/* Pass 2: RCM to striker */}
+            <MovementArrow x1={172} y1={208} x2={220} y2={180} dashed={false} color={C.text} />
+            <PitchLabel x={200} y={190} text="2" color={C.gold} size={9} />
+
+            {/* Striker dropping */}
+            <PlayerDot x={220} y={180} label="ST" type="attack" size={9} />
+            <MovementArrow x1={220} y1={160} x2={220} y2={178} dashed color={C.gold} />
+            <PitchLabel x={230} y={168} text="Drops" color={C.textSec} size={7} />
+
+            {/* Pass 3: Striker lays off to LCM */}
+            <MovementArrow x1={218} y1={180} x2={140} y2={170} dashed={false} color={C.text} />
+            <PitchLabel x={178} y={172} text="3" color={C.gold} size={9} />
+
+            {/* LCM arriving */}
+            <PlayerDot x={120} y={200} label="LCM" type="attack" size={9} />
+            <MovementArrow x1={122} y1={198} x2={140} y2={172} dashed color={C.gold} />
+
+            {/* Pass 4: LCM through ball */}
+            <MovementArrow x1={142} y1={170} x2={80} y2={120} dashed={false} color={C.text} />
+            <PitchLabel x={105} y={140} text="4" color={C.gold} size={9} />
+
+            {/* Pass 5: Through to winger */}
+            <MovementArrow x1={80} y1={120} x2={50} y2={70} dashed={false} color={C.gold} />
+            <PitchLabel x={60} y={90} text="5" color={C.gold} size={9} />
+
+            {/* Winger receiving in space */}
+            <PlayerDot x={50} y={70} label="LW" type="attack" size={10} />
+            <PitchLabel x={35} y={58} text="In Space" color={C.gold} size={7} />
+            <ZoneHighlight x={30} y={55} width={45} height={30} color="rgba(241,196,15,0.12)" />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>Every pass is one-touch except the striker&apos;s lay-off, which may require a touch to control. The 8-second window is critical — after that, the opposition will have recovered their defensive shape. The winger must time the run to stay onside until pass 4 is played.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 13: Striker Presses Alone */}
+      <SectionCard title='Routine 13: "Striker Presses Alone"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Kick off back, the entire team holds a compact mid-block shape EXCEPT the striker, who presses the opposition centre-back alone. The aim is to force a hurried clearance — the team is positioned to win the second ball from that clearance.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Centre circle kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Kick back */}
+            <MovementArrow x1={170} y1={236} x2={170} y2={210} dashed={false} color={C.text} />
+
+            {/* Mid-block shape */}
+            <PlayerDot x={80} y={170} label="LM" type="attack" size={9} />
+            <PlayerDot x={140} y={180} label="CM" type="attack" size={9} />
+            <PlayerDot x={200} y={180} label="CM" type="attack" size={9} />
+            <PlayerDot x={260} y={170} label="RM" type="attack" size={9} />
+
+            <PlayerDot x={100} y={210} label="LB" type="attack" size={9} />
+            <PlayerDot x={150} y={215} label="CB" type="attack" size={9} />
+            <PlayerDot x={190} y={215} label="CB" type="attack" size={9} />
+            <PlayerDot x={240} y={210} label="RB" type="attack" size={9} />
+            <PitchLabel x={170} y={230} text="Mid-Block Holds" color={C.textSec} size={7} />
+
+            {/* Striker isolated high, pressing */}
+            <PlayerDot x={170} y={100} label="ST" type="attack" size={10} />
+            <MovementArrow x1={170} y1={102} x2={170} y2={60} dashed color={C.gold} />
+            <PitchLabel x={185} y={80} text="Presses CB" color={C.gold} size={7} />
+
+            {/* Opposition CB under pressure */}
+            <PlayerDot x={170} y={55} label="X" type="defend" size={8} />
+            <PitchLabel x={170} y={42} text="Hurried" color={C.primary} size={7} />
+
+            {/* Second ball zone */}
+            <ZoneHighlight x={120} y={120} width={100} height={40} color="rgba(241,196,15,0.1)" />
+            <PitchLabel x={170} y={118} text="2nd Ball Zone" color={C.gold} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The striker must press with intent — angled run to show the CB onto the weaker foot. The mid-block must hold discipline and resist pushing up. The clearance will be hurried and often misdirected — the compact shape ensures someone is positioned to collect.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 14: Wing Flood */}
+      <SectionCard title='Routine 14: "Wing Flood"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Kick off, then immediately overload one wing with 4 players. The objective is to create a 4v2 situation on the right side within 10 seconds of kick-off. The ball is played into the overload before the opposition can shift across.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Centre circle kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Kick-off pass */}
+            <MovementArrow x1={170} y1={236} x2={200} y2={220} dashed={false} color={C.text} />
+
+            {/* 4 players flooding right wing */}
+            <PlayerDot x={280} y={160} label="RW" type="attack" size={9} />
+            <PlayerDot x={260} y={190} label="RB" type="attack" size={9} />
+            <PlayerDot x={250} y={150} label="RCM" type="attack" size={9} />
+            <PlayerDot x={270} y={120} label="ST" type="attack" size={9} />
+
+            {/* Converging arrows */}
+            <MovementArrow x1={240} y1={210} x2={260} y2={192} dashed color={C.gold} />
+            <MovementArrow x1={220} y1={190} x2={248} y2={152} dashed color={C.gold} />
+            <MovementArrow x1={250} y1={180} x2={278} y2={162} dashed color={C.gold} />
+            <MovementArrow x1={240} y1={160} x2={268} y2={122} dashed color={C.gold} />
+
+            {/* Ball played into the overload */}
+            <MovementArrow x1={202} y1={218} x2={258} y2={188} dashed={false} color={C.gold} />
+            <PitchLabel x={230} y={200} text="Into Overload" color={C.gold} size={7} />
+
+            {/* 4v2 zone */}
+            <ZoneHighlight x={240} y={110} width={70} height={100} color="rgba(241,196,15,0.1)" />
+            <PitchLabel x={275} y={105} text="4v2 Zone" color={C.gold} size={7} />
+
+            {/* 2 opposition defenders on that side */}
+            <PlayerDot x={290} y={140} label="X" type="defend" size={8} />
+            <PlayerDot x={285} y={175} label="X" type="defend" size={8} />
+
+            {/* Remaining players holding shape */}
+            <PlayerDot x={100} y={190} label="LCM" type="attack" size={9} />
+            <PlayerDot x={80} y={160} label="LW" type="attack" size={9} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>The 4 players must move simultaneously from kick-off — any stagger allows the defence to shift. The ball must reach the overloaded side within 3 passes. If the opposition recovers shape before the ball arrives, switch play to the underloaded left side where the LW will be 1v1.</div>
+        </div>
+        <CoachAttribution />
+      </SectionCard>
+
+      {/* Routine 15: Patience Build */}
+      <SectionCard title='Routine 15: "Patience Build"' onEdit={() => {}}>
+        <p style={{ color: C.textSec, fontSize: 13, margin: '0 0 6px' }}>
+          Kick off, then play 10-15 short passes in the own half before progressing. This is designed to frustrate pressing opponents into leaving positional gaps. The team forms a triangle/diamond pattern and circulates until the press breaks.
+        </p>
+        <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+          <PitchSVG width={340} height={260} halfPitch>
+            {/* Centre circle kick-off */}
+            <PlayerDot x={170} y={238} label="" type="ball" size={6} />
+
+            {/* Kick back */}
+            <MovementArrow x1={170} y1={236} x2={170} y2={215} dashed={false} color={C.text} />
+
+            {/* Diamond/triangle pattern in own half */}
+            <PlayerDot x={170} y={215} label="CM" type="attack" size={9} />
+            <PlayerDot x={120} y={230} label="LCB" type="attack" size={9} />
+            <PlayerDot x={220} y={230} label="RCB" type="attack" size={9} />
+            <PlayerDot x={80} y={200} label="LB" type="attack" size={9} />
+            <PlayerDot x={260} y={200} label="RB" type="attack" size={9} />
+            <PlayerDot x={170} y={190} label="DM" type="attack" size={9} />
+
+            {/* Short pass arrows forming circulation pattern */}
+            <MovementArrow x1={172} y1={213} x2={122} y2={228} dashed color={C.text} />
+            <MovementArrow x1={122} y1={228} x2={82} y2={200} dashed color={C.text} />
+            <MovementArrow x1={82} y1={198} x2={168} y2={190} dashed color={C.text} />
+            <MovementArrow x1={172} y1={190} x2={258} y2={200} dashed color={C.text} />
+            <MovementArrow x1={258} y1={200} x2={218} y2={228} dashed color={C.text} />
+            <MovementArrow x1={218} y1={228} x2={172} y2={213} dashed color={C.text} />
+            <PitchLabel x={170} y={245} text="10-15 Passes — Circulate" color={C.textSec} size={7} />
+
+            {/* Forward arrow into gap when press breaks */}
+            <MovementArrow x1={170} y1={188} x2={170} y2={130} dashed color={C.gold} />
+            <PitchLabel x={180} y={150} text="Into Gap" color={C.gold} size={8} />
+
+            {/* Gap opening as opposition press breaks */}
+            <ZoneHighlight x={140} y={110} width={60} height={35} color="rgba(241,196,15,0.12)" />
+            <PitchLabel x={170} y={108} text="Press Breaks" color={C.gold} size={7} />
+
+            {/* Opposition press tiring/breaking */}
+            <PlayerDot x={140} y={160} label="X" type="defend" size={8} />
+            <PlayerDot x={200} y={160} label="X" type="defend" size={8} />
+            <MovementArrow x1={140} y1={158} x2={120} y2={140} dashed color={C.primary} />
+            <MovementArrow x1={200} y1={158} x2={220} y2={140} dashed color={C.primary} />
+            <PitchLabel x={170} y={155} text="Press Splits" color={C.primary} size={7} />
+          </PitchSVG>
+        </div>
+        <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 8 }}>
+          <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</div>
+          <div style={{ color: C.text, fontSize: 13 }}>Patience is the weapon. Every player must be comfortable receiving under pressure and playing one-touch. The circulation is not aimless — it is designed to invite the press forward, then exploit the space behind it. The trigger to play forward is the first defender who steps out of shape.</div>
         </div>
         <CoachAttribution />
       </SectionCard>

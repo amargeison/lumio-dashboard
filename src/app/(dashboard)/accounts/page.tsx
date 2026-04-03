@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2 } from 'lucide-react'
+import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -146,7 +146,7 @@ export default function AccountsPage() {
 
   const hasData = useHasDashboardData('accounts')
   const isDemoActive = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
-  const hasImportedStaff = typeof window !== 'undefined' && (() => { try { return JSON.parse(localStorage.getItem('lumio_staff_imported') || '[]').length > 0 } catch { return false } })()
+  const hasImportedStaff = false // Staff now from Supabase only
 
   const deptStaff = getDeptStaff('accounts')
   const deptLead = getDeptLead(deptStaff)
@@ -156,12 +156,11 @@ export default function AccountsPage() {
     <>
       {deptStaff.length > 0 && <DeptStaffHeader staff={deptStaff} lead={deptLead} dept="accounts" />}
       <DashboardEmptyState pageKey="accounts"
-        title={deptLead ? `${getStaffName(deptLead).split(' ')[0]} is ready — add your accounts data` : 'No accounts data yet'}
-        description={deptLead ? `${getStaffName(deptLead)} is set up as ${deptLead.job_title || 'Accounts Lead'}. Upload your customer accounts, ARR data and contract information to activate the Accounts module.` : 'Upload your customer accounts, ARR data and contract information to activate the Accounts module.'}
+        title="No accounts data yet"
+        description="Import payroll and invoicing data to unlock financial dashboards, reporting and expense tracking."
         uploads={[
-          { key: 'accounts', label: 'Upload Customer Accounts (CSV)' },
-          { key: 'revenue', label: 'Upload ARR / Revenue Data (CSV/XLSX)', accept: '.csv,.xlsx' },
-          { key: 'contracts', label: 'Upload Contracts (CSV)' },
+          { key: 'revenue', label: 'Upload Payroll Data (CSV)' },
+          { key: 'accounts', label: 'Upload Invoice Data (CSV)' },
         ]}
       />
     </>
@@ -179,6 +178,8 @@ export default function AccountsPage() {
     )
   }
 
+  const accountsHighlights = ['7 overdue invoices totalling £12,400 — chase sequence active', 'MRR up 18% month-on-month to £42,800', 'Average contract value increased to £4,200', 'Forecast: £44,500 MRR next month based on pipeline', 'Expenses this month: £8,200 — within budget']
+
   return (
     <PageShell title="Accounts" subtitle="Invoicing, payroll, expenses and financial reporting">
       <ChartSection points={stats.map(s => ({ label: s.label, value: parseNum(s.value) }))}>
@@ -186,7 +187,24 @@ export default function AccountsPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <DeptAISummary dept="accounts" portal="business" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="accounts" portal="business" />
+        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Accounts</span>
+          </div>
+          <ul className="space-y-2.5">
+            {accountsHighlights.map((h: string, i: number) => (
+              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <QuickActions items={actions} />
 

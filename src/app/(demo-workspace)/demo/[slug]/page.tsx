@@ -926,111 +926,38 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
 
   return (
     <>
-    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600 rounded-full opacity-10 blur-3xl" />
-      <div className="absolute right-40 bottom-0 w-40 h-40 bg-teal-500 rounded-full opacity-10 blur-2xl" />
-
-      <div className="relative z-10 px-6 py-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-
-          {/* LEFT: greeting */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-black text-white tracking-tight">
-                {greeting}, {firstName || 'there'} 👋
-              </h1>
-
-              {/* Speaker 1: Active TTS */}
-              <button
-                onClick={handleBriefing}
-                title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud"
-                className="flex items-center justify-center rounded-lg transition-all"
-                style={{
-                  width: 32, height: 32, flexShrink: 0,
-                  backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)',
-                  border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                  color: isPlaying ? '#2DD4BF' : '#9CA3AF',
-                  animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                }}
-              >
-                <Volume2 size={15} strokeWidth={1.75} />
-              </button>
-
-              {/* Mic: Voice Commands */}
-              <button
-                onClick={openVoiceModal}
-                className="flex items-center justify-center rounded-lg transition-all"
-                title="Voice Commands — say 'Hi Lumio' or tap the mic"
-                style={{
-                  width: 32, height: 32, flexShrink: 0,
-                  backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)',
-                  border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`,
-                  color: '#A78BFA',
-                  transition: 'background-color 0.3s, border-color 0.3s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.35)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(108,63,197,0.2)' }}
-              >
-                <Mic size={15} strokeWidth={1.75} />
-              </button>
-
-              {/* Wake word status pill */}
-              {wakeWordEnabled && (
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium select-none"
-                  style={{
-                    backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)',
-                    color: showVoiceModal ? '#4ADE80' : '#A78BFA',
-                    border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}`,
-                  }}
-                >
-                  <span
-                    className="inline-block w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA',
-                      animation: 'pulse 2s ease-in-out infinite',
-                    }}
-                  />
-                  {showVoiceModal ? 'Listening\u2026' : 'Wake word active'}
-                </span>
-              )}
-            </div>
-            <p className="text-purple-300 text-sm mb-2">{date}</p>
-            <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
-          </div>
-
-          {/* CENTRE: summary chips */}
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            {[
-              { label: 'Meetings', value: 4,  color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',     icon: '📅' },
-              { label: 'Tasks',    value: 7,  color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅' },
-              { label: 'Urgent',   value: 2,  color: 'bg-red-500/20 text-red-300 border-red-500/30',         icon: '🔴' },
-              { label: 'Emails',   value: 12, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',      icon: '📧' },
-            ].map(item => (
-              <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
-                <span className="text-base">{item.icon}</span>
-                <span className="text-lg font-black text-white">{item.value}</span>
-                <span className="text-xs opacity-70">{item.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* RIGHT: weather + world clock */}
-          <div className="flex items-start gap-3 flex-shrink-0">
-            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-              <span className="text-3xl">⛅</span>
-              <div>
-                <div className="text-xl font-black text-white">11°C</div>
-                <div className="text-xs text-purple-300">Partly cloudy</div>
-                <div className="text-xs text-purple-300/60">Demo City</div>
-              </div>
-            </div>
-            <WorldClock />
-          </div>
-
+    <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl border border-white/5 mx-1`}>
+      <div className="relative z-10 flex items-center justify-between px-5 py-3 gap-4">
+        {/* Left: greeting + date */}
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="text-sm font-bold text-white whitespace-nowrap">{greeting}, {firstName || 'there'} 👋</h1>
+          <span className="text-xs text-purple-300/70 hidden sm:inline">{date}</span>
         </div>
-
+        {/* Centre: TTS + Voice buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button onClick={handleBriefing} title="Morning briefing" className="flex items-center justify-center rounded-lg transition-all"
+            style={{ width: 28, height: 28, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+            <Volume2 size={13} strokeWidth={1.75} />
+          </button>
+          <button onClick={openVoiceModal} title="Voice Commands" className="flex items-center justify-center rounded-lg transition-all"
+            style={{ width: 28, height: 28, backgroundColor: wakeFlash ? 'rgba(108,63,197,0.5)' : 'rgba(108,63,197,0.2)', border: `1px solid ${wakeFlash ? '#A78BFA' : 'rgba(108,63,197,0.4)'}`, color: '#A78BFA' }}>
+            <Mic size={13} strokeWidth={1.75} />
+          </button>
+          {wakeWordEnabled && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-medium select-none"
+              style={{ backgroundColor: showVoiceModal ? 'rgba(34,197,94,0.15)' : 'rgba(108,63,197,0.12)', color: showVoiceModal ? '#4ADE80' : '#A78BFA', border: `1px solid ${showVoiceModal ? 'rgba(34,197,94,0.3)' : 'rgba(108,63,197,0.25)'}` }}>
+              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: showVoiceModal ? '#4ADE80' : '#A78BFA', animation: 'pulse 2s ease-in-out infinite' }} />
+              {showVoiceModal ? 'Listening\u2026' : 'Wake word'}
+            </span>
+          )}
+        </div>
+        {/* Right: weather + clock */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+            <span className="text-lg">⛅</span>
+            <div><span className="text-sm font-bold text-white">11°C</span><span className="text-xs text-purple-300/60 ml-1.5">Partly cloudy</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1429,37 +1356,111 @@ function DemoMorningAIPanel() {
 }
 
 const DEMO_DEFAULT_PHOTOS = [
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
 function DemoPhotoFrame() {
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return DEMO_DEFAULT_PHOTOS })
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [intervalSecs, setIntervalSecs] = useState(5)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [photos, setPhotos] = useState<string[]>(() => {
-    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); if (p.length > 0) return p }; return DEMO_DEFAULT_PHOTOS } catch { return DEMO_DEFAULT_PHOTOS }
-  })
-  const [idx, setIdx] = useState(0)
-  useEffect(() => { if (photos.length > 1) { const t = setInterval(() => setIdx(i => (i + 1) % photos.length), 5000); return () => clearInterval(t) } }, [photos.length])
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    Array.from(e.target.files || []).forEach(f => { const r = new FileReader(); r.onload = ev => { setPhotos(p => { const n = [...p, ev.target?.result as string].slice(-20); localStorage.setItem('lumio_photo_frame', JSON.stringify(n)); return n }) }; r.readAsDataURL(f) }); e.target.value = ''
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
   }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
+  }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
+
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 200 }}>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
-        <button onClick={() => fileInputRef.current?.click()} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>+ Add Photo</button>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+        <div className="flex items-center gap-2">
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
+        </div>
       </div>
       {photos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151', backgroundColor: 'rgba(255,255,255,0.02)' }} onClick={() => fileInputRef.current?.click()}>
-          <div className="text-3xl">📷</div>
-          <div className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Upload your photos</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div className="flex-1 relative mx-4 mb-4 rounded-xl overflow-hidden" style={{ minHeight: 140 }}>
-          <img src={photos[idx]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{idx + 1}/{photos.length}</div>
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
+      )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
+          </button>
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
+      </div>
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
+            </div>
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
+          </div>
         </div>
       )}
     </div>
@@ -1573,16 +1574,16 @@ function DemoTeamPanel() {
   const DEPT_COLORS: Record<string, string> = { Executive: '#0D9488', Sales: '#8B5CF6', Marketing: '#F59E0B', Finance: '#3B82F6', HR: '#22C55E', IT: '#EF4444' }
 
   const TEAM = [
-    { id: '0', name: 'Demo User', role: 'CEO & Founder', department: 'Executive', avatar: 'DU', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'demo@company.com', level: 1 },
-    { id: '1', name: 'Sarah Mitchell', role: 'Head of HR', department: 'HR', avatar: 'SM', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sarah@company.com', managerId: '0', level: 2 },
-    { id: '2', name: 'Oliver Bennett', role: 'Head of Sales', department: 'Sales', avatar: 'OB', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'oliver@company.com', managerId: '0', level: 2 },
-    { id: '3', name: 'George Harrison', role: 'Head of Finance', department: 'Finance', avatar: 'GH', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'george@company.com', managerId: '0', level: 2 },
-    { id: '4', name: 'Alexander Jones', role: 'Head of IT', department: 'IT', avatar: 'AJ', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'alex@company.com', managerId: '0', level: 2 },
-    { id: '5', name: 'Charlotte Davies', role: 'Senior AE', department: 'Sales', avatar: 'CD', status: 'wfh', todayFocus: 'Client demo prep', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'charlotte@company.com', managerId: '2', level: 3 },
-    { id: '6', name: 'James Okafor', role: 'Sales Dev Rep', department: 'Sales', avatar: 'JO', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'james@company.com', managerId: '2', level: 3 },
-    { id: '7', name: 'Sophia Brown', role: 'Head of Marketing', department: 'Marketing', avatar: 'SB', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'sophia@company.com', managerId: '0', level: 2 },
-    { id: '8', name: 'Tom Ashworth', role: 'Content Lead', department: 'Marketing', avatar: 'TA', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'tom@company.com', managerId: '7', level: 3 },
-    { id: '9', name: 'Priya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'PK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'priya@company.com', managerId: '1', level: 3 },
+    { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Executive', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
+    { id: '1', name: 'Sophie Brennan', role: 'Head of HR', department: 'HR', avatar: 'SB', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sophie@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '2', name: 'Marcus Webb', role: 'Head of Sales', department: 'Sales', avatar: 'MW', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'marcus@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '3', name: 'Tom Fielding', role: 'Head of Finance', department: 'Finance', avatar: 'TF', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'tom@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '4', name: 'Claire Donovan', role: 'Head of IT', department: 'IT', avatar: 'CD', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'claire@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '5', name: 'Rachel Osei', role: 'Senior AE', department: 'Sales', avatar: 'RO', status: 'wfh', todayFocus: 'Client demo prep', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'rachel@lumiodemo.com', managerId: '2', level: 3 },
+    { id: '6', name: 'Ben Holloway', role: 'Sales Dev Rep', department: 'Sales', avatar: 'BH', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'ben@lumiodemo.com', managerId: '2', level: 3 },
+    { id: '7', name: 'Leah Thornton', role: 'Head of Marketing', department: 'Marketing', avatar: 'LT', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'leah@lumiodemo.com', managerId: '0', level: 2 },
+    { id: '8', name: 'Nate Crawford', role: 'Content Lead', department: 'Marketing', avatar: 'NC', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'nate@lumiodemo.com', managerId: '7', level: 3 },
+    { id: '9', name: 'Anya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'AK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'anya@lumiodemo.com', managerId: '1', level: 3 },
   ]
 
   const POLICIES = [
@@ -1595,9 +1596,9 @@ function DemoTeamPanel() {
   ]
 
   const BIRTHDAYS = [
-    { name: 'James Okafor', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
-    { name: 'Charlotte Davies', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
-    { name: 'Tom Ashworth', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
+    { name: 'Ben Holloway', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
+    { name: 'Rachel Osei', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
+    { name: 'Nate Crawford', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
   ]
 
   const filtered = TEAM.filter(m => {
@@ -1716,7 +1717,7 @@ function DemoTeamPanel() {
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['CEO', 'Demo User'], ['HR', 'Sarah Mitchell'], ['IT Support', 'Alexander Jones'], ['Finance', 'George Harrison']].map(([r, n]) => (
+              {[['CEO', 'James Hartley'], ['HR', 'Sophie Brennan'], ['IT Support', 'Claire Donovan'], ['Finance', 'Tom Fielding']].map(([r, n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>
@@ -4012,22 +4013,35 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         />
       )}
 
-      {/* Trial banner — hidden for converted/paid workspaces */}
+      {/* Trial banner — fixed, stops at sidebar edge */}
       {showUpgrade && isTrial && (
-        <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB' }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
             <span className="font-medium">Trial workspace — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>
-            <span className="hidden sm:inline opacity-75">· Demo data only · Auto-deleted after 14 days</span>
+            <span className="hidden lg:inline opacity-75">· Demo data only · Auto-deleted after 14 days</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowInvite(true)} className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
+            <button onClick={() => setShowInvite(true)} className="hidden lg:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
               <UserPlus size={11} /> Invite team
             </button>
-            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
               Clear Demo Data
             </button>
             <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>
+            <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      )}
+      {/* Mobile trial banner — static flow */}
+      {showUpgrade && isTrial && (
+        <div className="md:hidden flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center gap-2">
+            <Clock size={13} />
+            <span className="font-medium">Trial — {daysLeft}d left</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy</Link>
             <button onClick={() => setShowUpgrade(false)} className="opacity-70 hover:opacity-100">✕</button>
           </div>
         </div>
@@ -4128,11 +4142,11 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
         {/* Main scrollable area */}
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
+          <main className="flex-1 p-4 sm:p-5" style={{ paddingTop: showUpgrade && isTrial ? 56 : undefined }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>
+                {activeDept !== 'overview' && <h1 className="text-lg font-bold">{deptLabel}</h1>}
+                {activeDept !== 'overview' && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{isTrial ? 'Demo data for' : 'Workspace:'} <span style={{ color: '#F9FAFB' }}>{company}</span></p>}
               </div>
               <div className="flex items-center gap-2" style={{ paddingRight: 24 }}>
                 {/* Mobile invite */}

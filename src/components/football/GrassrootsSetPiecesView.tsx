@@ -727,6 +727,254 @@ function CornerRoutineL() {
 }
 
 /* ──────────────────────────────────────────────
+   Corner Routine M — Wait For It... NOW!
+   ────────────────────────────────────────────── */
+function CornerRoutineM() {
+  return (
+    <Card>
+      <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+        Routine M — &quot;Wait For It... NOW!&quot;
+      </h3>
+      <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        Everyone stands still for 3 seconds. Keeper gets confused. Then everyone runs at once.
+        The key is patience. Stand still. Look bored. Then explode.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+          <CornerFlag side="right" />
+
+          {/* Ball flight from corner to 6-yard box */}
+          <BallFlight x1={320} y1={20} x2={190} y2={70} cx={270} cy={10} color="#F1C40F" />
+
+          {/* 5 players standing still — starting positions */}
+          <PlayerDot x={120} y={170} label="Dave" type="attack" />
+          <PlayerDot x={170} y={180} label="Gaz" type="attack" />
+          <PlayerDot x={220} y={175} label="Kev" type="attack" />
+          <PlayerDot x={260} y={165} label="Tommo" type="attack" />
+          <PlayerDot x={150} y={190} label="Robbo" type="attack" />
+
+          {/* Burst arrows all converging on 6-yard box */}
+          <MovementArrow x1={120} y1={170} x2={160} y2={75} dashed color="#16A34A" />
+          <MovementArrow x1={170} y1={180} x2={180} y2={80} dashed color="#16A34A" />
+          <MovementArrow x1={220} y1={175} x2={200} y2={75} dashed color="#16A34A" />
+          <MovementArrow x1={260} y1={165} x2={220} y2={70} dashed color="#16A34A" />
+          <MovementArrow x1={150} y1={190} x2={170} y2={80} dashed color="#16A34A" />
+
+          {/* GK */}
+          <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+          {/* Defenders */}
+          <PlayerDot x={180} y={80} label="D1" type="defend" />
+          <PlayerDot x={210} y={90} label="D2" type="defend" />
+
+          <PitchLabel x={170} y={250} text="Wait For It... NOW!" />
+        </PitchSVG>
+      </div>
+
+      <EditButton />
+    </Card>
+  )
+}
+
+/* ──────────────────────────────────────────────
+   Corner Routine N — Low and Hard — Smash It In
+   ────────────────────────────────────────────── */
+function CornerRoutineN() {
+  return (
+    <Card>
+      <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+        Routine N — &quot;Low and Hard — Smash It In&quot;
+      </h3>
+      <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        Forget the aerial stuff. Drive it flat along the ground to the penalty spot. Someone stick a foot on it.
+        No headers needed. Just get a boot on it.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+          <CornerFlag side="right" />
+
+          {/* Flat driven arrow (not arc) from corner to penalty spot area */}
+          <MovementArrow x1={320} y1={20} x2={170} y2={120} dashed={false} color="#F1C40F" />
+
+          {/* 3 runners arriving at speed */}
+          <PlayerDot x={130} y={180} label="Dave" type="attack" />
+          <MovementArrow x1={130} y1={180} x2={155} y2={115} dashed color="#16A34A" />
+
+          <PlayerDot x={200} y={190} label="Gaz" type="attack" />
+          <MovementArrow x1={200} y1={190} x2={180} y2={120} dashed color="#16A34A" />
+
+          <PlayerDot x={240} y={170} label="Jonesy" type="attack" />
+          <MovementArrow x1={240} y1={170} x2={195} y2={115} dashed color="#16A34A" />
+
+          {/* GK */}
+          <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+          {/* Defenders */}
+          <PlayerDot x={180} y={80} label="D1" type="defend" />
+          <PlayerDot x={220} y={90} label="D2" type="defend" />
+
+          <PitchLabel x={170} y={250} text="Low and Hard — Pen Spot" />
+        </PitchSVG>
+      </div>
+
+      <EditButton />
+    </Card>
+  )
+}
+
+/* ──────────────────────────────────────────────
+   Corner Routine O — Overhit It — Gaz Collects
+   ────────────────────────────────────────────── */
+function CornerRoutineO() {
+  return (
+    <Card>
+      <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+        Routine O — &quot;Overhit It — Gaz Collects&quot;
+      </h3>
+      <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        Deliberately hit it too far. Gaz is waiting behind everyone to pick it up.
+        If it goes past everyone, Gaz is there. He either shoots or puts it back in.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+          <CornerFlag side="right" />
+
+          {/* Ball arc going past box — overhit */}
+          <BallFlight x1={320} y1={20} x2={70} y2={130} cx={200} cy={10} color="#F1C40F" />
+
+          {/* Gaz collecting far side */}
+          <PlayerDot x={70} y={130} label="Gaz" type="attack" />
+
+          {/* Shot arrow from Gaz */}
+          <MovementArrow x1={70} y1={130} x2={140} y2={50} dashed={false} color="#16A34A" />
+
+          {/* Pass-back arrow option */}
+          <MovementArrow x1={70} y1={130} x2={170} y2={100} dashed color="#F1C40F" />
+
+          {/* Runners in box */}
+          <PlayerDot x={170} y={100} label="Dave" type="attack" />
+          <PlayerDot x={200} y={110} label="Kev" type="attack" />
+
+          {/* Defenders in box watching the ball */}
+          <PlayerDot x={190} y={80} label="D1" type="defend" />
+          <PlayerDot x={220} y={70} label="D2" type="defend" />
+
+          {/* GK */}
+          <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+          <PitchLabel x={70} y={150} text="Gaz collects" />
+          <PitchLabel x={170} y={250} text="Overhit — Far Side" />
+        </PitchSVG>
+      </div>
+
+      <EditButton />
+    </Card>
+  )
+}
+
+/* ──────────────────────────────────────────────
+   Corner Routine P — Daz Runs From Halfway
+   ────────────────────────────────────────────── */
+function CornerRoutineP() {
+  return (
+    <Card>
+      <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+        Routine P — &quot;Daz Runs From Halfway&quot;
+      </h3>
+      <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        Daz stays at the halfway line. Nobody marks him. He sprints in late.
+        By the time they notice Daz, he&apos;s already in the box.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+          <CornerFlag side="right" />
+
+          {/* Ball timed to edge of box */}
+          <BallFlight x1={320} y1={20} x2={200} y2={140} cx={280} cy={50} color="#F1C40F" />
+
+          {/* Daz starting at halfway */}
+          <PlayerDot x={170} y={250} label="Daz" type="attack" />
+
+          {/* Sprint arrow forward into box */}
+          <MovementArrow x1={170} y1={250} x2={195} y2={145} dashed color="#16A34A" />
+
+          {/* Decoys in the box */}
+          <PlayerDot x={150} y={100} label="Dave" type="attack" />
+          <PlayerDot x={220} y={90} label="Gaz" type="attack" />
+
+          {/* GK */}
+          <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+          {/* Defenders watching box, not halfway */}
+          <PlayerDot x={180} y={80} label="D1" type="defend" />
+          <PlayerDot x={210} y={100} label="D2" type="defend" />
+
+          <PitchLabel x={170} y={230} text="Daz sprints in" />
+          <PitchLabel x={170} y={130} text="Nobody marks him" />
+        </PitchSVG>
+      </div>
+
+      <EditButton />
+    </Card>
+  )
+}
+
+/* ──────────────────────────────────────────────
+   Corner Routine Q — Same As Last Time... But Not
+   ────────────────────────────────────────────── */
+function CornerRoutineQ() {
+  return (
+    <Card>
+      <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+        Routine Q — &quot;Same As Last Time... But Not&quot;
+      </h3>
+      <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        Set up exactly like Routine A (Big Lad Back Post). Then switch it to near post instead.
+        They&apos;ll be expecting the back post. Hit the near post. Watch their faces.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+          <CornerFlag side="right" />
+
+          {/* Ball flight to NEAR post instead of back */}
+          <BallFlight x1={320} y1={20} x2={240} y2={55} cx={290} cy={15} color="#F1C40F" />
+
+          {/* Dave positioned back post (decoy — like Routine A) */}
+          <PlayerDot x={100} y={80} label="Dave" type="attack" />
+
+          {/* Near post runners — redirect */}
+          <PlayerDot x={260} y={120} label="Gaz" type="attack" />
+          <MovementArrow x1={260} y1={120} x2={245} y2={60} dashed color="#16A34A" />
+
+          <PlayerDot x={230} y={140} label="Jonesy" type="attack" />
+          <MovementArrow x1={230} y1={140} x2={235} y2={65} dashed color="#16A34A" />
+
+          {/* Robbo edge of box */}
+          <PlayerDot x={170} y={200} label="Robbo" type="attack" />
+
+          {/* Defenders expecting back post */}
+          <PlayerDot x={130} y={80} label="D1" type="defend" />
+          <PlayerDot x={150} y={75} label="D2" type="defend" />
+
+          {/* GK */}
+          <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+          <PitchLabel x={240} y={250} text="Near Post (surprise!)" />
+          <PitchLabel x={100} y={250} text="Back Post (decoy)" />
+        </PitchSVG>
+      </div>
+
+      <EditButton />
+    </Card>
+  )
+}
+
+/* ──────────────────────────────────────────────
    Defending Corners — Zonal / Man / Mix
    ────────────────────────────────────────────── */
 function DefendingCorners() {
@@ -1479,6 +1727,189 @@ function FreeKicksSection() {
 
         <EditButton />
       </Card>
+
+      {/* Routine 13 — The Banana Shot */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 13 — &quot;The Banana Shot&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Bend it. Just bend it. Around the wall, into the corner. Like on the telly.
+          Gaz has been practising this all week in the park. Let him have a go.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Wall */}
+            <DefensiveWall x={200} y={130} count={4} />
+
+            {/* Gaz — taker */}
+            <PlayerDot x={200} y={200} label="Gaz" type="attack" />
+
+            {/* Curved ball flight bending dramatically around the wall */}
+            <BallFlight x1={200} y1={200} x2={130} y2={40} cx={300} cy={80} color="#F1C40F" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={280} y={100} text="Bend it!" />
+            <PitchLabel x={170} y={250} text="The Banana Shot" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 14 — Two Walls */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 14 — &quot;Two Walls&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Put Macca and Tommo right in front of their wall. When the kick happens, they jump apart.
+          Blocks the keeper&apos;s view. May or may not be legal. Worth a try.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Defensive wall (red) */}
+            <DefensiveWall x={200} y={130} count={4} />
+
+            {/* Macca and Tommo in front of their wall */}
+            <PlayerDot x={190} y={140} label="Macca" type="attack" />
+            <PlayerDot x={210} y={140} label="Tommo" type="attack" />
+
+            {/* Split arrows — they jump apart */}
+            <MovementArrow x1={190} y1={140} x2={150} y2={140} dashed color="#16A34A" />
+            <MovementArrow x1={210} y1={140} x2={250} y2={140} dashed color="#16A34A" />
+
+            {/* Shot through gap */}
+            <BallFlight x1={200} y1={200} x2={170} y2={40} cx={200} cy={100} color="#F1C40F" />
+
+            {/* Taker */}
+            <PlayerDot x={200} y={200} label="Gaz" type="attack" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={170} y={250} text="Two Walls — Split!" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 15 — Walk Away — Surprise Them */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 15 — &quot;Walk Away — Surprise Them&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          First bloke walks away like he&apos;s given up. Second bloke runs up and smacks it.
+          Classic misdirection. Works every time at this level.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Wall */}
+            <DefensiveWall x={200} y={130} count={4} />
+
+            {/* First player walking away (dashed) */}
+            <PlayerDot x={210} y={200} label="Jonesy" type="attack" />
+            <MovementArrow x1={210} y1={200} x2={260} y2={220} dashed color="#94A3B8" />
+
+            {/* Second player arriving */}
+            <PlayerDot x={150} y={230} label="Macca" type="attack" />
+            <MovementArrow x1={150} y1={230} x2={195} y2={200} dashed color="#16A34A" />
+
+            {/* Shot */}
+            <BallFlight x1={195} y1={200} x2={160} y2={40} cx={150} cy={100} color="#F1C40F" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={250} y={235} text="Walks away" />
+            <PitchLabel x={170} y={250} text="Walk Away — Surprise!" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 16 — Cross It Instead */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 16 — &quot;Cross It Instead&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Instead of shooting, whip a cross to the far post. Dave&apos;s waiting.
+          Everyone expects the shot. Nobody expects the cross.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Wall */}
+            <DefensiveWall x={200} y={130} count={4} />
+
+            {/* Taker */}
+            <PlayerDot x={200} y={200} label="Gaz" type="attack" />
+
+            {/* Cross arc to far post */}
+            <BallFlight x1={200} y1={200} x2={90} y2={70} cx={100} cy={150} color="#F1C40F" />
+
+            {/* Dave heading it at far post */}
+            <PlayerDot x={90} y={70} label="Dave" type="attack" />
+            <MovementArrow x1={90} y1={70} x2={140} y2={40} dashed={false} color="#16A34A" />
+
+            {/* GK wrong-footed */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={90} y={90} text="Dave heads it" />
+            <PitchLabel x={170} y={250} text="Cross It Instead" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 17 — Just Pass It Into the Box */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 17 — &quot;Just Pass It Into the Box&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Don&apos;t shoot. Pass it to Connor in the box. He turns. He shoots. Simple.
+          Sometimes the best free kick is just a pass.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Wall */}
+            <DefensiveWall x={200} y={130} count={3} />
+
+            {/* Taker */}
+            <PlayerDot x={200} y={200} label="Gaz" type="attack" />
+
+            {/* Pass arrow into box to Connor */}
+            <MovementArrow x1={200} y1={200} x2={160} y2={110} dashed={false} color="#F1C40F" />
+
+            {/* Connor in the box */}
+            <PlayerDot x={160} y={110} label="Connor" type="attack" />
+
+            {/* Connor turning and shooting */}
+            <MovementArrow x1={160} y1={110} x2={155} y2={95} dashed color="#16A34A" />
+            <BallFlight x1={155} y1={95} x2={170} y2={40} cx={140} cy={60} color="#F1C40F" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={130} y={125} text="Connor turns" />
+            <PitchLabel x={170} y={250} text="Just Pass It In" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
     </>
   )
 }
@@ -2185,6 +2616,203 @@ function ThrowInsSection() {
 
         <EditButton />
       </Card>
+
+      {/* Routine 13 — Fake the Long One */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 13 — &quot;Fake the Long One&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Shape to throw it miles, then just lob it to the bloke two feet away.
+          Their defender will back off expecting the long throw. Free man. Easy.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Thrower */}
+            <PlayerDot x={320} y={130} label="Daz" type="attack" />
+
+            {/* Dashed long throw shape (fake) */}
+            <MovementArrow x1={320} y1={130} x2={180} y2={80} dashed color="#94A3B8" />
+
+            {/* Actual short throw to nearby player */}
+            <MovementArrow x1={320} y1={130} x2={290} y2={120} dashed={false} color="#F1C40F" />
+            <PlayerDot x={290} y={120} label="Gaz" type="attack" />
+
+            {/* Defender backing off */}
+            <PlayerDot x={260} y={110} label="D1" type="defend" />
+            <MovementArrow x1={260} y1={110} x2={230} y2={100} dashed color="#EF4444" />
+
+            {/* Gaz has space */}
+            <MovementArrow x1={290} y1={120} x2={250} y2={100} dashed color="#16A34A" />
+
+            <PitchLabel x={250} y={140} text="Free man!" />
+            <PitchLabel x={170} y={250} text="Fake the Long One" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 14 — Stack Up — Everyone Scatter */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 14 — &quot;Stack Up — Everyone Scatter&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Three players stand in a line. On the throw, they all run in different directions.
+          It&apos;s like a set play from American football. Sort of.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Thrower */}
+            <PlayerDot x={320} y={130} label="Daz" type="attack" />
+
+            {/* 3 stacked dots */}
+            <PlayerDot x={270} y={110} label="Gaz" type="attack" />
+            <PlayerDot x={270} y={125} label="Macca" type="attack" />
+            <PlayerDot x={270} y={140} label="Kev" type="attack" />
+
+            {/* 3 diverging arrows */}
+            <MovementArrow x1={270} y1={110} x2={230} y2={70} dashed color="#16A34A" />
+            <MovementArrow x1={270} y1={125} x2={220} y2={130} dashed color="#16A34A" />
+            <MovementArrow x1={270} y1={140} x2={250} y2={180} dashed color="#16A34A" />
+
+            {/* Throw to best option */}
+            <MovementArrow x1={320} y1={130} x2={235} y2={72} dashed={false} color="#F1C40F" />
+
+            {/* Defenders confused */}
+            <PlayerDot x={250} y={100} label="D1" type="defend" />
+            <PlayerDot x={240} y={145} label="D2" type="defend" />
+
+            <PitchLabel x={170} y={250} text="Stack Up — Scatter!" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 15 — One Touch Cross */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 15 — &quot;One Touch Cross&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Catch the throw, first-time cross into the box. No messing about.
+          Don&apos;t trap it. Don&apos;t think. Just cross it.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Thrower */}
+            <PlayerDot x={320} y={130} label="Daz" type="attack" />
+
+            {/* Throw to receiver */}
+            <MovementArrow x1={320} y1={130} x2={280} y2={110} dashed={false} color="#F1C40F" />
+            <PlayerDot x={280} y={110} label="Jonesy" type="attack" />
+
+            {/* Immediate cross arc into box */}
+            <BallFlight x1={280} y1={110} x2={180} y2={70} cx={240} cy={60} color="#F1C40F" />
+
+            {/* Runners in box */}
+            <PlayerDot x={150} y={140} label="Dave" type="attack" />
+            <MovementArrow x1={150} y1={140} x2={170} y2={75} dashed color="#16A34A" />
+
+            <PlayerDot x={200} y={150} label="Gaz" type="attack" />
+            <MovementArrow x1={200} y1={150} x2={190} y2={80} dashed color="#16A34A" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={170} y={250} text="One Touch Cross" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 16 — Chest and Volley */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 16 — &quot;Chest and Volley&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Throw it to Macca&apos;s chest at the edge of the box. He lets it drop. He volleys it.
+          We&apos;ve seen Macca do this in training. Once. But it was magnificent.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Thrower */}
+            <PlayerDot x={320} y={130} label="Daz" type="attack" />
+
+            {/* Throw arc to Macca at edge of box */}
+            <BallFlight x1={320} y1={130} x2={220} y2={150} cx={280} cy={110} color="#F1C40F" />
+
+            {/* Macca at edge of box */}
+            <PlayerDot x={220} y={150} label="Macca" type="attack" />
+
+            {/* Volley trajectory to goal */}
+            <BallFlight x1={220} y1={150} x2={160} y2={40} cx={170} cy={80} color="#F1C40F" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            {/* Defenders */}
+            <PlayerDot x={200} y={100} label="D1" type="defend" />
+
+            <PitchLabel x={220} y={170} text="Chest, drop, VOLLEY" />
+            <PitchLabel x={170} y={250} text="Chest and Volley" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 17 — Treat It Like a Corner */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 17 — &quot;Treat It Like a Corner&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Long throw into the box, near post flick, back post header. Just like a corner.
+          If Daz can throw it far enough, it&apos;s basically a free corner.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Thrower */}
+            <PlayerDot x={320} y={100} label="Daz" type="attack" />
+
+            {/* Long throw arc into box */}
+            <BallFlight x1={320} y1={100} x2={240} y2={65} cx={290} cy={50} color="#F1C40F" />
+
+            {/* Near post flicker */}
+            <PlayerDot x={240} y={65} label="Gaz" type="attack" />
+
+            {/* Flick arrow to back post */}
+            <MovementArrow x1={240} y1={65} x2={120} y2={75} dashed={false} color="#F1C40F" />
+
+            {/* Back post runner */}
+            <PlayerDot x={100} y={130} label="Dave" type="attack" />
+            <MovementArrow x1={100} y1={130} x2={115} y2={80} dashed color="#16A34A" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            {/* Defenders */}
+            <PlayerDot x={200} y={80} label="D1" type="defend" />
+            <PlayerDot x={160} y={75} label="D2" type="defend" />
+
+            <PitchLabel x={240} y={85} text="Near post flick" />
+            <PitchLabel x={100} y={100} text="Back post header" />
+            <PitchLabel x={170} y={250} text="Like a Corner" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
     </>
   )
 }
@@ -2650,6 +3278,188 @@ function GoalKicksSection() {
 
         <EditButton />
       </Card>
+
+      {/* Routine 11 — Fake Long — Sneak It Short */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 11 — &quot;Fake Long — Sneak It Short&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Keeper shapes to hoof it, then just rolls it to Chris who&apos;s standing there looking innocent.
+          The other team pushes up. Chris has acres.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* GK */}
+            <PlayerDot x={170} y={30} label="GK" type="gk" />
+
+            {/* Fake long (dashed) */}
+            <MovementArrow x1={170} y1={30} x2={170} y2={200} dashed color="#94A3B8" />
+
+            {/* Short roll to Chris */}
+            <MovementArrow x1={170} y1={30} x2={120} y2={60} dashed={false} color="#F1C40F" />
+            <PlayerDot x={120} y={60} label="Chris" type="attack" />
+
+            {/* Chris has space ahead */}
+            <MovementArrow x1={120} y1={60} x2={100} y2={130} dashed color="#16A34A" />
+
+            {/* Opposition pushed up */}
+            <PlayerDot x={150} y={180} label="D1" type="defend" />
+            <PlayerDot x={200} y={185} label="D2" type="defend" />
+
+            <PitchLabel x={120} y={100} text="Acres of space" />
+            <PitchLabel x={170} y={250} text="Fake Long — Sneak Short" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 12 — Spread Wide — Pick Your Man */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 12 — &quot;Spread Wide — Pick Your Man&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Three defenders go as wide as possible. Someone&apos;s always free.
+          Just find the open man. It&apos;s not rocket science.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* GK */}
+            <PlayerDot x={170} y={30} label="GK" type="gk" />
+
+            {/* 3 players spread wide */}
+            <PlayerDot x={40} y={90} label="Robbo" type="attack" />
+            <PlayerDot x={170} y={80} label="Dave" type="attack" />
+            <PlayerDot x={300} y={90} label="Daz" type="attack" />
+
+            {/* GK choosing — arrows to all 3 */}
+            <MovementArrow x1={170} y1={30} x2={45} y2={85} dashed color="#F1C40F" />
+            <MovementArrow x1={170} y1={30} x2={170} y2={75} dashed color="#F1C40F" />
+            <MovementArrow x1={170} y1={30} x2={295} y2={85} dashed color="#F1C40F" />
+
+            {/* Opposition */}
+            <PlayerDot x={130} y={150} label="D1" type="defend" />
+            <PlayerDot x={210} y={150} label="D2" type="defend" />
+
+            <PitchLabel x={170} y={250} text="Spread Wide — Pick Your Man" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 13 — Laser to Jonesy */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 13 — &quot;Laser to Jonesy&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Keeper drives it flat and fast straight to Jonesy on the wing.
+          No arc. No bounce. Just fire it to Jonesy&apos;s feet. Good luck to their fullback.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* GK */}
+            <PlayerDot x={170} y={30} label="GK" type="gk" />
+
+            {/* Flat driven arrow to Jonesy on touchline */}
+            <MovementArrow x1={170} y1={30} x2={310} y2={170} dashed={false} color="#F1C40F" />
+
+            {/* Jonesy on the wing */}
+            <PlayerDot x={310} y={170} label="Jonesy" type="attack" />
+
+            {/* Jonesy running forward */}
+            <MovementArrow x1={310} y1={170} x2={300} y2={220} dashed color="#16A34A" />
+
+            {/* Their fullback trailing */}
+            <PlayerDot x={280} y={160} label="D1" type="defend" />
+
+            <PitchLabel x={240} y={100} text="Laser pass" />
+            <PitchLabel x={170} y={250} text="Laser to Jonesy" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 14 — Drop It Into the Gap */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 14 — &quot;Drop It Into the Gap&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Boot it into the space between their fullback and centre-back. Connor runs.
+          Connor&apos;s fast. Their left back isn&apos;t. Simple maths.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* GK */}
+            <PlayerDot x={170} y={30} label="GK" type="gk" />
+
+            {/* Ball into channel gap */}
+            <BallFlight x1={170} y1={30} x2={240} y2={180} cx={220} cy={90} color="#F1C40F" />
+
+            {/* Gap zone highlight */}
+            <ZoneHighlight x={220} y={165} width={50} height={40} />
+
+            {/* Opposition fullback and CB with gap between */}
+            <PlayerDot x={200} y={170} label="CB" type="defend" />
+            <PlayerDot x={280} y={175} label="LB" type="defend" />
+
+            {/* Connor diagonal run into the gap */}
+            <PlayerDot x={220} y={130} label="Connor" type="attack" />
+            <MovementArrow x1={220} y1={130} x2={245} y2={180} dashed color="#16A34A" />
+
+            <PitchLabel x={240} y={210} text="The gap" />
+            <PitchLabel x={170} y={250} text="Drop It Into the Gap" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 15 — Run Behind While They're Watching */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 15 — &quot;Run Behind While They&apos;re Watching&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Target man stands still, shadow runner (Robbo) runs behind the defence.
+          Everyone watches the target man. Robbo sneaks in behind like a ghost.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* GK */}
+            <PlayerDot x={170} y={30} label="GK" type="gk" />
+
+            {/* Ball to target zone */}
+            <BallFlight x1={170} y1={30} x2={170} y2={160} cx={130} cy={80} color="#F1C40F" />
+
+            {/* Target man standing still */}
+            <PlayerDot x={170} y={160} label="Dave" type="attack" />
+
+            {/* Defenders watching target man */}
+            <PlayerDot x={155} y={155} label="D1" type="defend" />
+            <PlayerDot x={185} y={165} label="D2" type="defend" />
+
+            {/* Robbo through-run arrow behind defence */}
+            <PlayerDot x={220} y={130} label="Robbo" type="attack" />
+            <MovementArrow x1={220} y1={130} x2={200} y2={200} dashed color="#16A34A" />
+
+            <PitchLabel x={220} y={120} text="Robbo sneaks behind" />
+            <PitchLabel x={170} y={250} text="Run Behind — Shadow Runner" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
     </>
   )
 }
@@ -3003,6 +3813,192 @@ function KickOffsSection() {
 
         <EditButton />
       </Card>
+
+      {/* Routine 11 — Give It To Macca — Trust Him */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 11 — &quot;Give It To Macca — Trust Him&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Knock it back, find Macca, he does something brilliant or something stupid.
+          50/50 chance of genius. We&apos;ll take those odds.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Kick off player */}
+            <PlayerDot x={170} y={250} label="Connor" type="attack" />
+
+            {/* Back pass */}
+            <MovementArrow x1={170} y1={250} x2={170} y2={220} dashed={false} color="#F1C40F" />
+
+            {/* Macca receiving central */}
+            <PlayerDot x={170} y={220} label="Macca" type="attack" />
+
+            {/* Forward dribble/pass arrow */}
+            <MovementArrow x1={170} y1={220} x2={170} y2={160} dashed color="#16A34A" />
+            <MovementArrow x1={170} y1={160} x2={130} y2={120} dashed color="#16A34A" />
+
+            {/* Support runners */}
+            <PlayerDot x={100} y={230} label="Gaz" type="attack" />
+            <PlayerDot x={240} y={230} label="Jonesy" type="attack" />
+
+            <PitchLabel x={170} y={140} text="Trust him" />
+            <PitchLabel x={170} y={130} text="Give It To Macca" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 12 — Diagonal to Gaz — First Touch */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 12 — &quot;Diagonal to Gaz — First Touch&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Kick off, immediate diagonal to Gaz on the wing.
+          If Gaz gets it in space early, good things happen.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Kick off player */}
+            <PlayerDot x={170} y={250} label="Connor" type="attack" />
+
+            {/* Kick back */}
+            <MovementArrow x1={170} y1={250} x2={170} y2={230} dashed={false} color="#F1C40F" />
+            <PlayerDot x={170} y={230} label="Macca" type="attack" />
+
+            {/* Long diagonal to Gaz on wing */}
+            <BallFlight x1={170} y1={230} x2={300} y2={170} cx={250} cy={180} color="#F1C40F" />
+
+            {/* Gaz on the wing */}
+            <PlayerDot x={300} y={170} label="Gaz" type="attack" />
+
+            {/* Gaz running forward */}
+            <MovementArrow x1={300} y1={170} x2={290} y2={120} dashed color="#16A34A" />
+
+            <PitchLabel x={250} y={200} text="Diagonal" />
+            <PitchLabel x={170} y={130} text="Diagonal to Gaz" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 13 — Tiny Passes — Don't Panic */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 13 — &quot;Tiny Passes — Don&apos;t Panic&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Everyone stays within 5 yards of each other. Tiny passes. Don&apos;t lose it.
+          Remember last week? Don&apos;t do that again.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Tight cluster of players */}
+            <PlayerDot x={170} y={250} label="Connor" type="attack" />
+            <PlayerDot x={155} y={230} label="Macca" type="attack" />
+            <PlayerDot x={185} y={225} label="Gaz" type="attack" />
+            <PlayerDot x={145} y={210} label="Kev" type="attack" />
+            <PlayerDot x={195} y={210} label="Robbo" type="attack" />
+
+            {/* Multiple tiny pass arrows */}
+            <MovementArrow x1={170} y1={250} x2={157} y2={232} dashed={false} color="#F1C40F" />
+            <MovementArrow x1={155} y1={230} x2={183} y2={227} dashed={false} color="#F1C40F" />
+            <MovementArrow x1={185} y1={225} x2={147} y2={212} dashed={false} color="#F1C40F" />
+            <MovementArrow x1={145} y1={210} x2={193} y2={212} dashed={false} color="#F1C40F" />
+
+            {/* Opposition */}
+            <PlayerDot x={170} y={190} label="D1" type="defend" />
+            <PlayerDot x={130} y={195} label="D2" type="defend" />
+
+            <PitchLabel x={170} y={130} text="Tiny Passes — Don't Panic" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 14 — Have a Pop */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 14 — &quot;Have a Pop&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Kick off, quick one-two, someone shoots from 30 yards.
+          Why not? Worst case it goes out for a throw. Best case &mdash; screamer.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Kick off player */}
+            <PlayerDot x={170} y={250} label="Connor" type="attack" />
+
+            {/* Back pass */}
+            <MovementArrow x1={170} y1={250} x2={170} y2={225} dashed={false} color="#F1C40F" />
+            <PlayerDot x={170} y={225} label="Macca" type="attack" />
+
+            {/* Forward pass */}
+            <MovementArrow x1={170} y1={225} x2={170} y2={190} dashed={false} color="#F1C40F" />
+            <PlayerDot x={170} y={190} label="Gaz" type="attack" />
+
+            {/* Long-range shot arrow */}
+            <BallFlight x1={170} y1={190} x2={170} y2={40} cx={130} cy={100} color="#F1C40F" />
+
+            {/* GK */}
+            <PlayerDot x={170} y={35} label="GK" type="gk" />
+
+            <PitchLabel x={200} y={190} text="SHOOT!" />
+            <PitchLabel x={170} y={130} text="Have a Pop" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
+
+      {/* Routine 15 — Be Annoying */}
+      <Card>
+        <h3 style={{ color: TEXT, fontWeight: 600, marginBottom: '0.5rem' }}>
+          Routine 15 — &quot;Be Annoying&quot;
+        </h3>
+        <p style={{ color: TEXT_SEC, fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+          Kick off gently, let them have it, then press like your life depends on it.
+          Make them uncomfortable. Get in their faces. They hate that.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <PitchSVG width={340} height={260} halfPitch className="set-piece-svg">
+            {/* Gentle kick forward */}
+            <PlayerDot x={170} y={250} label="Connor" type="attack" />
+            <MovementArrow x1={170} y1={250} x2={170} y2={210} dashed={false} color="#F1C40F" />
+
+            {/* Opposition receiver */}
+            <PlayerDot x={170} y={190} label="Opp" type="defend" />
+
+            {/* 4 press arrows converging on opposition receiver */}
+            <PlayerDot x={100} y={220} label="Gaz" type="attack" />
+            <MovementArrow x1={100} y1={220} x2={155} y2={195} dashed color="#16A34A" />
+
+            <PlayerDot x={240} y={220} label="Macca" type="attack" />
+            <MovementArrow x1={240} y1={220} x2={185} y2={195} dashed color="#16A34A" />
+
+            <PlayerDot x={130} y={200} label="Jonesy" type="attack" />
+            <MovementArrow x1={130} y1={200} x2={160} y2={192} dashed color="#16A34A" />
+
+            <PlayerDot x={210} y={200} label="Kev" type="attack" />
+            <MovementArrow x1={210} y1={200} x2={180} y2={192} dashed color="#16A34A" />
+
+            <PitchLabel x={170} y={170} text="PRESS!" />
+            <PitchLabel x={170} y={130} text="Be Annoying" />
+          </PitchSVG>
+        </div>
+
+        <EditButton />
+      </Card>
     </>
   )
 }
@@ -3121,6 +4117,11 @@ export default function GrassrootsSetPiecesView() {
       <CornerRoutineJ />
       <CornerRoutineK />
       <CornerRoutineL />
+      <CornerRoutineM />
+      <CornerRoutineN />
+      <CornerRoutineO />
+      <CornerRoutineP />
+      <CornerRoutineQ />
 
       {/* ── DEFENDING CORNERS ── */}
       <DefendingCorners />

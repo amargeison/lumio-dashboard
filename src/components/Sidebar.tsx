@@ -38,18 +38,18 @@ const BASE_NAV_ITEMS: {
   { label: 'Overview',          path: '',             icon: LayoutDashboard, badge: null },
   { label: 'Insights',          path: '/insights',    icon: Sparkles,        badge: null, accent: '#6C3FC5' },
   { label: 'Partners',          path: '/partners',    icon: Handshake,       badge: null },
-  { label: 'HR & People',       path: '/hr',          icon: Users,           badge: 3    },
+  { label: 'HR & People',       path: '/hr',          icon: Users,           badge: null },
   { label: 'Accounts',          path: '/accounts',    icon: Building2,       badge: null },
   { label: 'Strategy',          path: '/strategy',    icon: Target,          badge: null },
   { label: 'Trials',            path: '/trials',      icon: FlaskConical,    badge: null },
-  { label: 'Sales',             path: '/sales',       icon: TrendingUp,      badge: 12   },
+  { label: 'Sales',             path: '/sales',       icon: TrendingUp,      badge: null },
   { label: 'CRM',               path: '/crm',         icon: Database,        badge: null },
   { label: 'Marketing',         path: '/marketing',   icon: Megaphone,       badge: null },
   { label: 'Projects',          path: '/projects',    icon: Layers,          badge: null },
   { label: 'Operations',        path: '/operations',  icon: Package,         badge: null },
-  { label: 'Support',           path: '/support',     icon: Headphones,      badge: 5    },
-  { label: 'Success',           path: '/success',     icon: Activity,        badge: 2    },
-  { label: 'IT & Systems',      path: '/it',          icon: Server,          badge: 1    },
+  { label: 'Support',           path: '/support',     icon: Headphones,      badge: null },
+  { label: 'Success',           path: '/success',     icon: Activity,        badge: null },
+  { label: 'IT & Systems',      path: '/it',          icon: Server,          badge: null },
   { label: 'Workflows Library', path: '/workflows',   icon: GitBranch,       badge: null },
   { label: 'Directors Suite',  path: '/directors',   icon: Crown,           badge: null, accent: '#F1C40F' },
   { label: 'Settings',          path: '/settings',    icon: Settings,        badge: null },
@@ -163,13 +163,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
-    // Detect active departments from imported staff
+    // Detect active departments from imported staff — only when real data exists (not demo)
     const isDemoActive = localStorage.getItem('lumio_demo_active') === 'true'
     if (!isDemoActive) {
-      const deptKeys = ['sales', 'hr', 'marketing', 'accounts', 'operations', 'it', 'support', 'success', 'partners', 'strategy', 'trials', 'projects', 'insights']
-      const active = new Set<string>()
-      deptKeys.forEach(d => { if (getDeptStaff(d).length > 0) active.add(d) })
-      setActiveDepts(active)
+      // Only show dept indicators if user has genuinely imported staff (not stale demo data)
+      const hasAnyRealData = localStorage.getItem('lumio_staff_imported_source') === 'supabase'
+      if (hasAnyRealData) {
+        const deptKeys = ['sales', 'hr', 'marketing', 'accounts', 'operations', 'it', 'support', 'success', 'partners', 'strategy', 'trials', 'projects', 'insights']
+        const active = new Set<string>()
+        deptKeys.forEach(d => { if (getDeptStaff(d).length > 0) active.add(d) })
+        setActiveDepts(active)
+      }
     }
     return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('lumio-logo-updated', onLogoUpdated) }
   }, [])

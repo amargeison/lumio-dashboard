@@ -10,6 +10,7 @@ import {
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -375,30 +376,60 @@ function SchoolWorldClock() {
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const SCHOOL_DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
 ]
 
-// Photos stored in localStorage only — never persisted to server or committed to repo
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_photo_frame') : null; if (s) { const p = JSON.parse(s); const valid = p.filter((u: string) => u.startsWith('http') || u.startsWith('blob:')); if (valid.length > 0) return valid }; return SCHOOL_DEMO_PHOTOS } catch { return SCHOOL_DEMO_PHOTOS } })
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && (localStorage.getItem('lumio_schools_demo_loaded') === 'true' || localStorage.getItem('lumio_demo_active') === 'true') ? SCHOOL_DEMO_PHOTOS : [] })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  useEffect(() => { if (intervalRef.current) clearInterval(intervalRef.current); if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000); return () => { if (intervalRef.current) clearInterval(intervalRef.current) } }, [isPlaying, photos.length, intervalSecs])
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) { Array.from(e.target.files || []).forEach(file => { const reader = new FileReader(); reader.onload = (ev) => setPhotos(prev => { const next = [...prev, ev.target?.result as string].slice(-20); localStorage.setItem('lumio_photo_frame', JSON.stringify(next)); return next }); reader.readAsDataURL(file) }); e.target.value = '' }
-  function removePhoto(idx: number) { setPhotos(prev => { const next = prev.filter((_, i) => i !== idx); localStorage.setItem('lumio_photo_frame', JSON.stringify(next)); if (currentIdx >= next.length) setCurrentIdx(Math.max(0, next.length - 1)); return next }) }
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
+  }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
+  }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
+
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
         <div className="flex items-center gap-2">
-          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '\u23F8 Pause' : '\u25B6 Play'}</button>}
-          <button onClick={() => fileInputRef.current?.click()} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>+ Add</button>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
       {photos.length === 0 ? (
@@ -406,14 +437,52 @@ function PhotoFrame() {
           <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-        <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150 }}>
-          <img src={photos[currentIdx]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-          {photos.length > 1 && (<><button onClick={() => setCurrentIdx(i => (i - 1 + photos.length) % photos.length)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u2039'}</button><button onClick={() => setCurrentIdx(i => (i + 1) % photos.length)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'\u203A'}</button></>)}
-          <button onClick={() => removePhoto(currentIdx)} className="absolute top-2 right-2 rounded-full flex items-center justify-center text-xs" style={{ width: 20, height: 20, backgroundColor: 'rgba(0,0,0,0.6)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.2)' }}>{'\u00D7'}</button>
-          <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
-        </div>
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
       )}
       {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
+          </button>
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
+      </div>
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
+            </div>
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -488,7 +557,7 @@ function SchoolMeetingsToday() {
   )
 }
 
-function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { schoolName: string; firstName?: string; pupils?: number; staff?: number }) {
+function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive }: { schoolName: string; firstName?: string; pupils?: number; staff?: number; demoActive?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -549,10 +618,10 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff }: { school
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Pupils', value: pupils || 423, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: staff || 41, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: 3, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Reports', value: 2, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+              { label: 'Pupils', value: demoActive ? (pupils || 423) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { label: 'Staff', value: demoActive ? (staff || 41) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { label: 'Alerts', value: demoActive ? 3 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Reports', value: demoActive ? 2 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
@@ -1088,10 +1157,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const ownerName = isAdminImpersonating
     ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
     : (localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
-  const firstName = ownerName ? ownerName.split(' ')[0] : undefined
+  const userEmail = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_email') || '' : ''
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_name') || '' : ''
+  const firstName = ownerName ? ownerName.split(' ')[0] : userName ? userName.split(' ')[0] : userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1) : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
   const [activeTab, setActiveTab] = useState('today')
+  const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
   const TABS = [
     { id: 'today', label: 'Today', icon: '📅' },
     { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
@@ -1105,9 +1177,21 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     <div className="space-y-4">
 
       {/* 1. Greeting banner */}
-      <SchoolGreetingBanner schoolName={schoolName} firstName={ownerName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} />
+      <SchoolGreetingBanner schoolName={schoolName} firstName={firstName || 'there'} pupils={schoolData?.pupil_count || undefined} staff={schoolData?.staff_count || undefined} demoActive={demoDataActive} />
 
-      {/* 2. Quick actions */}
+      {/* 2. Tab bar */}
+      <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+        <div className="flex items-center gap-0 min-w-max px-2">
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              style={{ borderBottomColor: activeTab === t.id ? '#0D9488' : 'transparent', color: activeTab === t.id ? '#2DD4BF' : '#6B7280', backgroundColor: activeTab === t.id ? 'rgba(13,148,136,0.05)' : 'transparent' }}>
+              <span className="text-base">{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Quick actions */}
       <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
         <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
         {[
@@ -1127,18 +1211,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         ))}
       </div>
 
-      {/* 3. Tab bar */}
-      <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
-        <div className="flex items-center gap-0 min-w-max px-2">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-              style={{ borderBottomColor: activeTab === t.id ? '#0D9488' : 'transparent', color: activeTab === t.id ? '#2DD4BF' : '#6B7280', backgroundColor: activeTab === t.id ? 'rgba(13,148,136,0.05)' : 'transparent' }}>
-              <span className="text-base">{t.icon}</span>{t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* 4. Safeguarding alert — only when demo data is active */}
       {demoDataActive && (
         <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
@@ -1154,6 +1226,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* TAB: Today */}
       {activeTab === 'today' && (
         <>
+          {demoDataActive ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <div className="lg:col-span-1 flex flex-col"><SchoolMorningRoundup /></div>
             <div className="lg:col-span-1 flex flex-col"><SchoolMeetingsToday /></div>
@@ -1179,135 +1252,364 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               </div>
             </div>
           </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-6">
+              <div className="text-5xl mb-4">🏫</div>
+              <h2 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Connect your tools to get started</h2>
+              <p className="text-sm text-center mb-6" style={{ color: '#6B7280', maxWidth: 400 }}>Your daily overview, AI insights and schedule will appear here once your data is connected. Load demo data to explore.</p>
+              <button onClick={() => { localStorage.setItem('lumio_schools_demo_loaded', 'true'); window.location.reload() }} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+            </div>
+          )}
         </>
       )}
 
       {/* TAB: Quick Wins */}
       {activeTab === 'quick-wins' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h3>
-          {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                { text: 'Take register for Year 4B — overdue', urgent: true },
-                { text: 'Sign off DSL concern logged 2 days ago', urgent: true },
-                { text: 'Chase 3 outstanding trip permission slips', urgent: false },
-                { text: 'Review EHCP draft for student review tomorrow', urgent: false },
-                { text: 'Send parent callback — missed call logged this morning', urgent: false },
-              ].map((w, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                  <span className="text-sm flex-1" style={{ color: '#F9FAFB' }}>{w.text}</span>
-                  {w.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
-                </div>
-              ))}
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority. Do these first.</p>
             </div>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Quick wins will appear here once your data is connected.</p>
-          )}
+          </div>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
+            <div className="space-y-3">
+              {([
+                { id: 'qw1', title: 'Sign off open DSL concern', description: 'Logged 2 days ago, requires DSL review before end of day.', impact: 'high' as const, effort: '2min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
+                { id: 'qw2', title: 'Chase 4 pupils below 85% attendance', description: 'Persistent absence threshold reached. Trigger parent contact.', impact: 'high' as const, effort: '2min', category: 'Attendance', action: 'Send letters', source: 'MIS' },
+                { id: 'qw3', title: 'Approve 3 pending expense claims', description: 'Staff claims submitted this week awaiting sign-off.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Review claims', source: 'Finance' },
+                { id: 'qw4', title: "Complete EHCP draft for tomorrow's review", description: 'Annual review meeting at 9am, draft must be submitted today.', impact: 'medium' as const, effort: '5min', category: 'SEND', action: 'Open EHCP', source: 'SEND Register' },
+                { id: 'qw5', title: 'Chase 3 outstanding trip permission slips', description: "Year 5 trip is Friday. 3 families haven't responded.", impact: 'medium' as const, effort: '10min', category: 'Curriculum', action: 'Send reminders', source: 'Trips' },
+              ]).map(win => {
+                const impactColors = win.impact === 'high'
+                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+                return (
+                  <div key={win.id} className="rounded-2xl p-5 transition-all"
+                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{win.impact.toUpperCase()} IMPACT</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {win.effort}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
+                        </div>
+                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{win.description}</p>
+                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          {win.action} →
+                        </button>
+                        <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                          Mark done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
       )}
 
       {/* TAB: Daily Tasks */}
       {activeTab === 'tasks' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h3>
-          {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                'Morning register check — all classes',
-                'Review attendance alerts',
-                'Check safeguarding log',
-                'Staff briefing notes',
-                'End of day behaviour summary',
-              ].map((t, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <input type="checkbox" className="rounded" style={{ accentColor: '#0D9488' }} />
-                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{t}</span>
-                </div>
-              ))}
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your essential daily checklist — stay on top of operations.</p>
             </div>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Daily tasks will appear here once your data is connected.</p>
-          )}
+          </div>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
+            <div className="space-y-3">
+              {([
+                { id: 'dt1', title: 'Submit daily attendance return to DfE', description: 'Must be submitted by 12pm. 94% recorded so far.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Submit now', source: 'MIS' },
+                { id: 'dt2', title: 'Review and respond to parent concern logged yesterday', description: 'Mrs. Clarke raised a concern via Parent Portal at 4:32pm.', impact: 'high' as const, effort: '10min', category: 'Safeguarding', action: 'Open concern', source: 'Parent Portal' },
+                { id: 'dt3', title: 'Approve cover arrangement for Period 3', description: 'Mr. Davies absence — cover not yet confirmed.', impact: 'medium' as const, effort: '5min', category: 'HR', action: 'Assign cover', source: 'Cover Manager' },
+                { id: 'dt4', title: 'Prepare agenda for Thursday SLT meeting', description: 'Meeting in 2 days. No agenda submitted yet.', impact: 'medium' as const, effort: '15min', category: 'SLT', action: 'Create agenda', source: 'Calendar' },
+                { id: 'dt5', title: 'Respond to 2 new admissions enquiries', description: 'Both received yesterday via website form.', impact: 'medium' as const, effort: '5min', category: 'Admissions', action: 'View enquiries', source: 'Admissions' },
+              ]).map(task => {
+                const impactColors = task.impact === 'high'
+                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+                return (
+                  <div key={task.id} className="rounded-2xl p-5 transition-all"
+                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{task.impact.toUpperCase()} IMPACT</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {task.effort}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
+                        </div>
+                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{task.description}</p>
+                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          {task.action} →
+                        </button>
+                        <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                          Mark done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
       )}
 
       {/* TAB: Insights */}
       {activeTab === 'insights' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>📊 Insights</h3>
-          {demoDataActive ? (
-            <div className="space-y-3">
-              {[
-                { label: 'Attendance trend this week', value: '94.3% → 96.1%', color: '#22C55E', trend: '↑' },
-                { label: 'Behaviour incidents vs last week', value: '7 vs 12', color: '#0D9488', trend: '↓' },
-                { label: 'SEND review deadlines approaching', value: '3 this month', color: '#F59E0B', trend: '' },
-                { label: 'FSM uptake this term', value: '18.2%', color: '#A78BFA', trend: '' },
-              ].map(s => (
-                <div key={s.label} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>{s.label}</span>
-                  <span className="text-sm font-bold" style={{ color: s.color }}>{s.trend} {s.value}</span>
-                </div>
-              ))}
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📊 Insights</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Key trends and metrics — know what&apos;s changing before it becomes a problem.</p>
             </div>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Insights will appear here once your data is connected.</p>
-          )}
+          </div>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          <div className="space-y-3">
+            {([
+              { id: 'in1', title: 'Attendance dropped 2.1% vs last week', description: 'Currently 91.9%. Year 3 and Year 5 showing the biggest dip.', impact: 'high' as const, category: 'Attendance', source: 'MIS' },
+              { id: 'in2', title: 'SEND cohort now 22.3% of roll', description: 'Above national average of 18.1%. EHCP requests up 3 this term.', impact: 'high' as const, category: 'SEND', source: 'SEND Register' },
+              { id: 'in3', title: 'Budget variance of £4,200 in Premises', description: 'Heating costs higher than forecast. Review recommended.', impact: 'medium' as const, category: 'Finance', source: 'Finance' },
+              { id: 'in4', title: 'Year 6 SATs prep: 67% of intervention sessions complete', description: 'On track but 4 pupils need additional support sessions.', impact: 'medium' as const, category: 'Curriculum', source: 'Curriculum' },
+            ]).map(insight => {
+              const impactColors = insight.impact === 'high'
+                ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
+                : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+              return (
+                <div key={insight.id} className="rounded-2xl p-5 transition-all"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{insight.impact.toUpperCase()} IMPACT</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{insight.category}</span>
+                      </div>
+                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{insight.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{insight.description}</p>
+                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {insight.source}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#7C3AED' }}>
+                        View detail →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
       {/* TAB: Don't Miss */}
       {activeTab === 'dont-miss' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>🔴 Don't Miss</h3>
-          {demoDataActive ? (
-            <div className="space-y-2">
-              {[
-                { text: 'EHCP annual review overdue — 2 students', level: 'critical' },
-                { text: 'DBS expiry — 1 staff member in 7 days', level: 'critical' },
-                { text: 'Ofsted data return due Friday', level: 'warning' },
-                { text: 'Year 6 SATs prep — resources not uploaded', level: 'warning' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${item.level === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, borderLeft: `3px solid ${item.level === 'critical' ? '#EF4444' : '#F59E0B'}` }}>
-                  <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.text}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded ml-auto flex-shrink-0" style={{ backgroundColor: item.level === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: item.level === 'critical' ? '#F87171' : '#FBBF24' }}>
-                    {item.level === 'critical' ? 'Critical' : 'Warning'}
-                  </span>
+        <div className="max-w-4xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+          {true ? (
+            <div className="space-y-3">
+              {([
+                { id: 'dm1', title: 'Ofsted data return due in 3 days', description: 'Annual census data must be submitted to Ofsted portal by Friday.', effort: '1min', category: 'Compliance', action: 'Submit now', source: 'DfE' },
+                { id: 'dm2', title: 'SCR check outstanding for 1 new staff member', description: 'Started 2 weeks ago. Single Central Record incomplete.', effort: '2min', category: 'Safeguarding', action: 'Complete SCR', source: 'SCR' },
+                { id: 'dm3', title: 'Grant claim deadline: Tomorrow 5pm', description: 'PE & Sport Premium claim worth £18,500 must be submitted.', effort: '5min', category: 'Finance', action: 'Open claim', source: 'Finance' },
+                { id: 'dm4', title: '3 staff DBS renewals overdue', description: 'All 3 exceeded 3-year renewal window. Action required immediately.', effort: '2min', category: 'HR', action: 'Review now', source: 'HR' },
+              ]).map(item => (
+                <div key={item.id} className="rounded-2xl p-5 transition-all"
+                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {item.effort}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+                      </div>
+                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.description}</p>
+                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#7C3AED' }}>
+                        {item.action} →
+                      </button>
+                      <button className="px-4 py-2 text-xs rounded-xl transition-colors"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                        Mark done
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Alerts and reminders will appear here once your data is connected.</p>
-          )}
+          ) : null}
         </div>
       )}
 
       {/* TAB: Staff */}
-      {activeTab === 'staff' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="font-bold text-sm mb-4" style={{ color: '#F9FAFB' }}>👥 Staff Overview</h3>
-          {demoDataActive ? (
-          <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {[
-              { label: 'Staff in today', value: '4 / 6', color: '#0D9488' },
-              { label: 'On cover', value: '1', color: '#F59E0B' },
-              { label: 'CPD due this term', value: '3 staff', color: '#A78BFA' },
-              { label: 'Reviews this week', value: '2', color: '#60A5FA' },
-            ].map(s => (
-              <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</p>
-                <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
-              </div>
+      {activeTab === 'staff' && (() => {
+        const SCHOOL_STAFF = [
+          { name: 'Sarah Mitchell', role: 'Headteacher', dept: 'SLT', initials: 'SM', color: '#0D9488', status: 'available', email: 'headteacher@oakridge.edu', level: 1, stats: { TEA: 92, COM: 95, PLA: 88, ENG: 91, WEL: 86, EXP: 97 }, overall: 94 },
+          { name: 'James Okafor', role: 'Deputy Head', dept: 'SLT', initials: 'JO', color: '#6D28D9', status: 'available', email: 'deputy@oakridge.edu', level: 2, stats: { TEA: 89, COM: 91, PLA: 85, ENG: 88, WEL: 90, EXP: 82 }, overall: 88 },
+          { name: 'Emma Clarke', role: 'SENCO', dept: 'SEND', initials: 'EC', color: '#EC4899', status: 'in-meeting', email: 'senco@oakridge.edu', level: 2, stats: { TEA: 84, COM: 92, PLA: 90, ENG: 79, WEL: 95, EXP: 86 }, overall: 87 },
+          { name: 'Tom Bradley', role: 'Year 6 Teacher', dept: 'Teaching', initials: 'TB', color: '#3B82F6', status: 'available', email: 'tbradley@oakridge.edu', level: 3, stats: { TEA: 86, COM: 82, PLA: 91, ENG: 93, WEL: 78, EXP: 74 }, overall: 84 },
+          { name: 'Priya Patel', role: 'DSL', dept: 'Safeguarding', initials: 'PP', color: '#EF4444', status: 'available', email: 'dsl@oakridge.edu', level: 2, stats: { TEA: 81, COM: 94, PLA: 77, ENG: 85, WEL: 92, EXP: 88 }, overall: 86 },
+          { name: 'Mark Davis', role: 'Business Manager', dept: 'Admin', initials: 'MD', color: '#F59E0B', status: 'away', email: 'bursar@oakridge.edu', level: 2, stats: { TEA: 78, COM: 85, PLA: 93, ENG: 72, WEL: 80, EXP: 91 }, overall: 83 },
+        ]
+        const statusC: Record<string, { dot: string; label: string }> = { available: { dot: '#22C55E', label: 'Available' }, 'in-meeting': { dot: '#F59E0B', label: 'In meeting' }, away: { dot: '#6B7280', label: 'Away' } }
+        return (
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'org' as const, label: '🏢 Org Chart' }, { id: 'info' as const, label: '🃏 Staff Info' }, { id: 'school' as const, label: '📋 School Info' }].map(t => (
+              <button key={t.id} onClick={() => setStaffSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: staffSubTab === t.id ? '#0D9488' : '#111318', color: staffSubTab === t.id ? '#F9FAFB' : '#6B7280', border: staffSubTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
             ))}
           </div>
-          </>
-          ) : (
-            <p className="text-sm py-6 text-center" style={{ color: '#6B7280' }}>Staff data will appear here once imported or synced from your MIS.</p>
+
+          {/* AI suggestions banner */}
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-0" style={{ backgroundColor: 'rgba(108,63,197,0.08)', border: '1px solid rgba(108,63,197,0.2)' }}>
+            <span>🔗</span>
+            <span className="text-sm" style={{ color: '#A78BFA' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          </div>
+
+          {/* STAFF TODAY */}
+          {staffSubTab === 'today' && (
+            <>
+              <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{SCHOOL_STAFF.filter(s => s.status === 'available').length} available · {SCHOOL_STAFF.filter(s => s.status !== 'available').length} away/busy</p></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {SCHOOL_STAFF.map(m => (
+                  <div key={m.name} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start gap-3">
+                      <div className="relative shrink-0">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.initials}</div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: statusC[m.status]?.dot || '#6B7280', borderColor: '#111318' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-sm" style={{ color: '#E5E7EB' }}>{m.name}</span>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p>
+                        <span className="text-xs font-medium" style={{ color: statusC[m.status]?.dot || '#6B7280' }}>{statusC[m.status]?.label || m.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ORG CHART */}
+          {staffSubTab === 'org' && (
+            <div>
+              <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Organisation Chart</h2>
+              <div className="flex justify-center mb-6">
+                <div className="rounded-xl p-4 text-center w-48" style={{ backgroundColor: '#111318', border: '2px solid #0D9488' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>SM</div>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Sarah Mitchell</p>
+                  <p className="text-[10px]" style={{ color: '#0D9488' }}>Headteacher</p>
+                </div>
+              </div>
+              <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
+              <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '70%' }} /></div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {SCHOOL_STAFF.filter(s => s.level >= 2).map(m => (
+                  <div key={m.name} className="flex flex-col items-center">
+                    <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
+                    <div className="rounded-xl p-3 text-center w-full" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.initials}</div>
+                      <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
+                      <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.role}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* STAFF INFO — FIFA/Panini cards (identical to business portal Team Info) */}
+          {staffSubTab === 'info' && (() => {
+            const SCHOOL_DEMO_STAFF: StaffRecord[] = [
+              { first_name: 'Sarah', last_name: 'Mitchell', job_title: 'Headteacher', department: 'Leadership', email: 'headteacher@oakridge.edu' },
+              { first_name: 'James', last_name: 'Okafor', job_title: 'Deputy Head', department: 'Leadership', email: 'deputy@oakridge.edu' },
+              { first_name: 'Emma', last_name: 'Clarke', job_title: 'SENCO', department: 'HR', email: 'senco@oakridge.edu' },
+              { first_name: 'Tom', last_name: 'Bradley', job_title: 'Year 6 Teacher', department: 'Support', email: 'tbradley@oakridge.edu' },
+              { first_name: 'Priya', last_name: 'Patel', job_title: 'DSL', department: 'Support', email: 'dsl@oakridge.edu' },
+              { first_name: 'Mark', last_name: 'Davis', job_title: 'Business Manager', department: 'Finance', email: 'bursar@oakridge.edu' },
+            ]
+            return (
+              <div className="space-y-4">
+                <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Info</h2>
+                <div className={`grid gap-4 justify-items-center ${getGridCols(SCHOOL_DEMO_STAFF.length)}`}>
+                  {SCHOOL_DEMO_STAFF.map((s, i) => (
+                    <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => {}} teamSize={SCHOOL_DEMO_STAFF.length} />
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* SCHOOL INFO */}
+          {staffSubTab === 'school' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>School Info</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>School Details</p>
+                  {[['School Name', schoolName || 'Oakridge Primary'], ['Type', 'Community Primary'], ['URN', '114286'], ['Ofsted Rating', 'Good (2023)'], ['Pupils on Roll', '412'], ['Staff', '41'], ['Address', 'Oakridge Lane, London SE15']].map(([l, v]) => (
+                    <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+                  ))}
+                </div>
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+                  {[['Headteacher', 'Sarah Mitchell'], ['Deputy Head', 'James Okafor'], ['SENCO', 'Emma Clarke'], ['DSL', 'Priya Patel'], ['Business Manager', 'Mark Davis'], ['Chair of Governors', 'Dr Helen Wright']].map(([r, n]) => (
+                    <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
-      )}
+        )
+      })()}
 
       {/* Stats row + Attendance + Workflows + Compliance — demo data only */}
       {demoDataActive ? (

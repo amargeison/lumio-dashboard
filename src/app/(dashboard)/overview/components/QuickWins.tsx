@@ -19,8 +19,8 @@ const MOCK_WINS: QuickWin[] = [
   { id: '1', title: 'Chase Bramble Hill Trust invoice', description: 'Invoice #1047 is 30 days overdue. One click fires the AC-03 chase sequence automatically.', impact: 'high', effort: '2min', category: 'Finance', action: 'Run AC-03 chase', source: 'Xero', done: false },
   { id: '2', title: 'Whitestone College is RAG Red', description: 'Health score dropped to 34 — below your 40-point alert threshold. Send check-in now.', impact: 'high', effort: '2min', category: 'Customer Success', action: 'Send check-in email', source: 'CS-01', done: false },
   { id: '3', title: '3 LinkedIn messages unanswered', description: 'Two from potential customers who viewed your pricing page. One from a supplier.', impact: 'medium', effort: '5min', category: 'Sales', action: 'Open LinkedIn', actionUrl: 'https://linkedin.com/messaging', source: 'LinkedIn', done: false },
-  { id: '4', title: 'Approve 2 pending leave requests', description: 'Emma Clarke (2 days) and Noah Thomas (1 day) are waiting for approval.', impact: 'medium', effort: '2min', category: 'HR', action: 'Review requests', source: 'HR workflows', done: false },
-  { id: '5', title: 'New trial signup needs follow-up', description: 'Signed up 18 hours ago — no activity yet. Send personal check-in.', impact: 'high', effort: '2min', category: 'Sales', action: 'Send check-in', source: 'Demo system', done: false },
+  { id: '4', title: 'Campaign email not sent this week', description: 'Weekly nurture sequence missed — 340 contacts waiting.', impact: 'medium', effort: '5min', category: 'Marketing', action: 'Send now', source: 'HubSpot', done: false },
+  { id: '5', title: 'Team expenses pending approval', description: '4 staff expense claims submitted over 5 days ago.', impact: 'medium', effort: '10min', category: 'Operations', action: 'Review claims', source: 'Xero', done: false },
 ]
 
 const IMPACT_BADGE = {

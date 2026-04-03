@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Mail, Calendar, ExternalLink, Search } from 'lucide-react'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 interface TeamMember {
   id: string; name: string; role: string; department: string; avatar: string
@@ -21,37 +22,47 @@ const SC = {
 const DEPT_COLORS: Record<string, string> = { Executive: '#0D9488', Sales: '#8B5CF6', Marketing: '#F59E0B', Finance: '#3B82F6', HR: '#22C55E', IT: '#EF4444' }
 
 const TEAM: TeamMember[] = [
-  { id: '0', name: 'Arron Margeison', role: 'CEO & Founder', department: 'Executive', avatar: 'AM', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'arron@lumiocms.com', level: 1 },
-  { id: '1', name: 'Sarah Mitchell', role: 'Head of HR', department: 'HR', avatar: 'SM', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sarah@lumiocms.com', managerId: '0', level: 2 },
-  { id: '2', name: 'Oliver Bennett', role: 'Head of Sales', department: 'Sales', avatar: 'OB', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'oliver@lumiocms.com', managerId: '0', level: 2 },
-  { id: '3', name: 'George Harrison', role: 'Head of Finance', department: 'Finance', avatar: 'GH', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'george@lumiocms.com', managerId: '0', level: 2 },
-  { id: '4', name: 'Alexander Jones', role: 'Head of IT', department: 'IT', avatar: 'AJ', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'alex@lumiocms.com', managerId: '0', level: 2 },
-  { id: '5', name: 'Charlotte Davies', role: 'Senior AE', department: 'Sales', avatar: 'CD', status: 'wfh', todayFocus: 'Oakridge Schools demo', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'charlotte@lumiocms.com', managerId: '2', level: 3 },
-  { id: '6', name: 'James Okafor', role: 'Sales Dev Rep', department: 'Sales', avatar: 'JO', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'james@lumiocms.com', managerId: '2', level: 3 },
-  { id: '7', name: 'Sophia Brown', role: 'Head of Marketing', department: 'Marketing', avatar: 'SB', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'sophia@lumiocms.com', managerId: '0', level: 2 },
-  { id: '8', name: 'Tom Ashworth', role: 'Content Lead', department: 'Marketing', avatar: 'TA', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'tom@lumiocms.com', managerId: '7', level: 3 },
-  { id: '9', name: 'Priya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'PK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'priya@lumiocms.com', managerId: '1', level: 3 },
+  { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Executive', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
+  { id: '1', name: 'Sophie Brennan', role: 'Head of HR', department: 'HR', avatar: 'SB', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sophie@company.com', managerId: '0', level: 2 },
+  { id: '2', name: 'Marcus Webb', role: 'Head of Sales', department: 'Sales', avatar: 'MW', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'marcus@company.com', managerId: '0', level: 2 },
+  { id: '3', name: 'Tom Fielding', role: 'Head of Finance', department: 'Finance', avatar: 'TF', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'tom@company.com', managerId: '0', level: 2 },
+  { id: '4', name: 'Claire Donovan', role: 'Head of IT', department: 'IT', avatar: 'CD', status: 'active', todayFocus: 'IT provisioning backlog', openTasks: 2, alerts: 0, recentActivity: 'IT-01 complete', relationship: 'Direct report', email: 'claire@company.com', managerId: '0', level: 2 },
+  { id: '5', name: 'Rachel Osei', role: 'Senior AE', department: 'Sales', avatar: 'RO', status: 'wfh', todayFocus: 'Client demo prep', openTasks: 4, alerts: 0, recentActivity: 'Proposal sent', relationship: 'Same department', email: 'rachel@company.com', managerId: '2', level: 3 },
+  { id: '6', name: 'Ben Holloway', role: 'Sales Dev Rep', department: 'Sales', avatar: 'BH', status: 'active', todayFocus: 'Cold outreach sequence', openTasks: 3, alerts: 0, recentActivity: '8 calls made', relationship: 'Same department', email: 'ben@company.com', managerId: '2', level: 3 },
+  { id: '7', name: 'Leah Thornton', role: 'Head of Marketing', department: 'Marketing', avatar: 'LT', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'leah@company.com', managerId: '0', level: 2 },
+  { id: '8', name: 'Nate Crawford', role: 'Content Lead', department: 'Marketing', avatar: 'NC', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'nate@company.com', managerId: '7', level: 3 },
+  { id: '9', name: 'Anya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'AK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'anya@company.com', managerId: '1', level: 3 },
 ]
 
 const POLICIES = [
   { icon: '📋', title: 'Staff Handbook', desc: 'Employment policies, conduct, benefits', content: 'This Staff Handbook sets out the policies and procedures for all employees. It covers employment terms, code of conduct, disciplinary procedures, grievance processes and employee benefits. All staff are expected to familiarise themselves with this document within their first week.\n\nKey points:\n• Standard working hours: 9am-5:30pm, flexible start between 8-10am\n• Annual leave: 25 days + bank holidays\n• Probation period: 3 months for all new starters\n• Notice period: 1 month (3 months for senior roles)\n\nLast updated: January 2026' },
   { icon: '🏖️', title: 'Leave & Holiday Policy', desc: 'Annual leave, booking, blackout dates', content: 'Annual leave allowance is 25 days per year plus 8 bank holidays. Leave must be booked at least 2 weeks in advance for periods over 3 days. Maximum 2 consecutive weeks. December 20-31 is a blackout period — no leave unless pre-approved by CEO.\n\nCarry over: up to 5 days may be carried to the next year.\nBuy/sell: you may buy up to 3 additional days or sell up to 3 days.\n\nLast updated: March 2026' },
-  { icon: '🏥', title: 'Health & Wellbeing', desc: 'Mental health, EAP, sick leave', content: 'We provide an Employee Assistance Programme (EAP) through Health Assured, available 24/7. All employees have access to 6 free counselling sessions per year. Mental health first aiders: Sarah Mitchell, Priya Kapoor.\n\nSick leave: statutory sick pay from day 4. Enhanced: full pay for first 10 days, half pay for days 11-20.\n\nLast updated: February 2026' },
-  { icon: '🔒', title: 'Data & Security', desc: 'GDPR, data handling, passwords', content: 'All company data must be handled in accordance with UK GDPR. Personal data is stored in UK data centres only. Passwords must be minimum 12 characters. Two-factor authentication is mandatory for all systems.\n\nData breach reporting: notify IT immediately, then DPO within 2 hours.\nDPO: Alexander Jones (alex@lumiocms.com)\n\nLast updated: January 2026' },
+  { icon: '🏥', title: 'Health & Wellbeing', desc: 'Mental health, EAP, sick leave', content: 'We provide an Employee Assistance Programme (EAP) through Health Assured, available 24/7. All employees have access to 6 free counselling sessions per year. Mental health first aiders: Sophie Brennan, Anya Kapoor.\n\nSick leave: statutory sick pay from day 4. Enhanced: full pay for first 10 days, half pay for days 11-20.\n\nLast updated: February 2026' },
+  { icon: '🔒', title: 'Data & Security', desc: 'GDPR, data handling, passwords', content: 'All company data must be handled in accordance with UK GDPR. Personal data is stored in UK data centres only. Passwords must be minimum 12 characters. Two-factor authentication is mandatory for all systems.\n\nData breach reporting: notify IT immediately, then DPO within 2 hours.\nDPO: Claire Donovan (claire@company.com)\n\nLast updated: January 2026' },
   { icon: '💰', title: 'Expenses Policy', desc: 'Claims, limits, deadlines', content: 'Expenses must be submitted within 30 days of being incurred. Receipts required for all claims over £10. Approval: line manager for claims under £200, Finance for £200+.\n\nLimits: meals £25pp, hotels £150/night (London £200), mileage 45p/mile.\nPayment: processed in next payroll cycle after approval.\n\nLast updated: March 2026' },
   { icon: '🎓', title: 'Learning & Development', desc: 'Training budget, study leave', content: 'Each employee has a £1,000 annual L&D budget. This can be used for courses, conferences, books or certifications. Study leave: up to 5 days per year for approved qualifications.\n\nRequest process: discuss with manager → submit L&D form → Finance approval.\n\nLast updated: January 2026' },
 ]
 
 const BIRTHDAYS = [
-  { name: 'James Okafor', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
-  { name: 'Charlotte Davies', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
-  { name: 'Tom Ashworth', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
+  { name: 'Ben Holloway', event: 'Birthday', date: '4 Apr', emoji: '🎂' },
+  { name: 'Rachel Osei', event: '2 year anniversary', date: '7 Apr', emoji: '🎉' },
+  { name: 'Nate Crawford', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
 ]
 
-type SubTab = 'today' | 'orgchart' | 'company'
+const DEMO_STAFF: StaffRecord[] = [
+  { first_name: 'James', last_name: 'Hartley', job_title: 'CEO & Founder', department: 'Executive', email: 'james@lumiodemo.com' },
+  { first_name: 'Sophie', last_name: 'Brennan', job_title: 'Marketing Director', department: 'Marketing', email: 'sophie@lumiodemo.com' },
+  { first_name: 'Marcus', last_name: 'Webb', job_title: 'Sales Director', department: 'Sales', email: 'marcus@lumiodemo.com' },
+  { first_name: 'Rachel', last_name: 'Osei', job_title: 'Operations Manager', department: 'Operations', email: 'rachel@lumiodemo.com' },
+  { first_name: 'Tom', last_name: 'Fielding', job_title: 'Support Lead', department: 'Support', email: 'tom@lumiodemo.com' },
+  { first_name: 'Claire', last_name: 'Donovan', job_title: 'IT Director', department: 'IT', email: 'claire@lumiodemo.com' },
+]
+
+type SubTab = 'today' | 'orgchart' | 'company' | 'cards'
 
 export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] } = {}) {
-  const [team, setTeam] = useState<TeamMember[]>(TEAM)
+  const isDemo = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
+  const [team, setTeam] = useState<TeamMember[]>(isDemo ? TEAM : [])
   const [filter, setFilter] = useState<string>('all')
   const [subTab, setSubTab] = useState<SubTab>('today')
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
@@ -96,13 +107,70 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
     <div className="max-w-5xl space-y-4">
       {/* Sub-tabs */}
       <div className="flex gap-2">
-        {[{ id: 'today' as SubTab, label: '👥 Team Today' }, { id: 'orgchart' as SubTab, label: '🏢 Org Chart' }, { id: 'company' as SubTab, label: '📋 Company Info' }].map(t => (
+        {[{ id: 'today' as SubTab, label: '👥 Team Today' }, { id: 'orgchart' as SubTab, label: '🏢 Org Chart' }, { id: 'cards' as SubTab, label: '🃏 Team Info' }, { id: 'company' as SubTab, label: '📋 Company Info' }].map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: subTab === t.id ? '#7C3AED' : '#111318', color: subTab === t.id ? '#F9FAFB' : '#6B7280', border: subTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
         ))}
       </div>
 
+      {/* ═══ PREVIEW OVERLAY — shown when no real team data ═══ */}
+      {team.length === 0 && subTab !== 'company' && (
+        <div className="relative">
+          {/* Ghost preview at reduced opacity */}
+          <div style={{ opacity: 0.35, filter: 'blur(1px)', pointerEvents: 'none', userSelect: 'none' }}>
+            {subTab === 'today' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {TEAM.slice(0, 6).map(m => {
+                  const sc = SC[m.status]
+                  return (
+                    <div key={m.id} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start gap-3">
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: sc.dot, borderColor: '#111318' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-sm" style={{ color: '#E5E7EB' }}>{m.name}</span>
+                          <p className="text-xs" style={{ color: '#6B7280' }}>{m.role} · {m.department}</p>
+                          <span className="text-xs" style={{ color: sc.color }}>{sc.label}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {subTab === 'orgchart' && (
+              <div className="space-y-4">
+                <div className="flex justify-center"><div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', width: 180 }}><div className="w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2" style={{ backgroundColor: '#0D948815', color: '#0D9488' }}>JH</div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>James Hartley</p><p className="text-xs" style={{ color: '#6B7280' }}>CEO & Founder</p></div></div>
+                <div className="flex justify-center gap-3">{TEAM.filter(m => m.level === 2).slice(0, 4).map(m => <div key={m.id} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', width: 140 }}><div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div><p className="text-xs font-medium" style={{ color: '#D1D5DB' }}>{m.name}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</p></div>)}</div>
+              </div>
+            )}
+            {subTab === 'cards' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {DEMO_STAFF.map((s, i) => (
+                  <div key={i} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between mb-3"><div><p className="text-2xl font-black" style={{ color: '#6B7280' }}>93</p><p className="text-[10px]" style={{ color: '#4B5563' }}>CEO</p></div><div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{s.first_name?.[0]}{s.last_name?.[0]}</div></div>
+                    <p className="text-sm font-bold" style={{ color: '#9CA3AF' }}>{s.first_name} {s.last_name}</p>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{s.job_title}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Overlay banner */}
+          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+            <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', maxWidth: 400, border: '1px solid #1F2937' }}>
+              <p className="text-2xl mb-2">👀</p>
+              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>This is how your team will look</h3>
+              <p className="text-xs mb-4" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>Import your team to unlock your org chart, staff cards and team intelligence</p>
+              <a href="/settings" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', textDecoration: 'none' }}>Import Team →</a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ TEAM TODAY ═══ */}
-      {subTab === 'today' && <>
+      {subTab === 'today' && team.length > 0 && <>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{filtered.length} people{activeDeptNames ? ` (filtered by ${selectedDepts?.length} departments)` : ''} · {team.filter(m => m.status === 'holiday' || m.status === 'sick').length} out · {team.filter(m => m.alerts > 0).length} with alerts</p></div>
           <div className="flex gap-1 flex-wrap items-center">
@@ -139,14 +207,14 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       </>}
 
       {/* ═══ ORG CHART ═══ */}
-      {subTab === 'orgchart' && (
+      {subTab === 'orgchart' && team.length > 0 && (
         <div>
           <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Organisation Chart</h2>
           {/* CEO */}
           <div className="flex justify-center mb-8">
             <div onClick={() => setSelectedMember(TEAM[0])} className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #0D9488' }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>AM</div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Arron Margeison</p>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>James Hartley</p>
               <p className="text-[10px]" style={{ color: '#0D9488' }}>CEO & Founder</p>
             </div>
           </div>
@@ -184,6 +252,18 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
         </div>
       )}
 
+      {/* ═══ TEAM INFO (FIFA CARDS — same component as live) ═══ */}
+      {subTab === 'cards' && team.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+          <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`}>
+            {DEMO_STAFF.map((s, i) => (
+              <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => setSelectedMember(team.find(t => t.name.includes(s.last_name || '')) || null)} teamSize={DEMO_STAFF.length} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ═══ COMPANY INFO ═══ */}
       {subTab === 'company' && (
         <div className="space-y-6">
@@ -213,7 +293,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['CEO', 'Arron Margeison'], ['HR', 'Sarah Mitchell'], ['IT Support', 'Alexander Jones'], ['Finance', 'George Harrison']].map(([r, n]) => (
+              {[['CEO', 'James Hartley'], ['HR', 'Sophie Brennan'], ['IT Support', 'Claire Donovan'], ['Finance', 'Marcus Webb']].map(([r, n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>

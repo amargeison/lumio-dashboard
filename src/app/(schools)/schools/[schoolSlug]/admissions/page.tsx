@@ -129,14 +129,10 @@ export default function AdmissionsPage() {
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Applications pipeline, open days, waiting list and parent communications</p>
       </div>
 
-      <DeptAISummary dept="admissions" portal="schools" />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Applications" value="47" sub="2026 entry" />
-        <StatCard label="Offers Made" value="38" sub="81% of applications" />
-        <StatCard label="Waiting List" value="9" sub="Remaining" />
-        <StatCard label="Open Day Registrations" value="34" sub="Next Sat 29 Mar" />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="admissions" portal="schools" />
+        <AIHighlights items={aiHighlights} />
       </div>
 
       {/* Quick Actions */}
@@ -149,8 +145,13 @@ export default function AdmissionsPage() {
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
-      {/* AI Highlights */}
-      <AIHighlights items={aiHighlights} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Applications" value="47" sub="2026 entry" />
+        <StatCard label="Offers Made" value="38" sub="81% of applications" />
+        <StatCard label="Waiting List" value="9" sub="Remaining" />
+        <StatCard label="Open Day Registrations" value="34" sub="Next Sat 29 Mar" />
+      </div>
 
       {/* Pipeline Summary */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

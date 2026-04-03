@@ -346,7 +346,7 @@ export default function SchoolSettingsPage() {
                 setDemoDataActive(true)
               }
               setDemoLoading(false)
-              window.location.reload()
+              window.location.href = `/schools/${schoolSlug}`
             }}
             disabled={demoLoading}
             className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all"

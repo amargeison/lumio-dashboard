@@ -159,10 +159,11 @@ export default function CurriculumPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Lesson plans, assessments, parents evening and curriculum events</p>
       </div>
 
-      <DeptAISummary dept="curriculum" portal="schools" />
-
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="curriculum" portal="schools" />
+        <AIHighlights items={HIGHLIGHTS} />
+      </div>
 
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Clock, UserPlus, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Clock } from 'lucide-react'
 import DataConnectionsModal from './DataConnectionsModal'
 import { invalidateWorkspaceCache } from '@/hooks/useWorkspace'
 
@@ -25,13 +24,14 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
+    localStorage.removeItem('lumio-photo-frame')
     invalidateWorkspaceCache()
     window.location.reload()
   }
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 40, zIndex: 9999, backgroundColor: '#0D9488', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 13 }}>
         <div className="flex items-center gap-2">
           <Clock size={13} />
           <span className="font-medium">Demo workspace — exploring with sample data</span>
@@ -44,12 +44,10 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
           <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
             Clear Demo Data
           </button>
-          <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-            Buy <ArrowRight size={11} className="inline" />
-          </Link>
           <button onClick={() => setDismissed(true)} className="opacity-70 hover:opacity-100">✕</button>
         </div>
       </div>
+      <div style={{ height: 40, flexShrink: 0 }} />
       {showModal && <DataConnectionsModal onClose={() => setShowModal(false)} variant={variant} />}
     </>
   )
