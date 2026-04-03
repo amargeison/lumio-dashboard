@@ -27,7 +27,7 @@ import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
-import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView } from '@/components/football/IntegrationViews'
+import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView, FindClubView, FindPlayerView } from '@/components/football/IntegrationViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -42,6 +42,7 @@ type DeptId =
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
   | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
+  | 'find-club' | 'find-player'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -105,6 +106,8 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
   { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
   { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
+  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Integrations' },
+  { id: 'find-player', label: 'Find Player',    icon: Users,          section: 'Integrations' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -5451,6 +5454,8 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
             {activeDept === 'opta' && <OptaStatsBombView />}
+            {activeDept === 'find-club' && <FindClubView />}
+            {activeDept === 'find-player' && <FindPlayerView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
         </div>
