@@ -4995,7 +4995,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   // Set default badge when demo is active — state only, no localStorage
   useEffect(() => {
     if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
-      setClubLogo('/badges/afc-wimbledon.svg')
+      setClubLogo('/afc-wimbledon.png')
     } else if (!isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
       setClubLogo(null)
     }
