@@ -26,6 +26,7 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -4958,6 +4959,14 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
           <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
         </div>
       </div>
+
+      {/* Voice Settings */}
+      <VoiceSettings commands={[
+        { phrase: 'Show squad fitness', description: 'Lists fit, injured and suspended players' },
+        { phrase: 'Next fixture', description: 'Shows the next upcoming match' },
+        { phrase: 'Top scorer this season', description: 'Current leading goalscorer' },
+        { phrase: 'Transfer activity', description: 'Latest transfer news and agent messages' },
+      ]} />
 
       {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>

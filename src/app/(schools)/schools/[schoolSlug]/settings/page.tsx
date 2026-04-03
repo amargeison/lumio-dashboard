@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { ExternalLink } from 'lucide-react'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { createClient } from '@supabase/supabase-js'
 
 const VOICES = [
@@ -312,7 +313,19 @@ export default function SchoolSettingsPage() {
         </div>
       </Section>
 
-      {/* Section 9 — Data & Display */}
+      {/* Section 9 — Voice Settings */}
+      <Section title="Voice & Speech">
+        <div className="px-5 py-4">
+          <VoiceSettings commands={[
+            { phrase: 'Show attendance today', description: "Pulls up today's attendance overview" },
+            { phrase: 'Any safeguarding alerts', description: 'Lists open safeguarding concerns' },
+            { phrase: "What's on the timetable", description: "Shows today's schedule" },
+            { phrase: 'Ofsted readiness score', description: 'Current Ofsted readiness rating' },
+          ]} />
+        </div>
+      </Section>
+
+      {/* Section 10 — Data & Display */}
       <Section title="Data & Display">
         <div className="px-5 py-4 space-y-4">
           <div className="flex items-center justify-between">

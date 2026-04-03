@@ -27,6 +27,7 @@ import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
 import Insights from '@/app/(dashboard)/overview/components/Insights'
 import NotToMiss from '@/app/(dashboard)/overview/components/NotToMiss'
 import TeamPanel from '@/app/(dashboard)/overview/components/TeamPanel'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
@@ -2988,6 +2989,21 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Voice & Speech Settings ────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice & Speech</p>
+        </div>
+        <div className="px-5 py-4">
+          <VoiceSettings commands={[
+            { phrase: 'Show my meetings today', description: "Lists today's scheduled meetings" },
+            { phrase: "What's urgent", description: 'Pulls up urgent items across all departments' },
+            { phrase: 'Pipeline summary', description: 'Current sales pipeline overview' },
+            { phrase: 'Team availability', description: 'Shows team status and availability' },
+          ]} />
         </div>
       </div>
 
