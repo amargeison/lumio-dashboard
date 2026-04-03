@@ -1090,11 +1090,11 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
   )
 }
 
-function FifaCard({ p, size = 'pitch', selected, onClick }: { p: { id: string; name: string; pos: string; initials: string; overall: number; color: string; stats: Record<string, number> }; size?: 'pitch' | 'bench'; selected?: boolean; onClick?: () => void }) {
+function FifaCard({ p, size = 'pitch', selected, onClick }: { p: { id: string; name: string; pos: string; initials: string; overall: number; color: string; stats?: Record<string, number> }; size?: 'pitch' | 'bench'; selected?: boolean; onClick?: () => void }) {
   const w = size === 'pitch' ? 64 : 56
   const h = size === 'pitch' ? 80 : 70
   const ratingColor = p.overall >= 80 ? '#F59E0B' : p.overall >= 70 ? '#F9FAFB' : '#6B7280'
-  const topStats = Object.entries(p.stats).slice(0, 3)
+  const topStats = p.stats ? Object.entries(p.stats).slice(0, 3) : []
   return (
     <div onClick={onClick} style={{ width: w, height: h, background: 'linear-gradient(135deg, #0D0D1A 0%, #1a1a2e 100%)', border: selected ? '2px solid #0D9488' : '1px solid rgba(255,255,255,0.1)', borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3px 2px', cursor: onClick ? 'pointer' : 'default', boxShadow: selected ? '0 0 12px #0D9488' : 'none', opacity: size === 'bench' ? 0.7 : 1, transition: 'box-shadow 0.2s, border 0.2s' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 3px' }}>
