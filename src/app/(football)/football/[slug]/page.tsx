@@ -2494,6 +2494,77 @@ function SquadView() {
           </button>
         ))}
       </div>
+
+      {/* ═══ Squad Statistics Panel ═══ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Squad Statistics</h2></div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
+        {[{l:'Total Players',v:'23'},{l:'Average Age',v:'24.8 yrs'},{l:'Avg Rating',v:'81.2'},{l:'Internationals',v:'4'},{l:'Academy Grads',v:'6'},{l:'Contracted >2026',v:'11'}].map(s=>(
+          <div key={s.l} className="rounded-xl p-4 text-center" style={{backgroundColor:'#0D1017',border:'1px solid #1F2937'}}><p className="text-xl font-black" style={{color:'#F9FAFB'}}>{s.v}</p><p className="text-[10px]" style={{color:'#6B7280'}}>{s.l}</p></div>
+        ))}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{backgroundColor:'#0D1017',border:'1px solid #1F2937'}}>
+        <div className="px-5 py-3" style={{borderBottom:'1px solid #1F2937'}}><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>Top Scorers This Season</p></div>
+        <table className="w-full text-xs">
+          <thead><tr style={{borderBottom:'1px solid #1F2937',backgroundColor:'#111318'}}>
+            {['#','Player','Pos','Apps','Goals','Assists','Mins'].map(h=><th key={h} className="text-left py-2 px-4 font-semibold" style={{color:'#6B7280'}}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[{m:'🥇',n:'M. Okafor',p:'ST',a:28,g:16,as:4,mn:'2,340'},{m:'🥈',n:'L. Santos',p:'LW',a:26,g:9,as:7,mn:'2,180'},{m:'🥉',n:'Z. Osei',p:'RW',a:24,g:7,as:5,mn:'1,920'},{m:'',n:'T. Torres',p:'CM',a:30,g:5,as:11,mn:'2,580'},{m:'',n:'B. Hardy',p:'CM',a:28,g:4,as:8,mn:'2,240'}].map(r=>(
+              <tr key={r.n} style={{borderBottom:'1px solid #1F2937'}}>
+                <td className="py-2 px-4">{r.m}</td>
+                <td className="py-2 px-4 font-bold" style={{color:'#F9FAFB'}}>{r.n}</td>
+                <td className="py-2 px-4" style={{color:'#6B7280'}}>{r.p}</td>
+                <td className="py-2 px-4" style={{color:'#9CA3AF'}}>{r.a}</td>
+                <td className="py-2 px-4 font-bold" style={{color:'#22C55E'}}>{r.g}</td>
+                <td className="py-2 px-4" style={{color:'#9CA3AF'}}>{r.as}</td>
+                <td className="py-2 px-4" style={{color:'#6B7280'}}>{r.mn}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl p-5" style={{backgroundColor:'#0D1017',border:'1px solid #1F2937'}}>
+        <p className="text-sm font-bold mb-3" style={{color:'#F9FAFB'}}>Player Ratings Distribution</p>
+        <div className="space-y-2">
+          {[{b:'90+',c:0},{b:'85-89',c:2},{b:'80-84',c:8},{b:'75-79',c:9},{b:'70-74',c:4},{b:'<70',c:0}].map(r=>(
+            <div key={r.b} className="flex items-center gap-3">
+              <span className="text-xs w-12 shrink-0 text-right" style={{color:'#6B7280'}}>{r.b}</span>
+              <div className="flex-1 h-4 rounded" style={{backgroundColor:'#1F2937'}}><div className="h-full rounded" style={{width:`${(r.c/9)*100}%`,backgroundColor:'#6C3FC5',minWidth:r.c>0?4:0}}/></div>
+              <span className="text-xs w-6 font-bold" style={{color:'#F9FAFB'}}>{r.c}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{backgroundColor:'#0D1017',border:'1px solid #1F2937'}}>
+          <p className="text-sm font-bold mb-3" style={{color:'#F9FAFB'}}>Injury & Availability</p>
+          <div className="space-y-2">
+            <div className="flex justify-between"><span className="text-xs" style={{color:'#6B7280'}}>Available</span><span className="text-xs font-bold" style={{color:'#22C55E'}}>19 ✅</span></div>
+            <div className="flex justify-between"><span className="text-xs" style={{color:'#6B7280'}}>Suspended</span><span className="text-xs font-bold" style={{color:'#F59E0B'}}>1 🟡</span></div>
+            <div className="pt-2" style={{borderTop:'1px solid #1F2937'}}>
+              <p className="text-xs font-bold mb-2" style={{color:'#EF4444'}}>Injured (3) 🔴</p>
+              {[{n:'J. Walsh',i:'Hamstring',r:'2 weeks'},{n:'D. Cole',i:'Ankle',r:'4 weeks'},{n:'P. Ryan',i:'Illness',r:'TBC'}].map(p=>(
+                <div key={p.n} className="flex justify-between py-1"><span className="text-xs" style={{color:'#F9FAFB'}}>{p.n} — {p.i}</span><span className="text-[10px]" style={{color:'#6B7280'}}>{p.r}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{backgroundColor:'#0D1017',border:'1px solid #1F2937'}}>
+          <p className="text-sm font-bold mb-3" style={{color:'#F9FAFB'}}>Contract Expiry Timeline</p>
+          <div className="space-y-2">
+            {[{n:'J. Hartley',d:'Jun 2025',c:'#EF4444',u:'🔴'},{n:'M. Cross',d:'Jun 2025',c:'#EF4444',u:'🔴'},{n:'T. Shaw',d:'Dec 2025',c:'#F59E0B',u:'🟡'},{n:'L. Adeyemi',d:'Jun 2026',c:'#22C55E',u:'🟢'}].map(p=>(
+              <div key={p.n} className="flex items-center justify-between rounded-lg px-3 py-2" style={{backgroundColor:'#0A0B10',border:'1px solid #1F2937'}}>
+                <span className="text-xs font-medium" style={{color:'#F9FAFB'}}>{p.n}</span>
+                <span className="text-xs font-bold" style={{color:p.c}}>{p.u} {p.d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
