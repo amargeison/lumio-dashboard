@@ -2119,6 +2119,173 @@ function InsightsView() {
           ))}
         </div>
       </>}
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION A — Performance Charts */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Performance Charts</h2></div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* League Position Trend */}
+        <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20 }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>League Position Trend</p>
+          <svg viewBox="0 0 500 200" width="100%" style={{ overflow: 'visible' }}>
+            {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (<line key={n} x1="40" y1={16*n+4} x2="490" y2={16*n+4} stroke="#1F2937" strokeWidth="0.5" />))}
+            {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (<text key={n} x="30" y={16*n+8} fill="#6B7280" fontSize="9" textAnchor="end">{n}</text>))}
+            {(() => { const pts = [8,7,9,8,7,6,7,6,5,6,6,6]; const coords = pts.map((p,i) => `${40+i*((490-40)/11)},${p*16+4}`); return (<><polyline points={coords.join(' ')} fill="none" stroke="#0D9488" strokeWidth="2.5" strokeLinejoin="round" />{pts.map((p,i) => (<circle key={i} cx={40+i*((490-40)/11)} cy={p*16+4} r={i===11?5:3} fill={i===11?'#F1C40F':'#0D9488'} />))}{pts.map((p,i) => (<text key={`l${i}`} x={40+i*((490-40)/11)} y={196} fill="#6B7280" fontSize="8" textAnchor="middle">GW{i+1}</text>))}</>)})()}
+          </svg>
+          <p className="text-xs mt-2 text-center" style={{ color: '#6B7280' }}>Current: <span style={{ color: '#F1C40F', fontWeight: 700 }}>6th</span></p>
+        </div>
+        {/* Goals For vs Against */}
+        <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20 }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Goals For vs Against</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 180 }}>
+            {[{m:'Aug',f:8,a:5},{m:'Sep',f:11,a:4},{m:'Oct',f:9,a:6},{m:'Nov',f:7,a:5},{m:'Dec',f:12,a:3},{m:'Jan',f:9,a:6},{m:'Feb',f:10,a:5},{m:'Mar',f:8,a:3}].map(d => (
+              <div key={d.m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 160 }}>
+                  <div style={{ width: 14, height: `${(d.f/12)*140}px`, backgroundColor: '#0D9488', borderRadius: '3px 3px 0 0' }} title={`For: ${d.f}`} />
+                  <div style={{ width: 14, height: `${(d.a/12)*140}px`, backgroundColor: '#EF4444', borderRadius: '3px 3px 0 0' }} title={`Against: ${d.a}`} />
+                </div>
+                <span style={{ fontSize: 9, color: '#6B7280' }}>{d.m}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 mt-3 justify-center"><span className="flex items-center gap-1 text-xs" style={{ color: '#0D9488' }}><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#0D9488', display: 'inline-block' }} /> For</span><span className="flex items-center gap-1 text-xs" style={{ color: '#EF4444' }}><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#EF4444', display: 'inline-block' }} /> Against</span></div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION B — Squad Analytics */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Squad Analytics</h2></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Age Distribution */}
+        <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20 }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Age Distribution</p>
+          <svg viewBox="0 0 120 120" width="120" style={{ display: 'block', margin: '0 auto' }}>
+            {(() => { const data = [{v:26,c:'#3B82F6'},{v:35,c:'#0D9488'},{v:26,c:'#8B5CF6'},{v:13,c:'#F59E0B'}]; let acc = 0; return data.map((d,i) => { const start = acc; acc += d.v; const s = (start/100)*Math.PI*2-Math.PI/2; const e = (acc/100)*Math.PI*2-Math.PI/2; const la = d.v > 50 ? 1 : 0; return <path key={i} d={`M${60+40*Math.cos(s)},${60+40*Math.sin(s)} A40,40 0 ${la},1 ${60+40*Math.cos(e)},${60+40*Math.sin(e)} L${60+25*Math.cos(e)},${60+25*Math.sin(e)} A25,25 0 ${la},0 ${60+25*Math.cos(s)},${60+25*Math.sin(s)} Z`} fill={d.c} /> }) })()}
+            <text x="60" y="57" textAnchor="middle" fill="#F9FAFB" fontSize="12" fontWeight="800">23</text>
+            <text x="60" y="69" textAnchor="middle" fill="#6B7280" fontSize="7">Players</text>
+          </svg>
+          <div className="grid grid-cols-2 gap-1 mt-3">{[{l:'U21',c:'#3B82F6',v:'6 (26%)'},{l:'21-25',c:'#0D9488',v:'8 (35%)'},{l:'26-29',c:'#8B5CF6',v:'6 (26%)'},{l:'30+',c:'#F59E0B',v:'3 (13%)'}].map(d => (<div key={d.l} className="flex items-center gap-2"><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: d.c }} /><span className="text-xs" style={{ color: '#9CA3AF' }}>{d.l}: {d.v}</span></div>))}</div>
+        </div>
+        {/* Nationality */}
+        <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20 }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Nationality Breakdown</p>
+          <div className="space-y-2">{[{n:'England',v:39,c:'#0D9488'},{n:'Nigeria',v:13,c:'#3B82F6'},{n:'Brazil',v:9,c:'#22C55E'},{n:'Spain',v:9,c:'#F59E0B'},{n:'Other',v:30,c:'#8B5CF6'}].map(d => (<div key={d.n}><div className="flex justify-between text-xs mb-1"><span style={{ color: '#D1D5DB' }}>{d.n}</span><span style={{ color: '#6B7280' }}>{d.v}%</span></div><div style={{ height: 6, borderRadius: 3, backgroundColor: '#1F2937' }}><div style={{ height: 6, borderRadius: 3, width: `${d.v}%`, backgroundColor: d.c }} /></div></div>))}</div>
+        </div>
+        {/* Contract Status */}
+        <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20 }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Contract Status</p>
+          <svg viewBox="0 0 120 120" width="120" style={{ display: 'block', margin: '0 auto' }}>
+            {(() => { const data = [{v:13,c:'#EF4444'},{v:22,c:'#F59E0B'},{v:39,c:'#22C55E'},{v:26,c:'#0D9488'}]; let acc = 0; return data.map((d,i) => { const start = acc; acc += d.v; const s = (start/100)*Math.PI*2-Math.PI/2; const e = (acc/100)*Math.PI*2-Math.PI/2; const la = d.v > 50 ? 1 : 0; return <path key={i} d={`M${60+40*Math.cos(s)},${60+40*Math.sin(s)} A40,40 0 ${la},1 ${60+40*Math.cos(e)},${60+40*Math.sin(e)} L${60+25*Math.cos(e)},${60+25*Math.sin(e)} A25,25 0 ${la},0 ${60+25*Math.cos(s)},${60+25*Math.sin(s)} Z`} fill={d.c} /> }) })()}
+            <text x="60" y="57" textAnchor="middle" fill="#F9FAFB" fontSize="12" fontWeight="800">23</text>
+            <text x="60" y="69" textAnchor="middle" fill="#6B7280" fontSize="7">Players</text>
+          </svg>
+          <div className="grid grid-cols-2 gap-1 mt-3">{[{l:'<6 months',c:'#EF4444',v:'3'},{l:'6-12 mo',c:'#F59E0B',v:'5'},{l:'1-2 years',c:'#22C55E',v:'9'},{l:'2+ years',c:'#0D9488',v:'6'}].map(d => (<div key={d.l} className="flex items-center gap-2"><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: d.c }} /><span className="text-xs" style={{ color: '#9CA3AF' }}>{d.l}: {d.v}</span></div>))}</div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION C — Financial Intelligence */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Financial Intelligence</h2></div>
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {[{l:'Revenue YTD',v:'£8.2M',s:'vs £9.4M budget (87%)',c:'#F59E0B'},{l:'Wage Bill',v:'£2.52M',s:'Ratio 62%',c:'#0D9488'},{l:'Transfer Spend',v:'£2.1M',s:'Net spend',c:'#3B82F6'},{l:'Matchday Rev',v:'£480K',s:'42% of total',c:'#8B5CF6'},{l:'Commercial',v:'£270K',s:'▲ +18%',c:'#22C55E'},{l:'Cash Reserves',v:'£1.2M',s:'Healthy',c:'#0D9488'}].map(d => (
+          <div key={d.l} style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 16 }}>
+            <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>{d.l}</p>
+            <p className="text-xl font-black mt-1" style={{ color: d.c }}>{d.v}</p>
+            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{d.s}</p>
+          </div>
+        ))}
+      </div>
+      {/* Monthly Revenue */}
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginTop: 16 }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Monthly Revenue (Season)</p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, borderBottom: '1px dashed #374151' }}><span className="text-[8px] absolute -top-3 right-0" style={{ color: '#4B5563' }}>£800K</span></div>
+          {[{m:'Jul',v:580},{m:'Aug',v:720},{m:'Sep',v:680},{m:'Oct',v:650},{m:'Nov',v:590},{m:'Dec',v:710},{m:'Jan',v:680},{m:'Feb',v:660},{m:'Mar',v:700},{m:'Apr',v:0},{m:'May',v:0},{m:'Jun',v:0}].map(d => (
+            <div key={d.m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+              <div style={{ width: '100%', maxWidth: 28, height: d.v > 0 ? `${(d.v/800)*140}px` : 20, backgroundColor: d.v > 0 ? '#0D9488' : 'transparent', border: d.v === 0 ? '1px dashed #374151' : 'none', borderRadius: '3px 3px 0 0' }} />
+              <span style={{ fontSize: 8, color: '#6B7280', marginTop: 4 }}>{d.m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* P&L Table */}
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, overflow: 'hidden', marginTop: 16 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead><tr style={{ backgroundColor: '#111318' }}>{['Category','Budget','Actual','Remaining','Status'].map(h => <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #1F2937' }}>{h}</th>)}</tr></thead>
+          <tbody>{[{c:'Playing staff wages',b:'£2.8M',a:'£2.52M',r:'£280K',s:'✅ Under'},{c:'Transfer fees',b:'£2.5M',a:'£2.1M',r:'£400K',s:'✅ Under'},{c:'Stadium/Operations',b:'£480K',a:'£510K',r:'-£30K',s:'⚠️ Over'},{c:'Academy',b:'£320K',a:'£298K',r:'£22K',s:'✅ Under'},{c:'Commercial/Marketing',b:'£180K',a:'£162K',r:'£18K',s:'✅ Under'},{c:'Medical/Science',b:'£140K',a:'£128K',r:'£12K',s:'✅ Under'}].map((r,i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td style={{ padding: '10px 14px', color: '#F9FAFB', fontWeight: 500 }}>{r.c}</td><td style={{ padding: '10px 14px', color: '#9CA3AF' }}>{r.b}</td><td style={{ padding: '10px 14px', color: '#D1D5DB' }}>{r.a}</td><td style={{ padding: '10px 14px', color: r.r.startsWith('-') ? '#EF4444' : '#22C55E' }}>{r.r}</td><td style={{ padding: '10px 14px' }}>{r.s}</td></tr>))}</tbody>
+        </table>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION D — Match Performance */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Match Performance</h2></div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[{l:'Avg Possession',v:'54%',s:'▲ +3%',c:'#0D9488'},{l:'Shots per Game',v:'14.2',s:'▲ +1.8',c:'#3B82F6'},{l:'xG per Game',v:'1.84',s:'▲ +0.22',c:'#8B5CF6'},{l:'Clean Sheets',v:'11 (34%)',s:'League 4th',c:'#22C55E'}].map(d => (
+          <div key={d.l} style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 16 }}>
+            <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>{d.l}</p>
+            <p className="text-xl font-black mt-1" style={{ color: d.c }}>{d.v}</p>
+            <p className="text-[10px] mt-1" style={{ color: '#22C55E' }}>{d.s}</p>
+          </div>
+        ))}
+      </div>
+      {/* Form heatmap */}
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginTop: 16 }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Last 20 Games</p>
+        <div className="flex flex-wrap gap-1.5">
+          {[{r:'W',s:'2-0'},{r:'W',s:'1-0'},{r:'D',s:'1-1'},{r:'W',s:'3-1'},{r:'L',s:'0-2'},{r:'W',s:'2-0'},{r:'W',s:'2-1'},{r:'W',s:'4-0'},{r:'D',s:'0-0'},{r:'W',s:'1-0'},{r:'L',s:'1-3'},{r:'W',s:'2-1'},{r:'D',s:'2-2'},{r:'W',s:'3-0'},{r:'W',s:'2-0'},{r:'W',s:'1-0'},{r:'L',s:'0-1'},{r:'W',s:'2-0'},{r:'W',s:'3-1'},{r:'D',s:'1-1'}].map((g,i) => (
+            <div key={i} className="flex flex-col items-center" style={{ width: 36 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 6, backgroundColor: g.r === 'W' ? '#22C55E' : g.r === 'D' ? '#F59E0B' : '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff' }}>{g.r}</div>
+              <span style={{ fontSize: 8, color: '#6B7280', marginTop: 2 }}>{g.s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION E — Scouting Pipeline */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Scouting &amp; Recruitment Pipeline</h2></div>
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead><tr style={{ backgroundColor: '#111318' }}>{['Player','Age','Pos','Club','Value','Status'].map(h => <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', borderBottom: '1px solid #1F2937' }}>{h}</th>)}</tr></thead>
+          <tbody>{[{n:'D. Osei',a:22,p:'ST',cl:'Harlow Town',v:'£180K',s:'✅ Signed'},{n:'A. Mensah',a:24,p:'CM',cl:'Braintree',v:'£95K',s:'🔄 Negotiating'},{n:'T. Park',a:21,p:'RB',cl:'Chelmsford',v:'£65K',s:'👁️ Scouting'},{n:'L. Diallo',a:19,p:'LW',cl:'AFC Sudbury',v:'£45K',s:'👁️ Scouting'},{n:'K. Walsh',a:26,p:'CB',cl:'Bishops Stortford',v:'£80K',s:'💬 Interested'},{n:'R. Santos',a:23,p:'GK',cl:'Maldon',v:'£55K',s:'📋 Watching'}].map((r,i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td style={{ padding: '10px 14px', color: '#F9FAFB', fontWeight: 600 }}>{r.n}</td><td style={{ padding: '10px 14px', color: '#9CA3AF' }}>{r.a}</td><td style={{ padding: '10px 14px', color: '#9CA3AF' }}>{r.p}</td><td style={{ padding: '10px 14px', color: '#D1D5DB' }}>{r.cl}</td><td style={{ padding: '10px 14px', color: '#F1C40F' }}>{r.v}</td><td style={{ padding: '10px 14px' }}>{r.s}</td></tr>))}</tbody>
+        </table>
+      </div>
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 16, marginTop: 12 }}>
+        <div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>Summer Budget</span><span className="text-xs" style={{ color: '#6B7280' }}>£500K total · £150K committed · £350K available</span></div>
+        <div style={{ height: 8, borderRadius: 4, backgroundColor: '#1F2937', display: 'flex', overflow: 'hidden' }}><div style={{ width: '30%', backgroundColor: '#0D9488' }} /><div style={{ width: '70%', backgroundColor: '#8B5CF6' }} /></div>
+        <div className="flex gap-4 mt-2">{[{l:'Committed',c:'#0D9488'},{l:'Available',c:'#8B5CF6'}].map(d => <span key={d.l} className="flex items-center gap-1 text-xs" style={{ color: '#6B7280' }}><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: d.c, display: 'inline-block' }} />{d.l}</span>)}</div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION F — Attendance & Fanbase */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div style={{ borderLeft: '3px solid #6C3FC5', paddingLeft: 12, marginBottom: 16, marginTop: 24 }}><h2 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: 0 }}>Attendance &amp; Fanbase</h2></div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[{l:'Season Avg',v:'4,240',s:'/ 6,000 (71%)',c:'#0D9488'},{l:'Season Tickets',v:'1,847',s:'▲ +124 vs last season',c:'#22C55E'},{l:'Highest',v:'5,980',s:'Derby vs Riverside',c:'#F1C40F'},{l:'Lowest',v:'1,240',s:'League Cup R1',c:'#EF4444'}].map(d => (
+          <div key={d.l} style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 16 }}>
+            <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>{d.l}</p>
+            <p className="text-xl font-black mt-1" style={{ color: d.c }}>{d.v}</p>
+            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{d.s}</p>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginTop: 16 }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Home Attendance (10 Games)</p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, borderBottom: '1px dashed #374151' }}><span className="text-[8px] absolute -top-3 right-0" style={{ color: '#4B5563' }}>6,000 cap</span></div>
+          {[{g:'vs Town',v:3800},{g:'vs City',v:4100},{g:'vs Utd',v:4400},{g:'vs Rangers',v:3600},{g:'vs Athletic',v:4800},{g:'vs Vale',v:4200},{g:'vs Borough',v:5100},{g:'vs Rovers',v:3900},{g:'vs FC',v:4500},{g:'vs Riverside',v:5980}].map(d => (
+            <div key={d.g} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+              <div style={{ width: '100%', maxWidth: 32, height: `${(d.v/6000)*140}px`, backgroundColor: '#0D9488', borderRadius: '3px 3px 0 0' }} />
+              <span style={{ fontSize: 7, color: '#6B7280', marginTop: 4, textAlign: 'center', lineHeight: 1.1 }}>{d.g}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
