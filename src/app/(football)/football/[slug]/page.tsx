@@ -1170,8 +1170,8 @@ function TeamInfoTab() {
     if (pitchIdx < 0 || benchIdx < 0) { setSelectedPlayer(null); return }
     const newStarters = [...starters]; const newBench = [...bench]
     const temp = newStarters[pitchIdx]
-    newStarters[pitchIdx] = { ...newBench[benchIdx], id: temp.id }
-    newBench[benchIdx] = { ...temp, id: bench[benchIdx].id }
+    newStarters[pitchIdx] = { ...newBench[benchIdx], id: temp.id, stats: newBench[benchIdx].stats ?? temp.stats }
+    newBench[benchIdx] = { ...temp, id: bench[benchIdx].id, stats: temp.stats ?? newBench[benchIdx].stats }
     setStarters(newStarters); setBench(newBench)
     setSelectedPlayer(null); setSwapToast(true)
     setTimeout(() => setSwapToast(false), 1500)
