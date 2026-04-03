@@ -880,12 +880,13 @@ function FixturesPanel() {
 // ─── Photo Frame ─────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
+  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80',
 ]
 
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true' ? DEMO_PHOTOS : [] })
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && (localStorage.getItem('lumio_demo_active') === 'true' || localStorage.getItem('lumio_football_demo_active') === 'true') ? DEMO_PHOTOS : [] })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
@@ -1101,7 +1102,9 @@ function FifaCard({ p, size = 'pitch', selected, onClick }: { p: { id: string; n
         <span style={{ fontSize: size === 'pitch' ? 13 : 11, fontWeight: 900, color: ratingColor, lineHeight: 1 }}>{p.overall}</span>
         <span style={{ fontSize: 7, fontWeight: 700, color: p.color }}>{p.pos}</span>
       </div>
-      <div style={{ width: size === 'pitch' ? 28 : 24, height: size === 'pitch' ? 28 : 24, borderRadius: '50%', backgroundColor: `${p.color}30`, border: `1.5px solid ${p.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size === 'pitch' ? 9 : 8, fontWeight: 800, color: p.color, margin: '2px 0' }}>{p.initials}</div>
+      <div style={{ width: size === 'pitch' ? 28 : 24, height: size === 'pitch' ? 28 : 24, borderRadius: '50%', backgroundColor: `${p.color}30`, border: `1.5px solid ${p.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size === 'pitch' ? 9 : 8, fontWeight: 800, color: p.color, margin: '2px 0', overflow: 'hidden' }}>
+        <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.name)}&backgroundColor=${p.color.replace('#', '')}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = p.initials }} />
+      </div>
       <span style={{ fontSize: size === 'pitch' ? 8 : 7, fontWeight: 700, color: '#F9FAFB', textAlign: 'center', lineHeight: 1.1, maxWidth: w - 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name.split(' ').pop()}</span>
       <div style={{ display: 'flex', gap: 2, marginTop: 'auto' }}>
         {topStats.map(([k, v]) => (<div key={k} style={{ textAlign: 'center' }}><div style={{ fontSize: 8, fontWeight: 700, color: '#F9FAFB' }}>{v}</div><div style={{ fontSize: 6, color: '#6B7280' }}>{k}</div></div>))}
