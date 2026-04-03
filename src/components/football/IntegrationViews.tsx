@@ -429,3 +429,133 @@ export function FindPlayerView() {
     </div>
   )
 }
+
+// ─── FOOTBALL PYRAMID VIEW ───────────────────────────────────────────────────
+export function FootballPyramidView() {
+  const [selectedTier, setSelectedTier] = useState<number | null>(null)
+  const [selectedClub, setSelectedClub] = useState<string | null>(null)
+  const [squadData, setSquadData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+
+  const pyramid = [
+    { tier: 1, name: 'Premier League', clubs: ['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton & Hove Albion','Chelsea','Crystal Palace','Everton','Fulham','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Tottenham Hotspur','West Ham United','Wolverhampton Wanderers','Ipswich Town','Leicester City','Southampton'] },
+    { tier: 2, name: 'EFL Championship', clubs: ['Blackburn Rovers','Bristol City','Burnley','Coventry City','Derby County','Hull City','Leeds United','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Preston North End','QPR','Sheffield United','Stoke City','Swansea City','Watford','West Bromwich Albion','Sheffield Wednesday','Sunderland','Portsmouth','Luton Town','Cardiff City'] },
+    { tier: 3, name: 'EFL League One', clubs: ['AFC Wimbledon','Barnsley','Birmingham City','Bolton Wanderers','Bristol Rovers','Burton Albion','Cambridge United','Charlton Athletic','Exeter City','Leyton Orient','Lincoln City','Mansfield Town','Northampton Town','Peterborough United','Reading','Shrewsbury Town','Stockport County','Wigan Athletic','Wrexham','Huddersfield Town','Rotherham United','Blackpool','Crawley Town','Wycombe Wanderers'] },
+    { tier: 4, name: 'EFL League Two', clubs: ['Accrington Stanley','Barrow','Bradford City','Bromley','Carlisle United','Cheltenham Town','Chesterfield','Colchester United','Crewe Alexandra','Doncaster Rovers','Fleetwood Town','Gillingham','Grimsby Town','Harrogate Town','Morecambe','Newport County','Notts County','Port Vale','Salford City','Swindon Town','Tranmere Rovers','Walsall','MK Dons','AFC Wimbledon'] },
+    { tier: 5, name: 'National League', clubs: ['Aldershot Town','Altrincham','Boreham Wood','Dagenham & Redbridge','Dorking Wanderers','Eastleigh','FC Halifax Town','Gateshead','Hartlepool United','Maidenhead United','Oldham Athletic','Rochdale','Solihull Moors','Southend United','Sutton United','Torquay United','Woking','York City','Barnet','Ebbsfleet United','Forest Green Rovers','Tamworth','Wealdstone','Yeovil Town'] },
+    { tier: 6, name: 'National League North & South', clubs: ['AFC Fylde','Blyth Spartans','Chester FC','Chorley','Curzon Ashton','Darlington','Farsley Celtic','FC United of Manchester','Hereford FC','Scarborough Athletic','South Shields','Spennymoor Town','Bath City','Braintree Town','Dartford','Eastbourne Borough','Farnborough','Hampton & Richmond Borough','Havant & Waterlooville','Hemel Hempstead Town','Slough Town','St Albans City','Tonbridge Angels','Welling United'] },
+  ]
+
+  const allClubs = pyramid.flatMap(t => t.clubs.map(c => ({ club: c, tier: t.name })))
+  const filteredClubs = search.trim()
+    ? allClubs.filter(c => c.club.toLowerCase().includes(search.toLowerCase()))
+    : selectedTier !== null
+      ? pyramid.filter(t => t.tier === selectedTier).flatMap(t => t.clubs.map(c => ({ club: c, tier: t.name })))
+      : []
+
+  async function fetchSquad(clubName: string, leagueName: string) {
+    setLoading(true); setSquadData(null); setError('')
+    try {
+      const res = await fetch('/api/ai/football-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'squad', query: `${clubName}|${leagueName}` }) })
+      const data = await res.json()
+      if (data.result) setSquadData(data.result)
+      else setError('Could not load squad data.')
+    } catch { setError('Could not load squad data. Please try again.') }
+    setLoading(false)
+  }
+
+  const posOrder = ['GK','CB','LB','RB','CDM','CM','CAM','LW','RW','ST','CF']
+  const sortedPlayers = squadData?.players?.slice().sort((a: any, b: any) => posOrder.indexOf(a.pos) - posOrder.indexOf(b.pos)) ?? []
+
+  const tierStyles = [
+    { tier: 1, label: 'Premier League', clubs: 20, bg: 'rgba(88,28,135,0.15)', border: 'rgba(147,51,234,0.3)', color: '#C084FC' },
+    { tier: 2, label: 'Championship', clubs: 24, bg: 'rgba(30,58,138,0.15)', border: 'rgba(59,130,246,0.3)', color: '#60A5FA' },
+    { tier: 3, label: 'League One', clubs: 24, bg: 'rgba(13,148,136,0.15)', border: 'rgba(13,148,136,0.3)', color: '#2DD4BF' },
+    { tier: 4, label: 'League Two', clubs: 24, bg: 'rgba(157,23,77,0.15)', border: 'rgba(236,72,153,0.3)', color: '#F472B6' },
+    { tier: 5, label: 'National League', clubs: 24, bg: 'rgba(194,65,12,0.15)', border: 'rgba(249,115,22,0.3)', color: '#FB923C' },
+    { tier: 6, label: 'NL North & South', clubs: 24, bg: 'rgba(13,148,136,0.1)', border: 'rgba(13,148,136,0.2)', color: '#5EEAD4' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><h2 className="text-xl font-bold" style={{ color: C.text }}>English Football Pyramid</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Browse every club from Premier League to National League — real squads loaded on demand via AI.</p></div>
+
+      <input value={search} onChange={e => { setSearch(e.target.value); setSelectedTier(null); setSelectedClub(null); setSquadData(null) }} placeholder="Search any club across all tiers..." className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
+
+      {!search && !squadData && (
+        <div><div className="text-xs uppercase tracking-wider mb-3" style={{ color: C.muted }}>Select a tier</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{tierStyles.map(t => (
+            <button key={t.tier} onClick={() => { setSelectedTier(t.tier === selectedTier ? null : t.tier); setSelectedClub(null); setSquadData(null) }} className="p-4 rounded-xl text-left" style={{ backgroundColor: selectedTier === t.tier ? t.bg : C.card, border: `1px solid ${selectedTier === t.tier ? t.border : C.border}` }}>
+              <div className="text-sm font-semibold" style={{ color: C.text }}>{t.label}</div>
+              <div className="text-xs mt-0.5" style={{ color: C.muted }}>{t.clubs} clubs · Tier {t.tier}</div>
+            </button>
+          ))}</div>
+        </div>
+      )}
+
+      {filteredClubs.length > 0 && !squadData && !loading && (
+        <div><div className="text-xs uppercase tracking-wider mb-3" style={{ color: C.muted }}>{search ? `${filteredClubs.length} clubs matching "${search}"` : `${filteredClubs.length} clubs`}</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{filteredClubs.map((c, i) => (
+            <button key={i} onClick={() => { setSelectedClub(c.club); fetchSquad(c.club, c.tier) }} className="p-3 rounded-xl text-left" style={{ backgroundColor: selectedClub === c.club ? 'rgba(0,61,165,0.15)' : C.card, border: `1px solid ${selectedClub === c.club ? 'rgba(0,61,165,0.3)' : C.border}` }}>
+              <div className="text-sm font-medium" style={{ color: C.text }}>{c.club}</div>
+              {search && <div className="text-xs mt-0.5" style={{ color: C.muted }}>{c.tier}</div>}
+            </button>
+          ))}</div>
+        </div>
+      )}
+
+      {loading && <div className="rounded-xl p-12 flex flex-col items-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="w-8 h-8 border-2 rounded-full animate-spin mb-4" style={{ borderColor: C.border, borderTopColor: C.blue }} /><div className="text-sm" style={{ color: C.muted }}>Loading {selectedClub} squad...</div></div>}
+      {error && <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444' }}>{error}</div>}
+
+      {squadData && !loading && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.15), rgba(0,0,0,0.1))', border: '1px solid rgba(0,61,165,0.3)' }}>
+            <div className="flex items-start justify-between mb-3"><div><h3 className="text-2xl font-black" style={{ color: C.text }}>{squadData.club}</h3><div className="text-sm mt-0.5" style={{ color: C.muted }}>{squadData.league} · {squadData.season}</div><div className="text-sm" style={{ color: C.muted }}>Manager: <span style={{ color: C.text }}>{squadData.manager}</span> · {squadData.stadium}</div></div><div className="text-right"><div className="text-2xl font-bold" style={{ color: C.text }}>{squadData.leaguePos}</div><div className="text-xs" style={{ color: C.muted }}>in league</div></div></div>
+            <div className="grid grid-cols-3 gap-3 mt-3">
+              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="font-bold" style={{ color: C.text }}>{squadData.topScorer}</div><div className="text-xs" style={{ color: C.muted }}>Top scorer</div></div>
+              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="font-bold" style={{ color: C.text }}>{squadData.avgRating}</div><div className="text-xs" style={{ color: C.muted }}>Avg rating</div></div>
+              <div className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="flex gap-1 justify-center">{(squadData.recentForm || '').split('-').slice(0, 5).map((r: string, i: number) => (<div key={i} className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.3)' : r === 'D' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div><div className="text-xs mt-0.5" style={{ color: C.muted }}>Form</div></div>
+            </div>
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{squadData.club} — {sortedPlayers.length} players</div><button onClick={() => { setSquadData(null); setSelectedClub(null) }} className="text-xs" style={{ color: C.muted }}>← Back</button></div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs" style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3">#</th><th className="text-left p-3">Player</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-center p-3">Nat.</th><th className="text-center p-3">Apps</th><th className="text-center p-3">G</th><th className="text-center p-3">A</th><th className="text-center p-3">Rtg</th><th className="text-left p-3">Contract</th><th className="text-right p-3">Value</th><th className="text-center p-3">Fit</th></tr></thead>
+                <tbody>{sortedPlayers.map((p: any, i: number) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, opacity: p.status === 'injured' ? 0.6 : 1 }}>
+                    <td className="p-3 text-xs" style={{ color: C.muted }}>{p.number}</td>
+                    <td className="p-3 font-medium" style={{ color: C.text }}>{p.name}</td>
+                    <td className="p-3 text-center"><span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: p.pos === 'GK' ? 'rgba(245,158,11,0.15)' : ['CB','LB','RB'].includes(p.pos) ? 'rgba(59,130,246,0.15)' : ['CDM','CM','CAM'].includes(p.pos) ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: p.pos === 'GK' ? '#F59E0B' : ['CB','LB','RB'].includes(p.pos) ? '#60A5FA' : ['CDM','CM','CAM'].includes(p.pos) ? '#22C55E' : '#EF4444' }}>{p.pos}</span></td>
+                    <td className="p-3 text-center" style={{ color: C.muted }}>{p.age}</td>
+                    <td className="p-3 text-center">{p.nationality}</td>
+                    <td className="p-3 text-center" style={{ color: C.muted }}>{p.apps}</td>
+                    <td className="p-3 text-center font-medium" style={{ color: C.text }}>{p.goals}</td>
+                    <td className="p-3 text-center" style={{ color: C.muted }}>{p.assists}</td>
+                    <td className="p-3 text-center font-bold" style={{ color: parseFloat(p.rating) >= 7.0 ? C.teal : parseFloat(p.rating) >= 6.5 ? '#F59E0B' : C.muted }}>{p.rating}</td>
+                    <td className="p-3 text-xs" style={{ color: C.muted }}>{p.contract}</td>
+                    <td className="p-3 text-right text-xs" style={{ color: '#D1D5DB' }}>{p.value}</td>
+                    <td className="p-3 text-center"><span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: p.status === 'fit' ? 'rgba(13,148,136,0.15)' : 'rgba(239,68,68,0.15)', color: p.status === 'fit' ? C.teal : '#EF4444' }}>{p.status === 'fit' ? '✓' : '🤕'}</span></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+          <div className="flex gap-3"><button className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: C.blue, color: C.yellow }}>+ Add player to scouting DB</button><button onClick={() => { setSquadData(null); setSelectedClub(null) }} className="px-4 py-2 rounded-lg text-xs" style={{ backgroundColor: '#1F2937', color: '#D1D5DB' }}>← Browse another club</button></div>
+          <div className="text-xs" style={{ color: '#4B5563' }}>Data sourced via AI from public sources. Always verify with club official channels.</div>
+        </div>
+      )}
+
+      {!search && !selectedTier && !squadData && !loading && (
+        <div className="rounded-xl p-10 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="text-5xl mb-4">🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+          <div className="font-semibold text-lg mb-2" style={{ color: C.text }}>English Football Pyramid</div>
+          <div className="text-sm max-w-md mx-auto" style={{ color: C.muted }}>Select a tier above or search for any club — from Arsenal to Altrincham. Real squad data loaded on demand for all 160+ clubs.</div>
+          <div className="mt-4 grid grid-cols-3 gap-2 max-w-sm mx-auto text-xs" style={{ color: C.muted }}>{['Premier League — 20','Championship — 24','League One — 24','League Two — 24','National League — 24','NL North & South — 24+'].map((t, i) => (<div key={i} className="rounded-lg px-2 py-1" style={{ backgroundColor: '#1F2937' }}>{t}</div>))}</div>
+        </div>
+      )}
+    </div>
+  )
+}
