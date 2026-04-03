@@ -326,3 +326,106 @@ export function OptaStatsBombView() {
     </div>
   )
 }
+
+// ─── FIND CLUB VIEW ──────────────────────────────────────────────────────────
+export function FindClubView() {
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<any>(null)
+  const [error, setError] = useState('')
+  const recentSearches = ['Charlton Athletic', 'Wrexham', 'Barnsley', 'Bolton Wanderers', 'Reading']
+
+  async function searchClub(clubName: string) {
+    if (!clubName.trim()) return
+    setLoading(true); setResult(null); setError('')
+    try {
+      const res = await fetch('/api/ai/football-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'club', query: clubName }) })
+      const data = await res.json()
+      if (data.result) setResult(data.result)
+      else setError('Could not retrieve club data.')
+    } catch { setError('Search failed. Please try again.') }
+    setLoading(false)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">🏟️</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Find Club</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>AI-powered club intelligence — league position, financials, key personnel, and Lumio fit assessment.</p></div>
+      <div className="flex gap-3">
+        <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchClub(query)} placeholder="Search any football club..." className="flex-1 rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
+        <button onClick={() => searchClub(query)} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: C.blue, color: C.yellow, opacity: loading ? 0.6 : 1 }}>{loading ? 'Searching...' : '🔍 Find Club'}</button>
+      </div>
+      {!result && !loading && (<div><div className="text-xs mb-2" style={{ color: C.muted }}>Recent searches</div><div className="flex gap-2 flex-wrap">{recentSearches.map(s => (<button key={s} onClick={() => { setQuery(s); searchClub(s) }} className="px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#1F2937', color: C.muted, border: `1px solid ${C.border}` }}>{s}</button>))}</div></div>)}
+      {error && <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444' }}>{error}</div>}
+      {loading && <div className="rounded-xl p-12 flex flex-col items-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="w-8 h-8 border-2 rounded-full animate-spin mb-4" style={{ borderColor: C.border, borderTopColor: C.blue }} /><div className="text-sm" style={{ color: C.muted }}>Researching club data...</div></div>}
+      {result && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.15), rgba(0,0,0,0.1))', border: '1px solid rgba(0,61,165,0.3)' }}>
+            <div className="flex items-start justify-between mb-3"><div><h3 className="text-2xl font-black" style={{ color: C.text }}>{result.name}</h3><div className="text-sm mt-0.5" style={{ color: C.muted }}>{result.league} · {result.country} · Founded {result.founded}</div></div><div className="text-right"><div className="text-lg font-bold" style={{ color: C.yellow }}>{result.leaguePos}</div><div className="text-xs" style={{ color: C.muted }}>in league</div></div></div>
+            <p className="text-sm" style={{ color: '#D1D5DB' }}>{result.summary}</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: 'Manager', v: result.manager }, { l: 'Stadium', v: result.stadium }, { l: 'Capacity', v: result.capacity }, { l: 'Avg Attendance', v: result.avgAttendance }, { l: 'Owner Type', v: result.ownerType }, { l: 'Revenue', v: result.revenue }, { l: 'Wage Bill', v: result.wageBill }, { l: 'Transfer Budget', v: result.transferBudget }].map((s, i) => (<div key={i} className="rounded-xl p-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs" style={{ color: C.muted }}>{s.l}</div><div className="text-sm font-medium" style={{ color: C.text }}>{s.v}</div></div>))}</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs mb-2" style={{ color: C.muted }}>Recent Form</div><div className="flex gap-1.5">{(result.recentForm || '').split('-').map((r: string, i: number) => (<div key={i} className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.2)' : r === 'D' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div></div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs mb-2" style={{ color: C.muted }}>PSR Status</div><div className="text-sm font-semibold" style={{ color: (result.psr || '').toLowerCase().includes('compliant') ? C.teal : '#F59E0B' }}>{result.psr}</div></div>
+          </div>
+          {result.keyPlayers && <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs mb-3" style={{ color: C.muted }}>Key Players</div><div className="flex gap-2 flex-wrap">{result.keyPlayers.map((p: string, i: number) => (<div key={i} className="rounded-lg px-3 py-1.5 text-xs" style={{ backgroundColor: '#1F2937', color: '#D1D5DB' }}>{p}</div>))}</div></div>}
+          <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.06), rgba(0,0,0,0.02))', border: '1px solid rgba(0,61,165,0.2)' }}><div className="text-xs font-semibold uppercase mb-2" style={{ color: C.yellow }}>Lumio Pro Club Fit</div><p className="text-sm" style={{ color: '#D1D5DB' }}>{result.lumioFit}</p><div className="mt-3 text-xs" style={{ color: C.muted }}>Contact route: <span style={{ color: '#D1D5DB' }}>{result.contactRoute}</span></div></div>
+          <button onClick={() => { setResult(null); setQuery('') }} className="text-xs" style={{ color: C.muted }}>← Search another club</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── FIND PLAYER VIEW ────────────────────────────────────────────────────────
+export function FindPlayerView() {
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<any>(null)
+  const [error, setError] = useState('')
+  const recentSearches = ['Marcus Browne', 'Mathew Stevens', 'Omar Bugiel', 'Harvey Knibbs', 'Aaron Collins']
+
+  async function searchPlayer(playerName: string) {
+    if (!playerName.trim()) return
+    setLoading(true); setResult(null); setError('')
+    try {
+      const res = await fetch('/api/ai/football-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'player', query: playerName }) })
+      const data = await res.json()
+      if (data.result) setResult(data.result)
+      else setError('Could not retrieve player data.')
+    } catch { setError('Search failed. Please try again.') }
+    setLoading(false)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">⚽</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Find Player</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>AI-powered player intelligence — stats, contract, market value, agent details, and AFC Wimbledon fit.</p></div>
+      <div className="flex gap-3">
+        <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchPlayer(query)} placeholder="Search any professional player..." className="flex-1 rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
+        <button onClick={() => searchPlayer(query)} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: C.blue, color: C.yellow, opacity: loading ? 0.6 : 1 }}>{loading ? 'Searching...' : '🔍 Find Player'}</button>
+      </div>
+      {!result && !loading && (<div><div className="text-xs mb-2" style={{ color: C.muted }}>Quick search</div><div className="flex gap-2 flex-wrap">{recentSearches.map(s => (<button key={s} onClick={() => { setQuery(s); searchPlayer(s) }} className="px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#1F2937', color: C.muted, border: `1px solid ${C.border}` }}>{s}</button>))}</div></div>)}
+      {error && <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444' }}>{error}</div>}
+      {loading && <div className="rounded-xl p-12 flex flex-col items-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="w-8 h-8 border-2 rounded-full animate-spin mb-4" style={{ borderColor: C.border, borderTopColor: C.blue }} /><div className="text-sm" style={{ color: C.muted }}>Researching player data...</div></div>}
+      {result && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.15), rgba(0,0,0,0.1))', border: '1px solid rgba(0,61,165,0.3)' }}>
+            <div className="flex items-start justify-between mb-3"><div><h3 className="text-2xl font-black" style={{ color: C.text }}>{result.name}</h3><div className="text-sm mt-0.5" style={{ color: C.muted }}>{result.position} · {result.nationality} · Age {result.age}</div><div className="text-sm mt-0.5" style={{ color: C.muted }}>{result.currentClub} · {result.league}</div></div><div className="text-right"><div className="text-xl font-bold" style={{ color: C.text }}>{result.marketValue}</div><div className="text-xs" style={{ color: C.muted }}>Market value</div><div className="text-xs mt-1 font-semibold" style={{ color: C.teal }}>⭐ {result.rating} rating</div></div></div>
+            <p className="text-sm" style={{ color: '#D1D5DB' }}>{result.summary}</p>
+          </div>
+          <div className="grid grid-cols-4 gap-3">{[{ l: 'Appearances', v: result.apps }, { l: 'Goals', v: result.goals }, { l: 'Assists', v: result.assists }, { l: 'Avg Rating', v: result.rating }].map((s, i) => (<div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-2xl font-bold" style={{ color: C.text }}>{s.v}</div><div className="text-xs mt-0.5" style={{ color: C.muted }}>{s.l}</div></div>))}</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs mb-2" style={{ color: C.muted }}>Contract & Transfer</div><div className="space-y-1.5 text-sm">{[['Expires', result.contractUntil], ['Status', result.transferStatus], ['Asking price', result.askingPrice], ['Int. caps', result.internationalCaps]].map(([l, v]) => (<div key={l} className="flex justify-between"><span style={{ color: C.muted }}>{l}</span><span style={{ color: C.text }}>{v}</span></div>))}</div></div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs mb-2" style={{ color: C.muted }}>Agent</div><div className="text-sm font-medium" style={{ color: C.text }}>{result.agent}</div><div className="text-xs mt-0.5" style={{ color: C.muted }}>{result.agencyName}</div>{result.previousClubs && <div className="mt-3"><div className="text-xs" style={{ color: C.muted }}>Previous clubs</div><div className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{result.previousClubs.join(' · ')}</div></div>}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs font-semibold mb-2" style={{ color: C.teal }}>✓ Strengths</div><div className="space-y-1">{(result.strengths || []).map((s: string, i: number) => <div key={i} className="text-xs" style={{ color: '#D1D5DB' }}>• {s}</div>)}</div></div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs font-semibold mb-2" style={{ color: '#EF4444' }}>✗ Weaknesses</div><div className="space-y-1">{(result.weaknesses || []).map((w: string, i: number) => <div key={i} className="text-xs" style={{ color: '#D1D5DB' }}>• {w}</div>)}</div></div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.06), rgba(0,0,0,0.02))', border: '1px solid rgba(0,61,165,0.2)' }}><div className="text-xs font-semibold uppercase mb-2" style={{ color: C.yellow }}>AFC Wimbledon Fit Assessment</div><p className="text-sm mb-3" style={{ color: '#D1D5DB' }}>{result.fitForWimbledon}</p><div className="grid grid-cols-2 gap-3 text-xs"><div><span style={{ color: C.muted }}>Approach: </span><span style={{ color: '#D1D5DB' }}>{result.approachRoute}</span></div><div><span style={{ color: C.muted }}>PSR impact: </span><span style={{ color: '#D1D5DB' }}>{result.psrImpact}</span></div></div></div>
+          <div className="flex gap-3"><button onClick={() => { setResult(null); setQuery('') }} className="text-xs" style={{ color: C.muted }}>← Search another player</button><button className="text-xs px-3 py-1 rounded-lg" style={{ color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>+ Add to transfer pipeline</button></div>
+        </div>
+      )}
+    </div>
+  )
+}

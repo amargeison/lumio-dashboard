@@ -292,7 +292,7 @@ const PlayerCard = ({ player }: { player: GolfPlayer }) => (
 
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 
-function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection?: (s: string) => void }) {
+function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection: (s: string) => void }) {
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
