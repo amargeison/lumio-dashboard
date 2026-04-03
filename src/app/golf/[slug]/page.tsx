@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface GolfPlayer {
@@ -293,7 +292,7 @@ const PlayerCard = ({ player }: { player: GolfPlayer }) => (
 
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 
-function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection: (id: string) => void }) {
+function DashboardView({ player }: { player: GolfPlayer }) {
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
@@ -330,28 +329,6 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
         </div>
         <div className="mt-4 pt-4 border-t border-white/10 text-xs text-gray-400">
           SG Putting alert: <span className="text-yellow-400 font-medium">losing 1.18 strokes/round</span> from 8–15ft over last 6 events · Focus of today's session
-        </div>
-      </div>
-      {/* Quick Actions Bar */}
-      <div className="flex items-center gap-3 border-b border-t border-gray-800/50 bg-[#0a0c14]">
-        <span className="text-xs text-gray-500 font-medium px-4 whitespace-nowrap">Quick Actions</span>
-        <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {[
-            { icon: <Clipboard size={12} />, label: 'Caddie Sheet', target: 'caddie' },
-            { icon: <Activity size={12} />, label: 'Log Practice', target: 'practicelog' },
-            { icon: <Heart size={12} />, label: 'Log Injury', target: 'physio' },
-            { icon: <BarChart size={12} />, label: 'SG Analysis', target: 'strokes' },
-            { icon: <Map size={12} />, label: 'Course Fit', target: 'coursefit' },
-            { icon: <DollarSign size={12} />, label: 'Prize Money', target: 'financial' },
-            { icon: <Handshake size={12} />, label: 'Sponsor Check', target: 'sponsorship' },
-            { icon: <Star size={12} />, label: 'Pro-Am Prep', target: 'proam' },
-            { icon: <TrendingUp size={12} />, label: 'OWGR Tracker', target: 'owgr' },
-          ].map((a, i) => (
-            <button key={i} onClick={() => setActiveSection(a.target)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 bg-green-700 text-gray-50">
-              {a.icon}{a.label}
-            </button>
-          ))}
         </div>
       </div>
       {/* Recent form */}
@@ -1915,7 +1892,7 @@ export default function GolfTourPage() {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} setActiveSection={setActiveSection} />;
+      case 'dashboard':   return <DashboardView player={player} />;
       case 'morning':     return <MorningBriefingView player={player} />;
       case 'owgr':        return <OWGRView player={player} />;
       case 'schedule':    return <ScheduleView />;
