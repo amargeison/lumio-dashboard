@@ -84,11 +84,10 @@ export default function SchoolLayout({ children }: Props) {
     const blobUrl = URL.createObjectURL(file)
     setSchoolLogo(blobUrl)
     const token = localStorage.getItem('workspace_session_token')
-    if (!token) return
     const fd = new FormData()
     fd.append('logo', file)
     try {
-      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: token ? { 'x-workspace-token': token } : {}, body: fd })
       const data = await res.json()
       if (data.logo_url) {
         setSchoolLogo(data.logo_url)
