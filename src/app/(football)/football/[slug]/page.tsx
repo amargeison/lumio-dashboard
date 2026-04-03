@@ -618,7 +618,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               {clubLogo && (
-                <img src={clubLogo} alt="Club badge" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))' }} />
+                <img src={clubLogo} alt="Club badge" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))', borderRadius: 8, mixBlendMode: 'screen' as any }} />
               )}
               <div>
               <div className="flex items-center gap-2 mb-1">
