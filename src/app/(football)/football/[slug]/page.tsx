@@ -14,7 +14,7 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink, Crown,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown, Camera,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
@@ -26,6 +26,7 @@ import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -429,7 +430,28 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const logoFileRef = useRef<HTMLInputElement>(null)
+  const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null)
+  const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const blobUrl = URL.createObjectURL(file)
+    setClubLogo(blobUrl)
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) { setClubLogo(data.logo_url); localStorage.setItem('lumio_football_logo', data.logo_url) }
+      URL.revokeObjectURL(blobUrl)
+    } catch { /* ignore */ }
+  }
 
   function togglePin() {
     setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
@@ -456,10 +478,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: PRIMARY, color: '#F9FAFB' }}>
-            FC
-          </div>
+          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden" style={{ backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB' }} title="Upload club badge">
+            {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={() => setClubLogo(null)} /> : 'FC'}
+            {logoHover && <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><Camera size={14} color="#fff" /></div>}
+          </button>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -4620,14 +4644,12 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
       )}
 
       {/* Top-right avatar */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
         </button>
-        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          {initials}
-        </button>
+        <AvatarDropdown initials={initials} logoutRedirect="/" settingsHref={`/football/${slug}/settings`} />
       </div>
 
       {/* Mobile menu button */}

@@ -6,9 +6,10 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Building2, Users, BookOpen, Heart,
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
-  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, LogOut, DoorOpen, Clock,
+  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, DoorOpen, Clock, Camera,
 } from 'lucide-react'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
 
 const COLLAPSED_W = 48
@@ -46,9 +47,7 @@ export default function SchoolLayout({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
-  const [avatarOpen, setAvatarOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const avatarRef = useRef<HTMLDivElement>(null)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const slugMatch = pathname.match(/\/schools\/([^/]+)/)
@@ -69,6 +68,35 @@ export default function SchoolLayout({ children }: Props) {
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
+  const [logoHover, setLogoHover] = useState(false)
+  const logoFileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const storedLogo = localStorage.getItem(`lumio_school_logo_${slug}`)
+    if (storedLogo) setSchoolLogo(storedLogo)
+  }, [slug])
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const blobUrl = URL.createObjectURL(file)
+    setSchoolLogo(blobUrl)
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setSchoolLogo(data.logo_url)
+        localStorage.setItem(`lumio_school_logo_${slug}`, data.logo_url)
+      }
+      URL.revokeObjectURL(blobUrl)
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem(`lumio_school_${slug}_name`)
@@ -112,11 +140,7 @@ export default function SchoolLayout({ children }: Props) {
     }
     window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
 
-    function handleClick(e: MouseEvent) {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => { document.removeEventListener('mousedown', handleClick); window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
+    return () => { window.removeEventListener('lumio-avatar-updated', onAvatarUpdated) }
   }, [slug])
 
   const expanded = pinned || hovered
@@ -142,10 +166,12 @@ export default function SchoolLayout({ children }: Props) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            {schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-          </div>
+          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden" style={{ backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB' }} title="Upload school logo">
+            {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            {logoHover && <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><Camera size={14} color="#fff" /></div>}
+          </button>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -212,9 +238,9 @@ export default function SchoolLayout({ children }: Props) {
       {mobileOpen && (
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
           <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              {schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
+            <button onClick={() => logoFileRef.current?.click()} className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden" style={{ backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB' }}>
+              {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</p>
               <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
@@ -268,27 +294,7 @@ export default function SchoolLayout({ children }: Props) {
             <Bell size={16} strokeWidth={1.75} />
             <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
           </button>
-          <div ref={avatarRef} style={{ position: 'relative' }}>
-            <button onClick={() => setAvatarOpen(o => !o)}
-              style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#0D9488', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
-              {userPhoto ? (
-                <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={() => setUserPhoto(null)} />
-              ) : (
-                initials
-              )}
-            </button>
-            {avatarOpen && (
-              <div className="rounded-xl py-2 shadow-xl" style={{ position: 'absolute', top: 44, right: 0, minWidth: 160, backgroundColor: '#111318', border: '1px solid #1F2937', zIndex: 70 }}>
-                {userName && <div className="px-4 py-2" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{userName}</p>{userEmail && <p className="text-xs truncate" style={{ color: '#6B7280' }}>{userEmail}</p>}</div>}
-                <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_school_')).forEach(k => localStorage.removeItem(k)); router.replace('/schools/login') }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm" style={{ color: '#EF4444' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}>
-                  <LogOut size={14} /> Sign out
-                </button>
-              </div>
-            )}
-          </div>
+          <AvatarDropdown initials={initials} logoutRedirect="/schools/login" logoutClearKeys={['lumio_school_']} settingsHref={`${base}/settings`} />
         </div>
         {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
 
