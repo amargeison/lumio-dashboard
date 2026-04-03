@@ -434,7 +434,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const logoFileRef = useRef<HTMLInputElement>(null)
-  const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null)
+  const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? (localStorage.getItem('lumio_football_logo') || '/badges/afc-wimbledon.png') : '/badges/afc-wimbledon.png')
   const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
 
