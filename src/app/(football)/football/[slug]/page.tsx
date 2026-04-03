@@ -1227,65 +1227,93 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   if (tab === 'today') return null // handled separately
 
   if (tab === 'quick-wins') return (
-    <div className="space-y-3">
-      <QWItem priority="🔴" title="Tyler James contract — expires June" desc="No offer made yet. Board approval needed. Player could leave on free." action="Open Contract" />
-      <QWItem priority="🔴" title="GPS flags Okafor as overloaded" desc="3 consecutive high-load sessions. Rest recommended before Saturday." action="View Load" />
-      <QWItem priority="🟡" title="Agent for Diallo called twice" desc="Transfer interest from Championship rivals. Call back today." action="Log Call" />
-      <QWItem priority="🟡" title="Press conference prep — 2pm today" desc="AI notes ready but manager hasn't reviewed." action="View Prep" />
-      <QWItem priority="🟡" title="Tyler James eligible for first team squad" desc="Academy standout — include in squad for Saturday?" action="Add to Squad" />
-      <QWItem priority="🟢" title="Scout report on target overdue" desc="Report on Martinez (Valencia B) assigned to Clarke, 3 days overdue." action="Chase Scout" />
-      <QWItem priority="🟢" title="EPPP quarterly report — 80% complete" desc="Submission due Friday. Academy director needs to finalise." action="Complete Report" />
-      <QWItem priority="🟢" title="Kit sponsor deliverables" desc="2 social posts owed this month, 0 delivered." action="Schedule Posts" />
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority.</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
+      </div>
+      <div className="space-y-3">
+        {([
+          { id: 'fqw1', title: 'Kyle Brennan fitness check overdue', description: 'Last GPS session flagged fatigue risk. Clear for Saturday?', impact: 'high' as const, effort: '2min', category: 'Squad', action: 'Check fitness', source: 'GPS' },
+          { id: 'fqw2', title: 'Opposition report not reviewed', description: 'Riverside United match in 3 days. Scout report ready.', impact: 'high' as const, effort: '5min', category: 'Tactics', action: 'View report', source: 'Scouting' },
+          { id: 'fqw3', title: 'Agent contact overdue — Diallo deal', description: 'No contact logged in 4 days. Window closes in 11 days.', impact: 'medium' as const, effort: '5min', category: 'Transfers', action: 'Log contact', source: 'CRM' },
+          { id: 'fqw4', title: 'Press conference prep outstanding', description: 'Match day press conf tomorrow at 10am. No notes prepared.', impact: 'medium' as const, effort: '10min', category: 'Media', action: 'Prepare notes', source: 'Calendar' },
+          { id: 'fqw5', title: '3 player expense claims pending', description: 'Awaiting manager approval for over 72 hours.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Approve', source: 'Finance' },
+        ]).map(win => {
+          const ic = win.impact === 'high' ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' } : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+          return (
+            <div key={win.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{win.impact.toUpperCase()} IMPACT</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {win.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{win.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{win.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 
   if (tab === 'match-week') return (
-    <div className="space-y-5">
-      {/* Match Card */}
-      <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #922B21, #C0392B)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <p className="text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>CHAMPIONSHIP · MATCHDAY 19</p>
-        <div className="flex items-center justify-center gap-6">
-          <div><p className="text-lg font-black text-white">Oakridge FC</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Home</p></div>
-          <div className="text-2xl font-black" style={{ color: '#F1C40F' }}>vs</div>
-          <div><p className="text-lg font-black text-white">Bristol City</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Away</p></div>
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📅 Match Week</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your match preparation checklist — everything that needs doing.</p>
         </div>
-        <p className="text-sm mt-3 font-semibold text-white">Saturday 3:00pm · Bet365 Stadium</p>
-        <p className="text-xs mt-1" style={{ color: '#F1C40F' }}>3 days · 14 hours remaining</p>
       </div>
-      {/* Preparation Timeline */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Match Week Preparation</p>
-        {[
-          { day: 'Mon', status: '✅', tasks: 'Recovery session, opposition video sent to squad' },
-          { day: 'Tue', status: '✅', tasks: 'Tactical training, set piece work' },
-          { day: 'Wed', status: '🔄', tasks: 'Press conference 2pm, training 10am (TODAY)' },
-          { day: 'Thu', status: '⬜', tasks: 'Final preparation session, team meeting' },
-          { day: 'Fri', status: '⬜', tasks: "Travel/rest day, captain's meeting" },
-          { day: 'Sat', status: '⬜', tasks: 'MATCH DAY' },
-        ].map(d => (
-          <div key={d.day} className="flex items-center gap-3 py-2">
-            <span className="text-sm w-8 font-bold" style={{ color: '#C0392B' }}>{d.day}</span>
-            <span className="text-sm w-6">{d.status}</span>
-            <span className="text-xs flex-1" style={{ color: d.status === '⬜' ? '#6B7280' : '#D1D5DB', fontWeight: d.status === '🔄' ? 700 : 400 }}>{d.tasks}</span>
-          </div>
-        ))}
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
       </div>
-      {/* Squad Availability */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
-        <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
-          {SQUAD.map(p => (
-            <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-              <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
-              <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+      <div className="space-y-3">
+        {([
+          { id: 'fmw1', title: 'Finalise starting XI for Saturday', description: 'Formation set, but 2 positions undecided. Confirm by Thursday.', impact: 'high' as const, effort: '15min', category: 'Tactics', action: 'Set lineup', source: 'Squad Planner' },
+          { id: 'fmw2', title: 'Pre-match fitness assessment', description: 'Four players require sign-off from physio before training today.', impact: 'high' as const, effort: '10min', category: 'Medical', action: 'View assessments', source: 'Medical' },
+          { id: 'fmw3', title: 'Post training video clips ready', description: "Three clips uploaded from today's session. Review before posting.", impact: 'medium' as const, effort: '5min', category: 'Media', action: 'Review clips', source: 'Social Media' },
+          { id: 'fmw4', title: 'Opposition set piece analysis', description: 'Riverside United scored 3 set piece goals last 5 games.', impact: 'medium' as const, effort: '30min', category: 'Tactics', action: 'View analysis', source: 'Analytics' },
+          { id: 'fmw5', title: 'Under-18 match report overdue', description: "Tuesday fixture. Coach hasn't submitted report yet.", impact: 'medium' as const, effort: '5min', category: 'Academy', action: 'Chase report', source: 'Academy' },
+        ]).map(task => {
+          const ic = task.impact === 'high' ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' } : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
+          return (
+            <div key={task.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{task.impact.toUpperCase()} IMPACT</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {task.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{task.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{task.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-      {/* Weather */}
-      <div className="rounded-xl p-4 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <span className="text-3xl">🌧️</span>
-        <div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Saturday 3pm — 12°C, Light rain</p><p className="text-xs" style={{ color: '#6B7280' }}>Wind 15mph NW · Pitch: Good</p></div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1318,22 +1346,44 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'dont-miss') return (
-    <div className="space-y-5">
-      {[
-        { level: '🔴 URGENT', items: ['Transfer deadline: 11 days remaining — Diallo bid not yet submitted. Rivals circling.', 'Tyler James contract expires June — no renewal offer. Player could leave on free.', 'Work permit application for Santos — deadline Friday or signing falls through.'] },
-        { level: '🟡 THIS WEEK', items: ['Mensah fitness: scan results back Thursday — decide if available Saturday.', 'Board meeting Thursday: DoF presentation on winter window activity required.', 'Kit manufacturer deadline: squad numbers and names for new kit by Friday.', 'FA registration: loan player window closes 5pm Thursday.'] },
-        { level: '🟢 THIS MONTH', items: ['Pre-season friendlies: 3 venues need confirming by month end.', 'Academy scholarship decisions: 4 players need contracts or release by 30th.', 'Annual accounts submission: finance team needs commercial data by 28th.'] },
-      ].map(group => (
-        <div key={group.level}>
-          <p className="text-xs font-bold mb-2" style={{ color: group.level.includes('URGENT') ? '#EF4444' : group.level.includes('WEEK') ? '#F59E0B' : '#22C55E' }}>{group.level}</p>
-          <div className="space-y-2">{group.items.map((item, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <span className="text-xs mt-0.5">{group.level.includes('URGENT') ? '🔴' : group.level.includes('WEEK') ? '🟡' : '🟢'}</span>
-              <p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p>
-            </div>
-          ))}</div>
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
         </div>
-      ))}
+      </div>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+        <span>🔗</span>
+        <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
+      </div>
+      <div className="space-y-3">
+        {([
+          { id: 'fdm1', title: 'Diallo negotiation stalled — counter offer needed', description: 'Transfer window closes in 11 days. Rivals have tabled £140k. Our last offer was £120k.', effort: '15min', category: 'Transfers', action: 'Send offer', source: 'CRM' },
+          { id: 'fdm2', title: 'Press conference 10am — no prep completed', description: 'Tomorrow morning. Manager expects AI-generated talking points by tonight.', effort: '10min', category: 'Media', action: 'Prepare now', source: 'Calendar' },
+          { id: 'fdm3', title: '3 player contracts expiring in 60 days', description: 'No renewal talks started for James, Ward, or Shaw. Free agent risk.', effort: '30min', category: 'Contracts', action: 'Start talks', source: 'HR' },
+          { id: 'fdm4', title: 'PSR compliance check — quarterly submission missed', description: 'Deadline was last Friday. Finance team needs to submit immediately.', effort: '10min', category: 'Finance', action: 'Submit now', source: 'Finance' },
+        ]).map(item => (
+          <div key={item.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {item.effort}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+                </div>
+                <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.description}</p>
+                <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
+              </div>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{item.action} →</button>
+                <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 
@@ -1547,12 +1597,42 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
           <QuickActionsBar onAction={onAction} />
 
           {!isDemo && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="text-5xl mb-4">⚽</div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
               <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
               <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📨 Match Inbox</h3>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your communications to see WhatsApp, email and Slack messages in one place.</p>
+                <div className="space-y-2">
+                  {['WhatsApp Group Chat', 'Club Email', 'Slack Channel'].map(s => (
+                    <div key={s} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{s}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>Connect</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📅 Fixtures This Week</h3>
+                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your calendar to see training sessions, matches and meetings.</p>
+                <div className="flex items-center justify-center py-6">
+                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C', border: '1px solid rgba(192,57,43,0.3)' }}>Connect Calendar →</button>
+                </div>
+              </div>
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                <PhotoFrame />
+                <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>🤖 AI Match Summary</h3>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your tools to generate your AI match day summary with squad news, form analysis and tactical suggestions.</p>
+                </div>
+              </div>
+            </div>
+            </>
           )}
 
           {isDemo && <>
