@@ -128,6 +128,9 @@ interface Player {
   stats?: { PAC: number; SHO: number; PAS: number; DRI: number; DEF: number; PHY: number }
 }
 
+const FB_PRIMARY = '#003DA5'
+const FB_SECONDARY = '#F1C40F'
+
 const SQUAD: Player[] = [
   { name: 'Nathan Bishop', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 0, assists: 0, stats: { PAC: 58, SHO: 14, PAS: 62, DRI: 52, DEF: 72, PHY: 78 } },
   { name: 'Joe McDonnell', number: 13, position: 'GK', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.9, goals: 0, assists: 0, stats: { PAC: 52, SHO: 12, PAS: 58, DRI: 48, DEF: 70, PHY: 76 } },
@@ -2287,6 +2290,7 @@ function SquadView() {
   const [sortCol, setSortCol] = useState<string>('number')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [posFilter, setPosFilter] = useState<string>('All')
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   function handleSort(col: string) {
     if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
@@ -2453,7 +2457,7 @@ function SquadView() {
             </thead>
             <tbody>
               {sorted.map((p, i) => (
-                <tr key={i} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
+                <tr key={i} onClick={() => setSelectedPlayer(p)} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined, cursor: 'pointer' }} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-2.5 font-bold" style={{ color: '#6B7280' }}>{p.number}</td>
                   <td className="px-4 py-2.5 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
                   <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{p.position}</span></td>
@@ -2556,6 +2560,15 @@ function SquadView() {
           </div>
         </div>
       </div>
+
+      {selectedPlayer && (
+        <PlayerProfileModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          PRIMARY={FB_PRIMARY}
+          SECONDARY={FB_SECONDARY}
+        />
+      )}
     </div>
   )
 }
@@ -4957,6 +4970,145 @@ function Toast({ message }: { message: string | null }) {
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
+
+function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: Player, onClose: () => void, PRIMARY: string, SECONDARY: string }) {
+  const form = [7.8, 6.9, 7.5, 8.1, 7.2]
+  const statColor = (v: number) => v >= 80 ? '#22c55e' : v >= 65 ? PRIMARY : v >= 50 ? '#eab308' : '#ef4444'
+  const moraleScore = player.fitness === 'fit' ? 82 : player.fitness === 'injured' ? 45 : player.fitness === 'suspended' ? 60 : 70
+  const injuryHistory = player.fitness === 'injured'
+    ? [{ type: 'Current', date: 'Mar 2026', games: 3 }]
+    : [{ type: 'Muscle strain', date: 'Oct 2025', games: 2 }, { type: 'None recent', date: '—', games: 0 }]
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#0F1117', border: `1px solid ${PRIMARY}40`, borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: SECONDARY }}>
+              {player.number}
+            </div>
+            <div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#F9FAFB' }}>{player.name}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+                <span style={{ backgroundColor: PRIMARY + '30', color: PRIMARY === '#003DA5' ? SECONDARY : PRIMARY, padding: '2px 10px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>{player.position}</span>
+                <span style={{ fontSize: 18 }}>{player.nationality}</span>
+                <span style={{ color: '#6B7280', fontSize: 13 }}>Age {player.age}</span>
+                <span style={{ backgroundColor: player.fitness === 'fit' ? '#16a34a30' : player.fitness === 'injured' ? '#dc262630' : '#d9770630', color: player.fitness === 'fit' ? '#4ade80' : player.fitness === 'injured' ? '#f87171' : '#fb923c', padding: '2px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{player.fitness}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #374151', color: '#9CA3AF', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>✕ Close</button>
+        </div>
+
+        {/* 3 column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
+
+          {/* Col 1 — Performance */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Performance</div>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: SECONDARY }}>{player.lastRating.toFixed(1)}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Rating</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.goals}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Goals</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.assists}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Assists</div></div>
+            </div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Last 5 matches</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+              {form.map((r, i) => (
+                <div key={i} style={{ flex: 1, textAlign: 'center', backgroundColor: r >= 7.5 ? '#16a34a30' : r >= 6.5 ? PRIMARY + '30' : '#dc262630', borderRadius: 6, padding: '4px 0' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: r >= 7.5 ? '#4ade80' : r >= 6.5 ? SECONDARY : '#f87171' }}>{r.toFixed(1)}</div>
+                </div>
+              ))}
+            </div>
+            {player.stats && (
+              <div>
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Attributes</div>
+                {Object.entries({ PAC: player.stats.PAC, SHO: player.stats.SHO, PAS: player.stats.PAS, DRI: player.stats.DRI, DEF: player.stats.DEF, PHY: player.stats.PHY }).map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 30, fontSize: 11, color: '#9CA3AF', fontWeight: 700 }}>{k}</div>
+                    <div style={{ flex: 1, height: 6, backgroundColor: '#374151', borderRadius: 3 }}>
+                      <div style={{ width: `${v}%`, height: '100%', backgroundColor: statColor(v), borderRadius: 3, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ width: 24, fontSize: 11, fontWeight: 700, color: statColor(v), textAlign: 'right' }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Col 2 — Contract & Value */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Contract & Value</div>
+            {[
+              { label: 'Market Value', value: player.marketValue },
+              { label: 'Contract Until', value: player.contractExpiry },
+              { label: 'Wage Band', value: player.marketValue === '£600k' ? '£4,200/wk' : player.marketValue === '£350k' ? '£2,800/wk' : player.marketValue === '£300k' ? '£2,200/wk' : '£1,800/wk' },
+              { label: 'Agent', value: 'Stellar Group' },
+              { label: 'Nationality', value: player.nationality + ' ' + (player.nationality === '🏴󠁧󠁢󠁥󠁮󠁧󠁿' ? 'English' : player.nationality === '🇮🇪' ? 'Irish' : player.nationality === '🇩🇪' ? 'German' : player.nationality === '🏴󠁧󠁢󠁳󠁣󠁴󠁿' ? 'Scottish' : 'International') },
+              { label: 'Appearances', value: '28' },
+              { label: 'Minutes Played', value: '2,340' },
+              { label: 'Signed From', value: 'Academy' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #1F2937' }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>{label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Col 3 — Wellbeing */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Wellbeing & Load</div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>Morale</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: moraleScore >= 75 ? '#4ade80' : moraleScore >= 50 ? SECONDARY : '#f87171' }}>{moraleScore}/100</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: `${moraleScore}%`, height: '100%', backgroundColor: moraleScore >= 75 ? '#16a34a' : moraleScore >= 50 ? PRIMARY : '#dc2626', borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>GPS Load (this week)</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#F9FAFB' }}>74%</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: '74%', height: '100%', backgroundColor: SECONDARY, borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>Recovery Score</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#4ade80' }}>88%</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: '88%', height: '100%', backgroundColor: '#16a34a', borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Injury History</div>
+            {injuryHistory.map((inj, i) => (
+              <div key={i} style={{ backgroundColor: '#111318', borderRadius: 8, padding: '8px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#F9FAFB' }}>{inj.type}</span>
+                <span style={{ fontSize: 12, color: '#6B7280' }}>{inj.date} {inj.games > 0 ? `· ${inj.games} games` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer quick actions */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {['Log Injury', 'Contact Agent', 'Extend Contract', 'Transfer List', 'Player Report', 'Team Talk'].map(action => (
+            <button key={action} onClick={() => {}} style={{ backgroundColor: PRIMARY, color: SECONDARY, border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {action}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
