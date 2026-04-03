@@ -158,6 +158,100 @@ function OverviewTab() {
           ))}
         </div>
       </Card>
+
+      {/* Club Health Score */}
+      <Card>
+        <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Club Health Score</p>
+        <div className="flex items-center gap-8">
+          <div className="shrink-0">
+            <svg width={110} height={110}>
+              <circle cx={55} cy={55} r={48} fill="none" stroke={C.border} strokeWidth={8} />
+              <circle cx={55} cy={55} r={48} fill="none" stroke={C.gold} strokeWidth={8}
+                strokeDasharray={`${2 * Math.PI * 48}`} strokeDashoffset={`${2 * Math.PI * 48 * (1 - 0.74)}`}
+                strokeLinecap="round" transform="rotate(-90 55 55)" />
+              <text x="55" y="52" textAnchor="middle" fill={C.text} fontSize={22} fontWeight={900}>74</text>
+              <text x="55" y="68" textAnchor="middle" fill={C.muted} fontSize={9}>/100</text>
+            </svg>
+          </div>
+          <div className="flex-1 space-y-2.5">
+            {[{ l: 'Financial Health', v: 78, c: '#22C55E' }, { l: 'Squad Strength', v: 72, c: C.gold }, { l: 'Fan Engagement', v: 69, c: '#F59E0B' }, { l: 'Infrastructure', v: 77, c: C.teal }].map(s => (
+              <div key={s.l}>
+                <div className="flex justify-between mb-0.5"><span className="text-[10px]" style={{ color: C.muted }}>{s.l}</span><span className="text-[10px] font-bold" style={{ color: s.c }}>{s.v}</span></div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.border }}>
+                  <div className="h-full rounded-full" style={{ width: `${s.v}%`, backgroundColor: s.c }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Season Comparison */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Season vs Last Season</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {['Metric', '2023/24', '2024/25', 'Change'].map(h => <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {[
+                { m: 'Points at this stage', prev: '41', curr: '47', change: '▲+6', ok: true },
+                { m: 'Goals scored', prev: '38', curr: '44', change: '▲+6', ok: true },
+                { m: 'Goals conceded', prev: '31', curr: '27', change: '▼-4', ok: true },
+                { m: 'Average attendance', prev: '3,980', curr: '4,240', change: '▲+260', ok: true },
+                { m: 'Revenue YTD', prev: '£1.02M', curr: '£1.14M', change: '▲+12%', ok: true },
+                { m: 'Wage bill/mo', prev: '£195K', curr: '£210K', change: '▲+8%', ok: false },
+              ].map(r => (
+                <tr key={r.m} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td className="py-2 px-3" style={{ color: C.text }}>{r.m}</td>
+                  <td className="py-2 px-3" style={{ color: C.muted }}>{r.prev}</td>
+                  <td className="py-2 px-3 font-bold" style={{ color: C.text }}>{r.curr}</td>
+                  <td className="py-2 px-3 font-bold" style={{ color: r.ok ? '#22C55E' : '#F59E0B' }}>{r.change} {r.ok ? '✅' : '⚠️'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Media & Social */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { l: 'Twitter/X', v: '12,400', t: '▲+340 this month', c: C.teal },
+          { l: 'Instagram', v: '8,900', t: '▲+210 this month', c: C.purple },
+          { l: 'YouTube Views', v: '4,200', t: 'This month', c: '#EF4444' },
+          { l: 'Website Visits', v: '9,800', t: 'This month', c: C.gold },
+        ].map(s => (
+          <Card key={s.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: C.muted }}>{s.l}</p>
+            <p className="text-xl font-black" style={{ color: C.text }}>{s.v}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: s.c }}>{s.t}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Risk Register */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Risk Register</p>
+        <div className="space-y-2">
+          {[
+            { risk: 'PSR breach if wage bill exceeds 75%', level: 'High', color: '#EF4444', mitigation: 'Monthly review with CFO — currently 55%' },
+            { risk: 'Key player contract expiry (3 players)', level: 'High', color: '#EF4444', mitigation: 'Renewal talks initiated — board approval needed' },
+            { risk: 'Transfer window overspend', level: 'Medium', color: '#F59E0B', mitigation: '£350K budget approved — tracking vs allocation' },
+            { risk: 'Facilities non-compliance (West Stand)', level: 'Medium', color: '#F59E0B', mitigation: 'Inspection booked 22 Apr' },
+            { risk: 'Academy EPPP audit gap', level: 'Low', color: '#22C55E', mitigation: '94% compliant — 2 items outstanding' },
+          ].map((r, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: `${r.color}15`, color: r.color }}>{r.level}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold" style={{ color: C.text }}>{r.risk}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>Mitigation: {r.mitigation}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   )
 }
@@ -166,11 +260,12 @@ function OverviewTab() {
 
 function FinanceTab() {
   const months = [
-    { month: 'Jan', matchday: 120, commercial: 95, broadcasting: 80, academy: 25 },
-    { month: 'Feb', matchday: 140, commercial: 88, broadcasting: 80, academy: 30 },
-    { month: 'Mar', matchday: 130, commercial: 102, broadcasting: 80, academy: 28 },
+    { month: 'Jan', matchday: 180, commercial: 85, broadcasting: 35, academy: 20 },
+    { month: 'Feb', matchday: 190, commercial: 90, broadcasting: 35, academy: 23 },
+    { month: 'Mar', matchday: 185, commercial: 95, broadcasting: 38, academy: 22 },
   ]
-  const maxTotal = Math.max(...months.map(m => m.matchday + m.commercial + m.broadcasting + m.academy))
+  const allVals = months.flatMap(m => [m.matchday, m.commercial, m.broadcasting, m.academy])
+  const maxVal = Math.max(...allVals)
   const costs = [
     { cat: 'Wages', budget: 630, actual: 618, ok: true },
     { cat: 'Operations', budget: 180, actual: 195, ok: false },
@@ -183,17 +278,21 @@ function FinanceTab() {
     <div className="space-y-4">
       <Card>
         <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Revenue Breakdown (Q1)</p>
-        <div className="flex items-end gap-4 h-40">
+        <div className="flex items-end justify-center gap-8" style={{ height: 200 }}>
           {months.map(m => {
+            const bars = [
+              { val: m.matchday, c: C.teal },
+              { val: m.commercial, c: C.purple },
+              { val: m.broadcasting, c: '#F59E0B' },
+              { val: m.academy, c: '#3B82F6' },
+            ]
             const total = m.matchday + m.commercial + m.broadcasting + m.academy
-            const h = (total / maxTotal) * 100
             return (
-              <div key={m.month} className="flex-1 flex flex-col items-center">
-                <div className="w-full rounded-lg overflow-hidden flex flex-col-reverse" style={{ height: `${h}%`, minHeight: 20 }}>
-                  <div style={{ height: `${(m.matchday / total) * 100}%`, backgroundColor: C.teal }} />
-                  <div style={{ height: `${(m.commercial / total) * 100}%`, backgroundColor: C.purple }} />
-                  <div style={{ height: `${(m.broadcasting / total) * 100}%`, backgroundColor: '#F59E0B' }} />
-                  <div style={{ height: `${(m.academy / total) * 100}%`, backgroundColor: '#3B82F6' }} />
+              <div key={m.month} className="flex flex-col items-center">
+                <div className="flex items-end gap-1" style={{ height: 160 }}>
+                  {bars.map((b, i) => (
+                    <div key={i} className="rounded-t" style={{ width: 24, height: Math.max(4, (b.val / maxVal) * 150), backgroundColor: b.c, transition: 'height 0.4s ease' }} />
+                  ))}
                 </div>
                 <span className="text-xs mt-2 font-bold" style={{ color: C.muted }}>{m.month}</span>
                 <span className="text-[10px]" style={{ color: C.muted }}>£{total}K</span>
@@ -262,6 +361,78 @@ function FinanceTab() {
             ))}
           </div>
         </Card>
+      </div>
+
+      {/* Monthly P&L */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Monthly P&L (Last 6 Months)</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Month', 'Revenue', 'Costs', 'Net'].map(h => <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              { m: 'Oct 2024', r: '£362K', c: '£298K', n: '+£64K' },
+              { m: 'Nov 2024', r: '£318K', c: '£301K', n: '+£17K' },
+              { m: 'Dec 2024', r: '£395K', c: '£310K', n: '+£85K' },
+              { m: 'Jan 2025', r: '£320K', c: '£295K', n: '+£25K' },
+              { m: 'Feb 2025', r: '£338K', c: '£305K', n: '+£33K' },
+              { m: 'Mar 2025', r: '£340K', c: '£290K', n: '+£50K' },
+            ].map(row => (
+              <tr key={row.m} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3" style={{ color: C.text }}>{row.m}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.r}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.c}</td>
+                <td className="py-2 px-3 font-bold" style={{ color: '#22C55E' }}>{row.n} ✅</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Transfer Budget Tracker */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Transfer Budget Tracker</p>
+        <div className="flex justify-between text-xs mb-2"><span style={{ color: C.muted }}>£150K spent</span><span style={{ color: C.muted }}>£350K remaining</span></div>
+        <div className="h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: C.border }}>
+          <div style={{ width: '30%', backgroundColor: C.teal }} />
+          <div style={{ width: '70%', backgroundColor: `${C.purple}40` }} />
+        </div>
+        <div className="flex justify-between mt-2"><span className="text-[10px]" style={{ color: C.teal }}>Spent: D. Osei from Harlow Town (£150K)</span><span className="text-[10px]" style={{ color: C.muted }}>Summer window: 1 Jun 2025</span></div>
+      </Card>
+
+      {/* Top Revenue Sources */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Top Revenue Sources</p>
+        <div className="space-y-2">
+          {[
+            { l: 'Gate receipts', v: 480, pct: 42 },
+            { l: 'Commercial/Sponsorship', v: 270, pct: 24 },
+            { l: 'Broadcasting', v: 108, pct: 9 },
+            { l: 'Hospitality', v: 96, pct: 8 },
+            { l: 'Academy sales', v: 87, pct: 8 },
+            { l: 'Merchandising', v: 54, pct: 5 },
+            { l: 'Other', v: 45, pct: 4 },
+          ].map(s => (
+            <div key={s.l} className="flex items-center gap-3">
+              <span className="text-xs w-40 shrink-0" style={{ color: C.muted }}>{s.l}</span>
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.border }}>
+                <div className="h-full rounded-full" style={{ width: `${s.pct}%`, backgroundColor: C.teal }} />
+              </div>
+              <span className="text-xs w-16 text-right font-bold" style={{ color: C.text }}>£{s.v}K</span>
+              <span className="text-[10px] w-8 text-right" style={{ color: C.muted }}>{s.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Outstanding Invoices */}
+      <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+        <AlertCircle size={16} style={{ color: '#F59E0B', marginTop: 2 }} />
+        <div>
+          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>3 invoices overdue &gt;30 days — total £12,400</p>
+          <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>Oldest: Matchday catering supplier — £4,800 — 47 days overdue</p>
+        </div>
       </div>
     </div>
   )
@@ -337,6 +508,81 @@ function SquadTab() {
           </div>
         </Card>
       </div>
+
+      {/* Form Guide */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Form Guide (Last 5 Appearances)</p>
+        <div className="space-y-2">
+          {[
+            { n: 'M. Okafor', dots: ['🟢','🟢','🟢','🟢','🟡'], avg: '8.1' },
+            { n: 'T. Brennan', dots: ['🟢','🟢','🟡','🟢','🟢'], avg: '7.9' },
+            { n: 'L. Santos', dots: ['🟡','🟢','🟢','🟡','🟢'], avg: '7.6' },
+            { n: 'K. Mensah', dots: ['🟢','🟢','🟢','🟢','🟢'], avg: '7.8' },
+            { n: 'A. Park', dots: ['🟢','🟡','🟢','🟢','🟡'], avg: '7.6' },
+            { n: 'D. Osei', dots: ['🟡','🟢','🟡','🟡','🟢'], avg: '7.2' },
+            { n: 'R. Cole', dots: ['🟢','🟡','🟡','🟢','🟢'], avg: '7.4' },
+            { n: 'B. Hardy', dots: ['🟡','🟡','🟢','🟢','🟡'], avg: '7.1' },
+          ].map(p => (
+            <div key={p.n} className="flex items-center gap-3">
+              <span className="text-xs w-24 shrink-0 font-medium" style={{ color: C.text }}>{p.n}</span>
+              <div className="flex gap-1">{p.dots.map((d, i) => <span key={i} className="text-sm">{d}</span>)}</div>
+              <span className="text-xs font-bold ml-auto" style={{ color: C.gold }}>{p.avg}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Age Profile */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Age Profile</p>
+        <div className="flex rounded-full overflow-hidden h-4 mb-3">
+          <div style={{ width: '26%', backgroundColor: '#3B82F6' }} title="U21" />
+          <div style={{ width: '35%', backgroundColor: C.teal }} title="21-25" />
+          <div style={{ width: '26%', backgroundColor: C.gold }} title="26-29" />
+          <div style={{ width: '13%', backgroundColor: '#EF4444' }} title="30+" />
+        </div>
+        <div className="flex gap-4 flex-wrap">
+          {[{ l: 'U21', v: '6 (26%)', c: '#3B82F6' }, { l: '21–25', v: '8 (35%)', c: C.teal }, { l: '26–29', v: '6 (26%)', c: C.gold }, { l: '30+', v: '3 (13%)', c: '#EF4444' }].map(a => (
+            <div key={a.l} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: a.c }} /><span className="text-[10px]" style={{ color: C.muted }}>{a.l}: {a.v}</span></div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Academy Pipeline */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Academy Pipeline</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Player', 'Age', 'Pos', 'Status'].map(h => <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              { n: 'R. Adeyemi', a: 18, p: 'ST', s: 'Training with first team' },
+              { n: 'C. Walsh', a: 17, p: 'CM', s: 'Academy captain' },
+              { n: 'J. Nkosi', a: 19, p: 'RB', s: 'Loan return Jun 2025' },
+              { n: 'P. Diallo', a: 16, p: 'LW', s: 'Scholarship signed' },
+              { n: 'B. Osei', a: 18, p: 'GK', s: 'First team squad' },
+            ].map(p => (
+              <tr key={p.n} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3 font-medium" style={{ color: C.text }}>{p.n}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{p.a}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{p.p}</td>
+                <td className="py-2 px-3" style={{ color: C.teal }}>{p.s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Disciplinary */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[{ l: 'Yellow Cards', v: '34', c: '#F59E0B' }, { l: 'Red Cards', v: '2', c: '#EF4444' }, { l: 'Suspensions', v: '3', c: '#EF4444' }, { l: 'Avg Fouls/Game', v: '11.2', c: C.muted }].map(d => (
+          <Card key={d.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.muted }}>{d.l}</p>
+            <p className="text-xl font-black mt-1" style={{ color: d.c }}>{d.v}</p>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
@@ -400,6 +646,78 @@ function GovernanceTab() {
           ))}
         </div>
       </Card>
+
+      {/* Shareholder Structure */}
+      <Card>
+        <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Shareholder Structure</p>
+        <div className="flex items-center gap-6">
+          <div className="shrink-0" style={{ width: 100, height: 100, borderRadius: '50%', background: `conic-gradient(${C.gold} 0% 45%, ${C.purple} 45% 75%, ${C.teal} 75% 90%, #6B7280 90% 100%)` }}>
+            <div className="flex items-center justify-center rounded-full" style={{ width: 60, height: 60, backgroundColor: C.card, margin: '20px auto 0' }} />
+          </div>
+          <div className="space-y-1.5">
+            {[{ l: 'James Hartley (Chairman)', v: '45%', c: C.gold }, { l: 'Riverside Capital Ltd', v: '30%', c: C.purple }, { l: 'Community Trust', v: '15%', c: C.teal }, { l: 'Other shareholders', v: '10%', c: '#6B7280' }].map(s => (
+              <div key={s.l} className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.c }} /><span className="text-xs" style={{ color: C.muted }}>{s.l} — <span style={{ color: C.text, fontWeight: 700 }}>{s.v}</span></span></div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Board Members */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Board Members</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            { n: 'James Hartley', r: 'Chairman', y: '2018', c: C.gold },
+            { n: 'Sarah Bloom', r: 'Finance Director', y: '2020', c: C.teal },
+            { n: 'Mike Okafor', r: 'Football Director', y: '2022', c: C.red },
+            { n: 'Priya Singh', r: 'Non-Executive Director', y: '2021', c: C.purple },
+            { n: 'Tom Carver', r: 'Club Secretary', y: '2019', c: '#3B82F6' },
+          ].map(b => (
+            <div key={b.n} className="rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: `${b.c}20`, color: b.c }}>{b.n.split(' ').map(w => w[0]).join('')}</div>
+              <div><p className="text-xs font-bold" style={{ color: C.text }}>{b.n}</p><p className="text-[10px]" style={{ color: C.muted }}>{b.r} · since {b.y}</p></div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Insurance & Legal */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Insurance & Legal</p>
+        <div className="space-y-2">
+          {[
+            { text: 'Public liability insurance — valid to Dec 2025', done: true },
+            { text: 'Employer liability — valid to Dec 2025', done: true },
+            { text: 'Player personal accident cover — 23 players covered', done: true },
+            { text: 'Directors & Officers insurance — renewal due 1 May 2025', done: false },
+          ].map((c, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: c.done ? 'rgba(34,197,94,0.04)' : 'rgba(245,158,11,0.04)', border: `1px solid ${c.done ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'}` }}>
+              {c.done ? <CheckCircle2 size={14} style={{ color: '#22C55E' }} /> : <AlertCircle size={14} style={{ color: '#F59E0B' }} />}
+              <span className="text-xs" style={{ color: c.done ? C.muted : C.text }}>{c.text}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Strategic Plan */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Strategic Plan Milestones</p>
+        <div className="space-y-2">
+          {[
+            { icon: '✅', text: 'Q1 2025: Achieve top-6 position', status: 'DONE', c: '#22C55E' },
+            { icon: '✅', text: 'Q1 2025: Complete west stand refurb plan', status: 'DONE', c: '#22C55E' },
+            { icon: '🔄', text: 'Q2 2025: Sign 3 summer signings within budget', status: 'IN PROGRESS', c: '#F59E0B' },
+            { icon: '⬜', text: 'Q3 2025: Launch new club app', status: 'PLANNED', c: C.muted },
+            { icon: '⬜', text: 'Q4 2025: Academy affiliation with PL club', status: 'PLANNED', c: C.muted },
+          ].map((m, i) => (
+            <div key={i} className="flex items-center gap-3 py-1.5">
+              <span>{m.icon}</span>
+              <span className="text-xs flex-1" style={{ color: C.text }}>{m.text}</span>
+              <span className="text-[10px] font-bold" style={{ color: m.c }}>{m.status}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   )
 }
@@ -458,6 +776,65 @@ function FacilitiesTab() {
           <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>This season average</span><span className="text-xs font-bold" style={{ color: C.text }}>71%</span></div>
           <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Best attended</span><span className="text-xs font-bold" style={{ color: '#22C55E' }}>Derby vs Riverside — 5,980 (99%)</span></div>
           <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Lowest</span><span className="text-xs font-bold" style={{ color: '#EF4444' }}>LC R1 vs Cliffe Town — 1,240 (21%)</span></div>
+        </div>
+      </Card>
+
+      {/* Facility Investment Plan */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Facility Investment Plan</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Project', 'Budget', 'Status', 'Completion'].map(h => <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              { p: 'West Stand inspection & repairs', b: '£45K', s: 'In progress', c: 'May 2025', sc: '#F59E0B' },
+              { p: 'Training ground drainage', b: '£28K', s: 'Approved', c: 'Jun 2025', sc: '#22C55E' },
+              { p: 'New CCTV system', b: '£15K', s: 'Tendering', c: 'May 2025', sc: '#F59E0B' },
+              { p: 'Pitch resurfacing', b: '£60K', s: 'Planned', c: 'Jul 2025', sc: C.muted },
+              { p: 'Club shop refit', b: '£22K', s: 'Planned', c: 'Aug 2025', sc: C.muted },
+            ].map(r => (
+              <tr key={r.p} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3" style={{ color: C.text }}>{r.p}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{r.b}</td>
+                <td className="py-2 px-3"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${r.sc}15`, color: r.sc }}>{r.s}</span></td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{r.c}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Energy & Sustainability */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { l: 'Monthly Energy Cost', v: '£4,200', c: '#F59E0B' },
+          { l: 'Solar Savings YTD', v: '£1,800', c: '#22C55E' },
+          { l: 'Pitch Water Usage', v: '18,000L/mo', c: '#3B82F6' },
+          { l: 'Carbon Offset', v: 'On track ✅', c: '#22C55E' },
+        ].map(e => (
+          <Card key={e.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.muted }}>{e.l}</p>
+            <p className="text-lg font-black mt-1" style={{ color: e.c }}>{e.v}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Stadium History */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Stadium Timeline</p>
+        <div className="space-y-2">
+          {[
+            { y: '1952', text: 'Ground opened' },
+            { y: '2019', text: 'Last major refurbishment (North Stand)' },
+            { y: 'Now', text: 'Current capacity: 6,000' },
+            { y: 'Pending', text: 'East Stand expansion to 7,500 — planning decision expected Jun 2025' },
+          ].map(t => (
+            <div key={t.y} className="flex items-center gap-3">
+              <span className="text-xs font-bold w-16 shrink-0" style={{ color: t.y === 'Pending' ? C.gold : C.text }}>{t.y}</span>
+              <span className="text-xs" style={{ color: C.muted }}>{t.text}</span>
+            </div>
+          ))}
         </div>
       </Card>
     </div>
