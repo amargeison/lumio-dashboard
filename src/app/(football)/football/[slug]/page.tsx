@@ -1904,30 +1904,28 @@ function InsightsView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Intelligence</h1>
-          <p className="text-xs" style={{ color: '#6B7280' }}>Everything your club needs to know — by role, by department, by moment</p>
+      {/* Header + Role Tabs */}
+      <div>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+          <div>
+            <h1 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Intelligence</h1>
+            <p className="text-xs" style={{ color: '#6B7280' }}>Everything your club needs to know — by role, by department, by moment</p>
+          </div>
+          <div className="flex gap-2">
+            {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['season', 'This Season']].map(([k, l]) => (
+              <button key={k} onClick={() => setRange(k)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{ backgroundColor: range === k ? '#C0392B' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['season', 'This Season']].map(([k, l]) => (
-            <button key={k} onClick={() => setRange(k)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ backgroundColor: range === k ? '#C0392B' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {ROLES.map(r => (
+            <button key={r.id} onClick={() => setRole(r.id)} className="inline-flex items-center gap-1.5 shrink-0 rounded-full transition-all"
+              style={{ padding: '6px 14px', fontSize: 13, fontWeight: 600, backgroundColor: role === r.id ? '#0D9488' : '#111318', color: role === r.id ? '#F9FAFB' : '#9CA3AF', border: role === r.id ? 'none' : '1px solid #1F2937' }}>
+              <span>{r.emoji}</span>{r.title}
+            </button>
           ))}
         </div>
-      </div>
-
-      {/* Role Selector */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {ROLES.map(r => (
-          <button key={r.id} onClick={() => setRole(r.id)} className="rounded-xl p-4 text-left transition-all"
-            style={{ backgroundColor: role === r.id ? 'rgba(192,57,43,0.12)' : '#111318', border: role === r.id ? '2px solid #C0392B' : '1px solid #1F2937' }}>
-            <span className="text-2xl block mb-2">{r.emoji}</span>
-            <p className="text-sm font-bold" style={{ color: role === r.id ? '#F1C40F' : '#F9FAFB' }}>{r.title}</p>
-            <p className="text-xs" style={{ color: '#6B7280' }}>{r.summary}</p>
-          </button>
-        ))}
       </div>
 
       {/* ── DIRECTOR OF FOOTBALL ── */}
