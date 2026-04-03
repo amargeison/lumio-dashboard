@@ -129,46 +129,28 @@ interface Player {
 }
 
 const SQUAD: Player[] = [
-  // Goalkeepers
-  { name: 'James Walker', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2026', marketValue: '£800k', fitness: 'fit', lastRating: 7.2, goals: 0, assists: 0 },
-  { name: 'Liam Burton', number: 13, position: 'GK', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£300k', fitness: 'fit', lastRating: 6.8, goals: 0, assists: 0 },
-  { name: 'Tomasz Kowalski', number: 30, position: 'GK', nationality: '🇵🇱', age: 19, contractExpiry: 'Jun 2029', marketValue: '£120k', fitness: 'fit', lastRating: 6.5, goals: 0, assists: 0 },
-  // Centre Backs
-  { name: 'Diego Martinez', number: 5, position: 'CB', nationality: '🇪🇸', age: 30, contractExpiry: 'Jun 2025', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 2, assists: 0 },
-  { name: 'Marcus Cole', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.6, goals: 1, assists: 1 },
-  { name: 'Jake Phillips', number: 15, position: 'CB', nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', age: 24, contractExpiry: 'Jun 2029', marketValue: '£900k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 0 },
-  { name: 'Luka Petrovic', number: 22, position: 'CB', nationality: '🇷🇸', age: 28, contractExpiry: 'Jun 2027', marketValue: '£1.1m', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 2 },
-  // Right Backs
-  { name: 'Callum Henderson', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.0m', fitness: 'fit', lastRating: 7.3, goals: 1, assists: 5 },
-  { name: 'Charlie Bennett', number: 24, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 19, contractExpiry: 'Jun 2029', marketValue: '£250k', fitness: 'fit', lastRating: 6.4, goals: 0, assists: 1 },
-  // Left Backs
-  { name: 'Tyrone Campbell', number: 3, position: 'LB', nationality: '🇯🇲', age: 26, contractExpiry: 'Jun 2027', marketValue: '£850k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 4 },
-  { name: 'Nathan Brooks', number: 18, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'Jun 2028', marketValue: '£350k', fitness: 'fit', lastRating: 6.7, goals: 0, assists: 2 },
-  // Central Midfielders
-  { name: 'Ryan Thompson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 29, contractExpiry: 'Jun 2026', marketValue: '£1.8m', fitness: 'suspended', lastRating: 7.8, goals: 4, assists: 7 },
-  { name: 'Kai Nakamura', number: 14, position: 'CM', nationality: '🇯🇵', age: 24, contractExpiry: 'Jun 2029', marketValue: '£1.3m', fitness: 'fit', lastRating: 7.5, goals: 3, assists: 6 },
-  { name: 'Ben Gallagher', number: 16, position: 'CM', nationality: '🇮🇪', age: 27, contractExpiry: 'Jun 2027', marketValue: '£950k', fitness: 'fit', lastRating: 7.1, goals: 2, assists: 3 },
-  { name: 'Kwame Asante', number: 25, position: 'CM', nationality: '🇬🇭', age: 21, contractExpiry: 'Jun 2030', marketValue: '£400k', fitness: 'fit', lastRating: 6.9, goals: 1, assists: 2 },
-  // Attacking Midfielders
-  { name: 'Ethan Price', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£1.4m', fitness: 'fit', lastRating: 7.6, goals: 5, assists: 8 },
-  { name: 'Mateo Silva', number: 20, position: 'CAM', nationality: '🇧🇷', age: 26, contractExpiry: 'Jun 2027', marketValue: '£1.6m', fitness: 'modified', lastRating: 7.3, goals: 3, assists: 5 },
-  // Left Wingers
-  { name: "Sean O'Brien", number: 11, position: 'LW', nationality: '🇮🇪', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 6, assists: 4 },
-  { name: 'Jayden Clarke', number: 19, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2029', marketValue: '£500k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3 },
-  // Right Wingers
-  { name: 'Rafa Correia', number: 7, position: 'RW', nationality: '🇵🇹', age: 24, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.7, goals: 5, assists: 9 },
-  { name: 'Daniel Foster', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 6.6, goals: 1, assists: 2 },
-  // Strikers
-  { name: 'Lucas Santos', number: 9, position: 'ST', nationality: '🇧🇷', age: 27, contractExpiry: 'Jun 2027', marketValue: '£2.2m', fitness: 'injured', lastRating: 8.1, goals: 14, assists: 3 },
-  { name: 'Tommy Richards', number: 21, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£700k', fitness: 'fit', lastRating: 7.0, goals: 4, assists: 1 },
-  { name: 'Aiden Murphy', number: 12, position: 'ST', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£500k', fitness: 'fit', lastRating: 6.9, goals: 3, assists: 2 },
-  { name: 'Omar Hassan', number: 23, position: 'ST', nationality: '🇪🇬', age: 23, contractExpiry: 'Jun 2028', marketValue: '£650k', fitness: 'doubt', lastRating: 7.2, goals: 5, assists: 1 },
+  { name: 'Nathan Bishop', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 0, assists: 0, stats: { PAC: 58, SHO: 14, PAS: 62, DRI: 52, DEF: 72, PHY: 78 } },
+  { name: 'Joe McDonnell', number: 13, position: 'GK', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.9, goals: 0, assists: 0, stats: { PAC: 52, SHO: 12, PAS: 58, DRI: 48, DEF: 70, PHY: 76 } },
+  { name: 'Patrick Bauer', number: 5, position: 'CB', nationality: '🇩🇪', age: 33, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 1, stats: { PAC: 62, SHO: 38, PAS: 65, DRI: 55, DEF: 79, PHY: 84 } },
+  { name: 'Ryan Johnson', number: 4, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 26, contractExpiry: 'Jun 2027', marketValue: '£250k', fitness: 'fit', lastRating: 7.2, goals: 1, assists: 0, stats: { PAC: 68, SHO: 35, PAS: 67, DRI: 58, DEF: 77, PHY: 82 } },
+  { name: 'Isaac Ogundere', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'injured', lastRating: 6.8, goals: 0, assists: 1, stats: { PAC: 72, SHO: 32, PAS: 64, DRI: 60, DEF: 74, PHY: 80 } },
+  { name: 'Steve Seddon', number: 3, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 3, stats: { PAC: 74, SHO: 42, PAS: 70, DRI: 68, DEF: 73, PHY: 75 } },
+  { name: 'Nathan Asiimwe', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'May 2026', marketValue: '£150k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 2, stats: { PAC: 78, SHO: 38, PAS: 68, DRI: 70, DEF: 68, PHY: 72 } },
+  { name: 'Brodi Hughes', number: 22, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'injured', lastRating: 6.7, goals: 0, assists: 1, stats: { PAC: 76, SHO: 35, PAS: 65, DRI: 68, DEF: 65, PHY: 70 } },
+  { name: 'Sam Hutchinson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 35, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 4, stats: { PAC: 58, SHO: 55, PAS: 76, DRI: 65, DEF: 74, PHY: 80 } },
+  { name: 'Delano McCoy-Splatt', number: 14, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 3, assists: 5, stats: { PAC: 72, SHO: 60, PAS: 74, DRI: 72, DEF: 62, PHY: 72 } },
+  { name: 'Alistair Smith', number: 16, position: 'CM', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 26, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'injured', lastRating: 6.9, goals: 2, assists: 3, stats: { PAC: 70, SHO: 58, PAS: 72, DRI: 68, DEF: 65, PHY: 74 } },
+  { name: 'Zack Nelson', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 24, contractExpiry: 'Jun 2026', marketValue: '£250k', fitness: 'fit', lastRating: 7.3, goals: 4, assists: 6, stats: { PAC: 74, SHO: 68, PAS: 78, DRI: 76, DEF: 45, PHY: 66 } },
+  { name: 'Marcus Browne', number: 11, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 7.8, goals: 12, assists: 5, stats: { PAC: 82, SHO: 74, PAS: 72, DRI: 80, DEF: 38, PHY: 68 } },
+  { name: 'Ed Leach', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3, stats: { PAC: 80, SHO: 65, PAS: 68, DRI: 76, DEF: 35, PHY: 62 } },
+  { name: 'Antwoine Hackford', number: 9, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£350k', fitness: 'fit', lastRating: 7.2, goals: 8, assists: 2, stats: { PAC: 80, SHO: 76, PAS: 62, DRI: 72, DEF: 28, PHY: 74 } },
+  { name: 'Layton Stewart', number: 19, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 5, assists: 1, stats: { PAC: 78, SHO: 74, PAS: 60, DRI: 70, DEF: 25, PHY: 72 } },
 ]
 
 const INJURIES = [
-  { player: 'Diego Martinez', type: 'Hamstring strain (Grade 2)', expectedReturn: '14 Apr 2026', phase: 'Rehab — jogging', since: '12 Mar 2026', matchesMissed: 4 },
-  { player: "Sean O'Brien", type: 'Ankle ligament damage', expectedReturn: '21 Apr 2026', phase: 'Boot — non-weight bearing', since: '8 Mar 2026', matchesMissed: 5 },
-  { player: 'Lucas Santos', type: 'Knee cartilage irritation', expectedReturn: '7 Apr 2026', phase: 'Light training', since: '22 Mar 2026', matchesMissed: 2 },
+  { player: 'Brodi Hughes', type: 'Hamstring strain', expectedReturn: 'Apr 2026', phase: 'Rehabilitation', since: 'Mar 2026', matchesMissed: 3 },
+  { player: 'Alistair Smith', type: 'Ankle ligament', expectedReturn: 'May 2026', phase: 'Recovery', since: 'Feb 2026', matchesMissed: 7 },
+  { player: 'Isaac Ogundere', type: 'Knee bruise', expectedReturn: 'Apr 2026', phase: 'Light training', since: 'Mar 2026', matchesMissed: 2 },
 ]
 
 const TRANSFER_TARGETS = [
@@ -257,9 +239,9 @@ const MATCH_FORMATIONS = [
 ]
 
 const FIXTURES = [
-  { opponent: 'Riverside United', date: 'Sat 4 Apr', time: '15:00', venue: 'Home', competition: 'League' },
-  { opponent: 'Northgate City', date: 'Tue 7 Apr', time: '19:45', venue: 'Away', competition: 'League Cup QF' },
-  { opponent: 'Crestwood Athletic', date: 'Sat 11 Apr', time: '15:00', venue: 'Away', competition: 'League' },
+  { opponent: 'Stockport County', date: 'Sat 5 Apr', time: '15:00', venue: 'Away', competition: 'League One' },
+  { opponent: 'Huddersfield Town', date: 'Sat 12 Apr', time: '15:00', venue: 'Home', competition: 'League One' },
+  { opponent: 'Peterborough United', date: 'Fri 18 Apr', time: '19:45', venue: 'Away', competition: 'League One' },
 ]
 
 const ACADEMY_PLAYERS = [
@@ -633,7 +615,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               {clubLogo && (
-                <img src={clubLogo} alt="Club badge" style={{ width: 72, height: 72, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }} />
+                <img src={clubLogo} alt="Club badge" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))' }} />
               )}
               <div>
               <div className="flex items-center gap-2 mb-1">
@@ -1134,7 +1116,7 @@ function TeamInfoTab() {
     { id: 'st', name: 'Liam Cross', pos: 'ST', initials: 'LC', overall: 86, color: '#EF4444', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 } },
   ]
   const COACHES = [
-    { name: 'Marcus Reid', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
     { name: 'Danny Hughes', role: 'Asst Coach', initials: 'DH', color: '#0D9488' },
     { name: 'Priya Nair', role: 'Head Medical', initials: 'PN', color: '#EC4899' },
   ]
@@ -1193,7 +1175,7 @@ function TeamInfoTab() {
   if (!mounted) return null
 
   const GRID_CARDS = [
-    { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
     { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
     { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
     { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
@@ -1508,7 +1490,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {[
-            { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#003DA5' },
+            { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#003DA5' },
             { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#003DA5' },
             { name: 'Dr Sarah Phillips', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
             { name: 'Pete Morrison', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
@@ -1553,7 +1535,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="flex justify-center mb-8">
             <div className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #7F8C8D' }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(127,140,141,0.2)', color: '#7F8C8D' }}>RB</div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>The Dons Trust</p>
               <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Chairman</p>
             </div>
           </div>
@@ -1561,7 +1543,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '40%' }} /></div>
           {/* Level 2 */}
           <div className="flex justify-center gap-6 mb-4">
-            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Marcus Reid', role: 'Head Coach', color: '#003DA5' }].map(m => (
+            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Johnnie Jackson', role: 'Head Coach', color: '#003DA5' }].map(m => (
               <div key={m.name} className="flex flex-col items-center">
                 <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
                 <div className="rounded-xl p-3 text-center cursor-pointer w-44" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
@@ -1631,13 +1613,13 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
-              {[['Club','AFC Wimbledon'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Plough Lane (9,500)'],['Training Ground','Wimbledon Training Ground'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+              {[['Club','AFC Wimbledon'],['Founded','2002'],['Nickname','The Dons'],['Colours','Blue & Yellow'],['Stadium','Plough Lane (9,215)'],['Training Ground','Wimbledon Training Ground'],['League','EFL League One'],['EPPP Category','Category 2']].map(([l,v]) => (
                 <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
               ))}
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['Chairman','Robert Blackwell'],['Director of Football','Dave Thompson'],['Head Coach','Marcus Reid'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
+              {[['Chairman','The Dons Trust'],['Director of Football','Dave Thompson'],['Head Coach','Johnnie Jackson'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>
@@ -4784,7 +4766,7 @@ function ClubProfileView() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Plough Lane' },{ l: 'Capacity', v: '24,000' }].map(s => (
+        {[{ l: 'Nickname', v: 'The Dons' },{ l: 'Colours', v: 'Blue & Yellow' },{ l: 'Stadium', v: 'Plough Lane' },{ l: 'Capacity', v: '9,215' }].map(s => (
           <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
         ))}
       </div>
@@ -4802,7 +4784,7 @@ function ClubProfileView() {
 
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
-        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'AFC Wimbledon Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
+        {[['Owner', 'The Dons Trust (fan-owned)'],['Manager', 'Johnnie Jackson'],['Founded', '2002'],['Philosophy', '"By the fans, for the fans"']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
