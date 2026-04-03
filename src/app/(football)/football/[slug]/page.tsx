@@ -1721,6 +1721,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo 
       {tab === 'today' ? (
         <div className="space-y-4">
           <QuickActionsBar onAction={onAction} />
+          <ApiStatusStrip />
 
           {!isDemo && (
             <>
@@ -4849,6 +4850,76 @@ function ClubProfileView() {
   )
 }
 
+function useApiStatus() {
+  const [status, setStatus] = useState<{ plan: string; used: number; limit: number; remaining: number } | null>(null)
+  useEffect(() => {
+    fetch('/api/football/status').then(r => r.json()).then(d => {
+      if (d?.response) {
+        const s = d.response.requests
+        setStatus({ plan: d.response.subscription?.plan || 'Free', used: s.current, limit: s.limit_day, remaining: s.limit_day - s.current })
+      }
+    }).catch(() => {})
+  }, [])
+  return status
+}
+
+function ApiUsageCard() {
+  const status = useApiStatus()
+  if (!status) return null
+  const pct = Math.round((status.used / status.limit) * 100)
+  const barColor = pct >= 85 ? '#EF4444' : pct >= 60 ? '#F59E0B' : '#22C55E'
+  const resetTime = new Date(); resetTime.setUTCDate(resetTime.getUTCDate() + 1); resetTime.setUTCHours(0, 0, 0, 0)
+  const resetLocal = resetTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">📡</span>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>API & Integrations</p>
+        </div>
+      </div>
+      <div className="px-5 py-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>API-Football Plan</span>
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{status.plan}</span>
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Requests used today</span>
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{status.used} / {status.limit}</span>
+          </div>
+          <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+            <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: 4, transition: 'width 0.5s' }} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Remaining today</span>
+          <span className="text-sm font-bold" style={{ color: barColor }}>{status.remaining}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Quota resets at</span>
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{resetLocal} (midnight UTC)</span>
+        </div>
+        <p className="text-xs" style={{ color: '#6B7280' }}>Upgrade at api-football.com for unlimited calls (~£7/mo)</p>
+      </div>
+    </div>
+  )
+}
+
+function ApiStatusStrip() {
+  const status = useApiStatus()
+  if (!status) return null
+  const pct = Math.round((status.used / status.limit) * 100)
+  const dotColor = pct >= 85 ? '#EF4444' : pct >= 60 ? '#F59E0B' : '#22C55E'
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937' }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+      <span className="text-[11px]" style={{ color: '#6B7280' }}>API: {status.used}/{status.limit} calls used today</span>
+    </div>
+  )
+}
+
 function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: string }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
@@ -5071,6 +5142,9 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
         { phrase: 'Show the mentorship programme', description: 'Senior and youth mentoring pairs' },
         { phrase: 'Any pre season friendlies confirmed', description: 'Confirmed pre season match schedule' },
       ]} />
+
+      {/* API & Integrations */}
+      <ApiUsageCard />
 
       {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
