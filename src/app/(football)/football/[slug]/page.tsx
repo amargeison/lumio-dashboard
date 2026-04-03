@@ -475,13 +475,13 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
       {/* Desktop sidebar */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 48, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 64 }}>
-          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }} title="Upload club badge">
+        <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
+          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }} title="Upload club badge">
             {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
             {logoHover && <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 9 }}><Camera size={16} color="#fff" /></div>}
           </button>
