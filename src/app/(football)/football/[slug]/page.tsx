@@ -65,13 +65,13 @@ const FOOTBALL_QUOTES = [
 ]
 
 const BG_GRADIENTS = [
-  'from-red-950/80 via-rose-900/90 to-red-950',
-  'from-rose-950 via-red-950/80 to-rose-900/90',
-  'from-red-950 via-rose-950/80 to-red-900/90',
-  'from-rose-950/90 via-red-950 to-rose-900/80',
-  'from-red-950/80 via-rose-900/90 to-rose-950',
-  'from-rose-900/90 via-red-950 to-rose-950/80',
-  'from-red-950 via-rose-950/90 to-red-900/80',
+  'from-blue-950 via-blue-900 to-yellow-950/80',
+  'from-blue-900 via-blue-950 to-yellow-900/80',
+  'from-blue-950 via-indigo-950 to-blue-900/90',
+  'from-blue-900 via-blue-950 to-yellow-950/80',
+  'from-indigo-950 via-blue-950 to-yellow-900/80',
+  'from-blue-950 via-blue-900 to-indigo-950/90',
+  'from-blue-900 via-indigo-950 to-yellow-950/80',
 ]
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
@@ -626,7 +626,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
       <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-red-600 rounded-full opacity-10 blur-3xl" />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
         <div className="relative z-10 px-6 py-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -1624,7 +1624,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
-              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+              {[['Club','AFC Wimbledon'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Plough Lane (9,500)'],['Training Ground','Wimbledon Training Ground'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
                 <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
               ))}
             </div>
@@ -3358,11 +3358,11 @@ function AnalyticsView() {
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Last 5 Matches — Key Metrics</p>
         </div>
         {[
-          { match: 'Oakridge 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
-          { match: 'Ashford 0-0 Oakridge', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
-          { match: 'Oakridge 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
-          { match: 'Crestwood 1-2 Oakridge', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
-          { match: 'Oakridge 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
+          { match: 'Wimbledon 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
+          { match: 'Ashford 0-0 Wimbledon', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
+          { match: 'Wimbledon 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
+          { match: 'Crestwood 1-2 Wimbledon', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
+          { match: 'Wimbledon 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
         ].map((m, i) => (
           <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
@@ -4476,14 +4476,14 @@ const VOICES = [
 // ─── Social Media View ──────────────────────────────────────────────────────
 
 const SOCIAL_MENTIONS = [
-  { user: '@OakridgeFan92', content: 'Great performance from Oakridge FC last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing Oakridge FC are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
-  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Oakridge! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@ChampionshipNews', content: 'Oakridge FC move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+  { user: '@AFCWimbFan92', content: 'Great performance from AFC Wimbledon last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+  { user: '@SportsBlogger', content: 'Hearing AFC Wimbledon are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Wimbledon! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
+  { user: '@ChampionshipNews', content: 'AFC Wimbledon move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
   { user: '@TacticsBoard', content: 'Thompson\'s pass map vs Riverside was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
   { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Tyler James (17) training with Oakridge first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'Oakridge FC have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+  { user: '@YouthFootball', content: 'Tyler James (17) training with Wimbledon first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+  { user: '@TransferWatch', content: 'AFC Wimbledon have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
 ]
 
 const SOCIAL_PLATFORMS = [
@@ -4516,7 +4516,7 @@ function SocialMediaView() {
 
   return (
     <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Oakridge FC</p></div>
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about AFC Wimbledon</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
@@ -4773,11 +4773,11 @@ function ClubProfileView() {
     <div className="space-y-5">
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#C0392B' }}>⚽</div>
-        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Oakridge FC</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL Championship · Founded 1887</p></div>
+        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>AFC Wimbledon</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL League One · Founded 2002</p></div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
+        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Plough Lane' },{ l: 'Capacity', v: '24,000' }].map(s => (
           <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
         ))}
       </div>
@@ -4795,7 +4795,7 @@ function ClubProfileView() {
 
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
-        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'Oakridge FC Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
+        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'AFC Wimbledon Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
@@ -4975,9 +4975,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_club_name') || 'Oakridge FC'
+      return localStorage.getItem('football_club_name') || 'AFC Wimbledon'
     }
-    return 'Oakridge FC'
+    return 'AFC Wimbledon'
   })
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -5030,7 +5030,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   }
 
   useEffect(() => {
-    const name = localStorage.getItem('football_club_name') || 'Oakridge FC'
+    const name = localStorage.getItem('football_club_name') || 'AFC Wimbledon'
     const user = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
     setClubName(name)
     setUserName(user)
