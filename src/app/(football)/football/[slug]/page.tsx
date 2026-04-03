@@ -24,6 +24,7 @@ import AIInsightsReport from '@/components/AIInsightsReport'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import BoardSuiteView from '@/components/football/BoardSuiteView'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -4812,7 +4813,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
             {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
-            {isFootballDemo && activeDept === 'board' && <div className="text-center py-20"><div className="text-5xl mb-4">👑</div><h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>Board Suite</h2><p className="text-sm" style={{ color: '#6B7280' }}>Executive dashboards, financial oversight and governance tools — coming soon.</p></div>}
+            {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
             {isFootballDemo && activeDept === 'medical' && <MedicalView />}
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
