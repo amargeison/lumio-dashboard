@@ -37,7 +37,7 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
 
   return (
     <>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 40, zIndex: 9999, backgroundColor: '#0D9488', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 13 }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 40, zIndex: 9999, backgroundColor: '#0D9488', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 80px 0 16px', fontSize: 13 }}>
         <div className="flex items-center gap-2">
           <Clock size={13} />
           <span className="font-medium">Demo workspace — exploring with sample data</span>
