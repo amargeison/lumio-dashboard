@@ -575,8 +575,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean
+function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, clubLogo }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean; clubLogo?: string | null
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -631,7 +631,11 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
         <div className="relative z-10 px-6 py-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              {clubLogo && (
+                <img src={clubLogo} alt="Club badge" style={{ width: 72, height: 72, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }} />
+              )}
+              <div>
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
@@ -654,6 +658,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
               </div>
               <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{date}</p>
               <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
@@ -1676,7 +1681,7 @@ function FootballEmptyState({ dept }: { dept: string }) {
 
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean }) {
+function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1685,7 +1690,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} clubLogo={clubLogo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -5098,7 +5103,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
