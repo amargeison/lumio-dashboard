@@ -467,10 +467,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, focusDepts, navRef, comp
         style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
         <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           {companyLogo ? (
-            <img src={companyLogo} alt={companyName || 'Company'} style={{ maxWidth: 120, maxHeight: 40, objectFit: 'contain' }} className="rounded-md" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            <div className="flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, border: '1px solid #1F2937' }}>
+              <img src={companyLogo} alt={companyName || 'Company'} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            </div>
           ) : (
-            <div className="flex items-center justify-center rounded-lg text-xs font-bold"
-              style={{ width: 36, height: 36, backgroundColor: '#6C3FC5', color: '#F9FAFB', flexShrink: 0 }}>
+            <div className="flex items-center justify-center text-sm font-bold shrink-0"
+              style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
               {(companyName || 'LC').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
             </div>
           )}
