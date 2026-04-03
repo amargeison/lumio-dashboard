@@ -20,11 +20,17 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
   if (!visible || dismissed) return null
 
   function clearDemo() {
+    const savedLogo = localStorage.getItem('lumio_company_logo')
+    const savedWsLogo = localStorage.getItem('workspace_company_logo')
+    const savedPhoto = localStorage.getItem('lumio_user_photo')
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
       .forEach(k => localStorage.removeItem(k))
     localStorage.setItem('lumio_demo_active', 'false')
     localStorage.removeItem('lumio-photo-frame')
+    if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
+    if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
+    if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
     invalidateWorkspaceCache()
     window.location.reload()
   }

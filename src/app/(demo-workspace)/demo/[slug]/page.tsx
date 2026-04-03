@@ -4099,7 +4099,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <button onClick={() => setShowInvite(true)} className="hidden lg:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
               <UserPlus size={11} /> Invite team
             </button>
-            <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+            <button onClick={() => { const logo = localStorage.getItem('demo_company_logo'); const photo = localStorage.getItem('lumio_user_photo'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); if (logo) localStorage.setItem('demo_company_logo', logo); if (photo) localStorage.setItem('lumio_user_photo', photo); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
               Clear Demo Data
             </button>
             <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>
@@ -4210,6 +4210,15 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         </div>
       )}
 
+      {/* Top-right: bell + avatar — fixed overlay */}
+      <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
+        <NotificationBell />
+        <AvatarDropdown
+          initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
+          onConvert={() => setShowConvert(true)}
+        />
+      </div>
+
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} focusDepts={focusDepts} navRef={navRef} companyName={company} companyLogo={companyLogo} />
@@ -4225,14 +4234,6 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               <div className="flex items-center gap-2" style={{ paddingRight: 24 }}>
                 {/* Mobile invite */}
                 <button className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }} onClick={() => setShowInvite(true)}><UserPlus size={11} /> Invite</button>
-                {/* Bell + avatar (desktop) */}
-                <div className="hidden md:flex items-center gap-3">
-                  <NotificationBell />
-                  <AvatarDropdown
-                    initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}
-                    onConvert={() => setShowConvert(true)}
-                  />
-                </div>
               </div>
             </div>
 
