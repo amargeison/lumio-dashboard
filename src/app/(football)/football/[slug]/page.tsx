@@ -1243,7 +1243,7 @@ function TeamInfoTab() {
             {/* Right: Squad Panel (50%) */}
             <div style={{ width: '50%', backgroundColor: '#0a0d13', borderLeft: '1px solid #1F2937', overflowY: 'auto' }}>
               <div className="px-3 py-2.5" style={{ borderBottom: '1px solid #1F2937' }}>
-                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Squad ({ALL_SQUAD.length})</p>
+                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Squad ({starters.length + bench.length})</p>
                 <p className="text-[10px]" style={{ color: '#6B7280' }}>{starters.length} starting · {bench.length} bench</p>
               </div>
               {[
@@ -1252,7 +1252,7 @@ function TeamInfoTab() {
                 { label: '🟦 MIDFIELDERS', positions: ['CM', 'DM', 'CAM', 'AM'] },
                 { label: '🔴 ATTACKERS', positions: ['RW', 'LW', 'ST', 'CF'] },
               ].map(group => {
-                const players = ALL_SQUAD.filter(p => group.positions.includes(p.pos))
+                const players = [...starters, ...bench].filter(p => group.positions.includes(p.pos))
                 if (!players.length) return null
                 const starterIds = new Set(starters.map(p => p.id))
                 return (
