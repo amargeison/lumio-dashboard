@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 import { getWorkspaceSession } from '@/lib/auth/workspace-auth'
 
 function getSupabase() {
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
   const session = await getWorkspaceSession(req)
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
   const { business_id } = session
+  const cookieStore = await cookies()
+  const devPinActive = cookieStore.get('lumio_dev_access')?.value === '0717'
 
   const { data: business } = await supabase
     .from('businesses')
@@ -43,5 +46,5 @@ export async function GET(req: NextRequest) {
     .select('id', { count: 'exact', head: true })
     .eq('business_id', business_id)
 
-  return NextResponse.json({ ...business, user_avatar_url, staff_count: staff_count ?? 0 })
+  return NextResponse.json({ ...business, user_avatar_url, staff_count: staff_count ?? 0, demo_data_active: devPinActive ? true : business.demo_data_active })
 }

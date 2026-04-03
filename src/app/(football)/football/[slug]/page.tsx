@@ -26,6 +26,8 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
+import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView } from '@/components/football/IntegrationViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -39,10 +41,11 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
+  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools'
+type SidebarSection = null | 'Departments' | 'Tools' | 'Integrations'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -65,13 +68,13 @@ const FOOTBALL_QUOTES = [
 ]
 
 const BG_GRADIENTS = [
-  'from-red-950/80 via-rose-900/90 to-red-950',
-  'from-rose-950 via-red-950/80 to-rose-900/90',
-  'from-red-950 via-rose-950/80 to-red-900/90',
-  'from-rose-950/90 via-red-950 to-rose-900/80',
-  'from-red-950/80 via-rose-900/90 to-rose-950',
-  'from-rose-900/90 via-red-950 to-rose-950/80',
-  'from-red-950 via-rose-950/90 to-red-900/80',
+  'from-blue-950 via-blue-900 to-yellow-950/80',
+  'from-blue-900 via-blue-950 to-yellow-900/80',
+  'from-blue-950 via-indigo-950 to-blue-900/90',
+  'from-blue-900 via-blue-950 to-yellow-950/80',
+  'from-indigo-950 via-blue-950 to-yellow-900/80',
+  'from-blue-950 via-blue-900 to-indigo-950/90',
+  'from-blue-900 via-indigo-950 to-yellow-950/80',
 ]
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
@@ -98,6 +101,10 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
+  { id: 'wyscout',     label: 'Wyscout / Video', icon: Video,          section: 'Integrations' },
+  { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
+  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
+  { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -128,47 +135,32 @@ interface Player {
   stats?: { PAC: number; SHO: number; PAS: number; DRI: number; DEF: number; PHY: number }
 }
 
+const FB_PRIMARY = '#003DA5'
+const FB_SECONDARY = '#F1C40F'
+
 const SQUAD: Player[] = [
-  // Goalkeepers
-  { name: 'James Walker', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2026', marketValue: '£800k', fitness: 'fit', lastRating: 7.2, goals: 0, assists: 0 },
-  { name: 'Liam Burton', number: 13, position: 'GK', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£300k', fitness: 'fit', lastRating: 6.8, goals: 0, assists: 0 },
-  { name: 'Tomasz Kowalski', number: 30, position: 'GK', nationality: '🇵🇱', age: 19, contractExpiry: 'Jun 2029', marketValue: '£120k', fitness: 'fit', lastRating: 6.5, goals: 0, assists: 0 },
-  // Centre Backs
-  { name: 'Diego Martinez', number: 5, position: 'CB', nationality: '🇪🇸', age: 30, contractExpiry: 'Jun 2025', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 2, assists: 0 },
-  { name: 'Marcus Cole', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.6, goals: 1, assists: 1 },
-  { name: 'Jake Phillips', number: 15, position: 'CB', nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', age: 24, contractExpiry: 'Jun 2029', marketValue: '£900k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 0 },
-  { name: 'Luka Petrovic', number: 22, position: 'CB', nationality: '🇷🇸', age: 28, contractExpiry: 'Jun 2027', marketValue: '£1.1m', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 2 },
-  // Right Backs
-  { name: 'Callum Henderson', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.0m', fitness: 'fit', lastRating: 7.3, goals: 1, assists: 5 },
-  { name: 'Charlie Bennett', number: 24, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 19, contractExpiry: 'Jun 2029', marketValue: '£250k', fitness: 'fit', lastRating: 6.4, goals: 0, assists: 1 },
-  // Left Backs
-  { name: 'Tyrone Campbell', number: 3, position: 'LB', nationality: '🇯🇲', age: 26, contractExpiry: 'Jun 2027', marketValue: '£850k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 4 },
-  { name: 'Nathan Brooks', number: 18, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'Jun 2028', marketValue: '£350k', fitness: 'fit', lastRating: 6.7, goals: 0, assists: 2 },
-  // Central Midfielders
-  { name: 'Ryan Thompson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 29, contractExpiry: 'Jun 2026', marketValue: '£1.8m', fitness: 'suspended', lastRating: 7.8, goals: 4, assists: 7 },
-  { name: 'Kai Nakamura', number: 14, position: 'CM', nationality: '🇯🇵', age: 24, contractExpiry: 'Jun 2029', marketValue: '£1.3m', fitness: 'fit', lastRating: 7.5, goals: 3, assists: 6 },
-  { name: 'Ben Gallagher', number: 16, position: 'CM', nationality: '🇮🇪', age: 27, contractExpiry: 'Jun 2027', marketValue: '£950k', fitness: 'fit', lastRating: 7.1, goals: 2, assists: 3 },
-  { name: 'Kwame Asante', number: 25, position: 'CM', nationality: '🇬🇭', age: 21, contractExpiry: 'Jun 2030', marketValue: '£400k', fitness: 'fit', lastRating: 6.9, goals: 1, assists: 2 },
-  // Attacking Midfielders
-  { name: 'Ethan Price', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£1.4m', fitness: 'fit', lastRating: 7.6, goals: 5, assists: 8 },
-  { name: 'Mateo Silva', number: 20, position: 'CAM', nationality: '🇧🇷', age: 26, contractExpiry: 'Jun 2027', marketValue: '£1.6m', fitness: 'modified', lastRating: 7.3, goals: 3, assists: 5 },
-  // Left Wingers
-  { name: "Sean O'Brien", number: 11, position: 'LW', nationality: '🇮🇪', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 6, assists: 4 },
-  { name: 'Jayden Clarke', number: 19, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2029', marketValue: '£500k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3 },
-  // Right Wingers
-  { name: 'Rafa Correia', number: 7, position: 'RW', nationality: '🇵🇹', age: 24, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.7, goals: 5, assists: 9 },
-  { name: 'Daniel Foster', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 6.6, goals: 1, assists: 2 },
-  // Strikers
-  { name: 'Lucas Santos', number: 9, position: 'ST', nationality: '🇧🇷', age: 27, contractExpiry: 'Jun 2027', marketValue: '£2.2m', fitness: 'injured', lastRating: 8.1, goals: 14, assists: 3 },
-  { name: 'Tommy Richards', number: 21, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£700k', fitness: 'fit', lastRating: 7.0, goals: 4, assists: 1 },
-  { name: 'Aiden Murphy', number: 12, position: 'ST', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£500k', fitness: 'fit', lastRating: 6.9, goals: 3, assists: 2 },
-  { name: 'Omar Hassan', number: 23, position: 'ST', nationality: '🇪🇬', age: 23, contractExpiry: 'Jun 2028', marketValue: '£650k', fitness: 'doubt', lastRating: 7.2, goals: 5, assists: 1 },
+  { name: 'Nathan Bishop', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 0, assists: 0, stats: { PAC: 58, SHO: 14, PAS: 62, DRI: 52, DEF: 72, PHY: 78 } },
+  { name: 'Joe McDonnell', number: 13, position: 'GK', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.9, goals: 0, assists: 0, stats: { PAC: 52, SHO: 12, PAS: 58, DRI: 48, DEF: 70, PHY: 76 } },
+  { name: 'Patrick Bauer', number: 5, position: 'CB', nationality: '🇩🇪', age: 33, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 1, stats: { PAC: 62, SHO: 38, PAS: 65, DRI: 55, DEF: 79, PHY: 84 } },
+  { name: 'Ryan Johnson', number: 4, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 26, contractExpiry: 'Jun 2027', marketValue: '£250k', fitness: 'fit', lastRating: 7.2, goals: 1, assists: 0, stats: { PAC: 68, SHO: 35, PAS: 67, DRI: 58, DEF: 77, PHY: 82 } },
+  { name: 'Isaac Ogundere', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'injured', lastRating: 6.8, goals: 0, assists: 1, stats: { PAC: 72, SHO: 32, PAS: 64, DRI: 60, DEF: 74, PHY: 80 } },
+  { name: 'Steve Seddon', number: 3, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 3, stats: { PAC: 74, SHO: 42, PAS: 70, DRI: 68, DEF: 73, PHY: 75 } },
+  { name: 'Nathan Asiimwe', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'May 2026', marketValue: '£150k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 2, stats: { PAC: 78, SHO: 38, PAS: 68, DRI: 70, DEF: 68, PHY: 72 } },
+  { name: 'Brodi Hughes', number: 22, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'injured', lastRating: 6.7, goals: 0, assists: 1, stats: { PAC: 76, SHO: 35, PAS: 65, DRI: 68, DEF: 65, PHY: 70 } },
+  { name: 'Sam Hutchinson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 35, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 4, stats: { PAC: 58, SHO: 55, PAS: 76, DRI: 65, DEF: 74, PHY: 80 } },
+  { name: 'Delano McCoy-Splatt', number: 14, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 3, assists: 5, stats: { PAC: 72, SHO: 60, PAS: 74, DRI: 72, DEF: 62, PHY: 72 } },
+  { name: 'Alistair Smith', number: 16, position: 'CM', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 26, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'injured', lastRating: 6.9, goals: 2, assists: 3, stats: { PAC: 70, SHO: 58, PAS: 72, DRI: 68, DEF: 65, PHY: 74 } },
+  { name: 'Zack Nelson', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 24, contractExpiry: 'Jun 2026', marketValue: '£250k', fitness: 'fit', lastRating: 7.3, goals: 4, assists: 6, stats: { PAC: 74, SHO: 68, PAS: 78, DRI: 76, DEF: 45, PHY: 66 } },
+  { name: 'Marcus Browne', number: 11, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 7.8, goals: 12, assists: 5, stats: { PAC: 82, SHO: 74, PAS: 72, DRI: 80, DEF: 38, PHY: 68 } },
+  { name: 'Ed Leach', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3, stats: { PAC: 80, SHO: 65, PAS: 68, DRI: 76, DEF: 35, PHY: 62 } },
+  { name: 'Antwoine Hackford', number: 9, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£350k', fitness: 'fit', lastRating: 7.2, goals: 8, assists: 2, stats: { PAC: 80, SHO: 76, PAS: 62, DRI: 72, DEF: 28, PHY: 74 } },
+  { name: 'Layton Stewart', number: 19, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 5, assists: 1, stats: { PAC: 78, SHO: 74, PAS: 60, DRI: 70, DEF: 25, PHY: 72 } },
 ]
 
 const INJURIES = [
-  { player: 'Diego Martinez', type: 'Hamstring strain (Grade 2)', expectedReturn: '14 Apr 2026', phase: 'Rehab — jogging', since: '12 Mar 2026', matchesMissed: 4 },
-  { player: "Sean O'Brien", type: 'Ankle ligament damage', expectedReturn: '21 Apr 2026', phase: 'Boot — non-weight bearing', since: '8 Mar 2026', matchesMissed: 5 },
-  { player: 'Lucas Santos', type: 'Knee cartilage irritation', expectedReturn: '7 Apr 2026', phase: 'Light training', since: '22 Mar 2026', matchesMissed: 2 },
+  { player: 'Brodi Hughes', type: 'Hamstring strain', expectedReturn: 'Apr 2026', phase: 'Rehabilitation', since: 'Mar 2026', matchesMissed: 3 },
+  { player: 'Alistair Smith', type: 'Ankle ligament', expectedReturn: 'May 2026', phase: 'Recovery', since: 'Feb 2026', matchesMissed: 7 },
+  { player: 'Isaac Ogundere', type: 'Knee bruise', expectedReturn: 'Apr 2026', phase: 'Light training', since: 'Mar 2026', matchesMissed: 2 },
 ]
 
 const TRANSFER_TARGETS = [
@@ -257,9 +249,9 @@ const MATCH_FORMATIONS = [
 ]
 
 const FIXTURES = [
-  { opponent: 'Riverside United', date: 'Sat 4 Apr', time: '15:00', venue: 'Home', competition: 'League' },
-  { opponent: 'Northgate City', date: 'Tue 7 Apr', time: '19:45', venue: 'Away', competition: 'League Cup QF' },
-  { opponent: 'Crestwood Athletic', date: 'Sat 11 Apr', time: '15:00', venue: 'Away', competition: 'League' },
+  { opponent: 'Stockport County', date: 'Sat 5 Apr', time: '15:00', venue: 'Away', competition: 'League One' },
+  { opponent: 'Huddersfield Town', date: 'Sat 12 Apr', time: '15:00', venue: 'Home', competition: 'League One' },
+  { opponent: 'Peterborough United', date: 'Fri 18 Apr', time: '19:45', venue: 'Away', competition: 'League One' },
 ]
 
 const ACADEMY_PLAYERS = [
@@ -321,6 +313,35 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     messages: [
       { id: 'ac1', from: 'U21 Coach', avatar: 'U2', subject: 'Collins hat-trick — match report', preview: 'Josh Collins scored a hat-trick in yesterday\'s U21 win. Strong recommendation for first-team bench.', time: '8:15am', urgent: false, read: false },
       { id: 'ac2', from: 'Academy Director', avatar: 'AD', subject: 'Scholarship intake review', preview: 'We have 4 offers out for next season\'s scholarship cohort. 2 have accepted, 2 pending.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'sms', icon: '💬', label: 'SMS / Text', count: 3, urgent: true,
+    color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',
+    messages: [
+      { id: 'sms1', from: 'Nathan Bishop', avatar: 'NB', subject: 'Contract chat', preview: 'Gaffer, can we chat about my contract situation?', time: '7:45am', urgent: false, read: false },
+      { id: 'sms2', from: 'Unknown Number', avatar: '??', subject: 'Agent interest', preview: 'My client is very interested — call me', time: '8:12am', urgent: true, read: false },
+      { id: 'sms3', from: 'Marcus Browne', avatar: 'MB', subject: 'Match ready', preview: 'Feeling sharp today. Ready for Saturday 💪', time: '8:30am', urgent: false, read: false },
+    ]
+  },
+  {
+    id: 'whatsapp', icon: '💚', label: 'WhatsApp Business', count: 4, urgent: false,
+    color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)',
+    messages: [
+      { id: 'wa1', from: 'Plough Lane Staff', avatar: 'PL', subject: 'Pitch inspection', preview: 'Pitch inspection at 09:00 — all clear for training', time: '7:30am', urgent: false, read: false },
+      { id: 'wa2', from: 'Kit Man Dave', avatar: 'KD', subject: 'Away kit ready', preview: 'Away kit packed and loaded onto coach', time: '8:00am', urgent: false, read: false },
+      { id: 'wa3', from: 'Club Doctor', avatar: 'CD', subject: 'Hughes update', preview: 'Hughes cleared for light training today', time: '8:45am', urgent: false, read: false },
+      { id: 'wa4', from: 'Fan Trust Rep', avatar: 'FT', subject: 'Supporter Q&A', preview: 'Q&A with supporters confirmed for Tuesday', time: '9:00am', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'slack', icon: '🔷', label: 'Slack', count: 4, urgent: false,
+    color: '#4A154B', bg: 'rgba(74,21,75,0.08)', border: 'rgba(74,21,75,0.2)',
+    messages: [
+      { id: 'sl1', from: '#analyst-room', avatar: 'AN', subject: 'Stockport stats', preview: 'Stockport County pressing stats uploaded to shared drive', time: '8:10am', urgent: false, read: false },
+      { id: 'sl2', from: '#scouting', avatar: 'SC', subject: 'Peterborough winger', preview: 'Video package on Peterborough winger ready for review', time: '8:25am', urgent: false, read: false },
+      { id: 'sl3', from: '#medical', avatar: 'ME', subject: 'GPS report', preview: 'Weekly GPS load report available in Medical channel', time: '8:40am', urgent: false, read: false },
+      { id: 'sl4', from: '#board', avatar: 'BD', subject: 'Q3 review', preview: 'Q3 financial review scheduled for next Monday', time: '9:05am', urgent: false, read: true },
     ]
   },
 ]
@@ -438,6 +459,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
 
+
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || file.size > 2 * 1024 * 1024) return
@@ -461,14 +483,16 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   function handleMouseEnter() { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null }; setHovered(true) }
   function handleMouseLeave() { leaveTimer.current = setTimeout(() => setHovered(false), 400) }
 
-  const PRIMARY = '#C0392B'
-  const DARK = '#922B21'
+  const PRIMARY = '#003DA5'
+  const DARK = '#002D7A'
+  const SECONDARY = '#F1C40F'
 
   // group items by section
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
     { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
     { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
+    { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
   ]
 
   return (
@@ -573,8 +597,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean
+function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, clubLogo }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean; clubLogo?: string | null
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -626,14 +650,18 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
       <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-red-600 rounded-full opacity-10 blur-3xl" />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
         <div className="relative z-10 px-6 py-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              {clubLogo && (
+                <img src={clubLogo} alt="Club badge" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))', borderRadius: 8, mixBlendMode: 'screen' as any }} />
+              )}
+              <div>
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
-                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(192,57,43,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(192,57,43,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#E74C3C' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                   <Volume2 size={15} strokeWidth={1.75} />
                 </button>
                 <button
@@ -650,8 +678,9 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
                   <Mic size={14} strokeWidth={1.75} />
                 </button>
               </div>
-              <p className="text-red-300 text-sm mb-2">{date}</p>
+              <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{date}</p>
               <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
@@ -672,7 +701,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false }:
                 <span className="text-3xl">{weather.icon}</span>
                 <div>
                   <div className="text-xl font-black text-white">{weather.temp}</div>
-                  <div className="text-xs text-red-300">{weather.condition}</div>
+                  <div className="text-xs" style={{ color: '#F1C40F' }}>{weather.condition}</div>
                 </div>
               </div>
               <WorldClock />
@@ -715,7 +744,7 @@ function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
       {FOOTBALL_QUICK_ACTIONS.map(a => (
         <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
           <a.icon size={12} />{a.label}
         </button>
       ))}
@@ -740,7 +769,7 @@ function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab
       <div className="flex items-center gap-0 min-w-max px-2">
         {OVERVIEW_TABS.map(t => (
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-            style={{ borderBottomColor: tab === t.id ? '#C0392B' : 'transparent', color: tab === t.id ? '#E74C3C' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(192,57,43,0.05)' : 'transparent' }}>
+            style={{ borderBottomColor: tab === t.id ? '#003DA5' : 'transparent', color: tab === t.id ? '#F1C40F' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(0,61,165,0.05)' : 'transparent' }}>
             <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
@@ -809,10 +838,10 @@ function MorningRoundup() {
                       </div>
                       <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
                       {replied.includes(msg.id) ? (
-                        <span className="text-xs" style={{ color: '#C0392B' }}>Replied</span>
+                        <span className="text-xs" style={{ color: '#003DA5' }}>Replied</span>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <button onClick={() => setShowReply(showReply === msg.id ? null : msg.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>Reply</button>
+                          <button onClick={() => setShowReply(showReply === msg.id ? null : msg.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#003DA5', border: '1px solid rgba(0,61,165,0.3)' }}>Reply</button>
                           <button className="text-xs px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
                         </div>
                       )}
@@ -821,7 +850,7 @@ function MorningRoundup() {
                           <textarea value={replyText[msg.id] || ''} onChange={e => setReplyText(t => ({ ...t, [msg.id]: e.target.value }))} placeholder="Write your reply..." rows={2}
                             className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
                           <div className="flex gap-2 mt-1.5">
-                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Send</button>
+                            <button onClick={() => handleReply(msg.id)} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>Send</button>
                             <button onClick={() => setShowReply(null)} className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
                           </div>
                         </div>
@@ -849,11 +878,11 @@ function FixturesPanel() {
       </div>
       <div className="space-y-3">
         {FIXTURES.map((f, i) => (
-          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(192,57,43,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(192,57,43,0.25)' : '1px solid #1F2937' }}>
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(0,61,165,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(0,61,165,0.25)' : '1px solid #1F2937' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
-                <span className="text-sm font-bold" style={{ color: i === 0 ? '#E74C3C' : '#F9FAFB' }}>{f.opponent}</span>
+                <span className="text-sm font-bold" style={{ color: i === 0 ? '#F1C40F' : '#F9FAFB' }}>{f.opponent}</span>
               </div>
               <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>
                 {f.venue}
@@ -881,7 +910,7 @@ function FixturesPanel() {
 const DEMO_PHOTOS = [
   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
   'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80',
+  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
 ]
 
 function PhotoFrame() {
@@ -1001,20 +1030,20 @@ function MorningAIPanel() {
   const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
 
   return (
-    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #C0392B' }}>
-      <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: open ? '1px solid rgba(192,57,43,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #003DA5' }}>
+      <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: open ? '1px solid rgba(0,61,165,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
         <div className="flex items-center gap-2">
-          <Sparkles size={14} style={{ color: '#C0392B' }} />
+          <Sparkles size={14} style={{ color: '#003DA5' }} />
           <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
-          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{dayLabel}</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{dayLabel}</span>
         </div>
-        {open ? <ChevronUp size={14} style={{ color: '#C0392B' }} /> : <ChevronDown size={14} style={{ color: '#C0392B' }} />}
+        {open ? <ChevronUp size={14} style={{ color: '#003DA5' }} /> : <ChevronDown size={14} style={{ color: '#003DA5' }} />}
       </button>
       {open && (
         <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
           {MORNING_HIGHLIGHTS_FOOTBALL.map((item, i) => (
             <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{i + 1}</span>
               <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{item}</p>
             </div>
           ))}
@@ -1072,7 +1101,7 @@ type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 function WFStatusBadge({ status }: { status: WFStatus }) {
   const cfg = {
     COMPLETE: { label: 'COMPLETE', color: '#22C55E', bg: 'rgba(34,197,94,0.12)', Icon: CheckCircle2 },
-    RUNNING: { label: 'RUNNING', color: '#C0392B', bg: 'rgba(192,57,43,0.12)', Icon: Loader2 },
+    RUNNING: { label: 'RUNNING', color: '#003DA5', bg: 'rgba(0,61,165,0.12)', Icon: Loader2 },
     ACTION: { label: 'ACTION', color: '#EF4444', bg: 'rgba(239,68,68,0.12)', Icon: AlertCircle },
   }[status]
   return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold" style={{ color: cfg.color, backgroundColor: cfg.bg }}><cfg.Icon size={11} /> {cfg.label}</span>
@@ -1085,7 +1114,7 @@ function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' |
     <div className="flex items-start gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <span className="text-lg mt-0.5">{priority}</span>
       <div className="flex-1 min-w-0"><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{title}</p><p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{desc}</p></div>
-      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>{action}</button>
+      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>{action}</button>
     </div>
   )
 }
@@ -1127,7 +1156,7 @@ function TeamInfoTab() {
     { id: 'st', name: 'Liam Cross', pos: 'ST', initials: 'LC', overall: 86, color: '#EF4444', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 } },
   ]
   const COACHES = [
-    { name: 'Marcus Reid', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
     { name: 'Danny Hughes', role: 'Asst Coach', initials: 'DH', color: '#0D9488' },
     { name: 'Priya Nair', role: 'Head Medical', initials: 'PN', color: '#EC4899' },
   ]
@@ -1186,7 +1215,7 @@ function TeamInfoTab() {
   if (!mounted) return null
 
   const GRID_CARDS = [
-    { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
     { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
     { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
     { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
@@ -1202,8 +1231,8 @@ function TeamInfoTab() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => setViewMode('pitch')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'pitch' ? '#C0392B' : '#111318', color: viewMode === 'pitch' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Pitch View">⚽</button>
-          <button onClick={() => setViewMode('grid')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'grid' ? '#C0392B' : '#111318', color: viewMode === 'grid' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Grid View">🃏</button>
+          <button onClick={() => setViewMode('pitch')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'pitch' ? '#003DA5' : '#111318', color: viewMode === 'pitch' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Pitch View">⚽</button>
+          <button onClick={() => setViewMode('grid')} className="p-2 rounded-lg" style={{ backgroundColor: viewMode === 'grid' ? '#003DA5' : '#111318', color: viewMode === 'grid' ? '#fff' : '#6B7280', border: '1px solid #1F2937' }} title="Grid View">🃏</button>
         </div>
       </div>
 
@@ -1213,7 +1242,7 @@ function TeamInfoTab() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex gap-2">
               {(['4-2-3-1', '4-3-3', '3-5-2', '4-4-2'] as Formation[]).map(f => (
-                <button key={f} onClick={() => { setFormation(f); setSelectedPlayer(null) }} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#C0392B' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#C0392B' : '#1F2937'}` }}>{f}</button>
+                <button key={f} onClick={() => { setFormation(f); setSelectedPlayer(null) }} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: formation === f ? '#003DA5' : '#111318', color: formation === f ? '#fff' : '#6B7280', border: `1px solid ${formation === f ? '#003DA5' : '#1F2937'}` }}>{f}</button>
               ))}
             </div>
             <div className="flex gap-1.5">
@@ -1328,7 +1357,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>High impact, low effort — sorted by priority.</p>
         </div>
       </div>
-      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(0,61,165,0.08)', border: '1px solid rgba(0,61,165,0.2)' }}>
         <span>🔗</span>
         <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
       </div>
@@ -1347,7 +1376,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{win.impact.toUpperCase()} IMPACT</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {win.effort}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>⏱ {win.effort}</span>
                     <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
                   </div>
                   <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
@@ -1355,7 +1384,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                   <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{win.action} →</button>
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#003DA5' }}>{win.action} →</button>
                   <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
                 </div>
               </div>
@@ -1374,7 +1403,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your match preparation checklist — everything that needs doing.</p>
         </div>
       </div>
-      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(0,61,165,0.08)', border: '1px solid rgba(0,61,165,0.2)' }}>
         <span>🔗</span>
         <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
       </div>
@@ -1393,7 +1422,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ic.bg, color: ic.color }}>{task.impact.toUpperCase()} IMPACT</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {task.effort}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>⏱ {task.effort}</span>
                     <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
                   </div>
                   <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
@@ -1401,7 +1430,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                   <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{task.action} →</button>
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#003DA5' }}>{task.action} →</button>
                   <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
                 </div>
               </div>
@@ -1415,7 +1444,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   if (tab === 'insights') return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        {[{ l: 'League Position', v: '8th', c: '#F1C40F' }, { l: 'Squad Value', v: '£34.2m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£3.2m', c: '#C0392B' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'WWDLW', c: '#22C55E' }].map(s => (
+        {[{ l: 'League Position', v: '8th', c: '#F1C40F' }, { l: 'Squad Value', v: '£34.2m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£3.2m', c: '#003DA5' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'WWDLW', c: '#22C55E' }].map(s => (
           <div key={s.l} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p>
             <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
@@ -1447,7 +1476,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
         </div>
       </div>
-      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+      <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(0,61,165,0.08)', border: '1px solid rgba(0,61,165,0.2)' }}>
         <span>🔗</span>
         <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
       </div>
@@ -1463,7 +1492,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>⏱ {item.effort}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>⏱ {item.effort}</span>
                   <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
                 </div>
                 <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
@@ -1471,7 +1500,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                 <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
-                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#C0392B' }}>{item.action} →</button>
+                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#003DA5' }}>{item.action} →</button>
                 <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
               </div>
             </div>
@@ -1487,7 +1516,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
       <div className="flex gap-2">
         {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'teaminfo' as const, label: '🃏 Team Info' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
           <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
-            style={{ backgroundColor: activeStaffTab === t.id ? '#C0392B' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+            style={{ backgroundColor: activeStaffTab === t.id ? '#003DA5' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
         ))}
       </div>
 
@@ -1496,13 +1525,13 @@ function TabContent({ tab }: { tab: OverviewTab }) {
         <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>12 staff · 2 away · 0 alerts</p></div>
         <div className="flex gap-1 flex-wrap">
           {['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Scouting', 'Academy'].map(f => (
-            <button key={f} className="px-3 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor: f === 'All' ? '#C0392B' : 'rgba(255,255,255,0.05)', color: f === 'All' ? '#fff' : '#6B7280' }}>{f}</button>
+            <button key={f} className="px-3 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor: f === 'All' ? '#003DA5' : 'rgba(255,255,255,0.05)', color: f === 'All' ? '#fff' : '#6B7280' }}>{f}</button>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {[
-            { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#C0392B' },
-            { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#C0392B' },
+            { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#003DA5' },
+            { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#003DA5' },
             { name: 'Dr Sarah Phillips', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
             { name: 'Pete Morrison', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
             { name: 'Dave Thompson', role: 'Head of Recruitment', dept: 'Scouting', status: 'In today', location: 'Office + scout trip tomorrow', rel: 'Direct report', color: '#F39C12' },
@@ -1510,7 +1539,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
             { name: 'Steve Walsh', role: 'Chief Scout', dept: 'Scouting', status: 'Away', location: 'Valencia scouting trip', rel: 'Scouting dept', color: '#F39C12' },
             { name: 'Lisa Chen', role: 'Sports Scientist', dept: 'Performance', status: 'Away', location: 'Conference — back Thursday', rel: 'Performance dept', color: '#8E44AD' },
             { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', status: 'In today', location: 'Analysis suite', rel: 'Analytics dept', color: '#8E44AD' },
-            { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', status: 'Away', location: 'UEFA Pro Licence course Mon-Wed', rel: 'Coaching dept', color: '#C0392B' },
+            { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', status: 'Away', location: 'UEFA Pro Licence course Mon-Wed', rel: 'Coaching dept', color: '#003DA5' },
             { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept', color: '#8E44AD' },
             { name: 'Mark Evans', role: 'Scout', dept: 'Scouting', status: 'In today', location: 'Office', rel: 'Scouting dept', color: '#F39C12' },
           ].map(m => (
@@ -1546,7 +1575,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="flex justify-center mb-8">
             <div className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #7F8C8D' }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(127,140,141,0.2)', color: '#7F8C8D' }}>RB</div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>The Dons Trust</p>
               <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Chairman</p>
             </div>
           </div>
@@ -1554,7 +1583,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '40%' }} /></div>
           {/* Level 2 */}
           <div className="flex justify-center gap-6 mb-4">
-            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Marcus Reid', role: 'Head Coach', color: '#C0392B' }].map(m => (
+            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Johnnie Jackson', role: 'Head Coach', color: '#003DA5' }].map(m => (
               <div key={m.name} className="flex flex-col items-center">
                 <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
                 <div className="rounded-xl p-3 text-center cursor-pointer w-44" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
@@ -1568,8 +1597,8 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           {/* Level 3 */}
           <div className="grid grid-cols-3 md:grid-cols-5 gap-3 pl-4">
             {[
-              { name: 'David Hughes', role: 'Asst Manager', color: '#C0392B' },
-              { name: 'Alan Cooper', role: 'GK Coach', color: '#C0392B' },
+              { name: 'David Hughes', role: 'Asst Manager', color: '#003DA5' },
+              { name: 'Alan Cooper', role: 'GK Coach', color: '#003DA5' },
               { name: 'Tom Wallace', role: 'Fitness Coach', color: '#8E44AD' },
               { name: 'Lisa Chen', role: 'Sports Scientist', color: '#8E44AD' },
               { name: 'Emma Clark', role: 'Analyst', color: '#8E44AD' },
@@ -1587,7 +1616,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           </div>
           {/* Legend */}
           <div className="flex gap-3 justify-center mt-6 flex-wrap">
-            {[['#C0392B','Coaching'],['#2980B9','Medical'],['#F39C12','Scouting'],['#27AE60','Academy'],['#8E44AD','Performance']].map(([c,l]) => (
+            {[['#003DA5','Coaching'],['#2980B9','Medical'],['#F39C12','Scouting'],['#27AE60','Academy'],['#8E44AD','Performance']].map(([c,l]) => (
               <div key={l} className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />{l}</div>
             ))}
           </div>
@@ -1612,7 +1641,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
                 { icon: '📱', title: 'Media & Social', desc: 'What staff can post and player privacy rules' },
                 { icon: '👔', title: 'Employment', desc: 'Staff contracts, notice periods and exit procedures' },
               ].map(p => (
-                <div key={p.title} className="rounded-xl p-4 cursor-pointer transition-all hover:border-[#C0392B]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div key={p.title} className="rounded-xl p-4 cursor-pointer transition-all hover:border-[#003DA5]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                   <span className="text-2xl block mb-2">{p.icon}</span>
                   <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{p.title}</p>
                   <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{p.desc}</p>
@@ -1624,13 +1653,13 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
-              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+              {[['Club','AFC Wimbledon'],['Founded','2002'],['Nickname','The Dons'],['Colours','Blue & Yellow'],['Stadium','Plough Lane (9,215)'],['Training Ground','Wimbledon Training Ground'],['League','EFL League One'],['EPPP Category','Category 2']].map(([l,v]) => (
                 <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
               ))}
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['Chairman','Robert Blackwell'],['Director of Football','Dave Thompson'],['Head Coach','Marcus Reid'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
+              {[['Chairman','The Dons Trust'],['Director of Football','Dave Thompson'],['Head Coach','Johnnie Jackson'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>
@@ -1658,13 +1687,13 @@ function TabContent({ tab }: { tab: OverviewTab }) {
 function FootballEmptyState({ dept }: { dept: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(192,57,43,0.2), rgba(192,57,43,0.05))', border: '1px solid rgba(192,57,43,0.3)' }}>
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.2), rgba(0,61,165,0.05))', border: '1px solid rgba(0,61,165,0.3)' }}>
         <span className="text-4xl">⚽</span>
       </div>
       <h2 className="text-xl font-bold mb-2" style={{ color: '#F9FAFB' }}>No {dept} data yet</h2>
       <p className="text-sm max-w-md mb-8" style={{ color: '#9CA3AF' }}>Import your club data or explore with demo data to unlock {dept} features.</p>
       <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }}
-        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>
+        className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
         ✨ Explore with Demo Data
       </button>
       <p className="text-xs mt-3" style={{ color: '#4B5563' }}>Demo data is pre-filled sample data so you can explore all features</p>
@@ -1674,7 +1703,7 @@ function FootballEmptyState({ dept }: { dept: string }) {
 
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean }) {
+function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1683,7 +1712,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} clubLogo={clubLogo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1696,7 +1725,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
               <div className="text-5xl mb-4">⚽</div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
               <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
-              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>✨ Explore with Demo Data</button>
+              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>✨ Explore with Demo Data</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
               <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1706,7 +1735,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
                   {['WhatsApp Group Chat', 'Club Email', 'Slack Channel'].map(s => (
                     <div key={s} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
                       <span className="text-xs" style={{ color: '#9CA3AF' }}>{s}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C' }}>Connect</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>Connect</span>
                     </div>
                   ))}
                 </div>
@@ -1715,7 +1744,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
                 <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📅 Fixtures This Week</h3>
                 <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your calendar to see training sessions, matches and meetings.</p>
                 <div className="flex items-center justify-center py-6">
-                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#E74C3C', border: '1px solid rgba(192,57,43,0.3)' }}>Connect Calendar →</button>
+                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.3)' }}>Connect Calendar →</button>
                 </div>
               </div>
               <div className="lg:col-span-1 flex flex-col gap-4">
@@ -1746,7 +1775,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-4">
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#C0392B" />
+                <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
                 <StatCard label="Fit Players" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
                 <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#F59E0B" />
                 <StatCard label="Next Match" value={FIXTURES[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
@@ -1754,7 +1783,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-                  <span className="text-xs" style={{ color: '#C0392B' }}>Live</span>
+                  <span className="text-xs" style={{ color: '#003DA5' }}>Live</span>
                 </div>
                 {WORKFLOW_FEED.map((run, i) => (
                   <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < WORKFLOW_FEED.length - 1 ? '1px solid #1F2937' : undefined }}>
@@ -1770,12 +1799,12 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
               </div>
 
               {/* Squad Readiness — GPS */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #C0392B' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(192,57,43,0.06)' }}>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #003DA5' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(0,61,165,0.06)' }}>
                   <div className="flex items-center gap-2">
-                    <Activity size={14} style={{ color: '#C0392B' }} />
+                    <Activity size={14} style={{ color: '#003DA5' }} />
                     <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Readiness</p>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>GPS</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>GPS</span>
                   </div>
                   <span className="text-xs" style={{ color: '#6B7280' }}>ACWR-based</span>
                 </div>
@@ -1794,7 +1823,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false }: { clubN
                     </div>
                   </div>
                   <p className="text-xs mb-2" style={{ color: '#6B7280' }}>Last session: 31 Mar — Tactical Session — Set Pieces</p>
-                  <button className="text-xs font-semibold" style={{ color: '#C0392B' }}>View Performance Dashboard →</button>
+                  <button className="text-xs font-semibold" style={{ color: '#003DA5' }}>View Performance Dashboard →</button>
                 </div>
               </div>
             </div>
@@ -1838,7 +1867,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         <div className="flex items-center gap-2 flex-wrap">
           {actionButtons.map((a, i) => (
             <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}
@@ -1857,7 +1886,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         </div>
       )}
 
-      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{toast}</div>}
+      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{toast}</div>}
     </div>
   )
 }
@@ -1918,7 +1947,7 @@ function InsightsView() {
           <div className="flex gap-2">
             {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['season', 'This Season']].map(([k, l]) => (
               <button key={k} onClick={() => setRange(k)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-                style={{ backgroundColor: range === k ? '#C0392B' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
+                style={{ backgroundColor: range === k ? '#003DA5' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
             ))}
           </div>
         </div>
@@ -1974,7 +2003,7 @@ function InsightsView() {
       {/* ── HEAD COACH ── */}
       {role === 'coach' && <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <InsightCard label="Next Match" value="Saturday 3pm" sub="vs Bristol City (H)" color="#C0392B" />
+          <InsightCard label="Next Match" value="Saturday 3pm" sub="vs Bristol City (H)" color="#003DA5" />
           <InsightCard label="Days to Match" value="4" />
           <InsightCard label="Squad Available" value="21 / 25" sub="3 injured, 1 suspended" />
           <InsightCard label="Last Result" value="W 2-1" sub="vs Riverside United" color="#22C55E" />
@@ -2011,7 +2040,7 @@ function InsightsView() {
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Opposition — Bristol City</p>
           <div className="grid grid-cols-2 gap-4">
-            <div><p className="text-xs font-bold mb-2" style={{ color: '#C0392B' }}>THEIR THREATS</p>{['Top scorer: A. Wells (12 goals)', 'Set piece danger from corners', 'Fast counter-attack through right side'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>⚠️ {t}</p>)}</div>
+            <div><p className="text-xs font-bold mb-2" style={{ color: '#003DA5' }}>THEIR THREATS</p>{['Top scorer: A. Wells (12 goals)', 'Set piece danger from corners', 'Fast counter-attack through right side'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>⚠️ {t}</p>)}</div>
             <div><p className="text-xs font-bold mb-2" style={{ color: '#22C55E' }}>THEIR WEAKNESSES</p>{['Poor defending from crosses (12 goals conceded)', 'Slow build-up on left side', 'Vulnerable to high press (9.2 PPDA)'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>✅ {t}</p>)}</div>
           </div>
         </div>
@@ -2117,7 +2146,7 @@ function InsightsView() {
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board Agenda Items</p>
           {['Martinez contract renewal — £22k/week proposed, agent wants £28k', 'Academy EPPP Cat 2 re-assessment — due May, compliance at 94%', 'Commercial pipeline — 3 new sponsor conversations active, 1 near close'].map((item, i) => (
-            <div key={i} className="flex gap-3 py-2"><span className="text-xs font-bold shrink-0" style={{ color: '#C0392B' }}>{i + 1}.</span><p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p></div>
+            <div key={i} className="flex gap-3 py-2"><span className="text-xs font-bold shrink-0" style={{ color: '#003DA5' }}>{i + 1}.</span><p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p></div>
           ))}
         </div>
       </>}
@@ -2298,6 +2327,7 @@ function SquadView() {
   const [sortCol, setSortCol] = useState<string>('number')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [posFilter, setPosFilter] = useState<string>('All')
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   function handleSort(col: string) {
     if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
@@ -2329,14 +2359,14 @@ function SquadView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#C0392B" />
+        <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
         <StatCard label="Fit" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
         <StatCard label="Injured" value={String(SQUAD.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
         <StatCard label="Avg Age" value={(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length).toFixed(1)} icon={Users} color="#3B82F6" />
@@ -2456,7 +2486,7 @@ function SquadView() {
                   { key: 'contractExpiry', label: 'Contract' }, { key: 'lastRating', label: 'Rating' },
                   { key: 'goals', label: 'G' }, { key: 'assists', label: 'A' }, { key: 'fitness', label: 'Status' },
                 ].map(h => (
-                  <th key={h.key} className="text-left px-4 py-3 font-semibold cursor-pointer select-none hover:text-white" style={{ color: sortCol === h.key ? '#C0392B' : '#6B7280' }} onClick={() => handleSort(h.key)}>
+                  <th key={h.key} className="text-left px-4 py-3 font-semibold cursor-pointer select-none hover:text-white" style={{ color: sortCol === h.key ? '#003DA5' : '#6B7280' }} onClick={() => handleSort(h.key)}>
                     {h.label} {sortCol === h.key ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                   </th>
                 ))}
@@ -2464,10 +2494,10 @@ function SquadView() {
             </thead>
             <tbody>
               {sorted.map((p, i) => (
-                <tr key={i} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
+                <tr key={i} onClick={() => setSelectedPlayer(p)} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined, cursor: 'pointer' }} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-2.5 font-bold" style={{ color: '#6B7280' }}>{p.number}</td>
                   <td className="px-4 py-2.5 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
-                  <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{p.position}</span></td>
+                  <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{p.position}</span></td>
                   <td className="px-4 py-2.5">{p.nationality}</td>
                   <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{p.age}</td>
                   <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{p.marketValue}</td>
@@ -2491,7 +2521,7 @@ function SquadView() {
           { label: 'Contract Manager', icon: FileText },
           { label: 'Log Injury', icon: Heart },
         ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -2567,6 +2597,15 @@ function SquadView() {
           </div>
         </div>
       </div>
+
+      {selectedPlayer && (
+        <PlayerProfileModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          PRIMARY={FB_PRIMARY}
+          SECONDARY={FB_SECONDARY}
+        />
+      )}
     </div>
   )
 }
@@ -2579,7 +2618,7 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
       title="Tactics & Formation"
       subtitle="Formation planner, set pieces, and opposition analysis."
       stats={[
-        { label: 'Current Formation', value: '4-2-3-1', icon: Clipboard, color: '#C0392B' },
+        { label: 'Current Formation', value: '4-2-3-1', icon: Clipboard, color: '#003DA5' },
         { label: 'Win Rate', value: '62%', icon: Trophy, color: '#22C55E' },
         { label: 'Goals Scored', value: '48', icon: Target, color: '#3B82F6' },
         { label: 'Clean Sheets', value: '11', icon: Shield, color: '#F59E0B' },
@@ -2643,7 +2682,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
       subtitle="Target research, negotiations, and budget tracking."
       stats={[
         { label: 'Budget Remaining', value: '£4.2m', icon: DollarSign, color: '#22C55E' },
-        { label: 'Active Targets', value: '2', icon: Target, color: '#C0392B' },
+        { label: 'Active Targets', value: '2', icon: Target, color: '#003DA5' },
         { label: 'Window Closes', value: '11 days', icon: Clock, color: '#F59E0B' },
         { label: 'Bids Submitted', value: '1', icon: ArrowUpDown, color: '#3B82F6' },
       ]}
@@ -2680,9 +2719,9 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
               <button onClick={() => setResearchStep(stepNum)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                 style={{
-                  backgroundColor: isActive ? 'rgba(192,57,43,0.15)' : isComplete ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
-                  color: isActive ? '#E74C3C' : isComplete ? '#22C55E' : '#6B7280',
-                  border: isActive ? '1px solid rgba(192,57,43,0.3)' : '1px solid transparent',
+                  backgroundColor: isActive ? 'rgba(0,61,165,0.15)' : isComplete ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
+                  color: isActive ? '#F1C40F' : isComplete ? '#22C55E' : '#6B7280',
+                  border: isActive ? '1px solid rgba(0,61,165,0.3)' : '1px solid transparent',
                 }}>
                 {isComplete ? <Check size={10} /> : <span>{stepNum}</span>}
                 {step}
@@ -2723,7 +2762,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 </select>
               </div>
             </div>
-            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>
+            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
               Start Research →
             </button>
           </div>
@@ -2731,7 +2770,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
 
         {researchStep === 2 && (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
-            <Loader2 size={28} className="animate-spin" style={{ color: '#C0392B' }} />
+            <Loader2 size={28} className="animate-spin" style={{ color: '#003DA5' }} />
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Researcher scanning databases...</p>
             <p className="text-xs" style={{ color: '#6B7280' }}>Analysing 2,400+ players across 12 leagues</p>
             <div className="flex gap-2 mt-2">
@@ -2742,7 +2781,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 }}>{i < 2 ? '✓' : '...'} {stage}</span>
               ))}
             </div>
-            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#922B21', color: '#fff' }}>
+            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
               Skip to Results →
             </button>
           </div>
@@ -2769,7 +2808,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 <p className="text-xs" style={{ color: '#9CA3AF' }}>{t.summary}</p>
               </div>
             ))}
-            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>
+            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
               Take Action →
             </button>
           </div>
@@ -2783,7 +2822,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
                 { label: 'Submit Bid', desc: 'Create a formal offer and send to the club', icon: DollarSign, color: '#22C55E' },
                 { label: 'Request Video Analysis', desc: 'Queue a full match analysis from the scouting team', icon: Video, color: '#3B82F6' },
                 { label: 'Contact Agent', desc: 'Send an enquiry to the player\'s representative', icon: Phone, color: '#F59E0B' },
-                { label: 'Add to Shortlist', desc: 'Save to your transfer shortlist for board review', icon: Star, color: '#C0392B' },
+                { label: 'Add to Shortlist', desc: 'Save to your transfer shortlist for board review', icon: Star, color: '#003DA5' },
               ].map((action, i) => (
                 <button key={i} className="rounded-xl p-4 text-left transition-all hover:opacity-90" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}
                   onClick={() => setResearchStep(1)}>
@@ -2818,7 +2857,7 @@ function MedicalView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => medAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -2931,7 +2970,7 @@ function MedicalView() {
                 <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{p.note}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs" style={{ color: '#6B7280' }}>Load: {p.load}</span>
-                  <button onClick={() => medAction('Add medical note')} className="text-xs font-semibold" style={{ color: '#C0392B' }}>+ Add Note</button>
+                  <button onClick={() => medAction('Add medical note')} className="text-xs font-semibold" style={{ color: '#003DA5' }}>+ Add Note</button>
                 </div>
               </div>
             )
@@ -2996,7 +3035,7 @@ function MedicalView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3023,14 +3062,14 @@ function ScoutingView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Scouts Active" value="4" icon={Eye} color="#C0392B" />
+        <StatCard label="Scouts Active" value="4" icon={Eye} color="#003DA5" />
         <StatCard label="Reports This Month" value="12" icon={FileText} color="#3B82F6" />
         <StatCard label="Watchlist" value={String(SCOUT_TARGETS.length)} icon={Star} color="#F59E0B" />
         <StatCard label="Leagues Covered" value="6" icon={MapPin} color="#22C55E" />
@@ -3057,7 +3096,7 @@ function ScoutingView() {
                 return (
                   <tr key={i} style={{ borderBottom: i < SCOUT_TARGETS.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{t.name}</td>
-                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{t.position}</span></td>
+                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{t.position}</span></td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{t.age}</td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{t.club}</td>
                     <td className="px-4 py-3">{t.nationality}</td>
@@ -3094,7 +3133,7 @@ function ScoutingView() {
           ].map((s, i) => (
             <div key={i} className="flex items-center justify-between px-5 py-3">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>
                   {s.scout.split(' ').map(w => w[0]).join('')}
                 </div>
                 <div>
@@ -3150,7 +3189,7 @@ function AcademyView({ onActionClick }: { onActionClick?: (label: string) => voi
       stats={[
         { label: 'Academy Players', value: '42', icon: GraduationCap, color: '#F97316' },
         { label: 'U21 Record', value: 'W8 D2 L1', icon: Trophy, color: '#22C55E' },
-        { label: 'First-Team Ready', value: '3', icon: Star, color: '#C0392B' },
+        { label: 'First-Team Ready', value: '3', icon: Star, color: '#003DA5' },
         { label: 'Scholarships', value: '4', icon: FileText, color: '#3B82F6' },
       ]}
       highlights={[
@@ -3204,7 +3243,7 @@ function PitchDiagram({ positions, onPlayerClick }: { positions: { num: number; 
       {/* Players */}
       {positions.map(p => (
         <g key={p.num} onClick={() => onPlayerClick?.(p.name)} style={{ cursor: 'pointer' }}>
-          <circle cx={p.x} cy={p.y} r="3.5" fill="#C0392B" stroke="white" strokeWidth="0.4" />
+          <circle cx={p.x} cy={p.y} r="3.5" fill="#003DA5" stroke="white" strokeWidth="0.4" />
           <text x={p.x} y={p.y + 0.8} textAnchor="middle" fill="white" fontSize="2.2" fontWeight="bold">{p.num}</text>
           <text x={p.x} y={p.y + 5.5} textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="1.8">{p.name}</text>
         </g>
@@ -3234,14 +3273,14 @@ function AnalyticsView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="xG (Season)" value="42.6" icon={BarChart3} color="#C0392B" />
+        <StatCard label="xG (Season)" value="42.6" icon={BarChart3} color="#003DA5" />
         <StatCard label="xGA (Season)" value="28.3" icon={Shield} color="#3B82F6" />
         <StatCard label="Possession Avg" value="58%" icon={Activity} color="#22C55E" />
         <StatCard label="Pass Accuracy" value="84%" icon={Target} color="#F59E0B" />
@@ -3285,7 +3324,7 @@ function AnalyticsView() {
 
           {/* Player Modal */}
           {selectedPlayer && (
-            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #C0392B' }}>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #003DA5' }}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{selectedPlayer} — Match Stats</p>
                 <button onClick={() => setSelectedPlayer(null)} className="p-1 rounded" style={{ color: '#6B7280' }}><X size={14} /></button>
@@ -3358,11 +3397,11 @@ function AnalyticsView() {
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Last 5 Matches — Key Metrics</p>
         </div>
         {[
-          { match: 'Oakridge 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
-          { match: 'Ashford 0-0 Oakridge', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
-          { match: 'Oakridge 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
-          { match: 'Crestwood 1-2 Oakridge', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
-          { match: 'Oakridge 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
+          { match: 'Wimbledon 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
+          { match: 'Ashford 0-0 Wimbledon', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
+          { match: 'Wimbledon 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
+          { match: 'Crestwood 1-2 Wimbledon', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
+          { match: 'Wimbledon 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
         ].map((m, i) => (
           <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
@@ -3387,7 +3426,7 @@ function AnalyticsView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3412,7 +3451,7 @@ function MediaView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3421,7 +3460,7 @@ function MediaView() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Press Conf Today" value="2pm" icon={Newspaper} color="#8B5CF6" />
         <StatCard label="Media Requests" value="4" icon={MessageSquare} color="#3B82F6" />
-        <StatCard label="Social Followers" value="124k" icon={Users} color="#C0392B" />
+        <StatCard label="Social Followers" value="124k" icon={Users} color="#003DA5" />
         <StatCard label="Press Coverage" value="+12%" icon={TrendingUp} color="#22C55E" />
       </div>
 
@@ -3524,14 +3563,14 @@ function MatchdayView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Next Match" value="Sat 4 Apr" icon={Calendar} color="#C0392B" />
+        <StatCard label="Next Match" value="Sat 4 Apr" icon={Calendar} color="#003DA5" />
         <StatCard label="Kick Off" value="15:00" icon={Clock} color="#3B82F6" />
         <StatCard label="Expected Attendance" value="8,200" icon={Users} color="#22C55E" />
         <StatCard label="Matchday Revenue" value="£42k" icon={DollarSign} color="#F59E0B" />
@@ -3670,7 +3709,7 @@ function PerformanceGPSView() {
           <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Performance & GPS</h2>
           <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>GPS wearables data, player load monitoring, ACWR injury risk, and squad readiness.</p>
         </div>
-        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C', border: '1px solid rgba(192,57,43,0.4)' }}>Industry First</span>
+        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.4)' }}>Industry First</span>
       </div>
 
       {/* Quick Actions */}
@@ -3684,7 +3723,7 @@ function PerformanceGPSView() {
         ].map((a, i) => (
           <button key={i} onClick={() => { setToast(`${a.label} — opening workflow...`); setTimeout(() => setToast(null), 2500) }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3695,7 +3734,7 @@ function PerformanceGPSView() {
         <StatCard label="Ready to Play" value={String(readyCt)} icon={CheckCircle2} color="#22C55E" />
         <StatCard label="Manage Load" value={String(cautionCt)} icon={AlertCircle} color="#F59E0B" />
         <StatCard label="Injury Risk" value={String(riskCt)} icon={Heart} color="#EF4444" />
-        <StatCard label="Last Session" value={GPS_SESSIONS_DEMO[0].date.split('-').slice(1).join('/')} icon={Activity} color="#C0392B" />
+        <StatCard label="Last Session" value={GPS_SESSIONS_DEMO[0].date.split('-').slice(1).join('/')} icon={Activity} color="#003DA5" />
       </div>
 
       {/* Tab Navigation */}
@@ -3705,7 +3744,7 @@ function PerformanceGPSView() {
             className="px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors"
             style={{
               color: tab === t.id ? '#F9FAFB' : '#6B7280',
-              borderBottom: tab === t.id ? '2px solid #C0392B' : '2px solid transparent',
+              borderBottom: tab === t.id ? '2px solid #003DA5' : '2px solid transparent',
             }}>
             {t.label}
           </button>
@@ -3900,7 +3939,7 @@ function PerformanceGPSView() {
                 "Ryan Thompson and Kwame Okafor both within optimal range — available for full selection.",
               ].map((obs, i) => (
                 <div key={i} className="flex gap-2">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{i + 1}</span>
                   <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{obs}</p>
                 </div>
               ))}
@@ -3957,7 +3996,7 @@ function PerformanceGPSView() {
                 "Jamal Henderson and Kwame Okafor both consistent — match output mirrors training. Good conditioning base.",
               ].map((n, i) => (
                 <div key={i} className="flex gap-2">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{i + 1}</span>
                   <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{n}</p>
                 </div>
               ))}
@@ -4060,7 +4099,7 @@ function PerformanceGPSView() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
           {toast}
         </div>
       )}
@@ -4086,14 +4125,14 @@ function TrainingView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Today's Session" value="10:00" icon={Clock} color="#C0392B" />
+        <StatCard label="Today's Session" value="10:00" icon={Clock} color="#003DA5" />
         <StatCard label="Session Type" value="Tactical" icon={Clipboard} color="#3B82F6" />
         <StatCard label="Avg Load (7d)" value="72%" icon={Activity} color="#22C55E" />
         <StatCard label="Recovery Group" value="3" icon={Heart} color="#F59E0B" />
@@ -4125,9 +4164,9 @@ function TrainingView() {
               ].map((d, i) => {
                 const intColor = d.intensity === 'High' ? '#EF4444' : d.intensity === 'Medium' ? '#F59E0B' : d.intensity === 'Low' ? '#22C55E' : '#6B7280'
                 return (
-                  <tr key={i} style={{ borderBottom: '1px solid #1F2937', backgroundColor: d.day === 'Sat' ? 'rgba(192,57,43,0.05)' : undefined }} className="hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 font-bold" style={{ color: d.day === 'Sat' ? '#E74C3C' : '#F9FAFB' }}>{d.day}</td>
-                    <td className="px-4 py-3" style={{ color: d.day === 'Sat' ? '#E74C3C' : '#9CA3AF' }}>{d.am}</td>
+                  <tr key={i} style={{ borderBottom: '1px solid #1F2937', backgroundColor: d.day === 'Sat' ? 'rgba(0,61,165,0.05)' : undefined }} className="hover:bg-white/[0.02]">
+                    <td className="px-4 py-3 font-bold" style={{ color: d.day === 'Sat' ? '#F1C40F' : '#F9FAFB' }}>{d.day}</td>
+                    <td className="px-4 py-3" style={{ color: d.day === 'Sat' ? '#F1C40F' : '#9CA3AF' }}>{d.am}</td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{d.pm}</td>
                     <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${intColor}1a`, color: intColor }}>{d.intensity}</span></td>
                     <td className="px-4 py-3" style={{ color: '#6B7280' }}>{d.focus}</td>
@@ -4194,7 +4233,7 @@ function FinanceView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4202,7 +4241,7 @@ function FinanceView() {
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#22C55E" />
-        <StatCard label="Wage Bill" value="£2.1m/yr" icon={Users} color="#C0392B" />
+        <StatCard label="Wage Bill" value="£2.1m/yr" icon={Users} color="#003DA5" />
         <StatCard label="Revenue (YTD)" value="£3.4m" icon={TrendingUp} color="#3B82F6" />
         <StatCard label="Wage/Rev Ratio" value="62%" icon={BarChart3} color="#F59E0B" />
       </div>
@@ -4228,7 +4267,7 @@ function FinanceView() {
                 return (
                   <tr key={i} style={{ borderBottom: i < CONTRACT_DATA.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{c.player}</td>
-                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{c.position}</span></td>
+                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{c.position}</span></td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{c.weeklyWage}</td>
                     <td className="px-4 py-3" style={{ color: c.end === 'Jun 2025' ? '#EF4444' : c.end === 'Jun 2026' ? '#F59E0B' : '#9CA3AF' }}>{c.end}</td>
                     <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}>{c.status}</span></td>
@@ -4292,14 +4331,14 @@ function _OriginalStaffView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Coaching Staff" value="8" icon={Users} color="#C0392B" />
+        <StatCard label="Coaching Staff" value="8" icon={Users} color="#003DA5" />
         <StatCard label="Medical Team" value="4" icon={Heart} color="#22C55E" />
         <StatCard label="Scouts" value="4" icon={Eye} color="#3B82F6" />
         <StatCard label="Total Staff" value="32" icon={Briefcase} color="#F59E0B" />
@@ -4335,7 +4374,7 @@ function _OriginalStaffView() {
                   <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.name}</td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{s.role}</td>
-                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{s.dept}</span></td>
+                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{s.dept}</span></td>
                     <td className="px-4 py-3" style={{ color: '#6B7280' }}>{s.quals}</td>
                     <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}>{s.status}</span></td>
                   </tr>
@@ -4389,7 +4428,7 @@ function FacilitiesView() {
           { label: 'Dept Insights', icon: BarChart3 },
         ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4398,7 +4437,7 @@ function FacilitiesView() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Pitch Condition" value="Excellent" icon={CheckCircle2} color="#22C55E" />
         <StatCard label="Capacity" value="12,000" icon={Users} color="#3B82F6" />
-        <StatCard label="Training Pitches" value="4" icon={MapPin} color="#C0392B" />
+        <StatCard label="Training Pitches" value="4" icon={MapPin} color="#003DA5" />
         <StatCard label="Next Maintenance" value="Thu" icon={Calendar} color="#F59E0B" />
       </div>
 
@@ -4476,14 +4515,14 @@ const VOICES = [
 // ─── Social Media View ──────────────────────────────────────────────────────
 
 const SOCIAL_MENTIONS = [
-  { user: '@OakridgeFan92', content: 'Great performance from Oakridge FC last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing Oakridge FC are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
-  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Oakridge! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@ChampionshipNews', content: 'Oakridge FC move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+  { user: '@AFCWimbFan92', content: 'Great performance from AFC Wimbledon last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+  { user: '@SportsBlogger', content: 'Hearing AFC Wimbledon are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Wimbledon! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
+  { user: '@ChampionshipNews', content: 'AFC Wimbledon move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
   { user: '@TacticsBoard', content: 'Thompson\'s pass map vs Riverside was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
   { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Tyler James (17) training with Oakridge first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'Oakridge FC have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+  { user: '@YouthFootball', content: 'Tyler James (17) training with Wimbledon first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+  { user: '@TransferWatch', content: 'AFC Wimbledon have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
 ]
 
 const SOCIAL_PLATFORMS = [
@@ -4516,17 +4555,17 @@ function SocialMediaView() {
 
   return (
     <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Oakridge FC</p></div>
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about AFC Wimbledon</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Total Followers" value="284k" icon={Users} color="#C0392B" />
+        <StatCard label="Total Followers" value="284k" icon={Users} color="#003DA5" />
         <StatCard label="Engagement Rate" value="4.2%" icon={Activity} color="#22C55E" />
         <StatCard label="Mentions Today" value="847" icon={MessageSquare} color="#8B5CF6" />
         <StatCard label="Sentiment Score" value="72/100" icon={Heart} color="#F1C40F" />
@@ -4535,7 +4574,7 @@ function SocialMediaView() {
       {/* Platform Tabs */}
       <div className="flex gap-2 flex-wrap">
         {SOCIAL_PLATFORMS.map((sp, i) => (
-          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#C0392B' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
+          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#003DA5' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
             {sp.emoji} {sp.name}
           </button>
         ))}
@@ -4555,7 +4594,7 @@ function SocialMediaView() {
           <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
             <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Mentions</p>
             <div className="flex gap-1">{['all', 'positive', 'neutral', 'negative'].map(f => (
-              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#C0392B' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
+              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#003DA5' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
             ))}</div>
           </div>
           <div className="max-h-80 overflow-y-auto">
@@ -4585,7 +4624,7 @@ function SocialMediaView() {
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Content Calendar</p></div>
           {SOCIAL_CALENDAR.map((c, i) => (
             <div key={i} className="flex items-center gap-3 px-5 py-2.5" style={{ borderBottom: i < SOCIAL_CALENDAR.length - 1 ? '1px solid #1F2937' : undefined }}>
-              <span className="text-xs font-bold w-8" style={{ color: '#C0392B' }}>{c.day}</span>
+              <span className="text-xs font-bold w-8" style={{ color: '#003DA5' }}>{c.day}</span>
               <span className="text-xs w-10" style={{ color: '#6B7280' }}>{c.time}</span>
               <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{c.content}</span>
               <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{c.platforms}</span>
@@ -4594,7 +4633,7 @@ function SocialMediaView() {
         </div>
       </div>
 
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
     </div>
   )
 }
@@ -4620,7 +4659,7 @@ function DynamicsView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4656,7 +4695,7 @@ function DynamicsView() {
         <tbody>{[{ p: 'Marcus Webb', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Danny Okafor', o: 'Missed training', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Kenji Nakamura', o: 'Red card reaction', d: '22 Mar', pun: 'Fine: £1,000', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
       </div>
 
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
     </div>
   )
 }
@@ -4676,7 +4715,7 @@ function PSRView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -4699,7 +4738,7 @@ function PSRView() {
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>What-If PSR Calculator</p>
         <div className="grid grid-cols-2 gap-6">
-          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#C0392B' }} /></div>
+          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#003DA5' }} /></div>
           <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Sale: £{saleSlider}m</p><input type="range" min={0} max={20} step={0.5} value={saleSlider} onChange={e => setSaleSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#22C55E' }} /></div>
         </div>
         <div className="mt-4 rounded-lg p-3 text-center" style={{ backgroundColor: projected > 30 ? 'rgba(239,68,68,0.08)' : projected > 20 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${projected > 30 ? 'rgba(239,68,68,0.3)' : projected > 20 ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}` }}>
@@ -4707,7 +4746,7 @@ function PSRView() {
         </div>
       </div>
 
-      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{psrToast}</div>}
+      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{psrToast}</div>}
     </div>
   )
 }
@@ -4724,13 +4763,13 @@ function SquadPlannerView() {
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
       <div className="flex gap-2">
         {[{ k: 'current' as const, l: '2025/26 — Current' },{ k: 'next' as const, l: '2026/27 — Next' },{ k: 'after' as const, l: '2027/28 — After' }].map(s => (
-          <button key={s.k} onClick={() => setSeason(s.k)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: season === s.k ? '#C0392B' : '#111318', color: '#F9FAFB', border: season === s.k ? 'none' : '1px solid #1F2937' }}>{s.l}</button>
+          <button key={s.k} onClick={() => setSeason(s.k)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: season === s.k ? '#003DA5' : '#111318', color: '#F9FAFB', border: season === s.k ? 'none' : '1px solid #1F2937' }}>{s.l}</button>
         ))}
       </div>
 
@@ -4763,7 +4802,7 @@ function SquadPlannerView() {
         {ACADEMY_STANDOUTS.map(p => <div key={p.name} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#F9FAFB' }}>{p.name} — {p.position}</span><span className="text-xs" style={{ color: '#F1C40F' }}>Ready: {p.pathway === 'First Team Ready' ? 'Now' : '2027'}</span></div>)}
       </div>
 
-      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{spToast}</div>}
+      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{spToast}</div>}
     </div>
   )
 }
@@ -4772,12 +4811,12 @@ function ClubProfileView() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#C0392B' }}>⚽</div>
-        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Oakridge FC</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL Championship · Founded 1887</p></div>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#003DA5' }}>⚽</div>
+        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>AFC Wimbledon</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL League One · Founded 2002</p></div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
+        {[{ l: 'Nickname', v: 'The Dons' },{ l: 'Colours', v: 'Blue & Yellow' },{ l: 'Stadium', v: 'Plough Lane' },{ l: 'Capacity', v: '9,215' }].map(s => (
           <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
         ))}
       </div>
@@ -4795,7 +4834,7 @@ function ClubProfileView() {
 
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
-        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'Oakridge FC Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
+        {[['Owner', 'The Dons Trust (fan-owned)'],['Manager', 'Johnnie Jackson'],['Founded', '2002'],['Philosophy', '"By the fans, for the fans"']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
@@ -4816,7 +4855,7 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 
   function ToggleButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     return (
-      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#C0392B' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#003DA5' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
         <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
       </button>
     )
@@ -4875,10 +4914,10 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
             const isActive = activeVoice === voice.id
             return (
               <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
-                className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #C0392B' : '1px solid #1F2937' }}>
+                className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #003DA5' : '1px solid #1F2937' }}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
-                  {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B' }}>Active</span>}
+                  {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#003DA5' }}>Active</span>}
                 </div>
                 <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
               </button>
@@ -4913,13 +4952,13 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
                 <button key={zone.tz} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
                   className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
                   style={{
-                    backgroundColor: isSelected ? 'rgba(192,57,43,0.08)' : '#0A0B10',
-                    border: isSelected ? '1px solid rgba(192,57,43,0.3)' : '1px solid #1F2937',
+                    backgroundColor: isSelected ? 'rgba(0,61,165,0.08)' : '#0A0B10',
+                    border: isSelected ? '1px solid rgba(0,61,165,0.3)' : '1px solid #1F2937',
                     opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
                     cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
                   }}>
-                  <span className="text-sm" style={{ color: isSelected ? '#C0392B' : '#9CA3AF' }}>{zone.label}</span>
-                  {isSelected && <span style={{ color: '#C0392B' }}>✓</span>}
+                  <span className="text-sm" style={{ color: isSelected ? '#003DA5' : '#9CA3AF' }}>{zone.label}</span>
+                  {isSelected && <span style={{ color: '#003DA5' }}>✓</span>}
                 </button>
               )
             })}
@@ -4927,6 +4966,108 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
           <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
         </div>
       </div>
+
+      {/* Voice Settings */}
+      <VoiceSettings commands={[
+        { phrase: 'Show squad fitness', description: 'Lists fit, injured and suspended players' },
+        { phrase: 'Next fixture', description: 'Shows the next upcoming match details' },
+        { phrase: 'Top scorer this season', description: 'Current leading goalscorer' },
+        { phrase: 'Transfer activity', description: 'Latest transfer news and agent messages' },
+        { phrase: 'Show injured players', description: 'Full injury list with return dates' },
+        { phrase: 'Who is suspended', description: 'Players currently suspended' },
+        { phrase: 'Show training schedule today', description: "Today's training session plan" },
+        { phrase: 'What is our league position', description: 'Current league standing and points' },
+        { phrase: 'Show last match result', description: 'Most recent match score and stats' },
+        { phrase: 'Any agent messages', description: 'Unread agent communications' },
+        { phrase: 'Show board messages', description: 'Latest messages from the board' },
+        { phrase: 'What is our goal difference', description: 'Current goals for and against' },
+        { phrase: 'Show press requests', description: 'Outstanding media and press requests' },
+        { phrase: 'Any contract renewals due', description: 'Players with contracts expiring soon' },
+        { phrase: 'Show the team sheet', description: 'Current selected starting eleven' },
+        { phrase: 'What is our home record', description: 'Home match wins draws and losses' },
+        { phrase: 'Show youth team results', description: 'Latest academy and youth team scores' },
+        { phrase: 'Any scouting reports', description: 'New player scouting reports available' },
+        { phrase: 'Show PSR status', description: 'Profitability and sustainability rules position' },
+        { phrase: 'What is our wage bill', description: 'Current total squad wage expenditure' },
+        { phrase: 'Show transfer budget remaining', description: 'Available transfer window spend' },
+        { phrase: 'Any disciplinary issues', description: 'Yellow card accumulations and bans' },
+        { phrase: 'Show the tactics board', description: 'Current formation and tactical setup' },
+        { phrase: 'What is our clean sheet record', description: 'Clean sheets this season' },
+        { phrase: 'Show attendance figures', description: 'Recent home match attendance numbers' },
+        { phrase: 'Any loan players due back', description: 'Loan players returning from clubs' },
+        { phrase: 'Show the squad depth chart', description: 'Position by position squad coverage' },
+        { phrase: 'What is our xG this season', description: 'Expected goals for and against' },
+        { phrase: 'Show medical room update', description: 'Full medical and physio department update' },
+        { phrase: 'Any academy players ready', description: 'Academy players close to first team' },
+        { phrase: 'Show set piece analysis', description: 'Set piece goals scored and conceded' },
+        { phrase: 'What is our away record', description: 'Away match wins draws and losses' },
+        { phrase: 'Show the GPS data', description: 'Latest player GPS and load monitoring data' },
+        { phrase: 'Any contract disputes', description: 'Player or staff contract issues flagged' },
+        { phrase: 'Show matchday revenue', description: 'Last home match revenue breakdown' },
+        { phrase: 'What players are out of contract', description: 'Players whose deals end this summer' },
+        { phrase: 'Show the recruitment targets', description: 'Current transfer target shortlist' },
+        { phrase: 'Any international call ups', description: 'Players called up for international duty' },
+        { phrase: 'Show pressing stats', description: 'High press and PPDA metrics this season' },
+        { phrase: 'What is our possession average', description: 'Average possession percentage this season' },
+        { phrase: 'Show the fixture congestion', description: 'Upcoming fixture pile up and rotation needs' },
+        { phrase: 'Any travel arrangements needed', description: 'Away trip logistics and travel plans' },
+        { phrase: 'Show commercial revenue', description: 'Sponsorship and commercial income summary' },
+        { phrase: 'What is our fan base size', description: 'Season ticket holders and fan numbers' },
+        { phrase: 'Show social media engagement', description: 'Club social media stats and growth' },
+        { phrase: 'Any kit sponsorship updates', description: 'Kit and shirt sponsorship news' },
+        { phrase: 'Show the youth development plan', description: 'Academy pathway and development programme' },
+        { phrase: 'What is our longest unbeaten run', description: 'Current or best unbeaten sequence' },
+        { phrase: 'Show referee assignments', description: 'Upcoming match referee appointments' },
+        { phrase: 'Any VAR decisions pending', description: 'Outstanding VAR or appeal decisions' },
+        { phrase: 'Show the player ratings', description: 'Average player ratings across the season' },
+        { phrase: 'What is our corners won', description: 'Corners won and conversion rate' },
+        { phrase: 'Show the dressing room report', description: 'Squad morale and dynamics summary' },
+        { phrase: 'Any work permit applications', description: 'Outstanding international player permits' },
+        { phrase: 'Show the club planner', description: 'Season schedule and key club dates' },
+        { phrase: 'What is our shots on target ratio', description: 'Shots on target percentage this season' },
+        { phrase: 'Show offload pipeline', description: 'Players available for transfer or loan' },
+        { phrase: 'Any safeguarding concerns', description: 'Youth or community safeguarding flags' },
+        { phrase: 'Show the nutrition plan', description: 'Squad nutrition and diet programme' },
+        { phrase: 'What is our points per game', description: 'Average points earned per match' },
+        { phrase: 'Show fan trust updates', description: 'Latest communications from supporter trust' },
+        { phrase: 'Any community programme updates', description: 'Club community and outreach activity' },
+        { phrase: 'Show the video analysis', description: 'Latest match analysis and video reports' },
+        { phrase: 'What is our goal conversion rate', description: 'Shots to goals conversion percentage' },
+        { phrase: 'Show the physio report', description: 'Full squad injury and recovery status' },
+        { phrase: 'Any stadium maintenance issues', description: 'Ground and facility maintenance flags' },
+        { phrase: 'Show the half time stats', description: 'Half time performance data from last match' },
+        { phrase: 'What is our heading success rate', description: 'Aerial duel win percentage' },
+        { phrase: 'Show youth fixture list', description: 'Academy and youth team upcoming fixtures' },
+        { phrase: 'Any media training needed', description: 'Players scheduled for media training' },
+        { phrase: 'Show the match report', description: 'Latest post match report and analysis' },
+        { phrase: 'What is our dribble success rate', description: 'Successful dribbles per game average' },
+        { phrase: 'Show talent ID targets', description: 'Emerging talent on scouting radar' },
+        { phrase: 'Any charity partnership updates', description: 'Club charity and CSR commitments' },
+        { phrase: 'Show the FFP position', description: 'Financial fair play compliance status' },
+        { phrase: 'What is our save percentage', description: 'Goalkeeper save percentage this season' },
+        { phrase: 'Show the player welfare report', description: 'Player wellbeing and welfare checks' },
+        { phrase: 'Any kit issues flagged', description: 'Kit room and equipment issues reported' },
+        { phrase: 'Show the opponents analysis', description: 'Next opponent scouting and analysis' },
+        { phrase: 'What is our tackle success rate', description: 'Tackle win percentage this season' },
+        { phrase: 'Show the pre match plan', description: 'Pre match preparation and schedule' },
+        { phrase: 'Any loan signings available', description: 'Emergency loan options currently available' },
+        { phrase: 'Show the fan survey results', description: 'Latest supporter satisfaction survey' },
+        { phrase: 'What is our distance covered', description: 'Average distance covered per match' },
+        { phrase: 'Show the captain report', description: "Captain's squad report and feedback" },
+        { phrase: 'Any visa applications pending', description: 'Player or staff visa status' },
+        { phrase: 'Show the pitch report', description: 'Playing surface condition and forecast' },
+        { phrase: 'What is our interception rate', description: 'Interceptions per game this season' },
+        { phrase: 'Show the recovery sessions', description: 'Post match recovery programme' },
+        { phrase: 'Any kit launch updates', description: 'New kit design and launch planning' },
+        { phrase: 'Show the travel budget', description: 'Away travel costs and budget remaining' },
+        { phrase: 'What is our sprint speed average', description: 'Peak sprint speed across the squad' },
+        { phrase: 'Show the end of season plan', description: 'Season end review and planning schedule' },
+        { phrase: 'Any doping test results', description: 'Anti-doping programme and test outcomes' },
+        { phrase: 'Show the insurance claims', description: 'Player injury insurance claims status' },
+        { phrase: 'What is our pass completion rate', description: 'Passing accuracy percentage this season' },
+        { phrase: 'Show the mentorship programme', description: 'Senior and youth mentoring pairs' },
+        { phrase: 'Any pre season friendlies confirmed', description: 'Confirmed pre season match schedule' },
+      ]} />
 
       {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -4944,9 +5085,9 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
             if (isDemo) { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }
             else { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.href = `/football/${slug}` }
           }} className="w-full rounded-xl py-2.5 text-sm font-semibold" style={{
-            backgroundColor: isDemo ? 'rgba(239,68,68,0.1)' : 'rgba(192,57,43,0.1)',
-            color: isDemo ? '#EF4444' : '#C0392B',
-            border: `1px solid ${isDemo ? 'rgba(239,68,68,0.3)' : 'rgba(192,57,43,0.3)'}`,
+            backgroundColor: isDemo ? 'rgba(239,68,68,0.1)' : 'rgba(0,61,165,0.1)',
+            color: isDemo ? '#EF4444' : '#003DA5',
+            border: `1px solid ${isDemo ? 'rgba(239,68,68,0.3)' : 'rgba(0,61,165,0.3)'}`,
           }}>
             {isDemo ? 'Clear demo data' : 'Load demo data'}
           </button>
@@ -4961,7 +5102,7 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 function Toast({ message }: { message: string | null }) {
   if (!message) return null
   return (
-    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>
+    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
       {message}
     </div>
   )
@@ -4969,15 +5110,154 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
+function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: Player, onClose: () => void, PRIMARY: string, SECONDARY: string }) {
+  const form = [7.8, 6.9, 7.5, 8.1, 7.2]
+  const statColor = (v: number) => v >= 80 ? '#22c55e' : v >= 65 ? PRIMARY : v >= 50 ? '#eab308' : '#ef4444'
+  const moraleScore = player.fitness === 'fit' ? 82 : player.fitness === 'injured' ? 45 : player.fitness === 'suspended' ? 60 : 70
+  const injuryHistory = player.fitness === 'injured'
+    ? [{ type: 'Current', date: 'Mar 2026', games: 3 }]
+    : [{ type: 'Muscle strain', date: 'Oct 2025', games: 2 }, { type: 'None recent', date: '—', games: 0 }]
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#0F1117', border: `1px solid ${PRIMARY}40`, borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: SECONDARY }}>
+              {player.number}
+            </div>
+            <div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#F9FAFB' }}>{player.name}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+                <span style={{ backgroundColor: PRIMARY + '30', color: PRIMARY === '#003DA5' ? SECONDARY : PRIMARY, padding: '2px 10px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>{player.position}</span>
+                <span style={{ fontSize: 18 }}>{player.nationality}</span>
+                <span style={{ color: '#6B7280', fontSize: 13 }}>Age {player.age}</span>
+                <span style={{ backgroundColor: player.fitness === 'fit' ? '#16a34a30' : player.fitness === 'injured' ? '#dc262630' : '#d9770630', color: player.fitness === 'fit' ? '#4ade80' : player.fitness === 'injured' ? '#f87171' : '#fb923c', padding: '2px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{player.fitness}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #374151', color: '#9CA3AF', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>✕ Close</button>
+        </div>
+
+        {/* 3 column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
+
+          {/* Col 1 — Performance */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Performance</div>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: SECONDARY }}>{player.lastRating.toFixed(1)}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Rating</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.goals}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Goals</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.assists}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Assists</div></div>
+            </div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Last 5 matches</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+              {form.map((r, i) => (
+                <div key={i} style={{ flex: 1, textAlign: 'center', backgroundColor: r >= 7.5 ? '#16a34a30' : r >= 6.5 ? PRIMARY + '30' : '#dc262630', borderRadius: 6, padding: '4px 0' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: r >= 7.5 ? '#4ade80' : r >= 6.5 ? SECONDARY : '#f87171' }}>{r.toFixed(1)}</div>
+                </div>
+              ))}
+            </div>
+            {player.stats && (
+              <div>
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Attributes</div>
+                {Object.entries({ PAC: player.stats.PAC, SHO: player.stats.SHO, PAS: player.stats.PAS, DRI: player.stats.DRI, DEF: player.stats.DEF, PHY: player.stats.PHY }).map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 30, fontSize: 11, color: '#9CA3AF', fontWeight: 700 }}>{k}</div>
+                    <div style={{ flex: 1, height: 6, backgroundColor: '#374151', borderRadius: 3 }}>
+                      <div style={{ width: `${v}%`, height: '100%', backgroundColor: statColor(v), borderRadius: 3, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ width: 24, fontSize: 11, fontWeight: 700, color: statColor(v), textAlign: 'right' }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Col 2 — Contract & Value */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Contract & Value</div>
+            {[
+              { label: 'Market Value', value: player.marketValue },
+              { label: 'Contract Until', value: player.contractExpiry },
+              { label: 'Wage Band', value: player.marketValue === '£600k' ? '£4,200/wk' : player.marketValue === '£350k' ? '£2,800/wk' : player.marketValue === '£300k' ? '£2,200/wk' : '£1,800/wk' },
+              { label: 'Agent', value: 'Stellar Group' },
+              { label: 'Nationality', value: player.nationality + ' ' + (player.nationality === '🏴󠁧󠁢󠁥󠁮󠁧󠁿' ? 'English' : player.nationality === '🇮🇪' ? 'Irish' : player.nationality === '🇩🇪' ? 'German' : player.nationality === '🏴󠁧󠁢󠁳󠁣󠁴󠁿' ? 'Scottish' : 'International') },
+              { label: 'Appearances', value: '28' },
+              { label: 'Minutes Played', value: '2,340' },
+              { label: 'Signed From', value: 'Academy' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #1F2937' }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>{label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Col 3 — Wellbeing */}
+          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Wellbeing & Load</div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>Morale</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: moraleScore >= 75 ? '#4ade80' : moraleScore >= 50 ? SECONDARY : '#f87171' }}>{moraleScore}/100</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: `${moraleScore}%`, height: '100%', backgroundColor: moraleScore >= 75 ? '#16a34a' : moraleScore >= 50 ? PRIMARY : '#dc2626', borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>GPS Load (this week)</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#F9FAFB' }}>74%</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: '74%', height: '100%', backgroundColor: SECONDARY, borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>Recovery Score</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#4ade80' }}>88%</span>
+              </div>
+              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
+                <div style={{ width: '88%', height: '100%', backgroundColor: '#16a34a', borderRadius: 4 }} />
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Injury History</div>
+            {injuryHistory.map((inj, i) => (
+              <div key={i} style={{ backgroundColor: '#111318', borderRadius: 8, padding: '8px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#F9FAFB' }}>{inj.type}</span>
+                <span style={{ fontSize: 12, color: '#6B7280' }}>{inj.date} {inj.games > 0 ? `· ${inj.games} games` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer quick actions */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {['Log Injury', 'Contact Agent', 'Extend Contract', 'Transfer List', 'Player Report', 'Team Talk'].map(action => (
+            <button key={action} onClick={() => {}} style={{ backgroundColor: PRIMARY, color: SECONDARY, border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {action}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_club_name') || 'Oakridge FC'
+      return localStorage.getItem('football_club_name') || 'AFC Wimbledon'
     }
-    return 'Oakridge FC'
+    return 'AFC Wimbledon'
   })
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -4991,6 +5271,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [isFootballDemo, setIsFootballDemo] = useState(false)
   const [fbMounted, setFbMounted] = useState(false)
+  const [clubLogo, setClubLogo] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null
+  )
 
   useEffect(() => {
     const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
@@ -4999,6 +5282,15 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     const interval = setInterval(check, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  // Set default badge when demo is active — state only, no localStorage
+  useEffect(() => {
+    if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
+      setClubLogo('/badges/afc-wimbledon.png')
+    } else if (!isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
+      setClubLogo(null)
+    }
+  }, [isFootballDemo])
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -5030,7 +5322,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   }
 
   useEffect(() => {
-    const name = localStorage.getItem('football_club_name') || 'Oakridge FC'
+    const name = localStorage.getItem('football_club_name') || 'AFC Wimbledon'
     const user = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
     setClubName(name)
     setUserName(user)
@@ -5047,9 +5339,9 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
       {/* Demo banner */}
       {isFootballDemo && (
-        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#C0392B', color: '#F9FAFB' }}>
+        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F' }}>
           <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F' }}>Clear Demo Data</button>
         </div>
       )}
 
@@ -5083,7 +5375,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
@@ -5114,16 +5406,16 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
                   <DeptAISummary dept={activeDept} portal="football" />
-                  <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(192,57,43,0.4)' }}>
-                    <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.2)' }}>
-                      <Sparkles size={14} style={{ color: '#C0392B' }} />
+                  <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(0,61,165,0.4)' }}>
+                    <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: '1px solid rgba(0,61,165,0.2)' }}>
+                      <Sparkles size={14} style={{ color: '#003DA5' }} />
                       <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-                      <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>{deptName}</span>
+                      <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{deptName}</span>
                     </div>
                     <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
                       {highlights.map((item, i) => (
                         <div key={i} className="flex gap-3">
-                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#E74C3C' }}>{i + 1}</span>
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{i + 1}</span>
                           <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
                         </div>
                       ))}
@@ -5159,6 +5451,10 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {isFootballDemo && activeDept === 'psr' && <PSRView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'wyscout' && <WyscoutView />}
+            {activeDept === 'scouting-db' && <ScoutingDBView />}
+            {activeDept === 'gps-hardware' && <GPSHardwareView />}
+            {activeDept === 'opta' && <OptaStatsBombView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
           </main>
         </div>
