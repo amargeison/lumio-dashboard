@@ -2589,6 +2589,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
   async function handleClearDemo() {
     setClearing(true)
+    // Preserve identity fields before clearing
+    const savedLogo = localStorage.getItem('lumio_company_logo')
+    const savedWsLogo = localStorage.getItem('workspace_company_logo')
+    const savedPhoto = localStorage.getItem('lumio_user_photo')
+    const savedName = localStorage.getItem('lumio_user_name')
+    const savedEmail = localStorage.getItem('lumio_user_email')
     await fetch('/api/onboarding/clear-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_'))
@@ -2599,6 +2605,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_staff_profiles')
     localStorage.removeItem('lumio_demo_active')
     localStorage.removeItem('lumio-photo-frame')
+    // Restore identity fields
+    if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
+    if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
+    if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
+    if (savedName) localStorage.setItem('lumio_user_name', savedName)
+    if (savedEmail) localStorage.setItem('lumio_user_email', savedEmail)
     // Clear all AI tab caches so briefing and tabs start fresh
     ;['quick-wins','daily-tasks','insights','dont-miss','team'].forEach(tab => {
       localStorage.removeItem('lumio_ai_' + tab + '_cache')
