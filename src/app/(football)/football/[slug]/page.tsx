@@ -125,6 +125,7 @@ interface Player {
   lastRating: number
   goals: number
   assists: number
+  stats?: { PAC: number; SHO: number; PAS: number; DRI: number; DEF: number; PHY: number }
 }
 
 const SQUAD: Player[] = [
@@ -1170,8 +1171,8 @@ function TeamInfoTab() {
     if (pitchIdx < 0 || benchIdx < 0) { setSelectedPlayer(null); return }
     const newStarters = [...starters]; const newBench = [...bench]
     const temp = newStarters[pitchIdx]
-    newStarters[pitchIdx] = { ...newBench[benchIdx], id: temp.id, stats: newBench[benchIdx].stats ?? temp.stats }
-    newBench[benchIdx] = { ...temp, id: bench[benchIdx].id, stats: temp.stats ?? newBench[benchIdx].stats }
+    newStarters[pitchIdx] = { ...newBench[benchIdx], id: temp.id }
+    newBench[benchIdx] = { ...temp, id: bench[benchIdx].id }
     setStarters(newStarters); setBench(newBench)
     setSelectedPlayer(null); setSwapToast(true)
     setTimeout(() => setSwapToast(false), 1500)
