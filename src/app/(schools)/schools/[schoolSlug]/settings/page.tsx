@@ -332,11 +332,15 @@ export default function SchoolSettingsPage() {
               setDemoLoading(true)
               const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
               if (demoDataActive) {
-                // Clear demo data
+                // Clear demo data — preserve identity fields
+                const savedPhoto = localStorage.getItem('lumio_user_photo')
+                const savedName = localStorage.getItem('lumio_user_name')
                 Object.keys(localStorage)
                   .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData'))
                   .forEach(k => localStorage.removeItem(k))
                 localStorage.removeItem('lumio_schools_demo_loaded')
+                if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
+                if (savedName) localStorage.setItem('lumio_user_name', savedName)
                 await supabase.from('schools').update({ demo_data_active: false }).eq('slug', schoolSlug)
                 setDemoDataActive(false)
               } else {

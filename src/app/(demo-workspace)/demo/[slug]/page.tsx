@@ -4349,10 +4349,16 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Cancel</button>
               <button onClick={() => {
+                const savedLogo = localStorage.getItem('demo_company_logo')
+                const savedPhoto = localStorage.getItem('lumio_user_photo')
+                const savedName = localStorage.getItem('demo_user_name') || localStorage.getItem('lumio_user_name')
                 setDemoDataActive(false); setDemoCleared(true); setShowClearConfirm(false)
                 localStorage.setItem('lumio_demo_active', 'false')
                 localStorage.setItem(`lumio_demo_cleared`, 'true')
                 Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k))
+                if (savedLogo) localStorage.setItem('demo_company_logo', savedLogo)
+                if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
+                if (savedName) { localStorage.setItem('demo_user_name', savedName); localStorage.setItem('lumio_user_name', savedName) }
                 setShowDataConnections(true)
               }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Yes, clear all data</button>
             </div>
@@ -4420,8 +4426,8 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
         </div>
       )}
 
-      {/* Top-right: bell + avatar — fixed overlay */}
-      <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
+      {/* Top-right: bell + avatar — fixed overlay, z-100 to stay above all content */}
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 100, display: 'flex', alignItems: 'center', gap: 8 }}>
         <NotificationBell />
         <AvatarDropdown
           initials={userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : company.slice(0, 2).toUpperCase()}

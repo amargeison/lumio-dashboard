@@ -310,7 +310,7 @@ export default function SchoolLayout({ children }: Props) {
               <span>Demo workspace — exploring with sample data</span>
               <span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span>
             </div>
-            <button onClick={() => { localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); window.location.href = `/schools/${slug}` }}
+            <button onClick={() => { const savedPhoto = localStorage.getItem('lumio_user_photo'); const savedName = localStorage.getItem('lumio_user_name'); localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto); if (savedName) localStorage.setItem('lumio_user_name', savedName); window.location.href = `/schools/${slug}` }}
               className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>
               Clear Demo Data
             </button>
