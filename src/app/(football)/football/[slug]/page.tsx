@@ -108,7 +108,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Integrations' },
   { id: 'find-player', label: 'Find Player',    icon: Users,          section: 'Integrations' },
-  { id: 'pyramid',     label: 'Football Pyramid', icon: Trophy,        section: 'Integrations' },
+  { id: 'pyramid',     label: 'Football Pyramid', icon: Trophy,        section: 'Tools' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
