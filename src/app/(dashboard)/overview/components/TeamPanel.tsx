@@ -112,8 +112,8 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
         ))}
       </div>
 
-      {/* ═══ PREVIEW OVERLAY — shown when no real team data ═══ */}
-      {team.length === 0 && subTab !== 'company' && (
+      {/* ═══ PREVIEW OVERLAY — shown when no real team data AND not in demo ═══ */}
+      {team.length === 0 && !isDemo && subTab !== 'company' && (
         <div className="relative">
           {/* Ghost preview at reduced opacity */}
           <div style={{ opacity: 0.35, filter: 'blur(1px)', pointerEvents: 'none', userSelect: 'none' }}>
@@ -170,7 +170,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       )}
 
       {/* ═══ TEAM TODAY ═══ */}
-      {subTab === 'today' && team.length > 0 && <>
+      {subTab === 'today' && (team.length > 0 || isDemo) && <>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>{filtered.length} people{activeDeptNames ? ` (filtered by ${selectedDepts?.length} departments)` : ''} · {team.filter(m => m.status === 'holiday' || m.status === 'sick').length} out · {team.filter(m => m.alerts > 0).length} with alerts</p></div>
           <div className="flex gap-1 flex-wrap items-center">
@@ -207,7 +207,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       </>}
 
       {/* ═══ ORG CHART ═══ */}
-      {subTab === 'orgchart' && team.length > 0 && (
+      {subTab === 'orgchart' && (team.length > 0 || isDemo) && (
         <div>
           <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Organisation Chart</h2>
           {/* CEO */}
@@ -253,7 +253,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       )}
 
       {/* ═══ TEAM INFO (FIFA CARDS — same component as live) ═══ */}
-      {subTab === 'cards' && team.length > 0 && (
+      {subTab === 'cards' && (
         <div className="space-y-4">
           <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
           <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`}>

@@ -20,6 +20,7 @@ import { useWakeWord } from '@/hooks/useWakeWord'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import { buildDemoBriefingScript } from '@/lib/buildDemoBriefingScript'
 import DeptAISummary from '@/components/DeptAISummary'
+import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import CRMViewV2 from '@/components/demo/CRMView'
 import OverviewActionModal from '@/components/demo/OverviewActionModal'
 import ProjectsView from '@/components/demo/ProjectsView'
@@ -1558,7 +1559,7 @@ function OverviewView({ company, firstName, bannerRef, statsRef, actionsRef, onA
 
 /* ─── Demo Team Panel (matches TeamPanel.tsx with 3 sub-tabs) ──────────────── */
 function DemoTeamPanel() {
-  type SubTab = 'today' | 'orgchart' | 'company'
+  type SubTab = 'today' | 'orgchart' | 'cards' | 'company'
   const [subTab, setSubTab] = useState<SubTab>('today')
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const [selectedPolicy, setSelectedPolicy] = useState<any>(null)
@@ -1612,7 +1613,7 @@ function DemoTeamPanel() {
   return (
     <div className="max-w-5xl space-y-4">
       <div className="flex gap-2">
-        {([{ id: 'today' as SubTab, label: '👥 Team Today' }, { id: 'orgchart' as SubTab, label: '🏢 Org Chart' }, { id: 'company' as SubTab, label: '📋 Company Info' }]).map(t => (
+        {([{ id: 'today' as SubTab, label: '👥 Team Today' }, { id: 'orgchart' as SubTab, label: '🏢 Org Chart' }, { id: 'cards' as SubTab, label: '🃏 Team Info' }, { id: 'company' as SubTab, label: '📋 Company Info' }]).map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: subTab === t.id ? '#7C3AED' : '#111318', color: subTab === t.id ? '#F9FAFB' : '#6B7280', border: subTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
         ))}
       </div>
@@ -1692,6 +1693,27 @@ function DemoTeamPanel() {
           </div>
         </div>
       )}
+
+      {subTab === 'cards' && (() => {
+        const DEMO_CARD_STAFF: StaffRecord[] = [
+          { first_name: 'James', last_name: 'Hartley', job_title: 'CEO & Founder', department: 'Executive', email: 'james@lumiodemo.com' },
+          { first_name: 'Sophie', last_name: 'Brennan', job_title: 'Head of HR', department: 'HR', email: 'sophie@lumiodemo.com' },
+          { first_name: 'Marcus', last_name: 'Webb', job_title: 'Head of Sales', department: 'Sales', email: 'marcus@lumiodemo.com' },
+          { first_name: 'Tom', last_name: 'Fielding', job_title: 'Head of Finance', department: 'Finance', email: 'tom@lumiodemo.com' },
+          { first_name: 'Claire', last_name: 'Donovan', job_title: 'Head of IT', department: 'IT', email: 'claire@lumiodemo.com' },
+          { first_name: 'Leah', last_name: 'Thornton', job_title: 'Head of Marketing', department: 'Marketing', email: 'leah@lumiodemo.com' },
+        ]
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+            <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_CARD_STAFF.length)}`}>
+              {DEMO_CARD_STAFF.map((s, i) => (
+                <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => {}} teamSize={DEMO_CARD_STAFF.length} />
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {subTab === 'company' && (
         <div className="space-y-6">
