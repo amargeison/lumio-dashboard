@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getWorkspaceSession } from '@/lib/auth/workspace-auth'
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -10,11 +11,9 @@ const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
-  const wsToken = req.headers.get('x-workspace-token')
-  if (!wsToken) return NextResponse.json({ error: 'No token' }, { status: 401 })
-
-  const { data: session } = await supabase.from('business_sessions').select('business_id').eq('token', wsToken).gt('expires_at', new Date().toISOString()).maybeSingle()
+  const session = await getWorkspaceSession(req)
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+  const { business_id } = session
 
   try {
     const formData = await req.formData()
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const ext = file.type === 'image/webp' ? 'webp' : file.type === 'image/png' ? 'png' : 'jpg'
     const slug = email ? email.replace(/[^a-z0-9]/gi, '-') : `staff-${Date.now()}`
-    const path = `${session.business_id}/${slug}.${ext}`
+    const path = `${business_id}/${slug}.${ext}`
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     // Update workspace_staff with the photo URL
     if (email) {
-      await supabase.from('workspace_staff').update({ profile_photo_url: publicUrl }).eq('business_id', session.business_id).eq('email', email)
+      await supabase.from('workspace_staff').update({ profile_photo_url: publicUrl }).eq('business_id', business_id).eq('email', email)
         .then(({ error: dbErr }) => { if (dbErr) console.warn('[upload-profile-photo] DB update note:', dbErr.message) })
     }
 
