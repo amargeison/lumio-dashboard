@@ -448,6 +448,27 @@ export function FootballPyramidView() {
     { tier: 6, name: 'National League North & South', clubs: ['AFC Fylde','Blyth Spartans','Chester FC','Chorley','Curzon Ashton','Darlington','Farsley Celtic','FC United of Manchester','Hereford FC','Scarborough Athletic','South Shields','Spennymoor Town','Bath City','Braintree Town','Dartford','Eastbourne Borough','Farnborough','Hampton & Richmond Borough','Havant & Waterlooville','Hemel Hempstead Town','Slough Town','St Albans City','Tonbridge Angels','Welling United'] },
   ]
 
+  const TEAM_IDS: Record<string, number> = {
+    'Arsenal': 42, 'Aston Villa': 66, 'Bournemouth': 35, 'Brentford': 55,
+    'Brighton & Hove Albion': 51, 'Chelsea': 49, 'Crystal Palace': 52,
+    'Everton': 45, 'Fulham': 36, 'Liverpool': 40, 'Manchester City': 50,
+    'Manchester United': 33, 'Newcastle United': 34, 'Nottingham Forest': 65,
+    'Tottenham Hotspur': 47, 'West Ham United': 48, 'Wolverhampton Wanderers': 39,
+    'Ipswich Town': 57, 'Leicester City': 46, 'Southampton': 41,
+    'Blackburn Rovers': 69, 'Bristol City': 70, 'Burnley': 44, 'Cardiff City': 75,
+    'Coventry City': 71, 'Derby County': 76, 'Hull City': 80, 'Leeds United': 63,
+    'Luton Town': 1359, 'Middlesbrough': 25, 'Millwall': 81, 'Norwich City': 72,
+    'Oxford United': 2283, 'Plymouth Argyle': 3371, 'Preston North End': 1108,
+    'QPR': 67, 'Sheffield United': 62, 'Stoke City': 74, 'Swansea City': 78,
+    'Watford': 38, 'West Bromwich Albion': 60, 'Sheffield Wednesday': 64,
+    'Sunderland': 73, 'Portsmouth': 85,
+    'AFC Wimbledon': 638, 'Barnsley': 750, 'Bolton Wanderers': 1107,
+    'Bristol Rovers': 775, 'Burton Albion': 778, 'Cambridge United': 779,
+    'Charlton Athletic': 68, 'Exeter City': 784, 'Lincoln City': 729,
+    'Northampton Town': 773, 'Peterborough United': 1350, 'Reading': 777,
+    'Shrewsbury Town': 772, 'Stockport County': 769, 'Wigan Athletic': 87, 'Wrexham': 763,
+  }
+
   const allClubs = pyramid.flatMap(t => t.clubs.map(c => ({ club: c, tier: t.name })))
   const filteredClubs = search.trim()
     ? allClubs.filter(c => c.club.toLowerCase().includes(search.toLowerCase()))
@@ -457,10 +478,44 @@ export function FootballPyramidView() {
 
   async function fetchSquad(clubName: string, leagueName: string) {
     setLoading(true); setSquadData(null); setError('')
+    const teamId = TEAM_IDS[clubName]
+
+    // Try API-Football first if we have a team ID
+    if (teamId) {
+      try {
+        const res = await fetch(`/api/football/squad?teamId=${teamId}&season=2025`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.response?.[0]?.players?.length > 0) {
+            const apiPlayers = data.response[0].players.map((p: any) => ({
+              name: p.name || '',
+              number: p.number?.toString() || '—',
+              pos: p.position === 'Goalkeeper' ? 'GK' : p.position === 'Defender' ? 'CB' : p.position === 'Midfielder' ? 'CM' : 'ST',
+              age: p.age?.toString() || '—',
+              nationality: p.nationality || '—',
+              goals: '—', assists: '—', apps: '—',
+              rating: '—', contract: '—', value: '—', status: 'fit',
+            }))
+            setSquadData({
+              club: clubName, league: leagueName,
+              manager: '—', stadium: '—',
+              leaguePos: '—', avgRating: '—',
+              topScorer: '—', recentForm: '',
+              season: '2025-26', players: apiPlayers,
+              source: 'API-Football',
+            })
+            setLoading(false)
+            return
+          }
+        }
+      } catch { /* fall through to Claude AI */ }
+    }
+
+    // Fall back to Claude AI
     try {
       const res = await fetch('/api/ai/football-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'squad', query: `${clubName}|${leagueName}` }) })
       const data = await res.json()
-      if (data.result) setSquadData(data.result)
+      if (data.result) setSquadData({ ...data.result, source: 'AI' })
       else setError('Could not load squad data.')
     } catch { setError('Could not load squad data. Please try again.') }
     setLoading(false)
