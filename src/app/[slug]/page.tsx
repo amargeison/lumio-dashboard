@@ -759,7 +759,7 @@ function WorldClock() {
   )
 }
 
-function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo, onBellClick, onAvatarClick, userPhoto, userName: userNameProp, roleSwitcher }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void; onBellClick?: () => void; onAvatarClick?: () => void; userPhoto?: string | null; userName?: string; roleSwitcher?: React.ReactNode }) {
+function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo, onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -1066,11 +1066,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
             <Bell size={16} strokeWidth={1.75} />
             <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
           </button>
-          <div style={{ position: 'relative' }}>
-            <button onClick={onAvatarClick} style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: userPhoto ? 'transparent' : '#6C3FC5', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden', padding: 0 }}>
-              {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} /> : (userNameProp ? userNameProp.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM')}
-            </button>
-          </div>
+          <AvatarDropdown initials={userNameProp ? userNameProp.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={settingsHref} />
         </div>
       )}
       <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
@@ -3496,7 +3492,7 @@ function SnapshotWidgets() {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, onAvatarClick, userPhoto, userName: userNameProp, roleSwitcher }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; onAvatarClick?: () => void; userPhoto?: string | null; userName?: string; roleSwitcher?: React.ReactNode }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
@@ -3593,7 +3589,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
 
   return (
     <div className="space-y-4">
-      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} onAvatarClick={onAvatarClick} userPhoto={userPhoto} userName={userNameProp} roleSwitcher={roleSwitcher} />
+      <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} roleSwitcher={roleSwitcher} settingsHref={settingsHref} userNameProp={userNameProp} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -3800,7 +3796,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [businessId, setBusinessId] = useState('')
   const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
   const [staffRefreshKey, setStaffRefreshKey] = useState(0)
-  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
@@ -4254,7 +4249,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} onAvatarClick={() => setAvatarDropdownOpen(o => !o)} userPhoto={userPhoto} userName={userName} roleSwitcher={<RoleSwitcherPill />} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
