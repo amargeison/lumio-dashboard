@@ -2630,6 +2630,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
   async function handleLoadDemo() {
     setLoading(true)
+    // Preserve identity fields before loading demo
+    const savedLogo = localStorage.getItem('lumio_company_logo')
+    const savedWsLogo = localStorage.getItem('workspace_company_logo')
+    const savedPhoto = localStorage.getItem('lumio_user_photo')
     await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
     localStorage.setItem('lumio_demo_active', 'true')
     localStorage.setItem('lumio-photo-frame', JSON.stringify([
@@ -2638,6 +2642,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     ]))
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
     allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
+    // Restore identity fields
+    if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
+    if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
+    if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
     onDemoToggle(true)
     setLoading(false)
   }
