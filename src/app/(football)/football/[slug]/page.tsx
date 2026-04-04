@@ -664,13 +664,11 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
 
   return (
     <>
-      <div className={`relative bg-gradient-to-r ${bg} overflow-visible rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+      <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" style={{ zIndex: 0 }}>
-          <img src="/badges/afc_wimbledon_badge_studio.png" alt="" className="absolute" style={{ right: -20, top: '50%', transform: 'translateY(-50%)', width: 220, height: 220, objectFit: 'contain', opacity: 0.06, filter: 'saturate(0) brightness(2)', userSelect: 'none', pointerEvents: 'none' }} />
-        </div>
+        <img src="/badges/afc_wimbledon_badge_studio.png" alt="" style={{ position: 'absolute', right: 180, bottom: -10, width: 200, height: 200, objectFit: 'contain', opacity: 0.08, filter: 'saturate(0) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 0 }} />
         <img src="/badges/afc_wimbledon_badge_studio.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
         <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
