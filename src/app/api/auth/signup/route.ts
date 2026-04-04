@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // Send welcome email to user
     await sendEmail({
-      from: 'Arron at Lumio <arron@lumiocms.com>',
+      from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio workspace is ready, ${firstName}! 🚀`,
       html: welcomeEmailHTML({ firstName, companyName, portalType, portalUrl }),
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })
     await sendEmail({
       from: 'Lumio Notifications <hello@lumiocms.com>',
-      to: ['arron@lumiocms.com'],
+      to: ['hello@lumiocms.com'],
       subject: `🚀 New Lumio sign-up — ${firstName} ${lastName || ''} from ${companyName}`,
       html: `
         <div style="font-family:sans-serif;padding:20px;color:#333;">

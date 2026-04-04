@@ -99,7 +99,7 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
   // Schedule 48-hour follow-up email
   try {
     const { data: followupData } = await sendEmail({
-      from: 'Arron at Lumio <arron@lumiocms.com>',
+      from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [tenant.owner_email],
       subject: `Did you get a chance to explore, ${firstName}?`,
       html: followupTrialEmail({ name: firstName, slug: tenant.slug, portalType: 'business' }),
@@ -116,7 +116,7 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
   // Schedule 14-day win-back email
   try {
     const { data: winbackData } = await sendEmail({
-      from: 'Arron at Lumio <arron@lumiocms.com>',
+      from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [tenant.owner_email],
       subject: `Your Lumio workspace is paused, ${firstName}`,
       html: followup14dEmail({ name: firstName, slug: tenant.slug, companyName: tenant.company_name, portalType: 'business' }),
