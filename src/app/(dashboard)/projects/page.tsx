@@ -207,29 +207,6 @@ function Overview() {
 
   return (
     <div className="p-5 flex flex-col gap-5">
-      {/* AI Summary */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.1)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
-          <Zap size={13} style={{ color: '#0D9488' }} />
-          <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>PM Intelligence Summary</p>
-          <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
-        </div>
-        <div className="p-4 flex flex-col gap-2" style={{ backgroundColor: '#07080F' }}>
-          {[
-            { r: '#EF4444', t: 'Mobile App MVP is critically blocked — Apple Developer certificate issue is holding 8 tasks and 21 story points. JP to escalate to Apple Enterprise. Consider decoupling push notifications for MVP.' },
-            { r: '#F59E0B', t: "MRR OKR at risk — only 1 of 5 enterprise deals closed with 5 weeks to Q2. DM to review pipeline conversion rates. Pricing page A/B test still not started." },
-            { r: '#F59E0B', t: "Sprint 8 burndown tracking 3 points above ideal line. 17 points remaining with 7 working days left. Team needs to average 2.4 points/day — achievable but tight." },
-            { r: '#22C55E', t: 'Marketing Automation at 89% — KB on track to close this sprint. Recommend moving KB to LSP support for 2 days after completion.' },
-            { r: '#22C55E', t: "Lumio Schools Portal ahead of schedule — SEND White Paper and Trust Dashboard shipped this sprint. 6 of 10 pilot schools onboarded. NPS tracking at 4.6." },
-          ].map((a, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: a.r }} />
-              <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{a.t}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         <StatCard label="Active Projects" value={String(inProgress)} sub="2 amber · 1 red" color="#0D9488" />
@@ -845,6 +822,18 @@ export default function ProjectsPage() {
     </>
   )
 
+  const PM_AI: Record<string, { summary: string; highlights: Array<{n:number;text:string;color:string}> }> = {
+    overview: { summary: '3 projects active \u2014 all on track. Sprint velocity up 12%. 2 risks need board review this week.', highlights: [{ n:1, text:'Project Alpha 2 days behind \u2014 flag blockers today', color:'text-red-400' },{ n:2, text:'Sprint velocity up 12% \u2014 strongest quarter', color:'text-teal-400' },{ n:3, text:'2 risks need board decision this week', color:'text-amber-400' },{ n:4, text:'Roadmap Q3 priorities not yet confirmed', color:'text-amber-400' },{ n:5, text:'Team capacity 91% \u2014 review resourcing', color:'text-teal-400' }] },
+    kanban: { summary: '14 cards in progress, 3 blocked. API integration ticket overdue 4 days.', highlights: [{ n:1, text:'3 cards blocked \u2014 unblock before standup', color:'text-red-400' },{ n:2, text:'API ticket 4 days overdue \u2014 escalate', color:'text-red-400' },{ n:3, text:'6 cards in review \u2014 batch to clear backlog', color:'text-amber-400' },{ n:4, text:'12 cards completed this sprint', color:'text-teal-400' },{ n:5, text:'Cycle time improving \u2014 3.2 days vs 4.1 last sprint', color:'text-teal-400' }] },
+    sprint: { summary: 'Sprint 73% complete, 4 days remaining. 2 stories at risk. Velocity on track.', highlights: [{ n:1, text:'2 stories at risk this sprint', color:'text-red-400' },{ n:2, text:'73% complete with 4 days left \u2014 on track', color:'text-teal-400' },{ n:3, text:'Same blocker 3 days running \u2014 resolve today', color:'text-amber-400' },{ n:4, text:'Bug count down 40% vs last sprint', color:'text-teal-400' },{ n:5, text:'Sprint review Friday \u2014 prep demo environment', color:'text-amber-400' }] },
+    roadmap: { summary: 'Q2 roadmap 68% delivered. 3 features slipped to Q3. Q3 planning not started.', highlights: [{ n:1, text:'3 features slipped to Q3 \u2014 update stakeholders', color:'text-red-400' },{ n:2, text:'Q3 planning not started \u2014 begin this week', color:'text-amber-400' },{ n:3, text:'Mobile feature ahead of schedule', color:'text-teal-400' },{ n:4, text:'Design backlog growing \u2014 resource needed', color:'text-amber-400' },{ n:5, text:'Customer-requested features: 4 in Q3 scope', color:'text-teal-400' }] },
+    okrs: { summary: 'Q2 OKRs at 73%. 2 key results behind. 1 ahead of schedule.', highlights: [{ n:1, text:'KR: New signups at 67% of target', color:'text-amber-400' },{ n:2, text:'KR: NPS 67 vs 65 goal \u2014 ahead', color:'text-teal-400' },{ n:3, text:'KR: Revenue on track \u2014 2 deals critical', color:'text-amber-400' },{ n:4, text:'Q3 OKR planning should start now', color:'text-amber-400' },{ n:5, text:'Team OKR alignment improving', color:'text-teal-400' }] },
+    backlog: { summary: '47 items in backlog. 12 high priority. 6 items over 90 days old \u2014 need triage.', highlights: [{ n:1, text:'6 backlog items over 90 days \u2014 triage now', color:'text-red-400' },{ n:2, text:'12 high priority items unassigned', color:'text-amber-400' },{ n:3, text:'Backlog grew 18% this sprint \u2014 needs grooming', color:'text-amber-400' },{ n:4, text:'5 quick wins under 2 hours each', color:'text-teal-400' },{ n:5, text:'Next grooming session overdue by 1 week', color:'text-amber-400' }] },
+    risks: { summary: '2 high risks, 3 medium active. One escalated to board. Mitigations in place.', highlights: [{ n:1, text:'RISK-01: Key person dependency \u2014 plan incomplete', color:'text-red-400' },{ n:2, text:'RISK-02: API supplier \u2014 contingency identified', color:'text-amber-400' },{ n:3, text:'2 risks closed this month', color:'text-teal-400' },{ n:4, text:'Board risk review Thursday \u2014 prep summary', color:'text-amber-400' },{ n:5, text:'Insurance renewal due \u2014 check coverage', color:'text-amber-400' }] },
+    team: { summary: 'Team of 8, capacity 91%. 2 members at risk of burnout. 1 role open.', highlights: [{ n:1, text:'2 team members flagged for workload review', color:'text-red-400' },{ n:2, text:'1 open role \u2014 slowing delivery', color:'text-amber-400' },{ n:3, text:'Team satisfaction score 7.8/10', color:'text-teal-400' },{ n:4, text:'3 members have training requests pending', color:'text-amber-400' },{ n:5, text:'Velocity per person up 8% this quarter', color:'text-teal-400' }] },
+  }
+  const currentPMAI = PM_AI[tab] || PM_AI.overview
+
   return (
     <div className="flex flex-col gap-0" style={{ backgroundColor: '#07080F', minHeight: '100vh' }}>
       {/* Page header */}
@@ -886,6 +875,33 @@ export default function ProjectsPage() {
         {tab === 'backlog'  && <BacklogTab />}
         {tab === 'risks'    && <RisksTab />}
         {tab === 'team'     && <TeamTab />}
+      </div>
+
+      {/* AI Intelligence Row — changes per tab */}
+      <div className="grid grid-cols-2 gap-4 mx-6 mb-6 mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Summary</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Generated now</span>
+          </div>
+          <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{currentPMAI.summary}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(13,148,136,0.3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u26A1'}</span>
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
+          </div>
+          <div className="space-y-2">
+            {currentPMAI.highlights.map((h, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className={`text-xs font-bold w-4 flex-shrink-0 mt-0.5 ${h.color}`}>{h.n}</span>
+                <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

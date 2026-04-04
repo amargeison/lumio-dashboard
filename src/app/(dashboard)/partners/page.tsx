@@ -751,18 +751,7 @@ export default function PartnersPage() {
         </div>
       </div>
 
-      {/* ROW 3: AI Summary */}
-      <div style={{ marginBottom: 12 }}>
-        <AIPanel title={`AI Partner Summary — ${p.name}`} items={[
-          `${p.name} is performing ${p.score > 80 ? 'above' : 'at'} target this quarter with ${p.revenue} in referred revenue.`,
-          `Win rate of ${p.winRate} ${p.winRate !== '—' && parseInt(p.winRate) > 65 ? 'is the highest of any partner' : 'shows room for improvement'}.`,
-          `${p.deals} active deals in pipeline with avg deal size of ${p.avgDeal}.`,
-          `${p.contact} (primary contact) engagement level: ${p.engagement}.`,
-          `Commission rate: ${p.commission}%. Next QBR: ${p.review}.`,
-        ]} />
-      </div>
-
-      {/* ROW 4: Inner tab bar */}
+      {/* ROW 3: Inner tab bar */}
       <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${BORDER}`, marginBottom: 16, overflowX: 'auto' }}>
         {INNER_TABS.map(t => (
           <button key={t.id} onClick={() => setInnerTab(t.id)}
