@@ -12,6 +12,7 @@ import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
+import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -623,10 +624,10 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Pupils', value: demoActive ? (pupils || '1,147') : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: demoActive ? (staff || 89) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: demoActive ? 6 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Reports', value: demoActive ? 2 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+              { label: 'Pupils', value: demoActive ? (pupils || SCHOOL_DEMO.stats.pupils.toLocaleString()) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { label: 'Staff', value: demoActive ? (staff || SCHOOL_DEMO.stats.staff) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { label: 'Alerts', value: demoActive ? SCHOOL_DEMO.stats.alerts : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Reports', value: demoActive ? SCHOOL_DEMO.stats.reports : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
