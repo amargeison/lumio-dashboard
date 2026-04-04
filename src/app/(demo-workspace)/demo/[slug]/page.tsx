@@ -14,6 +14,7 @@ import {
   Settings, Hash, BarChart2, PieChart, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Upload, Bell,
   Database, RotateCcw, Mail, MessageSquare, Phone, FolderKanban,
+  Laptop, ClipboardCheck, GraduationCap, Megaphone as MegaphoneIcon2, ShoppingCart, Key, Timer,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -76,11 +77,24 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Email',        tooltip: 'Open the email composer',                                      icon: Mail        },
     { label: 'Send Slack',        tooltip: 'Send a message on Slack',                                      icon: MessageSquare },
     { label: 'Phone Call',        tooltip: 'Log a phone call',                                             icon: Phone       },
-    { label: 'Book Meeting',      tooltip: 'Schedule a meeting or demo',                                   icon: Calendar    },
+    { label: 'Book Meeting',      tooltip: 'Schedule a meeting with calendar integration',                 icon: Calendar    },
     { label: 'Team Events',       tooltip: 'Schedule a team event',                                        icon: Users       },
     { label: 'Claim Expenses',    tooltip: 'Submit an expense claim',                                      icon: Receipt     },
     { label: 'Book Holiday',      tooltip: 'Request annual leave',                                         icon: Calendar    },
     { label: 'Report Sickness',   tooltip: 'Report an absence',                                            icon: AlertCircle },
+    { label: 'Submit Timesheet',  tooltip: 'Log your weekly hours',                                        icon: FileText    },
+    { label: 'Log Remote Day',    tooltip: 'Log a remote working day',                                     icon: Home        },
+    { label: 'IT Support',        tooltip: 'Raise an IT support ticket',                                   icon: Laptop      },
+    { label: 'Request Sign-off',  tooltip: 'Request document sign-off',                                    icon: ClipboardCheck },
+    { label: 'Book Training',     tooltip: 'Request a training course',                                    icon: GraduationCap },
+    { label: 'Request 1-1',       tooltip: 'Request a 1-1 meeting',                                        icon: Handshake   },
+    { label: 'Raise Issue',       tooltip: 'Raise an issue or concern',                                    icon: AlertCircle },
+    { label: 'Post Announcement', tooltip: 'Post a company announcement',                                  icon: Megaphone   },
+    { label: 'Onboard Starter',   tooltip: 'Start new joiner onboarding',                                  icon: UserPlus    },
+    { label: 'Purchase Request',  tooltip: 'Submit a purchase request',                                    icon: ShoppingCart },
+    { label: 'Request Access',    tooltip: 'Request system access',                                        icon: Key         },
+    { label: 'Log Overtime',      tooltip: 'Log overtime hours',                                           icon: Timer       },
+    { label: 'Run Report',        tooltip: 'Generate a report',                                            icon: BarChart3   },
   ],
   insights:   [
     { label: 'Export Report',    tooltip: 'Download the current view as a PDF or CSV',                     icon: FileText  },
@@ -341,7 +355,7 @@ function QuickActionsBar({ dept, onAction }: { dept: DeptId; onAction: (label: s
   const actions = DEPT_ACTIONS[dept] || []
   if (!actions.length) return null
   return (
-    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none"
+    <div className="sticky top-[44px] z-40 flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none"
       style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
       {actions.map(a => (
@@ -1112,7 +1126,7 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
 
 function DemoTabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
   return (
-    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5"
+    <div className="sticky top-0 z-50 border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5"
       style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
         {OVERVIEW_TABS.map(t => (
@@ -4397,7 +4411,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     }
   }
 
-  const OVERVIEW_ACTIONS = ['Send Email','Send Slack','Phone Call','Book Meeting','Team Events','Claim Expenses','Book Holiday','Report Sickness']
+  const OVERVIEW_ACTIONS = ['Send Email','Send Slack','Phone Call','Book Meeting','Team Events','Claim Expenses','Book Holiday','Report Sickness','Submit Timesheet','Log Remote Day','IT Support','Request Sign-off','Book Training','Request 1-1','Raise Issue','Post Announcement','Onboard Starter','Purchase Request','Request Access','Log Overtime','Run Report']
 
   function fireToast(label: string = '') {
     if (OVERVIEW_ACTIONS.includes(label)) { setOverviewAction(label);                        return }
