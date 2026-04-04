@@ -74,7 +74,7 @@ const DASHBOARD_ROUTE_SET = new Set([
   'success', 'settings', 'projects', 'onboarding', 'overview',
 ])
 
-const COLLAPSED_W = 48
+const COLLAPSED_W = 72
 const EXPANDED_W = 200
 
 interface SidebarProps {
