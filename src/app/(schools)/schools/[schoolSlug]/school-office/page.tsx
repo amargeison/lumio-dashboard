@@ -1,11 +1,12 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3, Phone, Check, ClipboardList, UserCheck, Heart, FileText, Database, Pill, Bell, Shield } from 'lucide-react'
+import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3, Phone, Check, ClipboardList, UserCheck, Heart, FileText, Database, Pill, Bell, Shield, Bus, Hammer } from 'lucide-react'
 import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal, RegisterSessionModal } from '@/components/modals/SchoolModals'
 import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/SchoolOfficeModals'
 import { SchoolLockdownModal } from '@/components/modals/SchoolLockdownModal'
+import BookContractorModal from '@/components/modals/BookContractorModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { VisitorSignInModal, FirstAidLogModal, LetterGeneratorModal, DataRequestModal, MedicationLogModal, SendAnnouncementModal } from '@/components/modals/SchoolOfficeExtraModals'
@@ -101,7 +102,7 @@ function QuickActions({ actions }: { actions: { label: string; icon: React.React
       <div className="flex flex-wrap gap-2">
         {actions.map(a => (
           <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
             {a.icon}{a.label}
@@ -137,6 +138,7 @@ export default function SchoolOfficePage() {
   const [showDataRequest, setShowDataRequest] = useState(false)
   const [showMedication, setShowMedication] = useState(false)
   const [showAnnouncement, setShowAnnouncement] = useState(false)
+  const [showContractor, setShowContractor] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -190,6 +192,9 @@ export default function SchoolOfficePage() {
             : a.label === 'Send Announcement' ? () => setShowAnnouncement(true)
             : () => showToast('Feature coming soon'),
         })),
+        { label: 'School Trip', icon: <Bus size={14} />, onClick: () => setShowTrips(true) },
+        { label: 'Book Contractor', icon: <Hammer size={14} />, onClick: () => setShowContractor(true) },
+        { label: 'Report Incident', icon: <AlertTriangle size={14} />, onClick: () => setShowIncident(true) },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
@@ -333,6 +338,7 @@ export default function SchoolOfficePage() {
       {showDataRequest && <DataRequestModal onClose={() => setShowDataRequest(false)} />}
       {showMedication && <MedicationLogModal onClose={() => setShowMedication(false)} />}
       {showAnnouncement && <SendAnnouncementModal onClose={() => setShowAnnouncement(false)} />}
+      {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
       <AIInsightsReport dept="school-office" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
 

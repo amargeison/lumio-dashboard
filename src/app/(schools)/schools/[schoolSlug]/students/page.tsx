@@ -291,6 +291,7 @@ function PupilProfile({ pupil, onClose, view }: { pupil: Pupil; onClose: () => v
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}>
           <div className="flex items-center gap-3">
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', borderRadius: 8, color: '#94a3b8', padding: '6px 12px', cursor: 'pointer', fontSize: 13, marginRight: 12, flexShrink: 0 }}>← Back</button>
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
               style={{ backgroundColor: '#1F2937', color: '#0D9488' }}>
               {pupil.name.split(' ')[0][0]}
@@ -696,7 +697,7 @@ function QuickActions({ actions }: { actions: { label: string; icon: React.React
       <div className="flex flex-wrap gap-2">
         {actions.map(a => (
           <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
             {a.icon}{a.label}
