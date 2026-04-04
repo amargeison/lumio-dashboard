@@ -1014,8 +1014,8 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       setTimeout(() => setPendingAction({ type: 'AWAITING_SLACK_CHANNEL', data: { message: payload?.message || '' } }), 2000)
     } else if (action === 'EXECUTE_SLACK_SEND') {
       if (onVoiceCommand) onVoiceCommand(lastCommand)
-    } else if (action === 'BOOK_MEETING') {
-      if (onVoiceCommand) onVoiceCommand({ ...lastCommand, action: 'OPEN_MODAL', payload: { modal: 'ScheduleDemo' } })
+    } else if (['BOOK_MEETING','SEND_EMAIL','SEND_SLACK','PHONE_CALL','REPORT_SICK','BOOK_HOLIDAY','CLAIM_EXPENSE','NEW_JOINER','TEAM_EVENT','CHASE_INVOICE'].includes(action)) {
+      if (onVoiceCommand) onVoiceCommand(lastCommand)
     } else if (action === 'ADD_TASK') {
       const taskName = payload?.taskName || lastCommand.data?.taskName || 'New task'
       try {
@@ -3753,11 +3753,26 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     'Send Slack': () => setActiveQuickAction('Send Slack'),
   }
 
+  // Voice action → quick action modal mapping
+  const VOICE_TO_MODAL: Record<string, string> = {
+    BOOK_MEETING: 'Book Meeting', SEND_EMAIL: 'Send Email', SEND_SLACK: 'Send Slack',
+    PHONE_CALL: 'Phone Call', CLAIM_EXPENSE: 'Claim Expenses', BOOK_HOLIDAY: 'Book Holiday',
+    REPORT_SICK: 'Report Sickness', NEW_JOINER: 'Onboard Starter',
+    CHASE_INVOICE: 'Claim Expenses', TEAM_EVENT: 'Team Events',
+  }
   function handleVoiceCommand(cmd: VoiceCommandResult) {
+    // Map voice actions directly to quick action modals
+    const modalLabel = VOICE_TO_MODAL[cmd.action]
+    if (modalLabel && quickActionModals[modalLabel]) { quickActionModals[modalLabel](); return }
     if (cmd.action === 'SWITCH_TAB' && cmd.payload?.tab) setTab(cmd.payload.tab)
-    else if (cmd.action === 'OPEN_MODAL') onAction(`Opening ${cmd.payload?.modal || 'form'}...`)
+    else if (cmd.action === 'OPEN_MODAL') {
+      const modalMap: Record<string, string> = { deal: 'New Deal', call: 'Phone Call', proposal: 'Send Proposal', demo: 'Book Meeting', invoice: 'Claim Expenses', client: 'Onboard Starter', campaign: 'Post Announcement', project: 'Run Report' }
+      const label = modalMap[cmd.payload?.modal || '']
+      if (label && quickActionModals[label]) { quickActionModals[label](); return }
+      onAction(`Opening ${cmd.payload?.modal || 'form'}...`)
+    }
     else if (cmd.action === 'EXPAND_ROUNDUP') onAction(`Opening ${cmd.payload?.section || 'section'}...`)
-    else if (cmd.action === 'EMAIL_TEAM') onAction('Opening team email...')
+    else if (cmd.action === 'EMAIL_TEAM') { if (quickActionModals['Send Email']) quickActionModals['Send Email'](); else onAction('Opening team email...') }
     else if (cmd.action === 'EXECUTE_SLACK_SEND') onAction(`Slack message sent to #${cmd.payload?.channel || 'general'} \u2713`)
   }
 
