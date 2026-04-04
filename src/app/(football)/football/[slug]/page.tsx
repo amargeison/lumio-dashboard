@@ -1790,7 +1790,6 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo 
       {tab === 'today' ? (
         <div className="space-y-4">
           <QuickActionsBar onAction={onAction} />
-          <ApiStatusStrip />
 
           {!isDemo && (
             <>
