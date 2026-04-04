@@ -509,7 +509,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
         onMouseLeave={handleMouseLeave}
       >
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
-          <div className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }}>
+          <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
             {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
           </div>
           {expanded && (
