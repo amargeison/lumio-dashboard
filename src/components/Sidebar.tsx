@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { X, Pin, Camera, LogOut, Settings as SettingsIcon, User, Crown } from 'lucide-react'
+import { X, Pin, LogOut, Settings as SettingsIcon, User, Crown } from 'lucide-react'
 import {
   LayoutDashboard,
   Users,
@@ -110,11 +110,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
-  const [logoHover, setLogoHover] = useState(false)
   const [activeDepts, setActiveDepts] = useState<Set<string>>(new Set())
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_company_name')
@@ -152,14 +150,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     function onStorage(e: StorageEvent) {
       if (e.key === 'lumio_company_logo' || e.key === 'workspace_company_logo') {
         const logo = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-        if (logo) setCompanyLogo(logo)
+        setCompanyLogo(logo)
       }
       if (e.key === 'lumio_company_name') setCompanyName(e.newValue || 'Lumio')
     }
-    // Listen for same-tab logo updates (e.g. from Settings page upload)
+    // Listen for same-tab logo updates (e.g. from Settings page upload or remove)
     function onLogoUpdated(e: Event) {
       const url = (e as CustomEvent).detail
-      if (url) setCompanyLogo(url)
+      setCompanyLogo(url || null)
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
@@ -190,35 +188,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     localStorage.clear()
     router.push('/login')
   }, [router])
-
-  const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 2 * 1024 * 1024) return
-    const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp']
-    if (!validTypes.includes(file.type)) return
-    // Optimistic update — show the local blob URL immediately
-    const blobUrl = URL.createObjectURL(file)
-    setCompanyLogo(blobUrl)
-    // Upload via server endpoint (persists to DB + correct storage bucket)
-    const token = localStorage.getItem('workspace_session_token')
-    if (!token) return
-    const fd = new FormData()
-    fd.append('logo', file)
-    try {
-      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
-      const data = await res.json()
-      if (data.logo_url) {
-        setCompanyLogo(data.logo_url)
-        localStorage.setItem('lumio_company_logo', data.logo_url)
-        localStorage.setItem('workspace_company_logo', data.logo_url)
-        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
-      }
-      URL.revokeObjectURL(blobUrl)
-    } catch (err) {
-      console.error('Logo upload failed:', err)
-    }
-  }, [])
 
   const expanded = pinned || hovered
 
@@ -251,28 +220,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Workspace identity — top (clickable logo uploader) */}
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            onMouseEnter={() => setLogoHover(true)}
-            onMouseLeave={() => setLogoHover(false)}
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
-            style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
-            title="Upload company logo"
+        {/* Workspace identity — top (display only — upload in Settings) */}
+        <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-3" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
+          <div
+            className="relative flex h-16 w-16 items-center justify-center rounded-xl shrink-0 overflow-hidden"
+            style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
           >
             {companyLogo ? (
-              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
+              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
             ) : (
               companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
             )}
-            {logoHover && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <Camera size={14} />
-              </div>
-            )}
-          </button>
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -364,18 +323,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}
         >
           <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 overflow-hidden"
-              style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}
-              title="Upload company logo"
+            <div
+              className="relative flex h-16 w-16 items-center justify-center rounded-xl shrink-0 overflow-hidden"
+              style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
             >
               {companyLogo ? (
-                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; setCompanyLogo(null) }} />
+                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
               ) : (
                 companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
               )}
-            </button>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>
               <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
