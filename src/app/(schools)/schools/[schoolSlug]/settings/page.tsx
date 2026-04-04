@@ -363,6 +363,43 @@ export default function SchoolSettingsPage() {
         </div>
       </div>
 
+      {/* Section — Staff Roles & Permissions */}
+      <Section title="Staff Roles & Permissions">
+        <div className="px-5 py-4">
+          <p className="text-xs mb-3" style={{ color: '#6B7280', lineHeight: 1.6 }}>In Lumio, staff roles and permissions are set automatically when you connect your MIS. Each staff member&apos;s job title in Arbor, SIMS, or Bromcom maps directly to their Lumio access level — no manual setup required.</p>
+          <div className="overflow-x-auto mb-4">
+            <table className="w-full text-xs">
+              <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>MIS Job Title</th>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>Lumio Role</th>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>Access</th>
+              </tr></thead>
+              <tbody>
+                {[
+                  ['Headteacher, Principal', '👑 Headteacher', 'Full access'],
+                  ['Deputy/Assistant Head', '🏫 Deputy Head', 'All areas'],
+                  ['SENCO, Inclusion Manager', '🧠 SENCO', 'SEND + Safeguarding'],
+                  ['DSL, Safeguarding Lead', '🛡️ DSL', 'Safeguarding + Pastoral'],
+                  ['Head of Year', '💛 Pastoral', 'Students + Classes'],
+                  ['Teacher, ECT', '📚 Teacher', 'Classes + Timetable'],
+                  ['Business Manager, Bursar', '💼 SBM', 'Finance + HR'],
+                  ['Admin Officer, Secretary', '🗂️ Admin', 'Office + Students'],
+                  ['Caretaker, Site Manager', '🔧 Facilities', 'Facilities only'],
+                  ['Governor', '🏛️ Governor', 'Read-only reports'],
+                ].map(([mis, role, access]) => (
+                  <tr key={mis} style={{ borderBottom: '1px solid rgba(31,41,55,0.4)' }}>
+                    <td className="py-2" style={{ color: '#D1D5DB' }}>{mis}</td>
+                    <td className="py-2" style={{ color: '#0D9488' }}>{role}</td>
+                    <td className="py-2" style={{ color: '#6B7280' }}>{access}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Configure MIS sync</button>
+        </div>
+      </Section>
+
       {/* Section 5 — SSO & Rostering */}
       <Section title="SSO & Rostering">
         <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>

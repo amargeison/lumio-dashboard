@@ -14,6 +14,7 @@ import {
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
+import { SCHOOL_ROLES, type SchoolRole } from '@/lib/schoolRoles'
 
 const COLLAPSED_W = 72
 const EXPANDED_W = 200
@@ -58,6 +59,8 @@ export default function SchoolLayout({ children }: Props) {
   const base = `/schools/${slug}`
 
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+  const [activeRole, setActiveRole] = useState<SchoolRole>('slt_admin')
+  const roleConfig = SCHOOL_ROLES[activeRole]
   useEffect(() => {
     const check = () => setIsSchoolDemo(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
     check()
@@ -202,7 +205,12 @@ export default function SchoolLayout({ children }: Props) {
               const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }
               return r.role_level <= 1 || r.isOwner
             }
-            return true
+            // Role-based nav filtering
+            const navPerms = roleConfig.permissions.nav
+            if (navPerms.includes('all')) return true
+            const itemPath = item.path || 'overview'
+            if (itemPath === 'settings') return true // always show settings
+            return navPerms.includes(itemPath)
           }).map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
@@ -259,7 +267,11 @@ export default function SchoolLayout({ children }: Props) {
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
             {NAV.filter(item => {
               if ((item as any).sltOnly) { const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }; return r.role_level <= 1 || r.isOwner }
-              return true
+              const navPerms = roleConfig.permissions.nav
+              if (navPerms.includes('all')) return true
+              const itemPath = item.path || 'overview'
+              if (itemPath === 'settings') return true
+              return navPerms.includes(itemPath)
             }).map((item, i) => {
               const prev = NAV[i - 1]
               const showSection = item.section && item.section !== prev?.section
@@ -316,8 +328,14 @@ export default function SchoolLayout({ children }: Props) {
         {isSchoolDemo && (
           <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
             <div className="flex items-center gap-2 text-xs font-medium">
-              <span>Demo workspace — exploring with sample data</span>
-              <span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span>
+              <span>Demo workspace · sample data</span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span style={{ opacity: 0.7 }}>Preview as:</span>
+              <select value={activeRole} onChange={e => setActiveRole(e.target.value as SchoolRole)} title="This shows how Lumio looks for different staff roles. In a live school, roles are set automatically from your MIS." className="text-xs font-semibold rounded-lg outline-none cursor-pointer" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '2px 6px' }}>
+                {(Object.entries(SCHOOL_ROLES) as [SchoolRole, typeof SCHOOL_ROLES[SchoolRole]][]).map(([key, r]) => (
+                  <option key={key} value={key} style={{ backgroundColor: '#111318', color: '#F9FAFB' }}>{r.icon} {r.label}</option>
+                ))}
+              </select>
             </div>
             <button onClick={() => { const savedPhoto = localStorage.getItem('lumio_user_photo'); const savedName = localStorage.getItem('lumio_user_name'); localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto); if (savedName) localStorage.setItem('lumio_user_name', savedName); window.location.href = `/schools/${slug}` }}
               className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>
