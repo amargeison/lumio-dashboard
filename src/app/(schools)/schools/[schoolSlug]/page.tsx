@@ -567,6 +567,8 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => SCHOOL_BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useElevenLabsTTS()
+  const bannerRole = useSchoolRole()
+  const bannerPerms = SCHOOL_ROLES[bannerRole]?.permissions
   const { isListening, lastCommand, startListening, stopListening } = useSchoolVoiceCommands()
   const [quote, setQuote] = useState(SCHOOL_QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
@@ -626,11 +628,11 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Pupils', value: demoActive ? (pupils || SCHOOL_DEMO.stats.pupils.toLocaleString()) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: demoActive ? (staff || SCHOOL_DEMO.stats.staff) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: demoActive ? SCHOOL_DEMO.stats.alerts : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
-              { label: 'Reports', value: demoActive ? SCHOOL_DEMO.stats.reports : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
-            ].map(item => (
+              { id: 'pupils', label: 'Pupils', value: demoActive ? (pupils || SCHOOL_DEMO.stats.pupils.toLocaleString()) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { id: 'staff', label: 'Staff', value: demoActive ? (staff || SCHOOL_DEMO.stats.staff) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { id: 'alerts', label: 'Alerts', value: demoActive ? SCHOOL_DEMO.stats.alerts : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { id: 'reports', label: 'Reports', value: demoActive ? SCHOOL_DEMO.stats.reports : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
+            ].filter(s => (bannerPerms?.statsVisible || []).includes('all') || (bannerPerms?.statsVisible || []).includes(s.id)).map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                 <span className="text-base">{item.icon}</span>
                 <span className="text-lg font-black text-white">{item.value}</span>
@@ -1129,10 +1131,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
   const [siToast, setSiToast] = useState<string | null>(null)
   function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
-  const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
-  const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
-  const [siToast, setSiToast] = useState<string | null>(null)
-  function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
 
   useEffect(() => {
     fetch(`/api/schools/${_slug}`)
@@ -1244,32 +1242,33 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {activeTab === 'today' && (
       <div className="px-4 py-3" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
-        {[
-          [
+        {(() => {
+          const allButtons = [
             { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
             { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
-            { label: 'New Concern', icon: '\u26A0\uFE0F' },
-            { label: 'Mark Register', icon: '\u2705' },
-            { label: 'Behaviour Incident', icon: '\u{1F4CB}' },
-            { label: 'Log Absence', icon: '\u{1FAE5}' },
-            { label: 'Parent Contact', icon: '\u{1F4DE}' },
-            { label: 'Book Cover', icon: '\u{1F4D6}' },
-            { label: 'New Admission', icon: '\u2795' },
-            { label: 'Refer to SENCO', icon: '\u{1F9E0}' },
-          ],
-          [
-            { label: 'Create Lesson Plan', icon: '\u2728' },
-            { label: 'Send Parent Email', icon: '\u{1F4E7}' },
-            { label: 'Pupil Progress Note', icon: '\u{1F4C8}' },
-            { label: 'Request Resources', icon: '\u{1F4E6}' },
-            { label: 'IT Support', icon: '\u{1F4BB}' },
-            { label: 'Book CPD / Training', icon: '\u{1F393}' },
-            { label: 'Claim Expenses', icon: '\u{1F4B0}' },
-            { label: 'Request Leave', icon: '\u{1F3D6}\uFE0F' },
-            { label: 'Report Staff Absence', icon: '\u{1F464}' },
-            { label: 'Submit Risk Assessment', icon: '\u26A0\uFE0F' },
-          ],
-        ].map((row, ri) => (
+            { id: 'new-concern', label: 'New Concern', icon: '\u26A0\uFE0F' },
+            { id: 'mark-register', label: 'Mark Register', icon: '\u2705' },
+            { id: 'behaviour-incident', label: 'Behaviour Incident', icon: '\u{1F4CB}' },
+            { id: 'log-absence', label: 'Log Absence', icon: '\u{1FAE5}' },
+            { id: 'parent-contact', label: 'Parent Contact', icon: '\u{1F4DE}' },
+            { id: 'book-cover', label: 'Book Cover', icon: '\u{1F4D6}' },
+            { id: 'new-admission', label: 'New Admission', icon: '\u2795' },
+            { id: 'refer-to-senco', label: 'Refer to SENCO', icon: '\u{1F9E0}' },
+            { id: 'create-lesson-plan', label: 'Create Lesson Plan', icon: '\u2728' },
+            { id: 'send-parent-email', label: 'Send Parent Email', icon: '\u{1F4E7}' },
+            { id: 'pupil-progress-note', label: 'Pupil Progress Note', icon: '\u{1F4C8}' },
+            { id: 'request-resources', label: 'Request Resources', icon: '\u{1F4E6}' },
+            { id: 'it-support', label: 'IT Support', icon: '\u{1F4BB}' },
+            { id: 'book-cpd', label: 'Book CPD / Training', icon: '\u{1F393}' },
+            { id: 'claim-expenses', label: 'Claim Expenses', icon: '\u{1F4B0}' },
+            { id: 'request-leave', label: 'Request Leave', icon: '\u{1F3D6}\uFE0F' },
+            { id: 'report-staff-absence', label: 'Report Staff Absence', icon: '\u{1F464}' },
+            { id: 'submit-risk-assessment', label: 'Submit Risk Assessment', icon: '\u26A0\uFE0F' },
+          ]
+          const allowed = rolePerms?.quickActions || []
+          const filtered = allowed.includes('all') ? allButtons : allButtons.filter(b => allowed.includes(b.id))
+          const rows = filtered.length > 0 ? [filtered.slice(0, 10), filtered.slice(10)] : []
+          return rows.filter(r => r.length > 0).map((row, ri) => (
           <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri === 0 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
             {row.map((a: any) => (
               <button key={a.label} onClick={() => { if (a.label === 'School Lockdown') { setShowLockdown(true); setLockdownStep(0); setLockdownType('') } }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
@@ -1277,12 +1276,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               </button>
             ))}
           </div>
-        ))}
+        ))
+        })()}
       </div>
       )}
 
       {/* 4. Safeguarding alert — only when demo data is active */}
-      {demoDataActive && activeTab === 'today' && (
+      {demoDataActive && activeTab === 'today' && rolePerms?.canViewSafeguarding && (
         <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
           <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
           <div className="flex-1 min-w-0">
