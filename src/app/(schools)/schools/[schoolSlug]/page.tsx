@@ -15,8 +15,6 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
 import { useSchoolRole } from '@/lib/SchoolRoleContext'
 import { SCHOOL_ROLES } from '@/lib/schoolRoles'
-import { useSchoolRole } from '@/lib/SchoolRoleContext'
-import { SCHOOL_ROLES } from '@/lib/schoolRoles'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1109,8 +1107,6 @@ function OnboardingModal({
 
 export default function SchoolDashboard({ params }: { params: Promise<{ schoolSlug: string }> }) {
   const { schoolSlug: _slug } = use(params)
-  const activeRole = useSchoolRole()
-  const rolePerms = SCHOOL_ROLES[activeRole]?.permissions
   const activeRole = useSchoolRole()
   const rolePerms = SCHOOL_ROLES[activeRole]?.permissions
   const attendanceAvg = Math.round(ATTENDANCE_BY_YEAR.reduce((s, y) => s + y.pct, 0) / ATTENDANCE_BY_YEAR.length * 10) / 10
