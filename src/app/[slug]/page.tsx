@@ -150,15 +150,17 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     if (initialLogo) setLogoUrl(initialLogo)
   }, [initialLogo])
 
-  // Read from localStorage as instant cache, then always refresh from Supabase
+  // Read from localStorage as instant cache, then refresh from Supabase only if not cleared
   useEffect(() => {
-    if (!logoUrl) {
-      const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-      if (stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
-        setLogoUrl(stored)
-      }
+    const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
+    if (!stored) {
+      setLogoUrl(null) // don't fetch from DB if localStorage was explicitly cleared
+      return
     }
-    // Always fetch from Supabase in background to confirm/update logo
+    if (!logoUrl && stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
+      setLogoUrl(stored)
+    }
+    // Fetch from Supabase in background to confirm/update logo
     const token = localStorage.getItem('workspace_session_token')
     if (token) {
       fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
@@ -2836,6 +2838,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_company_logo')
     // Sync sidebar + parent immediately
     window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: '' }))
+    window.dispatchEvent(new CustomEvent('lumio-logo-cleared'))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     try {
@@ -4153,6 +4156,17 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
+
+  // Listen for logo removal from Settings
+  useEffect(() => {
+    const handler = () => {
+      setCompanyLogo('')
+      localStorage.removeItem('workspace_company_logo')
+      localStorage.removeItem('lumio_company_logo')
+    }
+    window.addEventListener('lumio-logo-cleared', handler)
+    return () => window.removeEventListener('lumio-logo-cleared', handler)
+  }, [])
 
   useEffect(() => {
     // Read cached values from localStorage — check admin impersonation first
