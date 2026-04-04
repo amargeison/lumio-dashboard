@@ -320,7 +320,7 @@ function HeroSection() {
 
             <div className="flex items-center gap-4 flex-wrap mb-5">
               <Link
-                href="/schools/register"
+                href="/signup?portal=schools"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
                 style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', color: '#F9FAFB' }}
               >
@@ -684,7 +684,7 @@ function FeaturesSection() {
               <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>
                 Trust leads and CEOs get a cross-school dashboard showing attendance, attainment, SEND, safeguarding and budget — for every academy in the trust, side by side. Spot the school that needs support before it becomes a crisis.
               </p>
-              <Link href="/schools/register" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: '#60A5FA' }}>
+              <Link href="/signup?portal=schools" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: '#60A5FA' }}>
                 Talk to us about trusts <ArrowRight size={14} />
               </Link>
             </div>
@@ -1028,7 +1028,7 @@ function FinalCTASection() {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap mb-6">
           <Link
-            href="/schools/register"
+            href="/signup?portal=schools"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold"
             style={{ backgroundColor: '#F9FAFB', color: '#07080F' }}
           >

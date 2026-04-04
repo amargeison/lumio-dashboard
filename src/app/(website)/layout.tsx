@@ -233,8 +233,6 @@ function Nav() {
     {showTypeModal && (
       <TrialTypeModal
         onClose={() => setShowTypeModal(false)}
-        onBusiness={() => { setShowTypeModal(false); setShowTrial(true) }}
-        onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
       />
     )}
   </>

@@ -348,33 +348,65 @@ export default function SchoolSettingsPage() {
       {/* Section 4 — Voice Assistant */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>🎙️ Voice Assistant</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Choose the voice for your AI morning briefing</p>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎙️</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Choose the voice for your AI morning briefing</p>
+            </div>
+          </div>
         </div>
         <div className="px-5 pt-4 space-y-3">
+          {/* TTS Toggle */}
           <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-            <div><div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🔊 Text to Speech</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</div></div>
-            <Toggle on={ttsEnabled} onChange={() => { setTtsEnabled(!ttsEnabled); localStorage.setItem('lumio_tts_enabled', String(!ttsEnabled)) }} />
+            <div>
+              <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🔊 Text to Speech</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>AI voice reads your morning briefing and responds to actions</div>
+            </div>
+            <button onClick={() => { const v = !ttsEnabled; setTtsEnabled(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} className="flex-shrink-0"
+              style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: ttsEnabled ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: 3, left: ttsEnabled ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+            </button>
           </div>
+          {/* Voice Commands Toggle */}
           <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-            <div><div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🎙️ Voice Commands</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say "Hi Lumio" to activate voice control</div></div>
-            <Toggle on={voiceEnabled} onChange={() => { setVoiceEnabled(!voiceEnabled); localStorage.setItem('lumio_voice_commands_enabled', String(!voiceEnabled)) }} />
+            <div>
+              <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🎙️ Voice Commands</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice control — navigate, open forms, get briefings</div>
+            </div>
+            <button onClick={() => { const v = !voiceEnabled; setVoiceEnabled(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} className="flex-shrink-0"
+              style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: voiceEnabled ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: 3, left: voiceEnabled ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+            </button>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
-          {VOICES.map(voice => {
+        {/* Voice filter chips */}
+        <div className="flex gap-2 px-5 pt-4 flex-wrap">
+          {['all', 'Male', 'Female', 'British', 'American'].map(f => (
+            <button key={f} onClick={() => setVoiceFilter(f)} className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${voiceFilter === f ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+              {f === 'all' ? `All (${VOICES.length})` : f}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
+          {filteredVoices.map(voice => {
             const isActive = activeVoice === voice.id
             const isPreviewing = previewing === voice.id
+            const isLoading = previewLoading === voice.id
             return (
-              <div key={voice.id} className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #0D9488' : '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between mb-2">
+              <div key={voice.id} className="rounded-xl p-4 transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #0D9488' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
-                  {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>✓ Active</span>}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.gender}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.accent}</span>
+                    {isActive && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{'\u2713'}</span>}
+                  </div>
                 </div>
-                <p className="text-xs mb-4 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
+                <p className="text-xs mb-3 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => preview(voice)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', color: isPreviewing ? '#A78BFA' : '#9CA3AF', border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937' }}>
-                    {isPreviewing ? '■ Stop' : '▶ Preview'}
+                  <button onClick={() => preview(voice)} disabled={isLoading} className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors" style={{ backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', color: isPreviewing ? '#A78BFA' : '#9CA3AF', border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937', opacity: isLoading ? 0.5 : 1 }}>
+                    {isLoading ? '\u21BB Loading...' : isPreviewing ? '\u25A0 Stop' : '\u25B6 Preview'}
                   </button>
                   {!isActive && <button onClick={() => selectVoice(voice.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Select</button>}
                 </div>

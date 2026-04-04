@@ -4698,7 +4698,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                       </div>
                     )}
                   </div>
-                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>Clear Demo Data</button>
+                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
                 </div>
               </div>
               {showRoleTip && (

@@ -123,7 +123,7 @@ export default function SchoolsFeaturesPage() {
             Lumio Schools replaces your MIS middleware, staff management tools, and morning admin — with one AI-powered platform built for UK schools.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/schools/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={16} /></Link>
+            <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={16} /></Link>
             <Link href="/demo/schools/oakridge-primary" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>See the demo</Link>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function SchoolsFeaturesPage() {
                 <h3 className="text-lg font-bold mb-1" style={{ color: '#F9FAFB' }}>{p.name}</h3>
                 <p className="mb-4" style={{ color: '#6B7280', fontSize: 13 }}>{p.desc}</p>
                 <p className="mb-6"><span className="text-3xl font-black" style={{ color: p.color }}>£{p.price}</span><span className="text-sm" style={{ color: '#6B7280' }}>{p.period}</span></p>
-                <Link href="/schools/register" className="block w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: p.color, color: '#F9FAFB' }}>Start Free Trial</Link>
+                <Link href="/signup?portal=schools" className="block w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: p.color, color: '#F9FAFB' }}>Start Free Trial</Link>
               </div>
             ))}
           </div>
@@ -221,7 +221,7 @@ export default function SchoolsFeaturesPage() {
           <h2 className="text-3xl font-black mb-4" style={{ color: '#F9FAFB' }}>Ready to see Lumio in action?</h2>
           <p className="text-base mb-10" style={{ color: '#9CA3AF' }}>Join schools across the UK who&apos;ve switched to Lumio.</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/schools/register" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={18} /></Link>
+            <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={18} /></Link>
             <Link href="https://calendly.com/lumiocms/lumio-schools" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>Book a demo</Link>
           </div>
           <p className="text-xs mt-6" style={{ color: '#4B5563' }}>14 days free. No credit card. Cancel any time. UK data storage.</p>

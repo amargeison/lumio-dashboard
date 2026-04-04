@@ -403,7 +403,7 @@ export default function SchoolLayout({ children }: Props) {
               </select>
             </div>
             <button onClick={() => { const savedPhoto = localStorage.getItem('lumio_user_photo'); const savedName = localStorage.getItem('lumio_user_name'); localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto); if (savedName) localStorage.setItem('lumio_user_name', savedName); window.location.href = `/schools/${slug}` }}
-              className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>
+              className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>
               Clear Demo Data
             </button>
           </div>

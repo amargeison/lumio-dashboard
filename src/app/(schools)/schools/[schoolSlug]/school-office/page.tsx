@@ -30,7 +30,7 @@ const ACTIONS_BASE = [
 ]
 
 const STATS = [
-  { label: 'Total Pupils', value: '423', sub: 'Oakridge Primary' },
+  { label: 'Total Pupils', value: '1,147', sub: 'Margy High School' },
   { label: 'New Admissions', value: '3', sub: 'This term' },
   { label: 'Leavers', value: '2', sub: 'End of term' },
   { label: 'Messages Today', value: '12', sub: 'Sent today' },
@@ -179,7 +179,7 @@ export default function SchoolOfficePage() {
       {/* Page title */}
       <div>
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>School Office</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Absences, admissions, communications and trips — Oakridge Primary</p>
+        <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Absences, admissions, communications and trips — Margy High School</p>
       </div>
 
       {/* Quick actions */}

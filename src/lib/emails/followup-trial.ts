@@ -5,7 +5,7 @@ export function followupTrialEmail({ name, slug, portalType }: { name: string; s
   const workspaceUrl = portalType === 'schools' ? `${appUrl}/schools/${slug}` : `${appUrl}/demo/${slug}`
   const isSchool = portalType === 'schools'
 
-  return emailLayout(`
+  return emailLayout({ preheader: 'Have you had a chance to explore your Lumio workspace?', body: `
     <div style="padding:32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <p style="color:#F9FAFB;font-size:16px;margin:0 0 16px;">Hi ${name},</p>
       <p style="color:#D1D5DB;font-size:14px;line-height:1.6;margin:0 0 16px;">
@@ -33,5 +33,5 @@ export function followupTrialEmail({ name, slug, portalType }: { name: string; s
         <span style="color:#4B5563;">Founder, Lumio</span>
       </p>
     </div>
-  `)
+  ` })
 }
