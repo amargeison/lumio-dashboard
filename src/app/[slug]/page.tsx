@@ -1905,7 +1905,9 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                   <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                     <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{m.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {m.duration}</p></div>
-                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
+                    <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                    <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join &rarr;</a>}
                   </div>
                 )}
                 {!live && (
@@ -1913,7 +1915,11 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                     <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
                     <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
-                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>}
+                    {m.status !== 'done' && <>
+                      <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                      <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                    </>}
+                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join &rarr;</a>}
                   </div>
                 )}
               </div>
@@ -3722,6 +3728,29 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             <div className="lg:col-span-1 flex flex-col gap-4">
               <PhotoFrame demoDataActive={demoDataActive} />
               <MorningAIPanel demoDataActive={demoDataActive} />
+              {demoDataActive && (
+                <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span>{'\u2728'}</span>
+                    <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { n: 1, text: 'Pipeline up 12% \u2014 strongest quarter since Q4 last year', color: '#0D9488' },
+                      { n: 2, text: 'Greenfield Group proposal due today \u2014 highest value deal in pipeline', color: '#EF4444' },
+                      { n: 3, text: '3 trials expiring this week \u2014 \u00A38,400 combined value at risk', color: '#F59E0B' },
+                      { n: 4, text: 'Win rate 23% \u2014 below industry average of 27%, needs attention', color: '#F59E0B' },
+                      { n: 5, text: 'Apex Learning partnership performing above target \u2014 68% win rate', color: '#0D9488' },
+                    ].map((h, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-xs font-bold w-4 flex-shrink-0 mt-0.5" style={{ color: h.color }}>{h.n}</span>
+                        <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
