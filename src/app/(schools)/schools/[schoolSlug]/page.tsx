@@ -8,7 +8,7 @@ import {
   ChevronUp, ChevronDown, GitBranch, Volume2, Mic,
 } from 'lucide-react'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
-import { useVoiceCommands } from '@/hooks/useVoiceCommands'
+import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
@@ -563,7 +563,7 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => SCHOOL_BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useElevenLabsTTS()
-  const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
+  const { isListening, lastCommand, startListening, stopListening } = useSchoolVoiceCommands()
   const [quote, setQuote] = useState(SCHOOL_QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
@@ -586,10 +586,14 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
   // Handle voice command actions
   useEffect(() => {
     if (!lastCommand) return
-    const { action, response } = lastCommand
+    const { action, response, data } = lastCommand
     speak(response)
     if (action === 'PLAY_BRIEFING') setTimeout(() => handleBriefing(), 1500)
     else if (action === 'STOP_AUDIO') stop()
+    else if (action === 'NAVIGATE' && data?.path) {
+      const base = window.location.pathname.split('/').slice(0, 3).join('/')
+      setTimeout(() => { window.location.href = `${base}/${data.path}` }, 1500)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastCommand])
 

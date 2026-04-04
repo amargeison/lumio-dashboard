@@ -949,7 +949,7 @@ function DemoPersonalBanner({ company, companyLogo, firstName, dept = 'overview'
     } else if (action === 'STOP_AUDIO') {
       stop()
     } else if (action === 'NAVIGATE') {
-      const dept = payload?.dept?.toLowerCase()
+      const dept = payload?.dept?.toLowerCase() || (lastCommand as any)?.data?.dept?.toLowerCase()
       if (dept) setTimeout(() => window.location.href = `/demo/${dept}`, 1500)
     } else if (action === 'CANCEL_NEXT_MEETING') {
       const nextMeeting = DEMO_MEETINGS.find(m => m.status === 'upcoming')
