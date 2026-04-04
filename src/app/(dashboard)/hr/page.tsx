@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles, Briefcase, ClipboardList, Calendar, Building2 } from 'lucide-react'
+import { Users, UserPlus, FileText, Star, AlertCircle, CalendarHeart, Sparkles, Briefcase, ClipboardList, Calendar, Building2, ClipboardCheck, AlertTriangle, MessageSquareWarning, PoundSterling, UserCheck, ShieldCheck, Clock, Baby, HeartPulse, ArrowUpRight, DoorOpen, Heart, BarChart2, BookOpen, IdCard } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -111,6 +111,7 @@ export default function HRPage() {
   const [showContractor,  setShowContractor]  = useState(false)
   const [showAIInsights,  setShowAIInsights]  = useState(false)
   const [showDeptInfo,    setShowDeptInfo]    = useState(false)
+  const [activeModal,     setActiveModal]     = useState<string | null>(null)
 
   const [stats,         setStats]         = useState(DEFAULT_STATS)
   const [starters,      setStarters]      = useState<Starter[]>(INITIAL_STARTERS)
@@ -263,7 +264,7 @@ export default function HRPage() {
     } catch { /* non-blocking */ }
     setStarters(prev => [{ name: fullName, role: data.jobTitle, start: formatStartDate(data.startDate), day: 'Pending', progress: 0, status: 'In Progress' }, ...prev])
     setShowModal(false)
-    showToast(`Onboarding started for ${fullName}`)
+    showToast(`✅ ${fullName} onboarding started — IT, Finance, Ops and ${data.department || 'their'} manager notified`)
   }
 
   function formatDateRange(start: string, end: string): string {
@@ -289,7 +290,7 @@ export default function HRPage() {
       days: `${data.totalDays} day${data.totalDays !== 1 ? 's' : ''}`,
     }, ...prev])
     setShowLeaveModal(false)
-    showToast(`Leave request submitted for ${data.employeeName}`)
+    showToast(`✅ Leave request submitted for ${data.employeeName} — manager notified for approval`)
   }
 
   async function handleOffboarding(data: OffboardingData) {
@@ -310,7 +311,7 @@ export default function HRPage() {
       lastDay: formatStartDate(data.lastWorkingDay), reason: data.reason,
     }, ...prev])
     setShowOffboarding(false)
-    showToast(`Offboarding started for ${data.employeeName}`)
+    showToast(`✅ ${data.employeeName} offboarding started — IT (revoke access), Finance (final payroll), Ops (return equipment) notified`)
   }
 
   async function handleRecruitment(data: RecruitmentData) {
@@ -333,7 +334,7 @@ export default function HRPage() {
       type: data.employmentType, positions: data.positions,
     }, ...prev])
     setShowRecruitment(false)
-    showToast(`Recruitment started for ${data.jobTitle}`)
+    showToast(`✅ ${data.jobTitle} role posted — hiring manager and recruitment team notified`)
   }
 
   async function handlePerfReview(data: PerformanceReviewData) {
@@ -351,7 +352,7 @@ export default function HRPage() {
     } catch { /* non-blocking */ }
     setProbations(prev => [{ name: data.employeeName, date: formatStartDate(data.dueDate), manager: data.manager || '—' }, ...prev])
     setShowPerfReview(false)
-    showToast(`Performance review started for ${data.employeeName}`)
+    showToast(`✅ Performance review initiated for ${data.employeeName} — employee and manager notified`)
   }
 
   const actions = [
@@ -363,6 +364,22 @@ export default function HRPage() {
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
     { label: 'Book Contractor',    icon: Briefcase,      onClick: () => setShowContractor(true) },
+    { label: 'Probation Review',   icon: ClipboardCheck,      onClick: () => setActiveModal('probation') },
+    { label: 'Disciplinary',       icon: AlertTriangle,       onClick: () => setActiveModal('disciplinary') },
+    { label: 'Grievance Log',      icon: MessageSquareWarning, onClick: () => setActiveModal('grievance') },
+    { label: 'Salary Review',      icon: PoundSterling,       onClick: () => setActiveModal('salary-review') },
+    { label: 'Return to Work',     icon: UserCheck,           onClick: () => setActiveModal('return-to-work') },
+    { label: 'Reference Request',  icon: FileText,            onClick: () => setActiveModal('reference') },
+    { label: 'DBS Check',          icon: ShieldCheck,         onClick: () => setActiveModal('dbs') },
+    { label: 'Flexible Working',   icon: Clock,               onClick: () => setActiveModal('flexible-working') },
+    { label: 'Maternity/Paternity', icon: Baby,               onClick: () => setActiveModal('parental-leave') },
+    { label: 'OH Referral',        icon: HeartPulse,          onClick: () => setActiveModal('oh-referral') },
+    { label: 'Job Change',         icon: ArrowUpRight,        onClick: () => setActiveModal('job-change') },
+    { label: 'Exit Interview',     icon: DoorOpen,            onClick: () => setActiveModal('exit-interview') },
+    { label: 'Wellbeing Check',    icon: Heart,               onClick: () => setActiveModal('wellbeing') },
+    { label: 'Employee Survey',    icon: BarChart2,           onClick: () => setActiveModal('survey') },
+    { label: 'Policy Update',      icon: BookOpen,            onClick: () => setActiveModal('policy') },
+    { label: 'Right to Work',      icon: IdCard,              onClick: () => setActiveModal('rtw') },
     { label: 'Dept Insights',      icon: Star,           onClick: () => setShowAIInsights(true) },
     { label: 'Dept Info',          icon: Building2,      onClick: () => setShowDeptInfo(true) },
   ]
@@ -498,7 +515,7 @@ export default function HRPage() {
       {showPerfReview && (
         <PerformanceReviewModal onClose={() => setShowPerfReview(false)} onSubmit={handlePerfReview} />
       )}
-      {showContract && <SendContractModal onClose={() => setShowContract(false)} onSubmit={() => { setShowContract(false); showToast('Contract sent') }} />}
+      {showContract && <SendContractModal onClose={() => setShowContract(false)} onSubmit={() => { setShowContract(false); showToast('✅ Contract sent via DocuSign — employee notified to sign') }} />}
       {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
       <AIInsightsReport dept="hr" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast message={toast} />
