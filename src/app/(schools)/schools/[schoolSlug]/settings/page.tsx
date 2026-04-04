@@ -7,9 +7,9 @@ import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { createClient } from '@supabase/supabase-js'
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady', sample: 'Good morning. Everything is under control.' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.' },
+  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.' },
 ]
 
 const ALL_TIMEZONES = [
@@ -186,7 +186,7 @@ export default function SchoolSettingsPage() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const t = localStorage.getItem('workspace_session_token') || localStorage.getItem('demo_session_token')
       if (t) { headers['x-workspace-token'] = t; headers['x-demo-token'] = t }
-      const res = await fetch('/api/tts', { method: 'POST', headers, body: JSON.stringify({ text: voice.sample, voice_id: voice.id }) })
+      const res = await fetch('/api/tts', { method: 'POST', headers, body: JSON.stringify({ text: voice.sample, voice_id: voice.id, preview: true }) })
       if (!res.ok) throw new Error()
       const buf = await res.arrayBuffer()
       const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }))

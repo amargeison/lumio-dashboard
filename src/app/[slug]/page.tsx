@@ -2230,20 +2230,20 @@ function BriefingSettings() {
 // ─── Voice Selector ─────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear \u2014 your daily motivator', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep \u2014 reassuring and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic \u2014 upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.', gender: 'Female', accent: 'American' },
-  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Deep & authoritative \u2014 professional and commanding', sample: 'Hi, I\'m Adam. Clear, authoritative and professional.', gender: 'Male', accent: 'American' },
-  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', desc: 'Smooth & confident \u2014 great for presentations', sample: 'Hi, I\'m Antoni. Smooth, confident and easy to listen to.', gender: 'Male', accent: 'American' },
-  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', desc: 'Strong & crisp \u2014 clear and decisive', sample: 'Hi, I\'m Arnold. Strong, clear and focused.', gender: 'Male', accent: 'American' },
-  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', desc: 'Bold & expressive \u2014 energetic and engaging', sample: 'Hi, I\'m Domi. Bold, expressive and full of energy.', gender: 'Female', accent: 'American' },
-  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', desc: 'Young & bright \u2014 friendly and approachable', sample: 'Hi, I\'m Elli. Friendly, bright and easy to connect with.', gender: 'Female', accent: 'American' },
-  { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', desc: 'Raspy & distinctive \u2014 character and personality', sample: 'Hi, I\'m Sam. Distinctive, real and full of character.', gender: 'Male', accent: 'American' },
-  { id: 'CYw3kZ28abi6tjtxIwYk', name: 'Dave', desc: 'British & warm \u2014 sophisticated and trustworthy', sample: 'Hi, I\'m Dave. Warm, British and thoroughly trustworthy.', gender: 'Male', accent: 'British' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
+  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.', gender: 'Female', accent: 'American' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Dominant & firm \u2014 authoritative and commanding', sample: 'Good morning. Here\'s what matters today.', gender: 'Male', accent: 'American' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'British & captivating \u2014 warm storyteller', sample: 'Good morning. Let me walk you through your day.', gender: 'Male', accent: 'British' },
+  { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice', desc: 'Clear & engaging \u2014 British educator', sample: 'Good morning. Here\'s your briefing for today.', gender: 'Female', accent: 'British' },
+  { id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda', desc: 'Knowledgeable & professional \u2014 polished and precise', sample: 'Good morning. Your priorities are ready.', gender: 'Female', accent: 'American' },
+  { id: 'cjVigY5qzO86Huf0OWal', name: 'Eric', desc: 'Smooth & trustworthy \u2014 calm and reliable', sample: 'Good morning. Here\'s your morning roundup.', gender: 'Male', accent: 'American' },
+  { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', desc: 'Steady broadcaster \u2014 British and professional', sample: 'Good morning. The headlines from your dashboard.', gender: 'Male', accent: 'British' },
+  { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', desc: 'Playful & bright \u2014 warm and approachable', sample: 'Good morning. Let\'s see what today brings.', gender: 'Female', accent: 'American' },
 ]
 
 function VoiceSelector() {
-  const [activeVoice, setActiveVoice] = useState('21m00Tcm4TlvDq8ikWAM')
+  const [activeVoice, setActiveVoice] = useState('EXAVITQu4vr4xnSDxMaL')
   const [previewing, setPreviewing] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)

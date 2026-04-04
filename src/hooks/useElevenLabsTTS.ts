@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useSyncExternalStore } from 'react'
 
-const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM' // Rachel
+const DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL' // Rachel
 
 function getVoiceId(): string {
   if (typeof window === 'undefined') return DEFAULT_VOICE_ID

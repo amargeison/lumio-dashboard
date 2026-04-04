@@ -4589,8 +4589,8 @@ function FacilitiesView() {
 // ─── Settings View ──────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring — your daily motivator' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting — reassuring and steady' },
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear' },
 ]
 
@@ -5001,7 +5001,7 @@ function ApiStatusStrip() {
 function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
-  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM' : '21m00Tcm4TlvDq8ikWAM')
+  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState(getStoredZones)
   const localTz = getUserLocalTz()
 
