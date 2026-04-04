@@ -779,6 +779,51 @@ export default function PartnersPage() {
       {innerTab === 'comms' && <CommsContent />}
       {innerTab === 'activity' && <ActivityContent />}
       {innerTab === 'settings' && <SettingsContent partner={p} />}
+
+      {/* AI Intelligence Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)', borderRadius: 12, padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span>{'\u2728'}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>AI Partner Summary</span>
+            <span style={{ fontSize: 11, color: '#6B7280', marginLeft: 'auto' }}>Generated now</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              `${p.name} is performing ${p.score > 80 ? 'above' : 'at'} target — ${p.winRate} win rate, ${p.revenue} revenue.`,
+              `${p.deals} active deals in pipeline with avg deal size of ${p.avgDeal}.`,
+              `Engagement level: ${p.engagement}. Primary contact: ${p.contact}.`,
+              `Commission rate: ${p.commission}%. Next QBR: ${p.review}.`,
+            ].map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flexShrink: 0, backgroundColor: '#7C3AED' }} />
+                <span style={{ fontSize: 12, color: '#D1D5DB' }}>{s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 12, padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span>{'\u26A1'}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span style={{ fontSize: 11, color: '#6B7280', marginLeft: 'auto' }}>Partners</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { n: 1, text: 'Apex Learning \u2014 68% win rate, highest of any partner this quarter', color: '#0D9488' },
+              { n: 2, text: 'MedCore Solutions \u2014 engagement dropped, QBR overdue by 3 weeks', color: '#EF4444' },
+              { n: 3, text: '2 partner renewals needed before end of month', color: '#F59E0B' },
+              { n: 4, text: 'Combined pipeline \u00A3847k \u2014 up 18% vs last quarter', color: '#0D9488' },
+              { n: 5, text: 'Vertex Analytics first deal expected Q3 \u2014 nurture now', color: '#0D9488' },
+            ].map((h, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, width: 16, flexShrink: 0, marginTop: 2, color: h.color }}>{h.n}</span>
+                <span style={{ fontSize: 12, color: '#D1D5DB' }}>{h.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

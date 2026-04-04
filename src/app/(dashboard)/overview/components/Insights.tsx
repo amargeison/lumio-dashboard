@@ -117,7 +117,8 @@ export default function Insights() {
       .catch(() => setInsights(MOCK_INSIGHTS))
   }, [])
 
-  const currentAI = INSIGHTS_AI.executive;
+  const currentAI = INSIGHTS_AI.executive
+  const revenueAI = INSIGHTS_AI.revenue
 
   return (
     <div className="max-w-5xl">
@@ -185,7 +186,7 @@ export default function Insights() {
             <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Generated now</span>
           </div>
           <div className="space-y-2">
-            {(currentAI?.summary || INSIGHTS_AI.executive.summary).map((s, i) => (
+            {revenueAI.summary.map((s, i) => (
               <div key={i} className="flex items-start gap-2">
                 <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: '#7C3AED' }} />
                 <span className="text-xs" style={{ color: '#D1D5DB' }}>{s}</span>
@@ -195,12 +196,12 @@ export default function Insights() {
         </div>
         <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(13,148,136,0.3)' }}>
           <div className="flex items-center gap-2 mb-3">
-            <span>⚡</span>
+            <span>{'\u26A1'}</span>
             <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
             <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
           </div>
           <div className="space-y-2">
-            {(currentAI?.highlights || INSIGHTS_AI.executive.highlights).map((h, i) => (
+            {revenueAI.highlights.map((h, i) => (
               <div key={i} className="flex items-start gap-2">
                 <span className={`text-xs font-bold w-4 flex-shrink-0 mt-0.5 ${h.color}`}>{h.n}</span>
                 <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
