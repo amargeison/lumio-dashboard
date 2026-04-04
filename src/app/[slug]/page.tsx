@@ -4460,4 +4460,5 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   )
 }
 
-// trigger rebuild Sat Apr  4 07:21:06 GMTST 2026
+// Quick actions: 20 buttons, integration gate allows null integrations through (always enabled)
+// New buttons use OverviewActionModal via activeQuickAction state
