@@ -1458,6 +1458,29 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoDataActive])
 
+  // 5-minute background refresh for live data only
+  useEffect(() => {
+    if (demoDataActive || !anyConnected) return
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+    if (!token) return
+    const interval = setInterval(() => {
+      Promise.all(connectedSources.map(async (src) => {
+        try {
+          const r = await fetch(src.route, { headers: { 'x-workspace-token': token } })
+          if (!r.ok) return { key: src.key, messages: [] as RoundupMessage[] }
+          const d = await r.json()
+          return { key: src.key, messages: src.parse(d) }
+        } catch { return { key: src.key, messages: [] as RoundupMessage[] } }
+      })).then(results => {
+        const msgs: Record<string, RoundupMessage[]> = {}
+        for (const r of results) msgs[r.key] = r.messages
+        setLiveMessages(msgs)
+      })
+    }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoDataActive, anyConnected])
+
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
       setReplied(r => [...r, msgId])
@@ -2590,6 +2613,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_staff_profiles')
     localStorage.removeItem('lumio_demo_active')
     localStorage.removeItem('lumio-photo-frame')
+    // Clear task/win/don't-miss persistence
+    ;['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed'].forEach(k => localStorage.removeItem(k))
+    // Clear all lumio_tasks_done_* keys
+    Object.keys(localStorage).filter(k => k.startsWith('lumio_tasks_done')).forEach(k => localStorage.removeItem(k))
     // Restore identity fields
     if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
     if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
@@ -2605,12 +2632,16 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_crm_'))
       .forEach(k => localStorage.removeItem(k))
+    // Clear QW wins cache
+    localStorage.removeItem('qw_wins_cache')
     try { sessionStorage.removeItem('lumio_crm_cache') } catch { /* ignore */ }
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
     localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
     onDemoToggle(false)
     setClearing(false)
+    // Reload after brief delay so all state resets from clean localStorage
+    setTimeout(() => window.location.reload(), 300)
   }
 
   async function handleLoadDemo() {
@@ -4441,7 +4472,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
               <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>Clear Demo Data</button>
+                <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>Clear Demo Data</button>
               </div>
             </div>
           )}
