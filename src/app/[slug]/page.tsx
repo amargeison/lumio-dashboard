@@ -4070,6 +4070,36 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => { try { return new Set(JSON.parse(localStorage.getItem('lumio_dismissed_notifs') || '[]')) } catch { return new Set() } })
   const dismissNotif = (id: string) => { setDismissedNotifs(prev => { const n = new Set(prev); n.add(id); try { localStorage.setItem('lumio_dismissed_notifs', JSON.stringify([...n])) } catch {}; return n }) }
   useEffect(() => { if (!notificationsOpen) return; const h = (e: MouseEvent) => { const el = document.getElementById('notif-bell'); if (el && !el.contains(e.target as Node)) setNotificationsOpen(false) }; document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h) }, [notificationsOpen])
+  // ── Live notification state ─────────────────────────────────────────────────
+  const [liveNotifs, setLiveNotifs] = useState<Array<{ id: string; priority: string; icon: string; title: string; body: string; time: string; dept: string; deptLabel: string | null; deptRoute: string | null; roles: string[]; category: string; source: string }>>([])
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const fetchLiveNotificationsRef = useRef<(() => Promise<void>) | null>(null)
+  fetchLiveNotificationsRef.current = async () => {
+    if (demoDataActive) return
+    setNotifLoading(true)
+    try {
+      const role = localStorage.getItem('lumio_user_role') || 'director'
+      const currentSlug = localStorage.getItem('lumio_workspace_slug') || ''
+      const hasCalendar = !!localStorage.getItem('lumio_gcal_connected')
+      const hasGmail = !!localStorage.getItem('lumio_gmail_connected')
+      const { fetchLiveNotifications } = await import('@/lib/notifications')
+      const results = await fetchLiveNotifications(role, currentSlug, hasCalendar, hasGmail)
+      setLiveNotifs(results)
+      setLastFetched(new Date())
+    } catch (e) {
+      console.error('Live notification fetch error:', e)
+    }
+    setNotifLoading(false)
+  }
+  // Fetch live notifications on mount (non-demo) and poll every 5 minutes
+  useEffect(() => {
+    if (demoDataActive) return
+    fetchLiveNotificationsRef.current?.()
+    const interval = setInterval(() => fetchLiveNotificationsRef.current?.(), 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoDataActive])
   const DEMO_NOTIFS = [
     { id:'n-01',priority:'high',icon:'\u{1F4B0}',title:'3 invoices overdue',body:'Bramblewood (\u00A34,200), Northgate (\u00A32,800), FitCore (\u00A31,400)',time:'Overdue',dept:'accounts',deptLabel:'Accounts',deptRoute:'/accounts',roles:['admin','director'],category:'finance' },
     { id:'n-02',priority:'high',icon:'\u{1F464}',title:'3 probation reviews overdue',body:'Sarah Mitchell (Mktg), Tom Chen (Eng), Priya Patel (CS)',time:'This week',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director'],category:'hr' },
@@ -4092,9 +4122,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     { id:'n-19',priority:'low',icon:'\u{1F393}',title:'Training completion at 84%',body:'3 staff have overdue training',time:'This month',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director','manager'],category:'hr' },
     { id:'n-20',priority:'medium',icon:'\u{1F4C5}',title:'Meeting with Andrew',body:'Tuesday 7 April \u00B7 11:00\u201312:00 \u00B7 Google Meet',time:'Tue 11:00',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'meetings' },
   ]
-  const visibleNotifs = DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id))
+  // Use demo notifications in demo mode, live notifications otherwise
+  const allNotifs = demoDataActive
+    ? DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id))
+    : (liveNotifs.length > 0 ? liveNotifs.filter(n => !dismissedNotifs.has(n.id)) : DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id)))
+  const visibleNotifs = allNotifs
   const urgentCount = visibleNotifs.filter(n => n.priority === 'high').length
   const filteredNotifs = notifTab === 'all' ? visibleNotifs : notifTab === 'urgent' ? visibleNotifs.filter(n => n.priority === 'high') : notifTab === 'meetings' ? visibleNotifs.filter(n => n.category === 'meetings') : notifTab === 'tasks' ? visibleNotifs.filter(n => n.category === 'tasks') : visibleNotifs.filter(n => n.category === notifTab)
+  const isLiveMode = !demoDataActive && liveNotifs.length > 0
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
@@ -4399,7 +4434,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                 ))}
               </div>
               <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-                {filteredNotifs.length === 0 ? <div className="text-center py-10 text-gray-600"><div className="text-3xl mb-2">{'\u2705'}</div><div className="text-sm">All clear</div></div> : filteredNotifs.map(n=>(
+                {notifLoading && liveNotifs.length === 0 && !demoDataActive ? <div className="text-center py-10 text-gray-600"><div className="text-2xl mb-2 animate-spin">⟳</div><div className="text-xs">Fetching live notifications…</div></div> : filteredNotifs.length === 0 ? <div className="text-center py-10 text-gray-600"><div className="text-3xl mb-2">{'\u2705'}</div><div className="text-sm">All clear</div></div> : filteredNotifs.map(n=>(
                   <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-all group" style={{ borderBottom: '1px solid rgba(31,41,55,0.4)', borderLeft: `2px solid ${n.priority==='high'?'#EF4444':n.priority==='medium'?'#F59E0B':'#374151'}` }}>
                     <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>{ setNotificationsOpen(false); if(n.deptRoute){ window.location.href=`/${slug}${n.deptRoute}` } }}>
@@ -4411,9 +4446,23 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                   </div>
                 ))}
               </div>
+              {/* Connect prompt — live mode, no integrations, no results */}
+              {!demoDataActive && liveNotifs.length === 0 && !notifLoading && visibleNotifs.length > 0 && (
+                <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(13,148,136,0.03)' }}>
+                  <div className="text-[10px] text-gray-500 mb-1.5">🔌 Connect Google Calendar & Gmail to see live notifications</div>
+                  <button onClick={() => { setNotificationsOpen(false); const s = localStorage.getItem('lumio_workspace_slug'); if (s) window.location.href = `/${s}/settings` }} className="text-[10px] text-teal-500 hover:text-teal-400 border border-teal-800/40 px-2.5 py-1 rounded-lg">Go to Integrations →</button>
+                </div>
+              )}
               <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(17,19,24,0.5)' }}>
-                <span className="text-[10px] text-gray-600">{visibleNotifs.length} notifications &middot; {dismissedNotifs.size} dismissed</span>
-                <button onClick={()=>{ setDismissedNotifs(new Set(DEMO_NOTIFS.map(n=>n.id))); try{localStorage.setItem('lumio_dismissed_notifs',JSON.stringify(DEMO_NOTIFS.map(n=>n.id)))}catch{} }} className="text-[10px] text-gray-600 hover:text-gray-400">Dismiss all</button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px]">{isLiveMode ? <span style={{ color: '#0D9488' }}>🔴 Live · {lastFetched?.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) || 'fetching'}</span> : <span style={{ color: '#D97706' }}>📋 Demo data</span>}</span>
+                  <span className="text-[10px] text-gray-700">·</span>
+                  <span className="text-[10px] text-gray-600 capitalize">{demoRole} view</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {!demoDataActive && <button onClick={() => fetchLiveNotificationsRef.current?.()} className="text-[10px] text-gray-600 hover:text-teal-400" title="Refresh">{notifLoading ? <span className="inline-block animate-spin">⟳</span> : '⟳'} Refresh</button>}
+                  <button onClick={()=>{ const allIds = [...DEMO_NOTIFS.map(n=>n.id), ...liveNotifs.map(n=>n.id)]; setDismissedNotifs(new Set(allIds)); try{localStorage.setItem('lumio_dismissed_notifs',JSON.stringify(allIds))}catch{} }} className="text-[10px] text-gray-600 hover:text-gray-400">Dismiss all</button>
+                </div>
               </div>
             </div>
           )}
