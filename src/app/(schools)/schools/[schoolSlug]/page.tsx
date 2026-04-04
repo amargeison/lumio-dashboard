@@ -1133,6 +1133,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
   const [siToast, setSiToast] = useState<string | null>(null)
   function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
+  const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
+  const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
+  const [siToast, setSiToast] = useState<string | null>(null)
+  function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
   const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
   const [lockdownDesc, setLockdownDesc] = useState('')
   const [lockdownLocation, setLockdownLocation] = useState('Unknown')
@@ -1244,7 +1248,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       </div>
 
-      {/* 3. Quick actions — filtered by role */}
+      {/* 3. Quick actions — filtered by role (Today tab only) */}
+      {activeTab === 'today' && (
       <div className="px-4 py-3" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
         {[
@@ -1282,6 +1287,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           </div>
         ))}
       </div>
+      )}
 
       {/* 4. Safeguarding alert — only when demo data is active */}
       {demoDataActive && activeTab === 'today' && (
@@ -1744,7 +1750,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                     { icon: '💰', title: 'Expenses Policy', sub: 'Claims, limits, deadlines' },
                     { icon: '📚', title: 'CPD & Development', sub: 'Training budget, study leave' },
                   ].map(d => (
-                    <div key={d.title} className="rounded-xl p-4 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div key={d.title} onClick={() => setSchoolInfoDoc(d.title)} className="rounded-xl p-4 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                       <span className="text-lg">{d.icon}</span>
                       <p className="text-sm font-semibold mt-2" style={{ color: '#F9FAFB' }}>{d.title}</p>
                       <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{d.sub}</p>
@@ -1806,7 +1812,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                     { icon: '🔗', title: 'Ofsted Dashboard', sub: 'Readiness tracker' },
                     { icon: '🔗', title: 'DfE Portal', sub: 'Returns & data' },
                   ].map(l => (
-                    <div key={l.title} className="rounded-xl p-3 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div key={l.title} onClick={() => setSchoolInfoLink(l.title)} className="rounded-xl p-3 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                       <div className="flex items-center gap-2">
                         <span>{l.icon}</span>
                         <div>
