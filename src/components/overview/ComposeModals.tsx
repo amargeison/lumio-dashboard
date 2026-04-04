@@ -23,6 +23,10 @@ export function EmailComposeModal({ onClose, onToast }: { onClose: () => void; o
   async function handleSend() {
     if (!to || !subject) return
     setSending(true)
+    if (!connected) {
+      await new Promise(r => setTimeout(r, 600))
+      onToast('Email sent (demo mode)'); onClose(); setSending(false); return
+    }
     const route = source === 'outlook' ? '/api/integrations/microsoft/mail/send' : '/api/integrations/google/mail/send'
     try {
       const r = await fetch(route, {
@@ -36,27 +40,18 @@ export function EmailComposeModal({ onClose, onToast }: { onClose: () => void; o
     setSending(false)
   }
 
-  if (!connected) {
-    return (
-      <Overlay onClose={onClose}>
-        <div className="text-center py-6">
-          <div className="text-4xl mb-4">📧</div>
-          <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Connect your email</h3>
-          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Connect Outlook or Gmail in Settings to send emails from Lumio.</p>
-          <a href="/settings" className="inline-block px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#fff', textDecoration: 'none' }}>Go to Settings</a>
-        </div>
-      </Overlay>
-    )
-  }
-
   return (
     <Overlay onClose={onClose}>
       <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid #1F2937' }}>
         <h3 className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>New Email</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: source === 'outlook' ? 'rgba(96,165,250,0.15)' : 'rgba(239,68,68,0.15)', color: source === 'outlook' ? '#60A5FA' : '#EF4444' }}>
-            via {source === 'outlook' ? 'Outlook' : 'Gmail'}
-          </span>
+          {connected ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: source === 'outlook' ? 'rgba(96,165,250,0.15)' : 'rgba(239,68,68,0.15)', color: source === 'outlook' ? '#60A5FA' : '#EF4444' }}>
+              via {source === 'outlook' ? 'Outlook' : 'Gmail'}
+            </span>
+          ) : (
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Demo</span>
+          )}
           <button onClick={onClose} style={{ color: '#6B7280' }}><X size={16} /></button>
         </div>
       </div>
@@ -150,6 +145,10 @@ export function MeetingBookModal({ onClose, onToast, onMeetingCreated }: { onClo
   async function handleBook() {
     if (!title || !date || !startTime || !endTime) return
     setBooking(true)
+    if (!connected) {
+      await new Promise(r => setTimeout(r, 600))
+      onToast('Meeting booked (demo mode)'); onClose(); setBooking(false); return
+    }
     const start = `${date}T${startTime}:00`
     const end = `${date}T${endTime}:00`
     const allAttendees = meetingType === 'team' ? staffEmails : attendees
@@ -190,27 +189,18 @@ export function MeetingBookModal({ onClose, onToast, onMeetingCreated }: { onClo
     setBooking(false)
   }
 
-  if (!connected) {
-    return (
-      <Overlay onClose={onClose}>
-        <div className="text-center py-6">
-          <div className="text-4xl mb-4">📅</div>
-          <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Connect your calendar</h3>
-          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Connect Outlook Calendar or Google Calendar in Settings to book meetings from Lumio.</p>
-          <a href="/settings" className="inline-block px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#fff', textDecoration: 'none' }}>Go to Settings</a>
-        </div>
-      </Overlay>
-    )
-  }
-
   return (
     <Overlay onClose={onClose}>
       <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid #1F2937' }}>
         <h3 className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Book Meeting</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: source === 'microsoft' ? 'rgba(0,164,239,0.15)' : 'rgba(66,133,244,0.15)', color: source === 'microsoft' ? '#00A4EF' : '#4285F4' }}>
-            via {source === 'microsoft' ? 'Outlook' : 'Google'}
-          </span>
+          {connected ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: source === 'microsoft' ? 'rgba(0,164,239,0.15)' : 'rgba(66,133,244,0.15)', color: source === 'microsoft' ? '#00A4EF' : '#4285F4' }}>
+              via {source === 'microsoft' ? 'Outlook' : 'Google'}
+            </span>
+          ) : (
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Demo</span>
+          )}
           <button onClick={onClose} style={{ color: '#6B7280' }}><X size={16} /></button>
         </div>
       </div>
