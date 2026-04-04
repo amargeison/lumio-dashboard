@@ -14,7 +14,12 @@ export async function GET(req: NextRequest) {
 
   if (!url) return NextResponse.json({ error: 'invalid type' }, { status: 400 });
 
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  const data = await res.json();
-  return NextResponse.json(data);
+  try {
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return NextResponse.json({ error: 'not found' }, { status: 404 });
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ error: 'fetch failed' }, { status: 500 });
+  }
 }
