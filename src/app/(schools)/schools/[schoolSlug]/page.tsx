@@ -10,6 +10,7 @@ import {
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -1118,6 +1119,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [showLockdown, setShowLockdown] = useState(false)
   const [lockdownStep, setLockdownStep] = useState(0)
   const [lockdownType, setLockdownType] = useState<'emergency' | 'drill' | ''>('')
+  const [showSafeguardingReview, setShowSafeguardingReview] = useState(false)
   const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
   const [lockdownDesc, setLockdownDesc] = useState('')
   const [lockdownLocation, setLockdownLocation] = useState('Unknown')
@@ -1234,7 +1236,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         {[
           [
             { label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
-            { label: 'School Lockdown', icon: '\u{1F534}', pulse: true, red: true },
+            { label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
             { label: 'New Concern', icon: '\u26A0\uFE0F' },
             { label: 'Mark Register', icon: '\u2705' },
             { label: 'Behaviour Incident', icon: '\u{1F4CB}' },
@@ -1275,7 +1277,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>1 open safeguarding concern</p>
             <p className="text-xs" style={{ color: '#9CA3AF' }}>Requires DSL review — logged 2 days ago</p>
           </div>
-          <button className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
+          <button onClick={() => setShowSafeguardingReview(true)} className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
         </div>
       )}
 
@@ -1444,7 +1446,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                         <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
-                        <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        <button onClick={() => { if (task.action === 'Review now' && task.category === 'Safeguarding') setShowSafeguardingReview(true) }} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
                           style={{ backgroundColor: '#7C3AED' }}>
                           {task.action} →
                         </button>
@@ -1552,7 +1554,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                       <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
                     </div>
                     <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                      <button onClick={() => { if (item.action === 'Review now' && item.category === 'Safeguarding') setShowSafeguardingReview(true) }} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
                         style={{ backgroundColor: '#7C3AED' }}>
                         {item.action} →
                       </button>
@@ -1904,6 +1906,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       )}
 
       {/* Lockdown wizard */}
+      {showSafeguardingReview && <SafeguardingReviewModal onClose={() => setShowSafeguardingReview(false)} isDemoMode={demoDataActive} />}
       {showLockdown && (
         <div className="fixed inset-0 bg-black/80 z-[9998] flex items-center justify-center p-4">
           <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
