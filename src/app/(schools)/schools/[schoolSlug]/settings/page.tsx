@@ -92,6 +92,7 @@ export default function SchoolSettingsPage() {
   const [plan, setPlan] = useState('Trial')
   const [demoDataActive, setDemoDataActive] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
 
   // AI Briefing
   const [briefingEnabled, setBriefingEnabled] = useState(true)
@@ -116,6 +117,8 @@ export default function SchoolSettingsPage() {
     const name = localStorage.getItem('lumio_school_name') || ''
     setSchoolName(name)
     setPlan(localStorage.getItem('lumio_school_plan') || 'Trial')
+    const storedLogo = localStorage.getItem(`lumio_school_logo_${schoolSlug}`)
+    if (storedLogo) setSchoolLogo(storedLogo)
     // Check demo data status
     setDemoDataActive(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
     fetch(`/api/schools/${schoolSlug}`)
@@ -132,6 +135,37 @@ export default function SchoolSettingsPage() {
       else setZones([{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }])
     } catch { setZones([{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }]) }
   }, [])
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const blobUrl = URL.createObjectURL(file)
+    setSchoolLogo(blobUrl)
+    const token = localStorage.getItem('workspace_session_token')
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: token ? { 'x-workspace-token': token } : {}, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setSchoolLogo(data.logo_url)
+        localStorage.setItem(`lumio_school_logo_${schoolSlug}`, data.logo_url)
+      }
+      URL.revokeObjectURL(blobUrl)
+    } catch { /* ignore */ }
+  }
+
+  async function handleLogoRemove() {
+    setSchoolLogo(null)
+    localStorage.removeItem(`lumio_school_logo_${schoolSlug}`)
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
+      } catch { /* ignore */ }
+    }
+  }
 
   function selectVoice(id: string) { setActiveVoice(id); localStorage.setItem('lumio_tts_voice', id) }
   function toggleZone(zone: { label: string; tz: string }) {
@@ -179,6 +213,31 @@ export default function SchoolSettingsPage() {
         <Row label="School Name" value={schoolName || 'School'} />
         <Row label="Plan" value={plan} />
         <Row label="Status" value="Active" isStatus />
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div>
+            <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>School logo</div>
+            <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Upload or change in Settings only.</div>
+          </div>
+          <div className="flex items-center gap-3">
+            {schoolLogo ? (
+              <>
+                <img src={schoolLogo} alt="School logo" className="h-10 w-10 rounded-lg object-contain" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                  Change
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+                <button onClick={handleLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                  Remove
+                </button>
+              </>
+            ) : (
+              <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#0D9488', color: '#fff' }}>
+                Upload logo
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              </label>
+            )}
+          </div>
+        </div>
       </Section>
 
       {/* Section 2 — Team */}

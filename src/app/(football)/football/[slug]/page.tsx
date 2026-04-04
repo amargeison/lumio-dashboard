@@ -14,7 +14,7 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink, Crown, Camera,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -474,24 +474,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const logoFileRef = useRef<HTMLInputElement>(null)
   const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null)
-  const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
-
-
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || file.size > 2 * 1024 * 1024) return
-    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = reader.result as string
-      setClubLogo(dataUrl)
-      localStorage.setItem('lumio_football_logo', dataUrl)
-    }
-    reader.readAsDataURL(file)
-  }
 
   function togglePin() {
     setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
@@ -521,12 +505,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
-          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }} title="Upload club badge">
+          <div className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }}>
             {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
-            {logoHover && <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 9 }}><Camera size={16} color="#fff" /></div>}
-          </button>
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -5013,7 +4995,7 @@ function ApiStatusStrip() {
   )
 }
 
-function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: string }) {
+function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM' : '21m00Tcm4TlvDq8ikWAM')
@@ -5238,6 +5220,40 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 
       {/* API & Integrations */}
       <ApiUsageCard />
+
+      {/* Club Badge */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Appearance</p>
+        </div>
+        <div className="px-5">
+          <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Club badge</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Upload or change in Settings only.</div>
+            </div>
+            <div className="flex items-center gap-3">
+              {clubLogo ? (
+                <>
+                  <img src={clubLogo} alt="Club badge" className="h-10 w-10 rounded-lg object-contain" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                  <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                    Change
+                    <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
+                  </label>
+                  <button onClick={onLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
+                  Upload badge
+                  <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
+                </label>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -5549,6 +5565,24 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     setTimeout(() => setToast(null), 3000)
   }
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setClubLogo(dataUrl)
+      localStorage.setItem('lumio_football_logo', dataUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleLogoRemove() {
+    setClubLogo(null)
+    localStorage.removeItem('lumio_football_logo')
+  }
+
   const LABEL_TO_ACTION: Record<string, string> = {
     'Team Sheet': 'team-sheet', 'Log Injury': 'log-injury', 'Scout Report': 'scout-report',
     'Board Report': 'board-report', 'Training Plan': 'training-plan', 'Press Conf': 'press-conference',
@@ -5663,7 +5697,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'fixtures-results' && <FixturesView />}
             {activeDept === 'pyramid' && <FootballPyramidView />}
             {activeDept === 'statsbomb' && <StatsBombView />}
-            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
+            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
                 squad: ['Top performers this week: Marcus Browne (8.2 avg), Mathew Stevens (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
