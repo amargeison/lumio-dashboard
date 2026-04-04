@@ -19,6 +19,47 @@ export function EmailComposeModal({ onClose, onToast }: { onClose: () => void; o
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
+  const [tone, setTone] = useState<'professional' | 'friendly' | 'firm' | 'brief'>('professional')
+  const [generating, setGenerating] = useState(false)
+  const [aiGenerated, setAiGenerated] = useState(false)
+
+  const toneInstructions: Record<string, string> = {
+    professional: 'Write in a professional, formal business tone. Well-structured with clear paragraphs.',
+    friendly: 'Write in a warm, friendly and approachable tone. Conversational but still professional.',
+    firm: 'Write in a firm, direct and assertive tone. Clear expectations, no ambiguity.',
+    brief: 'Write very briefly \u2014 3-4 sentences maximum. Get straight to the point.',
+  }
+
+  async function generateEmail() {
+    if (!subject.trim()) return
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/ai/football-search', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'player', query: `WRITE EMAIL BODY. Subject: "${subject}". ${toneInstructions[tone]}. ${to ? `To: ${to}.` : ''} Rules: No subject line. No "Dear X" unless name known. No signature. Just the body text. Be realistic and specific.` })
+      })
+      const data = await res.json()
+      if (typeof data.result === 'string') { setBody(data.result.trim()); setAiGenerated(true) }
+      else if (data.result?.summary) { setBody(data.result.summary.trim()); setAiGenerated(true) }
+      else throw new Error('no text')
+    } catch {
+      const fallbacks: Record<string, string> = {
+        professional: `I hope this email finds you well.\n\nI am writing regarding ${subject}.\n\nPlease let me know if you require any further information or would like to discuss this further.\n\nKind regards`,
+        friendly: `Hope you're doing well!\n\nJust reaching out about ${subject}.\n\nLet me know what you think \u2014 happy to chat through anything.\n\nThanks`,
+        firm: `I am writing to address ${subject} directly.\n\nI require a response by end of business today.\n\nPlease confirm receipt of this email and advise on your position.\n\nRegards`,
+        brief: `Following up on ${subject}.\n\nPlease advise at your earliest convenience.\n\nThank you`,
+      }
+      setBody(fallbacks[tone])
+      setAiGenerated(true)
+    }
+    setGenerating(false)
+  }
+
+  // Re-generate when tone changes if already generated
+  useEffect(() => {
+    if (aiGenerated && subject.trim()) generateEmail()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tone])
 
   async function handleSend() {
     if (!to || !subject) return
@@ -30,14 +71,14 @@ export function EmailComposeModal({ onClose, onToast }: { onClose: () => void; o
           method: 'POST', headers: { 'x-workspace-token': getToken(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ to, subject, body }),
         })
-        if (r.ok) { onToast(`✅ Email sent to ${to}`); onClose(); return }
-        else if (r.status === 401) onToast(`Session expired — please reconnect in Settings`)
+        if (r.ok) { onToast(`\u2705 Email sent to ${to}`); onClose(); return }
+        else if (r.status === 401) onToast('Session expired \u2014 please reconnect in Settings')
         else { const d = await r.json().catch(() => ({})); onToast(d.error || 'Failed to send') }
-      } catch { onToast('Failed to send — check your connection') }
+      } catch { onToast('Failed to send \u2014 check your connection') }
       setSending(false)
     } else {
       await new Promise(r => setTimeout(r, 800))
-      onToast(`✅ Email sent to ${to}`)
+      onToast(`\u2705 Email sent to ${to}`)
       onClose()
     }
   }
@@ -60,11 +101,43 @@ export function EmailComposeModal({ onClose, onToast }: { onClose: () => void; o
         </div>
         <div>
           <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Subject</label>
-          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" style={INPUT} />
+          <input value={subject} onChange={e => { setSubject(e.target.value); setAiGenerated(false) }} placeholder="Email subject" style={INPUT} />
         </div>
         <div>
-          <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Message</label>
-          <textarea value={body} onChange={e => setBody(e.target.value)} rows={6} placeholder="Write your email..." style={{ ...INPUT, resize: 'vertical' as const }} />
+          <label className="text-xs mb-1.5 block font-medium" style={{ color: '#6B7280' }}>Tone</label>
+          <div className="flex gap-2">
+            {([
+              { id: 'professional' as const, label: '\u{1F4BC} Professional' },
+              { id: 'friendly' as const, label: '\u{1F60A} Friendly' },
+              { id: 'firm' as const, label: '\u{1F4CC} Firm' },
+              { id: 'brief' as const, label: '\u26A1 Brief' },
+            ]).map(t => (
+              <button key={t.id} onClick={() => setTone(t.id)}
+                className="flex-1 py-2 px-2 rounded-xl text-xs font-medium border transition-all"
+                style={{ backgroundColor: tone === t.id ? '#7C3AED' : '#0A0B10', borderColor: tone === t.id ? '#7C3AED' : '#374151', color: tone === t.id ? '#fff' : '#9CA3AF' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={generateEmail} disabled={!subject.trim() || generating}
+          className="w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+          style={{ backgroundColor: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', color: '#A78BFA', opacity: !subject.trim() || generating ? 0.4 : 1, cursor: !subject.trim() || generating ? 'not-allowed' : 'pointer' }}>
+          {generating ? <><Loader2 size={14} className="animate-spin" /> Generating...</> : <>{'\u2728'} Generate email from subject</>}
+        </button>
+        <div>
+          {aiGenerated ? (
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium" style={{ color: '#6B7280' }}>Message</label>
+              <span className="text-xs flex items-center gap-1" style={{ color: '#A78BFA' }}>
+                {'\u2728'} AI generated &middot; edit freely
+                <button onClick={() => { setBody(''); setAiGenerated(false) }} className="ml-1" style={{ color: '#4B5563' }}>&times;</button>
+              </span>
+            </div>
+          ) : (
+            <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>Message</label>
+          )}
+          <textarea value={body} onChange={e => setBody(e.target.value)} rows={6} placeholder="Write your email or generate with AI..." style={{ ...INPUT, resize: 'vertical' as const }} />
         </div>
       </div>
       <div className="flex gap-2 mt-4">
