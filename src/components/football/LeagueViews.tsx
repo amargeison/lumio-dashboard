@@ -1105,6 +1105,17 @@ export function LeaguesView() {
   const [loading, setLoading] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
 
+  const [liveStandings, setLiveStandings] = useState<any[]|null>(null)
+  const [loadingStandings, setLoadingStandings] = useState(false)
+  useEffect(() => {
+    setLoadingStandings(true)
+    fetch('/api/football/standings?leagueId=41&season=2025')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { const items = data?.response || data?.data || data; if (Array.isArray(items) && items.length > 0) setLiveStandings(items) })
+      .catch(() => {})
+      .finally(() => setLoadingStandings(false))
+  }, [])
+
   async function loadLeagueData(league: typeof TIER_LEAGUES[0]) {
     setSelectedLeague(league); setLoading(true); setStandings([]); setScorers([]); setAssists([])
     try {
@@ -1124,6 +1135,18 @@ export function LeaguesView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6"><span className="text-xl">🏆</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Leagues & Tables</h2><p className="text-sm ml-2" style={{ color: C.muted }}>Live standings, top scorers and assists</p></div>
+      {loadingStandings && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+          <div className="w-3 h-3 border border-gray-600 border-t-blue-500 rounded-full animate-spin"/>
+          Loading live standings...
+        </div>
+      )}
+      {liveStandings && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-emerald-500">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+          Live League One table from API-Football
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{TIER_LEAGUES.map((l, i) => (
         <button key={i} onClick={() => loadLeagueData(l)} className={`p-4 rounded-xl border text-left transition-all ${selectedLeague?.name === l.name ? colourMap[l.colour] : 'bg-[#0d0f1a] border-gray-800 hover:border-gray-600'}`}>
           <div className="text-sm font-semibold" style={{ color: C.text }}>{l.name}</div><div className="text-xs mt-0.5" style={{ color: C.muted }}>Tier {l.tier}</div>
@@ -1349,6 +1372,17 @@ export function FixturesView() {
   const [loading, setLoading] = useState(false)
   const [filterClub, setFilterClub] = useState('')
 
+  const [liveFixtures, setLiveFixtures] = useState<any[]|null>(null)
+  const [loadingFixtures, setLoadingFixtures] = useState(false)
+  useEffect(() => {
+    setLoadingFixtures(true)
+    fetch('/api/football/fixtures?teamId=638&season=2025&next=10')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { const items = data?.response || data?.data || data; if (Array.isArray(items) && items.length > 0) setLiveFixtures(items) })
+      .catch(() => {})
+      .finally(() => setLoadingFixtures(false))
+  }, [])
+
   async function loadFixtures(league: typeof TIER_LEAGUES[0], tab: 'upcoming' | 'results') {
     setSelectedLeague(league); setActiveTab(tab); setLoading(true); setFixtures([])
     try {
@@ -1365,6 +1399,18 @@ export function FixturesView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6"><span className="text-xl">📅</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Fixtures & Results</h2><p className="text-sm ml-2" style={{ color: C.muted }}>Upcoming fixtures and recent results across all leagues</p></div>
+      {loadingFixtures && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+          <div className="w-3 h-3 border border-gray-600 border-t-blue-500 rounded-full animate-spin"/>
+          Loading live fixtures...
+        </div>
+      )}
+      {liveFixtures && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-emerald-500">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+          Live fixtures from API-Football · {liveFixtures.length} upcoming loaded
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{TIER_LEAGUES.map((l, i) => (
         <button key={i} onClick={() => loadFixtures(l, activeTab)} className="p-3 rounded-xl border text-left transition-all" style={{ backgroundColor: selectedLeague?.name === l.name ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${selectedLeague?.name === l.name ? 'rgba(0,61,165,0.3)' : C.border}` }}>
           <div className="text-sm font-semibold" style={{ color: C.text }}>{l.name}</div><div className="text-xs" style={{ color: C.muted }}>Tier {l.tier}</div>
