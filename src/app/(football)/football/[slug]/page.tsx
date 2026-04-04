@@ -614,8 +614,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, clubLogo }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; isDemo?: boolean; clubLogo?: string | null
+function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDemo = false, clubLogo }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -642,6 +642,8 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
       setTimeout(() => handleBriefing(), 1800)
     } else if (lastCommand.action === 'STOP_AUDIO') {
       stop()
+    } else if (lastCommand.action === 'NAVIGATE' && lastCommand.data?.dept && onNavigate) {
+      setTimeout(() => onNavigate(lastCommand.data!.dept), 1500)
     }
     if (onVoiceCommand) onVoiceCommand(lastCommand)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1773,7 +1775,7 @@ function InjuryRoomCard() {
 
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
+function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1782,7 +1784,7 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo 
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} isDemo={isDemo} clubLogo={clubLogo} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -4358,7 +4360,7 @@ function FinanceView() {
             </thead>
             <tbody>
               {CONTRACT_DATA.map((c, i) => {
-                const statusColor = c.status === 'Signed' ? '#22C55E' : c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
+                const statusColor = (c.status as string) === 'Signed' ? '#22C55E' : c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
                 return (
                   <tr key={i} style={{ borderBottom: i < CONTRACT_DATA.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{c.player}</td>
@@ -5626,7 +5628,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} clubLogo={clubLogo} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {isFootballDemo && activeDept === 'squad' && <SquadView />}
