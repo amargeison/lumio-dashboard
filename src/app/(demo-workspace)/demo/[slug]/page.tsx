@@ -114,7 +114,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
   ],
   sales:      [
     { label: 'New Deal',       tooltip: 'Add a new deal and start the qualification workflow',             icon: TrendingUp},
-    { label: 'Book Demo',      tooltip: 'Send a Calendly invite for a product demo',                      icon: Calendar  },
+    { label: 'Book Demo',      tooltip: 'Send a meeting invite for a product demo',                       icon: Calendar  },
     { label: 'Send Proposal',  tooltip: 'Generate a proposal from a template and send to a prospect',     icon: Send      },
     { label: 'Log Call',       tooltip: 'Log a call with a prospect or lead',                             icon: FileText  },
     { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
@@ -894,7 +894,7 @@ function WorldClock() {
   )
 }
 
-function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wakeWordEnabled = true, voiceCommandsEnabled = true }: { company: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
+function DemoPersonalBanner({ company, companyLogo, firstName, dept = 'overview', onToast, wakeWordEnabled = true, voiceCommandsEnabled = true }: { company: string; companyLogo?: string; firstName?: string; dept?: string; onToast?: (msg: string) => void; wakeWordEnabled?: boolean; voiceCommandsEnabled?: boolean }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -981,8 +981,17 @@ function DemoPersonalBanner({ company, firstName, dept = 'overview', onToast, wa
     <>
     <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-xl border border-white/5 mx-1`}>
       <div className="relative z-10 flex items-center justify-between px-5 py-3 gap-4">
-        {/* Left: greeting + date */}
+        {/* Left: logo + greeting + date */}
         <div className="flex items-center gap-3 min-w-0">
+          {companyLogo ? (
+            <div className="shrink-0 ring-2 ring-white/20 overflow-hidden" style={{ width: 56, height: 56, borderRadius: 12, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+              <img src={companyLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+          ) : (
+            <div className="shrink-0 flex items-center justify-center font-bold ring-2 ring-white/20" style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: 'rgba(108,63,197,0.3)', color: '#A78BFA', fontSize: 18, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+              {company?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'LC'}
+            </div>
+          )}
           <h1 className="text-sm font-bold text-white whitespace-nowrap">{greeting}, {firstName || 'there'} 👋</h1>
           <span className="text-xs text-purple-300/70 hidden sm:inline">{date}</span>
         </div>
@@ -1129,7 +1138,7 @@ function DemoTabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: Overvie
 // ─── Meetings Today ───────────────────────────────────────────────────────────
 
 const DEMO_MEETINGS = [
-  { id: '1', title: 'The Feed Network — Weekly Check-in',   time: '09:00', duration: '30 min', attendees: ['Sarah M.'],     location: 'Google Meet',  type: 'video'    as const, status: 'done'     as const, link: '#' },
+  { id: '1', title: 'Client Partnership — Weekly Check-in',   time: '09:00', duration: '30 min', attendees: ['Sarah M.'],     location: 'Google Meet',  type: 'video'    as const, status: 'done'     as const, link: '#' },
   { id: '2', title: 'New Customer Demo — Oakridge Schools', time: '11:00', duration: '45 min', attendees: ['Charlotte D.'], location: 'Zoom',         type: 'video'    as const, status: 'now'      as const, link: '#' },
   { id: '3', title: 'Investor Update Call',                  time: '14:00', duration: '60 min', attendees: ['Arron'],        location: 'Google Meet',  type: 'call'     as const, status: 'upcoming' as const, link: '#' },
   { id: '4', title: 'Team Standup',                          time: '17:00', duration: '15 min', attendees: ['All team'],     location: 'Slack Huddle', type: 'internal' as const, status: 'upcoming' as const },
@@ -1205,7 +1214,7 @@ function DemoMeetingsToday() {
 const ROUNDUP_ITEMS = [
   { id: 'sms',      icon: '📱', label: 'SMS / Text',          count: 3,  urgent: true,  color: '#3B82F6', bg: 'rgba(59,130,246,0.08)',   border: 'rgba(59,130,246,0.2)',   preview: ['Urgent: Payment query from Tom at Bramble Hill', 'Demo confirmation for 11am today', 'GDPR compliance question from prospect'] },
   { id: 'whatsapp', icon: '💬', label: 'WhatsApp Business',   count: 4,  urgent: false, color: '#25D366', bg: 'rgba(37,211,102,0.08)',  border: 'rgba(37,211,102,0.2)',  preview: ['Sarah Mitchell: follow-up on demo call', 'James Harlow: contract query', 'Apex Consulting: renewal reminder', 'Dan Marsh: invoice question'] },
-  { id: 'email',    icon: '📧', label: 'Emails',              count: 12, urgent: true,  color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',   border: 'rgba(96,165,250,0.2)',   preview: ['Invoice overdue — INV-2026-041', 'Renewal discussion — Apex contract ends Apr 30', 'Stripe payment confirmed — £4,800 from Oakridge'] },
+  { id: 'email',    icon: '📧', label: 'Emails',              count: 12, urgent: true,  color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',   border: 'rgba(96,165,250,0.2)',   preview: ['Invoice overdue — INV-2026-041', 'Renewal discussion — Apex contract ends Apr 30', 'Payment confirmed — £4,800 from Oakridge'] },
   { id: 'slack',    icon: '💬', label: 'Slack',               count: 7,  urgent: false, color: '#C084FC', bg: 'rgba(192,132,252,0.08)',  border: 'rgba(192,132,252,0.2)',  preview: ['Charlotte: lead scored 87 in SA-02', 'HR-01 completed for new joiner Sophie Williams', 'James: Wimbledon client wants a demo Friday'] },
   { id: 'teams',    icon: '🟣', label: 'Microsoft Teams',     count: 3,  urgent: false, color: '#7B83EB', bg: 'rgba(123,131,235,0.08)', border: 'rgba(123,131,235,0.2)', preview: ['Sales Standup — Apex moving to proposal', 'Sophie: onboarding checklist progress', 'James: Oakridge loves the safeguarding module'] },
   { id: 'hubspot',  icon: '🟠', label: 'HubSpot',             count: 5,  urgent: false, color: '#FB923C', bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.2)',   preview: ['Deal update — Apex moved to Negotiation', 'New contact — Marcus Chen, Meridian Trust', 'Email sequence: 3 opens, 1 click-through'] },
@@ -1523,7 +1532,7 @@ function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
       <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>✅ Daily Tasks · 0/4 done</p><div className="flex gap-1">{['All (4)','Critical (1)','High (2)','Medium (1)'].map(f=><span key={f} className="text-xs px-2 py-0.5 rounded-lg cursor-pointer" style={{backgroundColor:f.startsWith('All')?'rgba(13,148,136,0.15)':'transparent',color:f.startsWith('All')?'#0D9488':'#6B7280',border:'1px solid #1F2937'}}>{f}</span>)}</div></div>
       {[
         {priority:'Critical',color:'#EF4444',dept:'Finance',source:'lumio',time:'12:00',title:'Review and respond to Bramble Hill invoice dispute',desc:'They queried the September charge. Email from George Harrison at 11pm.',tag:'AC-04'},
-        {priority:'High',color:'#F59E0B',dept:'Operations',source:'notion',time:'14:00',title:'Finalise The Feed Network testing guide sign-off',desc:'Phase 5 review due today. 13 flagged gaps to resolve.',tag:''},
+        {priority:'High',color:'#F59E0B',dept:'Operations',source:'notion',time:'14:00',title:'Finalise Q2 operations testing guide sign-off',desc:'Phase 5 review due today. 13 flagged gaps to resolve.',tag:''},
         {priority:'High',color:'#F59E0B',dept:'Finance',source:'manual',time:'17:00',title:'Send investor deck to Marcus',desc:'Promised by end of day. Latest version in Notion.',tag:''},
         {priority:'Medium',color:'#3B82F6',dept:'HR',source:'workflow',time:'16:00',title:'Approve payroll pack for review',desc:'HR-07 generated the pack. Needs sign-off before Friday.',tag:'HR-07'},
       ].map((t,i)=>(
@@ -1730,8 +1739,9 @@ function DemoPhotoFrame() {
   )
 }
 
-function OverviewView({ company, firstName, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
+function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, actionsRef, onAction, wakeWordEnabled }: {
   company: string
+  companyLogo?: string
   firstName?: string
   bannerRef?: RefObject<HTMLDivElement | null>
   statsRef?: RefObject<HTMLDivElement | null>
@@ -1753,7 +1763,7 @@ function OverviewView({ company, firstName, bannerRef, statsRef, actionsRef, onA
   return (
     <div className="space-y-4">
       {/* 1. Banner */}
-      <div ref={bannerRef}><DemoPersonalBanner company={company} firstName={firstName} wakeWordEnabled={wakeWordEnabled} /></div>
+      <div ref={bannerRef}><DemoPersonalBanner company={company} companyLogo={companyLogo} firstName={firstName} wakeWordEnabled={wakeWordEnabled} /></div>
 
       {/* 2. Tab bar */}
       <DemoTabBar tab={tab} onChange={setTab} />
@@ -4432,7 +4442,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
       {/* Trial banner — fixed, stops at sidebar edge */}
       {showUpgrade && isTrial && (
-        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB', paddingRight: 120 }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
             <span className="font-medium">Trial workspace — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>
@@ -4594,7 +4604,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
               </div>
             )}
 
-            {!demoCleared && activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
+            {!demoCleared && activeDept === 'overview' && <OverviewView company={company} companyLogo={companyLogo} firstName={userName ? userName.split(' ')[0] : undefined} bannerRef={bannerRef} statsRef={statsRef} actionsRef={actionsRef} onAction={fireToast} wakeWordEnabled={wakeWordEnabled} />}
             {!demoCleared && activeDept === 'insights'   && <InsightsView   company={company} />}
             {!demoCleared && activeDept === 'hr'         && <HRView         company={company} />}
             {!demoCleared && activeDept === 'accounts'   && <AccountsView   company={company} />}

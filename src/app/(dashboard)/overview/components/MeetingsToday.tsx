@@ -19,7 +19,7 @@ const TYPE_ICON = { call: '📞', 'in-person': '🤝', video: '📹', internal: 
 const SOURCE_BADGE = { google: 'Google Cal', outlook: 'Outlook', manual: 'Lumio' }
 
 const MOCK_MEETINGS: Meeting[] = [
-  { id: '1', title: 'The Feed Network — Weekly Check-in', time: '09:00', duration: '30 min', attendees: ['Sarah M.', 'James T.'], location: 'Google Meet', type: 'video', status: 'done', source: 'google', link: 'https://meet.google.com' },
+  { id: '1', title: 'Client Partnership — Weekly Check-in', time: '09:00', duration: '30 min', attendees: ['Sarah M.', 'James T.'], location: 'Google Meet', type: 'video', status: 'done', source: 'google', link: 'https://meet.google.com' },
   { id: '2', title: 'New Customer Demo — Oakridge Schools', time: '11:00', duration: '45 min', attendees: ['Charlotte D.', 'Oliver B.'], location: 'Zoom', type: 'video', status: 'upcoming', source: 'google', link: 'https://zoom.us' },
   { id: '3', title: 'Investor Update Call', time: '14:00', duration: '60 min', attendees: ['James Hartley'], location: 'Google Meet', type: 'call', status: 'upcoming', source: 'outlook', link: 'https://meet.google.com' },
   { id: '4', title: 'Team Standup', time: '17:00', duration: '15 min', attendees: ['All team'], location: 'Slack Huddle', type: 'internal', status: 'upcoming', source: 'google' },
