@@ -254,7 +254,7 @@ export default function DemoSchoolLayout({ children }: Props) {
 
         {/* Trial banner — teal bar matching business demo portal */}
         {showUpgrade && (
-          <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center justify-between px-4 py-2 text-sm shrink-0" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', paddingRight: 120 }}>
             <div className="flex items-center gap-2">
               <Clock size={13} />
               <span className="font-medium">Trial workspace — 14 days remaining</span>
