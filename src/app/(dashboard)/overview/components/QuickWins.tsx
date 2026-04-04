@@ -34,7 +34,13 @@ interface QuickWinsProps {
 }
 
 export default function QuickWins({ dismissedWins = new Set(), onDismiss }: QuickWinsProps) {
-  const [wins, setWins] = useState<QuickWin[]>([])
+  const [wins, setWins] = useState<QuickWin[]>(() => {
+    try {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem('qw_wins_cache') : null
+      if (cached) return JSON.parse(cached) as QuickWin[]
+    } catch {}
+    return MOCK_WINS
+  })
 
   useEffect(() => {
     const token = localStorage.getItem('workspace_session_token')
@@ -42,7 +48,11 @@ export default function QuickWins({ dismissedWins = new Set(), onDismiss }: Quic
       headers: token ? { 'x-workspace-token': token } : {},
     })
       .then(r => r.json())
-      .then(d => setWins((d.wins as QuickWin[]) || MOCK_WINS))
+      .then(d => {
+        const loaded = (d.wins as QuickWin[]) || MOCK_WINS
+        setWins(loaded)
+        try { localStorage.setItem('qw_wins_cache', JSON.stringify(loaded)) } catch {}
+      })
       .catch(() => setWins(MOCK_WINS))
   }, [])
 
