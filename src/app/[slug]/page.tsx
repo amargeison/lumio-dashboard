@@ -14,10 +14,12 @@ import {
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
   Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban, Crown,
+  Laptop, ClipboardCheck, GraduationCap, ShoppingCart, Key, Timer,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
+import OverviewActionModal from '@/components/demo/OverviewActionModal'
 // ClearDemoBar replaced by inline banner in the right column
 import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
@@ -218,27 +220,17 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
-          <button
-            onClick={() => fileRef.current?.click()}
-            onMouseEnter={() => setIconHover(true)}
-            onMouseLeave={() => setIconHover(false)}
+          <div
             className="relative flex items-center justify-center shrink-0 overflow-hidden"
             style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
-            title="Upload company logo"
           >
             {logoUrl ? (
               <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
-            {iconHover && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-              </div>
-            )}
-          </button>
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -1757,7 +1749,7 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
   const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
   return (
-    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+    <div className="sticky top-0 z-50 border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
         {visibleTabs.map(t => (
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
@@ -1948,6 +1940,19 @@ const QUICK_ACTIONS = [
   { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: ['xero', 'quickbooks'], integrationLabel: 'Xero or QuickBooks' },
   { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
   { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
+  { label: 'Submit Timesheet', tooltip: 'Log your weekly hours', icon: FileText, integrations: null, integrationLabel: '' },
+  { label: 'Log Remote Day', tooltip: 'Log a remote working day', icon: Home, integrations: null, integrationLabel: '' },
+  { label: 'IT Support', tooltip: 'Raise an IT support ticket', icon: Laptop, integrations: null, integrationLabel: '' },
+  { label: 'Request Sign-off', tooltip: 'Request document sign-off', icon: ClipboardCheck, integrations: null, integrationLabel: '' },
+  { label: 'Book Training', tooltip: 'Request a training course', icon: GraduationCap, integrations: null, integrationLabel: '' },
+  { label: 'Request 1-1', tooltip: 'Request a 1-1 meeting', icon: Handshake, integrations: null, integrationLabel: '' },
+  { label: 'Raise Issue', tooltip: 'Raise an issue or concern', icon: AlertCircle, integrations: null, integrationLabel: '' },
+  { label: 'Post Announcement', tooltip: 'Post a company announcement', icon: Megaphone, integrations: null, integrationLabel: '' },
+  { label: 'Onboard Starter', tooltip: 'Start new joiner onboarding', icon: UserPlus, integrations: null, integrationLabel: '' },
+  { label: 'Purchase Request', tooltip: 'Submit a purchase request', icon: ShoppingCart, integrations: null, integrationLabel: '' },
+  { label: 'Request Access', tooltip: 'Request system access', icon: Key, integrations: null, integrationLabel: '' },
+  { label: 'Log Overtime', tooltip: 'Log overtime hours', icon: Timer, integrations: null, integrationLabel: '' },
+  { label: 'Run Report', tooltip: 'Generate a report', icon: BarChart3, integrations: null, integrationLabel: '' },
 ]
 
 function isIntegrationConnected(keys: string[] | null): boolean {
@@ -1978,7 +1983,7 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+      <div className="sticky top-[44px] z-40 flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
         <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
         {visibleActions.map(a => {
           const connected = isIntegrationConnected(a.integrations)
@@ -2792,6 +2797,18 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     } catch (err) { console.error('Logo upload failed:', err) }
   }
 
+  async function handleLogoRemove() {
+    setLogoUrl('')
+    localStorage.removeItem('workspace_company_logo')
+    localStorage.removeItem('lumio_company_logo')
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    try {
+      await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
+      window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: '' }))
+    } catch (err) { console.error('Logo remove failed:', err) }
+  }
+
   async function handleInvite() {
     if (!inviteEmail || !inviteEmail.includes('@')) return
     setInviteSending(true)
@@ -2925,14 +2942,29 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             )}
           </div>
           {/* Company logo */}
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Company logo</span>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Company logo</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Change it here.</div>
+            </div>
             <div className="flex items-center gap-3">
-              {logoUrl && <img src={logoUrl} alt="" className="rounded-lg" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
-              <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-              <button onClick={() => logoFileRef.current?.click()} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-                {logoUrl ? 'Change' : 'Upload'}
-              </button>
+              {logoUrl ? (
+                <>
+                  <img src={logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151' }} />
+                  <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                    Change
+                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  </label>
+                  <button onClick={handleLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#7C3AED', color: '#fff' }}>
+                  Upload logo
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+              )}
             </div>
           </div>
           {/* Read-only fields */}
@@ -3612,6 +3644,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   const [showPhoneCall, setShowPhoneCall] = useState(false)
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [showMeetingBook, setShowMeetingBook] = useState(false)
+  const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [callVia, setCallVia] = useState('Phone')
   const [, forceUpdate] = useState(0)
@@ -3634,6 +3667,20 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     'Claim Expenses': () => setShowExpense(true),
     'Book Holiday': () => setShowHoliday(true),
     'Report Sickness': () => setShowSickness(true),
+    'Submit Timesheet': () => setActiveQuickAction('Submit Timesheet'),
+    'Log Remote Day': () => setActiveQuickAction('Log Remote Day'),
+    'IT Support': () => setActiveQuickAction('IT Support'),
+    'Request Sign-off': () => setActiveQuickAction('Request Sign-off'),
+    'Book Training': () => setActiveQuickAction('Book Training'),
+    'Request 1-1': () => setActiveQuickAction('Request 1-1'),
+    'Raise Issue': () => setActiveQuickAction('Raise Issue'),
+    'Post Announcement': () => setActiveQuickAction('Post Announcement'),
+    'Onboard Starter': () => setActiveQuickAction('Onboard Starter'),
+    'Purchase Request': () => setActiveQuickAction('Purchase Request'),
+    'Request Access': () => setActiveQuickAction('Request Access'),
+    'Log Overtime': () => setActiveQuickAction('Log Overtime'),
+    'Run Report': () => setActiveQuickAction('Run Report'),
+    'Send Slack': () => setActiveQuickAction('Send Slack'),
   }
 
   function handleVoiceCommand(cmd: VoiceCommandResult) {
@@ -3852,6 +3899,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         <TabPlaceholder tab={tab} />
       )}
 
+      {activeQuickAction && <OverviewActionModal action={activeQuickAction} onClose={() => setActiveQuickAction(null)} onToast={(msg) => { setActiveQuickAction(null); onAction(msg) }} />}
       {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
       {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
       {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
