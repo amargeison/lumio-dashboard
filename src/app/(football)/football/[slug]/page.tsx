@@ -288,9 +288,9 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     id: 'agents', icon: '📱', label: 'Agent Messages', count: 3, urgent: true,
     color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
     messages: [
-      { id: 'a1', from: 'Stellar Group', avatar: 'SG', subject: 'Martinez contract — urgent', preview: 'Diego\'s representatives want to discuss the renewal terms before the window. They have interest from Serie A.', time: '8:05am', urgent: true, read: false },
-      { id: 'a2', from: 'ProSport Agency', avatar: 'PA', subject: 'Santos availability', preview: 'Lucas Santos is open to a loan move in January if he isn\'t first choice by then. Interested clubs in touch.', time: '7:30am', urgent: false, read: false },
-      { id: 'a3', from: 'Elite Sports Mgmt', avatar: 'ES', subject: 'Academy prospect query', preview: 'We represent Josh Collins. His family want to discuss first-team pathway and improved academy terms.', time: 'Yesterday', urgent: false, read: true },
+      { id: 'a1', from: 'Stellar Group', avatar: 'SG', subject: 'Bugiel contract — urgent', preview: 'Omar\'s representatives want to discuss the renewal terms before the window. They have interest from Serie A.', time: '8:05am', urgent: true, read: false },
+      { id: 'a2', from: 'ProSport Agency', avatar: 'PA', subject: 'Browne availability', preview: 'Marcus Browne is open to a loan move in January if he isn\'t first choice by then. Interested clubs in touch.', time: '7:30am', urgent: false, read: false },
+      { id: 'a3', from: 'Elite Sports Mgmt', avatar: 'ES', subject: 'Academy prospect query', preview: 'We represent an Academy Player. His family want to discuss first-team pathway and improved academy terms.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
   {
@@ -306,7 +306,7 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',
     messages: [
       { id: 'm1', from: 'BBC Sport', avatar: 'BB', subject: 'Pre-match interview request', preview: 'We\'d like to arrange a 15-minute pre-match interview for Saturday\'s game. Available Thursday PM?', time: '8:45am', urgent: false, read: false },
-      { id: 'm2', from: 'Sky Sports', avatar: 'SS', subject: 'Transfer rumours — comment?', preview: 'We\'re running a piece on your interest in Yannick Diallo. Any comment from the club?', time: '8:00am', urgent: false, read: false },
+      { id: 'm2', from: 'Sky Sports', avatar: 'SS', subject: 'Transfer rumours — comment?', preview: 'We\'re running a piece on your interest in Aaron Collins. Any comment from the club?', time: '8:00am', urgent: false, read: false },
       { id: 'm3', from: 'Local Gazette', avatar: 'LG', subject: 'Fan forum coverage', preview: 'We\'re covering the fan forum on Thursday evening. Will the manager be attending?', time: 'Yesterday', urgent: false, read: true },
       { id: 'm4', from: 'Press Officer', avatar: 'PO', subject: 'Press conference at 2pm', preview: 'Reminder: pre-match presser at 2pm today in the media suite. AI briefing notes attached.', time: '7:30am', urgent: false, read: false },
     ]
@@ -315,23 +315,23 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     id: 'transfers', icon: '🔄', label: 'Transfer Activity', count: 2, urgent: true,
     color: '#10B981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)',
     messages: [
-      { id: 't1', from: 'Chief Scout', avatar: 'CS', subject: 'Diallo update — Genk respond', preview: 'Genk have countered at £2.1m. They want a 15% sell-on clause. Recommend we push back to £1.9m.', time: '9:02am', urgent: true, read: false },
-      { id: 't2', from: 'Analyst Team', avatar: 'AT', subject: 'Ferreira video analysis ready', preview: 'Full match analysis of Tiago Ferreira vs Porto is ready for review. 94-minute breakdown with heat maps.', time: 'Yesterday', urgent: false, read: true },
+      { id: 't1', from: 'Chief Scout', avatar: 'CS', subject: 'Collins update — Wrexham respond', preview: 'Wrexham have countered at £800k. They want a 15% sell-on clause. Recommend we push back to £750k.', time: '9:02am', urgent: true, read: false },
+      { id: 't2', from: 'Analyst Team', avatar: 'AT', subject: 'Knibbs video analysis ready', preview: 'Full match analysis of Harvey Knibbs vs Oxford is ready for review. 94-minute breakdown with heat maps.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
   {
     id: 'staff', icon: '👔', label: 'Staff Updates', count: 2, urgent: false,
     color: '#06B6D4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)',
     messages: [
-      { id: 's1', from: 'Head Physio', avatar: 'HP', subject: 'Injury update — morning report', preview: 'Martinez did light jogging this morning. Santos completed pool session. O\'Brien still in boot.', time: '8:30am', urgent: false, read: false },
-      { id: 's2', from: 'Goalkeeping Coach', avatar: 'GC', subject: 'Walker — distribution drill results', preview: 'Walker\'s long distribution accuracy improved to 74% in yesterday\'s session. Significant progress.', time: 'Yesterday', urgent: false, read: true },
+      { id: 's1', from: 'Head Physio', avatar: 'HP', subject: 'Injury update — morning report', preview: 'Bugiel did light jogging this morning. Browne completed pool session. Browne still in boot.', time: '8:30am', urgent: false, read: false },
+      { id: 's2', from: 'Goalkeeping Coach', avatar: 'GC', subject: 'Bishop — distribution drill results', preview: 'Bishop\'s long distribution accuracy improved to 74% in yesterday\'s session. Significant progress.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
   {
     id: 'academy', icon: '🎓', label: 'Academy', count: 2, urgent: false,
     color: '#F97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)',
     messages: [
-      { id: 'ac1', from: 'U21 Coach', avatar: 'U2', subject: 'Collins hat-trick — match report', preview: 'Josh Collins scored a hat-trick in yesterday\'s U21 win. Strong recommendation for first-team bench.', time: '8:15am', urgent: false, read: false },
+      { id: 'ac1', from: 'U21 Coach', avatar: 'U2', subject: 'Academy Player hat-trick — match report', preview: 'Academy Player scored a hat-trick in yesterday\'s U21 win. Strong recommendation for first-team bench.', time: '8:15am', urgent: false, read: false },
       { id: 'ac2', from: 'Academy Director', avatar: 'AD', subject: 'Scholarship intake review', preview: 'We have 4 offers out for next season\'s scholarship cohort. 2 have accepted, 2 pending.', time: 'Yesterday', urgent: false, read: true },
     ]
   },
@@ -349,7 +349,7 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)',
     messages: [
       { id: 'wa1', from: 'Plough Lane Staff', avatar: 'PL', subject: 'Pitch inspection', preview: 'Pitch inspection at 09:00 — all clear for training', time: '7:30am', urgent: false, read: false },
-      { id: 'wa2', from: 'Kit Man Dave', avatar: 'KD', subject: 'Away kit ready', preview: 'Away kit packed and loaded onto coach', time: '8:00am', urgent: false, read: false },
+      { id: 'wa2', from: 'Kit Manager', avatar: 'KM', subject: 'Away kit ready', preview: 'Away kit packed and loaded onto coach', time: '8:00am', urgent: false, read: false },
       { id: 'wa3', from: 'Club Doctor', avatar: 'CD', subject: 'Hughes update', preview: 'Hughes cleared for light training today', time: '8:45am', urgent: false, read: false },
       { id: 'wa4', from: 'Fan Trust Rep', avatar: 'FT', subject: 'Supporter Q&A', preview: 'Q&A with supporters confirmed for Tuesday', time: '9:00am', urgent: false, read: true },
     ]
@@ -387,11 +387,11 @@ const FOOTBALL_CLOSING_LINES = [
 // ─── Morning Highlights ─────────────────────────────────────────────────────
 
 const MORNING_HIGHLIGHTS_FOOTBALL = [
-  '3 injured players — Martinez, O\'Brien, Santos. Santos closest to return (7 Apr).',
-  'Thompson suspended for Saturday. Nakamura or Gallagher to start in CM.',
-  'Transfer target Diallo — Genk countered at £2.1m. Budget remaining: £4.2m.',
+  '3 injured players — Bugiel, Seddon, Browne. Browne closest to return (7 Apr).',
+  'Reeves suspended for Saturday. Nelson or McCoy-Splatt to start in CM.',
+  'Transfer target Aaron Collins — Wrexham countered at £800k. Budget remaining: £4.2m.',
   'Press conference at 2pm today. AI briefing notes prepared.',
-  'U21s won 3-0 yesterday. Collins hat-trick — recommended for first-team bench.',
+  'U21s won 3-0 yesterday. Academy Player hat-trick — recommended for first-team bench.',
   'Saturday\'s match vs Stockport County at home, 3pm kick-off. Team sheet needed by Thursday.',
 ]
 
@@ -1683,8 +1683,8 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           {/* Birthdays */}
           <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming This Month</p>
-            {[['📋','Pre-match briefing','Stockport County — 4 Apr'],['⚽','Matchday','vs Stockport County (A) — 5 Apr'],['📋','Post-match debrief','7 Apr']].map(([icon,label,date]) => (
-              <p key={name} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {name} — {event}</p>
+            {[['📋','Pre-match briefing','Stockport County — 4 Apr'],['⚽','Matchday','vs Stockport County (A) — 5 Apr'],['📋','Post-match debrief','7 Apr']].map(([icon,label,date], i) => (
+              <p key={i} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {label} — {date}</p>
             ))}
           </div>
         </div>
@@ -2221,7 +2221,7 @@ function InsightsView() {
         </div>
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board Agenda Items</p>
-          {['Martinez contract renewal — £22k/week proposed, agent wants £28k', 'Academy EPPP Cat 2 re-assessment — due May, compliance at 94%', 'Commercial pipeline — 3 new sponsor conversations active, 1 near close'].map((item, i) => (
+          {['Bugiel contract renewal — £22k/week proposed, agent wants £28k', 'Academy EPPP Cat 2 re-assessment — due May, compliance at 94%', 'Commercial pipeline — 3 new sponsor conversations active, 1 near close'].map((item, i) => (
             <div key={i} className="flex gap-3 py-2"><span className="text-xs font-bold shrink-0" style={{ color: '#003DA5' }}>{i + 1}.</span><p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p></div>
           ))}
         </div>
@@ -2425,6 +2425,17 @@ function SquadView() {
   const [sqToast, setSqToast] = useState<string | null>(null)
   function sqAction(l: string) { setSqToast(`${l} — opening workflow...`); setTimeout(() => setSqToast(null), 2500) }
 
+  const [sqLiveSquad, setSqLiveSquad] = useState<any[]|null>(null)
+  const [sqLoadingSquad, setSqLoadingSquad] = useState(false)
+  useEffect(() => {
+    setSqLoadingSquad(true)
+    fetch('/api/football/squad?teamId=638&season=2025')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { const items = data?.response || data?.data || data; if (Array.isArray(items) && items.length > 0) setSqLiveSquad(items) })
+      .catch(() => {})
+      .finally(() => setSqLoadingSquad(false))
+  }, [])
+
   return (
     <div className="space-y-5">
       <div>
@@ -2541,6 +2552,18 @@ function SquadView() {
       </div>
 
       {/* Full Squad Table */}
+      {sqLoadingSquad && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+          <div className="w-3 h-3 border border-gray-600 border-t-blue-500 rounded-full animate-spin"/>
+          Loading live squad data...
+        </div>
+      )}
+      {sqLiveSquad && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-emerald-500">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+          Live data from API-Football · {sqLiveSquad.length} players loaded
+        </div>
+      )}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Full Squad</p>
@@ -2747,9 +2770,9 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
   const [researchStep, setResearchStep] = useState(1)
 
   const RESEARCH_TARGETS = [
-    { name: 'Yannick Diallo', position: 'LB', club: 'KRC Genk', age: 22, value: '£1.8m', fit: 92, summary: 'Athletic left-back, strong in 1v1 duels. 4 assists this season. Suited to overlapping style.' },
-    { name: 'Tiago Ferreira', position: 'CM', club: 'SC Braga', age: 24, value: '£1.3m', fit: 87, summary: 'Box-to-box midfielder, high work rate. Press-resistant with 89% pass accuracy.' },
-    { name: 'Andrei Popescu', position: 'CB', club: 'CFR Cluj', age: 23, value: '£900k', fit: 78, summary: 'Left-footed centre-back, good distribution. 2 goals from set pieces this season.' },
+    { name: 'Aaron Collins', position: 'LW', club: 'Wrexham', age: 26, value: '£700k', fit: 92, summary: 'Direct left winger, strong in 1v1 duels. 4 assists this season. Suited to wide attacking style.' },
+    { name: 'Louie Barry', position: 'CAM', club: 'Stockport County', age: 22, value: '£1.2m', fit: 87, summary: 'Creative attacking midfielder, high work rate. Press-resistant with 89% pass accuracy.' },
+    { name: 'Harvey Knibbs', position: 'ST', club: 'Burton Albion', age: 24, value: '£500k', fit: 78, summary: 'Mobile striker, good movement. 2 goals from set pieces this season.' },
   ]
 
   return (
@@ -3268,7 +3291,7 @@ function AcademyView({ onActionClick }: { onActionClick?: (label: string) => voi
         { label: 'Scholarships', value: '4', icon: FileText, color: '#3B82F6' },
       ]}
       highlights={[
-        'Josh Collins (17, ST) hat-trick in U21s — strong first-team bench candidate.',
+        'Academy Player (17, ST) hat-trick in U21s — strong first-team bench candidate.',
         'Alfie Morgan (16, CM) rated as generational talent by youth coaching staff.',
         'Rhys Okonkwo (18, CB) dominant aerially — bench squad inclusion pending.',
         'Elijah Shaw (17, LW) — 7 assists in last 8 U18 appearances.',
@@ -5422,6 +5445,37 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [clubLogo, setClubLogo] = useState<string | null>(() =>
     typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null
   )
+
+  // Live API data
+  const [liveSquad, setLiveSquad] = useState<any[]|null>(null);
+  const [liveFixtures, setLiveFixtures] = useState<any[]|null>(null);
+  const [liveResults, setLiveResults] = useState<any[]|null>(null);
+  const [liveStandings, setLiveStandings] = useState<any[]|null>(null);
+  const [liveTopScorers, setLiveTopScorers] = useState<any[]|null>(null);
+  const [liveInjuries, setLiveInjuries] = useState<any[]|null>(null);
+  const [loadingLive, setLoadingLive] = useState<Record<string,boolean>>({});
+
+  useEffect(() => {
+    const fetchLive = async (key: string, url: string, setter: (d:any)=>void) => {
+      setLoadingLive(prev => ({...prev, [key]: true}));
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const items = data?.response || data?.data || data;
+          if (Array.isArray(items) && items.length > 0) setter(items);
+        }
+      } catch(e) { console.warn(`Failed to fetch ${key}:`, e); }
+      finally { setLoadingLive(prev => ({...prev, [key]: false})); }
+    };
+
+    fetchLive('squad', '/api/football/squad?teamId=638&season=2025', setLiveSquad);
+    fetchLive('fixtures', '/api/football/fixtures?teamId=638&season=2025&next=10', setLiveFixtures);
+    fetchLive('results', '/api/football/fixtures?teamId=638&season=2025&last=5', setLiveResults);
+    fetchLive('standings', '/api/football/standings?leagueId=41&season=2025', setLiveStandings);
+    fetchLive('topscorers', '/api/football/topscorers?leagueId=41&season=2025', setLiveTopScorers);
+    fetchLive('injuries', '/api/football/injuries?teamId=638&season=2025', setLiveInjuries);
+  }, []);
 
   useEffect(() => {
     const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
