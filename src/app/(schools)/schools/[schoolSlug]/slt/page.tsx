@@ -13,6 +13,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   RadialBarChart, RadialBar,
 } from 'recharts'
+import { SchoolDashboardModal, OfstedPrepModal, SLTMeetingAgendaModal, WholeSchoolInsightsModal, GovernorReportModal, ImprovementPlanModal, StaffAppraisalModal, ExclusionSignOffModal, CalendarPlannerModal, SendAllStaffMessageModal } from '@/components/modals/SLTModals'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & THEME
@@ -187,6 +188,18 @@ export default function SLTSuite() {
   const [tab, setTab] = useState<MainTab>('executive')
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [showOfsted, setShowOfsted] = useState(false)
+  const [showSLTAgenda, setShowSLTAgenda] = useState(false)
+  const [showInsightsModal, setShowInsightsModal] = useState(false)
+  const [showGovernorReport, setShowGovernorReport] = useState(false)
+  const [showImprovement, setShowImprovement] = useState(false)
+  const [showAppraisal, setShowAppraisal] = useState(false)
+  const [showExclusionSignOff, setShowExclusionSignOff] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showAllStaffMsg, setShowAllStaffMsg] = useState(false)
+
+  const sltFirstName = typeof window !== 'undefined' ? (localStorage.getItem('lumio_user_name') || '').split(' ')[0] || 'there' : 'there'
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -257,7 +270,7 @@ export default function SLTSuite() {
       <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #0C1A2E 0%, #111827 50%, #0C1A2E 100%)', border: `1px solid ${BORDER}` }}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{greeting}, Gemma. Here&apos;s your school at a glance.</h1>
+            <h1 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{greeting}, {sltFirstName}. Here&apos;s your school at a glance.</h1>
             <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{dateStr}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -273,16 +286,16 @@ export default function SLTSuite() {
 
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'School Dashboard', icon: <LayoutDashboard size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Ofsted Prep', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'SLT Meeting Agenda', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Whole School Insights', icon: <BarChart3 size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Governor Report', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Improvement Plan', icon: <Target size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Staff Appraisal', icon: <Users size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Exclusion Sign-off', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Calendar Planner', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Send All-Staff Message', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'School Dashboard', icon: <LayoutDashboard size={14} />, onClick: () => setShowDashboard(true) },
+        { label: 'Ofsted Prep', icon: <Shield size={14} />, onClick: () => setShowOfsted(true) },
+        { label: 'SLT Meeting Agenda', icon: <FileText size={14} />, onClick: () => setShowSLTAgenda(true) },
+        { label: 'Whole School Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsightsModal(true) },
+        { label: 'Governor Report', icon: <FileText size={14} />, onClick: () => setShowGovernorReport(true) },
+        { label: 'Improvement Plan', icon: <Target size={14} />, onClick: () => setShowImprovement(true) },
+        { label: 'Staff Appraisal', icon: <Users size={14} />, onClick: () => setShowAppraisal(true) },
+        { label: 'Exclusion Sign-off', icon: <AlertTriangle size={14} />, onClick: () => setShowExclusionSignOff(true) },
+        { label: 'Calendar Planner', icon: <Calendar size={14} />, onClick: () => setShowCalendar(true) },
+        { label: 'Send All-Staff Message', icon: <Mail size={14} />, onClick: () => setShowAllStaffMsg(true) },
       ]} />
 
       {/* Tab bar */}
@@ -304,6 +317,16 @@ export default function SLTSuite() {
       {tab === 'improvement' && <SchoolImprovementTab />}
       {tab === 'governance' && <GovernanceTab />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      {showDashboard && <SchoolDashboardModal onClose={() => setShowDashboard(false)} isDemoMode={isSchoolDemo} />}
+      {showOfsted && <OfstedPrepModal onClose={() => setShowOfsted(false)} isDemoMode={isSchoolDemo} />}
+      {showSLTAgenda && <SLTMeetingAgendaModal onClose={() => setShowSLTAgenda(false)} isDemoMode={isSchoolDemo} />}
+      {showInsightsModal && <WholeSchoolInsightsModal onClose={() => setShowInsightsModal(false)} isDemoMode={isSchoolDemo} />}
+      {showGovernorReport && <GovernorReportModal onClose={() => setShowGovernorReport(false)} isDemoMode={isSchoolDemo} />}
+      {showImprovement && <ImprovementPlanModal onClose={() => setShowImprovement(false)} isDemoMode={isSchoolDemo} />}
+      {showAppraisal && <StaffAppraisalModal onClose={() => setShowAppraisal(false)} isDemoMode={isSchoolDemo} />}
+      {showExclusionSignOff && <ExclusionSignOffModal onClose={() => setShowExclusionSignOff(false)} isDemoMode={isSchoolDemo} />}
+      {showCalendar && <CalendarPlannerModal onClose={() => setShowCalendar(false)} isDemoMode={isSchoolDemo} />}
+      {showAllStaffMsg && <SendAllStaffMessageModal onClose={() => setShowAllStaffMsg(false)} isDemoMode={isSchoolDemo} />}
     </div>
   )
 }
@@ -354,7 +377,7 @@ function ExecutiveSummary() {
         <div style={cs}>
           <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Today&apos;s Priority Actions</h3>
           {[
-            { dot: '#EF4444', action: 'Review open safeguarding concern', owner: 'Gemma Reddick', due: 'TODAY', detail: 'DSL sign-off required' },
+            { dot: '#EF4444', action: 'Review open safeguarding concern', owner: 'Dr Sarah Mitchell', due: 'TODAY', detail: 'DSL sign-off required' },
             { dot: '#F59E0B', action: 'Year 6 SATs prep meeting', owner: 'Academic lead', due: 'TODAY 10:00', detail: '' },
             { dot: '#F59E0B', action: 'M. Taylor DBS expired — chase renewal', owner: 'HR', due: 'OVERDUE', detail: '' },
             { dot: '#F97316', action: 'Year 4 trip permission — 12/28 outstanding', owner: 'Admin', due: 'Friday', detail: '' },
@@ -937,7 +960,7 @@ function StaffHR() {
           <table className="w-full text-xs">
             <thead><tr style={{ backgroundColor: '#0D0E14' }}>{['Name', 'Role', 'Contract', 'Absence Days YTD', 'DBS Status', 'Review Date'].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
             <tbody>{[
-              { name: 'Gemma Reddick', role: 'Headteacher', contract: 'Permanent', abs: 1, dbs: 'Current', review: 'Jul 2026' },
+              { name: 'Dr Sarah Mitchell', role: 'Headteacher', contract: 'Permanent', abs: 1, dbs: 'Current', review: 'Jul 2026' },
               { name: 'Mark Johnson', role: 'Deputy Head', contract: 'Permanent', abs: 0, dbs: 'Current', review: 'Jul 2026' },
               { name: 'Sarah Okafor', role: 'SENCO', contract: 'Permanent', abs: 4, dbs: 'Current', review: 'Mar 2026' },
               { name: 'Michael Taylor', role: 'Year 6 Teacher', contract: 'Permanent', abs: 2, dbs: 'EXPIRED', review: 'Jul 2026' },
