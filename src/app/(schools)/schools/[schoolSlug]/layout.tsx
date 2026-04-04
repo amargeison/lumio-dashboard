@@ -1,3 +1,6 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/schools/[slug]  →  THIS FILE (layout + page.tsx)
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import { useState, useEffect, useRef } from 'react'

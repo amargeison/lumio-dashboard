@@ -1,3 +1,6 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/football/[slug]  →  THIS FILE
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'

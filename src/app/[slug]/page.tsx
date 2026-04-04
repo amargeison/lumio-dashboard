@@ -1,3 +1,8 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/lumio-dev  →  THIS FILE
+// DO NOT edit (demo-workspace)/demo/[slug]/page.tsx for changes visible at /lumio-dev
+// The demo-workspace file serves /demo/lumio-dev (trial provisioning URL) — separate route.
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'

@@ -1,3 +1,8 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/demo/lumio-dev  →  THIS FILE
+// This serves the TRIAL PROVISIONING URL (/demo/slug). If you need to edit the
+// dashboard at /lumio-dev (no /demo/ prefix), edit src/app/[slug]/page.tsx instead.
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback, RefObject } from 'react'
