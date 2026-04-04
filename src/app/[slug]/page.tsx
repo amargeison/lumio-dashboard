@@ -2024,24 +2024,23 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
   return (
     <>
       <div className="sticky top-[44px] z-40 px-4 py-2.5" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-          {visibleActions.map(a => {
-            const connected = isIntegrationConnected(a.integrations)
-            return (
-              <div key={a.label} className="relative group">
-                <button onClick={() => handleClick(a)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-                  <a.icon size={11} />{a.label}
-                </button>
-                <div className="pointer-events-none absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ bottom: '100%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 9999 }}>
-                  <div className="px-2.5 py-1.5 rounded-lg text-xs w-52 text-center" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>
-                    {connected ? a.tooltip : a.tooltip}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="text-xs font-semibold mb-1.5" style={{ color: '#4B5563' }}>Quick actions</span>
+          {Array.from({ length: Math.ceil(visibleActions.length / 10) }, (_, ri) => (
+            <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri < Math.ceil(visibleActions.length / 10) - 1 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
+              {visibleActions.slice(ri * 10, ri * 10 + 10).map(a => (
+                <div key={a.label} className="relative group shrink-0">
+                  <button onClick={() => handleClick(a)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                    <a.icon size={11} />{a.label}
+                  </button>
+                  <div className="pointer-events-none absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ bottom: '100%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 9999 }}>
+                    <div className="px-2.5 py-1.5 rounded-lg text-xs w-52 text-center" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>{a.tooltip}</div>
+                    <div style={{ width: 0, height: 0, margin: '0 auto', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #374151' }} />
                   </div>
-                  <div style={{ width: 0, height: 0, margin: '0 auto', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #374151' }} />
                 </div>
-              </div>
-            )
-          })}
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </>
