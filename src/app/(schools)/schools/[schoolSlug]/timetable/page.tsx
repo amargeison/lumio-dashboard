@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3, Sparkles } from 'lucide-react'
+import React from 'react'
+import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3, Sparkles, RefreshCw, Clock } from 'lucide-react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -103,6 +104,24 @@ function AIHighlights({ items }: { items: string[] }) {
               style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
             <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
         ))}
       </div>
     </div>
@@ -230,28 +249,19 @@ export default function TimetablePage() {
         </div>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="timetable" portal="schools" />
-        <AIHighlights items={TIMETABLE_HIGHLIGHTS} />
-      </div>
-
       {/* Quick Actions */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none">
-        {[
-          { label: 'New Lesson', icon: Plus, onClick: () => setShowNewLesson(true) },
-          { label: 'Cover Lesson', icon: Calendar, onClick: () => showToast('Opening cover booking...') },
-          { label: 'Room Finder', icon: Search, onClick: () => showToast('Room finder coming soon') },
-          { label: 'Print Timetable', icon: Printer, onClick: () => showToast('Preparing print view...') },
-          { label: 'Export to PDF', icon: FileText, onClick: () => showToast('Exporting PDF...') },
-          { label: 'Dept Insights', icon: BarChart3, onClick: () => setShowInsights(true) },
-        ].map(a => (
-          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
+      <QuickActions actions={[
+        { label: 'New Lesson', icon: <Plus size={14} />, onClick: () => setShowNewLesson(true) },
+        { label: 'Cover Lesson', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Room Finder', icon: <Search size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Print Timetable', icon: <Printer size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Export to PDF', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Swap Teacher', icon: <RefreshCw size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Log Room Conflict', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Block Planner', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Edit Period Times', icon: <Clock size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
+      ]} />
 
       {/* View selectors */}
       {(view === 'week' || view === 'class') && (
@@ -346,6 +356,16 @@ export default function TimetablePage() {
 
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="timetable" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="timetable" portal="schools" />
+          <AIHighlights items={TIMETABLE_HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

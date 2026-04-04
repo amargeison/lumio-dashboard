@@ -1,8 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText, BarChart3 } from 'lucide-react'
-import { AddStaffModal, LogStaffAbsenceModal, StaffReviewModal } from '@/components/modals/SchoolModals'
+import { Sparkles, UserPlus, ClipboardList, GraduationCap, FileText, PoundSterling, Calendar, AlertTriangle, Heart, BarChart3 } from 'lucide-react'
+import { AddStaffModal, LogStaffAbsenceModal, StaffReviewModal, SubmitExpenseModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -14,11 +14,15 @@ const HIGHLIGHTS = [
 ]
 
 const ACTIONS_BASE = [
-  { label: 'Log Absence', icon: <UserX size={14} /> },
-  { label: 'Book Cover', icon: <Calendar size={14} /> },
-  { label: 'New Staff Member', icon: <UserPlus size={14} /> },
-  { label: 'DBS Check', icon: <Shield size={14} /> },
+  { label: 'New Staff Record', icon: <UserPlus size={14} /> },
+  { label: 'Log Absence', icon: <ClipboardList size={14} /> },
+  { label: 'Book CPD', icon: <GraduationCap size={14} /> },
   { label: 'Performance Review', icon: <FileText size={14} /> },
+  { label: 'Contract Change', icon: <FileText size={14} /> },
+  { label: 'Claim Expenses', icon: <PoundSterling size={14} /> },
+  { label: 'Request Leave', icon: <Calendar size={14} /> },
+  { label: 'Raise HR Concern', icon: <AlertTriangle size={14} /> },
+  { label: 'Staff Wellbeing Check', icon: <Heart size={14} /> },
 ]
 
 const STATS = [
@@ -93,17 +97,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -126,6 +133,7 @@ export default function HRStaffPage() {
   const [showAddStaff, setShowAddStaff] = useState(false)
   const [showLogStaffAbsence, setShowLogStaffAbsence] = useState(false)
   const [showStaffReview, setShowStaffReview] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
 
@@ -164,18 +172,13 @@ export default function HRStaffPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Staff attendance, cover, DBS compliance and professional development</p>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="hr-staff" portal="schools" />
-        <AIHighlights items={HIGHLIGHTS} />
-      </div>
-
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({
         ...a,
-        onClick: a.label === 'Log Absence' ? () => setShowLogStaffAbsence(true)
-          : a.label === 'New Staff Member' ? () => setShowAddStaff(true)
+        onClick: a.label === 'New Staff Record' ? () => setShowAddStaff(true)
+          : a.label === 'Log Absence' ? () => setShowLogStaffAbsence(true)
           : a.label === 'Performance Review' ? () => setShowStaffReview(true)
+          : a.label === 'Claim Expenses' ? () => setShowExpense(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
@@ -286,8 +289,19 @@ export default function HRStaffPage() {
       {showAddStaff && <AddStaffModal onClose={() => setShowAddStaff(false)} onToast={showToast} />}
       {showLogStaffAbsence && <LogStaffAbsenceModal onClose={() => setShowLogStaffAbsence(false)} onToast={showToast} />}
       {showStaffReview && <StaffReviewModal onClose={() => setShowStaffReview(false)} onToast={showToast} />}
+      {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="hr-staff" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="hr-staff" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

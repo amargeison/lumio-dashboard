@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { AlertTriangle, FileSearch, Phone, GraduationCap, Shield, Sparkles, BarChart3 } from 'lucide-react'
-import { SafeguardingConcernModal, DSLReviewModal, StaffAlertModal } from '@/components/modals/SchoolModals'
+import { AlertTriangle, ShieldAlert, Brain, ClipboardList, Phone, FileText, Building2, Calendar, Sparkles, BarChart3 } from 'lucide-react'
+import { SafeguardingConcernModal, DSLReviewModal, StaffAlertModal, AddSENDRecordModal, EHCPReviewModal, ParentContactModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -38,17 +38,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -96,6 +99,9 @@ export default function SafeguardingPage() {
   const [showConcern, setShowConcern] = useState(false)
   const [showDSLReview, setShowDSLReview] = useState(false)
   const [showStaffAlert, setShowStaffAlert] = useState(false)
+  const [showAddSEND, setShowAddSEND] = useState(false)
+  const [showEHCP, setShowEHCP] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
 
@@ -134,19 +140,17 @@ export default function SafeguardingPage() {
         </div>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="safeguarding" portal="schools" />
-        <AIHighlights items={aiHighlights} />
-      </div>
-
       {/* Quick Actions */}
       <QuickActions actions={[
-        { label: 'Log Concern', icon: <AlertTriangle size={14} />, onClick: () => setShowConcern(true) },
-        { label: 'DSL Review', icon: <FileSearch size={14} />, onClick: () => setShowDSLReview(true) },
-        { label: 'MASH Referral', icon: <Phone size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Staff Training', icon: <GraduationCap size={14} />, onClick: () => setShowStaffAlert(true) },
-        { label: 'KCSIE Compliance', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Safeguarding Referral', icon: <ShieldAlert size={14} />, onClick: () => setShowConcern(true), urgent: true },
+        { label: 'SEND Referral', icon: <Brain size={14} />, onClick: () => setShowAddSEND(true) },
+        { label: 'EHCP Review', icon: <ClipboardList size={14} />, onClick: () => setShowEHCP(true) },
+        { label: 'Parent/Carer Contact', icon: <Phone size={14} />, onClick: () => setShowParentContact(true) },
+        { label: 'Risk Assessment', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Generate SEND Report', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'External Agency Referral', icon: <Building2 size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Review Meeting', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'LAC/CiC Update', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
@@ -275,8 +279,21 @@ export default function SafeguardingPage() {
       {showConcern && <SafeguardingConcernModal onClose={() => setShowConcern(false)} onToast={showToast} />}
       {showDSLReview && <DSLReviewModal onClose={() => setShowDSLReview(false)} onToast={showToast} />}
       {showStaffAlert && <StaffAlertModal onClose={() => setShowStaffAlert(false)} onToast={showToast} />}
+      {showAddSEND && <AddSENDRecordModal onClose={() => setShowAddSEND(false)} onToast={showToast} />}
+      {showEHCP && <EHCPReviewModal onClose={() => setShowEHCP(false)} onToast={showToast} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="safeguarding" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="safeguarding" portal="schools" />
+          <AIHighlights items={aiHighlights} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

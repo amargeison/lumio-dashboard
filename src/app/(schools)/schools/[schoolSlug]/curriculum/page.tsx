@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3 } from 'lucide-react'
+import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3, Calendar, ClipboardCheck, Package } from 'lucide-react'
 import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -17,8 +17,12 @@ const ACTIONS_BASE = [
   { label: 'Generate Lesson Plan', icon: <BookOpen size={14} /> },
   { label: 'Cover Work', icon: <FileText size={14} /> },
   { label: 'Parents Evening', icon: <Users size={14} /> },
-  { label: 'Assessment Tracker', icon: <ClipboardList size={14} /> },
-  { label: 'Report Writer', icon: <PenLine size={14} /> },
+  { label: 'Assessment Tracker', icon: <BarChart3 size={14} /> },
+  { label: 'Report Writer', icon: <FileText size={14} /> },
+  { label: 'Scheme of Work Review', icon: <BookOpen size={14} /> },
+  { label: 'Plan Assessment Calendar', icon: <Calendar size={14} /> },
+  { label: 'Moderation Request', icon: <ClipboardCheck size={14} /> },
+  { label: 'Order Resources', icon: <Package size={14} /> },
 ]
 
 const STATS = [
@@ -94,17 +98,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -157,12 +164,6 @@ export default function CurriculumPage() {
       <div>
         <h1 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Curriculum</h1>
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Lesson plans, assessments, parents evening and curriculum events</p>
-      </div>
-
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="curriculum" portal="schools" />
-        <AIHighlights items={HIGHLIGHTS} />
       </div>
 
       {/* Quick actions */}
@@ -295,6 +296,16 @@ export default function CurriculumPage() {
       {showReportWriter && <ReportWriterModal onClose={() => setShowReportWriter(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="curriculum" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="curriculum" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

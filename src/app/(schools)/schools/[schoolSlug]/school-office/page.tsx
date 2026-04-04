@@ -1,8 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3 } from 'lucide-react'
-import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal } from '@/components/modals/SchoolModals'
+import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3, Phone, Check, ClipboardList, UserCheck, Heart, FileText, Database, Pill, Bell } from 'lucide-react'
+import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal, RegisterSessionModal } from '@/components/modals/SchoolModals'
 import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/SchoolOfficeModals'
 import DeptAISummary from '@/components/DeptAISummary'
@@ -16,14 +16,15 @@ const HIGHLIGHTS = [
 ]
 
 const ACTIONS_BASE = [
-  { label: 'Log Absence', icon: <UserMinus size={14} /> },
-  { label: 'New Admission', icon: <UserPlus size={14} /> },
-  { label: 'Send Communication', icon: <MessageSquare size={14} /> },
-  { label: 'New Leaver', icon: <LogOut size={14} /> },
-  { label: 'Trip Permission', icon: <Map size={14} /> },
-  { label: 'School Trips', icon: <Map size={14} /> },
-  { label: 'Log Incident', icon: <AlertTriangle size={14} /> },
-  { label: 'Log Maintenance', icon: <Wrench size={14} /> },
+  { label: 'Parent Contact', icon: <Phone size={14} /> },
+  { label: 'Mark Register', icon: <Check size={14} /> },
+  { label: 'Log Absence', icon: <ClipboardList size={14} /> },
+  { label: 'Visitor Sign-in', icon: <UserCheck size={14} /> },
+  { label: 'First Aid Log', icon: <Heart size={14} /> },
+  { label: 'Letter Generator', icon: <FileText size={14} /> },
+  { label: 'Data Request', icon: <Database size={14} /> },
+  { label: 'Medication Log', icon: <Pill size={14} /> },
+  { label: 'Send Announcement', icon: <Bell size={14} /> },
 ]
 
 const STATS = [
@@ -91,17 +92,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -123,6 +127,7 @@ export default function SchoolOfficePage() {
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [showIncident, setShowIncident] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
+  const [showRegister, setShowRegister] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -160,21 +165,12 @@ export default function SchoolOfficePage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Absences, admissions, communications and trips — Oakridge Primary</p>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="school-office" portal="schools" />
-        <AIHighlights items={HIGHLIGHTS} />
-      </div>
-
       {/* Quick actions */}
       <QuickActions actions={[...ACTIONS_BASE.map(a => ({
         ...a,
-        onClick: a.label === 'Log Absence' ? () => setShowLogAbsence(true)
-          : a.label === 'New Admission' ? () => setShowNewAdmission(true)
-          : a.label === 'Send Communication' ? () => setShowParentContact(true)
-          : a.label === 'School Trips' ? () => setShowTrips(true)
-          : a.label === 'Log Incident' ? () => setShowIncident(true)
-          : a.label === 'Log Maintenance' ? () => setShowMaintenance(true)
+        onClick: a.label === 'Parent Contact' ? () => setShowParentContact(true)
+          : a.label === 'Log Absence' ? () => setShowLogAbsence(true)
+          : a.label === 'Mark Register' ? () => setShowRegister(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
@@ -310,8 +306,19 @@ export default function SchoolOfficePage() {
       {showTrips && <SchoolTripsModal onClose={() => setShowTrips(false)} onToast={showToast} />}
       {showIncident && <LogIncidentModal onClose={() => setShowIncident(false)} />}
       {showMaintenance && <LogMaintenanceModal onClose={() => setShowMaintenance(false)} />}
+      {showRegister && <RegisterSessionModal onClose={() => setShowRegister(false)} onToast={showToast} />}
       <AIInsightsReport dept="school-office" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="school-office" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

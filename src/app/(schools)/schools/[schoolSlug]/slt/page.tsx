@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   GraduationCap, FileText, Calendar, Target, Users, Shield, Plus, Save, X,
   RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, TrendingDown,
   DollarSign, Award, Eye, BookOpen, Heart, BarChart2, Loader2, Download,
-  Database, Upload,
+  Database, Upload, LayoutDashboard, Mail, BarChart3,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -165,9 +165,30 @@ const MAIN_TABS: { id: MainTab; label: string; icon: string }[] = [
   { id: 'governance', label: 'Governance', icon: '📅' },
 ]
 
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB', animation: a.urgent ? 'pulse 2s infinite' : 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function SLTSuite() {
   const [tab, setTab] = useState<MainTab>('executive')
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const check = () => {
@@ -250,6 +271,20 @@ export default function SLTSuite() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <QuickActions actions={[
+        { label: 'School Dashboard', icon: <LayoutDashboard size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Ofsted Prep', icon: <Shield size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'SLT Meeting Agenda', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Whole School Insights', icon: <BarChart3 size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Governor Report', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Improvement Plan', icon: <Target size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Staff Appraisal', icon: <Users size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Exclusion Sign-off', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Calendar Planner', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Send All-Staff Message', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
+      ]} />
+
       {/* Tab bar */}
       <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
         {MAIN_TABS.map(t => (
@@ -268,6 +303,7 @@ export default function SLTSuite() {
       {tab === 'finance' && <FinanceTab />}
       {tab === 'improvement' && <SchoolImprovementTab />}
       {tab === 'governance' && <GovernanceTab />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
     </div>
   )
 }
