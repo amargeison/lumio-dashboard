@@ -285,6 +285,44 @@ export default function SafeguardingPage() {
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="safeguarding" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 
+      {/* Incidents Log */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">📋</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Lockdown Incident Reports</p>
+          </div>
+          <Badge label={`${2} records`} color="#6B7280" bg="rgba(107,114,128,0.12)" />
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="w-full text-left">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                {['Reference', 'Date', 'Type', 'Initiated by', 'Outcome', 'Duration', ''].map(col => (
+                  <th key={col} className="px-5 py-3 text-xs font-semibold" style={{ color: '#6B7280' }}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { ref: 'LOCK-20260110-4821', date: '10 Jan 2026', type: 'Drill', by: 'Dr Sarah Mitchell', outcome: 'Drill completed successfully', duration: '12 mins' },
+                { ref: 'LOCK-20251004-3297', date: '4 Oct 2025', type: 'Drill', by: 'Mr Tom Briggs', outcome: 'Drill completed successfully', duration: '8 mins' },
+              ].map(row => (
+                <tr key={row.ref} style={{ borderBottom: '1px solid rgba(31,41,55,0.4)' }}>
+                  <td className="px-5 py-3 font-mono text-xs" style={{ color: '#9CA3AF' }}>{row.ref}</td>
+                  <td className="px-5 py-3 text-xs" style={{ color: '#D1D5DB' }}>{row.date}</td>
+                  <td className="px-5 py-3"><Badge label={row.type} color="#FBBF24" bg="rgba(251,191,36,0.12)" /></td>
+                  <td className="px-5 py-3 text-xs" style={{ color: '#D1D5DB' }}>{row.by}</td>
+                  <td className="px-5 py-3 text-xs" style={{ color: '#22C55E' }}>{row.outcome}</td>
+                  <td className="px-5 py-3 text-xs" style={{ color: '#9CA3AF' }}>{row.duration}</td>
+                  <td className="px-5 py-3"><button onClick={() => showToast('Incident report would open here')} className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ color: '#0D9488', backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)' }}>View Report</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* AI Intelligence — bottom of page */}
       <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
