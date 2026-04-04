@@ -102,7 +102,7 @@ export default function DemoSchoolSettingsPage() {
   const [tzSearch, setTzSearch] = useState('')
 
   useEffect(() => {
-    const name = localStorage.getItem('lumio_demo_school_name') || 'Oakridge Primary School'
+    const name = localStorage.getItem('lumio_demo_school_name') || localStorage.getItem('lumio_company_name') || 'Margy High School'
     setSchoolName(name)
     const st = localStorage.getItem('lumio_demo_school_type')
     if (st) setSchoolType(st)
