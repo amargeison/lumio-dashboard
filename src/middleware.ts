@@ -16,7 +16,7 @@ const DASHBOARD_ROUTES = new Set([
   'partners', 'support', 'success', 'settings', 'projects', 'onboarding', 'directors',
 ])
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Dev PIN gate (non-production only) ────────────────────────────────
@@ -62,8 +62,29 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Handle /{slug} for non-reserved slugs → let [slug]/page.tsx handle it
+  // Handle /{slug} for non-reserved slugs
   if (parts.length === 1 && !RESERVED_SLUGS.has(parts[0])) {
+    // Check if this slug is a demo tenant → redirect to /demo/[slug] or /demo/schools/[slug]
+    const slug = parts[0]
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (supabaseUrl && supabaseKey) {
+        const res = await fetch(`${supabaseUrl}/rest/v1/demo_tenants?slug=eq.${slug}&select=slug,tenant_type&limit=1`, {
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+        })
+        if (res.ok) {
+          const rows = await res.json()
+          if (rows.length > 0) {
+            const url = request.nextUrl.clone()
+            url.pathname = rows[0].tenant_type === 'schools'
+              ? `/demo/schools/${slug}`
+              : `/demo/${slug}`
+            return NextResponse.redirect(url)
+          }
+        }
+      }
+    } catch { /* fall through to default handling */ }
     return NextResponse.next()
   }
 
