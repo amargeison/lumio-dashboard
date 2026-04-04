@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles, Building2, Calendar, Newspaper, Search, GitCompare, Palette, Target, BarChart2, Eye, Handshake, Trophy, Rocket } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
@@ -67,6 +68,7 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 }
 
 export default function MarketingPage() {
+  const router = useRouter()
   const [country,  setCountry]  = useState('All Countries')
   const [product,  setProduct]  = useState('All Products')
   const [region,   setRegion]   = useState('All Regions')
