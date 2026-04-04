@@ -16,9 +16,13 @@ const DASHBOARD_ROUTES = new Set([
   'partners', 'support', 'success', 'settings', 'projects', 'onboarding', 'directors',
 ])
 
+// DEMO-BUSINESS BRANCH — root redirects to business demo workspace
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+<<<<<<< HEAD
+  // Root → business demo workspace
+=======
   // ── Dev PIN gate (non-production only) ────────────────────────────────
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
   const devPin = process.env.DEV_ACCESS_PIN
@@ -39,9 +43,10 @@ export function middleware(request: NextRequest) {
   }
 
   // Redirect / → /home
+>>>>>>> dev
   if (pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/home'
+    url.pathname = '/demo/lumio-demo'
     return NextResponse.redirect(url)
   }
 
