@@ -2287,7 +2287,7 @@ function HRView({ company }: { company: string }) {
             { label: 'Dept Insights', icon: BarChart3 },
             { label: 'Dept Info', icon: Users },
           ].map(a => (
-            <button key={a.label} onClick={() => { if (a.label === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.label === 'Dept Insights') window.dispatchEvent(new Event('lumio-dept-insights')); if (a.label === 'Recruitment') router.push(`/demo/${slug}/recruit`); if (a.label === 'Company Events') router.push(`/demo/${slug}/events`) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            <button key={a.label} onClick={() => { const s = window.location.pathname.split('/')[2] || ''; if (a.label === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.label === 'Dept Insights') window.dispatchEvent(new Event('lumio-dept-insights')); if (a.label === 'Recruitment') { window.location.href = `/demo/${s}/recruit` }; if (a.label === 'Company Events') { window.location.href = `/demo/${s}/events` } }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               <a.icon size={12} />{a.label === 'Recruitment' ? '🔍 Recruit' : a.label}
             </button>
@@ -2313,7 +2313,7 @@ function HRView({ company }: { company: string }) {
           </div>
           <div className="text-xs font-medium mt-auto" style={{ color: '#2DD4BF' }}>Launch workflow →</div>
         </div>
-        <div onClick={() => router.push(`/demo/${slug}/recruit`)} className="group flex flex-col gap-3 rounded-xl p-5 transition-all hover:border-[#374151] cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div onClick={() => { window.location.href = `/demo/${window.location.pathname.split('/')[2] || ''}/recruit` }} className="group flex flex-col gap-3 rounded-xl p-5 transition-all hover:border-[#374151] cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <div className="flex items-start justify-between">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(124,58,237,0.08)' }}>
               <Users className="w-4 h-4" style={{ color: '#A78BFA' }} />
