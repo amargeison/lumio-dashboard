@@ -149,43 +149,51 @@ const FB_PRIMARY = '#003DA5'
 const FB_SECONDARY = '#F1C40F'
 
 const SQUAD: Player[] = [
-  { name: 'Nathan Bishop', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 0, assists: 0, stats: { PAC: 58, SHO: 14, PAS: 62, DRI: 52, DEF: 72, PHY: 78 } },
-  { name: 'Joe McDonnell', number: 13, position: 'GK', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.9, goals: 0, assists: 0, stats: { PAC: 52, SHO: 12, PAS: 58, DRI: 48, DEF: 70, PHY: 76 } },
-  { name: 'Patrick Bauer', number: 5, position: 'CB', nationality: '🇩🇪', age: 33, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 1, stats: { PAC: 62, SHO: 38, PAS: 65, DRI: 55, DEF: 79, PHY: 84 } },
-  { name: 'Ryan Johnson', number: 4, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 26, contractExpiry: 'Jun 2027', marketValue: '£250k', fitness: 'fit', lastRating: 7.2, goals: 1, assists: 0, stats: { PAC: 68, SHO: 35, PAS: 67, DRI: 58, DEF: 77, PHY: 82 } },
-  { name: 'Isaac Ogundere', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'injured', lastRating: 6.8, goals: 0, assists: 1, stats: { PAC: 72, SHO: 32, PAS: 64, DRI: 60, DEF: 74, PHY: 80 } },
-  { name: 'Steve Seddon', number: 3, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 3, stats: { PAC: 74, SHO: 42, PAS: 70, DRI: 68, DEF: 73, PHY: 75 } },
-  { name: 'Nathan Asiimwe', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'May 2026', marketValue: '£150k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 2, stats: { PAC: 78, SHO: 38, PAS: 68, DRI: 70, DEF: 68, PHY: 72 } },
-  { name: 'Brodi Hughes', number: 22, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'injured', lastRating: 6.7, goals: 0, assists: 1, stats: { PAC: 76, SHO: 35, PAS: 65, DRI: 68, DEF: 65, PHY: 70 } },
-  { name: 'Sam Hutchinson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 35, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'fit', lastRating: 7.0, goals: 2, assists: 4, stats: { PAC: 58, SHO: 55, PAS: 76, DRI: 65, DEF: 74, PHY: 80 } },
-  { name: 'Delano McCoy-Splatt', number: 14, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£200k', fitness: 'fit', lastRating: 7.1, goals: 3, assists: 5, stats: { PAC: 72, SHO: 60, PAS: 74, DRI: 72, DEF: 62, PHY: 72 } },
-  { name: 'Alistair Smith', number: 16, position: 'CM', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 26, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'injured', lastRating: 6.9, goals: 2, assists: 3, stats: { PAC: 70, SHO: 58, PAS: 72, DRI: 68, DEF: 65, PHY: 74 } },
-  { name: 'Zack Nelson', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 24, contractExpiry: 'Jun 2026', marketValue: '£250k', fitness: 'fit', lastRating: 7.3, goals: 4, assists: 6, stats: { PAC: 74, SHO: 68, PAS: 78, DRI: 76, DEF: 45, PHY: 66 } },
-  { name: 'Marcus Browne', number: 11, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 7.8, goals: 12, assists: 5, stats: { PAC: 82, SHO: 74, PAS: 72, DRI: 80, DEF: 38, PHY: 68 } },
-  { name: 'Ed Leach', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2026', marketValue: '£150k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3, stats: { PAC: 80, SHO: 65, PAS: 68, DRI: 76, DEF: 35, PHY: 62 } },
-  { name: 'Antwoine Hackford', number: 9, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£350k', fitness: 'fit', lastRating: 7.2, goals: 8, assists: 2, stats: { PAC: 80, SHO: 76, PAS: 62, DRI: 72, DEF: 28, PHY: 74 } },
-  { name: 'Layton Stewart', number: 19, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'fit', lastRating: 7.0, goals: 5, assists: 1, stats: { PAC: 78, SHO: 74, PAS: 60, DRI: 70, DEF: 25, PHY: 72 } },
+  // Goalkeepers
+  { name: 'Nathan Bishop',       number: 1,  position: 'GK',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 26, contractExpiry: 'Jun 2027', marketValue: '£180k', fitness: 'fit',     lastRating: 6.8,  goals: 0,  assists: 0, stats: { PAC: 45, SHO: 20, PAS: 52, DRI: 30, DEF: 28, PHY: 65 } },
+  { name: 'Joe McDonnell',       number: 20, position: 'GK',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 31, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'fit',     lastRating: 6.9,  goals: 0,  assists: 0, stats: { PAC: 42, SHO: 18, PAS: 50, DRI: 28, DEF: 26, PHY: 62 } },
+  // Defenders
+  { name: 'Steve Seddon',        number: 3,  position: 'LB',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£450k', fitness: 'fit',     lastRating: 7.18, goals: 1,  assists: 8, stats: { PAC: 72, SHO: 55, PAS: 68, DRI: 65, DEF: 71, PHY: 70 } },
+  { name: 'Ryan Johnson',        number: 6,  position: 'CB',  nationality: '🇮🇪',         age: 29, contractExpiry: 'Jun 2027', marketValue: '£350k', fitness: 'fit',     lastRating: 7.08, goals: 2,  assists: 1, stats: { PAC: 62, SHO: 40, PAS: 55, DRI: 45, DEF: 74, PHY: 76 } },
+  { name: 'Patrick Bauer',       number: 15, position: 'CB',  nationality: '🇩🇪',         age: 33, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'fit',     lastRating: 6.9,  goals: 1,  assists: 0, stats: { PAC: 55, SHO: 38, PAS: 52, DRI: 42, DEF: 72, PHY: 78 } },
+  { name: 'Isaac Ogundere',      number: 33, position: 'CB',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£300k', fitness: 'fit',     lastRating: 6.8,  goals: 0,  assists: 0, stats: { PAC: 68, SHO: 35, PAS: 50, DRI: 44, DEF: 70, PHY: 74 } },
+  { name: 'Joe Lewis',           number: 31, position: 'CB',  nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', age: 26, contractExpiry: 'Jun 2026', marketValue: '£175k', fitness: 'fit',     lastRating: 6.7,  goals: 0,  assists: 0, stats: { PAC: 60, SHO: 32, PAS: 48, DRI: 40, DEF: 68, PHY: 72 } },
+  { name: 'Nathan Asiimwe',      number: 2,  position: 'RB',  nationality: '🇺🇬',         age: 21, contractExpiry: 'Jun 2026', marketValue: '£250k', fitness: 'fit',     lastRating: 6.6,  goals: 0,  assists: 1, stats: { PAC: 76, SHO: 42, PAS: 58, DRI: 62, DEF: 65, PHY: 68 } },
+  { name: 'Brodi Hughes',        number: 17, position: 'CB',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'doubt',   lastRating: 6.5,  goals: 0,  assists: 0, stats: { PAC: 64, SHO: 30, PAS: 46, DRI: 38, DEF: 66, PHY: 70 } },
+  // Midfielders
+  { name: 'Callum Maycock',      number: 8,  position: 'CM',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£400k', fitness: 'fit',     lastRating: 7.05, goals: 3,  assists: 4, stats: { PAC: 65, SHO: 62, PAS: 72, DRI: 68, DEF: 66, PHY: 72 } },
+  { name: 'Jake Reeves',         number: 4,  position: 'CM',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 32, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'fit',     lastRating: 6.95, goals: 2,  assists: 3, stats: { PAC: 58, SHO: 58, PAS: 70, DRI: 64, DEF: 68, PHY: 70 } },
+  { name: 'Alistair Smith',      number: 12, position: 'CM',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 26, contractExpiry: 'Jun 2027', marketValue: '£400k', fitness: 'fit',     lastRating: 6.96, goals: 4,  assists: 5, stats: { PAC: 66, SHO: 64, PAS: 70, DRI: 66, DEF: 62, PHY: 68 } },
+  { name: 'Sam Hutchinson',      number: 5,  position: 'CDM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 36, contractExpiry: 'Jun 2026', marketValue: '£100k', fitness: 'fit',     lastRating: 6.85, goals: 0,  assists: 1, stats: { PAC: 50, SHO: 45, PAS: 65, DRI: 55, DEF: 72, PHY: 74 } },
+  { name: 'Myles Hippolyte',     number: 21, position: 'LW',  nationality: '🇬🇩',         age: 31, contractExpiry: 'Jun 2026', marketValue: '£250k', fitness: 'fit',     lastRating: 6.9,  goals: 3,  assists: 4, stats: { PAC: 74, SHO: 60, PAS: 62, DRI: 72, DEF: 40, PHY: 65 } },
+  { name: 'Zack Nelson',         number: 37, position: 'CM',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2026', marketValue: '£200k', fitness: 'fit',     lastRating: 6.7,  goals: 1,  assists: 1, stats: { PAC: 70, SHO: 55, PAS: 64, DRI: 62, DEF: 56, PHY: 60 } },
+  { name: 'Delano McCoy-Splatt', number: 16, position: 'CM',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'Jun 2027', marketValue: '£150k', fitness: 'fit',     lastRating: 6.5,  goals: 0,  assists: 0, stats: { PAC: 68, SHO: 48, PAS: 58, DRI: 56, DEF: 54, PHY: 62 } },
+  { name: 'James Tilley',        number: 19, position: 'RW',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2026', marketValue: '£275k', fitness: 'fit',     lastRating: 6.8,  goals: 2,  assists: 3, stats: { PAC: 75, SHO: 64, PAS: 66, DRI: 74, DEF: 38, PHY: 62 } },
+  // Forwards
+  { name: 'Marcus Browne',       number: 11, position: 'LW',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit',     lastRating: 7.2,  goals: 12, assists: 3, stats: { PAC: 78, SHO: 72, PAS: 68, DRI: 76, DEF: 35, PHY: 66 } },
+  { name: 'Mathew Stevens',      number: 10, position: 'ST',  nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', age: 26, contractExpiry: 'Jun 2026', marketValue: '£450k', fitness: 'fit',     lastRating: 7.0,  goals: 9,  assists: 4, stats: { PAC: 70, SHO: 72, PAS: 60, DRI: 64, DEF: 32, PHY: 74 } },
+  { name: 'Omar Bugiel',         number: 9,  position: 'ST',  nationality: '🇱🇧',         age: 30, contractExpiry: 'Jun 2026', marketValue: '£300k', fitness: 'injured', lastRating: 6.95, goals: 5,  assists: 4, stats: { PAC: 62, SHO: 68, PAS: 58, DRI: 56, DEF: 38, PHY: 78 } },
+  { name: 'Antwoine Hackford',   number: 18, position: 'CF',  nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£350k', fitness: 'fit',     lastRating: 6.75, goals: 4,  assists: 2, stats: { PAC: 76, SHO: 66, PAS: 56, DRI: 68, DEF: 30, PHY: 70 } },
 ]
 
 const INJURIES = [
-  { player: 'Brodi Hughes', type: 'Hamstring strain', expectedReturn: 'Apr 2026', phase: 'Rehabilitation', since: 'Mar 2026', matchesMissed: 3 },
-  { player: 'Alistair Smith', type: 'Ankle ligament', expectedReturn: 'May 2026', phase: 'Recovery', since: 'Feb 2026', matchesMissed: 7 },
-  { player: 'Isaac Ogundere', type: 'Knee bruise', expectedReturn: 'Apr 2026', phase: 'Light training', since: 'Mar 2026', matchesMissed: 2 },
+  { player: 'Omar Bugiel',   type: 'Calf strain',          expectedReturn: 'Apr 2026', phase: 'Rehabilitation',  since: 'Mar 2026', matchesMissed: 4 },
+  { player: 'Brodi Hughes',  type: 'Hamstring tightness',  expectedReturn: 'Apr 2026', phase: 'Light training',   since: 'Mar 2026', matchesMissed: 2 },
 ]
 
 const TRANSFER_TARGETS = [
-  { name: 'Yannick Diallo', position: 'LB', club: 'KRC Genk', age: 22, value: '£1.8m', status: 'Bid submitted' },
-  { name: 'Tiago Ferreira', position: 'CM', club: 'SC Braga', age: 24, value: '£1.3m', status: 'Watching' },
+  { name: 'Aaron Collins',  position: 'LW', club: 'Wrexham',        age: 28, value: 'Free',   status: 'Shortlisted' },
+  { name: 'Harvey Knibbs',  position: 'ST', club: 'Burton Albion',  age: 25, value: '£500k',  status: 'In pipeline' },
 ]
 
 // ─── Recent Form ────────────────────────────────────────────────────────────
 
 const RECENT_FORM = [
-  { opponent: 'Riverside United', score: '2-1', result: 'W' as const, home: true, scorers: "Santos 34', Thompson 67'" },
-  { opponent: 'City Vale', score: '0-0', result: 'D' as const, home: false, scorers: '' },
-  { opponent: 'Northern Town', score: '3-1', result: 'W' as const, home: true, scorers: "Santos 12', 45', O'Brien 78'" },
-  { opponent: 'Westfield Athletic', score: '1-2', result: 'L' as const, home: false, scorers: "Thompson 55'" },
-  { opponent: 'South Park Rangers', score: '4-0', result: 'W' as const, home: true, scorers: "Santos 22', 41', Collins 67', Martinez 89'" },
+  { opponent: 'Charlton Athletic', score: '1-2', result: 'L' as const, home: true,  scorers: "Browne 61'" },
+  { opponent: 'Plymouth Argyle',   score: '1-2', result: 'L' as const, home: false, scorers: "Stevens 44'" },
+  { opponent: 'Bolton Wanderers',  score: '1-1', result: 'D' as const, home: true,  scorers: "Maycock 78'" },
+  { opponent: 'Blackpool',         score: '2-0', result: 'W' as const, home: false, scorers: "Browne 32', Stevens 71'" },
+  { opponent: 'Wrexham',           score: '2-2', result: 'D' as const, home: true,  scorers: "Browne 18', Hackford 55'" },
 ]
 
 // ─── GPS Training Data ──────────────────────────────────────────────────────
@@ -3011,10 +3019,9 @@ function MedicalView() {
         </div>
         <div className="p-5 space-y-3">
           {[
-            { player: "Sean O'Brien", acwr: 1.58, load: 478, note: 'Steady increase over 8 weeks. Rest recommended — remove from starting XI consideration.' },
-            { player: 'Diego Martinez', acwr: 1.48, load: 298, note: 'Returning from injury — load ramp too aggressive. Reduce intensity for next 2 sessions.' },
-            { player: 'Jamie Wilson', acwr: 1.42, load: 456, note: 'Match-to-training spike of +47%. Conditioning concern — increase training intensity or limit match minutes.' },
-            { player: 'Jamal Henderson', acwr: 1.35, load: 445, note: 'Two consecutive match starts caused spike. One training rest day recommended.' },
+            { player: 'Omar Bugiel', acwr: 1.38, load: 478, note: 'Steady increase over 8 weeks. Rest recommended — remove from starting XI consideration.' },
+            { player: 'Steve Seddon', acwr: 1.08, load: 298, note: 'Returning from injury — monitor load carefully. Reduce intensity for next 2 sessions if needed.' },
+            { player: 'Marcus Browne', acwr: 1.12, load: 445, note: 'Two consecutive match starts caused spike. One training rest day recommended.' },
           ].map((p, i) => {
             const color = p.acwr > 1.5 ? '#EF4444' : '#F59E0B'
             const label = p.acwr > 1.5 ? 'HIGH RISK' : 'CAUTION'
@@ -3048,9 +3055,9 @@ function MedicalView() {
         </div>
         <div className="p-5 space-y-3">
           {[
-            { player: 'Lucas Santos', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 3 },
-            { player: 'Diego Martinez', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 2 },
-            { player: "Sean O'Brien", stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 1 },
+            { player: 'Omar Bugiel', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 3 },
+            { player: 'Brodi Hughes', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 4 },
+            { player: 'Isaac Ogundere', stages: ['Diagnosis', 'Treatment', 'Rehab', 'Light Training', 'Full Training', 'Match Ready'], current: 4 },
           ].map((p, pi) => (
             <div key={pi} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.player}</p>
@@ -3189,10 +3196,10 @@ function ScoutingView() {
         </div>
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
           {[
-            { scout: 'Mark Evans', region: 'Belgium / Netherlands', currentTrip: 'KRC Genk vs Club Brugge (Fri)', targets: 2, reports: 5 },
-            { scout: 'Carlos Mendes', region: 'Portugal / Spain', currentTrip: 'SC Braga vs Benfica (Sat)', targets: 1, reports: 4 },
-            { scout: 'Jan Bakker', region: 'Netherlands / Denmark', currentTrip: 'Ajax U21 vs PSV U21 (Fri)', targets: 1, reports: 2 },
-            { scout: 'Pierre Dumont', region: 'France / Belgium', currentTrip: 'Metz vs Auxerre (Sun)', targets: 1, reports: 1 },
+            { scout: 'Chief Scout', region: 'England — League One', currentTrip: 'Wrexham vs MK Dons (Sat)', targets: 2, reports: 5 },
+            { scout: 'Scout A', region: 'England — League Two', currentTrip: 'Stockport County vs Bradford (Fri)', targets: 1, reports: 4 },
+            { scout: 'Scout B', region: 'Northern Europe', currentTrip: 'Ajax U21 vs PSV U21 (Fri)', targets: 1, reports: 2 },
+            { scout: 'Scout C', region: 'France / Belgium', currentTrip: 'Metz vs Auxerre (Sun)', targets: 1, reports: 1 },
           ].map((s, i) => (
             <div key={i} className="flex items-center justify-between px-5 py-3">
               <div className="flex items-center gap-3">
@@ -3219,11 +3226,11 @@ function ScoutingView() {
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Scout Reports</p>
         </div>
         {[
-          { player: 'Rui Silva', scout: 'Mark Evans', league: 'Belgian Pro League', rating: 'A', date: '25 Mar' },
-          { player: 'André Costa', scout: 'Carlos Mendes', league: 'Primeira Liga', rating: 'A-', date: '22 Mar' },
-          { player: "Jean-Marc N'Golo", scout: 'Pierre Dumont', league: 'Ligue 2', rating: 'B+', date: '20 Mar' },
-          { player: 'Kasper Eriksen', scout: 'Jan Bakker', league: 'Danish Superliga', rating: 'B', date: '18 Mar' },
-          { player: 'Liam Brennan', scout: 'Mark Evans', league: 'League of Ireland', rating: 'B-', date: '15 Mar' },
+          { player: 'Aaron Collins', scout: 'Chief Scout', league: 'League One — Wrexham', rating: 'A', date: '25 Mar' },
+          { player: 'Louie Barry', scout: 'Scout A', league: 'League One — Stockport County', rating: 'A-', date: '22 Mar' },
+          { player: 'Harvey Knibbs', scout: 'Scout C', league: 'League One — Burton Albion', rating: 'B+', date: '20 Mar' },
+          { player: 'Jordan Slew', scout: 'Scout B', league: 'League One — Leyton Orient', rating: 'B', date: '18 Mar' },
+          { player: 'Ibou Sawaneh', scout: 'Chief Scout', league: 'League Two — Forest Green Rovers', rating: 'B-', date: '15 Mar' },
         ].map((r, i) => (
           <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
@@ -3706,38 +3713,38 @@ const GPS_SESSIONS_DEMO = [
 ]
 
 const GPS_PLAYER_DEMO = [
-  { name: 'Ryan Thompson', distance: 11.4, hsr: 1680, sprints: 28, maxSpeed: 33.8, load: 420, acwr: 1.12, status: 'optimal' as const },
-  { name: 'Jamal Henderson', distance: 10.8, hsr: 1550, sprints: 42, maxSpeed: 34.2, load: 445, acwr: 1.35, status: 'caution' as const },
-  { name: 'Marcus Cole', distance: 9.2, hsr: 620, sprints: 12, maxSpeed: 28.4, load: 310, acwr: 0.92, status: 'optimal' as const },
-  { name: "Sean O'Brien", distance: 10.1, hsr: 1490, sprints: 36, maxSpeed: 34.8, load: 478, acwr: 1.58, status: 'high-risk' as const },
-  { name: 'Kwame Okafor', distance: 10.6, hsr: 1380, sprints: 30, maxSpeed: 33.1, load: 398, acwr: 1.02, status: 'optimal' as const },
-  { name: 'Lucas Santos', distance: 9.8, hsr: 890, sprints: 18, maxSpeed: 30.6, load: 280, acwr: 0.72, status: 'under' as const },
-  { name: 'Alex Collins', distance: 10.2, hsr: 1420, sprints: 34, maxSpeed: 33.1, load: 412, acwr: 1.18, status: 'optimal' as const },
-  { name: 'Jamie Wilson', distance: 11.1, hsr: 1620, sprints: 38, maxSpeed: 35.2, load: 456, acwr: 1.42, status: 'caution' as const },
-  { name: 'Tom Richards', distance: 8.4, hsr: 520, sprints: 10, maxSpeed: 26.8, load: 245, acwr: 0.85, status: 'optimal' as const },
-  { name: 'Jake Phillips', distance: 9.0, hsr: 640, sprints: 14, maxSpeed: 29.2, load: 322, acwr: 0.95, status: 'optimal' as const },
-  { name: 'Diego Martinez', distance: 8.8, hsr: 580, sprints: 11, maxSpeed: 27.6, load: 298, acwr: 1.48, status: 'caution' as const },
-  { name: 'James Walker', distance: 5.8, hsr: 320, sprints: 4, maxSpeed: 24.2, load: 165, acwr: 0.88, status: 'optimal' as const },
+  { name: 'Nathan Bishop', distance: 11.4, hsr: 1680, sprints: 28, maxSpeed: 33.8, load: 420, acwr: 0.88, readiness: 95, status: 'optimal' as const },
+  { name: 'Steve Seddon', distance: 10.8, hsr: 1550, sprints: 42, maxSpeed: 34.2, load: 445, acwr: 1.08, readiness: 82, status: 'optimal' as const },
+  { name: 'Ryan Johnson', distance: 9.2, hsr: 620, sprints: 12, maxSpeed: 28.4, load: 310, acwr: 0.94, readiness: 91, status: 'optimal' as const },
+  { name: 'Patrick Bauer', distance: 10.1, hsr: 1490, sprints: 36, maxSpeed: 34.8, load: 478, acwr: 0.90, readiness: 92, status: 'optimal' as const },
+  { name: 'Nathan Asiimwe', distance: 10.6, hsr: 1380, sprints: 30, maxSpeed: 33.1, load: 398, acwr: 0.96, readiness: 89, status: 'optimal' as const },
+  { name: 'Callum Maycock', distance: 9.8, hsr: 890, sprints: 18, maxSpeed: 30.6, load: 280, acwr: 0.95, readiness: 90, status: 'optimal' as const },
+  { name: 'Jake Reeves', distance: 10.2, hsr: 1420, sprints: 34, maxSpeed: 33.1, load: 412, acwr: 0.92, readiness: 88, status: 'optimal' as const },
+  { name: 'Alistair Smith', distance: 11.1, hsr: 1620, sprints: 38, maxSpeed: 35.2, load: 456, acwr: 0.97, readiness: 87, status: 'optimal' as const },
+  { name: 'Marcus Browne', distance: 8.4, hsr: 520, sprints: 10, maxSpeed: 26.8, load: 245, acwr: 1.12, readiness: 88, status: 'caution' as const },
+  { name: 'Mathew Stevens', distance: 9.0, hsr: 640, sprints: 14, maxSpeed: 29.2, load: 322, acwr: 0.91, readiness: 93, status: 'optimal' as const },
+  { name: 'Omar Bugiel', distance: 8.8, hsr: 580, sprints: 11, maxSpeed: 27.6, load: 298, acwr: 1.38, readiness: 61, status: 'caution' as const },
+  { name: 'Sam Hutchinson', distance: 5.8, hsr: 320, sprints: 4, maxSpeed: 24.2, load: 165, acwr: 0.78, readiness: 96, status: 'optimal' as const },
 ]
 
 const WEEKLY_LOAD_DEMO = [
-  { week: 'W1', 'Ryan Thompson': 380, 'Jamal Henderson': 420, "Sean O'Brien": 350, 'Kwame Okafor': 360, avg: 378 },
-  { week: 'W2', 'Ryan Thompson': 395, 'Jamal Henderson': 410, "Sean O'Brien": 380, 'Kwame Okafor': 375, avg: 390 },
-  { week: 'W3', 'Ryan Thompson': 410, 'Jamal Henderson': 430, "Sean O'Brien": 420, 'Kwame Okafor': 390, avg: 413 },
-  { week: 'W4', 'Ryan Thompson': 390, 'Jamal Henderson': 440, "Sean O'Brien": 445, 'Kwame Okafor': 385, avg: 415 },
-  { week: 'W5', 'Ryan Thompson': 420, 'Jamal Henderson': 435, "Sean O'Brien": 460, 'Kwame Okafor': 400, avg: 429 },
-  { week: 'W6', 'Ryan Thompson': 405, 'Jamal Henderson': 445, "Sean O'Brien": 470, 'Kwame Okafor': 395, avg: 429 },
-  { week: 'W7', 'Ryan Thompson': 415, 'Jamal Henderson': 440, "Sean O'Brien": 475, 'Kwame Okafor': 398, avg: 432 },
-  { week: 'W8', 'Ryan Thompson': 420, 'Jamal Henderson': 445, "Sean O'Brien": 478, 'Kwame Okafor': 412, avg: 439 },
+  { week: 'W1', 'Steve Seddon': 380, 'Marcus Browne': 420, 'Omar Bugiel': 350, 'Mathew Stevens': 360, avg: 378 },
+  { week: 'W2', 'Steve Seddon': 395, 'Marcus Browne': 410, 'Omar Bugiel': 380, 'Mathew Stevens': 375, avg: 390 },
+  { week: 'W3', 'Steve Seddon': 410, 'Marcus Browne': 430, 'Omar Bugiel': 420, 'Mathew Stevens': 390, avg: 413 },
+  { week: 'W4', 'Steve Seddon': 390, 'Marcus Browne': 440, 'Omar Bugiel': 445, 'Mathew Stevens': 385, avg: 415 },
+  { week: 'W5', 'Steve Seddon': 420, 'Marcus Browne': 435, 'Omar Bugiel': 460, 'Mathew Stevens': 400, avg: 429 },
+  { week: 'W6', 'Steve Seddon': 405, 'Marcus Browne': 445, 'Omar Bugiel': 470, 'Mathew Stevens': 395, avg: 429 },
+  { week: 'W7', 'Steve Seddon': 415, 'Marcus Browne': 440, 'Omar Bugiel': 475, 'Mathew Stevens': 398, avg: 432 },
+  { week: 'W8', 'Steve Seddon': 420, 'Marcus Browne': 445, 'Omar Bugiel': 478, 'Mathew Stevens': 412, avg: 439 },
 ]
 
 const MATCH_VS_TRAIN_DEMO = [
-  { name: 'Ryan Thompson', matchDist: 11.4, trainDist: 9.8, matchHSR: 1680, trainHSR: 1220, matchLoad: 420, trainLoad: 340, diff: '+24%' },
-  { name: 'Jamal Henderson', matchDist: 10.8, trainDist: 10.2, matchHSR: 1550, trainHSR: 1380, matchLoad: 445, trainLoad: 410, diff: '+9%' },
-  { name: "Sean O'Brien", matchDist: 10.1, trainDist: 9.5, matchHSR: 1490, trainHSR: 1100, matchLoad: 478, trainLoad: 350, diff: '+37%' },
-  { name: 'Kwame Okafor', matchDist: 10.6, trainDist: 10.0, matchHSR: 1380, trainHSR: 1280, matchLoad: 398, trainLoad: 370, diff: '+8%' },
-  { name: 'Jamie Wilson', matchDist: 11.1, trainDist: 9.2, matchHSR: 1620, trainHSR: 1050, matchLoad: 456, trainLoad: 310, diff: '+47%' },
-  { name: 'Alex Collins', matchDist: 10.2, trainDist: 9.6, matchHSR: 1420, trainHSR: 1200, matchLoad: 412, trainLoad: 360, diff: '+14%' },
+  { name: 'Steve Seddon', matchDist: 11.4, trainDist: 9.8, matchHSR: 1680, trainHSR: 1220, matchLoad: 420, trainLoad: 340, diff: '+24%' },
+  { name: 'Marcus Browne', matchDist: 10.8, trainDist: 10.2, matchHSR: 1550, trainHSR: 1380, matchLoad: 445, trainLoad: 410, diff: '+9%' },
+  { name: 'Omar Bugiel', matchDist: 10.1, trainDist: 9.5, matchHSR: 1490, trainHSR: 1100, matchLoad: 478, trainLoad: 350, diff: '+37%' },
+  { name: 'Mathew Stevens', matchDist: 10.6, trainDist: 10.0, matchHSR: 1380, trainHSR: 1280, matchLoad: 398, trainLoad: 370, diff: '+8%' },
+  { name: 'Callum Maycock', matchDist: 11.1, trainDist: 9.2, matchHSR: 1620, trainHSR: 1050, matchLoad: 456, trainLoad: 310, diff: '+47%' },
+  { name: 'Sam Hutchinson', matchDist: 10.2, trainDist: 9.6, matchHSR: 1420, trainHSR: 1200, matchLoad: 412, trainLoad: 360, diff: '+14%' },
 ]
 
 function PerformanceGPSView() {
@@ -4423,14 +4430,14 @@ function _OriginalStaffView() {
             </thead>
             <tbody>
               {[
-                { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
-                { name: 'Mike Reynolds', role: 'First Team Coach', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
-                { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', quals: 'UEFA Pro (in progress)', status: 'Course Mon-Wed' },
-                { name: 'Sarah Mitchell', role: 'Head Physio', dept: 'Medical', quals: 'MSc Sports Med', status: 'Available' },
-                { name: 'Dr. James Hart', role: 'Club Doctor', dept: 'Medical', quals: 'MBBS, MRCGP', status: 'Available' },
-                { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Coaching', quals: 'BSc S&C', status: 'Available' },
-                { name: 'Mark Evans', role: 'Chief Scout', dept: 'Scouting', quals: 'UEFA B', status: 'Belgium trip' },
-                { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', quals: 'MSc Data Science', status: 'Starts Monday' },
+                { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', quals: 'UEFA Pro', status: 'Available' },
+                { name: 'Assistant Manager', role: 'Assistant Manager', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
+                { name: 'Goalkeeping Coach', role: 'GK Coach', dept: 'Coaching', quals: 'UEFA Pro (in progress)', status: 'Course Mon-Wed' },
+                { name: 'First Team Analyst', role: 'Performance Analyst', dept: 'Analytics', quals: 'MSc Data Science', status: 'Available' },
+                { name: 'Head Physio', role: 'Head Physio', dept: 'Medical', quals: 'MSc Sports Med', status: 'Available' },
+                { name: 'Team Doctor', role: 'Club Doctor', dept: 'Medical', quals: 'MBBS, MRCGP', status: 'Available' },
+                { name: 'Fitness Coach', role: 'Fitness Coach', dept: 'Coaching', quals: 'BSc S&C', status: 'Available' },
+                { name: 'Chief Scout', role: 'Chief Scout', dept: 'Scouting', quals: 'UEFA B', status: 'Scouting trip' },
               ].map((s, i) => {
                 const statusColor = s.status === 'Available' ? '#22C55E' : '#F59E0B'
                 return (
@@ -4454,9 +4461,9 @@ function _OriginalStaffView() {
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Leave & Absences</p>
         </div>
         {[
-          { name: 'Alan Cooper', dates: '28-30 Mar', reason: 'UEFA Pro Licence course', cover: 'David Hughes' },
-          { name: 'Sarah Mitchell', dates: '14-18 Apr', reason: 'Annual leave', cover: 'Dr. James Hart' },
-          { name: 'Mark Evans', dates: '25-29 Mar', reason: 'Scouting trip — Belgium', cover: 'Carlos Mendes (remote)' },
+          { name: 'Goalkeeping Coach', dates: '28-30 Mar', reason: 'UEFA Pro Licence course', cover: 'Assistant Manager' },
+          { name: 'Head Physio', dates: '14-18 Apr', reason: 'Annual leave', cover: 'Team Doctor' },
+          { name: 'Chief Scout', dates: '25-29 Mar', reason: 'Scouting trip', cover: 'Head of Recruitment' },
         ].map((l, i) => (
           <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
@@ -4578,14 +4585,14 @@ const VOICES = [
 // ─── Social Media View ──────────────────────────────────────────────────────
 
 const SOCIAL_MENTIONS = [
-  { user: '@AFCWimbFan92', content: 'Great performance from AFC Wimbledon last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing AFC Wimbledon are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+  { user: '@AFCWimbFan92', content: 'Great performance from AFC Wimbledon last night! Browne was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+  { user: '@SportsBlogger', content: 'Hearing AFC Wimbledon are close to signing a new winger — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
   { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Wimbledon! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@ChampionshipNews', content: 'AFC Wimbledon move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
-  { user: '@TacticsBoard', content: 'Thompson\'s pass map vs Riverside was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
+  { user: '@League1News', content: 'AFC Wimbledon move up to 14th after beating Stockport County. Solid showing.', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+  { user: '@TacticsBoard', content: 'Stevens\'s pass map vs Stockport County was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
   { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Tyler James (17) training with Wimbledon first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'AFC Wimbledon have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+  { user: '@YouthFootball', content: 'Academy Player (17) training with Wimbledon first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+  { user: '@TransferWatch', content: 'AFC Wimbledon have reportedly tracked a League One winger. Clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
 ]
 
 const SOCIAL_PLATFORMS = [
@@ -4600,7 +4607,7 @@ const SOCIAL_PLATFORMS = [
 const SOCIAL_CALENDAR = [
   { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
   { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
-  { day: 'Wed', time: '12pm', content: 'Player spotlight — Santos', platforms: 'All' },
+  { day: 'Wed', time: '12pm', content: 'Player spotlight — Browne', platforms: 'All' },
   { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
   { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
   { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
@@ -4706,13 +4713,13 @@ function DynamicsView() {
   function action(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
 
   const PLAYER_HAPPINESS = [
-    { name: 'Marcus Webb', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
-    { name: 'Jordan Ellis', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
-    { name: 'Lucas Santos', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
-    { name: 'Ryan Thompson', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
-    { name: 'Danny Okafor', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
-    { name: 'Kenji Nakamura', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
-    { name: 'Chris Walsh', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
+    { name: 'Marcus Browne', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
+    { name: 'Mathew Stevens', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
+    { name: 'Omar Bugiel', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
+    { name: 'Steve Seddon', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
+    { name: 'Callum Maycock', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
+    { name: 'Jake Reeves', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
+    { name: 'Sam Hutchinson', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
   ]
 
   return (
@@ -4755,7 +4762,7 @@ function DynamicsView() {
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Disciplinary Log (Last 30 Days)</p>
         <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player','Offence','Date','Punishment','Status'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
-        <tbody>{[{ p: 'Marcus Webb', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Danny Okafor', o: 'Missed training', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Kenji Nakamura', o: 'Red card reaction', d: '22 Mar', pun: 'Fine: £1,000', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
+        <tbody>{[{ p: 'Marcus Browne', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Callum Maycock', o: 'Missed training session', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Jake Reeves', o: 'Yellow card accumulation', d: '22 Mar', pun: '1-match suspension', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
       </div>
 
       {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
@@ -4887,7 +4894,7 @@ function ClubProfileView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F1C40F' }}>🏆 Honours</p>
-          {['League One title: 2019/20','League Two title: 2015/16','FA Cup Semi-finals: 1978, 1994','League Cup QF: 2021'].map(h => <p key={h} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{h}</p>)}
+          {['League Two Play-off Winners: 2015/16','National League Promotion: 2010/11','Combined Counties League Premier: 2004/05','Isthmian League Division One: 2007/08'].map(h => <p key={h} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{h}</p>)}
         </div>
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</p>
@@ -4903,7 +4910,7 @@ function ClubProfileView() {
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Recent League History</p></div>
         <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Season','Division','Position','Pts'].map(h => <th key={h} className="text-left px-4 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
-        <tbody>{[['2025/26','Championship','8th','—'],['2024/25','Championship','14th','58'],['2023/24','Championship','11th','62'],['2022/23','League One','1st 🏆','92'],['2021/22','League One','4th','78']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? '#F9FAFB' : c.includes('🏆') ? '#F1C40F' : '#9CA3AF' }}>{c}</td>)}</tr>)}</tbody></table>
+        <tbody>{[['2025/26','League One','14th (current)','—'],['2024/25','League Two','3rd (Promoted)','77'],['2023/24','League Two','10th','62'],['2022/23','League Two','19th','50'],['2021/22','League One','24th (Relegated)','41']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? '#F9FAFB' : c.includes('Promoted') ? '#22C55E' : c.includes('Relegated') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}</tbody></table>
       </div>
     </div>
   )
@@ -5514,58 +5521,6 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
-              const DEPT_HIGHLIGHTS: Record<string, string[]> = {
-                squad: ['Top performers this week: Dele Adeyemi (8.2 avg), Liam Cross (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
-                tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
-                transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for Kyle Brennan — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
-                medical: ['2 players currently in rehab — Torres (knee), Fletcher (shoulder)', 'Torres expected return: 10 days, Fletcher: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Adeyemi high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
-                scouting: ['3 new targets added to watchlist this month', '2 scouting reports due by end of week', 'Trial session scheduled Saturday AM — 2 youth prospects', 'Recommended signing: LB target rated 8/10 by chief scout', 'Watchlist updated: 14 active targets across 3 positions'],
-                academy: ['2 graduates ready for first-team consideration', 'Academy win rate this season: 71% across all age groups', '3 scholarship renewals due for review by April', 'Talent pathway review meeting scheduled next Tuesday', 'Parent liaison meetings: 4 outstanding this term'],
-                analytics: ['xG vs actual goals: +2.3 over-performance this month', 'Pressing intensity 12% above league average', 'Defensive line height 34m — 2m higher than last month', 'Set piece efficiency: 22% from corners (league avg 16%)', 'Possession vs win rate: 58% possession correlates with 68% win rate'],
-                dynamics: ['Team morale indicators: 8.2/10 — highest since October', 'Training intensity scores up 6% week-on-week', 'Leadership group action: captain meeting scheduled Friday', 'No conflict flags this week', 'Team bonding session planned for Wednesday afternoon'],
-                media: ['Press conference scheduled Friday 2pm — pre-match', 'Social media reach this week: 124k (+18% vs last week)', 'Sponsor content deadline: Thursday for matchday programme', '2 interview requests pending — local press + podcast', 'No crisis comms flags currently active'],
-                social: ['Best performing post: matchday highlight reel (42k views)', 'Follower growth: +820 this week across all platforms', 'Content schedule: 2 gaps identified in next week plan', 'Fan engagement rate: 4.8% — above 3.5% benchmark', 'Viral opportunity: behind-the-scenes training video trending'],
-                matchday: ['Pre-match prep checklist: 85% complete', 'Travel arrangements confirmed for Saturday away fixture', 'Kit and equipment check completed — all clear', 'Referee briefing notes shared with coaching staff', 'Starting XI finalised — announced Friday 3pm'],
-                training: ['Session attendance this week: 94%', 'Fitness benchmark results: 3 players improved their times', 'Tactical drill completion rate: 88%', 'Load management flag: Adeyemi recommended light session Thursday', 'Next session plan uploaded — Friday AM recovery session'],
-                performance: ['Highest load player this week: Dele Adeyemi (2,840 AU)', 'Recovery scores: squad average 7.8/10', 'Sprint distance leaders: Adeyemi 1.2km, Cole 1.1km', 'Fatigue risk players: Torres (amber), Adeyemi (amber)', 'GPS anomaly flagged: Fletcher — reduced output in last session'],
-                finance: ['PSR headroom: £85k remaining for this reporting period', 'Wage bill at 72% of revenue — target under 75%', 'Player sale target: £150k needed to balance books by June', 'Commercial revenue 8% above target year-to-date', 'Cost overrun flagged: medical department 12% over budget'],
-                staff: ['All coaching staff DBS checks current', 'Physio vacancy — interviews scheduled next week', 'CPD compliance: 2 staff outstanding', 'Staff wellbeing survey results: 7.6/10', 'Annual reviews: 3 due this month'],
-                facilities: ['Pitch maintenance scheduled Monday', 'Floodlight inspection due — annual certificate expiring', 'Changing room refurb quote received — £12k', 'Car park resurfacing flagged', 'Groundsman leave cover arranged'],
-                'squad-planner': ['Left-back position still requires cover signing', 'Squad depth: thin at centre-back if Brennan injured', '1 loan return due end of April — decision needed', '2 trialists awaiting final decision by Friday', 'Summer window priority: left-back, central midfielder, backup striker'],
-                'club-profile': ['Club rating 7.2 — above league average 6.8', 'Stadium capacity utilisation: 78% average this season', 'Academy output rank: 3rd in division', 'Fanbase growth: +4.2% year-on-year', 'Commercial partnerships: 8 active, 2 in negotiation'],
-                psr: ['PSR submission deadline: 45 days away', 'Current projected position: within limits', 'Wage-to-revenue ratio: 72% (limit 75%)', 'Amortisation schedule on track', 'No transfer embargo risk flagged'],
-              }
-              const highlights = DEPT_HIGHLIGHTS[activeDept] || ['No highlights available for this department']
-              const deptName = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || activeDept
-              return (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
-                  <DeptAISummary dept={activeDept} portal="football" />
-                  <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(0,61,165,0.4)' }}>
-                    <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: '1px solid rgba(0,61,165,0.2)' }}>
-                      <Sparkles size={14} style={{ color: '#003DA5' }} />
-                      <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-                      <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{deptName}</span>
-                    </div>
-                    <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
-                      {highlights.map((item, i) => (
-                        <div key={i} className="flex gap-3">
-                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{i + 1}</span>
-                          <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-2">
-                  <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-                    📊 Insights
-                  </button>
-                </div>
-              </>
-              )
-            })()}
             {isFootballDemo && activeDept === 'squad' && <SquadView />}
             {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
@@ -5599,6 +5554,59 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'pyramid' && <FootballPyramidView />}
             {activeDept === 'statsbomb' && <StatsBombView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
+              const DEPT_HIGHLIGHTS: Record<string, string[]> = {
+                squad: ['Top performers this week: Dele Adeyemi (8.2 avg), Liam Cross (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
+                tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
+                transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for Kyle Brennan — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
+                medical: ['2 players currently in rehab — Bugiel (calf), Hughes (hamstring)', 'Bugiel expected return: 10 days, Hughes: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Browne high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
+                scouting: ['3 new targets added to watchlist this month', '2 scouting reports due by end of week', 'Trial session scheduled Saturday AM — 2 youth prospects', 'Recommended signing: LB target rated 8/10 by chief scout', 'Watchlist updated: 14 active targets across 3 positions'],
+                academy: ['2 graduates ready for first-team consideration', 'Academy win rate this season: 71% across all age groups', '3 scholarship renewals due for review by April', 'Talent pathway review meeting scheduled next Tuesday', 'Parent liaison meetings: 4 outstanding this term'],
+                analytics: ['xG vs actual goals: +2.3 over-performance this month', 'Pressing intensity 12% above league average', 'Defensive line height 34m — 2m higher than last month', 'Set piece efficiency: 22% from corners (league avg 16%)', 'Possession vs win rate: 58% possession correlates with 68% win rate'],
+                dynamics: ['Team morale indicators: 8.2/10 — highest since October', 'Training intensity scores up 6% week-on-week', 'Leadership group action: captain meeting scheduled Friday', 'No conflict flags this week', 'Team bonding session planned for Wednesday afternoon'],
+                media: ['Press conference scheduled Friday 2pm — pre-match', 'Social media reach this week: 124k (+18% vs last week)', 'Sponsor content deadline: Thursday for matchday programme', '2 interview requests pending — local press + podcast', 'No crisis comms flags currently active'],
+                social: ['Best performing post: matchday highlight reel (42k views)', 'Follower growth: +820 this week across all platforms', 'Content schedule: 2 gaps identified in next week plan', 'Fan engagement rate: 4.8% — above 3.5% benchmark', 'Viral opportunity: behind-the-scenes training video trending'],
+                matchday: ['Pre-match prep checklist: 85% complete', 'Travel arrangements confirmed for Saturday away fixture', 'Kit and equipment check completed — all clear', 'Referee briefing notes shared with coaching staff', 'Starting XI finalised — announced Friday 3pm'],
+                training: ['Session attendance this week: 94%', 'Fitness benchmark results: 3 players improved their times', 'Tactical drill completion rate: 88%', 'Load management flag: Adeyemi recommended light session Thursday', 'Next session plan uploaded — Friday AM recovery session'],
+                performance: ['Highest load player this week: Dele Adeyemi (2,840 AU)', 'Recovery scores: squad average 7.8/10', 'Sprint distance leaders: Adeyemi 1.2km, Cole 1.1km', 'Fatigue risk players: Torres (amber), Adeyemi (amber)', 'GPS anomaly flagged: Fletcher — reduced output in last session'],
+                finance: ['PSR headroom: £85k remaining for this reporting period', 'Wage bill at 72% of revenue — target under 75%', 'Player sale target: £150k needed to balance books by June', 'Commercial revenue 8% above target year-to-date', 'Cost overrun flagged: medical department 12% over budget'],
+                staff: ['All coaching staff DBS checks current', 'Physio vacancy — interviews scheduled next week', 'CPD compliance: 2 staff outstanding', 'Staff wellbeing survey results: 7.6/10', 'Annual reviews: 3 due this month'],
+                facilities: ['Pitch maintenance scheduled Monday', 'Floodlight inspection due — annual certificate expiring', 'Changing room refurb quote received — £12k', 'Car park resurfacing flagged', 'Groundsman leave cover arranged'],
+                'squad-planner': ['Left-back position still requires cover signing', 'Squad depth: thin at centre-back if Brennan injured', '1 loan return due end of April — decision needed', '2 trialists awaiting final decision by Friday', 'Summer window priority: left-back, central midfielder, backup striker'],
+                'club-profile': ['Club rating 7.2 — above league average 6.8', 'Stadium capacity utilisation: 78% average this season', 'Academy output rank: 3rd in division', 'Fanbase growth: +4.2% year-on-year', 'Commercial partnerships: 8 active, 2 in negotiation'],
+                psr: ['PSR submission deadline: 45 days away', 'Current projected position: within limits', 'Wage-to-revenue ratio: 72% (limit 75%)', 'Amortisation schedule on track', 'No transfer embargo risk flagged'],
+              }
+              const highlights = DEPT_HIGHLIGHTS[activeDept] || ['No highlights available for this department']
+              const deptName = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || activeDept
+              return (
+                <div className="mt-8 pt-6 border-t border-gray-800 space-y-4">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">{'\u{1F916}'} AI Department Intelligence</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                    <DeptAISummary dept={activeDept} portal="football" />
+                    <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(0,61,165,0.4)' }}>
+                      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: '1px solid rgba(0,61,165,0.2)' }}>
+                        <Sparkles size={14} style={{ color: '#003DA5' }} />
+                        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+                        <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{deptName}</span>
+                      </div>
+                      <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
+                        {highlights.map((item, i) => (
+                          <div key={i} className="flex gap-3">
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{i + 1}</span>
+                            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+                      {'\u{1F4CA}'} Insights
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
           </main>
         </div>
       </div>
