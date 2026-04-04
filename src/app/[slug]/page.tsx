@@ -225,7 +225,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
       {/* Desktop — collapsible */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 48, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
