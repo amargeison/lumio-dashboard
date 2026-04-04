@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2, Sparkles, FileX, PiggyBank, Percent, ArrowLeftRight, ShoppingCart, CalendarCheck, BookOpen, Trash2, Landmark, Coins, ClipboardList } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
@@ -63,6 +64,7 @@ function fmtGBP(n: number): string {
 
 export default function AccountsPage() {
   const workspace = useWorkspace()
+  const router = useRouter()
   const [showInvoice, setShowInvoice] = useState(false)
   const [showChase, setShowChase] = useState(false)
   const [showExpense, setShowExpense] = useState(false)
@@ -148,14 +150,14 @@ export default function AccountsPage() {
     { label: 'Bank Reconciliation', icon: ArrowLeftRight, onClick: () => setActiveModal('bank-recon') },
     { label: 'Purchase Order',    icon: ShoppingCart,     onClick: () => setActiveModal('purchase-order') },
     { label: 'Supplier Payment',  icon: Building2,       onClick: () => setActiveModal('supplier-payment') },
-    { label: 'Month End Close',   icon: CalendarCheck,    onClick: () => setActiveModal('month-end') },
+    { label: 'Month End Close',   icon: CalendarCheck,    onClick: () => router.push('/accounts/month-end') },
     { label: 'Aged Debtors',      icon: AlertCircle,      onClick: () => setActiveModal('aged-debtors') },
     { label: 'Forecast Update',   icon: TrendingUp,       onClick: () => setActiveModal('forecast') },
     { label: 'Journal Entry',     icon: BookOpen,         onClick: () => setActiveModal('journal') },
     { label: 'Write Off',         icon: Trash2,           onClick: () => setActiveModal('write-off') },
     { label: 'Director Loan',     icon: Landmark,         onClick: () => setActiveModal('director-loan') },
     { label: 'Dividend',          icon: Coins,            onClick: () => setActiveModal('dividend') },
-    { label: 'Audit Prep',        icon: ClipboardList,    onClick: () => setActiveModal('audit') },
+    { label: 'Audit Prep',        icon: ClipboardList,    onClick: () => router.push('/accounts/audit') },
     { label: 'Dept Insights', icon: Star,        onClick: () => setShowAIInsights(true) },
     { label: 'Dept Info',     icon: Building2,   onClick: () => setShowDeptInfo(true) },
   ]
