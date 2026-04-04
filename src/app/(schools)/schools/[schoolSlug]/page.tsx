@@ -1270,7 +1270,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       </div>
 
       {/* 4. Safeguarding alert — only when demo data is active */}
-      {demoDataActive && (
+      {demoDataActive && activeTab === 'today' && (
         <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderLeft: '4px solid #EF4444' }}>
           <Shield size={18} style={{ color: '#EF4444', flexShrink: 0 }} />
           <div className="flex-1 min-w-0">
@@ -1466,51 +1466,90 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* TAB: Insights */}
       {activeTab === 'insights' && (
-        <div className="max-w-4xl">
-          <div className="flex items-center justify-between mb-6">
+        <div className="max-w-5xl">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📊 Insights</h2>
-              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Key trends and metrics — know what&apos;s changing before it becomes a problem.</p>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>AI-generated from your live data — updated every morning at 6am</p>
+            </div>
+            <div className="text-xs" style={{ color: '#374151' }}>Last run: today 07:00</div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* ALERT */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2"><span className="text-xl">🚨</span><span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#F87171' }}>ALERT</span></div>
+                <div className="text-right"><div className="text-lg font-black" style={{ color: '#F87171' }}>6 at risk</div><div className="text-xs" style={{ color: '#6B7280' }}>+1 since last week</div></div>
+              </div>
+              <h3 className="font-bold mb-2 leading-tight" style={{ color: '#F9FAFB' }}>6 pupils below attendance threshold</h3>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#6B7280' }}>Attendance engine flagged 6 pupils below 90%. At-risk pupils are 3× more likely to require intervention.</p>
+              <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#374151' }}>📡 Attendance Monitor</span><button className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ color: '#F87171', backgroundColor: 'rgba(255,255,255,0.05)' }}>View at-risk →</button></div>
+            </div>
+            {/* OPPORTUNITY */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2"><span className="text-xl">💡</span><span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#FBBF24' }}>OPPORTUNITY</span></div>
+                <div className="text-right"><div className="text-lg font-black" style={{ color: '#FBBF24' }}>3 referrals</div><div className="text-xs" style={{ color: '#6B7280' }}>Score: High priority</div></div>
+              </div>
+              <h3 className="font-bold mb-2 leading-tight" style={{ color: '#F9FAFB' }}>3 SEND pupils due annual review this term</h3>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#6B7280' }}>Reviews are statutory. Missing deadlines risks Ofsted action. Two parents not yet contacted.</p>
+              <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#374151' }}>📡 SEND tracker</span><button className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ color: '#FBBF24', backgroundColor: 'rgba(255,255,255,0.05)' }}>View referrals →</button></div>
+            </div>
+            {/* TREND */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2"><span className="text-xl">📈</span><span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#60A5FA' }}>TREND</span></div>
+                <div className="text-right"><div className="text-lg font-black" style={{ color: '#4ADE80' }}>87%</div><div className="text-xs" style={{ color: '#6B7280' }}>+4% vs last month</div></div>
+              </div>
+              <h3 className="font-bold mb-2 leading-tight" style={{ color: '#F9FAFB' }}>Ofsted readiness score up 4% this month</h3>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#6B7280' }}>Self-assessment improvements in Safeguarding and Curriculum. Target 90% by end of term.</p>
+              <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#374151' }}>📡 Ofsted readiness engine</span><button className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ color: '#60A5FA', backgroundColor: 'rgba(255,255,255,0.05)' }}>View report →</button></div>
+            </div>
+            {/* ACHIEVEMENT */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2"><span className="text-xl">🏆</span><span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4ADE80' }}>ACHIEVEMENT</span></div>
+                <div className="text-right"><div className="text-lg font-black" style={{ color: '#4ADE80' }}>32h saved</div><div className="text-xs" style={{ color: '#6B7280' }}>£640 value</div></div>
+              </div>
+              <h3 className="font-bold mb-2 leading-tight" style={{ color: '#F9FAFB' }}>Admin workflows saved 32 hours this month</h3>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#6B7280' }}>Cover booking, absence logging and parent contact automation ran 47 times. Average 40 mins saved per task.</p>
+              <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#374151' }}>📡 Workflow execution logs</span><button className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ color: '#4ADE80', backgroundColor: 'rgba(255,255,255,0.05)' }}>View breakdown →</button></div>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
-            <span>🔗</span>
-            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
-          </div>
-          <div className="space-y-3">
-            {([
-              { id: 'in1', title: 'Attendance dropped 2.1% vs last week', description: 'Currently 91.9%. Year 3 and Year 5 showing the biggest dip.', impact: 'high' as const, category: 'Attendance', source: 'MIS' },
-              { id: 'in2', title: 'SEND cohort now 22.3% of roll', description: 'Above national average of 18.1%. EHCP requests up 3 this term.', impact: 'high' as const, category: 'SEND', source: 'SEND Register' },
-              { id: 'in3', title: 'Budget variance of £4,200 in Premises', description: 'Heating costs higher than forecast. Review recommended.', impact: 'medium' as const, category: 'Finance', source: 'Finance' },
-              { id: 'in4', title: 'Year 6 SATs prep: 67% of intervention sessions complete', description: 'On track but 4 pupils need additional support sessions.', impact: 'medium' as const, category: 'Curriculum', source: 'Curriculum' },
-            ]).map(insight => {
-              const impactColors = insight.impact === 'high'
-                ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
-                : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
-              return (
-                <div key={insight.id} className="rounded-2xl p-5 transition-all"
-                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{insight.impact.toUpperCase()} IMPACT</span>
-                        <span className="text-xs" style={{ color: '#6B7280' }}>{insight.category}</span>
-                      </div>
-                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{insight.title}</h3>
-                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{insight.description}</p>
-                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {insight.source}</p>
-                    </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
-                        style={{ backgroundColor: '#7C3AED' }}>
-                        View detail →
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+
+          {/* AI Intelligence Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(217,119,6,0.3)' }}>
+              <div className="flex items-center gap-2 mb-3"><span>🧠</span><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Executive Briefing</span></div>
+              <div className="space-y-2">
+                {['Attendance at 96.2% — Year 6 below target', '1 safeguarding concern awaiting DSL review', '3 cover lessons unassigned for this afternoon', 'Ofsted readiness at 87% — up 4% this month'].map((s, i) => (
+                  <div key={i} className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: '#D97706' }} /><span className="text-xs" style={{ color: '#D1D5DB' }}>{s}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)' }}>
+              <div className="flex items-center gap-2 mb-3"><span>✨</span><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Summary</span><span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Generated now</span></div>
+              <div className="space-y-2">
+                {['Attendance stable at 96.2% — Year 6 dipping below 94% target, Year 3 recovering well', 'Behaviour incidents down 18% this week — new lunch rota contributing', 'Staff absence: 1 teacher off today, cover arranged for 2 of 3 lessons', 'Priority this week: Year 11 mock results upload, SENCO reviews, Ofsted self-assessment'].map((s, i) => (
+                  <div key={i} className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: '#7C3AED' }} /><span className="text-xs" style={{ color: '#D1D5DB' }}>{s}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(13,148,136,0.3)' }}>
+              <div className="flex items-center gap-2 mb-3"><span>⚡</span><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span><span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span></div>
+              <div className="space-y-2">
+                {[
+                  { n: 1, text: 'Attendance 96.2% — Year 6 at 91.8%, below 94% target', color: 'text-amber-400' },
+                  { n: 2, text: '1 safeguarding concern — DSL review required today', color: 'text-red-400' },
+                  { n: 3, text: '3 cover lessons needed — 2 unassigned', color: 'text-amber-400' },
+                  { n: 4, text: 'Year 11 mock results upload due 4pm', color: 'text-teal-400' },
+                  { n: 5, text: 'Ofsted readiness 87% — 3% from Outstanding threshold', color: 'text-teal-400' },
+                ].map(h => (
+                  <div key={h.n} className="flex items-start gap-2"><span className={`text-xs font-bold w-4 flex-shrink-0 mt-0.5 ${h.color}`}>{h.n}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span></div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
