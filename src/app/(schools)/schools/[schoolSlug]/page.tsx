@@ -736,9 +736,9 @@ function SchoolMorningRoundup() {
       </div>
       <div className="space-y-2 mt-3">
         {[
+          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action', color: '#0D9488', bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.2)' },
           { icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts', color: '#3B82F6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.2)' },
           { icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent', color: '#8B5CF6', bg: 'rgba(139,92,246,0.06)', border: 'rgba(139,92,246,0.2)' },
-          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action', color: '#0D9488', bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.2)' },
           { icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)' },
           { icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS', color: '#EC4899', bg: 'rgba(236,72,153,0.06)', border: 'rgba(236,72,153,0.2)' },
           { icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence', color: '#EF4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
