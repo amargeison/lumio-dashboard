@@ -1173,6 +1173,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     fetch(`/api/schools/${_slug}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
+        if (!data) {
+          // No school found — check if this is a demo tenant and redirect
+          fetch(`/api/demo/check-slug?slug=${encodeURIComponent(_slug)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.exists) window.location.replace(`/demo/schools/${_slug}`) })
+            .catch(() => {})
+        }
         if (data) {
           setSchoolData(data)
           if (data.id) setSchoolId(data.id)
