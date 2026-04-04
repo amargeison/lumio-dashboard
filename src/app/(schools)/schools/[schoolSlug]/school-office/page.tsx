@@ -340,8 +340,8 @@ export default function SchoolOfficePage() {
       {/* Lockdown banner */}
       {lockdownBanner && (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626', color: '#fff' }}>
-          <span className="text-sm font-bold">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
-          <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
+          <span className="text-sm font-bold">{lockdownType === 'drill' ? '🟡' : '🔴'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
+          <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'🟢'} Stand Down</button>
         </div>
       )}
       {/* Lockdown wizard — identical to overview */}
@@ -362,20 +362,20 @@ export default function SchoolOfficePage() {
         <div className="fixed inset-0 bg-black/80 z-[9998] flex items-center justify-center p-4">
           <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-              <div className="flex items-center gap-2"><span className="text-lg">{'\u{1F6A8}'}</span><span className="text-white font-bold">School Lockdown Protocol</span><span className="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Step {lockdownStep + 1}/5</span></div>
+              <div className="flex items-center gap-2"><span className="text-lg">{'🚨'}</span><span className="text-white font-bold">School Lockdown Protocol</span><span className="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Step {lockdownStep + 1}/5</span></div>
               <button onClick={() => setShowLockdown(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
             </div>
             <div className="px-6 py-5">
               {lockdownStep === 0 && (
                 <div className="space-y-4">
                   <div className="rounded-xl p-5 text-center" style={{ backgroundColor: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.4)' }}>
-                    <div className="text-4xl mb-3">{'\u26A0\uFE0F'}</div>
+                    <div className="text-4xl mb-3">{'\u26A0️'}</div>
                     <h3 className="text-lg font-bold text-white mb-2">You are initiating a School Lockdown</h3>
                     <p className="text-sm text-gray-400">This will alert staff, parents, and emergency services. Only proceed if genuine emergency or authorised drill.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => { setLockdownType('emergency'); setLockdownChecks({}); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'\u{1F534}'} GENUINE EMERGENCY</button>
-                    <button onClick={() => { setLockdownType('drill'); setLockdownChecks({ 'call-999': false }); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'\u{1F7E1}'} DRILL / PRACTICE</button>
+                    <button onClick={() => { setLockdownType('emergency'); setLockdownChecks({}); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'🔴'} GENUINE EMERGENCY</button>
+                    <button onClick={() => { setLockdownType('drill'); setLockdownChecks({ 'call-999': false }); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'🟡'} DRILL / PRACTICE</button>
                   </div>
                 </div>
               )}
@@ -454,7 +454,7 @@ export default function SchoolOfficePage() {
               )}
               {lockdownStep === 4 && (
                 <div className="space-y-4 text-center">
-                  <div className="text-5xl mb-2">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'}</div>
+                  <div className="text-5xl mb-2">{lockdownType === 'drill' ? '🟡' : '🔴'}</div>
                   <h3 className="text-lg font-bold text-white">Lockdown {lockdownType === 'drill' ? 'Drill' : 'Protocol'} Initiated {isDemoMode ? '(DEMO)' : ''}</h3>
                   {lockdownType === 'emergency' && wants999 && (
                     <div className="space-y-3">
@@ -464,18 +464,18 @@ export default function SchoolOfficePage() {
                           <div className="space-y-2">
                             <button className="w-full py-4 rounded-xl text-lg font-black" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2 }}
                               onClick={() => alert('DEMO MODE: In a live workspace this would open your phone dialler to call 999.')}>
-                              {'\u{1F4DE}'} Call 999 NOW (DEMO)
+                              {'📞'} Call 999 NOW (DEMO)
                             </button>
                             <p className="text-xs text-gray-500">Demo mode — no call will be made</p>
                           </div>
                         ) : (
                           <a href="tel:999" className="block w-full py-4 rounded-xl text-lg font-black text-center" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2, textDecoration: 'none' }}>
-                            {'\u{1F4DE}'} Call 999 NOW
+                            {'📞'} Call 999 NOW
                           </a>
                         )}
                       </div>
                       <div className="rounded-xl p-4 text-left" style={{ backgroundColor: '#111827', border: '1px solid #1F2937' }}>
-                        <p className="text-xs font-semibold text-white mb-2">{'\u{1F4F1}'} Emergency SMS alerts</p>
+                        <p className="text-xs font-semibold text-white mb-2">{'📱'} Emergency SMS alerts</p>
                         {isDemoMode ? (
                           <div className="space-y-1.5">
                             {[
