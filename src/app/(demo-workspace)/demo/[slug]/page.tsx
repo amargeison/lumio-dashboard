@@ -2241,6 +2241,55 @@ function InsightsView({ company }: { company: string }) {
 
       {/* Demo data below — hidden when own data is loaded */}
       {uploadState !== 'loaded' && demoContent}
+
+      {/* AI Insights Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+        {/* Box 1: AI Executive Briefing */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Executive Briefing</p>
+          </div>
+          <div className="space-y-3 text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+            <p><strong style={{ color: '#F9FAFB' }}>{company}</strong> is operating at strong efficiency this period. Automation has saved over 340 hours in the last 30 days, with AI completing 1,240+ tasks across departments.</p>
+            <p>NPS score of 68 is trending upward — driven by faster support response times and proactive health score alerts. The new joiner onboarding workflow has a 98% success rate, the highest of any automated process.</p>
+            <p>Recommended focus area: the invoice chase workflow has a 94% success rate — the 6% failure rate is worth investigating as it represents approximately £12,400 in outstanding receivables.</p>
+          </div>
+        </div>
+        {/* Box 2: AI Summary */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Summary</p>
+          </div>
+          <div className="space-y-3 text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+            <p>Pipeline health is stable with 7 active deals across sales and partnerships. Revenue run rate is on track for Q2 targets. Team utilisation is at 82% — within the optimal 75-90% range.</p>
+            <p>HR workflows are the most active automation category (35% of all runs), followed by sales lead scoring (25%). The trial conversion flow has the highest time saving per run at 3.2 hours.</p>
+            <p>No critical alerts this week. Two medium-priority items: 3 overdue performance reviews and 1 expiring partner agreement.</p>
+          </div>
+        </div>
+        {/* Box 3: AI Key Highlights */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              { icon: '\u{26A1}', text: '340+ hours saved by automation this month — up 12% MoM' },
+              { icon: '\u{1F4C8}', text: 'NPS score 68 — highest since platform launch, trending upward' },
+              { icon: '\u{2705}', text: 'New joiner onboarding: 98% success rate across 142 runs' },
+              { icon: '\u{1F4B0}', text: 'Invoice chase recovering 94% of overdue payments automatically' },
+              { icon: '\u{1F916}', text: '1,240 tasks completed by AI — emails, reports, and scheduling' },
+            ].map((h, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="text-sm mt-0.5 shrink-0">{h.icon}</span>
+                <p className="text-sm" style={{ color: '#D1D5DB' }}>{h.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -3409,10 +3458,12 @@ function SettingsView({ company, wakeWordEnabled, onToggleWakeWord }: { company:
 
 function PartnersView({ company }: { company: string }) {
   const partners = [
-    { initials: 'DFE', name: 'Department for Education', type: 'Government', status: 'Active', contact: 'Sarah Mitchell', color: '#003078' },
-    { initials: 'RGR', name: 'Really Great Reading',     type: 'Academic',   status: 'Pending', contact: 'James Halford', color: '#374151' },
-    { initials: 'PRS', name: 'Pearson',                  type: 'Distribution', status: 'Pending', contact: 'Clare Nguyen', color: '#374151' },
+    { initials: 'ALS', name: 'Apex Learning Solutions', type: 'Reseller', status: 'Active', contact: 'James Thornton', color: '#0D9488', revenue: '£124,800', deals: 7, winRate: '68%', engagement: 'High', nextReview: 'Aug 2026', commission: '15%' },
+    { initials: 'DFE', name: 'Department for Education', type: 'Government', status: 'Active', contact: 'Sarah Mitchell', color: '#003078', revenue: '£89,400', deals: 4, winRate: '55%', engagement: 'Medium', nextReview: 'Sep 2026', commission: '10%' },
+    { initials: 'RGR', name: 'Really Great Reading', type: 'Academic', status: 'Pending', contact: 'James Halford', color: '#374151', revenue: '£0', deals: 0, winRate: '—', engagement: 'New', nextReview: 'TBC', commission: 'TBC' },
   ]
+  const [activePartner, setActivePartner] = useState(0)
+  const p = partners[activePartner]
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -3421,27 +3472,83 @@ function PartnersView({ company }: { company: string }) {
           <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Key partnerships for {company}</p>
         </div>
       </div>
-      {partners.map(p => (
-        <div key={p.name} className="flex items-center justify-between rounded-xl px-5 py-4"
-          style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold"
-              style={{ backgroundColor: p.color, color: '#fff' }}>{p.initials}</div>
+      <div className="flex gap-2 flex-wrap">
+        {partners.map((pt, i) => (
+          <button key={pt.name} onClick={() => setActivePartner(i)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
+            style={{ backgroundColor: activePartner === i ? 'rgba(108,63,197,0.12)' : '#111318', border: `1px solid ${activePartner === i ? 'rgba(108,63,197,0.3)' : '#1F2937'}`, color: activePartner === i ? '#A78BFA' : '#9CA3AF' }}>
+            <div className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: pt.color, color: '#fff' }}>{pt.initials}</div>
+            {pt.name}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Box 1: Partner Info */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold" style={{ backgroundColor: p.color, color: '#fff' }}>{p.initials}</div>
             <div>
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-              <p className="text-xs" style={{ color: '#9CA3AF' }}>{p.type} · {p.contact}</p>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs" style={{ color: '#9CA3AF' }}>{p.type}</span>
+                <span className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: p.status === 'Active' ? 'rgba(13,148,136,0.12)' : 'rgba(245,158,11,0.12)', color: p.status === 'Active' ? '#0D9488' : '#F59E0B' }}>{p.status}</span>
+              </div>
             </div>
           </div>
-          <span className="rounded-md px-2.5 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: p.status === 'Active' ? 'rgba(13,148,136,0.12)' : 'rgba(245,158,11,0.12)',
-              color: p.status === 'Active' ? '#0D9488' : '#F59E0B',
-            }}>{p.status}</span>
+          <div className="space-y-2.5">
+            {[{ l: 'Contact', v: p.contact }, { l: 'Next Review', v: p.nextReview }, { l: 'Commission', v: p.commission }].map(r => (
+              <div key={r.l} className="flex justify-between text-sm" style={{ borderBottom: '1px solid #1F2937', paddingBottom: 8 }}><span style={{ color: '#6B7280' }}>{r.l}</span><span className="font-semibold" style={{ color: '#F9FAFB' }}>{r.v}</span></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {[{ l: 'Revenue', v: p.revenue, c: '#22C55E' }, { l: 'Active Deals', v: String(p.deals), c: '#6C3FC5' }, { l: 'Win Rate', v: p.winRate, c: '#0D9488' }, { l: 'Engagement', v: p.engagement, c: '#F59E0B' }].map(s => (
+              <div key={s.l} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318' }}>
+                <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
+                <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
-      <p className="text-xs text-center pt-2" style={{ color: '#4B5563' }}>
-        Partner data is read-only in demo mode. Upgrade to manage live partner records.
-      </p>
+        {/* Box 2: AI Partner Summary */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Partner Summary</p>
+          </div>
+          <div className="space-y-3 text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+            <p><strong style={{ color: '#F9FAFB' }}>{p.name}</strong> is a {p.status.toLowerCase()} {p.type.toLowerCase()} partner with {p.deals > 0 ? `${p.deals} active deals worth ${p.revenue} in the current pipeline` : 'no active deals yet — recently onboarded'}.</p>
+            {p.deals > 0 && <p>The partnership shows strong engagement from {p.contact}, who has been responsive and proactive in identifying opportunities. Win rate of {p.winRate} is {parseInt(p.winRate) >= 60 ? 'above' : 'below'} the portfolio average of 54%.</p>}
+            {p.deals > 0 && <p>Commission is set at {p.commission} with the next quarterly business review scheduled for {p.nextReview}. Recommend reviewing deal pipeline before QBR to identify co-sell opportunities.</p>}
+            {p.deals === 0 && <p>Partnership agreement is pending. Recommended next steps: schedule introductory call with {p.contact} to align on go-to-market strategy and define initial target accounts.</p>}
+          </div>
+        </div>
+        {/* Box 3: AI Key Highlights */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</p>
+          </div>
+          <div className="space-y-3">
+            {(p.deals > 0 ? [
+              { icon: '📈', text: `Win rate ${p.winRate} — ${parseInt(p.winRate) >= 60 ? 'highest of any partner this quarter' : 'below portfolio average — needs attention'}` },
+              { icon: '💰', text: `${p.deals} active deals totalling ${p.revenue} in pipeline` },
+              { icon: '📋', text: `Commission rate ${p.commission} — review at ${p.nextReview} QBR` },
+              { icon: '🤝', text: `Engagement level ${p.engagement} — ${p.contact} responsive` },
+              { icon: '📊', text: `Average deal size £${p.deals > 0 ? Math.round(parseInt(p.revenue.replace(/[£,]/g, '')) / p.deals).toLocaleString() : '—'} — ${parseInt(p.revenue.replace(/[£,]/g, '')) / p.deals > 15000 ? 'above' : 'near'} portfolio average` },
+            ] : [
+              { icon: '🆕', text: 'New partner — onboarding in progress' },
+              { icon: '📞', text: `Introductory call with ${p.contact} recommended` },
+              { icon: '🎯', text: 'Define target accounts and ICP alignment' },
+              { icon: '📋', text: 'Partnership agreement awaiting signature' },
+              { icon: '📅', text: 'Schedule QBR date once agreement is signed' },
+            ]).map((h, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="text-sm mt-0.5 shrink-0">{h.icon}</span>
+                <p className="text-sm" style={{ color: '#D1D5DB' }}>{h.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
