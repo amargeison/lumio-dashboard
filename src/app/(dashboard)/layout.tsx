@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {/* Demo banner — first element, zero gap */}
         {demoActive && !demoDismissed && (
-          <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 120px 0 16px', gap: 8 }}>
+          <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 140px 0 16px', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, fontSize: 13, color: 'white' }}>
               <span style={{ fontWeight: 600 }}>Demo workspace — exploring with sample data</span>
               <span style={{ opacity: 0.8 }}>· Connect your real tools to see live insights</span>
