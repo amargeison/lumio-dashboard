@@ -15,6 +15,8 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
 import { useSchoolRole } from '@/lib/SchoolRoleContext'
 import { SCHOOL_ROLES } from '@/lib/schoolRoles'
+import { useSchoolRole } from '@/lib/SchoolRoleContext'
+import { SCHOOL_ROLES } from '@/lib/schoolRoles'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1109,6 +1111,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const { schoolSlug: _slug } = use(params)
   const activeRole = useSchoolRole()
   const rolePerms = SCHOOL_ROLES[activeRole]?.permissions
+  const activeRole = useSchoolRole()
+  const rolePerms = SCHOOL_ROLES[activeRole]?.permissions
   const attendanceAvg = Math.round(ATTENDANCE_BY_YEAR.reduce((s, y) => s + y.pct, 0) / ATTENDANCE_BY_YEAR.length * 10) / 10
   const staffIn = STAFF_TODAY.filter(s => s.status === 'in').length
 
@@ -1243,7 +1247,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* 3. Quick actions — filtered by role */}
       <div className="px-4 py-3" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
-        {(() => { const ALL_QA = [
+        {[
+          [
             { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
             { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
             { label: 'New Concern', icon: '\u26A0\uFE0F' },
