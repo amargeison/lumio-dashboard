@@ -3035,17 +3035,53 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           </div>
           <div className="px-5 py-4">
             <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE TEAM MEMBER</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} onKeyDown={e => e.key === 'Enter' && handleInvite()} />
-              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="staff">Staff</option>
-              </select>
-              <button onClick={handleInvite} disabled={inviteSending || !inviteEmail} className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: inviteSent ? '#22C55E' : '#0D9488', color: '#fff', opacity: !inviteEmail ? 0.5 : 1 }}>
-                {inviteSending ? 'Sending...' : inviteSent ? 'Sent!' : 'Send Invite'}
-              </button>
+            <div className="mb-3">
+              <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} onKeyDown={e => e.key === 'Enter' && handleInvite()} />
             </div>
+            <div className="space-y-2 mb-4">
+              {[
+                { value: 'director', label: 'Director / SLT', description: 'All departments including Finance, HR sensitive data, Directors Suite', color: '#8B5CF6' },
+                { value: 'admin', label: 'Admin', description: 'Full access including user management and all financial data', color: '#EF4444' },
+                { value: 'manager', label: 'Manager', description: 'All departments except Finance figures and Directors Suite', color: '#3B82F6' },
+                { value: 'staff', label: 'Standard User', description: 'Assigned department only, no sensitive financial or HR data', color: '#10B981' },
+              ].map(role => (
+                <div key={role.value}
+                  onClick={() => setInviteRole(role.value)}
+                  className="cursor-pointer transition-all"
+                  style={{ padding: '10px 12px', borderRadius: 12, border: inviteRole === role.value ? '1px solid #7C3AED' : '1px solid #1F2937', backgroundColor: inviteRole === role.value ? 'rgba(124,58,237,0.1)' : 'transparent' }}>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: role.color }} />
+                    <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{role.label}</span>
+                    {inviteRole === role.value && <span className="text-[10px] ml-auto" style={{ color: '#A78BFA' }}>Selected ✓</span>}
+                  </div>
+                  <p className="text-xs ml-4" style={{ color: '#6B7280' }}>{role.description}</p>
+                </div>
+              ))}
+            </div>
+            {/* Permission matrix summary */}
+            <div className="mb-4" style={{ backgroundColor: '#07080F', borderRadius: 12, padding: 12 }}>
+              <div className="text-xs mb-2 font-medium" style={{ color: '#6B7280' }}>What this role can see:</div>
+              <div className="space-y-1">
+                {[
+                  { label: 'All standard departments', roles: ['director','admin','manager','staff'] },
+                  { label: 'Sales & CRM pipeline data', roles: ['director','admin','manager'] },
+                  { label: 'Financial figures (Accounts)', roles: ['director','admin'] },
+                  { label: 'HR sensitive data (salary, disciplinary)', roles: ['director','admin'] },
+                  { label: 'Directors Suite', roles: ['director'] },
+                  { label: 'User management (Settings)', roles: ['director','admin'] },
+                ].map(perm => (
+                  <div key={perm.label} className="flex items-center justify-between text-xs">
+                    <span style={{ color: '#9CA3AF' }}>{perm.label}</span>
+                    <span style={{ color: perm.roles.includes(inviteRole) ? '#0D9488' : '#374151' }}>
+                      {perm.roles.includes(inviteRole) ? '✅' : '🔒'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={handleInvite} disabled={inviteSending || !inviteEmail} className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: inviteSent ? '#22C55E' : '#0D9488', color: '#fff', opacity: !inviteEmail ? 0.5 : 1 }}>
+              {inviteSending ? 'Sending...' : inviteSent ? 'Sent!' : 'Send Invite'}
+            </button>
           </div>
         </div>
       </div>
@@ -4010,7 +4046,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showRoleTooltip, setShowRoleTooltip] = useState(false)
   const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
   const DEMO_ROLES = [{ id: 'admin', label: 'Admin', color: '#EF4444', desc: 'Full access' }, { id: 'director', label: 'Director', color: '#8B5CF6', desc: 'Finance + Directors Suite' }, { id: 'manager', label: 'Manager', color: '#3B82F6', desc: 'No finance figures' }, { id: 'standard', label: 'Standard', color: '#6B7280', desc: 'Own dept only' }]
-  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role) } catch {}; window.location.reload() }
+  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role); const levelMap: Record<string, string> = { admin: '2', director: '1', manager: '3', standard: '4', user: '4' }; localStorage.setItem('lumio_user_role_level', levelMap[role] || '4') } catch {}; window.location.reload() }
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
     try {
       if (typeof window === 'undefined') return new Set()

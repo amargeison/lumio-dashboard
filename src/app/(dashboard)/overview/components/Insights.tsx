@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { DEMO_STATS } from '@/lib/demoStats'
 
 interface Insight {
   id: string
@@ -38,7 +39,7 @@ const INSIGHTS_AI: Record<string, { summary: string[]; highlights: Array<{n: num
     ]
   },
   people: {
-    summary: ['187 employees — +3 vs last month', '8 active onboardings in progress', '3 probation reviews overdue — action required today', '14 leave requests pending approval'],
+    summary: [`${DEMO_STATS.totalEmployees} employees — +3 vs last month`, `${DEMO_STATS.activeOnboardings} active onboardings in progress`, `${DEMO_STATS.overdueReviews} probation reviews overdue — action required today`, `${DEMO_STATS.leaveRequestsPending} leave requests pending approval`],
     highlights: [
       { n: 1, text: '3 performance reviews overdue — legal compliance risk', color: 'text-red-400' },
       { n: 2, text: 'Staff wellbeing score 7.4/10 — highest this quarter', color: 'text-teal-400' },
@@ -48,7 +49,7 @@ const INSIGHTS_AI: Record<string, { summary: string[]; highlights: Array<{n: num
     ]
   },
   customers: {
-    summary: ['173 total customers — 132 healthy, 29 at risk, 10 critical', 'NPS score 67 — up from 63 last quarter', 'Average onboarding time 14 days — down from 21', 'Support ticket SLA met 91% of the time this month'],
+    summary: [`${DEMO_STATS.totalCustomers} total customers — ${DEMO_STATS.healthyCustomers} healthy, ${DEMO_STATS.atRiskCustomers} at risk, ${DEMO_STATS.criticalCustomers} critical`, `NPS score ${DEMO_STATS.npsScore} — up from 63 last quarter`, `Average onboarding time ${DEMO_STATS.avgOnboardingDays} days — down from 21`, `Support ticket SLA met ${DEMO_STATS.slaCompliance}% of the time this month`],
     highlights: [
       { n: 1, text: '10 critical accounts — CS team must contact all this week', color: 'text-red-400' },
       { n: 2, text: 'Bramble Hill at risk — no login in 18 days, renewal in 30', color: 'text-amber-400' },
@@ -58,7 +59,7 @@ const INSIGHTS_AI: Record<string, { summary: string[]; highlights: Array<{n: num
     ]
   },
   operations: {
-    summary: ['44 active workflows running — 3 flagged for attention', '1,844 workflow runs in last 30 days — up 12%', 'System uptime 99.8% — all integrations healthy', 'Automation saved estimated 47 hours this month'],
+    summary: [`${DEMO_STATS.activeWorkflows} active workflows running — 3 flagged for attention`, `${DEMO_STATS.workflowRuns30d.toLocaleString()} workflow runs in last 30 days — up 12%`, `System uptime ${DEMO_STATS.systemUptime}% — all integrations healthy`, `Automation saved estimated ${DEMO_STATS.automationHoursSaved} hours this month`],
     highlights: [
       { n: 1, text: '3 workflows failing intermittently — investigate before scale', color: 'text-red-400' },
       { n: 2, text: 'Invoice chase workflow saved £12k in recovered revenue', color: 'text-teal-400' },

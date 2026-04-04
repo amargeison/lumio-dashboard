@@ -1,5 +1,6 @@
 'use client'
 
+import { DEMO_STATS } from '@/lib/demoStats'
 import { useState } from 'react'
 import { Server, Clock, Monitor, Key, Plus, UserPlus, Package, RefreshCw, FileText, Shield, AlertTriangle, Sparkles, Building2, ShieldAlert, KeyRound, Laptop, Network, AppWindow, HardDrive, UserMinus, Lock, Fish, ClipboardCheck, LifeBuoy, Cloud, Code, Bug, Loader2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'

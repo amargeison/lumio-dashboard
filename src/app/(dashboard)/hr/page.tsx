@@ -22,11 +22,12 @@ import { HRStaffList, HRChecklist } from '@/components/dashboard/LiveStaffPanels
 import { useWorkspace } from '@/hooks/useWorkspace'
 import SendContractModal from '@/components/modals/SendContractModal'
 import BookContractorModal from '@/components/modals/BookContractorModal'
+import { DEMO_STATS } from '@/lib/demoStats'
 
 // ─── Default static data (fallback) ──────────────────────────────────────────
 
 const DEFAULT_STATS = [
-  { label: 'Total Employees',    value: '187', trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
+  { label: 'Total Employees',    value: String(DEMO_STATS.totalEmployees), trend: '+3',  trendDir: 'up' as const, trendGood: true,  icon: Users,       sub: 'vs last month' },
   { label: 'Active Onboardings', value: '8',   trend: '+2',  trendDir: 'up' as const, trendGood: true,  icon: UserPlus,    sub: 'this month'    },
   { label: 'Leave Requests',     value: '14',  trend: '+4',  trendDir: 'up' as const, trendGood: false, icon: FileText,    sub: 'pending'       },
   { label: 'Overdue Reviews',    value: '3',   trend: '+1',  trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'vs last week'  },
@@ -402,7 +403,13 @@ export default function HRPage() {
     { label: 'Dept Info',          icon: Building2,      onClick: () => setShowDeptInfo(true) },
   ]
 
-  const hrHighlights = ['8 active onboardings in progress — all on track', '14 leave requests pending approval — 3 flagged as urgent', '3 probation reviews overdue — HR action required', 'Headcount at 187 — 2 open roles in recruitment pipeline', 'Staff wellbeing score: 7.4/10 — highest this quarter']
+  const hrHighlights = [
+    `${DEMO_STATS.activeOnboardings} active onboardings in progress — all on track`,
+    `${DEMO_STATS.leaveRequestsPending} leave requests pending approval — 3 flagged as urgent`,
+    `${DEMO_STATS.overdueReviews} probation reviews overdue — HR action required`,
+    `Headcount at ${DEMO_STATS.totalEmployees} — ${DEMO_STATS.openRoles} open roles in recruitment pipeline`,
+    `Staff wellbeing score: ${DEMO_STATS.staffWellbeingScore}/10 — highest this quarter`,
+  ]
 
   return (
     <PageShell title="HR & People" subtitle="People management, hiring, onboarding and team workflows">

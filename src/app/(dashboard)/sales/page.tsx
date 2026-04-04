@@ -1,5 +1,6 @@
 'use client'
 
+import { DEMO_STATS } from '@/lib/demoStats'
 import { useState, useEffect } from 'react'
 import { TrendingUp, UserPlus, FlaskConical, FileText, Phone, Send, Calendar, Sparkles, Building2, Bell, Zap, BarChart2, PoundSterling, FileCheck, GitPullRequest, Calculator, Eye, Network, Search, Shield, ClipboardCheck, Map, FileSearch, Loader2 } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
@@ -21,10 +22,10 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const DEFAULT_STATS = [
-  { label: 'Open Deals',       value: '34',    trend: '+8%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
-  { label: 'Pipeline Value',   value: '£2.4M', trend: '+12%', trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
-  { label: 'Win Rate (30d)',   value: '23%',   trend: '+3%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'deals closed won' },
-  { label: 'Hot Leads',        value: '4',     trend: '+1',   trendDir: 'up' as const, trendGood: true,  icon: UserPlus,   sub: 'score ≥ 70/100'  },
+  { label: 'Open Deals',       value: String(DEMO_STATS.openDeals),      trend: '+8%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
+  { label: 'Pipeline Value',   value: DEMO_STATS.pipelineFormatted,      trend: '+12%', trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'vs last month'   },
+  { label: 'Win Rate (30d)',   value: DEMO_STATS.winRate + '%',          trend: '+3%',  trendDir: 'up' as const, trendGood: true,  icon: TrendingUp, sub: 'deals closed won' },
+  { label: 'Hot Leads',        value: '4',                               trend: '+1',   trendDir: 'up' as const, trendGood: true,  icon: UserPlus,   sub: 'score ≥ 70/100'  },
 ]
 
 const DEFAULT_DEALS = [
@@ -58,8 +59,8 @@ const DEFAULT_HIGHLIGHTS = [
   '3 trials expiring this week — £8,400 combined value at risk of not converting',
   'Pipeline velocity up 18% — deals now closing in an average of 11 days',
   'Oakridge Schools demo today at 11am — prep briefing and deck ready to review',
-  '12 open deals totalling £68,400 currently active in pipeline',
-  'Top performing source this month: referrals at 40% conversion rate',
+  `${DEMO_STATS.openDeals} open deals totalling ${DEMO_STATS.pipelineFormatted} currently active in pipeline`,
+  `Win rate this month at ${DEMO_STATS.winRate}% — top performing source: referrals at 40% conversion rate`,
 ]
 
 function timeAgo(date: string | null): string {
