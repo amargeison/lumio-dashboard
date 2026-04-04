@@ -1288,7 +1288,7 @@ const ROUNDUP_ITEMS = [
     messages: [
       { id: 'e1', from: 'Tom Wright', avatar: 'TW', subject: 'Invoice overdue — INV-2026-041', preview: 'Hi, just chasing the invoice from last month — can you confirm when this will be settled?', time: '8:14am', urgent: true, read: false },
       { id: 'e2', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal discussion — contract ends Apr 30', preview: 'We\u2019d like to discuss the terms for our renewal. Can we schedule a call this week?', time: '7:52am', urgent: true, read: false },
-      { id: 'e3', from: 'Stripe', avatar: 'ST', subject: 'Payment confirmed — \u00A34,800 from Oakridge', preview: 'Your payment of \u00A34,800.00 from Oakridge Schools Ltd has been processed successfully.', time: '7:31am', urgent: false, read: false },
+      { id: 'e3', from: 'Payments', avatar: 'PA', subject: 'Payment confirmed — \u00A34,800 from Oakridge', preview: 'Your payment of \u00A34,800.00 from Oakridge Schools Ltd has been processed successfully.', time: '7:31am', urgent: false, read: false },
       { id: 'e4', from: 'Helen Park', avatar: 'HP', subject: 'Re: Lumio Pro demo — follow-up questions', preview: 'Thanks for the demo yesterday. We have a few questions about the safeguarding module...', time: 'Yesterday', urgent: false, read: true },
       { id: 'e5', from: 'Dan Marsh', avatar: 'DM', subject: 'Q2 board pack — action needed', preview: 'Please review the attached slides before Friday\u2019s board meeting and send your comments.', time: 'Yesterday', urgent: false, read: true },
     ]
