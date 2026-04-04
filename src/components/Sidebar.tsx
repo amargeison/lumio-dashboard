@@ -171,7 +171,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     // Listen for same-tab logo updates (e.g. from Settings page upload or remove)
     function onLogoUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
+      const d = (e as CustomEvent).detail
+      const url = typeof d === 'object' && d !== null ? d.logo : d
       setCompanyLogo(url || null)
       setCompanyLogoKey(Date.now())
     }

@@ -176,7 +176,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     }
     // Listen for same-tab logo updates (e.g. from Settings page upload or remove)
     function onLogoUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
+      const d = (e as CustomEvent).detail
+      const url = typeof d === 'object' && d !== null ? d.logo : d
       setLogoUrl(url || null)
       setLogoKey(Date.now())
     }
@@ -213,10 +214,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
       const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
       const data = await res.json()
       if (data.logo_url) {
-        setLogoUrl(data.logo_url)
-        localStorage.setItem('lumio_company_logo', data.logo_url)
-        localStorage.setItem('workspace_company_logo', data.logo_url)
-        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+        const cacheBustedUrl = `${data.logo_url}?t=${Date.now()}`
+        setLogoUrl(cacheBustedUrl)
+        setLogoKey(Date.now())
+        localStorage.setItem('lumio_company_logo', cacheBustedUrl)
+        localStorage.setItem('workspace_company_logo', cacheBustedUrl)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: cacheBustedUrl } }))
       }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
@@ -2813,7 +2816,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     setLogoUrl(blobUrl)
     setLogoKey(Date.now())
     // Sync sidebar + parent immediately via event
-    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: blobUrl }))
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: blobUrl } }))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     const fd = new FormData()
@@ -2822,10 +2825,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
       const data = await res.json()
       if (data.logo_url) {
-        setLogoUrl(data.logo_url)
-        localStorage.setItem('workspace_company_logo', data.logo_url)
-        localStorage.setItem('lumio_company_logo', data.logo_url)
-        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+        const cacheBustedUrl = `${data.logo_url}?t=${Date.now()}`
+        setLogoUrl(cacheBustedUrl)
+        setLogoKey(Date.now())
+        localStorage.setItem('workspace_company_logo', cacheBustedUrl)
+        localStorage.setItem('lumio_company_logo', cacheBustedUrl)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: cacheBustedUrl } }))
       }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
@@ -2837,7 +2842,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('workspace_company_logo')
     localStorage.removeItem('lumio_company_logo')
     // Sync sidebar + parent immediately
-    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: '' }))
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: '' } }))
     window.dispatchEvent(new CustomEvent('lumio-logo-cleared'))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
@@ -4164,8 +4169,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       localStorage.removeItem('workspace_company_logo')
       localStorage.removeItem('lumio_company_logo')
     }
+    const logoHandler = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      const url = typeof d === 'object' && d !== null ? d.logo : d
+      setCompanyLogo(url || '')
+    }
     window.addEventListener('lumio-logo-cleared', handler)
-    return () => window.removeEventListener('lumio-logo-cleared', handler)
+    window.addEventListener('lumio-logo-updated', logoHandler)
+    return () => { window.removeEventListener('lumio-logo-cleared', handler); window.removeEventListener('lumio-logo-updated', logoHandler) }
   }, [])
 
   useEffect(() => {
