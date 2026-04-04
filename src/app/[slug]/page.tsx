@@ -224,12 +224,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             onClick={() => fileRef.current?.click()}
             onMouseEnter={() => setIconHover(true)}
             onMouseLeave={() => setIconHover(false)}
-            className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
-            style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}
+            className="relative flex items-center justify-center shrink-0 overflow-hidden"
+            style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
             title="Upload company logo"
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-contain" onError={() => setLogoUrl(null)} />
+              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
@@ -1659,20 +1659,6 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
               {/* Messages */}
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
-                  {demoDataActive && item.id === 'whatsapp' && (
-                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}>
-                      <span className="text-xs" style={{ color: '#25D366' }}>💬 Showing demo data — connect WhatsApp Business to see real messages</span>
-                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)' }}
-                        onClick={() => window.location.href = '/settings'}>Connect →</button>
-                    </div>
-                  )}
-                  {demoDataActive && item.id === 'sms' && (
-                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                      <span className="text-xs" style={{ color: '#3B82F6' }}>📱 Showing demo data — connect Twilio SMS to see real messages</span>
-                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
-                        onClick={() => window.location.href = '/settings'}>Connect →</button>
-                    </div>
-                  )}
                   {item.messages.map(msg => (
                     <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
                       {/* Message header */}
