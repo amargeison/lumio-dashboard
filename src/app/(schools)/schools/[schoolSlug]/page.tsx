@@ -549,6 +549,12 @@ function SchoolMeetingsToday() {
           <div key={m.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ opacity: m.status === 'done' ? 0.4 : 1 }}>
             <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
             <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs" style={{ color: '#6B7280' }}>{m.type}</p></div>
+            {m.status !== 'done' && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>Forward</button>
+                <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>Decline</button>
+              </div>
+            )}
             {m.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
           </div>
         ))}
@@ -727,6 +733,27 @@ function SchoolMorningRoundup() {
             </div>
           )
         })}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+        {[
+          { icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts' },
+          { icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent' },
+          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action' },
+          { icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts' },
+          { icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS' },
+          { icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence' },
+          { icon: '💬', label: 'Teams/Slack', count: 5, sub: 'unread staff messages' },
+          { icon: '📟', label: 'Announcements', count: 0, sub: 'no new broadcasts' },
+        ].map(ch => (
+          <div key={ch.label} className="rounded-lg p-2.5 cursor-pointer hover:opacity-80 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{ch.icon}</span>
+              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{ch.label}</span>
+              {ch.count > 0 && <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>{ch.count}</span>}
+            </div>
+            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{ch.count > 0 ? `${ch.count} ${ch.sub}` : ch.sub}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -1096,6 +1123,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [demoDataActive, setDemoDataActive] = useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('lumio_schools_demo_loaded') === 'true'
   )
+  const [showLockdown, setShowLockdown] = useState(false)
+  const [lockdownStep, setLockdownStep] = useState(0)
+  const [lockdownType, setLockdownType] = useState<'emergency' | 'drill' | ''>('')
+  const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
+  const [lockdownDesc, setLockdownDesc] = useState('')
+  const [lockdownLocation, setLockdownLocation] = useState('Unknown')
+  const [lockdownBanner, setLockdownBanner] = useState(false)
 
   useEffect(() => {
     fetch(`/api/schools/${_slug}`)
@@ -1200,7 +1234,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions</span>
         {[
           [
-            { label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: true },
+            { label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
+            { label: 'School Lockdown', icon: '\u{1F534}', pulse: true, red: true },
             { label: 'New Concern', icon: '\u26A0\uFE0F' },
             { label: 'Mark Register', icon: '\u2705' },
             { label: 'Behaviour Incident', icon: '\u{1F4CB}' },
@@ -1209,7 +1244,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             { label: 'Book Cover', icon: '\u{1F4D6}' },
             { label: 'New Admission', icon: '\u2795' },
             { label: 'Refer to SENCO', icon: '\u{1F9E0}' },
-            { label: 'Run Report', icon: '\u{1F4CA}' },
           ],
           [
             { label: 'Create Lesson Plan', icon: '\u2728' },
@@ -1226,7 +1260,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         ].map((row, ri) => (
           <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri === 0 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
             {row.map((a: any) => (
-              <button key={a.label} onClick={() => {}} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
+              <button key={a.label} onClick={() => { if (a.label === 'School Lockdown') { setShowLockdown(true); setLockdownStep(0); setLockdownType('') } }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
                 <span>{a.icon}</span>{a.label}
               </button>
             ))}
@@ -1256,6 +1290,27 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
             <div className="lg:col-span-1 flex flex-col gap-4">
               <PhotoFrame />
               <SchoolAIPanel />
+              <div className="rounded-xl p-4 mt-3" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span>{'\u{1F916}'}</span>
+                  <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+                  <span className="ml-auto text-xs" style={{ color: '#64748b' }}>Updated just now</span>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { n: 1, text: 'Attendance today is 96.2% — Year 6 at 91.8%, below 94% target', color: '#F59E0B' },
+                    { n: 2, text: '1 open safeguarding concern requires DSL review before 3pm', color: '#EF4444' },
+                    { n: 3, text: '3 cover lessons needed this afternoon — 2 unassigned', color: '#F59E0B' },
+                    { n: 4, text: 'SENCO review meeting at 11:30 — 4 pupils on agenda', color: '#3B82F6' },
+                    { n: 5, text: 'Year 11 mock results due for upload by end of day', color: '#3B82F6' },
+                  ].map((h, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-xs font-bold w-4 flex-shrink-0 mt-0.5" style={{ color: h.color }}>{h.n}</span>
+                      <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
               {/* Staff Today */}
               <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>👥 Staff Today</h3>
@@ -1302,11 +1357,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           {true ? (
             <div className="space-y-3">
               {([
-                { id: 'qw1', title: 'Sign off open DSL concern', description: 'Logged 2 days ago, requires DSL review before end of day.', impact: 'high' as const, effort: '2min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
-                { id: 'qw2', title: 'Chase 4 pupils below 85% attendance', description: 'Persistent absence threshold reached. Trigger parent contact.', impact: 'high' as const, effort: '2min', category: 'Attendance', action: 'Send letters', source: 'MIS' },
-                { id: 'qw3', title: 'Approve 3 pending expense claims', description: 'Staff claims submitted this week awaiting sign-off.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Review claims', source: 'Finance' },
-                { id: 'qw4', title: "Complete EHCP draft for tomorrow's review", description: 'Annual review meeting at 9am, draft must be submitted today.', impact: 'medium' as const, effort: '5min', category: 'SEND', action: 'Open EHCP', source: 'SEND Register' },
-                { id: 'qw5', title: 'Chase 3 outstanding trip permission slips', description: "Year 5 trip is Friday. 3 families haven't responded.", impact: 'medium' as const, effort: '10min', category: 'Curriculum', action: 'Send reminders', source: 'Trips' },
+                { id: 'qw1', title: 'Mark your morning register', description: 'Quick admin task to start the day.', impact: 'high' as const, effort: '2min', category: 'Admin', action: 'Mark now', source: 'MIS' },
+                { id: 'qw2', title: 'Reply to 3 parent emails flagged for action', description: 'Flagged emails awaiting your response.', impact: 'high' as const, effort: '4min', category: 'Comms', action: 'Open inbox', source: 'Email' },
+                { id: 'qw3', title: 'Log yesterday\'s behaviour incident', description: 'Incident not yet recorded in the system.', impact: 'medium' as const, effort: '2min', category: 'Pastoral', action: 'Log now', source: 'Behaviour Log' },
+                { id: 'qw4', title: 'Complete SENCO referral form for Year 7 pupil', description: 'Referral form partially completed — needs finishing.', impact: 'medium' as const, effort: '3min', category: 'SEND', action: 'Complete form', source: 'SEND Register' },
+                { id: 'qw5', title: 'Upload Year 11 mock results to MIS', description: 'Results due for upload by end of day.', impact: 'medium' as const, effort: '4min', category: 'Data', action: 'Upload now', source: 'MIS' },
+                { id: 'qw6', title: 'Submit outstanding expense claim (£42.50)', description: 'Claim submitted but awaiting your sign-off.', impact: 'medium' as const, effort: '2min', category: 'Finance', action: 'Submit claim', source: 'Finance' },
               ]).map(win => {
                 const impactColors = win.impact === 'high'
                   ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
@@ -1362,11 +1418,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           {true ? (
             <div className="space-y-3">
               {([
-                { id: 'dt1', title: 'Submit daily attendance return to DfE', description: 'Must be submitted by 12pm. 94% recorded so far.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Submit now', source: 'MIS' },
-                { id: 'dt2', title: 'Review and respond to parent concern logged yesterday', description: 'Mrs. Clarke raised a concern via Parent Portal at 4:32pm.', impact: 'high' as const, effort: '10min', category: 'Safeguarding', action: 'Open concern', source: 'Parent Portal' },
-                { id: 'dt3', title: 'Approve cover arrangement for Period 3', description: 'Mr. Davies absence — cover not yet confirmed.', impact: 'medium' as const, effort: '5min', category: 'HR', action: 'Assign cover', source: 'Cover Manager' },
-                { id: 'dt4', title: 'Prepare agenda for Thursday SLT meeting', description: 'Meeting in 2 days. No agenda submitted yet.', impact: 'medium' as const, effort: '15min', category: 'SLT', action: 'Create agenda', source: 'Calendar' },
-                { id: 'dt5', title: 'Respond to 2 new admissions enquiries', description: 'Both received yesterday via website form.', impact: 'medium' as const, effort: '5min', category: 'Admissions', action: 'View enquiries', source: 'Admissions' },
+                { id: 'dt1', title: 'Review open safeguarding concern with DSL', description: 'Year 9 pupil — DSL review required before 3pm today.', impact: 'high' as const, effort: '10min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
+                { id: 'dt2', title: 'Check cover arrangements for all periods', description: '3 cover lessons needed — 2 currently unassigned.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Assign cover', source: 'Cover Manager' },
+                { id: 'dt3', title: 'Confirm attendance for all classes by 9:30am', description: 'Year 6 at 91.8% — below 94% target.', impact: 'high' as const, effort: '5min', category: 'Attendance', action: 'View registers', source: 'MIS' },
+                { id: 'dt4', title: 'Return 2 parent phone calls logged yesterday', description: 'Mrs Ahmed re: collection, Mr Singh re: absence.', impact: 'medium' as const, effort: '10min', category: 'Comms', action: 'View messages', source: 'Phone Log' },
+                { id: 'dt5', title: 'Confirm SENCO meeting agenda for 11:30', description: '4 pupils on agenda — EHCP updates needed.', impact: 'medium' as const, effort: '5min', category: 'SEND', action: 'View agenda', source: 'Calendar' },
+                { id: 'dt6', title: 'Complete lesson plan for Monday (due Friday)', description: 'Year 10 English — Romeo and Juliet Act 3.', impact: 'medium' as const, effort: '15min', category: 'Teaching', action: 'Open planner', source: 'Curriculum' },
               ]).map(task => {
                 const impactColors = task.impact === 'high'
                   ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
@@ -1473,10 +1530,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           {true ? (
             <div className="space-y-3">
               {([
-                { id: 'dm1', title: 'Ofsted data return due in 3 days', description: 'Annual census data must be submitted to Ofsted portal by Friday.', effort: '1min', category: 'Compliance', action: 'Submit now', source: 'DfE' },
-                { id: 'dm2', title: 'SCR check outstanding for 1 new staff member', description: 'Started 2 weeks ago. Single Central Record incomplete.', effort: '2min', category: 'Safeguarding', action: 'Complete SCR', source: 'SCR' },
-                { id: 'dm3', title: 'Grant claim deadline: Tomorrow 5pm', description: 'PE & Sport Premium claim worth £18,500 must be submitted.', effort: '5min', category: 'Finance', action: 'Open claim', source: 'Finance' },
-                { id: 'dm4', title: '3 staff DBS renewals overdue', description: 'All 3 exceeded 3-year renewal window. Action required immediately.', effort: '2min', category: 'HR', action: 'Review now', source: 'HR' },
+                { id: 'dm1', title: 'DSL review — safeguarding concern', description: 'Year 9 pupil — must be reviewed before 3pm today.', effort: '10min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
+                { id: 'dm2', title: 'Year 11 mock results upload — due 4pm', description: 'Data team need results uploaded to MIS by end of day.', effort: '5min', category: 'Data', action: 'Upload', source: 'MIS' },
+                { id: 'dm3', title: 'SENCO review meeting — 11:30am', description: '4 pupils on agenda including 2 EHCP reviews.', effort: '30min', category: 'SEND', action: 'View agenda', source: 'Calendar' },
+                { id: 'dm4', title: 'All-staff briefing — Friday 3:45pm', description: 'Dr Mitchell — whole school updates.', effort: '5min', category: 'SLT', action: 'Add to calendar', source: 'Calendar' },
+                { id: 'dm5', title: 'CPD booking deadline — Sunday', description: 'Trauma-informed teaching course, Leeds — last day to book.', effort: '2min', category: 'CPD', action: 'Book now', source: 'CPD Portal' },
+                { id: 'dm6', title: 'Ofsted readiness self-assessment — end of month', description: 'Currently at 87% — up 4% this week.', effort: '15min', category: 'Compliance', action: 'View assessment', source: 'Compliance' },
               ]).map(item => (
                 <div key={item.id} className="rounded-2xl p-5 transition-all"
                   style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1761,6 +1820,32 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />
       )}
 
+      {/* Lockdown drill banner */}
+      {lockdownBanner && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: '#DC2626', color: '#fff' }}>
+          <span className="text-sm font-bold animate-pulse">{'\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL' : ''} ACTIVE &mdash; Click Stand Down when complete</span>
+          <button onClick={() => setLockdownBanner(false)} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
+        </div>
+      )}
+
+      {/* Lockdown wizard */}
+      {showLockdown && (
+        <div className="fixed inset-0 bg-black/80 z-[9998] flex items-center justify-center p-4">
+          <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2"><span className="text-lg">{'\u{1F6A8}'}</span><span className="text-white font-bold">School Lockdown Protocol</span><span className="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Step {lockdownStep + 1}/5</span></div>
+              <button onClick={() => setShowLockdown(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+            </div>
+            <div className="px-6 py-5">
+              {lockdownStep === 0 && (<div className="space-y-4"><div className="rounded-xl p-5 text-center" style={{ backgroundColor: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.4)' }}><div className="text-4xl mb-3">{'\u26A0\uFE0F'}</div><h3 className="text-lg font-bold text-white mb-2">You are initiating a School Lockdown</h3><p className="text-sm text-gray-400">This will alert staff, parents, and emergency services. Only proceed if genuine emergency or authorised drill.</p></div><div className="grid grid-cols-2 gap-3"><button onClick={() => { setLockdownType('emergency'); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'\u{1F534}'} GENUINE EMERGENCY</button><button onClick={() => { setLockdownType('drill'); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'\u{1F7E1}'} DRILL / PRACTICE</button></div></div>)}
+              {lockdownStep === 1 && (<div className="space-y-4"><h3 className="text-white font-semibold">Incident Details</h3><div><label className="text-xs text-gray-400 mb-1 block">Incident type</label><select value={lockdownIncident} onChange={e => setLockdownIncident(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Intruder on site</option><option>Threat received</option><option>Nearby police incident</option><option>Suspicious person</option><option>Other</option></select></div><div><label className="text-xs text-gray-400 mb-1 block">Brief description</label><textarea value={lockdownDesc} onChange={e => setLockdownDesc(e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Location of threat</label><select value={lockdownLocation} onChange={e => setLockdownLocation(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Main entrance</option><option>School grounds</option><option>Nearby area</option><option>Unknown</option></select></div><div className="flex gap-3"><button onClick={() => setLockdownStep(0)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button></div></div>)}
+              {lockdownStep === 2 && (<div className="space-y-4"><h3 className="text-white font-semibold">Communications to trigger</h3><div className="space-y-2">{['Alert all staff via emergency broadcast','Send SMS to all parents/carers','Send email to all parents/carers','Post notice on school website','Notify local authority designated officer','Contact emergency services (999)','Lock all external doors','Activate PA system announcement'].map(item => <label key={item} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-900 text-sm text-gray-300 cursor-pointer"><input type="checkbox" defaultChecked className="rounded" />{item}</label>)}</div><div className="flex gap-3"><button onClick={() => setLockdownStep(1)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(3)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button></div></div>)}
+              {lockdownStep === 3 && (<div className="space-y-4"><h3 className="text-white font-semibold">Message Preview</h3><div><label className="text-xs text-gray-400 mb-1 block">SMS to parents</label><textarea rows={3} defaultValue={`URGENT: We have initiated a lockdown ${lockdownType === 'drill' ? 'drill ' : ''}procedure. Your child is safe. Do NOT come to school. We will update you shortly.`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Email subject</label><input defaultValue={`URGENT: School Lockdown ${lockdownType === 'drill' ? 'Drill ' : ''}Initiated`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div className="flex gap-3"><button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(4)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">{lockdownType === 'drill' ? 'Initiate Drill' : 'INITIATE LOCKDOWN'}</button></div></div>)}
+              {lockdownStep === 4 && (<div className="space-y-4 text-center"><div className="text-5xl mb-2">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'}</div><h3 className="text-lg font-bold text-white">Lockdown {lockdownType === 'drill' ? 'Drill' : 'Protocol'} Initiated {demoDataActive ? '(DEMO)' : ''}</h3>{demoDataActive ? (<div className="text-left space-y-2 bg-gray-900 rounded-xl p-4"><p className="text-xs text-gray-400 mb-2">In a live plan this would:</p>{['\u2705 Broadcast emergency alert to all 89 staff','\u2705 Send SMS to 1,147 parent contacts','\u2705 Send email to all registered parents','\u2705 Post lockdown notice on school website','\u2705 Log incident with timestamp for Ofsted/legal records','\u2705 Notify local authority','\u2705 Auto-generate incident report'].map((item, i) => <div key={i} className="text-xs text-gray-300">{item}</div>)}</div>) : (<div className="text-left bg-red-900/20 border border-red-700/30 rounded-xl p-4"><p className="text-xs text-red-400 font-bold">LOCKDOWN ACTIVE</p><p className="text-xs text-gray-400">{lockdownIncident} &middot; {lockdownLocation} &middot; Ref: LKD-{new Date().toISOString().slice(0,10).replace(/-/g,'')}-{Math.floor(Math.random()*900)+100}</p></div>)}<button onClick={() => { setShowLockdown(false); setLockdownBanner(true) }} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Close &mdash; Lockdown Active</button></div>)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
