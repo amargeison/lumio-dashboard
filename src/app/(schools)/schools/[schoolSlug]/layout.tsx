@@ -15,6 +15,7 @@ import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
 import { SCHOOL_ROLES, type SchoolRole } from '@/lib/schoolRoles'
+import { SchoolRoleContext } from '@/lib/SchoolRoleContext'
 
 const COLLAPSED_W = 72
 const EXPANDED_W = 200
@@ -344,7 +345,9 @@ export default function SchoolLayout({ children }: Props) {
           </div>
         )}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
+          <SchoolRoleContext.Provider value={activeRole}>
+            {children}
+          </SchoolRoleContext.Provider>
         </main>
       </div>
     </div>
