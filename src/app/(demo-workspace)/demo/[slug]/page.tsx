@@ -984,11 +984,11 @@ function DemoPersonalBanner({ company, companyLogo, firstName, dept = 'overview'
         {/* Left: logo + greeting + date */}
         <div className="flex items-center gap-3 min-w-0">
           {companyLogo ? (
-            <div className="shrink-0 ring-2 ring-white/20 overflow-hidden rounded-xl flex items-center justify-center" style={{ width: 64, height: 64, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-              <img src={companyLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <div className="shrink-0 ring-2 ring-white/20 overflow-hidden rounded-xl" style={{ width: 64, height: 64, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+              <img src={companyLogo} alt="" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="shrink-0 flex items-center justify-center font-bold ring-2 ring-white/20 rounded-xl" style={{ width: 64, height: 64, backgroundColor: 'rgba(108,63,197,0.3)', color: '#A78BFA', fontSize: 22, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+            <div className="shrink-0 flex items-center justify-center ring-2 ring-white/20 rounded-xl" style={{ width: 64, height: 64, backgroundColor: 'rgba(108,63,197,0.3)', color: '#A78BFA', fontSize: 26, fontWeight: 700, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
               {company?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'LC'}
             </div>
           )}
@@ -1788,7 +1788,13 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
     setCompletedTasks(prev => { const next = new Set(prev); next.add(taskId); return next })
   }
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
-    try { const saved = localStorage.getItem('demo_dismissed_wins'); return saved ? new Set(JSON.parse(saved)) : new Set() } catch { return new Set() }
+    try {
+      const today = new Date().toDateString()
+      const savedDate = localStorage.getItem('demo_wins_date')
+      if (savedDate !== today) { localStorage.removeItem('demo_dismissed_wins'); localStorage.setItem('demo_wins_date', today); return new Set() }
+      const saved = localStorage.getItem('demo_dismissed_wins')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
   })
   useEffect(() => { try { localStorage.setItem('demo_dismissed_wins', JSON.stringify([...dismissedWins])) } catch {} }, [dismissedWins])
   const dismissWin = (id: string) => { setDismissedWins(prev => { const next = new Set(prev); next.add(id); return next }) }
