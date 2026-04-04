@@ -1165,13 +1165,17 @@ function DemoMeetingsToday() {
             <p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{live.title}</p>
             <p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {live.duration}</p>
           </div>
-          {'link' in live && live.link && (
-            <a href={live.link}
-              className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-colors"
-              style={{ backgroundColor: '#16A34A' }}>
-              Join →
-            </a>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all">Forward</button>
+            <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all">Decline</button>
+            {'link' in live && live.link && (
+              <a href={live.link}
+                className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-colors"
+                style={{ backgroundColor: '#16A34A' }}>
+                Join →
+              </a>
+            )}
+          </div>
         </div>
       )}
 
@@ -1195,12 +1199,18 @@ function DemoMeetingsToday() {
                 {m.attendees.join(', ')} · {m.location}
               </p>
             </div>
-            {'link' in m && m.link && m.status !== 'done' && (
-              <a href={m.link}
-                className="px-2 py-1 text-xs rounded-lg flex-shrink-0"
-                style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>
-                Join
-              </a>
+            {m.status !== 'done' && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button className="px-2 py-1 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all">Forward</button>
+                <button className="px-2 py-1 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all">Decline</button>
+                {'link' in m && m.link && (
+                  <a href={m.link}
+                    className="px-2 py-1 text-xs rounded-lg"
+                    style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>
+                    Join
+                  </a>
+                )}
+              </div>
             )}
           </div>
         ))}
@@ -1831,6 +1841,27 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
             <div className="space-y-4">
               <DemoPhotoFrame />
               <DemoMorningAIPanel />
+              <div className="bg-[#0d0f1a] border border-purple-800/30 rounded-xl p-4 mt-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span>✨</span>
+                  <span className="text-sm font-semibold text-white">AI Key Highlights</span>
+                  <span className="text-xs text-gray-500 ml-auto">Saturday 4 Apr</span>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { n: 1, text: 'Pipeline up 12% — strongest quarter since Q4 last year', color: 'text-teal-400' },
+                    { n: 2, text: 'Greenfield Group proposal due today — highest value deal in pipeline', color: 'text-red-400' },
+                    { n: 3, text: '3 trials expiring this week — £8,400 combined value at risk', color: 'text-amber-400' },
+                    { n: 4, text: 'Win rate 23% — below industry average of 27%, needs attention', color: 'text-amber-400' },
+                    { n: 5, text: 'Apex Learning partnership performing above target — 68% win rate', color: 'text-teal-400' },
+                  ].map((h, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className={`text-xs font-bold w-4 flex-shrink-0 mt-0.5 ${h.color}`}>{h.n}</span>
+                      <span className="text-xs text-gray-300">{h.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -4091,9 +4122,6 @@ function DeptInsightsModal({ dept, onClose }: { dept: DeptId; onClose: () => voi
               <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{item.insight}</p>
             </div>
           ))}
-          <p className="text-xs text-center pt-2" style={{ color: '#4B5563' }}>
-            Demo data only — connect your real tools to see live insights.
-          </p>
         </div>
       </div>
     </div>
