@@ -1133,10 +1133,6 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
   const [siToast, setSiToast] = useState<string | null>(null)
   function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
-  const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
-  const [lockdownDesc, setLockdownDesc] = useState('')
-  const [lockdownLocation, setLockdownLocation] = useState('Unknown')
-  const [lockdownBanner, setLockdownBanner] = useState(false)
 
   useEffect(() => {
     fetch(`/api/schools/${_slug}`)
@@ -1733,6 +1729,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           {staffSubTab === 'school' && (
             <div className="space-y-6">
               <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>School Info</h2>
+              <div className="flex flex-wrap gap-2">{[{i:'🏆',l:'Outstanding'},{i:'👥',l:'1,147 pupils'},{i:'👨‍🏫',l:'89 staff'},{i:'📍',l:'London'},{i:'🔗',l:'Academy'},{i:'📅',l:'Est. 1962'}].map(s=><span key={s.l} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{backgroundColor:'#111318',border:'1px solid #1F2937',color:'#D1D5DB'}}>{s.i} {s.l}</span>)}</div>
 
               {/* School Documents */}
               <div>
@@ -1820,6 +1817,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                   ))}
                 </div>
               </div>
+              {schoolInfoDoc && <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor:'rgba(0,0,0,0.72)',backdropFilter:'blur(4px)'}} onClick={()=>setSchoolInfoDoc(null)}><div className="w-full max-w-sm rounded-2xl p-6 text-center" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}} onClick={e=>e.stopPropagation()}><p className="text-3xl mb-3">📄</p><p className="text-sm font-semibold mb-2" style={{color:'#F9FAFB'}}>{schoolInfoDoc}</p><p className="text-xs mb-4" style={{color:'#9CA3AF'}}>On a live plan this document would open with full content, download, and email options.</p><div className="flex gap-2"><button onClick={()=>fireSchoolToast('PDF would download')} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488',border:'1px solid rgba(13,148,136,0.3)'}}>📄 PDF</button><button onClick={()=>fireSchoolToast('Email would be sent')} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{backgroundColor:'rgba(124,58,237,0.1)',color:'#A78BFA',border:'1px solid rgba(124,58,237,0.3)'}}>📧 Email</button></div><button onClick={()=>setSchoolInfoDoc(null)} className="w-full mt-3 py-2 rounded-lg text-xs" style={{color:'#6B7280',border:'1px solid #1F2937'}}>Close</button></div></div>}
+              {schoolInfoLink && <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor:'rgba(0,0,0,0.72)',backdropFilter:'blur(4px)'}} onClick={()=>setSchoolInfoLink(null)}><div className="w-full max-w-sm rounded-2xl p-6 text-center" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}} onClick={e=>e.stopPropagation()}><p className="text-3xl mb-3">🔗</p><p className="text-sm font-semibold mb-2" style={{color:'#F9FAFB'}}>{schoolInfoLink}</p><p className="text-xs mb-4" style={{color:'#9CA3AF'}}>On a live plan this would connect to the external platform.</p><button onClick={()=>{setSchoolInfoLink(null);fireSchoolToast('Navigate to Settings to connect')}} className="w-full py-2.5 rounded-xl text-xs font-semibold" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488',border:'1px solid rgba(13,148,136,0.3)'}}>Connect in Settings →</button></div></div>}
+              {siToast&&<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] rounded-xl px-5 py-3 shadow-2xl max-w-lg" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}><p className="text-sm" style={{color:'#F9FAFB'}}>{siToast}</p></div>}
             </div>
           )}
         </div>
