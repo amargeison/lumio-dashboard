@@ -431,7 +431,7 @@ function PhotoFrame() {
     <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       {photos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #374151', height: 220 }} onClick={() => fileInputRef.current?.click()}>
-          <div className="text-3xl">{'\u{1F4F7}'}</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
+          <div className="text-3xl">{'📷'}</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
       <div className="relative" style={{ height: 220, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
@@ -458,7 +458,7 @@ function PhotoFrame() {
       )}
       <div className="flex items-center justify-between px-3 py-2 flex-shrink-0" style={{ borderTop: photos.length > 0 ? '1px solid #1F2937' : 'none' }}>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs">{'\u{1F5BC}\u{FE0F}'}</span>
+          <span className="text-xs">{'🖼️'}</span>
           {photos.length > 1 && <>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'transparent', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</>}
           {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'transparent', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '\u23F8' : '\u25B6'}</button>}
         </div>
@@ -1281,25 +1281,25 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
         {(() => {
           const allButtons = [
-            { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}' },
-            { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', red: true },
-            { id: 'new-concern', label: 'New Concern', icon: '\u26A0\uFE0F' },
-            { id: 'mark-register', label: 'Mark Register', icon: '\u2705' },
-            { id: 'behaviour-incident', label: 'Behaviour Incident', icon: '\u{1F4CB}' },
-            { id: 'log-absence', label: 'Log Absence', icon: '\u{1FAE5}' },
-            { id: 'parent-contact', label: 'Parent Contact', icon: '\u{1F4DE}' },
-            { id: 'book-cover', label: 'Book Cover', icon: '\u{1F4D6}' },
-            { id: 'new-admission', label: 'New Admission', icon: '\u2795' },
-            { id: 'refer-to-senco', label: 'Refer to SENCO', icon: '\u{1F9E0}' },
-            { id: 'create-lesson-plan', label: 'Create Lesson Plan', icon: '\u2728' },
-            { id: 'send-parent-email', label: 'Send Parent Email', icon: '\u{1F4E7}' },
-            { id: 'pupil-progress-note', label: 'Pupil Progress Note', icon: '\u{1F4C8}' },
-            { id: 'request-resources', label: 'Request Resources', icon: '\u{1F4E6}' },
-            { id: 'it-support', label: 'IT Support', icon: '\u{1F4BB}' },
-            { id: 'book-cpd', label: 'Book CPD / Training', icon: '\u{1F393}' },
-            { id: 'claim-expenses', label: 'Claim Expenses', icon: '\u{1F4B0}' },
-            { id: 'request-leave', label: 'Request Leave', icon: '\u{1F3D6}\uFE0F' },
-            { id: 'report-staff-absence', label: 'Report Staff Absence', icon: '\u{1F464}' },
+            { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '🚨' },
+            { id: 'school-lockdown', label: 'School Lockdown', icon: '🔴', red: true },
+            { id: 'new-concern', label: 'New Concern', icon: '⚠️' },
+            { id: 'mark-register', label: 'Mark Register', icon: '✅' },
+            { id: 'behaviour-incident', label: 'Behaviour Incident', icon: '📋' },
+            { id: 'log-absence', label: 'Log Absence', icon: '📝' },
+            { id: 'parent-contact', label: 'Parent Contact', icon: '📞' },
+            { id: 'book-cover', label: 'Book Cover', icon: '📖' },
+            { id: 'new-admission', label: 'New Admission', icon: '➕' },
+            { id: 'refer-to-senco', label: 'Refer to SENCO', icon: '🧠' },
+            { id: 'create-lesson-plan', label: 'Create Lesson Plan', icon: '✨' },
+            { id: 'send-parent-email', label: 'Send Parent Email', icon: '📧' },
+            { id: 'pupil-progress-note', label: 'Pupil Progress Note', icon: '📈' },
+            { id: 'request-resources', label: 'Request Resources', icon: '📦' },
+            { id: 'it-support', label: 'IT Support', icon: '💻' },
+            { id: 'book-cpd', label: 'Book CPD / Training', icon: '🎓' },
+            { id: 'claim-expenses', label: 'Claim Expenses', icon: '💰' },
+            { id: 'request-leave', label: 'Request Leave', icon: '🏖️' },
+            { id: 'report-staff-absence', label: 'Report Staff Absence', icon: '👤' },
             { id: 'submit-risk-assessment', label: 'Submit Risk Assessment', icon: '\u26A0\uFE0F' },
           ]
           const allowed = rolePerms?.quickActions || []
@@ -1366,7 +1366,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <SchoolAIPanel />
               <div className="rounded-xl p-4 mt-3" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span>{'\u{1F916}'}</span>
+                  <span>{'🤖'}</span>
                   <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
                   <span className="ml-auto text-xs" style={{ color: '#64748b' }}>Updated just now</span>
                 </div>
@@ -2020,8 +2020,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* Lockdown drill banner */}
       {lockdownBanner && (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626', color: '#fff' }}>
-          <span className="text-sm font-bold">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
-          <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
+          <span className="text-sm font-bold">{lockdownType === 'drill' ? '🟡' : '🔴'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
+          <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'🟢'} Stand Down</button>
         </div>
       )}
 
@@ -2061,7 +2061,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <div className="fixed inset-0 bg-black/80 z-[9998] flex items-center justify-center p-4">
           <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-              <div className="flex items-center gap-2"><span className="text-lg">{'\u{1F6A8}'}</span><span className="text-white font-bold">School Lockdown Protocol</span><span className="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Step {lockdownStep + 1}/5</span></div>
+              <div className="flex items-center gap-2"><span className="text-lg">{'🚨'}</span><span className="text-white font-bold">School Lockdown Protocol</span><span className="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Step {lockdownStep + 1}/5</span></div>
               <button onClick={() => setShowLockdown(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
             </div>
             <div className="px-6 py-5">
@@ -2074,8 +2074,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                     <p className="text-sm text-gray-400">This will alert staff, parents, and emergency services. Only proceed if genuine emergency or authorised drill.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => { setLockdownType('emergency'); setLockdownChecks({}); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'\u{1F534}'} GENUINE EMERGENCY</button>
-                    <button onClick={() => { setLockdownType('drill'); setLockdownChecks({ 'call-999': false }); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'\u{1F7E1}'} DRILL / PRACTICE</button>
+                    <button onClick={() => { setLockdownType('emergency'); setLockdownChecks({}); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'🔴'} GENUINE EMERGENCY</button>
+                    <button onClick={() => { setLockdownType('drill'); setLockdownChecks({ 'call-999': false }); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'🟡'} DRILL / PRACTICE</button>
                   </div>
                 </div>
               )}
@@ -2158,7 +2158,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               {/* Step 4: Confirmation — with 999 call button for genuine emergencies */}
               {lockdownStep === 4 && (
                 <div className="space-y-4 text-center">
-                  <div className="text-5xl mb-2">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'}</div>
+                  <div className="text-5xl mb-2">{lockdownType === 'drill' ? '🟡' : '🔴'}</div>
                   <h3 className="text-lg font-bold text-white">Lockdown {lockdownType === 'drill' ? 'Drill' : 'Protocol'} Initiated {demoDataActive ? '(DEMO)' : ''}</h3>
 
                   {/* GENUINE EMERGENCY + 999 selected */}
@@ -2170,19 +2170,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                           <div className="space-y-2">
                             <button className="w-full py-4 rounded-xl text-lg font-black" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2 }}
                               onClick={() => alert('DEMO MODE: In a live workspace this would open your phone dialler to call 999.')}>
-                              {'\u{1F4DE}'} Call 999 NOW (DEMO)
+                              {'📞'} Call 999 NOW (DEMO)
                             </button>
                             <p className="text-xs text-gray-500">Demo mode — no call will be made</p>
                           </div>
                         ) : (
                           <a href="tel:999" className="block w-full py-4 rounded-xl text-lg font-black text-center" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2, textDecoration: 'none' }}>
-                            {'\u{1F4DE}'} Call 999 NOW
+                            {'📞'} Call 999 NOW
                           </a>
                         )}
                       </div>
                       {/* SMS alerts to emergency contacts */}
                       <div className="rounded-xl p-4 text-left" style={{ backgroundColor: '#111827', border: '1px solid #1F2937' }}>
-                        <p className="text-xs font-semibold text-white mb-2">{'\u{1F4F1}'} Emergency SMS alerts</p>
+                        <p className="text-xs font-semibold text-white mb-2">{'📱'} Emergency SMS alerts</p>
                         {demoDataActive ? (
                           <div className="space-y-1.5">
                             {[
