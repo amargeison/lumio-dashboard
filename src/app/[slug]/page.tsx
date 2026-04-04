@@ -4398,6 +4398,20 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             .catch(() => router.replace('/login?redirectTo=/' + slug))
         }).catch(() => router.replace('/login?redirectTo=/' + slug))
       }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
+    } else {
+      // No session token — check if this slug belongs to a demo tenant
+      fetch(`/api/demo/check-slug?slug=${encodeURIComponent(slug)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.exists) {
+            const redirectUrl = data.tenant_type === 'schools'
+              ? `/demo/schools/${slug}`
+              : `/demo/${slug}`
+            router.replace(redirectUrl)
+          }
+          // If not a demo tenant either, page renders with demo data / empty state
+        })
+        .catch(() => {}) // Non-blocking — don't redirect on failure
     }
   }, [slug, router])
 
