@@ -1507,7 +1507,16 @@ function DemoInsightsHub() {
   )
 }
 
-function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
+const DEMO_DAILY_TASKS = [
+  { id: 'task-1', priority: 'Critical', color: '#EF4444', dept: 'Finance', source: 'lumio', time: '12:00', title: 'Review and approve Q2 invoice batch', desc: '14 invoices ready for approval totalling £48,200. Accounts need sign-off before end of day.' },
+  { id: 'task-2', priority: 'High', color: '#F59E0B', dept: 'Sales', source: 'notion', time: '14:00', title: 'Prepare Greenfield Group proposal', desc: 'Proposal requested after last week\'s demo. Three slides still need revenue projections added before sending.' },
+  { id: 'task-3', priority: 'High', color: '#F59E0B', dept: 'Operations', source: 'manual', time: '15:00', title: 'Sign off Q2 board report', desc: 'Board meeting Thursday. All data pulled. Final sign-off needed before distribution to directors.' },
+  { id: 'task-4', priority: 'Medium', color: '#3B82F6', dept: 'HR', source: 'workflow', time: '16:00', title: 'Approve payroll pack for review', desc: 'HR-07 generated the pack. Needs sign-off before Friday payroll run.', tag: 'HR-07' },
+  { id: 'task-5', priority: 'High', color: '#F59E0B', dept: 'Marketing', source: 'lumio', time: '17:00', title: 'Review case study draft — Bramble Hill', desc: 'Design team submitted the draft. Review and send to client for approval to publish.' },
+  { id: 'task-6', priority: 'Medium', color: '#3B82F6', dept: 'Sales', source: 'notion', time: '17:30', title: 'Follow up — Apex Learning trial expiring Friday', desc: 'Trial ends in 3 days. No conversion action taken yet. Call or email needed today.' },
+]
+
+function DemoTabPlaceholder({ tab, completedTasks, onComplete }: { tab: OverviewTab; completedTasks: Set<string>; onComplete: (id: string) => void }) {
   if (tab === 'quick-wins') return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>⚡ Quick Wins — do these in under 15 minutes</p><span className="text-xs" style={{color:'#6B7280'}}>5 items · ~35 min total</span></div>
@@ -1527,40 +1536,47 @@ function DemoTabPlaceholder({ tab }: { tab: OverviewTab }) {
     </div>
   )
 
-  if (tab === 'tasks') return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>✅ Daily Tasks · 0/4 done</p><div className="flex gap-1">{['All (4)','Critical (1)','High (2)','Medium (1)'].map(f=><span key={f} className="text-xs px-2 py-0.5 rounded-lg cursor-pointer" style={{backgroundColor:f.startsWith('All')?'rgba(13,148,136,0.15)':'transparent',color:f.startsWith('All')?'#0D9488':'#6B7280',border:'1px solid #1F2937'}}>{f}</span>)}</div></div>
-      {[
-        {priority:'Critical',color:'#EF4444',dept:'Finance',source:'lumio',time:'12:00',title:'Review and respond to Bramble Hill invoice dispute',desc:'They queried the September charge. Email from George Harrison at 11pm.',tag:'AC-04'},
-        {priority:'High',color:'#F59E0B',dept:'Operations',source:'notion',time:'14:00',title:'Finalise Q2 operations testing guide sign-off',desc:'Phase 5 review due today. 13 flagged gaps to resolve.',tag:''},
-        {priority:'High',color:'#F59E0B',dept:'Finance',source:'manual',time:'17:00',title:'Send investor deck to Marcus',desc:'Promised by end of day. Latest version in Notion.',tag:''},
-        {priority:'Medium',color:'#3B82F6',dept:'HR',source:'workflow',time:'16:00',title:'Approve payroll pack for review',desc:'HR-07 generated the pack. Needs sign-off before Friday.',tag:'HR-07'},
-      ].map((t,i)=>(
-        <div key={i} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold px-2 py-0.5 rounded" style={{backgroundColor:`${t.color}1a`,color:t.color}}>{t.priority}</span>
-            <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'#1F2937',color:'#9CA3AF'}}>{t.dept}</span>
-            <span className="text-xs px-1.5 py-0.5 rounded" style={{backgroundColor:'rgba(108,63,197,0.1)',color:'#A78BFA'}}>{t.source}</span>
-            <span className="text-xs ml-auto" style={{color:'#6B7280'}}>{t.time}</span>
+  if (tab === 'tasks') {
+    const visible = DEMO_DAILY_TASKS.filter(t => !completedTasks.has(t.id))
+    const doneCount = completedTasks.size
+    const total = DEMO_DAILY_TASKS.length
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>{'\u2705'} Daily Tasks &middot; {doneCount}/{total} done</p></div>
+        {visible.length === 0 ? (
+          <div className="rounded-xl p-8 text-center" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+            <div className="text-4xl mb-2">{'\u2705'}</div>
+            <p className="text-sm font-bold" style={{color:'#F9FAFB'}}>All tasks completed for today</p>
+            <p className="text-xs mt-1" style={{color:'#6B7280'}}>Tasks reset automatically at midnight</p>
           </div>
-          <p className="text-sm font-semibold" style={{color:'#F9FAFB'}}>{t.title}</p>
-          <p className="text-xs mt-1" style={{color:'#9CA3AF'}}>{t.desc}</p>
-          {t.tag&&<span className="inline-block text-xs mt-2 px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{t.tag}</span>}
-        </div>
-      ))}
-    </div>
-  )
+        ) : visible.map(t => (
+          <div key={t.id} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+            <div className="flex items-center gap-2 mb-2">
+              <button onClick={() => onComplete(t.id)} className="w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-all" style={{borderColor:'#4B5563',backgroundColor:'transparent'}} />
+              <span className="text-xs font-bold px-2 py-0.5 rounded" style={{backgroundColor:`${t.color}1a`,color:t.color}}>{t.priority}</span>
+              <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor:'#1F2937',color:'#9CA3AF'}}>{t.dept}</span>
+              <span className="text-xs px-1.5 py-0.5 rounded" style={{backgroundColor:'rgba(108,63,197,0.1)',color:'#A78BFA'}}>{t.source}</span>
+              <span className="text-xs ml-auto" style={{color:'#6B7280'}}>{t.time}</span>
+            </div>
+            <p className="text-sm font-semibold" style={{color:'#F9FAFB'}}>{t.title}</p>
+            <p className="text-xs mt-1" style={{color:'#9CA3AF'}}>{t.desc}</p>
+            {t.tag && <span className="inline-block text-xs mt-2 px-2 py-0.5 rounded" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{t.tag}</span>}
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   if (tab === 'insights') return <DemoInsightsHub />
 
   if (tab === 'not-to-miss') return (
     <div className="space-y-3">
-      <p className="text-sm font-bold mb-2" style={{color:'#F9FAFB'}}>🔴 Requires Your Attention</p>
+      <p className="text-sm font-bold mb-2" style={{color:'#F9FAFB'}}>{'\u{1F534}'} Requires Your Attention</p>
       {[
-        {urgency:'Critical',color:'#EF4444',title:'Bramble Hill Trust — invoice dispute escalated',desc:'George Harrison emailed at 11pm. £4,800 September charge queried. Client threatening to pause contract.',action:'View dispute'},
-        {urgency:'High',color:'#F59E0B',title:'Starling Schools trial expires in 2 days',desc:'High engagement (84%) but no conversion call booked. Maria Olsen is the decision maker.',action:'Book call'},
-        {urgency:'High',color:'#F59E0B',title:'Overdue performance review — Amara Diallo',desc:'Was due 24 Mar. Manager Laura Simmons has not submitted. Now 7 days overdue.',action:'Chase review'},
-        {urgency:'Medium',color:'#3B82F6',title:'Oakridge deal going cold — 18 days no activity',desc:'£14,800 deal in Negotiation stage. Last contact was a pricing email. No response.',action:'Follow up'},
+        {urgency:'Critical',color:'#EF4444',title:'Payment terms not set on 3 client contracts',desc:'Finance team need sign-off before first invoices are raised. Risk of invoicing disputes.',action:'Review contracts'},
+        {urgency:'Critical',color:'#EF4444',title:'NDA outstanding — Bramble Hill partnership',desc:'Legal have drafted it but it has not been sent for signature. Partnership stalls without this.',action:'Send NDA'},
+        {urgency:'High',color:'#F59E0B',title:'Greenfield Group proposal — due end of day',desc:'Three slides still need revenue projections. Requested by CEO after last demo.',action:'Open proposal'},
+        {urgency:'Medium',color:'#3B82F6',title:'Three probation reviews overdue',desc:'Sarah (Marketing), Tom (Engineering), and Priya (Success) were due last week. HR flagged twice.',action:'Open HR'},
       ].map((a,i)=>(
         <div key={i} className="rounded-xl p-4 flex items-start justify-between gap-3" style={{backgroundColor:'#111318',border:`1px solid ${a.color}33`}}>
           <div>
@@ -1750,6 +1766,18 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
   wakeWordEnabled?: boolean
 }) {
   const [tab, setTab] = useState<OverviewTab>('today')
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(() => {
+    try {
+      const today = new Date().toDateString()
+      const savedDate = localStorage.getItem('demo_tasks_date')
+      if (savedDate !== today) { localStorage.removeItem('demo_completed_tasks'); localStorage.setItem('demo_tasks_date', today); return new Set() }
+      const saved = localStorage.getItem('demo_completed_tasks')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+  const markTaskComplete = (taskId: string) => {
+    setCompletedTasks(prev => { const next = new Set(prev); next.add(taskId); try { localStorage.setItem('demo_completed_tasks', JSON.stringify([...next])) } catch {}; return next })
+  }
   const wf  = fakeNum(47, company, 'wf')
   const cu  = fakeNum(181, company, 'cu')
   const mrr = fakeNum(42000, company, 'mrr')
@@ -1823,7 +1851,7 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
       ) : tab === 'team' ? (
         <DemoTeamPanel />
       ) : (
-        <DemoTabPlaceholder tab={tab} />
+        <DemoTabPlaceholder tab={tab} completedTasks={completedTasks} onComplete={markTaskComplete} />
       )}
     </div>
   )
