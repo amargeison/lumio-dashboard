@@ -1,3 +1,6 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/football/[slug]  →  THIS FILE
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
@@ -14,9 +17,10 @@ import {
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
-  Search, Filter, ArrowUpDown, ExternalLink, Crown, Camera,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2,
 } from 'lucide-react'
+import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
@@ -474,24 +478,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const logoFileRef = useRef<HTMLInputElement>(null)
   const [clubLogo, setClubLogo] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_football_logo') : null)
-  const [logoHover, setLogoHover] = useState(false)
   const expanded = pinned || hovered
-
-
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || file.size > 2 * 1024 * 1024) return
-    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = reader.result as string
-      setClubLogo(dataUrl)
-      localStorage.setItem('lumio_football_logo', dataUrl)
-    }
-    reader.readAsDataURL(file)
-  }
 
   function togglePin() {
     setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
@@ -521,12 +509,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
-          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937' }} title="Upload club badge">
-            {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
-            {logoHover && <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 9 }}><Camera size={16} color="#fff" /></div>}
-          </button>
+          <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
+            {clubLogo ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -678,7 +664,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
-                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF' }}>
                   <Volume2 size={15} strokeWidth={1.75} />
                 </button>
                 <button
@@ -690,7 +676,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
                     backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
                     border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
                     color: isListening ? '#EF4444' : '#F9FAFB',
-                    animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                    
                   }}>
                   <Mic size={14} strokeWidth={1.75} />
                 </button>
@@ -732,7 +718,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
           borderRadius: 999, padding: '8px 20px', zIndex: 50,
           display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
         }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
           Listening... say a command
         </div>
       )}
@@ -801,6 +787,7 @@ function MorningRoundup() {
   const [replied, setReplied] = useState<string[]>([])
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [showReply, setShowReply] = useState<string | null>(null)
+  const { items: roundupItems, dragProps, reset } = useDraggableList(FOOTBALL_ROUNDUP_ITEMS, 'lumio_football_overview_order')
 
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
@@ -814,15 +801,20 @@ function MorningRoundup() {
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
-        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        <div className="flex items-center gap-3">
+          <button onClick={reset} style={{ fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset order</button>
+          <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        </div>
       </div>
       <div className="space-y-2">
-        {FOOTBALL_ROUNDUP_ITEMS.map(item => {
+        {roundupItems.map((item, index) => {
           const isOpen = expanded === item.id
+          const dp = dragProps(index)
           return (
-            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+            <div key={item.id} draggable={dp.draggable} onDragStart={dp.onDragStart} onDragEnter={dp.onDragEnter} onDragEnd={dp.onDragEnd} onDragOver={dp.onDragOver} className="rounded-xl overflow-hidden" style={{ ...dp.style, backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
               <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
                 <div className="flex items-center gap-2.5">
+                  <span style={{ color: '#334155', marginRight: 4, fontSize: 14, cursor: 'grab', opacity: 0.4 }}>⠿</span>
                   <span className="text-base">{item.icon}</span>
                   <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
                   {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
@@ -897,7 +889,7 @@ function FixturesPanel() {
           <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(0,61,165,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(0,61,165,0.25)' : '1px solid #1F2937' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+                {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500" />}
                 <span className="text-sm font-bold" style={{ color: i === 0 ? '#F1C40F' : '#F9FAFB' }}>{f.opponent}</span>
               </div>
               <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>
@@ -2559,7 +2551,7 @@ function SquadView() {
       )}
       {sqLiveSquad && (
         <div className="flex items-center gap-2 mb-3 text-xs text-emerald-500">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+          <span className="w-2 h-2 rounded-full bg-emerald-500"/>
           Live data from API-Football · {sqLiveSquad.length} players loaded
         </div>
       )}
@@ -4604,8 +4596,8 @@ function FacilitiesView() {
 // ─── Settings View ──────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring — your daily motivator' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting — reassuring and steady' },
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear' },
 ]
 
@@ -5013,10 +5005,10 @@ function ApiStatusStrip() {
   )
 }
 
-function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: string }) {
+function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
-  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '21m00Tcm4TlvDq8ikWAM' : '21m00Tcm4TlvDq8ikWAM')
+  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState(getStoredZones)
   const localTz = getUserLocalTz()
 
@@ -5043,6 +5035,170 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your football portal preferences.</p>
+      </div>
+
+      {/* ── Club Details ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Club</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Club name</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{slug ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'My Club'}</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Stadium</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>League</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Season</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Football</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Manage billing</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Football-Specific Settings ────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Football Configuration</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>API-Football Team ID</p><p className="text-xs" style={{ color: '#6B7280' }}>For live fixture and stats data</p></div>
+            <input type="number" placeholder="e.g. 42" className="text-sm rounded-lg px-3 py-1.5 outline-none w-28 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
+            <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+              <option>None</option><option>Catapult</option><option>STATSports</option><option>Lumio GPS</option><option>Playertek</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — primary colour</p></div>
+            <input type="color" defaultValue="#003DA5" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — secondary colour</p></div>
+            <input type="color" defaultValue="#F1C40F" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Integrations ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA PROVIDERS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'API-Football', desc: 'Live fixtures, results & stats' },
+                { name: 'StatsBomb', desc: 'Advanced analytics & xG data' },
+                { name: 'Wyscout', desc: 'Scouting reports & video' },
+                { name: 'Opta', desc: 'Event-level match data' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>COMMUNICATION</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'Slack', desc: 'Team messaging & alerts' },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Player & agent messaging' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team & Staff ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team & Staff</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Staff members</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE STAFF MEMBER</p>
+            <div className="flex gap-2">
+              <input placeholder="colleague@club.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+              <select className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                <option>Manager</option><option>Coach</option><option>Analyst</option><option>Physio</option><option>Scout</option><option>Admin</option>
+              </select>
+              <button className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>Send Invite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Notifications ─────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔔</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Notifications</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive match and squad updates via email</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your club activity every Monday</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Injury alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification when a player is flagged injured</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Transfer window alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Updates on transfer targets and agent activity</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+        </div>
       </div>
 
       {/* TTS & Voice Commands */}
@@ -5238,6 +5394,40 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 
       {/* API & Integrations */}
       <ApiUsageCard />
+
+      {/* Club Badge */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Appearance</p>
+        </div>
+        <div className="px-5">
+          <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Club badge</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Upload or change in Settings only.</div>
+            </div>
+            <div className="flex items-center gap-3">
+              {clubLogo ? (
+                <>
+                  <img src={clubLogo} alt="Club badge" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                  <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                    Change
+                    <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
+                  </label>
+                  <button onClick={onLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
+                  Upload badge
+                  <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
+                </label>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Demo Data */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -5549,6 +5739,24 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     setTimeout(() => setToast(null), 3000)
   }
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setClubLogo(dataUrl)
+      localStorage.setItem('lumio_football_logo', dataUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleLogoRemove() {
+    setClubLogo(null)
+    localStorage.removeItem('lumio_football_logo')
+  }
+
   const LABEL_TO_ACTION: Record<string, string> = {
     'Team Sheet': 'team-sheet', 'Log Injury': 'log-injury', 'Scout Report': 'scout-report',
     'Board Report': 'board-report', 'Training Plan': 'training-plan', 'Press Conf': 'press-conference',
@@ -5593,7 +5801,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
       {isFootballDemo && (
         <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F', paddingRight: 140 }}>
           <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F', marginRight: 120 }}>Clear Demo Data</button>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
         </div>
       )}
 
@@ -5663,7 +5871,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'fixtures-results' && <FixturesView />}
             {activeDept === 'pyramid' && <FootballPyramidView />}
             {activeDept === 'statsbomb' && <StatsBombView />}
-            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
+            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
                 squad: ['Top performers this week: Marcus Browne (8.2 avg), Mathew Stevens (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Crown, FileText, Calendar, Target, Shield, Users, TrendingUp,
   Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Lock,
 } from 'lucide-react'
 import { PageShell } from '@/components/page-ui'
+import { DEMO_STATS } from '@/lib/demoStats'
 import ExportPdfButton from '@/components/ExportPdfButton'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
 import {
@@ -51,7 +52,7 @@ function BoardOverview() {
   const scorecard = [{ d: 'Revenue', q1: 82, q0: 74 }, { d: 'Retention', q1: 91, q0: 88 }, { d: 'Engagement', q1: 74, q0: 68 }, { d: 'Product', q1: 83, q0: 80 }, { d: 'Ops', q1: 94, q0: 89 }, { d: 'Market', q1: 68, q0: 62 }, { d: 'Finance', q1: 88, q0: 82 }, { d: 'Culture', q1: 79, q0: 73 }]
   return (<div className="space-y-4">
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      <S label="MRR" value="£42,800" color={G} trend="+18% MoM" /><S label="ARR Run Rate" value="£513.6k" color="#0D9488" trend="+127% YoY" /><S label="Cash Runway" value="18 months" color="#22C55E" sub="Series A window Q3" /><S label="Headcount" value="187" color="#3B82F6" trend="+3" /><S label="NPS" value="67" color="#22C55E" trend="+8" /><S label="Burn Multiple" value="0.8" color="#22C55E" sub="Efficient growth" />
+      <S label="MRR" value="£42,800" color={G} trend="+18% MoM" /><S label="ARR Run Rate" value="£513.6k" color="#0D9488" trend="+127% YoY" /><S label="Cash Runway" value="18 months" color="#22C55E" sub="Series A window Q3" /><S label="Headcount" value={String(DEMO_STATS.totalEmployees)} color="#3B82F6" trend="+3" /><S label="NPS" value={String(DEMO_STATS.npsScore)} color="#22C55E" trend="+8" /><S label="Burn Multiple" value="0.8" color="#22C55E" sub="Efficient growth" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div style={CS}><h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Revenue vs Burn (£k/mo)</h4><ResponsiveContainer width="100%" height={200}><AreaChart data={revBurn} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="#1F2937" /><XAxis dataKey="m" tick={{ fill: '#9CA3AF', fontSize: 10 }} /><YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} /><Tooltip contentStyle={TIP} /><Legend wrapperStyle={{ fontSize: 11 }} /><Area type="monotone" dataKey="rev" name="Revenue" stroke="#0D9488" fill="#0D9488" fillOpacity={0.2} /><Area type="monotone" dataKey="burn" name="Burn" stroke="#EF4444" fill="#EF4444" fillOpacity={0.1} /></AreaChart></ResponsiveContainer></div>
@@ -125,7 +126,7 @@ function CommercialTab() {
 function PeopleTab() {
   const [sub, setSub] = useState('exec')
   return (<div className="space-y-4">
-    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"><S label="Headcount" value={187} color="#0D9488" trend="+3" /><S label="eNPS" value={42} color="#22C55E" /><S label="Wellbeing" value="7.4/10" color="#22C55E" /><S label="Open Roles" value={3} color="#F59E0B" /><S label="Retention" value="87%" color="#3B82F6" /><S label="Comp Bill" value="£2.4M/yr" color="#8B5CF6" /></div>
+    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"><S label="Headcount" value={DEMO_STATS.totalEmployees} color="#0D9488" trend="+3" /><S label="eNPS" value={42} color="#22C55E" /><S label="Wellbeing" value={`${DEMO_STATS.staffWellbeingScore}/10`} color="#22C55E" /><S label="Open Roles" value={DEMO_STATS.openRoles} color="#F59E0B" /><S label="Retention" value="87%" color="#3B82F6" /><S label="Comp Bill" value="£2.4M/yr" color="#8B5CF6" /></div>
     <SubTabs tabs={[{ id: 'exec', label: 'Executive Team' }, { id: 'headcount', label: 'Headcount' }, { id: 'wellbeing', label: 'Wellbeing' }, { id: 'remuneration', label: 'Remuneration' }]} active={sub} onChange={setSub} />
     {sub === 'exec' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{[
       { name: 'James Hartley', role: 'CEO', tenure: '5 years', hc: 187, okr: 86, perf: 'Exceeding', color: '#7C3AED' },
@@ -215,6 +216,34 @@ function NotesTab() {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function DirectorsSuite() {
+  // ── RBAC: Directors Suite requires director/admin ──
+  const [userRole, setUserRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
+  useEffect(() => {
+    const handler = () => setUserRole(localStorage.getItem('lumio_user_role') || 'director')
+    window.addEventListener('lumio-role-changed', handler)
+    window.addEventListener('storage', handler)
+    return () => { window.removeEventListener('lumio-role-changed', handler); window.removeEventListener('storage', handler) }
+  }, [])
+
+  if (!['admin', 'director'].includes(userRole)) {
+    return (
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">👑</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Directors Suite</h2>
+          <p className="text-gray-400 mb-4">Board reports, strategic planning, investor information and executive dashboards.</p>
+          <div className="bg-gray-900 rounded-xl p-3 mb-4 inline-flex items-center gap-2">
+            <span className="text-xs text-gray-500">Your role:</span>
+            <span className="text-xs font-semibold text-amber-400 capitalize">{userRole}</span>
+            <span className="text-xs text-gray-600">·</span>
+            <span className="text-xs text-gray-500">Director level required</span>
+          </div>
+          <p className="text-xs text-gray-600">💡 Switch to Director or Admin in the demo banner to access this area</p>
+        </div>
+      </div>
+    )
+  }
+
   const [tab, setTab] = useState<Tab>('board')
   const hasData = useHasDashboardData('insights')
 

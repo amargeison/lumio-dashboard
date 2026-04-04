@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
+import { followupTrialEmail } from '@/lib/emails/followup-trial'
+import { followup14dEmail } from '@/lib/emails/followup-14d'
 import { logEmail } from '@/lib/emails/log'
 import { sendEmail } from '@/lib/emails/send'
 
@@ -93,6 +95,40 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
 
   await supabase.from('demo_tenants').update({ welcome_email_sent: true }).eq('id', tenant.id)
   logEmail(tenant.id, 'welcome_trial', tenant.owner_email).catch(() => {})
+
+  // Schedule 48-hour follow-up email
+  try {
+    const { data: followupData } = await sendEmail({
+      from: 'Arron at Lumio <hello@lumiocms.com>',
+      to: [tenant.owner_email],
+      subject: `Did you get a chance to explore, ${firstName}?`,
+      html: followupTrialEmail({ name: firstName, slug: tenant.slug, portalType: 'business' }),
+      scheduledAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    })
+    if (followupData?.id) {
+      await supabase.from('demo_tenants').update({ followup_email_id: followupData.id }).eq('id', tenant.id)
+    }
+    logEmail(tenant.id, 'followup_48h_scheduled', tenant.owner_email).catch(() => {})
+  } catch (e) {
+    console.error('[provision] Follow-up email scheduling failed:', e)
+  }
+
+  // Schedule 14-day win-back email
+  try {
+    const { data: winbackData } = await sendEmail({
+      from: 'Arron at Lumio <hello@lumiocms.com>',
+      to: [tenant.owner_email],
+      subject: `Your Lumio workspace is paused, ${firstName}`,
+      html: followup14dEmail({ name: firstName, slug: tenant.slug, companyName: tenant.company_name, portalType: 'business' }),
+      scheduledAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+    if (winbackData?.id) {
+      await supabase.from('demo_tenants').update({ followup_14d_email_id: winbackData.id }).eq('id', tenant.id)
+    }
+    logEmail(tenant.id, 'followup_14d_scheduled', tenant.owner_email).catch(() => {})
+  } catch (e) {
+    console.error('[provision] 14-day win-back email scheduling failed:', e)
+  }
 }
 
 async function sendInviteEmails(emails: string[], companyName: string, slug: string) {

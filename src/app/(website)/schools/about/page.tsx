@@ -93,7 +93,7 @@ export default function SchoolsAboutPage() {
             <Link href="/demo/schools/oakridge-primary" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               Try the demo <ArrowRight size={16} />
             </Link>
-            <Link href="/schools/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>
+            <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>
               Start free trial
             </Link>
           </div>

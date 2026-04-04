@@ -12,6 +12,7 @@ export async function sendEmail(params: {
   to: string[]
   subject: string
   html: string
+  scheduledAt?: string
 }) {
   // Send if production OR if RESEND_API_KEY is explicitly set (allows dev/preview sending)
   if (!IS_PRODUCTION && !HAS_RESEND_KEY) {

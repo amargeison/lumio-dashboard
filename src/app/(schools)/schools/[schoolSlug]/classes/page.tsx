@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Sparkles, ClipboardList, UserPlus, Eye, Calendar, BarChart3 } from 'lucide-react'
+import { Sparkles, ClipboardList, UserPlus, Eye, Calendar, BarChart3, AlertTriangle, ArrowRightLeft, Phone, FileText, BookOpen, Printer, CheckSquare } from 'lucide-react'
 
 const CLASSES_HIGHLIGHTS = [
   '2 classes without updated cover plans',
@@ -33,7 +33,8 @@ function AIHighlights({ items }: { items: string[] }) {
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
-import { RegisterClassModal, AddPupilToClassModal, TimetableChangeModal } from '@/components/modals/SchoolModals'
+import { RegisterClassModal, AddPupilToClassModal, TimetableChangeModal, BehaviourLogModal, ParentContactModal } from '@/components/modals/SchoolModals'
+import { MovePupilModal, GenerateClassReportModal, AssessmentEntryModal, SetHomeworkModal } from '@/components/modals/ClassesExtraModals'
 
 const HIGHLIGHTS = [
   '32 classes registered this term \u2014 2 without an assigned teacher',
@@ -43,11 +44,15 @@ const HIGHLIGHTS = [
 ]
 
 const ACTIONS = [
-  { label: 'Register Class', icon: <ClipboardList size={14} /> },
+  { label: 'Mark Register', icon: <CheckSquare size={14} /> },
+  { label: 'Log Behaviour', icon: <AlertTriangle size={14} /> },
   { label: 'Add Pupil to Class', icon: <UserPlus size={14} /> },
-  { label: 'Class Overview', icon: <Eye size={14} /> },
-  { label: 'Timetable Change', icon: <Calendar size={14} /> },
-  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
+  { label: 'Move Pupil', icon: <ArrowRightLeft size={14} /> },
+  { label: 'Parent Contact', icon: <Phone size={14} /> },
+  { label: 'Generate Class Report', icon: <FileText size={14} /> },
+  { label: 'Assessment Entry', icon: <BarChart3 size={14} /> },
+  { label: 'Set Homework', icon: <BookOpen size={14} /> },
+  { label: 'Print Class List', icon: <Printer size={14} /> },
 ]
 
 const CLASSES = [
@@ -65,17 +70,20 @@ const STATS = [
   { label: 'Timetable Changes', value: '3', color: '#A78BFA' },
 ]
 
-function QuickActions({ actions, onAction }: { actions: typeof ACTIONS; onAction: (label: string) => void }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -96,17 +104,15 @@ export default function ClassesPage() {
   const [showRegister, setShowRegister] = useState(false)
   const [showAddPupil, setShowAddPupil] = useState(false)
   const [showTimetable, setShowTimetable] = useState(false)
+  const [showBehaviour, setShowBehaviour] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
+  const [showMovePupil, setShowMovePupil] = useState(false)
+  const [showClassReport, setShowClassReport] = useState(false)
+  const [showAssessmentEntry, setShowAssessmentEntry] = useState(false)
+  const [showHomework, setShowHomework] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
-
-  function handleAction(label: string) {
-    if (label === 'Register Class') setShowRegister(true)
-    else if (label === 'Add Pupil to Class') setShowAddPupil(true)
-    else if (label === 'Timetable Change') setShowTimetable(true)
-    else if (label === 'Dept Insights') setShowInsights(true)
-    else showToast('Feature coming soon')
-  }
 
   if (hasData === null) return null
   if (!hasData) return (
@@ -128,13 +134,18 @@ export default function ClassesPage() {
         <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Manage timetables, registers and class groups</p>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="classes" portal="schools" />
-        <AIHighlights items={CLASSES_HIGHLIGHTS} />
-      </div>
-
-      <QuickActions actions={ACTIONS} onAction={handleAction} />
+      <QuickActions actions={[...ACTIONS.map(a => ({
+        ...a,
+        onClick: a.label === 'Mark Register' ? () => setShowRegister(true)
+          : a.label === 'Log Behaviour' ? () => setShowBehaviour(true)
+          : a.label === 'Add Pupil to Class' ? () => setShowAddPupil(true)
+          : a.label === 'Parent Contact' ? () => setShowParentContact(true)
+          : a.label === 'Move Pupil' ? () => setShowMovePupil(true)
+          : a.label === 'Generate Class Report' ? () => setShowClassReport(true)
+          : a.label === 'Assessment Entry' ? () => setShowAssessmentEntry(true)
+          : a.label === 'Set Homework' ? () => setShowHomework(true)
+          : () => showToast('Feature coming soon'),
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -211,8 +222,24 @@ export default function ClassesPage() {
       {showRegister && <RegisterClassModal onClose={() => setShowRegister(false)} onToast={showToast} />}
       {showAddPupil && <AddPupilToClassModal onClose={() => setShowAddPupil(false)} onToast={showToast} />}
       {showTimetable && <TimetableChangeModal onClose={() => setShowTimetable(false)} onToast={showToast} />}
+      {showBehaviour && <BehaviourLogModal onClose={() => setShowBehaviour(false)} onToast={showToast} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showMovePupil && <MovePupilModal onClose={() => setShowMovePupil(false)} />}
+      {showClassReport && <GenerateClassReportModal onClose={() => setShowClassReport(false)} />}
+      {showAssessmentEntry && <AssessmentEntryModal onClose={() => setShowAssessmentEntry(false)} />}
+      {showHomework && <SetHomeworkModal onClose={() => setShowHomework(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="classes" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="classes" portal="schools" />
+          <AIHighlights items={CLASSES_HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

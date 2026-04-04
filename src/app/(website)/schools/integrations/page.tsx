@@ -114,7 +114,7 @@ export default function SchoolsIntegrationsPage() {
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
-              href="/schools/register"
+              href="/signup?portal=schools"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
               style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', color: '#F9FAFB' }}
             >
