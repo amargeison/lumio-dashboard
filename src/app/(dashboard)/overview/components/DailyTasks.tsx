@@ -38,6 +38,18 @@ type Filter = 'all' | 'critical' | 'high' | 'medium' | 'low'
 export default function DailyTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [filter, setFilter] = useState<Filter>('all')
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('business_tasks_checked')
+      return saved ? JSON.parse(saved) : {}
+    } catch { return {} }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('business_tasks_checked', JSON.stringify(checked))
+    } catch { /* */ }
+  }, [checked])
 
   useEffect(() => {
     const token = localStorage.getItem('workspace_session_token')
@@ -45,11 +57,18 @@ export default function DailyTasks() {
       headers: token ? { 'x-workspace-token': token } : {},
     })
       .then(r => r.json())
-      .then(d => setTasks(d.tasks || MOCK_TASKS))
-      .catch(() => setTasks(MOCK_TASKS))
+      .then(d => {
+        const loaded = d.tasks || MOCK_TASKS
+        setTasks(loaded.map((t: Task) => ({ ...t, done: !!checked[t.id] })))
+      })
+      .catch(() => setTasks(MOCK_TASKS.map(t => ({ ...t, done: !!checked[t.id] }))))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const toggle = (id: string) => setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+  const toggle = (id: string) => {
+    setChecked(prev => ({ ...prev, [id]: !prev[id] }))
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+  }
   const filtered = filter === 'all' ? tasks : tasks.filter(t => t.priority === filter)
   const counts = {
     all: tasks.length,
