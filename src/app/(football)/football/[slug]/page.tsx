@@ -199,84 +199,86 @@ const RECENT_FORM = [
 // ─── GPS Training Data ──────────────────────────────────────────────────────
 
 const GPS_DATA = [
-  { player: 'Santos', distance: 10.2, hiSpeed: 1420, sprints: 34, maxSpeed: 33.1, load: 'optimal' as const },
-  { player: 'Thompson', distance: 11.4, hiSpeed: 1680, sprints: 28, maxSpeed: 31.8, load: 'high' as const },
-  { player: 'Walker', distance: 5.8, hiSpeed: 320, sprints: 8, maxSpeed: 24.2, load: 'optimal' as const },
-  { player: 'Henderson', distance: 10.8, hiSpeed: 1550, sprints: 42, maxSpeed: 34.2, load: 'optimal' as const },
-  { player: "O'Brien", distance: 9.1, hiSpeed: 1200, sprints: 22, maxSpeed: 32.6, load: 'amber' as const },
-  { player: 'Collins', distance: 10.6, hiSpeed: 1380, sprints: 30, maxSpeed: 33.8, load: 'high' as const },
-  { player: 'Martinez', distance: 9.8, hiSpeed: 890, sprints: 18, maxSpeed: 28.4, load: 'optimal' as const },
-  { player: 'Okafor', distance: 10.1, hiSpeed: 1490, sprints: 36, maxSpeed: 34.8, load: 'overload' as const },
+  { player: 'Nathan Bishop', distance: 5.2, hiSpeed: 0.3, sprints: 2, maxSpeed: 22.1, load: 'optimal' as const, acwr: 0.88 },
+  { player: 'Steve Seddon', distance: 10.8, hiSpeed: 2.1, sprints: 18, maxSpeed: 30.5, load: 'high' as const, acwr: 1.08 },
+  { player: 'Ryan Johnson', distance: 9.4, hiSpeed: 1.2, sprints: 8, maxSpeed: 28.2, load: 'optimal' as const, acwr: 0.94 },
+  { player: 'Marcus Browne', distance: 11.2, hiSpeed: 2.8, sprints: 22, maxSpeed: 32.1, load: 'high' as const, acwr: 1.12 },
+  { player: 'Mathew Stevens', distance: 10.1, hiSpeed: 2.4, sprints: 20, maxSpeed: 31.0, load: 'optimal' as const, acwr: 0.91 },
+  { player: 'Omar Bugiel', distance: 9.8, hiSpeed: 1.9, sprints: 15, maxSpeed: 29.8, load: 'overload' as const, acwr: 1.38 },
+  { player: 'Callum Maycock', distance: 11.5, hiSpeed: 1.8, sprints: 14, maxSpeed: 29.2, load: 'optimal' as const, acwr: 0.95 },
+  { player: 'Sam Hutchinson', distance: 9.0, hiSpeed: 1.0, sprints: 6, maxSpeed: 27.5, load: 'optimal' as const, acwr: 0.78 },
 ]
 
 // ─── Scout Targets ──────────────────────────────────────────────────────────
 
 const SCOUT_TARGETS = [
-  { name: 'Rui Silva', position: 'LB', age: 23, club: 'KRC Genk', nationality: '🇵🇹', value: '£1.8m', contract: 'Jun 2027', rating: 4, status: 'Approached', notes: 'Athletic, good crosser' },
-  { name: 'André Costa', position: 'CM', age: 25, club: 'SC Braga', nationality: '🇧🇷', value: '£2.4m', contract: 'Jun 2026', rating: 5, status: 'Bid Submitted', notes: 'Box-to-box, excellent range' },
-  { name: 'Kasper Eriksen', position: 'ST', age: 21, club: 'FC Nordsjælland', nationality: '🇩🇰', value: '£1.2m', contract: 'Jun 2028', rating: 3, status: 'Monitoring', notes: 'Pacy, needs development' },
-  { name: "Jean-Marc N'Golo", position: 'CB', age: 27, club: 'Metz', nationality: '🇫🇷', value: '£0.9m', contract: 'Jun 2025', rating: 4, status: 'Shortlisted', notes: 'Free agent June, strong aerial' },
-  { name: 'Liam Brennan', position: 'GK', age: 20, club: 'Shamrock Rovers', nationality: '🇮🇪', value: '£0.3m', contract: 'Jun 2027', rating: 3, status: 'Monitoring', notes: 'Good shot-stopper, needs loans' },
+  { name: 'Aaron Collins', position: 'LW', age: 28, club: 'Wrexham', nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', value: '£700k', contract: 'Jun 2026', rating: 4, status: 'Shortlisted', notes: 'Contract expiring — free agent opportunity.' },
+  { name: 'Louie Barry', position: 'CAM', age: 22, club: 'Stockport County', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', value: '£1.2M', contract: 'Jun 2027', rating: 4, status: 'Under review', notes: 'Villa-owned. Loan candidate.' },
+  { name: 'Harvey Knibbs', position: 'ST', age: 25, club: 'Burton Albion', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', value: '£500k', contract: 'Jun 2026', rating: 4, status: 'In pipeline', notes: 'Proven L1 finisher. Contract up Jun 2026.' },
+  { name: 'Jordan Slew', position: 'RW', age: 24, club: 'Leyton Orient', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', value: '£400k', contract: 'Jun 2026', rating: 3, status: 'Flagged', notes: 'Quick winger, contract expiring.' },
+  { name: 'Ibou Sawaneh', position: 'ST', age: 23, club: 'Forest Green Rovers', nationality: '🇬🇲', value: '£300k', contract: 'Jun 2027', rating: 3, status: 'Shortlisted', notes: 'League Two top scorer. Step up candidate.' },
 ]
 
 // ─── Contract Data ──────────────────────────────────────────────────────────
 
 const CONTRACT_DATA = [
-  { player: 'Diego Martinez', position: 'CB', weeklyWage: '£18,000', end: 'Jun 2025', status: 'Negotiating' as const, agent: 'Stellar Group' },
-  { player: 'Ryan Thompson', position: 'CM', weeklyWage: '£22,000', end: 'Jun 2026', status: 'Offered' as const, agent: 'CAA Base' },
-  { player: 'James Walker', position: 'GK', weeklyWage: '£15,000', end: 'Jun 2026', status: 'No Action' as const, agent: 'Unique Sports' },
-  { player: "Sean O'Brien", position: 'LW', weeklyWage: '£20,000', end: 'Jun 2027', status: 'Signed' as const, agent: 'Wasserman' },
+  { player: 'Jake Reeves', position: 'CM', weeklyWage: '£4,500/wk', end: 'Jun 2026', status: 'Offered' as const, agent: 'N/A' },
+  { player: 'Omar Bugiel', position: 'ST', weeklyWage: '£5,000/wk', end: 'Jun 2026', status: 'Negotiating' as const, agent: 'N/A' },
+  { player: 'Mathew Stevens', position: 'ST', weeklyWage: '£5,500/wk', end: 'Jun 2026', status: 'Offered' as const, agent: 'N/A' },
+  { player: 'Myles Hippolyte', position: 'LW', weeklyWage: '£4,000/wk', end: 'Jun 2026', status: 'No Action' as const, agent: 'N/A' },
 ]
 
 // ─── Academy Standouts ─────────────────────────────────────────────────────
 
 const ACADEMY_STANDOUTS = [
-  { name: 'Tyler James', age: 17, position: 'AMF', ageGroup: 'U18', devRating: '9.1', pathway: 'First Team Ready' },
-  { name: 'Luca Ferreira', age: 16, position: 'CB', ageGroup: 'U18', devRating: '8.4', pathway: 'Pathway' },
-  { name: 'Kai Thompson', age: 15, position: 'ST', ageGroup: 'U16', devRating: '8.8', pathway: 'Developing' },
-  { name: 'Remi Santos', age: 18, position: 'CM', ageGroup: 'U23', devRating: '9.3', pathway: 'First Team Ready' },
+  { name: 'Academy Player A', age: 17, position: 'AMF', ageGroup: 'U18', devRating: '7.2', pathway: 'Pathway' },
+  { name: 'Academy Player B', age: 16, position: 'CB', ageGroup: 'U18', devRating: '6.8', pathway: 'Developing' },
+  { name: 'Academy Player C', age: 15, position: 'ST', ageGroup: 'U16', devRating: '6.5', pathway: 'Developing' },
+  { name: 'Academy Player D', age: 18, position: 'CM', ageGroup: 'U21', devRating: '7.0', pathway: 'Pathway' },
 ]
 
 // ─── Match Formations ───────────────────────────────────────────────────────
 
 const MATCH_FORMATIONS = [
-  { match: 'vs Riverside (W 2-1)', formation: '4-3-3', positions: [
-    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
-    { num: 5, x: 60, y: 75, name: 'Martinez' }, { num: 6, x: 40, y: 75, name: 'Clarke' },
-    { num: 3, x: 20, y: 75, name: 'Davies' }, { num: 8, x: 65, y: 55, name: 'Thompson' },
-    { num: 4, x: 50, y: 50, name: 'Okafor' }, { num: 14, x: 35, y: 55, name: 'Fernandez' },
-    { num: 7, x: 80, y: 30, name: 'Collins' }, { num: 9, x: 50, y: 20, name: 'Santos' },
-    { num: 11, x: 20, y: 30, name: "O'Brien" },
-  ], stats: { possession: 58, shots: 14, xG: 1.82, passes: 487, duels: 52 }},
-  { match: 'vs City Vale (D 0-0)', formation: '4-2-3-1', positions: [
-    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
-    { num: 5, x: 60, y: 75, name: 'Cole' }, { num: 6, x: 40, y: 75, name: 'Phillips' },
-    { num: 3, x: 20, y: 75, name: 'Campbell' }, { num: 8, x: 60, y: 55, name: 'Nakamura' },
-    { num: 16, x: 40, y: 55, name: 'Gallagher' }, { num: 7, x: 80, y: 38, name: 'Correia' },
-    { num: 10, x: 50, y: 35, name: 'Price' }, { num: 11, x: 20, y: 38, name: 'Clarke' },
-    { num: 9, x: 50, y: 20, name: 'Richards' },
-  ], stats: { possession: 47, shots: 6, xG: 0.42, passes: 382, duels: 61 }},
-  { match: 'vs Northern (W 3-1)', formation: '4-3-3', positions: [
-    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
-    { num: 5, x: 60, y: 75, name: 'Cole' }, { num: 6, x: 40, y: 75, name: 'Martinez' },
-    { num: 3, x: 20, y: 75, name: 'Campbell' }, { num: 8, x: 65, y: 55, name: 'Thompson' },
-    { num: 14, x: 50, y: 50, name: 'Nakamura' }, { num: 16, x: 35, y: 55, name: 'Gallagher' },
-    { num: 7, x: 80, y: 30, name: 'Correia' }, { num: 9, x: 50, y: 20, name: 'Santos' },
-    { num: 11, x: 20, y: 30, name: "O'Brien" },
-  ], stats: { possession: 62, shots: 18, xG: 2.41, passes: 521, duels: 48 }},
+  { match: 'vs Charlton Athletic (L 1-2)', formation: '4-3-3', positions: [
+    { num: 1, x: 50, y: 90, name: 'Bishop' }, { num: 2, x: 80, y: 75, name: 'Asiimwe' },
+    { num: 15, x: 60, y: 75, name: 'Bauer' }, { num: 6, x: 40, y: 75, name: 'Johnson' },
+    { num: 3, x: 20, y: 75, name: 'Seddon' }, { num: 8, x: 65, y: 55, name: 'Maycock' },
+    { num: 5, x: 50, y: 50, name: 'Hutchinson' }, { num: 12, x: 35, y: 55, name: 'Smith' },
+    { num: 19, x: 80, y: 30, name: 'Tilley' }, { num: 10, x: 50, y: 20, name: 'Stevens' },
+    { num: 11, x: 20, y: 30, name: 'Browne' },
+  ], stats: { possession: 48, shots: 11, xG: 1.24, passes: 412, duels: 55 }},
+  { match: 'vs Plymouth Argyle (L 1-2)', formation: '4-3-3', positions: [
+    { num: 1, x: 50, y: 90, name: 'Bishop' }, { num: 2, x: 80, y: 75, name: 'Asiimwe' },
+    { num: 33, x: 60, y: 75, name: 'Ogundere' }, { num: 6, x: 40, y: 75, name: 'Johnson' },
+    { num: 3, x: 20, y: 75, name: 'Seddon' }, { num: 8, x: 65, y: 55, name: 'Maycock' },
+    { num: 4, x: 50, y: 50, name: 'Reeves' }, { num: 12, x: 35, y: 55, name: 'Smith' },
+    { num: 21, x: 80, y: 30, name: 'Hippolyte' }, { num: 9, x: 50, y: 20, name: 'Bugiel' },
+    { num: 11, x: 20, y: 30, name: 'Browne' },
+  ], stats: { possession: 44, shots: 9, xG: 0.98, passes: 378, duels: 62 }},
+  { match: 'vs Bolton Wanderers (D 1-1)', formation: '4-3-3', positions: [
+    { num: 1, x: 50, y: 90, name: 'Bishop' }, { num: 2, x: 80, y: 75, name: 'Asiimwe' },
+    { num: 15, x: 60, y: 75, name: 'Bauer' }, { num: 6, x: 40, y: 75, name: 'Johnson' },
+    { num: 3, x: 20, y: 75, name: 'Seddon' }, { num: 8, x: 65, y: 55, name: 'Maycock' },
+    { num: 5, x: 50, y: 50, name: 'Hutchinson' }, { num: 12, x: 35, y: 55, name: 'Smith' },
+    { num: 19, x: 80, y: 30, name: 'Tilley' }, { num: 10, x: 50, y: 20, name: 'Stevens' },
+    { num: 11, x: 20, y: 30, name: 'Browne' },
+  ], stats: { possession: 51, shots: 10, xG: 1.11, passes: 441, duels: 58 }},
 ]
 
 const FIXTURES = [
   { opponent: 'Stockport County', date: 'Sat 5 Apr', time: '15:00', venue: 'Away', competition: 'League One' },
   { opponent: 'Huddersfield Town', date: 'Sat 12 Apr', time: '15:00', venue: 'Home', competition: 'League One' },
-  { opponent: 'Peterborough United', date: 'Fri 18 Apr', time: '19:45', venue: 'Away', competition: 'League One' },
+  { opponent: 'Peterborough United', date: 'Sat 18 Apr', time: '19:45', venue: 'Away', competition: 'League One' },
+  { opponent: 'Cardiff City', date: 'Tue 21 Apr', time: '15:00', venue: 'Home', competition: 'League One' },
+  { opponent: 'Reading', date: 'Sat 26 Apr', time: '15:00', venue: 'Away', competition: 'League One' },
 ]
 
 const ACADEMY_PLAYERS = [
-  { name: 'Josh Collins', age: 17, position: 'ST', highlight: 'U21 hat-trick vs Riverside. Recommended for first-team training.' },
-  { name: 'Alfie Morgan', age: 16, position: 'CM', highlight: 'Outstanding passing range. Youth coach rates as generational talent.' },
-  { name: 'Rhys Okonkwo', age: 18, position: 'CB', highlight: 'Bench squad inclusion pending. Dominant in U21 aerial duels.' },
-  { name: 'Elijah Shaw', age: 17, position: 'LW', highlight: 'Pace merchant. 7 assists in last 8 U18 appearances.' },
+  { name: 'Academy Player E', age: 17, position: 'ST', highlight: 'U21 hat-trick vs reserve opponents' },
+  { name: 'Academy Player F', age: 16, position: 'CM', highlight: 'Outstanding passing range in U18s' },
+  { name: 'Academy Player G', age: 18, position: 'CB', highlight: 'Dominant in U21 aerial duels' },
+  { name: 'Academy Player H', age: 17, position: 'LW', highlight: '7 assists in 8 U18 games' },
 ]
 
 // ─── Football Roundup Data ──────────────────────────────────────────────────
@@ -390,7 +392,7 @@ const MORNING_HIGHLIGHTS_FOOTBALL = [
   'Transfer target Diallo — Genk countered at £2.1m. Budget remaining: £4.2m.',
   'Press conference at 2pm today. AI briefing notes prepared.',
   'U21s won 3-0 yesterday. Collins hat-trick — recommended for first-team bench.',
-  'Saturday\'s match vs Riverside United at home, 3pm kick-off. Team sheet needed by Thursday.',
+  'Saturday\'s match vs Stockport County at home, 3pm kick-off. Team sheet needed by Thursday.',
 ]
 
 // ─── World Clock (reused) ───────────────────────────────────────────────────
@@ -666,6 +668,9 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
+        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" style={{ zIndex: 0 }}>
+          <img src="/badges/afc_wimbledon_badge_studio.png" alt="" className="absolute" style={{ right: -20, top: '50%', transform: 'translateY(-50%)', width: 220, height: 220, objectFit: 'contain', opacity: 0.06, filter: 'saturate(0) brightness(2)', userSelect: 'none', pointerEvents: 'none' }} />
+        </div>
         <img src="/badges/afc_wimbledon_badge_studio.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
         <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1097,13 +1102,13 @@ function FitnessBadge({ status }: { status: FitnessStatus }) {
 // ─── Workflow Activity Feed ─────────────────────────────────────────────────
 
 const WORKFLOW_FEED = [
-  { name: 'Pre-match analysis — Riverside United', status: 'COMPLETE' as const, ts: 'Just now' },
-  { name: 'Injury assessment — Santos', status: 'RUNNING' as const, ts: '3 min ago' },
-  { name: 'Transfer negotiation — Diallo', status: 'ACTION' as const, ts: '15 min ago' },
+  { name: 'Pre-match analysis — Stockport County', status: 'COMPLETE' as const, ts: 'Just now' },
+  { name: 'Injury assessment — Omar Bugiel', status: 'RUNNING' as const, ts: '3 min ago' },
+  { name: 'Transfer negotiation — Aaron Collins', status: 'ACTION' as const, ts: '15 min ago' },
   { name: 'Training load report — weekly', status: 'COMPLETE' as const, ts: '1 hr ago' },
   { name: 'Academy performance review', status: 'COMPLETE' as const, ts: '2 hr ago' },
   { name: 'Press conference prep — AI brief', status: 'COMPLETE' as const, ts: '3 hr ago' },
-  { name: 'Opposition scouting — Northgate City', status: 'RUNNING' as const, ts: '4 hr ago' },
+  { name: 'Opposition scouting — Huddersfield Town', status: 'RUNNING' as const, ts: '4 hr ago' },
   { name: 'Matchday operations checklist', status: 'ACTION' as const, ts: 'Yesterday' },
 ]
 
@@ -1154,22 +1159,22 @@ function FifaCard({ p, size = 'pitch', selected, onClick }: { p: { id: string; n
 
 function TeamInfoTab() {
   const PLAYERS = [
-    { id: 'gk', name: 'Sam Fletcher', pos: 'GK', initials: 'SF', overall: 79, color: '#F59E0B', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 } },
-    { id: 'rb', name: 'Ryan Cole', pos: 'RB', initials: 'RC', overall: 81, color: '#3B82F6', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 } },
-    { id: 'cb1', name: 'Kyle Brennan', pos: 'CB', initials: 'KB', overall: 82, color: '#3B82F6', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 } },
-    { id: 'cb2', name: 'Nate Ward', pos: 'CB', initials: 'NW', overall: 78, color: '#3B82F6', stats: { PAC: 68, SHO: 35, PAS: 62, DRI: 55, DEF: 85, PHY: 84 } },
-    { id: 'lb', name: 'Tyler Shaw', pos: 'LB', initials: 'TS', overall: 76, color: '#3B82F6', stats: { PAC: 84, SHO: 48, PAS: 70, DRI: 72, DEF: 78, PHY: 74 } },
-    { id: 'cdm1', name: 'Jamie Torres', pos: 'CM', initials: 'JT', overall: 84, color: '#22C55E', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 } },
-    { id: 'cdm2', name: 'Ben Hardy', pos: 'CM', initials: 'BH', overall: 77, color: '#22C55E', stats: { PAC: 72, SHO: 62, PAS: 80, DRI: 74, DEF: 72, PHY: 78 } },
-    { id: 'cam', name: 'Kai Ellis', pos: 'CAM', initials: 'KE', overall: 83, color: '#22C55E', stats: { PAC: 80, SHO: 78, PAS: 86, DRI: 88, DEF: 42, PHY: 68 } },
-    { id: 'lm', name: 'Dele Adeyemi', pos: 'LW', initials: 'DA', overall: 85, color: '#EF4444', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 } },
-    { id: 'rm', name: 'Zak Osei', pos: 'RW', initials: 'ZO', overall: 80, color: '#EF4444', stats: { PAC: 88, SHO: 74, PAS: 72, DRI: 84, DEF: 38, PHY: 70 } },
-    { id: 'st', name: 'Liam Cross', pos: 'ST', initials: 'LC', overall: 86, color: '#EF4444', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 } },
+    { id: 'gk', name: 'Nathan Bishop', pos: 'GK', initials: 'NB', overall: 68, color: '#F59E0B', stats: { PAC: 52, SHO: 24, PAS: 58, DRI: 44, DEF: 76, PHY: 78 } },
+    { id: 'rb', name: 'Nathan Asiimwe', pos: 'RB', initials: 'NA', overall: 66, color: '#3B82F6', stats: { PAC: 76, SHO: 48, PAS: 62, DRI: 68, DEF: 70, PHY: 70 } },
+    { id: 'cb1', name: 'Ryan Johnson', pos: 'CB', initials: 'RJ', overall: 71, color: '#3B82F6', stats: { PAC: 66, SHO: 35, PAS: 60, DRI: 52, DEF: 80, PHY: 80 } },
+    { id: 'cb2', name: 'Patrick Bauer', pos: 'CB', initials: 'PB', overall: 69, color: '#3B82F6', stats: { PAC: 62, SHO: 30, PAS: 58, DRI: 50, DEF: 78, PHY: 79 } },
+    { id: 'lb', name: 'Steve Seddon', pos: 'LB', initials: 'SS', overall: 72, color: '#3B82F6', stats: { PAC: 76, SHO: 44, PAS: 68, DRI: 70, DEF: 74, PHY: 72 } },
+    { id: 'cdm1', name: 'Callum Maycock', pos: 'CM', initials: 'CM', overall: 71, color: '#22C55E', stats: { PAC: 70, SHO: 58, PAS: 76, DRI: 72, DEF: 64, PHY: 70 } },
+    { id: 'cdm2', name: 'Sam Hutchinson', pos: 'CDM', initials: 'SH', overall: 69, color: '#22C55E', stats: { PAC: 62, SHO: 48, PAS: 68, DRI: 60, DEF: 76, PHY: 74 } },
+    { id: 'cam', name: 'Alistair Smith', pos: 'CM', initials: 'AS', overall: 70, color: '#22C55E', stats: { PAC: 68, SHO: 60, PAS: 74, DRI: 70, DEF: 58, PHY: 68 } },
+    { id: 'lm', name: 'Marcus Browne', pos: 'LW', initials: 'MB', overall: 72, color: '#EF4444', stats: { PAC: 82, SHO: 68, PAS: 70, DRI: 80, DEF: 38, PHY: 68 } },
+    { id: 'rm', name: 'James Tilley', pos: 'RW', initials: 'JT', overall: 68, color: '#EF4444', stats: { PAC: 80, SHO: 62, PAS: 64, DRI: 76, DEF: 34, PHY: 66 } },
+    { id: 'st', name: 'Mathew Stevens', pos: 'ST', initials: 'MS', overall: 70, color: '#EF4444', stats: { PAC: 76, SHO: 76, PAS: 60, DRI: 72, DEF: 28, PHY: 72 } },
   ]
   const COACHES = [
-    { name: 'Johnnie Jackson', role: 'Head Coach', initials: 'MR', color: '#C8960C' },
-    { name: 'Danny Hughes', role: 'Asst Coach', initials: 'DH', color: '#0D9488' },
-    { name: 'Priya Nair', role: 'Head Medical', initials: 'PN', color: '#EC4899' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', initials: 'JJ', color: '#C8960C' },
+    { name: 'Assistant Manager', role: 'Assistant Coach', initials: 'AM', color: '#0D9488' },
+    { name: 'Head Physio', role: 'Head Medical', initials: 'HP', color: '#EC4899' },
   ]
   type Formation = '4-2-3-1' | '4-3-3' | '3-5-2' | '4-4-2'
   const FORMATIONS: Record<Formation, Record<string, { top: string; left: string }>> = {
@@ -1179,12 +1184,12 @@ function TeamInfoTab() {
     '4-4-2': { gk: { top: '84%', left: '50%' }, rb: { top: '68%', left: '90%' }, cb1: { top: '68%', left: '35%' }, cb2: { top: '68%', left: '65%' }, lb: { top: '68%', left: '10%' }, cdm1: { top: '46%', left: '10%' }, cdm2: { top: '46%', left: '35%' }, cam: { top: '46%', left: '65%' }, rm: { top: '46%', left: '90%' }, lm: { top: '18%', left: '35%' }, st: { top: '18%', left: '65%' } },
   }
   const SUBS = [
-    { id: 'gk2', name: 'Aiden Park', pos: 'GK', initials: 'AP', overall: 74, color: '#F59E0B', stats: { PAC: 52, SHO: 24, PAS: 60, DRI: 44, DEF: 78, PHY: 80 } },
-    { id: 'cb3', name: 'Jake Morris', pos: 'CB', initials: 'JM', overall: 75, color: '#3B82F6', stats: { PAC: 65, SHO: 30, PAS: 58, DRI: 52, DEF: 82, PHY: 81 } },
-    { id: 'rb2', name: 'Leo Grant', pos: 'RB', initials: 'LG', overall: 73, color: '#3B82F6', stats: { PAC: 78, SHO: 42, PAS: 64, DRI: 68, DEF: 74, PHY: 72 } },
-    { id: 'cm3', name: 'Finn Carey', pos: 'CM', initials: 'FC', overall: 76, color: '#22C55E', stats: { PAC: 70, SHO: 58, PAS: 78, DRI: 72, DEF: 66, PHY: 74 } },
-    { id: 'lw2', name: 'Omar Diallo', pos: 'LW', initials: 'OD', overall: 78, color: '#EF4444', stats: { PAC: 90, SHO: 72, PAS: 68, DRI: 82, DEF: 34, PHY: 68 } },
-    { id: 'st2', name: 'Rafe Adeyemi', pos: 'ST', initials: 'RA', overall: 77, color: '#EF4444', stats: { PAC: 84, SHO: 80, PAS: 62, DRI: 76, DEF: 28, PHY: 74 } },
+    { id: 'gk2', name: 'Joe McDonnell', pos: 'GK', initials: 'JM', overall: 69, color: '#F59E0B', stats: { PAC: 50, SHO: 22, PAS: 58, DRI: 42, DEF: 74, PHY: 76 } },
+    { id: 'cb3', name: 'Isaac Ogundere', pos: 'CB', initials: 'IO', overall: 68, color: '#3B82F6', stats: { PAC: 62, SHO: 28, PAS: 56, DRI: 50, DEF: 76, PHY: 78 } },
+    { id: 'rb2', name: 'Brodi Hughes', pos: 'RB', initials: 'BH', overall: 65, color: '#3B82F6', stats: { PAC: 74, SHO: 38, PAS: 60, DRI: 64, DEF: 68, PHY: 68 } },
+    { id: 'cm3', name: 'Jake Reeves', pos: 'CM', initials: 'JR', overall: 70, color: '#22C55E', stats: { PAC: 66, SHO: 54, PAS: 76, DRI: 68, DEF: 64, PHY: 72 } },
+    { id: 'lw2', name: 'Myles Hippolyte', pos: 'LW', initials: 'MH', overall: 69, color: '#EF4444', stats: { PAC: 84, SHO: 64, PAS: 66, DRI: 78, DEF: 30, PHY: 64 } },
+    { id: 'st2', name: 'Omar Bugiel', pos: 'ST', initials: 'OB', overall: 70, color: '#EF4444', stats: { PAC: 76, SHO: 74, PAS: 58, DRI: 70, DEF: 26, PHY: 70 } },
   ]
   const [starters, setStarters] = useState(PLAYERS)
   const [bench, setBench] = useState(SUBS)
@@ -1226,15 +1231,15 @@ function TeamInfoTab() {
   if (!mounted) return null
 
   const GRID_CARDS = [
-    { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'MR', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
-    { name: 'Danny Hughes', role: 'Assistant Coach', dept: 'Coaching', overall: 79, initials: 'DH', color: '#0D9488', stats: { PAC: 68, SHO: 52, PAS: 81, DRI: 74, DEF: 71, PHY: 69 }, id: 'OFC-002', date: '01/07/2025' },
-    { name: 'Kyle Brennan', role: 'Captain / CB', dept: 'First Team', overall: 82, initials: 'KB', color: '#1D4ED8', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 }, id: 'OFC-003', date: '01/07/2025' },
-    { name: 'Sam Fletcher', role: 'Goalkeeper', dept: 'First Team', overall: 79, initials: 'SF', color: '#15803D', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 }, id: 'OFC-004', date: '01/07/2025' },
-    { name: 'Dele Adeyemi', role: 'Left Wing', dept: 'First Team', overall: 85, initials: 'DA', color: '#7C3AED', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 }, id: 'OFC-005', date: '01/07/2025' },
-    { name: 'Ryan Cole', role: 'Right Back', dept: 'First Team', overall: 81, initials: 'RC', color: '#B91C1C', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 }, id: 'OFC-006', date: '01/07/2025' },
-    { name: 'Jamie Torres', role: 'Central Midfielder', dept: 'First Team', overall: 84, initials: 'JT', color: '#0EA5E9', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 }, id: 'OFC-007', date: '01/07/2025' },
-    { name: 'Liam Cross', role: 'Striker', dept: 'First Team', overall: 86, initials: 'LC', color: '#EA580C', stats: { PAC: 88, SHO: 91, PAS: 67, DRI: 85, DEF: 32, PHY: 78 }, id: 'OFC-008', date: '01/07/2025' },
-    { name: 'Priya Nair', role: 'Head of Medical', dept: 'Medical', overall: 91, initials: 'PN', color: '#EC4899', stats: { PAC: 61, SHO: 44, PAS: 82, DRI: 58, DEF: 77, PHY: 69 }, id: 'OFC-009', date: '01/07/2025' },
+    { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', overall: 87, initials: 'JJ', color: '#C8960C', stats: { PAC: 72, SHO: 45, PAS: 88, DRI: 79, DEF: 65, PHY: 71 }, id: 'OFC-001', date: '01/07/2025' },
+    { name: 'Nathan Bishop', role: 'Goalkeeper', dept: 'First Team', overall: 68, initials: 'NB', color: '#15803D', stats: { PAC: 52, SHO: 24, PAS: 58, DRI: 44, DEF: 76, PHY: 78 }, id: 'OFC-002', date: '01/07/2025' },
+    { name: 'Ryan Johnson', role: 'Centre Back', dept: 'First Team', overall: 71, initials: 'RJ', color: '#1D4ED8', stats: { PAC: 66, SHO: 35, PAS: 60, DRI: 52, DEF: 80, PHY: 80 }, id: 'OFC-003', date: '01/07/2025' },
+    { name: 'Steve Seddon', role: 'Left Back', dept: 'First Team', overall: 72, initials: 'SS', color: '#B91C1C', stats: { PAC: 76, SHO: 44, PAS: 68, DRI: 70, DEF: 74, PHY: 72 }, id: 'OFC-004', date: '01/07/2025' },
+    { name: 'Marcus Browne', role: 'Left Wing', dept: 'First Team', overall: 72, initials: 'MB', color: '#7C3AED', stats: { PAC: 82, SHO: 68, PAS: 70, DRI: 80, DEF: 38, PHY: 68 }, id: 'OFC-005', date: '01/07/2025' },
+    { name: 'Callum Maycock', role: 'Central Midfielder', dept: 'First Team', overall: 71, initials: 'CM', color: '#0EA5E9', stats: { PAC: 70, SHO: 58, PAS: 76, DRI: 72, DEF: 64, PHY: 70 }, id: 'OFC-006', date: '01/07/2025' },
+    { name: 'Mathew Stevens', role: 'Striker', dept: 'First Team', overall: 70, initials: 'MS', color: '#EA580C', stats: { PAC: 76, SHO: 76, PAS: 60, DRI: 72, DEF: 28, PHY: 72 }, id: 'OFC-007', date: '01/07/2025' },
+    { name: 'Sam Hutchinson', role: 'Defensive Midfielder', dept: 'First Team', overall: 69, initials: 'SH', color: '#0D9488', stats: { PAC: 62, SHO: 48, PAS: 68, DRI: 60, DEF: 76, PHY: 74 }, id: 'OFC-008', date: '01/07/2025' },
+    { name: 'Head Physio', role: 'Head of Medical', dept: 'Medical', overall: 88, initials: 'HP', color: '#EC4899', stats: { PAC: 58, SHO: 40, PAS: 80, DRI: 55, DEF: 74, PHY: 66 }, id: 'OFC-009', date: '01/07/2025' },
   ]
 
   return (
@@ -1375,7 +1380,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
       <div className="space-y-3">
         {([
           { id: 'fqw1', title: 'Kyle Brennan fitness check overdue', description: 'Last GPS session flagged fatigue risk. Clear for Saturday?', impact: 'high' as const, effort: '2min', category: 'Squad', action: 'Check fitness', source: 'GPS' },
-          { id: 'fqw2', title: 'Opposition report not reviewed', description: 'Riverside United match in 3 days. Scout report ready.', impact: 'high' as const, effort: '5min', category: 'Tactics', action: 'View report', source: 'Scouting' },
+          { id: 'fqw2', title: 'Opposition report not reviewed', description: 'Stockport County match in 3 days. Scout report ready.', impact: 'high' as const, effort: '5min', category: 'Tactics', action: 'View report', source: 'Scouting' },
           { id: 'fqw3', title: 'Agent contact overdue — Diallo deal', description: 'No contact logged in 4 days. Window closes in 11 days.', impact: 'medium' as const, effort: '5min', category: 'Transfers', action: 'Log contact', source: 'CRM' },
           { id: 'fqw4', title: 'Press conference prep outstanding', description: 'Match day press conf tomorrow at 10am. No notes prepared.', impact: 'medium' as const, effort: '10min', category: 'Media', action: 'Prepare notes', source: 'Calendar' },
           { id: 'fqw5', title: '3 player expense claims pending', description: 'Awaiting manager approval for over 72 hours.', impact: 'medium' as const, effort: '5min', category: 'Finance', action: 'Approve', source: 'Finance' },
@@ -1423,7 +1428,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           { id: 'fmw1', title: 'Finalise starting XI for Saturday', description: 'Formation set, but 2 positions undecided. Confirm by Thursday.', impact: 'high' as const, effort: '15min', category: 'Tactics', action: 'Set lineup', source: 'Squad Planner' },
           { id: 'fmw2', title: 'Pre-match fitness assessment', description: 'Four players require sign-off from physio before training today.', impact: 'high' as const, effort: '10min', category: 'Medical', action: 'View assessments', source: 'Medical' },
           { id: 'fmw3', title: 'Post training video clips ready', description: "Three clips uploaded from today's session. Review before posting.", impact: 'medium' as const, effort: '5min', category: 'Media', action: 'Review clips', source: 'Social Media' },
-          { id: 'fmw4', title: 'Opposition set piece analysis', description: 'Riverside United scored 3 set piece goals last 5 games.', impact: 'medium' as const, effort: '30min', category: 'Tactics', action: 'View analysis', source: 'Analytics' },
+          { id: 'fmw4', title: 'Opposition set piece analysis', description: 'Stockport County scored 3 set piece goals in their last 5 games.', impact: 'medium' as const, effort: '30min', category: 'Tactics', action: 'View analysis', source: 'Analytics' },
           { id: 'fmw5', title: 'Under-18 match report overdue', description: "Tuesday fixture. Coach hasn't submitted report yet.", impact: 'medium' as const, effort: '5min', category: 'Academy', action: 'Chase report', source: 'Academy' },
         ]).map(task => {
           const ic = task.impact === 'high' ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' } : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
@@ -1455,7 +1460,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   if (tab === 'insights') return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        {[{ l: 'League Position', v: '8th', c: '#F1C40F' }, { l: 'Squad Value', v: '£34.2m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£3.2m', c: '#003DA5' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'WWDLW', c: '#22C55E' }].map(s => (
+        {[{ l: 'League Position', v: '14th', c: '#F1C40F' }, { l: 'Squad Value', v: '£6.1m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£250k', c: '#003DA5' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'L-L-D-W-D', c: '#F59E0B' }].map(s => (
           <div key={s.l} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p>
             <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
@@ -1472,7 +1477,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
       </div>
       <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Metrics</p>
-        <div className="grid grid-cols-2 gap-2">{[{ l: 'Top Scorer', v: 'Marcus Webb — 12 goals' }, { l: 'Clean Sheet Rate', v: '39% (7/18)' }, { l: 'Wage Budget Used', v: '91% (£187k/wk)' }, { l: 'Academy Ready', v: '2 players' }, { l: 'Fan NPS', v: '72/100' }, { l: 'Position Trend', v: '11→10→9→8→8' }].map(m => (
+        <div className="grid grid-cols-2 gap-2">{[{ l: 'Top Scorer', v: 'Marcus Browne — 12 goals' }, { l: 'Clean Sheet Rate', v: '22% (8/37)' }, { l: 'Wage Budget Used', v: '82% (£42k/wk)' }, { l: 'Academy Ready', v: '2 players' }, { l: 'Fan NPS', v: '72/100' }, { l: 'Position Trend', v: '16→15→14→14→14' }].map(m => (
           <div key={m.l} className="flex justify-between py-1.5 px-2 rounded" style={{ backgroundColor: '#0A0B10' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{m.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{m.v}</span></div>
         ))}</div>
       </div>
@@ -1495,7 +1500,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
         {([
           { id: 'fdm1', title: 'Diallo negotiation stalled — counter offer needed', description: 'Transfer window closes in 11 days. Rivals have tabled £140k. Our last offer was £120k.', effort: '15min', category: 'Transfers', action: 'Send offer', source: 'CRM' },
           { id: 'fdm2', title: 'Press conference 10am — no prep completed', description: 'Tomorrow morning. Manager expects AI-generated talking points by tonight.', effort: '10min', category: 'Media', action: 'Prepare now', source: 'Calendar' },
-          { id: 'fdm3', title: '3 player contracts expiring in 60 days', description: 'No renewal talks started for James, Ward, or Shaw. Free agent risk.', effort: '30min', category: 'Contracts', action: 'Start talks', source: 'HR' },
+          { id: 'fdm3', title: '3 player contracts expiring in 60 days', description: 'No renewal talks started for Reeves, Bugiel, or Hippolyte. Free agent risk.', effort: '30min', category: 'Contracts', action: 'Start talks', source: 'HR' },
           { id: 'fdm4', title: 'PSR compliance check — quarterly submission missed', description: 'Deadline was last Friday. Finance team needs to submit immediately.', effort: '10min', category: 'Finance', action: 'Submit now', source: 'Finance' },
         ]).map(item => (
           <div key={item.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1542,17 +1547,17 @@ function TabContent({ tab }: { tab: OverviewTab }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {[
             { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#003DA5' },
-            { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#003DA5' },
-            { name: 'Dr Sarah Phillips', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
-            { name: 'Pete Morrison', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
-            { name: 'Dave Thompson', role: 'Head of Recruitment', dept: 'Scouting', status: 'In today', location: 'Office + scout trip tomorrow', rel: 'Direct report', color: '#F39C12' },
-            { name: 'Ian Brooks', role: 'Academy Director', dept: 'Academy', status: 'In today', location: 'Academy building', rel: 'Direct report', color: '#27AE60' },
-            { name: 'Steve Walsh', role: 'Chief Scout', dept: 'Scouting', status: 'Away', location: 'Valencia scouting trip', rel: 'Scouting dept', color: '#F39C12' },
-            { name: 'Lisa Chen', role: 'Sports Scientist', dept: 'Performance', status: 'Away', location: 'Conference — back Thursday', rel: 'Performance dept', color: '#8E44AD' },
-            { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', status: 'In today', location: 'Analysis suite', rel: 'Analytics dept', color: '#8E44AD' },
-            { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', status: 'Away', location: 'UEFA Pro Licence course Mon-Wed', rel: 'Coaching dept', color: '#003DA5' },
-            { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept', color: '#8E44AD' },
-            { name: 'Mark Evans', role: 'Scout', dept: 'Scouting', status: 'In today', location: 'Office', rel: 'Scouting dept', color: '#F39C12' },
+            { name: 'Assistant Manager', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#003DA5' },
+            { name: 'Team Doctor', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Head Physio', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Head of Recruitment', role: 'Head of Recruitment', dept: 'Scouting', status: 'In today', location: 'Office + scout trip tomorrow', rel: 'Direct report', color: '#F39C12' },
+            { name: 'Goalkeeping Coach', role: 'GK Coach', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Coaching dept', color: '#003DA5' },
+            { name: 'Chief Scout', role: 'Chief Scout', dept: 'Scouting', status: 'Away', location: 'Away — Scouting', rel: 'Scouting dept', color: '#F39C12' },
+            { name: 'First Team Analyst', role: 'Performance Analyst', dept: 'Analytics', status: 'In today', location: 'Analysis suite', rel: 'Analytics dept', color: '#8E44AD' },
+            { name: 'Fitness Coach', role: 'Fitness Coach', dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept', color: '#8E44AD' },
+            
+            
+            
           ].map(m => (
             <div key={m.name} className="rounded-2xl p-4 cursor-pointer transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="flex items-start gap-3">
@@ -1587,14 +1592,14 @@ function TabContent({ tab }: { tab: OverviewTab }) {
             <div className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #7F8C8D' }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(127,140,141,0.2)', color: '#7F8C8D' }}>RB</div>
               <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>The Dons Trust</p>
-              <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Chairman</p>
+              <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Fan Owner</p>
             </div>
           </div>
           <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
           <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '40%' }} /></div>
           {/* Level 2 */}
           <div className="flex justify-center gap-6 mb-4">
-            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Johnnie Jackson', role: 'Head Coach', color: '#003DA5' }].map(m => (
+            {[{ name: 'Joe Palmer', role: 'Chief Executive', color: '#F39C12' }, { name: 'Johnnie Jackson', role: 'Head Coach', color: '#003DA5' }, { name: 'Ivor Heller', role: 'Director', color: '#7F8C8D' }].map(m => (
               <div key={m.name} className="flex flex-col items-center">
                 <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
                 <div className="rounded-xl p-3 text-center cursor-pointer w-44" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
@@ -1608,15 +1613,15 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           {/* Level 3 */}
           <div className="grid grid-cols-3 md:grid-cols-5 gap-3 pl-4">
             {[
-              { name: 'David Hughes', role: 'Asst Manager', color: '#003DA5' },
-              { name: 'Alan Cooper', role: 'GK Coach', color: '#003DA5' },
-              { name: 'Tom Wallace', role: 'Fitness Coach', color: '#8E44AD' },
-              { name: 'Lisa Chen', role: 'Sports Scientist', color: '#8E44AD' },
-              { name: 'Emma Clark', role: 'Analyst', color: '#8E44AD' },
-              { name: 'Dr Sarah Phillips', role: 'Club Doctor', color: '#2980B9' },
-              { name: 'Pete Morrison', role: 'Head Physio', color: '#2980B9' },
-              { name: 'Steve Walsh', role: 'Chief Scout', color: '#F39C12' },
-              { name: 'Ian Brooks', role: 'Academy Director', color: '#27AE60' },
+              { name: 'Head of Recruitment', role: 'Head of Recruitment', color: '#F39C12' },
+              { name: 'Chief Scout', role: 'Chief Scout', color: '#F39C12' },
+              { name: 'Assistant Manager', role: 'Asst Manager', color: '#003DA5' },
+              { name: 'Goalkeeping Coach', role: 'GK Coach', color: '#003DA5' },
+              { name: 'First Team Analyst', role: 'Analyst', color: '#8E44AD' },
+              { name: 'Head Physio', role: 'Head Physio', color: '#2980B9' },
+              { name: 'Team Doctor', role: 'Club Doctor', color: '#2980B9' },
+              { name: 'Fitness Coach', role: 'Fitness Coach', color: '#8E44AD' },
+              
             ].map(m => (
               <div key={m.name} className="rounded-xl p-3 text-center cursor-pointer" style={{ backgroundColor: '#0A0B10', border: `1px solid ${m.color}40` }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
@@ -1670,7 +1675,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
             </div>
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-              {[['Chairman','The Dons Trust'],['Director of Football','Dave Thompson'],['Head Coach','Johnnie Jackson'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
+              {[['Chairman','The Dons Trust'],['Chief Executive','Joe Palmer'],['Head Coach','Johnnie Jackson'],['Club Doctor','Team Doctor'],['Club Secretary','Club Secretary'],['Media Manager','Media Manager']].map(([r,n]) => (
                 <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
               ))}
             </div>
@@ -1678,7 +1683,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           {/* Birthdays */}
           <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming This Month</p>
-            {[['🎂','Pete Morrison','Birthday 3 Apr'],['🎉','David Hughes','5 year club anniversary 8 Apr'],['🎂','Emma Clark','Birthday 22 Apr']].map(([icon,name,event]) => (
+            {[['📋','Pre-match briefing','Stockport County — 4 Apr'],['⚽','Matchday','vs Stockport County (A) — 5 Apr'],['📋','Post-match debrief','7 Apr']].map(([icon,label,date]) => (
               <p key={name} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {name} — {event}</p>
             ))}
           </div>
@@ -2077,7 +2082,7 @@ function InsightsView() {
           <InsightCard label="Next Match" value="Saturday 3pm" sub="vs Bristol City (H)" color="#003DA5" />
           <InsightCard label="Days to Match" value="4" />
           <InsightCard label="Squad Available" value="21 / 25" sub="3 injured, 1 suspended" />
-          <InsightCard label="Last Result" value="W 2-1" sub="vs Riverside United" color="#22C55E" />
+          <InsightCard label="Last Result" value="W 2-1" sub="vs Stockport County" color="#22C55E" />
         </div>
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
@@ -2127,7 +2132,7 @@ function InsightsView() {
           <InsightCard label="Injury Cost Est." value="£284k" sub="Wages during absence" color="#F59E0B" />
         </div>
         <InsightTable cols={['Player', 'Injury', 'Phase', 'Injured', 'Expected Return', 'Missed', 'Physio']}
-          rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Dr. J. Williams'])} />
+          rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Team Doctor'])} />
         <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
           <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>GPS Load — Last Session</p>
           <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Distance', 'Hi-Speed', 'Sprints', 'Max Speed', 'Load'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
@@ -2500,8 +2505,8 @@ function SquadView() {
         </div>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-0">
           {[
-            { label: 'P', value: '28' }, { label: 'W', value: '17' }, { label: 'D', value: '5' }, { label: 'L', value: '6' },
-            { label: 'GF', value: '48' }, { label: 'GA', value: '24' }, { label: 'CS', value: '11' }, { label: 'Pos', value: '3rd' },
+            { label: 'P', value: '37' }, { label: 'W', value: '11' }, { label: 'D', value: '8' }, { label: 'L', value: '18' },
+            { label: 'GF', value: '48' }, { label: 'GA', value: '56' }, { label: 'CS', value: '8' }, { label: 'Pos', value: '14th' },
           ].map((s, i) => (
             <div key={i} className="flex flex-col items-center py-4" style={{ borderRight: i < 7 ? '1px solid #1F2937' : undefined }}>
               <span className="text-xs" style={{ color: '#6B7280' }}>{s.label}</span>
@@ -2518,7 +2523,7 @@ function SquadView() {
         </div>
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
           {[
-            { time: '09:00', session: 'Recovery Group (Martinez, O\'Brien, Santos)', type: 'Rehab', color: '#EF4444' },
+            { time: '09:00', session: 'Recovery Group (Bugiel, Hughes, Ogundere)', type: 'Rehab', color: '#EF4444' },
             { time: '10:00', session: 'Tactical — Pressing Triggers', type: 'Tactical', color: '#3B82F6' },
             { time: '10:45', session: 'Possession Drills (Full Squad)', type: 'Technical', color: '#22C55E' },
             { time: '11:30', session: 'Set Pieces — Corners & Free Kicks', type: 'Set Piece', color: '#F59E0B' },
@@ -2614,7 +2619,7 @@ function SquadView() {
             {['#','Player','Pos','Apps','Goals','Assists','Mins'].map(h=><th key={h} className="text-left py-2 px-4 font-semibold" style={{color:'#6B7280'}}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {[{m:'🥇',n:'M. Okafor',p:'ST',a:28,g:16,as:4,mn:'2,340'},{m:'🥈',n:'L. Santos',p:'LW',a:26,g:9,as:7,mn:'2,180'},{m:'🥉',n:'Z. Osei',p:'RW',a:24,g:7,as:5,mn:'1,920'},{m:'',n:'T. Torres',p:'CM',a:30,g:5,as:11,mn:'2,580'},{m:'',n:'B. Hardy',p:'CM',a:28,g:4,as:8,mn:'2,240'}].map(r=>(
+            {[{m:'🥇',n:'M. Browne',p:'LW',a:36,g:12,as:6,mn:'2,980'},{m:'🥈',n:'M. Stevens',p:'ST',a:34,g:9,as:3,mn:'2,740'},{m:'🥉',n:'O. Bugiel',p:'ST',a:32,g:5,as:2,mn:'1,820'},{m:'',n:'A. Smith',p:'CM',a:33,g:4,as:5,mn:'2,460'},{m:'',n:'A. Hackford',p:'CF',a:22,g:4,as:3,mn:'1,340'}].map(r=>(
               <tr key={r.n} style={{borderBottom:'1px solid #1F2937'}}>
                 <td className="py-2 px-4">{r.m}</td>
                 <td className="py-2 px-4 font-bold" style={{color:'#F9FAFB'}}>{r.n}</td>
@@ -2697,7 +2702,7 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
       highlights={[
         'Current 4-2-3-1 has a 68% win rate compared to 54% with 4-3-3.',
         'Set piece conversion at 14% — above league average of 11%.',
-        'Opposition (Riverside United) weak against high press — 34% turnover rate in own half.',
+        'Opposition (Stockport County) weak against high press — 34% turnover rate in own half.',
         'Rafa Correia averages 3.2 key passes per game from right wing.',
       ]}
       actionButtons={[
@@ -3988,10 +3993,10 @@ function PerformanceGPSView() {
                   <YAxis stroke="#6B7280" fontSize={11} />
                   <Tooltip contentStyle={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="Ryan Thompson" stroke="#3B82F6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Jamal Henderson" stroke="#EF4444" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Sean O'Brien" stroke="#F59E0B" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Kwame Okafor" stroke="#22C55E" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Steve Seddon" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Marcus Browne" stroke="#EF4444" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Omar Bugiel" stroke="#F59E0B" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Mathew Stevens" stroke="#22C55E" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="avg" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="4-Week Avg" />
                 </LineChart>
               </ResponsiveContainer>
@@ -4003,10 +4008,10 @@ function PerformanceGPSView() {
             <p className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>Key Observations</p>
             <div className="space-y-2">
               {[
-                "Sean O'Brien's load has increased steadily over 8 weeks — now at high injury risk (ACWR 1.58).",
-                "Jamal Henderson spiked in W4 following two consecutive match starts — manage carefully.",
+                "Omar Bugiel's load has increased steadily over 8 weeks — now at elevated injury risk (ACWR 1.38).",
+                "Marcus Browne spiked in W4 following two consecutive match starts — manage carefully.",
                 "Squad average load trending upward — consider a recovery week before next fixture run.",
-                "Ryan Thompson and Kwame Okafor both within optimal range — available for full selection.",
+                "Steve Seddon and Mathew Stevens both within optimal range — available for full selection.",
               ].map((obs, i) => (
                 <div key={i} className="flex gap-2">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{i + 1}</span>
@@ -4061,9 +4066,9 @@ function PerformanceGPSView() {
             <p className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>Fitness Coach Notes</p>
             <div className="space-y-2">
               {[
-                "Jamie Wilson shows highest match-to-training spike (+47%) — condition needs work or his training intensity is too low.",
-                "Sean O'Brien +37% spike on match day with already high ACWR — limit minutes or start from bench.",
-                "Jamal Henderson and Kwame Okafor both consistent — match output mirrors training. Good conditioning base.",
+                "Callum Maycock shows highest match-to-training spike (+47%) — condition needs work or his training intensity is too low.",
+                "Omar Bugiel +37% spike on match day with elevated ACWR — limit minutes or start from bench.",
+                "Steve Seddon and Mathew Stevens both consistent — match output mirrors training. Good conditioning base.",
               ].map((n, i) => (
                 <div key={i} className="flex gap-2">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.2)', color: '#F1C40F' }}>{i + 1}</span>
@@ -4229,7 +4234,7 @@ function TrainingView() {
                 { day: 'Wed', am: 'Possession & Patterns', pm: 'Gym', intensity: 'Medium', focus: 'Technical' },
                 { day: 'Thu', am: 'Match Simulation', pm: 'Rest', intensity: 'High', focus: 'Match Prep' },
                 { day: 'Fri', am: 'Light Walk-through', pm: 'Pre-match Talk', intensity: 'Low', focus: 'Recovery' },
-                { day: 'Sat', am: 'MATCHDAY', pm: '—', intensity: '—', focus: 'Riverside United' },
+                { day: 'Sat', am: 'MATCHDAY', pm: '—', intensity: '—', focus: 'Stockport County' },
                 { day: 'Sun', am: 'Rest Day', pm: '—', intensity: '—', focus: 'Recovery' },
               ].map((d, i) => {
                 const intColor = d.intensity === 'High' ? '#EF4444' : d.intensity === 'Medium' ? '#F59E0B' : d.intensity === 'Low' ? '#22C55E' : '#6B7280'
@@ -5556,7 +5561,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
-                squad: ['Top performers this week: Dele Adeyemi (8.2 avg), Liam Cross (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
+                squad: ['Top performers this week: Marcus Browne (8.2 avg), Mathew Stevens (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
                 tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
                 transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for Kyle Brennan — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
                 medical: ['2 players currently in rehab — Bugiel (calf), Hughes (hamstring)', 'Bugiel expected return: 10 days, Hughes: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Browne high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
