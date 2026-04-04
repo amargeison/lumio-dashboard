@@ -1554,61 +1554,77 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       )}
 
-      {/* TAB: Don't Miss */}
-      {activeTab === 'dont-miss' && (
-        <div className="max-w-4xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
-              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Urgent deadlines and compliance actions — these cannot wait.</p>
+      {/* TAB: Don't Miss — matches business portal NotToMiss format exactly */}
+      {activeTab === 'dont-miss' && (() => {
+        const U: Record<string, { bg: string; border: string; tagBg: string; label: string }> = {
+          critical: { bg: 'rgba(153,27,27,0.15)', border: 'rgba(239,68,68,0.35)', tagBg: '#DC2626', label: '🔴 CRITICAL' },
+          today:    { bg: 'rgba(120,53,15,0.12)', border: 'rgba(245,158,11,0.25)', tagBg: '#D97706', label: '🟡 TODAY' },
+          soon:     { bg: 'rgba(29,78,216,0.08)', border: 'rgba(59,130,246,0.2)',  tagBg: '#2563EB', label: '🔵 THIS WEEK' },
+        }
+        const ALL = [
+          { id: 'dm1', urgency: 'critical', category: 'Safeguarding', deadline: 'Before 3pm today', title: 'Open safeguarding concern — DSL sign-off required', body: 'Year 9 pupil concern logged 2 days ago. DSL review is overdue. Ofsted requires same-day review for high-risk concerns.', consequence: 'Statutory breach risk', action: 'Review now' },
+          { id: 'dm2', urgency: 'critical', category: 'Exams', deadline: '4pm today', title: 'Year 11 mock results not uploaded to MIS', body: '3 classes outstanding. Results needed for progress reports going to parents Friday. Data manager flagged this yesterday.', consequence: 'Parent reports delayed', action: 'Upload results' },
+          { id: 'dm3', urgency: 'critical', category: 'Cover', deadline: 'Before Period 3', title: '2 cover lessons unassigned this afternoon', body: 'Mr Johnson absent — Period 3 Year 10 Maths and Period 5 Year 8 Science have no cover supervisor assigned.', consequence: 'Classes unsupervised', action: 'Assign cover' },
+          { id: 'dm4', urgency: 'today', category: 'SEND', deadline: '11:30am', title: 'SENCO review meeting agenda not circulated', body: '4 pupils on agenda for 11:30 review. Agenda not yet sent to class teachers or parents attending.', consequence: 'Meeting delayed', action: 'Send agenda' },
+          { id: 'dm5', urgency: 'today', category: 'CPD', deadline: 'Sunday midnight', title: 'CPD booking closes Sunday — Trauma-informed teaching', body: '3 staff have not confirmed attendance. Course is fully funded and counts toward appraisal targets.', consequence: 'Places lost', action: 'Book now' },
+          { id: 'dm6', urgency: 'soon', category: 'Compliance', deadline: 'End of month', title: 'Ofsted self-assessment due end of month', body: 'Currently 87% complete. 3 sections outstanding: Behaviour, SEND provision, and Curriculum impact. Target is 90%.', consequence: 'Inspection readiness at risk', action: 'Complete now' },
+        ]
+        const [dismissed, setDismissedDM] = React.useState<Set<string>>(new Set())
+        const active = ALL.filter(i => !dismissed.has(i.id))
+        return (
+          <div className="max-w-4xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss Today</h2>
+                <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Critical items that need your attention — sorted by urgency</p>
+              </div>
+              <div className="text-sm" style={{ color: '#6B7280' }}>{active.length} items</div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
-            <span>🔗</span>
-            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
-          </div>
-          {true ? (
             <div className="space-y-3">
-              {([
-                { id: 'dm1', title: 'DSL review — safeguarding concern', description: 'Year 9 pupil — must be reviewed before 3pm today.', effort: '10min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
-                { id: 'dm2', title: 'Year 11 mock results upload — due 4pm', description: 'Data team need results uploaded to MIS by end of day.', effort: '5min', category: 'Data', action: 'Upload', source: 'MIS' },
-                { id: 'dm3', title: 'SENCO review meeting — 11:30am', description: '4 pupils on agenda including 2 EHCP reviews.', effort: '30min', category: 'SEND', action: 'View agenda', source: 'Calendar' },
-                { id: 'dm4', title: 'All-staff briefing — Friday 3:45pm', description: 'Dr Mitchell — whole school updates.', effort: '5min', category: 'SLT', action: 'Add to calendar', source: 'Calendar' },
-                { id: 'dm5', title: 'CPD booking deadline — Sunday', description: 'Trauma-informed teaching course, Leeds — last day to book.', effort: '2min', category: 'CPD', action: 'Book now', source: 'CPD Portal' },
-                { id: 'dm6', title: 'Ofsted readiness self-assessment — end of month', description: 'Currently at 87% — up 4% this week.', effort: '15min', category: 'Compliance', action: 'View assessment', source: 'Compliance' },
-              ]).map(item => (
-                <div key={item.id} className="rounded-2xl p-5 transition-all"
-                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#F87171' }}>HIGH IMPACT</span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {item.effort}</span>
-                        <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+              {active.map(item => {
+                const u = U[item.urgency]
+                return (
+                  <div key={item.id} className="rounded-2xl p-5"
+                    style={{ backgroundColor: u.bg, border: `1px solid ${u.border}` }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs font-black px-2.5 py-1 rounded-full text-white"
+                            style={{ backgroundColor: u.tagBg }}>{u.label}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{item.category}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>Deadline: {item.deadline}</span>
+                        </div>
+                        <h3 className="font-bold mb-1.5" style={{ color: '#F9FAFB' }}>{item.title}</h3>
+                        <p className="text-sm leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{item.body}</p>
+                        <p className="text-xs" style={{ color: 'rgba(248,113,113,0.8)' }}>⚠️ If not done: {item.consequence}</p>
                       </div>
-                      <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.title}</h3>
-                      <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item.description}</p>
-                      <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {item.source}</p>
-                    </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button onClick={() => { if (item.action === 'Review now' && item.category === 'Safeguarding') setShowSafeguardingReview(true) }} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
-                        style={{ backgroundColor: '#7C3AED' }}>
-                        {item.action} →
-                      </button>
-                      <button className="px-4 py-2 text-xs rounded-xl transition-colors"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
-                        Mark done
-                      </button>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button onClick={() => { if (item.action === 'Review now') setShowSafeguardingReview(true) }}
+                          className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                          style={{ backgroundColor: '#7C3AED' }}>
+                          {item.action} →
+                        </button>
+                        <button onClick={() => setDismissedDM(prev => { const n = new Set(prev); n.add(item.id); return n })}
+                          className="px-4 py-2 text-xs rounded-xl transition-colors"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
                   </div>
+                )
+              })}
+              {active.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="text-5xl mb-3">✅</div>
+                  <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Nothing critical today!</p>
+                  <p className="text-sm" style={{ color: '#6B7280' }}>All urgent items are handled.</p>
                 </div>
-              ))}
+              )}
             </div>
-          ) : null}
-        </div>
-      )}
+          </div>
+        )
+      })()}
 
       {/* TAB: Staff */}
       {activeTab === 'staff' && (() => {
