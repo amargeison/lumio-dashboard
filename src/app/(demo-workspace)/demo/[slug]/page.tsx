@@ -2921,6 +2921,10 @@ function MarketingView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="marketing" portal="business" />
+      </div>
     </div>
   )
 }
@@ -2951,7 +2955,6 @@ function TrialsView({ company }: { company: string }) {
           )
         })}
       </div>
-      <DeptAISummary dept="trials" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -2991,6 +2994,10 @@ function TrialsView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="trials" portal="business" />
+      </div>
     </div>
   )
 }
@@ -3014,7 +3021,6 @@ function OpsView({ company }: { company: string }) {
           pieData={[{label:'This week',value:60,color:'#EF4444'},{label:'This month',value:30,color:'#F59E0B'},{label:'Next month',value:10,color:'#22C55E'}]}
           barData={[{label:'Jan',value:24000,color:'#6C3FC5'},{label:'Feb',value:26000,color:'#6C3FC5'},{label:'Mar',value:inv,color:'#7C3AED'}]} />
       </div>
-      <DeptAISummary dept="operations" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -3057,6 +3063,10 @@ function OpsView({ company }: { company: string }) {
         </div>
       </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="operations" portal="business" />
+      </div>
     </div>
   )
 }
@@ -3086,7 +3096,6 @@ function SupportView({ company }: { company: string }) {
           pieData={[{label:'P1',value:1,color:'#EF4444'},{label:'P2',value:3,color:'#F59E0B'},{label:'P3',value:2,color:'#374151'}]}
           barData={[{label:'Mon',value:5,color:'#0D9488'},{label:'Tue',value:7,color:'#0D9488'},{label:'Wed',value:6,color:'#0F766E'}]} />
       </div>
-      <DeptAISummary dept="support" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -3132,6 +3141,10 @@ function SupportView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="support" portal="business" />
+      </div>
     </div>
   )
 }
@@ -3155,7 +3168,6 @@ function SuccessView({ company }: { company: string }) {
           pieData={[{label:'Churn risk',value:12,color:'#EF4444'},{label:'No contact',value:11,color:'#7F1D1D'}]}
           barData={[{label:'Jan',value:20,color:'#EF4444'},{label:'Feb',value:22,color:'#EF4444'},{label:'Mar',value:Math.round(cu*.13),color:'#DC2626'}]} />
       </div>
-      <DeptAISummary dept="success" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -3189,6 +3201,10 @@ function SuccessView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="success" portal="business" />
+      </div>
     </div>
   )
 }
@@ -3218,7 +3234,6 @@ function ITView({ company }: { company: string }) {
           pieData={[{label:'This month',value:2,color:'#EF4444'},{label:'Next month',value:2,color:'#F59E0B'}]}
           barData={[{label:'Jan',value:1,color:'#EF4444'},{label:'Feb',value:3,color:'#EF4444'},{label:'Mar',value:4,color:'#DC2626'}]} />
       </div>
-      <DeptAISummary dept="it" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -3262,6 +3277,10 @@ function ITView({ company }: { company: string }) {
             </div>
           </div>
         </div>
+      </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="it" portal="business" />
       </div>
     </div>
   )
@@ -3590,34 +3609,35 @@ function PartnersView({ company }: { company: string }) {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Box 1: Partner Info */}
-        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold" style={{ backgroundColor: p.color, color: '#fff' }}>{p.initials}</div>
-            <div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs" style={{ color: '#9CA3AF' }}>{p.type}</span>
-                <span className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: p.status === 'Active' ? 'rgba(13,148,136,0.12)' : 'rgba(245,158,11,0.12)', color: p.status === 'Active' ? '#0D9488' : '#F59E0B' }}>{p.status}</span>
-              </div>
+      {/* Partner Info Card */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold" style={{ backgroundColor: p.color, color: '#fff' }}>{p.initials}</div>
+          <div>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>{p.type}</span>
+              <span className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: p.status === 'Active' ? 'rgba(13,148,136,0.12)' : 'rgba(245,158,11,0.12)', color: p.status === 'Active' ? '#0D9488' : '#F59E0B' }}>{p.status}</span>
             </div>
           </div>
-          <div className="space-y-2.5">
-            {[{ l: 'Contact', v: p.contact }, { l: 'Next Review', v: p.nextReview }, { l: 'Commission', v: p.commission }].map(r => (
-              <div key={r.l} className="flex justify-between text-sm" style={{ borderBottom: '1px solid #1F2937', paddingBottom: 8 }}><span style={{ color: '#6B7280' }}>{r.l}</span><span className="font-semibold" style={{ color: '#F9FAFB' }}>{r.v}</span></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            {[{ l: 'Revenue', v: p.revenue, c: '#22C55E' }, { l: 'Active Deals', v: String(p.deals), c: '#6C3FC5' }, { l: 'Win Rate', v: p.winRate, c: '#0D9488' }, { l: 'Engagement', v: p.engagement, c: '#F59E0B' }].map(s => (
-              <div key={s.l} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318' }}>
-                <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
-                <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p>
-              </div>
-            ))}
-          </div>
         </div>
-        {/* Box 2: AI Partner Summary */}
+        <div className="grid grid-cols-4 gap-3">
+          {[{ l: 'Revenue', v: p.revenue, c: '#22C55E' }, { l: 'Active Deals', v: String(p.deals), c: '#6C3FC5' }, { l: 'Win Rate', v: p.winRate, c: '#0D9488' }, { l: 'Engagement', v: p.engagement, c: '#F59E0B' }].map(s => (
+            <div key={s.l} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318' }}>
+              <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
+              <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2.5 mt-4">
+          {[{ l: 'Contact', v: p.contact }, { l: 'Next Review', v: p.nextReview }, { l: 'Commission', v: p.commission }].map(r => (
+            <div key={r.l} className="flex justify-between text-sm" style={{ borderBottom: '1px solid #1F2937', paddingBottom: 8 }}><span style={{ color: '#6B7280' }}>{r.l}</span><span className="font-semibold" style={{ color: '#F9FAFB' }}>{r.v}</span></div>
+          ))}
+        </div>
+      </div>
+      {/* AI Intelligence — 2-column at bottom */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        {/* Box 1: AI Partner Summary */}
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <span>{'\u2728'}</span>
