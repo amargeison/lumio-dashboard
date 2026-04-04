@@ -114,7 +114,7 @@ export default function SchoolsRegisterPage() {
         setError(data.error || 'Invalid code. Please try again.')
         return
       }
-      router.push(`/schools/${slug || data.school_slug}`)
+      router.push(`/demo/schools/${slug || data.school_slug}`)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
