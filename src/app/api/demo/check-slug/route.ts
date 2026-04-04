@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   // Check demo_tenants table
   const { data: demoTenant } = await supabase
     .from('demo_tenants')
-    .select('slug, tenant_type')
+    .select('slug, tenant_type, company_name, owner_name, logo_url')
     .eq('slug', slug)
     .not('status', 'eq', 'deleted')
     .maybeSingle()
@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       exists: true,
       tenant_type: demoTenant.tenant_type || 'business',
+      company_name: demoTenant.company_name || null,
+      owner_name: demoTenant.owner_name || null,
+      logo_url: demoTenant.logo_url || null,
     })
   }
 

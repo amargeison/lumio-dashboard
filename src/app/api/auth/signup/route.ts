@@ -75,12 +75,14 @@ export async function POST(req: NextRequest) {
     const portalUrl = portalType === 'schools' ? `/demo/schools/${slug}` : `/demo/${slug}`
 
     // Send welcome email to user
-    await sendEmail({
+    console.log(`[signup] Sending welcome email to ${email} for ${companyName} (${portalType})`)
+    const welcomeResult = await sendEmail({
       from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio workspace is ready, ${firstName}! 🚀`,
       html: welcomeEmailHTML({ firstName, companyName, portalType, portalUrl }),
-    }).catch(err => console.error('[signup] welcome email error:', err))
+    }).catch(err => { console.error('[signup] Welcome email FAILED:', err); return { data: null, error: err } })
+    console.log(`[signup] Welcome email result:`, welcomeResult?.data?.id ? `sent (${welcomeResult.data.id})` : 'no ID returned')
 
     // Notify Arron of new signup
     const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })
