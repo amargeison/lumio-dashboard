@@ -5030,6 +5030,170 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your football portal preferences.</p>
       </div>
 
+      {/* ── Club Details ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Club</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Club name</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{slug ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'My Club'}</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Stadium</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>League</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Season</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Football</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Manage billing</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Football-Specific Settings ────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Football Configuration</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>API-Football Team ID</p><p className="text-xs" style={{ color: '#6B7280' }}>For live fixture and stats data</p></div>
+            <input type="number" placeholder="e.g. 42" className="text-sm rounded-lg px-3 py-1.5 outline-none w-28 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
+            <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+              <option>None</option><option>Catapult</option><option>STATSports</option><option>Lumio GPS</option><option>Playertek</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — primary colour</p></div>
+            <input type="color" defaultValue="#003DA5" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — secondary colour</p></div>
+            <input type="color" defaultValue="#F1C40F" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Integrations ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA PROVIDERS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'API-Football', desc: 'Live fixtures, results & stats' },
+                { name: 'StatsBomb', desc: 'Advanced analytics & xG data' },
+                { name: 'Wyscout', desc: 'Scouting reports & video' },
+                { name: 'Opta', desc: 'Event-level match data' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>COMMUNICATION</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'Slack', desc: 'Team messaging & alerts' },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Player & agent messaging' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team & Staff ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team & Staff</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Staff members</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span>
+            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE STAFF MEMBER</p>
+            <div className="flex gap-2">
+              <input placeholder="colleague@club.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+              <select className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                <option>Manager</option><option>Coach</option><option>Analyst</option><option>Physio</option><option>Scout</option><option>Admin</option>
+              </select>
+              <button className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>Send Invite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Notifications ─────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔔</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Notifications</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive match and squad updates via email</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your club activity every Monday</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Injury alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification when a player is flagged injured</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Transfer window alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Updates on transfer targets and agent activity</p></div>
+            <ToggleButton on={true} onToggle={() => {}} />
+          </div>
+        </div>
+      </div>
+
       {/* TTS & Voice Commands */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>

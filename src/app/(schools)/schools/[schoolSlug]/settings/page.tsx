@@ -211,8 +211,54 @@ export default function SchoolSettingsPage() {
       {/* Section 1 — School Details */}
       <Section title="School Details">
         <Row label="School Name" value={schoolName || 'School'} />
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>School phase</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Primary (KS1-KS2)</option><option>Nursery/Reception</option><option>Junior</option><option>Middle</option><option>Secondary (KS3-KS4)</option><option>Sixth Form</option><option>All-through</option><option>Special</option><option>PRU</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>URN number</p><p className="text-xs" style={{ color: '#6B7280' }}>Unique Reference Number from DfE</p></div>
+          <input type="text" placeholder="e.g. 123456" className="text-sm rounded-lg px-3 py-1.5 outline-none w-28 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Local Authority</p></div>
+          <input type="text" placeholder="e.g. Oxfordshire" className="text-sm rounded-lg px-3 py-1.5 outline-none w-36 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Ofsted rating</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Outstanding</option><option>Good</option><option>Requires Improvement</option><option>Inadequate</option><option>Not yet inspected</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Last Ofsted inspection</p></div>
+          <input type="date" className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', colorScheme: 'dark' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Academic year</p></div>
+          <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>MIS system</p><p className="text-xs" style={{ color: '#6B7280' }}>Management Information System</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Arbor</option><option>SIMS</option><option>Bromcom</option><option>ScholarPack</option><option>iMIS</option><option>Other</option><option>None</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Pupil Premium eligible</p></div>
+          <input type="number" placeholder="0" className="text-sm rounded-lg px-3 py-1.5 outline-none w-20 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>SEND register pupils</p></div>
+          <input type="number" placeholder="0" className="text-sm rounded-lg px-3 py-1.5 outline-none w-20 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
         <Row label="Plan" value={plan} />
         <Row label="Status" value="Active" isStatus />
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+          <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Manage billing</button>
+        </div>
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
           <div>
             <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>School logo</div>
@@ -319,6 +365,14 @@ export default function SchoolSettingsPage() {
 
       {/* Section 5 — SSO & Rostering */}
       <Section title="SSO & Rostering">
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Google Workspace domain</p><p className="text-xs" style={{ color: '#6B7280' }}>For SSO and Google Classroom</p></div>
+          <input type="text" placeholder="school.org.uk" className="text-sm rounded-lg px-3 py-1.5 outline-none w-40 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Microsoft 365 tenant</p><p className="text-xs" style={{ color: '#6B7280' }}>For SSO and Teams for Education</p></div>
+          <input type="text" placeholder="school.onmicrosoft.com" className="text-sm rounded-lg px-3 py-1.5 outline-none w-48 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
         <ConnectRow label="Google Workspace" connected={false} />
         <ConnectRow label="Microsoft 365" connected={false} />
         <ConnectRow label="Arbor" connected={false} />
@@ -332,6 +386,32 @@ export default function SchoolSettingsPage() {
         <ConnectRow label="Google Classroom" connected={false} />
         <ConnectRow label="Teams for Education" connected={false} />
         <ConnectRow label="SchoolMoney" connected={false} />
+      </Section>
+
+      {/* Section — Notifications */}
+      <Section title="🔔 Notifications">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive safeguarding and attendance alerts via email</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your school activity every Monday</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Safeguarding alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification for safeguarding concerns</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Attendance threshold alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Alert when attendance drops below 95%</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+        </div>
       </Section>
 
       {/* Section 7 — World Clock Timezones */}
