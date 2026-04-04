@@ -2420,9 +2420,6 @@ function HRView({ company }: { company: string }) {
           barData={[{label:'Jan',value:0,color:'#22C55E'},{label:'Feb',value:1,color:'#F59E0B'},{label:'Mar',value:3,color:'#EF4444'}]} />
       </div>
 
-      {/* AI Summary */}
-      <DeptAISummary dept="hr" portal="business" />
-
       {/* Quick Actions label — actions are in the QuickActionsBar above */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4B5563' }}>Quick Actions</p>
@@ -2511,6 +2508,10 @@ function HRView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="hr" portal="business" />
+      </div>
     </div>
   )
 }
@@ -2534,7 +2535,6 @@ function AccountsView({ company }: { company: string }) {
           pieData={[{label:'<14d',value:45,color:'#22C55E'},{label:'14-30d',value:35,color:'#F59E0B'},{label:'>30d',value:20,color:'#EF4444'}]}
           barData={[{label:'Jan',value:22,color:'#F59E0B'},{label:'Feb',value:20,color:'#F59E0B'},{label:'Mar',value:18,color:'#D97706'}]} />
       </div>
-      <DeptAISummary dept="accounts" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -2578,6 +2578,10 @@ function AccountsView({ company }: { company: string }) {
           </div>
         </div>
       </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="accounts" portal="business" />
+      </div>
     </div>
   )
 }
@@ -2601,7 +2605,6 @@ function SalesView({ company }: { company: string }) {
           pieData={[{label:'Hot',value:8,color:'#EF4444'},{label:'Warm',value:16,color:'#F59E0B'}]}
           barData={[{label:'Jan',value:5,color:'#EF4444'},{label:'Feb',value:6,color:'#EF4444'},{label:'Mar',value:8,color:'#DC2626'}]} />
       </div>
-      <DeptAISummary dept="sales" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -2644,6 +2647,10 @@ function SalesView({ company }: { company: string }) {
             </div>
           </div>
         </div>
+      </div>
+      <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>✨ AI Intelligence</div>
+        <DeptAISummary dept="sales" portal="business" />
       </div>
     </div>
   )
@@ -2855,7 +2862,6 @@ function MarketingView({ company }: { company: string }) {
           )
         })}
       </div>
-      <DeptAISummary dept="marketing" portal="business" />
       <div>
         <p className="text-xs font-semibold mb-2" style={{ color: '#4B5563' }}>QUICK ACTIONS</p>
         <div className="flex items-center gap-2 flex-wrap">

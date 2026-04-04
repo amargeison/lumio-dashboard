@@ -31,6 +31,19 @@ const IMPACT_BADGE = {
 
 export default function QuickWins() {
   const [wins, setWins] = useState<QuickWin[]>([])
+  const [doneIds, setDoneIds] = useState<Set<string>>(() => {
+    try {
+      const today = new Date().toDateString()
+      const savedDate = localStorage.getItem('qw_date')
+      if (savedDate !== today) { localStorage.removeItem('qw_dismissed'); localStorage.setItem('qw_date', today); return new Set() }
+      const saved = localStorage.getItem('qw_dismissed')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('qw_dismissed', JSON.stringify([...doneIds])) } catch {}
+  }, [doneIds])
 
   useEffect(() => {
     const token = localStorage.getItem('workspace_session_token')
@@ -38,11 +51,18 @@ export default function QuickWins() {
       headers: token ? { 'x-workspace-token': token } : {},
     })
       .then(r => r.json())
-      .then(d => setWins(d.wins || MOCK_WINS))
-      .catch(() => setWins(MOCK_WINS))
+      .then(d => {
+        const loaded = (d.wins || MOCK_WINS) as QuickWin[]
+        setWins(loaded.map(w => ({ ...w, done: doneIds.has(w.id) })))
+      })
+      .catch(() => setWins(MOCK_WINS.map(w => ({ ...w, done: doneIds.has(w.id) }))))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const markDone = (id: string) => setWins(prev => prev.map(w => w.id === id ? { ...w, done: true } : w))
+  const markDone = (id: string) => {
+    setDoneIds(prev => { const next = new Set(prev); next.add(id); return next })
+    setWins(prev => prev.map(w => w.id === id ? { ...w, done: true } : w))
+  }
   const active = wins.filter(w => !w.done)
   const done   = wins.filter(w => w.done)
 
