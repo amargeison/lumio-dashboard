@@ -304,7 +304,7 @@ export default function SchoolLayout({ children }: Props) {
         </div>
 
         {isSchoolDemo && (
-          <div className="flex items-center justify-between px-6 pr-20 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 120 }}>
             <div className="flex items-center gap-2 text-xs font-medium">
               <span>Demo workspace — exploring with sample data</span>
               <span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span>
