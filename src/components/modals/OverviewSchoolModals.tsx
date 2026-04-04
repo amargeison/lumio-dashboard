@@ -954,3 +954,419 @@ export function ReportStaffAbsenceModal({ onClose, isDemoMode }: ModalProps) {
     </WizardShell>
   )
 }
+
+// ─── 14. Refer to SENCo ──────────────────────────────────────────────────────
+
+export function ReferToSencoModal({ onClose, isDemoMode }: ModalProps) {
+  const [step, setStep] = useState(1)
+  const [pupilName, setPupilName] = useState('')
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[7])
+  const [formClass, setFormClass] = useState('')
+  const [concerns, setConcerns] = useState<string[]>([])
+  const [description, setDescription] = useState('')
+  const [duration, setDuration] = useState('')
+  const [supportTried, setSupportTried] = useState<string[]>([])
+  const [parentAware, setParentAware] = useState('')
+  const [notes, setNotes] = useState('')
+  const [ref] = useState(() => genRef('SEND'))
+
+  const CONCERN_AREAS = ['\u{1F9E0} Learning difficulty', '\u{1F4AC} Communication / speech', '\u{1F465} Social interaction', '\u{1F61F} Emotional / mental health', '\u{1F3C3} Physical / medical', '\u{1F4DA} Academic progress', '\u{1F30D} EAL / language barrier', '\u26A1 Behaviour / SEMH']
+  const SUPPORT_OPTIONS = ['Differentiated work in class', 'Seating adjustments', 'Extra time on tasks', 'Verbal check-ins', 'Parental contact made', 'Discussed with form tutor', 'Referred to pastoral team', 'None yet']
+  const DURATION_OPTIONS = ['Less than 4 weeks', '4\u20138 weeks', '1\u20132 terms', 'More than 2 terms', 'Since start of year']
+
+  const toggleConcern = (c: string) => setConcerns(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+  const toggleSupport = (s: string) => setSupportTried(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+
+  return (
+    <WizardShell onClose={onClose} title="Refer to SENCo" subtitle="Submit a SEND referral for a pupil" icon="\u{1F9E9}" step={step} totalSteps={4} stepLabels={['Pupil', 'Concern', 'Support Tried', 'Confirm']} setStep={setStep}>
+      {step === 1 && (
+        <div className="space-y-4">
+          <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="e.g. Oliver Thompson" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Year Group</Label><select value={yearGroup} onChange={e => setYearGroup(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}>{YEAR_GROUPS.map(y => <option key={y}>{y}</option>)}</select></div>
+          <div><Label req>Form / Class</Label><input value={formClass} onChange={e => setFormClass(e.target.value)} placeholder="e.g. 9T" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <Label req>Areas of Concern</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {CONCERN_AREAS.map(c => (
+                <button key={c} onClick={() => toggleConcern(c)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: concerns.includes(c) ? '#0D9488' : '#1F2937', color: concerns.includes(c) ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><Label req>Description of Concerns</Label><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe the concerns you have observed..." rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>
+          <div><Label req>How Long Has This Been a Concern?</Label><select value={duration} onChange={e => setDuration(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select duration...</option>{DURATION_OPTIONS.map(d => <option key={d}>{d}</option>)}</select></div>
+        </div>
+      )}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <Label req>Support Already Tried</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {SUPPORT_OPTIONS.map(s => (
+                <button key={s} onClick={() => toggleSupport(s)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: supportTried.includes(s) ? '#0D9488' : '#1F2937', color: supportTried.includes(s) ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label req>Is the Parent / Carer Aware?</Label>
+            <div className="flex gap-3 mt-1">
+              {['Yes', 'No', 'Unsure'].map(v => (
+                <button key={v} onClick={() => setParentAware(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: parentAware === v ? '#0D9488' : '#1F2937', color: parentAware === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><Label>Additional Notes</Label><textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any other relevant information..." rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>
+        </div>
+      )}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+            <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{'\u2705'} SEND Referral Submitted</p>
+            <p className="text-sm mt-2" style={{ color: '#D1D5DB' }}>{pupilName || 'Pupil'} &middot; {yearGroup}{formClass ? ` &middot; ${formClass}` : ''}</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{concerns.length} concern area{concerns.length !== 1 ? 's' : ''} &middot; {supportTried.length} support{supportTried.length !== 1 ? 's' : ''} tried &middot; Parent aware: {parentAware || 'N/A'}</p>
+            <p className="text-xs mt-2 font-mono" style={{ color: '#0D9488' }}>Reference: {ref}</p>
+          </div>
+          <DemoConfirm isDemoMode={isDemoMode} text="On a live plan this would be logged to the pupil's record and relevant staff notified." />
+        </div>
+      )}
+    </WizardShell>
+  )
+}
+
+// ─── 15. New Concern ────────────────────────────────────────────────────────
+
+export function NewConcernModal({ onClose, isDemoMode }: ModalProps) {
+  const [step, setStep] = useState(1)
+  const [pupilName, setPupilName] = useState('')
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[7])
+  const [formClass, setFormClass] = useState('')
+  const [nature, setNature] = useState('')
+  const [description, setDescription] = useState('')
+  const [physicalSigns, setPhysicalSigns] = useState(false)
+  const [physicalNotes, setPhysicalNotes] = useState('')
+  const [urgency, setUrgency] = useState('')
+  const [ref] = useState(() => genRef('CON'))
+
+  const NATURE_OPTIONS = ['Academic', 'Pastoral', 'Safeguarding', 'Attendance', 'Behaviour', 'SEND', 'Wellbeing', 'Other']
+  const URGENCY_LEVELS: { label: string; color: string }[] = [
+    { label: 'Low', color: '#10B981' },
+    { label: 'Medium', color: '#F59E0B' },
+    { label: 'High', color: '#EF4444' },
+    { label: 'Urgent', color: '#EF4444' },
+  ]
+
+  return (
+    <WizardShell onClose={onClose} title="New Concern" subtitle="Log a concern about a pupil" icon="\u{1F6A9}" step={step} totalSteps={4} stepLabels={['Pupil', 'Concern', 'Urgency', 'Confirm']} setStep={setStep}>
+      {step === 1 && (
+        <div className="space-y-4">
+          <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="e.g. Oliver Thompson" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Year Group</Label><select value={yearGroup} onChange={e => setYearGroup(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}>{YEAR_GROUPS.map(y => <option key={y}>{y}</option>)}</select></div>
+          <div><Label req>Form / Class</Label><input value={formClass} onChange={e => setFormClass(e.target.value)} placeholder="e.g. 9T" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div><Label req>Nature of Concern</Label><select value={nature} onChange={e => setNature(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select...</option>{NATURE_OPTIONS.map(n => <option key={n}>{n}</option>)}</select></div>
+          <div><Label req>Description</Label><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe what you have observed or been told..." rows={5} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>
+          <div>
+            <Label>Physical Signs Observed?</Label>
+            <div className="flex gap-3 mt-1">
+              {[true, false].map(v => (
+                <button key={String(v)} onClick={() => setPhysicalSigns(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: physicalSigns === v ? '#0D9488' : '#1F2937', color: physicalSigns === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v ? 'Yes' : 'No'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {physicalSigns && <div><Label>Physical Signs Notes</Label><textarea value={physicalNotes} onChange={e => setPhysicalNotes(e.target.value)} placeholder="Describe what was observed..." rows={2} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>}
+        </div>
+      )}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <Label req>Urgency Level</Label>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {URGENCY_LEVELS.map(u => (
+                <button key={u.label} onClick={() => setUrgency(u.label)} className="px-4 py-2 rounded-lg text-sm font-medium flex-1" style={{ backgroundColor: urgency === u.label ? u.color : '#1F2937', color: urgency === u.label ? '#fff' : '#9CA3AF', border: '1px solid #374151', animation: urgency === 'Urgent' && u.label === 'Urgent' ? 'pulse 1.5s infinite' : undefined }}>
+                  {u.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {urgency === 'Urgent' && (
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <p className="text-xs font-bold" style={{ color: '#EF4444' }}>{'\u{1F6A8}'} This will notify the DSL immediately</p>
+              <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>The Designated Safeguarding Lead will be alerted as soon as this concern is submitted.</p>
+            </div>
+          )}
+        </div>
+      )}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+            <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{'\u2705'} Concern Logged</p>
+            <p className="text-sm mt-2" style={{ color: '#D1D5DB' }}>{pupilName || 'Pupil'} &middot; {yearGroup}{formClass ? ` &middot; ${formClass}` : ''}</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{nature || 'No category'}{physicalSigns ? ' &middot; Physical signs noted' : ''}</p>
+            <p className="text-xs mt-1" style={{ color: urgency === 'Urgent' || urgency === 'High' ? '#EF4444' : urgency === 'Medium' ? '#F59E0B' : '#6B7280' }}>Urgency: {urgency || 'Not set'}</p>
+            <p className="text-xs mt-2 font-mono" style={{ color: '#0D9488' }}>Reference: {ref}</p>
+          </div>
+          <DemoConfirm isDemoMode={isDemoMode} text="On a live plan this would be logged to the pupil's record and relevant staff notified." />
+        </div>
+      )}
+    </WizardShell>
+  )
+}
+
+// ─── 16. Behaviour Incident ─────────────────────────────────────────────────
+
+export function BehaviourIncidentModal({ onClose, isDemoMode }: ModalProps) {
+  const [step, setStep] = useState(1)
+  const [pupilName, setPupilName] = useState('')
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[7])
+  const [formClass, setFormClass] = useState('')
+  const [date, setDate] = useState(today())
+  const [time, setTime] = useState('')
+  const [location, setLocation] = useState('')
+  const [incidentType, setIncidentType] = useState<string[]>([])
+  const [description, setDescription] = useState('')
+  const [witnesses, setWitnesses] = useState('')
+  const [sanction, setSanction] = useState('')
+  const [parentContact, setParentContact] = useState(false)
+  const [contactMethod, setContactMethod] = useState('')
+  const [ref] = useState(() => genRef('BEH'))
+
+  const INCIDENT_TYPES = ['Defiance', 'Disruption', 'Verbal abuse', 'Physical aggression', 'Bullying', 'Vandalism', 'Truancy', 'Late to lesson', 'Phone misuse', 'Uniform violation', 'Smoking / vaping', 'Other']
+  const SANCTION_OPTIONS = ['Verbal warning', 'Written warning', 'Break detention', 'Lunch detention', 'After-school detention', 'Internal exclusion', 'Fixed-term exclusion', 'Referral to HoY', 'Referral to SLT']
+  const CONTACT_METHODS = ['Phone call', 'Email', 'Letter', 'In person', 'Text message']
+
+  const toggleIncident = (t: string) => setIncidentType(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+
+  return (
+    <WizardShell onClose={onClose} title="Behaviour Incident" subtitle="Log a behaviour incident for a pupil" icon="\u{26A0}\uFE0F" step={step} totalSteps={4} stepLabels={['Pupil', 'Incident', 'Sanction', 'Confirm']} setStep={setStep}>
+      {step === 1 && (
+        <div className="space-y-4">
+          <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="e.g. Oliver Thompson" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Year Group</Label><select value={yearGroup} onChange={e => setYearGroup(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}>{YEAR_GROUPS.map(y => <option key={y}>{y}</option>)}</select></div>
+          <div><Label req>Form / Class</Label><input value={formClass} onChange={e => setFormClass(e.target.value)} placeholder="e.g. 9T" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label req>Date</Label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+            <div><Label req>Time</Label><input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          </div>
+          <div><Label req>Location</Label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Room 14, Playground" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <Label req>Incident Type</Label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {INCIDENT_TYPES.map(t => (
+                <button key={t} onClick={() => toggleIncident(t)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-left" style={{ backgroundColor: incidentType.includes(t) ? '#0D9488' : '#1F2937', color: incidentType.includes(t) ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><Label req>Description</Label><textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe what happened..." rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>
+          <div><Label>Witnesses</Label><input value={witnesses} onChange={e => setWitnesses(e.target.value)} placeholder="e.g. Mrs Johnson, Jack Williams" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+        </div>
+      )}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div><Label req>Sanction Applied</Label><select value={sanction} onChange={e => setSanction(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select sanction...</option>{SANCTION_OPTIONS.map(s => <option key={s}>{s}</option>)}</select></div>
+          <div>
+            <Label>Parent / Carer Contacted?</Label>
+            <div className="flex gap-3 mt-1">
+              {[true, false].map(v => (
+                <button key={String(v)} onClick={() => setParentContact(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: parentContact === v ? '#0D9488' : '#1F2937', color: parentContact === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v ? 'Yes' : 'No'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {parentContact && (
+            <div><Label>Contact Method</Label><select value={contactMethod} onChange={e => setContactMethod(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select method...</option>{CONTACT_METHODS.map(m => <option key={m}>{m}</option>)}</select></div>
+          )}
+        </div>
+      )}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+            <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{'\u2705'} Behaviour Incident Logged</p>
+            <p className="text-sm mt-2" style={{ color: '#D1D5DB' }}>{pupilName || 'Pupil'} &middot; {yearGroup}{formClass ? ` &middot; ${formClass}` : ''}</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{incidentType.join(', ') || 'No type'} &middot; {date}{time ? ` ${time}` : ''} &middot; {location || 'No location'}</p>
+            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Sanction: {sanction || 'None'}{parentContact ? ` &middot; Parent contacted (${contactMethod || 'method not set'})` : ''}</p>
+            <p className="text-xs mt-2 font-mono" style={{ color: '#0D9488' }}>Reference: {ref}</p>
+          </div>
+          <DemoConfirm isDemoMode={isDemoMode} text="On a live plan this would be logged to the pupil's record and relevant staff notified." />
+        </div>
+      )}
+    </WizardShell>
+  )
+}
+
+// ─── 17. Log Absence ────────────────────────────────────────────────────────
+
+export function LogAbsenceModal({ onClose, isDemoMode }: ModalProps) {
+  const [step, setStep] = useState(1)
+  const [pupilName, setPupilName] = useState('')
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[7])
+  const [formClass, setFormClass] = useState('')
+  const [date, setDate] = useState(today())
+  const [session, setSession] = useState('')
+  const [reason, setReason] = useState('')
+  const [parentContacted, setParentContacted] = useState(false)
+  const [contactMethod, setContactMethod] = useState('')
+  const [firstDayCall, setFirstDayCall] = useState(false)
+  const [ref] = useState(() => genRef('ABS'))
+
+  const SESSION_OPTIONS = ['AM', 'PM', 'Full day', 'Multiple days']
+  const REASON_OPTIONS = ['Illness', 'Medical appointment', 'Family holiday', 'Religious observance', 'Bereavement', 'Excluded', 'Traveller absence', 'Unexplained', 'Other']
+  const CONTACT_METHODS = ['Phone call', 'Email', 'Letter', 'In person', 'Text message']
+
+  return (
+    <WizardShell onClose={onClose} title="Log Absence" subtitle="Record a pupil absence" icon="\u{1F4C5}" step={step} totalSteps={3} stepLabels={['Pupil', 'Absence', 'Confirm']} setStep={setStep}>
+      {step === 1 && (
+        <div className="space-y-4">
+          <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="e.g. Oliver Thompson" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Year Group</Label><select value={yearGroup} onChange={e => setYearGroup(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}>{YEAR_GROUPS.map(y => <option key={y}>{y}</option>)}</select></div>
+          <div><Label req>Form / Class</Label><input value={formClass} onChange={e => setFormClass(e.target.value)} placeholder="e.g. 9T" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div><Label req>Date</Label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div>
+            <Label req>Session</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {SESSION_OPTIONS.map(s => (
+                <button key={s} onClick={() => setSession(s)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: session === s ? '#0D9488' : '#1F2937', color: session === s ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><Label req>Reason</Label><select value={reason} onChange={e => setReason(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select reason...</option>{REASON_OPTIONS.map(r => <option key={r}>{r}</option>)}</select></div>
+          <div>
+            <Label>Parent / Carer Contacted?</Label>
+            <div className="flex gap-3 mt-1">
+              {[true, false].map(v => (
+                <button key={String(v)} onClick={() => setParentContacted(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: parentContacted === v ? '#0D9488' : '#1F2937', color: parentContacted === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v ? 'Yes' : 'No'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {parentContacted && (
+            <div><Label>Contact Method</Label><select value={contactMethod} onChange={e => setContactMethod(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}><option value="">Select method...</option>{CONTACT_METHODS.map(m => <option key={m}>{m}</option>)}</select></div>
+          )}
+          <div>
+            <Label>First Day Call Completed?</Label>
+            <div className="flex gap-3 mt-1">
+              {[true, false].map(v => (
+                <button key={String(v)} onClick={() => setFirstDayCall(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: firstDayCall === v ? '#0D9488' : '#1F2937', color: firstDayCall === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v ? 'Yes' : 'No'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+            <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{'\u2705'} Absence Logged</p>
+            <p className="text-sm mt-2" style={{ color: '#D1D5DB' }}>{pupilName || 'Pupil'} &middot; {yearGroup}{formClass ? ` &middot; ${formClass}` : ''}</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{date} &middot; {session || 'No session'} &middot; {reason || 'No reason'}</p>
+            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{parentContacted ? `Parent contacted (${contactMethod || 'method not set'})` : 'Parent not yet contacted'}{firstDayCall ? ' &middot; First day call done' : ''}</p>
+            <p className="text-xs mt-2 font-mono" style={{ color: '#0D9488' }}>Reference: {ref}</p>
+          </div>
+          <DemoConfirm isDemoMode={isDemoMode} text="On a live plan this would be logged to the pupil's record and relevant staff notified." />
+        </div>
+      )}
+    </WizardShell>
+  )
+}
+
+// ─── 18. Parent Contact ─────────────────────────────────────────────────────
+
+export function ParentContactModal({ onClose, isDemoMode }: ModalProps) {
+  const [step, setStep] = useState(1)
+  const [pupilName, setPupilName] = useState('')
+  const [yearGroup, setYearGroup] = useState(YEAR_GROUPS[7])
+  const [contactType, setContactType] = useState('')
+  const [subject, setSubject] = useState('')
+  const [contactName, setContactName] = useState('')
+  const [outcome, setOutcome] = useState('')
+  const [followUp, setFollowUp] = useState(false)
+  const [followAction, setFollowAction] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [ref] = useState(() => genRef('PC'))
+
+  const CONTACT_TYPES = ['Phone call', 'Email', 'In-person meeting', 'Parents evening', 'Home visit', 'Letter sent', 'Text message', 'Video call']
+
+  return (
+    <WizardShell onClose={onClose} title="Parent Contact" subtitle="Log a parent or carer contact" icon="\u{1F4DE}" step={step} totalSteps={3} stepLabels={['Pupil', 'Contact', 'Confirm']} setStep={setStep}>
+      {step === 1 && (
+        <div className="space-y-4">
+          <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="e.g. Oliver Thompson" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Year Group</Label><select value={yearGroup} onChange={e => setYearGroup(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS}>{YEAR_GROUPS.map(y => <option key={y}>{y}</option>)}</select></div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <Label req>Contact Type</Label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {CONTACT_TYPES.map(t => (
+                <button key={t} onClick={() => setContactType(t)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-left" style={{ backgroundColor: contactType === t ? '#0D9488' : '#1F2937', color: contactType === t ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><Label req>Subject</Label><input value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Attendance concern, progress update" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Contact Name</Label><input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="e.g. Mrs Thompson (Mother)" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+          <div><Label req>Outcome / Notes</Label><textarea value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="Summarise the conversation and any agreed actions..." rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={iS} /></div>
+          <div>
+            <Label>Follow-Up Required?</Label>
+            <div className="flex gap-3 mt-1">
+              {[true, false].map(v => (
+                <button key={String(v)} onClick={() => setFollowUp(v)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: followUp === v ? '#0D9488' : '#1F2937', color: followUp === v ? '#fff' : '#9CA3AF', border: '1px solid #374151' }}>
+                  {v ? 'Yes' : 'No'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {followUp && (
+            <div className="space-y-4">
+              <div><Label req>Follow-Up Action</Label><input value={followAction} onChange={e => setFollowAction(e.target.value)} placeholder="e.g. Call again in 2 weeks" className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+              <div><Label req>Due Date</Label><input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={iS} /></div>
+            </div>
+          )}
+        </div>
+      )}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+            <p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{'\u2705'} Parent Contact Logged</p>
+            <p className="text-sm mt-2" style={{ color: '#D1D5DB' }}>{pupilName || 'Pupil'} &middot; {yearGroup}</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{contactType || 'No type'} &middot; {contactName || 'No contact'} &middot; {subject || 'No subject'}</p>
+            {followUp && <p className="text-xs mt-1" style={{ color: '#F59E0B' }}>Follow-up: {followAction || 'Action pending'}{dueDate ? ` &middot; Due: ${dueDate}` : ''}</p>}
+            <p className="text-xs mt-2 font-mono" style={{ color: '#0D9488' }}>Reference: {ref}</p>
+          </div>
+          <DemoConfirm isDemoMode={isDemoMode} text="On a live plan this would be logged to the pupil's record and relevant staff notified." />
+        </div>
+      )}
+    </WizardShell>
+  )
+}

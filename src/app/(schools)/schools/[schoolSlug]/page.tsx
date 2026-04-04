@@ -16,7 +16,7 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
 import { useSchoolRole } from '@/lib/SchoolRoleContext'
 import { SCHOOL_ROLES } from '@/lib/schoolRoles'
-import { MarkRegisterModal, BookCoverModal, NewAdmissionWizardModal, SubmitRiskAssessmentModal, CreateLessonPlanModal, SendParentEmailModal, PupilProgressNoteModal, RequestResourcesModal, ITSupportModal, BookCPDModal, ClaimExpensesWizardModal, RequestLeaveModal, ReportStaffAbsenceModal } from '@/components/modals/OverviewSchoolModals'
+import { MarkRegisterModal, BookCoverModal, NewAdmissionWizardModal, SubmitRiskAssessmentModal, CreateLessonPlanModal, SendParentEmailModal, PupilProgressNoteModal, RequestResourcesModal, ITSupportModal, BookCPDModal, ClaimExpensesWizardModal, RequestLeaveModal, ReportStaffAbsenceModal, ReferToSencoModal, NewConcernModal, BehaviourIncidentModal, LogAbsenceModal, ParentContactModal } from '@/components/modals/OverviewSchoolModals'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1159,6 +1159,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [showClaimExpenses, setShowClaimExpenses] = useState(false)
   const [showRequestLeave, setShowRequestLeave] = useState(false)
   const [showReportAbsence, setShowReportAbsence] = useState(false)
+  const [showReferSenco, setShowReferSenco] = useState(false)
+  const [showNewConcern, setShowNewConcern] = useState(false)
+  const [showBehaviourIncident, setShowBehaviourIncident] = useState(false)
+  const [showLogAbsence, setShowLogAbsence] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
   const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
   const [siToast, setSiToast] = useState<string | null>(null)
@@ -1320,6 +1325,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                   'Claim Expenses': () => setShowClaimExpenses(true),
                   'Request Leave': () => setShowRequestLeave(true),
                   'Report Staff Absence': () => setShowReportAbsence(true),
+                  'Refer to SENCO': () => setShowReferSenco(true),
+                  'New Concern': () => setShowNewConcern(true),
+                  'Behaviour Incident': () => setShowBehaviourIncident(true),
+                  'Log Absence': () => setShowLogAbsence(true),
+                  'Parent Contact': () => setShowParentContact(true),
                 }
                 handlers[a.label]?.()
               }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 `} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
@@ -2030,6 +2040,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {showClaimExpenses && <ClaimExpensesWizardModal onClose={() => setShowClaimExpenses(false)} isDemoMode={demoDataActive} />}
       {showRequestLeave && <RequestLeaveModal onClose={() => setShowRequestLeave(false)} isDemoMode={demoDataActive} />}
       {showReportAbsence && <ReportStaffAbsenceModal onClose={() => setShowReportAbsence(false)} isDemoMode={demoDataActive} />}
+      {showReferSenco && <ReferToSencoModal onClose={() => setShowReferSenco(false)} isDemoMode={demoDataActive} />}
+      {showNewConcern && <NewConcernModal onClose={() => setShowNewConcern(false)} isDemoMode={demoDataActive} />}
+      {showBehaviourIncident && <BehaviourIncidentModal onClose={() => setShowBehaviourIncident(false)} isDemoMode={demoDataActive} />}
+      {showLogAbsence && <LogAbsenceModal onClose={() => setShowLogAbsence(false)} isDemoMode={demoDataActive} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} isDemoMode={demoDataActive} />}
       {showLockdown && (() => {
         const COMMS_ITEMS = [
           { id: 'staff-broadcast', label: 'Alert all staff via emergency broadcast' },
