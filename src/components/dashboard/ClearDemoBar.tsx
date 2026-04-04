@@ -47,7 +47,7 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
           <button onClick={() => setShowModal(true)} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
             Connect Tools
           </button>
-          <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+          <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', marginRight: 120 }}>
             Clear Demo Data
           </button>
           <button onClick={() => setDismissed(true)} className="opacity-70 hover:opacity-100">✕</button>
