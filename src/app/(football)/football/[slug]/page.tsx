@@ -3728,23 +3728,23 @@ const GPS_PLAYER_DEMO = [
 ]
 
 const WEEKLY_LOAD_DEMO = [
-  { week: 'W1', 'Ryan Thompson': 380, 'Jamal Henderson': 420, "Sean O'Brien": 350, 'Kwame Okafor': 360, avg: 378 },
-  { week: 'W2', 'Ryan Thompson': 395, 'Jamal Henderson': 410, "Sean O'Brien": 380, 'Kwame Okafor': 375, avg: 390 },
-  { week: 'W3', 'Ryan Thompson': 410, 'Jamal Henderson': 430, "Sean O'Brien": 420, 'Kwame Okafor': 390, avg: 413 },
-  { week: 'W4', 'Ryan Thompson': 390, 'Jamal Henderson': 440, "Sean O'Brien": 445, 'Kwame Okafor': 385, avg: 415 },
-  { week: 'W5', 'Ryan Thompson': 420, 'Jamal Henderson': 435, "Sean O'Brien": 460, 'Kwame Okafor': 400, avg: 429 },
-  { week: 'W6', 'Ryan Thompson': 405, 'Jamal Henderson': 445, "Sean O'Brien": 470, 'Kwame Okafor': 395, avg: 429 },
-  { week: 'W7', 'Ryan Thompson': 415, 'Jamal Henderson': 440, "Sean O'Brien": 475, 'Kwame Okafor': 398, avg: 432 },
-  { week: 'W8', 'Ryan Thompson': 420, 'Jamal Henderson': 445, "Sean O'Brien": 478, 'Kwame Okafor': 412, avg: 439 },
+  { week: 'W1', 'Steve Seddon': 380, 'Marcus Browne': 420, 'Omar Bugiel': 350, 'Mathew Stevens': 360, avg: 378 },
+  { week: 'W2', 'Steve Seddon': 395, 'Marcus Browne': 410, 'Omar Bugiel': 380, 'Mathew Stevens': 375, avg: 390 },
+  { week: 'W3', 'Steve Seddon': 410, 'Marcus Browne': 430, 'Omar Bugiel': 420, 'Mathew Stevens': 390, avg: 413 },
+  { week: 'W4', 'Steve Seddon': 390, 'Marcus Browne': 440, 'Omar Bugiel': 445, 'Mathew Stevens': 385, avg: 415 },
+  { week: 'W5', 'Steve Seddon': 420, 'Marcus Browne': 435, 'Omar Bugiel': 460, 'Mathew Stevens': 400, avg: 429 },
+  { week: 'W6', 'Steve Seddon': 405, 'Marcus Browne': 445, 'Omar Bugiel': 470, 'Mathew Stevens': 395, avg: 429 },
+  { week: 'W7', 'Steve Seddon': 415, 'Marcus Browne': 440, 'Omar Bugiel': 475, 'Mathew Stevens': 398, avg: 432 },
+  { week: 'W8', 'Steve Seddon': 420, 'Marcus Browne': 445, 'Omar Bugiel': 478, 'Mathew Stevens': 412, avg: 439 },
 ]
 
 const MATCH_VS_TRAIN_DEMO = [
-  { name: 'Ryan Thompson', matchDist: 11.4, trainDist: 9.8, matchHSR: 1680, trainHSR: 1220, matchLoad: 420, trainLoad: 340, diff: '+24%' },
-  { name: 'Jamal Henderson', matchDist: 10.8, trainDist: 10.2, matchHSR: 1550, trainHSR: 1380, matchLoad: 445, trainLoad: 410, diff: '+9%' },
-  { name: "Sean O'Brien", matchDist: 10.1, trainDist: 9.5, matchHSR: 1490, trainHSR: 1100, matchLoad: 478, trainLoad: 350, diff: '+37%' },
-  { name: 'Kwame Okafor', matchDist: 10.6, trainDist: 10.0, matchHSR: 1380, trainHSR: 1280, matchLoad: 398, trainLoad: 370, diff: '+8%' },
-  { name: 'Jamie Wilson', matchDist: 11.1, trainDist: 9.2, matchHSR: 1620, trainHSR: 1050, matchLoad: 456, trainLoad: 310, diff: '+47%' },
-  { name: 'Alex Collins', matchDist: 10.2, trainDist: 9.6, matchHSR: 1420, trainHSR: 1200, matchLoad: 412, trainLoad: 360, diff: '+14%' },
+  { name: 'Steve Seddon', matchDist: 11.4, trainDist: 9.8, matchHSR: 1680, trainHSR: 1220, matchLoad: 420, trainLoad: 340, diff: '+24%' },
+  { name: 'Marcus Browne', matchDist: 10.8, trainDist: 10.2, matchHSR: 1550, trainHSR: 1380, matchLoad: 445, trainLoad: 410, diff: '+9%' },
+  { name: 'Omar Bugiel', matchDist: 10.1, trainDist: 9.5, matchHSR: 1490, trainHSR: 1100, matchLoad: 478, trainLoad: 350, diff: '+37%' },
+  { name: 'Mathew Stevens', matchDist: 10.6, trainDist: 10.0, matchHSR: 1380, trainHSR: 1280, matchLoad: 398, trainLoad: 370, diff: '+8%' },
+  { name: 'Callum Maycock', matchDist: 11.1, trainDist: 9.2, matchHSR: 1620, trainHSR: 1050, matchLoad: 456, trainLoad: 310, diff: '+47%' },
+  { name: 'Sam Hutchinson', matchDist: 10.2, trainDist: 9.6, matchHSR: 1420, trainHSR: 1200, matchLoad: 412, trainLoad: 360, diff: '+14%' },
 ]
 
 function PerformanceGPSView() {
@@ -4430,14 +4430,14 @@ function _OriginalStaffView() {
             </thead>
             <tbody>
               {[
-                { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
-                { name: 'Mike Reynolds', role: 'First Team Coach', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
-                { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', quals: 'UEFA Pro (in progress)', status: 'Course Mon-Wed' },
-                { name: 'Sarah Mitchell', role: 'Head Physio', dept: 'Medical', quals: 'MSc Sports Med', status: 'Available' },
-                { name: 'Dr. James Hart', role: 'Club Doctor', dept: 'Medical', quals: 'MBBS, MRCGP', status: 'Available' },
-                { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Coaching', quals: 'BSc S&C', status: 'Available' },
-                { name: 'Mark Evans', role: 'Chief Scout', dept: 'Scouting', quals: 'UEFA B', status: 'Belgium trip' },
-                { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', quals: 'MSc Data Science', status: 'Starts Monday' },
+                { name: 'Johnnie Jackson', role: 'Head Coach', dept: 'Coaching', quals: 'UEFA Pro', status: 'Available' },
+                { name: 'Assistant Manager', role: 'Assistant Manager', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
+                { name: 'Goalkeeping Coach', role: 'GK Coach', dept: 'Coaching', quals: 'UEFA Pro (in progress)', status: 'Course Mon-Wed' },
+                { name: 'First Team Analyst', role: 'Performance Analyst', dept: 'Analytics', quals: 'MSc Data Science', status: 'Available' },
+                { name: 'Head Physio', role: 'Head Physio', dept: 'Medical', quals: 'MSc Sports Med', status: 'Available' },
+                { name: 'Team Doctor', role: 'Club Doctor', dept: 'Medical', quals: 'MBBS, MRCGP', status: 'Available' },
+                { name: 'Fitness Coach', role: 'Fitness Coach', dept: 'Coaching', quals: 'BSc S&C', status: 'Available' },
+                { name: 'Chief Scout', role: 'Chief Scout', dept: 'Scouting', quals: 'UEFA B', status: 'Scouting trip' },
               ].map((s, i) => {
                 const statusColor = s.status === 'Available' ? '#22C55E' : '#F59E0B'
                 return (
