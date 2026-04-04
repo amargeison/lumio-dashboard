@@ -112,9 +112,9 @@ function SignupForm() {
 
       const dest = data.redirect_to
         ? data.redirect_to
-        : data.is_new_user
-          ? (portalType === 'schools' ? '/demo/schools/onboarding' : '/demo/onboarding')
-          : (portalType === 'schools' ? `/demo/schools/${data.company.slug}` : `/demo/${data.company.slug}`)
+        : portalType === 'schools'
+          ? `/demo/schools/${data.company?.slug || 'onboarding'}`
+          : `/demo/${data.company?.slug || 'onboarding'}`
       setVerified(true)
       setTimeout(() => { try { router.push(dest) } catch { window.location.href = dest } }, 1500)
     } catch {
