@@ -94,6 +94,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setMounted(true)
   }, [pathname])
 
+  // Re-render when role changes via the demo switcher
+  const [, forceRender] = useState(0)
+  useEffect(() => {
+    const handler = () => forceRender(n => n + 1)
+    window.addEventListener('lumio-role-changed', handler)
+    window.addEventListener('lumio-settings-changed', handler)
+    return () => { window.removeEventListener('lumio-role-changed', handler); window.removeEventListener('lumio-settings-changed', handler) }
+  }, [])
+
   const userRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
   const effectiveLevel = userRole.isOwner ? 1 : userRole.role_level
   const navItems = BASE_NAV_ITEMS

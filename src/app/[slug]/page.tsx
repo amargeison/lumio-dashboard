@@ -186,7 +186,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     const handler = () => forceUpdate(n => n + 1)
     window.addEventListener('lumio-settings-changed', handler)
-    return () => window.removeEventListener('lumio-settings-changed', handler)
+    window.addEventListener('lumio-role-changed', handler)
+    return () => { window.removeEventListener('lumio-settings-changed', handler); window.removeEventListener('lumio-role-changed', handler) }
   }, [])
 
   function togglePin() {
@@ -252,7 +253,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           )}
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
-          {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
+          {SIDEBAR_ITEMS.filter(item => {
+            if (item.id === 'overview' || item.id === 'settings') return true
+            if (item.id === 'directors') { const r = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'director' : 'director'; if (!['admin', 'director'].includes(r)) return false }
+            return typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true
+          }).map(item => {
             const active = activeDept === item.id
             return (
               <button key={item.id}
@@ -294,7 +299,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
-              {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
+              {SIDEBAR_ITEMS.filter(item => {
+                if (item.id === 'overview' || item.id === 'settings') return true
+                if (item.id === 'directors') { const r = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'director' : 'director'; if (!['admin', 'director'].includes(r)) return false }
+                return typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true
+              }).map(item => {
                 const active = activeDept === item.id
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
@@ -4048,7 +4057,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showRoleTooltip, setShowRoleTooltip] = useState(false)
   const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
   const DEMO_ROLES = [{ id: 'admin', label: 'Admin', color: '#EF4444', desc: 'Full access' }, { id: 'director', label: 'Director', color: '#8B5CF6', desc: 'Finance + Directors Suite' }, { id: 'manager', label: 'Manager', color: '#3B82F6', desc: 'No finance figures' }, { id: 'standard', label: 'Standard', color: '#6B7280', desc: 'Own dept only' }]
-  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role); const levelMap: Record<string, string> = { admin: '2', director: '1', manager: '3', standard: '4', user: '4' }; localStorage.setItem('lumio_user_role_level', levelMap[role] || '4') } catch {}; window.location.reload() }
+  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role); const levelMap: Record<string, string> = { admin: '2', director: '1', manager: '3', standard: '4', user: '4' }; localStorage.setItem('lumio_user_role_level', levelMap[role] || '4'); window.dispatchEvent(new CustomEvent('lumio-role-changed', { detail: { role } })) } catch {} }
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
     try {
       if (typeof window === 'undefined') return new Set()
@@ -4642,14 +4651,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                       <div className="absolute top-full right-0 mt-2 rounded-xl p-3 z-50 shadow-xl min-w-[220px]" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>
                         <div className="text-xs font-semibold text-white mb-2">{DEMO_ROLES.find(r => r.id === demoRole)?.label} &mdash; can see:</div>
                         <div className="space-y-1.5">
-                          {([['All standard departments', ['admin','director','manager','standard']],['Finance figures', ['admin','director']],['HR salary &amp; sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['User management', ['admin']]] as [string, string[]][]).map(([label, roles]) => (
+                          {([['All standard departments', ['admin','director','manager','standard']],['Finance figures (Accounts)', ['admin','director']],['HR salary & sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['Trials & conversion data', ['admin','director','manager']]] as [string, string[]][]).map(([label, roles]) => (
                             <div key={label} className="flex items-center justify-between gap-3">
                               <span className="text-[11px] text-gray-400">{label}</span>
                               <span className="text-[11px]">{roles.includes(demoRole) ? '\u2705' : '\u{1F512}'}</span>
                             </div>
                           ))}
                         </div>
-                        <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role reloads the page</div>
+                        <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role updates all gated content instantly</div>
                       </div>
                     )}
                   </div>

@@ -1,13 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Crown, FileText, Calendar, Target, Shield, Users, TrendingUp,
   Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Lock,
 } from 'lucide-react'
-import { getClientRole } from '@/lib/check-role'
-import { canAccessDept } from '@/lib/permissions'
-import AccessRequest from '@/components/AccessRequest'
 import { PageShell } from '@/components/page-ui'
 import { DEMO_STATS } from '@/lib/demoStats'
 import ExportPdfButton from '@/components/ExportPdfButton'
@@ -219,20 +216,31 @@ function NotesTab() {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function DirectorsSuite() {
-  // ── RBAC: Directors Suite requires director level (role_level <= 1) ──
-  const clientRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
-  const effectiveLevel = clientRole.isOwner ? 1 : clientRole.role_level
-  if (!canAccessDept('directors', effectiveLevel)) {
+  // ── RBAC: Directors Suite requires director/admin ──
+  const [userRole, setUserRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
+  useEffect(() => {
+    const handler = () => setUserRole(localStorage.getItem('lumio_user_role') || 'director')
+    window.addEventListener('lumio-role-changed', handler)
+    window.addEventListener('storage', handler)
+    return () => { window.removeEventListener('lumio-role-changed', handler); window.removeEventListener('storage', handler) }
+  }, [])
+
+  if (!['admin', 'director'].includes(userRole)) {
     return (
-      <AccessRequest
-        dept="directors"
-        deptLabel="Directors Suite"
-        deptDescription="Board-level intelligence, financial performance, strategy, and confidential notes. Director access only."
-        userRole={clientRole.role}
-        roleLevel={effectiveLevel}
-        requiredLevel={1}
-        onRequest={() => console.log('Access request sent for directors')}
-      />
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">👑</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Directors Suite</h2>
+          <p className="text-gray-400 mb-4">Board reports, strategic planning, investor information and executive dashboards.</p>
+          <div className="bg-gray-900 rounded-xl p-3 mb-4 inline-flex items-center gap-2">
+            <span className="text-xs text-gray-500">Your role:</span>
+            <span className="text-xs font-semibold text-amber-400 capitalize">{userRole}</span>
+            <span className="text-xs text-gray-600">·</span>
+            <span className="text-xs text-gray-500">Director level required</span>
+          </div>
+          <p className="text-xs text-gray-600">💡 Switch to Director or Admin in the demo banner to access this area</p>
+        </div>
+      </div>
     )
   }
 

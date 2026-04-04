@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2, Sparkles, FileX, PiggyBank, Percent, ArrowLeftRight, ShoppingCart, CalendarCheck, BookOpen, Trash2, Landmark, Coins, ClipboardList } from 'lucide-react'
-import { getClientRole } from '@/lib/check-role'
-import { canAccessDept } from '@/lib/permissions'
-import AccessRequest from '@/components/AccessRequest'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -69,20 +66,38 @@ export default function AccountsPage() {
   const workspace = useWorkspace()
   const router = useRouter()
 
-  // ── RBAC: Accounts requires director level (role_level <= 1) ──
-  const clientRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
-  const effectiveLevel = clientRole.isOwner ? 1 : clientRole.role_level
-  if (!canAccessDept('accounts', effectiveLevel)) {
+  // ── RBAC: Accounts requires director/admin ──
+  const [userRole, setUserRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
+  useEffect(() => {
+    const handler = () => setUserRole(localStorage.getItem('lumio_user_role') || 'director')
+    window.addEventListener('lumio-role-changed', handler)
+    window.addEventListener('storage', handler)
+    return () => { window.removeEventListener('lumio-role-changed', handler); window.removeEventListener('storage', handler) }
+  }, [])
+  const canSeeFinance = ['admin', 'director'].includes(userRole)
+
+  if (!canSeeFinance) {
     return (
-      <AccessRequest
-        dept="accounts"
-        deptLabel="Accounts & Finance"
-        deptDescription="Financial reports, invoices, payroll, and P&L data. Access restricted to Director level and above."
-        userRole={clientRole.role}
-        roleLevel={effectiveLevel}
-        requiredLevel={1}
-        onRequest={() => console.log('Access request sent for accounts')}
-      />
+      <div className="flex items-center justify-center min-h-[70vh] p-8">
+        <div className="max-w-md w-full text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Accounts & Finance</h2>
+          <p className="text-gray-400 mb-1">Financial reports, invoices, payroll, P&L and budget data.</p>
+          <div className="bg-gray-900 rounded-xl p-3 mb-6 inline-flex items-center gap-2">
+            <span className="text-xs text-gray-500">Your role:</span>
+            <span className="text-xs font-semibold text-amber-400 capitalize">{userRole}</span>
+            <span className="text-xs text-gray-600">·</span>
+            <span className="text-xs text-gray-500">Requires Director access</span>
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6 text-left">
+            <h3 className="text-white font-semibold mb-1">Request Access</h3>
+            <p className="text-xs text-gray-500 mb-4">Your request will be sent to your workspace admin for approval.</p>
+            <textarea rows={3} placeholder="Why do you need access to financial data?" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm mb-3" />
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-semibold text-sm">Request Finance Access</button>
+          </div>
+          <p className="text-xs text-gray-600 mt-4">💡 Switch to Director or Admin in the demo banner to see the full Accounts department</p>
+        </div>
+      </div>
     )
   }
 
