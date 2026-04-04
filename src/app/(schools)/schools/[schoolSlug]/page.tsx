@@ -628,9 +628,9 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Pupils', value: demoActive ? (pupils || 423) : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
-              { label: 'Staff', value: demoActive ? (staff || 41) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
-              { label: 'Alerts', value: demoActive ? 3 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
+              { label: 'Pupils', value: demoActive ? (pupils || '1,147') : '—', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '👨‍🎓' },
+              { label: 'Staff', value: demoActive ? (staff || 89) : '—', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+              { label: 'Alerts', value: demoActive ? 6 : 0, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴' },
               { label: 'Reports', value: demoActive ? 2 : 0, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '📋' },
             ].map(item => (
               <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
@@ -1202,6 +1202,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
+  const [lastUpdated, setLastUpdated] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdated(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+    }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
   const TABS = [
     { id: 'today', label: 'Today', icon: '📅' },
     { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
@@ -1673,17 +1680,90 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           {staffSubTab === 'school' && (
             <div className="space-y-6">
               <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>School Info</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>School Details</p>
-                  {[['School Name', schoolName || 'Oakridge Primary'], ['Type', 'Community Primary'], ['URN', '114286'], ['Ofsted Rating', 'Good (2023)'], ['Pupils on Roll', '412'], ['Staff', '41'], ['Address', 'Oakridge Lane, London SE15']].map(([l, v]) => (
-                    <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+
+              {/* School Documents */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: '#9CA3AF' }}>SCHOOL DOCUMENTS</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { icon: '📋', title: 'Staff Handbook', sub: 'Employment policies, conduct, benefits' },
+                    { icon: '🏖️', title: 'Leave & Holiday Policy', sub: 'Annual leave, INSET days, booking' },
+                    { icon: '❤️', title: 'Health & Wellbeing', sub: 'Mental health, EAP, sick leave' },
+                    { icon: '🔒', title: 'Data & Security', sub: 'GDPR, data handling, safeguarding' },
+                    { icon: '💰', title: 'Expenses Policy', sub: 'Claims, limits, deadlines' },
+                    { icon: '📚', title: 'CPD & Development', sub: 'Training budget, study leave' },
+                  ].map(d => (
+                    <div key={d.title} className="rounded-xl p-4 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <span className="text-lg">{d.icon}</span>
+                      <p className="text-sm font-semibold mt-2" style={{ color: '#F9FAFB' }}>{d.title}</p>
+                      <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{d.sub}</p>
+                    </div>
                   ))}
                 </div>
-                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
-                  {[['Headteacher', 'Sarah Mitchell'], ['Deputy Head', 'James Okafor'], ['SENCO', 'Emma Clarke'], ['DSL', 'Priya Patel'], ['Business Manager', 'Mark Davis'], ['Chair of Governors', 'Dr Helen Wright']].map(([r, n]) => (
-                    <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+              </div>
+
+              {/* School Details */}
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: '#9CA3AF' }}>SCHOOL DETAILS</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ['Ofsted Rating', 'Outstanding (2023)'],
+                    ['School Type', 'Academy'],
+                    ['Phase', 'Secondary'],
+                    ['Capacity', '1,200 pupils'],
+                    ['NOR (Number on Roll)', '1,147'],
+                    ['Location', 'London, UK'],
+                    ['Website', 'margy-high-school.co.uk'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between py-2" style={{ borderBottom: '1px solid #1F2937' }}>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{label}</span>
+                      <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Contacts */}
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: '#9CA3AF' }}>KEY CONTACTS</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ['Headteacher', 'Dr Sarah Mitchell'],
+                    ['Deputy Head', 'Mr James Okafor'],
+                    ['SENCO', 'Mrs Linda Patel'],
+                    ['DSL', 'Mr Tom Briggs'],
+                    ['Finance', 'Mrs Claire Andrews'],
+                    ['IT Support', 'Mr Dev Sharma'],
+                  ].map(([role, name]) => (
+                    <div key={role} className="flex justify-between py-2" style={{ borderBottom: '1px solid #1F2937' }}>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{role}</span>
+                      <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Useful Links */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: '#9CA3AF' }}>USEFUL LINKS</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { icon: '🔗', title: 'School MIS', sub: 'Arbor / SIMS' },
+                    { icon: '🔗', title: 'Google Workspace', sub: 'Microsoft 365' },
+                    { icon: '🔗', title: 'Parent Portal', sub: 'Communications' },
+                    { icon: '🔗', title: 'Governor Portal', sub: 'Governance docs' },
+                    { icon: '🔗', title: 'Ofsted Dashboard', sub: 'Readiness tracker' },
+                    { icon: '🔗', title: 'DfE Portal', sub: 'Returns & data' },
+                  ].map(l => (
+                    <div key={l.title} className="rounded-xl p-3 cursor-pointer hover:border-teal-500/30 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-center gap-2">
+                        <span>{l.icon}</span>
+                        <div>
+                          <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{l.title}</p>
+                          <p className="text-[10px]" style={{ color: '#6B7280' }}>{l.sub}</p>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1696,6 +1776,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* Stats row + Attendance + Workflows + Compliance — demo data only */}
       {demoDataActive ? (
       <div className="space-y-4">
+          <div className="flex justify-end">
+            <span className="text-[10px]" style={{ color: '#4B5563' }}>Last updated: {lastUpdated}</span>
+          </div>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
               { label: 'Attendance today',  value: `${attendanceAvg}%`,         sub: '7-year group avg',      color: ragColor(attendanceAvg), icon: Activity   },
