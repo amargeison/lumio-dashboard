@@ -110,23 +110,23 @@ export default function MarketingPage() {
 
   const actions = [
     { label: 'Create Post',       icon: Plus,       onClick: () => setShowCreatePost(true) },
-    { label: 'Book Event',        icon: CalendarHeart, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Book Event',        icon: CalendarHeart, onClick: () => router.push('/marketing/events') },
     { label: 'New Campaign',      icon: Megaphone,  onClick: () => setShowCampaign(true) },
     { label: 'Case Study',        icon: FileText,   onClick: () => setShowCaseStudy(true) },
     { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
     { label: 'Lead Report',       icon: TrendingUp, onClick: () => setShowLeadReport(true) },
     { label: 'Dept Insights',    icon: Star,       onClick: () => setShowAIInsights(true) },
     { label: 'Dept Info',        icon: Building2,  onClick: () => setShowDeptInfo(true) },
-    { label: 'Email Campaign',   icon: Mail,       onClick: () => setActiveModal('email-campaign') },
-    { label: 'Social Schedule',  icon: Calendar,   onClick: () => setActiveModal('social-schedule') },
-    { label: 'Press Release',    icon: Newspaper,  onClick: () => setActiveModal('press-release') },
+    { label: 'Email Campaign',   icon: Mail,       onClick: () => router.push('/marketing/email-campaign') },
+    { label: 'Social Schedule',  icon: Calendar,   onClick: () => router.push('/marketing/social-schedule') },
+    { label: 'Press Release',    icon: Newspaper,  onClick: () => router.push('/marketing/press-release') },
     { label: 'SEO Audit',        icon: Search,     onClick: () => setActiveModal('seo-audit') },
     { label: 'A/B Test',         icon: GitCompare, onClick: () => setActiveModal('ab-test') },
     { label: 'Influencer Brief', icon: Star,       onClick: () => setActiveModal('influencer') },
     { label: 'Brand Review',     icon: Palette,    onClick: () => setActiveModal('brand-review') },
     { label: 'Ad Campaign',      icon: Target,     onClick: () => setActiveModal('ad-campaign') },
     { label: 'Content Brief',    icon: FileText,   onClick: () => setActiveModal('content-brief') },
-    { label: 'Newsletter',       icon: Send,       onClick: () => setActiveModal('newsletter') },
+    { label: 'Newsletter',       icon: Send,       onClick: () => router.push('/marketing/newsletter') },
     { label: 'Competitor Audit', icon: Eye,        onClick: () => setActiveModal('competitor-audit') },
     { label: 'Campaign Report',  icon: BarChart2,  onClick: () => setActiveModal('campaign-report') },
     { label: 'Partner Collab',   icon: Handshake,  onClick: () => setActiveModal('partner-collab') },
@@ -193,23 +193,91 @@ export default function MarketingPage() {
 
       <QuickActions items={actions} />
 
-      {/* Marketing Events Workflow Card */}
+      {/* Marketing Workflow Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all">
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/events')}>
           <div className="flex items-start justify-between">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
               <CalendarHeart className="w-4 h-4 text-teal-400" />
             </div>
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-              <span className="text-xs font-mono text-teal-400">MKT-EVENTS-01</span>
+              <span className="text-xs font-mono text-teal-400">MKT-EVENTS-02</span>
             </div>
           </div>
           <div>
-            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Marketing Events — Event Planner & Promoter</div>
-            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Describe your event type, audience, and goals — get a full event plan with venue options, promotional copy, and a ready-to-send invite sequence.</div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Marketing Events — Full Event Planner</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Plan and book any marketing event — conference, webinar, launch party, or networking event — with AI-powered venue research, budget planning, and promotional content generation.</div>
           </div>
-          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow →</div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/newsletter')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Send className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-NEWS-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Newsletter — AI Content Writer</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Configure your newsletter sections, generate AI-written content for each, preview and refine, then schedule and send via Gmail.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/email-campaign')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Mail className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-EMAIL-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Email Campaign — Sequence Builder</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Build multi-email drip campaigns with AI-generated copy, A/B test subject lines, approve each email, then deploy drafts to Gmail with calendar reminders.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/social-schedule')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Calendar className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-SOCIAL-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Social Schedule — Weekly Content Planner</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Generate a full week of social media content across all platforms, approve and refine each post, then export with calendar reminders for posting times.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/press-release')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Newspaper className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-PR-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Press Release — AI Writer & Distributor</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Enter your story details, get a full press release with social posts and journalist pitch, then distribute via email with follow-up reminders.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
         </div>
       </div>
 
@@ -287,16 +355,12 @@ export default function MarketingPage() {
               <>
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-white font-bold text-lg">
-                    {activeModal === 'email-campaign' && '📧 Email Campaign'}
-                    {activeModal === 'social-schedule' && '📅 Social Schedule'}
-                    {activeModal === 'press-release' && '📰 Press Release'}
                     {activeModal === 'seo-audit' && '🔍 SEO Audit'}
                     {activeModal === 'ab-test' && '🔀 A/B Test'}
                     {activeModal === 'influencer' && '⭐ Influencer Brief'}
                     {activeModal === 'brand-review' && '🎨 Brand Review'}
                     {activeModal === 'ad-campaign' && '🎯 Ad Campaign'}
                     {activeModal === 'content-brief' && '📝 Content Brief'}
-                    {activeModal === 'newsletter' && '📬 Newsletter'}
                     {activeModal === 'competitor-audit' && '👁️ Competitor Audit'}
                     {activeModal === 'campaign-report' && '📊 Campaign Report'}
                     {activeModal === 'partner-collab' && '🤝 Partner Collaboration'}
@@ -305,33 +369,6 @@ export default function MarketingPage() {
                   </h3>
                   <button onClick={() => setActiveModal(null)} className="text-gray-500 hover:text-white text-2xl">×</button>
                 </div>
-
-                {/* EMAIL CAMPAIGN */}
-                {activeModal === 'email-campaign' && (
-                  <div className="space-y-3">
-                    <div><label className="text-xs text-gray-400 mb-1 block">Campaign name</label><input type="text" placeholder="e.g. Q2 Product Update" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Audience</label><select className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>All subscribers</option><option>Trial users</option><option>Paying customers</option><option>Churned users</option><option>Leads</option></select></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Campaign goal</label><div className="flex gap-2 flex-wrap">{['Announce feature','Drive upgrades','Re-engage','Nurture leads','Promote event'].map(g => <button key={g} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{g}</button>)}</div></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Key message</label><textarea rows={2} placeholder="What's the one thing they should take away?" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Send date</label><input type="date" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <button disabled={submitting} onClick={() => callMarketingAction('Write an email campaign with: subject line (with emoji), preview text, header, 3 body paragraphs, CTA button text, and P.S. line. Goal: drive product upgrades. Tone: confident and friendly. Format clearly with labels for each section.', true)} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
-                      {submitting ? <><span className="animate-spin">⟳</span> Generating...</> : '✨ Generate Email Campaign'}
-                    </button>
-                  </div>
-                )}
-
-                {/* PRESS RELEASE */}
-                {activeModal === 'press-release' && (
-                  <div className="space-y-3">
-                    <div><label className="text-xs text-gray-400 mb-1 block">News headline</label><input type="text" placeholder="e.g. Lumio launches GPS tracking for football clubs" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Key facts (3-5 bullet points)</label><textarea rows={3} placeholder="What are the key facts to include?" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Quote from</label><input type="text" placeholder="e.g. Arron Margeison, Founder" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Target publications</label><input type="text" placeholder="e.g. TechCrunch, SportsPro, SaaS Weekly" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <button disabled={submitting} onClick={() => callMarketingAction('Write a professional press release with: headline, dateline, strong opening paragraph (who, what, when, where, why), 3 body paragraphs with quotes and context, boilerplate about Lumio, and contact information placeholder. Follow AP style. Return the full press release.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
-                      {submitting ? <><span className="animate-spin">⟳</span> Writing...</> : '✨ Generate Press Release'}
-                    </button>
-                  </div>
-                )}
 
                 {/* CONTENT BRIEF */}
                 {activeModal === 'content-brief' && (
@@ -357,18 +394,6 @@ export default function MarketingPage() {
                     <div><label className="text-xs text-gray-400 mb-1 block">Key message</label><input type="text" placeholder="Core value proposition" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
                     <button disabled={submitting} onClick={() => callMarketingAction('Create a digital ad campaign pack including: 3 headline variations (under 30 chars each), 3 description variations, 2 CTA options, audience targeting recommendations, bidding strategy suggestion, landing page recommendations, and success metrics to track. Format as a structured campaign brief.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
                       {submitting ? <><span className="animate-spin">⟳</span> Generating...</> : '✨ Generate Ad Campaign Brief'}
-                    </button>
-                  </div>
-                )}
-
-                {/* NEWSLETTER */}
-                {activeModal === 'newsletter' && (
-                  <div className="space-y-3">
-                    <div><label className="text-xs text-gray-400 mb-1 block">Newsletter edition</label><input type="text" placeholder="e.g. April 2026 — The Lumio Update" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Key stories this month</label><textarea rows={3} placeholder="List 3-5 things to include: product updates, case studies, tips, events..." className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Audience</label><div className="flex gap-2">{['All customers','Prospects','Partners','All subscribers'].map(a => <button key={a} className="flex-1 py-1.5 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{a}</button>)}</div></div>
-                    <button disabled={submitting} onClick={() => callMarketingAction('Write a monthly newsletter including: engaging subject line with emoji, warm opening paragraph, 3-4 content sections (product update, customer story, tip/insight, upcoming event), sign-off from founder, and unsubscribe footer placeholder. Conversational but professional tone. Format with clear section headers.', true)} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
-                      {submitting ? <><span className="animate-spin">⟳</span> Writing...</> : '✨ Generate Newsletter'}
                     </button>
                   </div>
                 )}
@@ -407,19 +432,6 @@ export default function MarketingPage() {
                     <div><label className="text-xs text-gray-400 mb-1 block">Budget (£)</label><input type="number" placeholder="Per influencer" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
                     <button disabled={submitting} onClick={() => callMarketingAction('Create an influencer marketing brief including: campaign overview, brand guidelines, key messages and product USPs, content requirements and format specifications, dos and donts, disclosure requirements (ASA/FTC), compensation structure, timeline, KPIs and reporting requirements, and approval process. Professional and clear.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
                       {submitting ? <><span className="animate-spin">⟳</span> Writing...</> : '⭐ Generate Influencer Brief'}
-                    </button>
-                  </div>
-                )}
-
-                {/* SOCIAL SCHEDULE */}
-                {activeModal === 'social-schedule' && (
-                  <div className="space-y-3">
-                    <div><label className="text-xs text-gray-400 mb-1 block">Platforms</label><div className="flex gap-2 flex-wrap">{['LinkedIn','Twitter/X','Instagram','Facebook','TikTok','YouTube'].map(p => <button key={p} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{p}</button>)}</div></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Week commencing</label><input type="date" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Theme / focus this week</label><input type="text" placeholder="e.g. Product launch, customer stories, tips" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
-                    <div><label className="text-xs text-gray-400 mb-1 block">Posts per platform</label><div className="flex gap-2">{['3/week','5/week','Daily','2/week'].map(f => <button key={f} className="flex-1 py-1.5 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{f}</button>)}</div></div>
-                    <button disabled={submitting} onClick={() => callMarketingAction('Create a full week social media content schedule for a B2B SaaS company. For each day (Mon-Fri), provide: platform, post copy, suggested visual description, hashtags, best posting time, and engagement prompt. Mix content types: value post, customer story, product feature, industry insight, team culture. Format as a clear daily schedule.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
-                      {submitting ? <><span className="animate-spin">⟳</span> Scheduling...</> : '📅 Generate Week\'s Social Content'}
                     </button>
                   </div>
                 )}
