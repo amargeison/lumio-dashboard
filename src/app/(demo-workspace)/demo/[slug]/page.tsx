@@ -4197,6 +4197,17 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     setCompany(name)
     setUserName(user)
     setCompanyLogo(logo)
+
+    // Always fetch fresh tenant data by slug — overrides stale localStorage
+    fetch(`/api/demo/check-slug?slug=${encodeURIComponent(slug)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.company_name) { setCompany(d.company_name); localStorage.setItem('workspace_company_name', d.company_name); localStorage.setItem('lumio_company_name', d.company_name) }
+        if (d?.owner_name) { setUserName(d.owner_name); localStorage.setItem('workspace_user_name', d.owner_name); localStorage.setItem('lumio_user_name', d.owner_name) }
+        if (d?.logo_url) { const cb = `${d.logo_url}?t=${Date.now()}`; setCompanyLogo(cb); localStorage.setItem('workspace_company_logo', cb); localStorage.setItem('lumio_company_logo', cb) }
+      })
+      .catch(() => {})
+
     // Hydration-safe: read client-only settings after mount
     if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
     if (localStorage.getItem('lumio_voice_commands_enabled') === 'false') setVoiceCommandsEnabled(false)
@@ -4273,10 +4284,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             // Don't boot fresh purchases — session may still be propagating
             if (justPurchased) {
               const alreadySetUp = localStorage.getItem(`lumio_onboarding_done_${slug}`)
-                || localStorage.getItem('lumio_onboarding_shown')
-                || localStorage.getItem('workspace_company_name')
                 || localStorage.getItem(`onboarding-dismissed-${slug}`)
-                || localStorage.getItem('lumio_tour_completed')
+                || localStorage.getItem(`lumio_tour_done_${slug}`)
               if (alreadySetUp) return
               // Extra guard: check if lumio_company_active was set more than 10 minutes ago
               const purchaseTs = parseInt(localStorage.getItem('lumio_purchase_timestamp') || '0', 10)
@@ -4350,7 +4359,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             // Only show if created less than 10 minutes ago AND no local flags set
             const createdAt = data.created_at ? new Date(data.created_at).getTime() : 0
             const isNewTenant = createdAt > 0 && (Date.now() - createdAt) < 10 * 60 * 1000
-            if (isNewTenant && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+            if (isNewTenant && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem(`onboarding-dismissed-${slug}`) && !localStorage.getItem(`lumio_tour_done_${slug}`)) {
               setShowLiveOnboarding(true)
             }
           }
@@ -4390,7 +4399,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               } else if (!data.business?.demo_data_active) {
                 const bizCreated = data.business?.created_at ? new Date(data.business.created_at).getTime() : 0
                 const bizIsNew = bizCreated > 0 && (Date.now() - bizCreated) < 10 * 60 * 1000
-                if (bizIsNew && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
+                if (bizIsNew && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem(`onboarding-dismissed-${slug}`) && !localStorage.getItem(`lumio_tour_done_${slug}`)) {
                   setShowLiveOnboarding(true)
                 }
               }
