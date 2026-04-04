@@ -91,6 +91,20 @@ function StatusDot({ status }: { status: string }) {
 
 export default function ParentPortalPage({ params }: { params: Promise<{ schoolSlug: string }> }) {
   const { schoolSlug } = use(params)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: 48 }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>👨‍👩‍👧</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Parent Portal</h1>
+      <p style={{ color: '#64748b', fontSize: 16, maxWidth: 480, marginBottom: 32 }}>
+        The Parent Portal is coming soon — giving parents real-time access to attendance, reports, timetables, and two-way messaging with the school.
+      </p>
+      <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: '12px 24px', color: '#0D9488', fontWeight: 600, fontSize: 14 }}>
+        🚀 Coming Soon — available on full release
+      </div>
+    </div>
+  )
+
   const [loggedIn, setLoggedIn] = useState(false)
   const [tab, setTab] = useState<Tab>('today')
   const [email, setEmail] = useState('')
