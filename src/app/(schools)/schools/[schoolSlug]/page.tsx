@@ -1195,23 +1195,42 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       </div>
 
-      {/* 3. Quick actions */}
-      <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
-        <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+      {/* 3. Quick actions — 2 rows of 10 */}
+      <div className="px-4 py-3" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
+        <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions</span>
         {[
-          { label: 'New Concern', icon: '⚠️' },
-          { label: 'Log Absence', icon: '📋' },
-          { label: 'Parent Contact', icon: '📞' },
-          { label: 'Book Cover', icon: '📅' },
-          { label: 'New Admission', icon: '➕' },
-          { label: 'Run Report', icon: '📊' },
-          { label: 'Claim Expenses', icon: '💰' },
-          { label: 'Request Leave', icon: '🏖️' },
-          { label: 'Report Staff Absence', icon: '🤒' },
-        ].map(a => (
-          <button key={a.label} onClick={() => {}} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            <span>{a.icon}</span>{a.label}
-          </button>
+          [
+            { label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: true },
+            { label: 'New Concern', icon: '\u26A0\uFE0F' },
+            { label: 'Mark Register', icon: '\u2705' },
+            { label: 'Behaviour Incident', icon: '\u{1F4CB}' },
+            { label: 'Log Absence', icon: '\u{1FAE5}' },
+            { label: 'Parent Contact', icon: '\u{1F4DE}' },
+            { label: 'Book Cover', icon: '\u{1F4D6}' },
+            { label: 'New Admission', icon: '\u2795' },
+            { label: 'Refer to SENCO', icon: '\u{1F9E0}' },
+            { label: 'Run Report', icon: '\u{1F4CA}' },
+          ],
+          [
+            { label: 'Create Lesson Plan', icon: '\u2728' },
+            { label: 'Send Parent Email', icon: '\u{1F4E7}' },
+            { label: 'Pupil Progress Note', icon: '\u{1F4C8}' },
+            { label: 'Request Resources', icon: '\u{1F4E6}' },
+            { label: 'IT Support', icon: '\u{1F4BB}' },
+            { label: 'Book CPD / Training', icon: '\u{1F393}' },
+            { label: 'Claim Expenses', icon: '\u{1F4B0}' },
+            { label: 'Request Leave', icon: '\u{1F3D6}\uFE0F' },
+            { label: 'Report Staff Absence', icon: '\u{1F464}' },
+            { label: 'Submit Risk Assessment', icon: '\u26A0\uFE0F' },
+          ],
+        ].map((row, ri) => (
+          <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri === 0 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
+            {row.map((a: any) => (
+              <button key={a.label} onClick={() => {}} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
+                <span>{a.icon}</span>{a.label}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 
