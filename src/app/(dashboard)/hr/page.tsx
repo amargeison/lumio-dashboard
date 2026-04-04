@@ -358,7 +358,7 @@ export default function HRPage() {
     { label: 'New Starter',        icon: UserPlus,       onClick: () => setShowModal(true)       },
     { label: 'Leave Request',      icon: FileText,        onClick: () => setShowLeaveModal(true)  },
     { label: 'Offboarding',        icon: Users,           onClick: () => setShowOffboarding(true) },
-    { label: 'Recruitment',        icon: Briefcase,       onClick: () => setShowRecruitment(true) },
+    { label: 'Recruitment',        icon: Briefcase,       onClick: () => router.push('/hr/recruit') },
     { label: 'Performance Review', icon: ClipboardList,   onClick: () => setShowPerfReview(true)  },
     { label: 'Company Events',     icon: CalendarHeart,   onClick: () => router.push('/hr/events')},
     { label: 'Send Contract',      icon: FileText,       onClick: () => setShowContract(true) },
@@ -402,7 +402,29 @@ export default function HRPage() {
               Describe your event, headcount, and budget — get ranked venue recommendations with ratings, prices, and a ready-to-send enquiry email.
             </div>
           </div>
-          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow →</div>
+          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow &rarr;</div>
+        </Link>
+        <Link
+          href="/hr/recruit"
+          className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(124,58,237,0.08)' }}>
+              <Briefcase className="w-4 h-4 text-purple-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-xs font-mono text-purple-400">HR-RECRUIT-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Recruitment Researcher</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">
+              Describe the role you need to fill &mdash; get an AI-generated job description, candidate personas, interview questions, and outreach templates.
+            </div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch workflow &rarr;</div>
         </Link>
       </div>
 
