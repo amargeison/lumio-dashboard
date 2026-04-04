@@ -1933,13 +1933,13 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
 // ─── Quick Actions Bar ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: ['gmail', 'outlook'], integrationLabel: 'Gmail or Outlook' },
-  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: ['slack'], integrationLabel: 'Slack' },
+  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: null, integrationLabel: '' },
+  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: null, integrationLabel: '' },
   { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone, integrations: null, integrationLabel: '' },
-  { label: 'Book Meeting', tooltip: 'Schedule a meeting or team event', icon: Calendar, integrations: ['gcal', 'outlook_cal'], integrationLabel: 'Google Calendar or Outlook Calendar' },
-  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: ['xero', 'quickbooks'], integrationLabel: 'Xero or QuickBooks' },
-  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
-  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
+  { label: 'Book Meeting', tooltip: 'Schedule a meeting or team event', icon: Calendar, integrations: null, integrationLabel: '' },
+  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: null, integrationLabel: '' },
+  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: null, integrationLabel: '' },
+  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: null, integrationLabel: '' },
   { label: 'Submit Timesheet', tooltip: 'Log your weekly hours', icon: FileText, integrations: null, integrationLabel: '' },
   { label: 'Log Remote Day', tooltip: 'Log a remote working day', icon: Home, integrations: null, integrationLabel: '' },
   { label: 'IT Support', tooltip: 'Raise an IT support ticket', icon: Laptop, integrations: null, integrationLabel: '' },
@@ -2002,18 +2002,6 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
           )
         })}
       </div>
-      {/* Integration toast */}
-      {toast && (
-        <div className="fixed z-[100] flex items-center gap-3 shadow-2xl" style={{ bottom: 32, left: '50%', transform: 'translateX(-50%)', backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 12, minWidth: 340, maxWidth: 480, padding: '14px 20px' }}>
-          <p style={{ color: '#9CA3AF', fontSize: 14 }}>
-            Connect <span style={{ color: '#F9FAFB', fontWeight: 700 }}>{toast.integration}</span> in Settings to use {toast.label}
-          </p>
-          <button onClick={() => { setToast(null); onGoSettings() }} className="shrink-0 whitespace-nowrap" style={{ fontSize: 14, fontWeight: 700, color: '#A78BFA', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-            Go to Settings
-          </button>
-          <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
-        </div>
-      )}
     </>
   )
 }
