@@ -221,7 +221,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onMouseLeave={handleMouseLeave}
       >
         {/* Workspace identity — top (display only — upload in Settings) */}
-        <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-3" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
+        <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 10px' : '12px 4px', gap: expanded ? 10 : 0 }}>
           <div
             className="relative flex h-16 w-16 items-center justify-center rounded-xl shrink-0 overflow-hidden"
             style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
@@ -322,7 +322,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden"
           style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}
         >
-          <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: '12px 10px', gap: 10 }}>
             <div
               className="relative flex h-16 w-16 items-center justify-center rounded-xl shrink-0 overflow-hidden"
               style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
