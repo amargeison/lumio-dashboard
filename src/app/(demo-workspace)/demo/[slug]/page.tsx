@@ -4470,7 +4470,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
 
       {/* Trial banner — fixed, stops at sidebar edge */}
       {showUpgrade && isTrial && (
-        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB', paddingRight: 120 }}>
+        <div className="hidden md:flex items-center justify-between px-4 py-2 text-sm" style={{ position: 'fixed', top: 0, left: 208, right: 0, height: 40, zIndex: 9998, backgroundColor: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
           <div className="flex items-center gap-2">
             <Clock size={13} />
             <span className="font-medium">Trial workspace — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>

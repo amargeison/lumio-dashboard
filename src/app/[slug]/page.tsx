@@ -4360,7 +4360,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Demo banner — in flow, first child of right column */}
           {demoDataActive && (
-            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 120 }}>
+            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
               <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
               <div className="flex items-center gap-2">
                 <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
