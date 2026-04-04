@@ -20,6 +20,7 @@ import {
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2,
 } from 'lucide-react'
+import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
@@ -663,7 +664,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
-                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF' }}>
                   <Volume2 size={15} strokeWidth={1.75} />
                 </button>
                 <button
@@ -675,7 +676,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
                     backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
                     border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
                     color: isListening ? '#EF4444' : '#F9FAFB',
-                    animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                    
                   }}>
                   <Mic size={14} strokeWidth={1.75} />
                 </button>
@@ -717,7 +718,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
           borderRadius: 999, padding: '8px 20px', zIndex: 50,
           display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
         }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
           Listening... say a command
         </div>
       )}
@@ -786,6 +787,7 @@ function MorningRoundup() {
   const [replied, setReplied] = useState<string[]>([])
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [showReply, setShowReply] = useState<string | null>(null)
+  const { items: roundupItems, dragProps, reset } = useDraggableList(FOOTBALL_ROUNDUP_ITEMS, 'lumio_football_overview_order')
 
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
@@ -799,15 +801,20 @@ function MorningRoundup() {
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
-        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        <div className="flex items-center gap-3">
+          <button onClick={reset} style={{ fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset order</button>
+          <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        </div>
       </div>
       <div className="space-y-2">
-        {FOOTBALL_ROUNDUP_ITEMS.map(item => {
+        {roundupItems.map((item, index) => {
           const isOpen = expanded === item.id
+          const dp = dragProps(index)
           return (
-            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+            <div key={item.id} draggable={dp.draggable} onDragStart={dp.onDragStart} onDragEnter={dp.onDragEnter} onDragEnd={dp.onDragEnd} onDragOver={dp.onDragOver} className="rounded-xl overflow-hidden" style={{ ...dp.style, backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
               <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
                 <div className="flex items-center gap-2.5">
+                  <span style={{ color: '#334155', marginRight: 4, fontSize: 14, cursor: 'grab', opacity: 0.4 }}>⠿</span>
                   <span className="text-base">{item.icon}</span>
                   <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
                   {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
@@ -882,7 +889,7 @@ function FixturesPanel() {
           <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(0,61,165,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(0,61,165,0.25)' : '1px solid #1F2937' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+                {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500" />}
                 <span className="text-sm font-bold" style={{ color: i === 0 ? '#F1C40F' : '#F9FAFB' }}>{f.opponent}</span>
               </div>
               <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>
@@ -2544,7 +2551,7 @@ function SquadView() {
       )}
       {sqLiveSquad && (
         <div className="flex items-center gap-2 mb-3 text-xs text-emerald-500">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+          <span className="w-2 h-2 rounded-full bg-emerald-500"/>
           Live data from API-Football · {sqLiveSquad.length} players loaded
         </div>
       )}

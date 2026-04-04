@@ -7,9 +7,16 @@ import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { createClient } from '@supabase/supabase-js'
 
 const VOICES = [
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.' },
-  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.' },
-  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
+  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.', gender: 'Female', accent: 'American' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Dominant & firm \u2014 authoritative and commanding', sample: 'Good morning. Here\'s what matters today.', gender: 'Male', accent: 'American' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'British & captivating \u2014 warm storyteller', sample: 'Good morning. Let me walk you through your day.', gender: 'Male', accent: 'British' },
+  { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice', desc: 'Clear & engaging \u2014 British educator', sample: 'Good morning. Here\'s your briefing for today.', gender: 'Female', accent: 'British' },
+  { id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda', desc: 'Knowledgeable & professional \u2014 polished and precise', sample: 'Good morning. Your priorities are ready.', gender: 'Female', accent: 'American' },
+  { id: 'cjVigY5qzO86Huf0OWal', name: 'Eric', desc: 'Smooth & trustworthy \u2014 calm and reliable', sample: 'Good morning. Here\'s your morning roundup.', gender: 'Male', accent: 'American' },
+  { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', desc: 'Steady broadcaster \u2014 British and professional', sample: 'Good morning. The headlines from your dashboard.', gender: 'Male', accent: 'British' },
+  { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', desc: 'Playful & bright \u2014 warm and approachable', sample: 'Good morning. Let\'s see what today brings.', gender: 'Female', accent: 'American' },
 ]
 
 const ALL_TIMEZONES = [
@@ -107,6 +114,8 @@ export default function SchoolSettingsPage() {
   const [voiceEnabled, setVoiceEnabled] = useState(false)
   const [activeVoice, setActiveVoice] = useState(VOICES[0].id)
   const [previewing, setPreviewing] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
+  const [voiceFilter, setVoiceFilter] = useState('all')
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Timezones
@@ -180,8 +189,9 @@ export default function SchoolSettingsPage() {
 
   async function preview(voice: typeof VOICES[0]) {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
-    if (previewing === voice.id) { setPreviewing(null); return }
+    if (previewing === voice.id) { setPreviewing(null); setPreviewLoading(null); return }
     setPreviewing(voice.id)
+    setPreviewLoading(voice.id)
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const t = localStorage.getItem('workspace_session_token') || localStorage.getItem('demo_session_token')
@@ -192,11 +202,14 @@ export default function SchoolSettingsPage() {
       const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }))
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => { setPreviewing(null); URL.revokeObjectURL(url) }
-      audio.onerror = () => { setPreviewing(null); URL.revokeObjectURL(url) }
+      audio.onended = () => { setPreviewing(null); setPreviewLoading(null); audioRef.current = null; URL.revokeObjectURL(url) }
+      audio.onerror = () => { setPreviewing(null); setPreviewLoading(null); URL.revokeObjectURL(url) }
+      setPreviewLoading(null)
       await audio.play()
-    } catch { setPreviewing(null) }
+    } catch { setPreviewing(null); setPreviewLoading(null) }
   }
+
+  const filteredVoices = voiceFilter === 'all' ? VOICES : VOICES.filter(v => v.gender === voiceFilter || v.accent === voiceFilter)
 
   const isDev = typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_ENV') === 'dev'
   const filteredTz = tzSearch ? ALL_TIMEZONES.filter(z => z.label.toLowerCase().includes(tzSearch.toLowerCase())) : ALL_TIMEZONES

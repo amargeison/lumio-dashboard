@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
+import { useDraggableList } from '@/hooks/useDraggableList'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
@@ -554,7 +555,7 @@ function SchoolMeetingsToday() {
                 <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>Decline</button>
               </div>
             )}
-            {m.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
+            {m.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
           </div>
         ))}
       </div>
@@ -615,12 +616,12 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
               <button onClick={() => isListening ? stopListening() : startListening()} title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
                 className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, cursor: 'pointer', backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)', border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isListening ? '#EF4444' : '#F9FAFB', animation: isListening ? 'pulse 1.5s infinite' : 'none' }}>
+                style={{ width: 32, height: 32, flexShrink: 0, cursor: 'pointer', backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)', border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isListening ? '#EF4444' : '#F9FAFB' }}>
                 <Mic size={14} strokeWidth={1.75} />
               </button>
             </div>
@@ -684,8 +685,20 @@ const SCHOOL_DAY_ITEMS = [
     ]},
 ]
 
+const SCHOOL_CHANNEL_CARDS = [
+  { id: 'email', icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action', color: '#0D9488', bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.2)' },
+  { id: 'sms', icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts', color: '#3B82F6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.2)' },
+  { id: 'phone', icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent', color: '#8B5CF6', bg: 'rgba(139,92,246,0.06)', border: 'rgba(139,92,246,0.2)' },
+  { id: 'push', icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)' },
+  { id: 'mis', icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS', color: '#EC4899', bg: 'rgba(236,72,153,0.06)', border: 'rgba(236,72,153,0.2)' },
+  { id: 'ofsted-portal', icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence', color: '#EF4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
+  { id: 'teams-slack', icon: '💬', label: 'Teams/Slack', count: 5, sub: 'unread staff messages', color: '#6366F1', bg: 'rgba(99,102,241,0.06)', border: 'rgba(99,102,241,0.2)' },
+  { id: 'announcements', icon: '📟', label: 'Announcements', count: 0, sub: 'no new broadcasts', color: '#6B7280', bg: 'rgba(107,114,128,0.04)', border: 'rgba(107,114,128,0.15)' },
+]
+
 function SchoolMorningRoundup() {
   const [expanded, setExpanded] = useState<string | null>(null)
+  const { items: channelCards, dragProps, reset } = useDraggableList(SCHOOL_CHANNEL_CARDS, 'lumio_school_overview_order')
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
@@ -735,24 +748,24 @@ function SchoolMorningRoundup() {
           )
         })}
       </div>
-      <div className="space-y-2 mt-3">
-        {[
-          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action', color: '#0D9488', bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.2)' },
-          { icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts', color: '#3B82F6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.2)' },
-          { icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent', color: '#8B5CF6', bg: 'rgba(139,92,246,0.06)', border: 'rgba(139,92,246,0.2)' },
-          { icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)' },
-          { icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS', color: '#EC4899', bg: 'rgba(236,72,153,0.06)', border: 'rgba(236,72,153,0.2)' },
-          { icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence', color: '#EF4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
-          { icon: '💬', label: 'Teams/Slack', count: 5, sub: 'unread staff messages', color: '#6366F1', bg: 'rgba(99,102,241,0.06)', border: 'rgba(99,102,241,0.2)' },
-          { icon: '📟', label: 'Announcements', count: 0, sub: 'no new broadcasts', color: '#6B7280', bg: 'rgba(107,114,128,0.04)', border: 'rgba(107,114,128,0.15)' },
-        ].map((ch: any) => (
-          <div key={ch.label} className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-all" style={{ backgroundColor: ch.bg || '#111318', border: `1px solid ${ch.border || '#1F2937'}` }}>
-            <div className="w-full flex items-center justify-between p-3">
-              <div className="flex items-center gap-2.5"><span className="text-base">{ch.icon}</span><span className="text-sm font-bold" style={{ color: ch.color || '#F9FAFB' }}>{ch.label}</span>{ch.count > 0 && <span className="text-xs" style={{ color: '#6B7280' }}>{ch.sub}</span>}</div>
-              <div className="flex items-center gap-2"><span className="text-base font-black" style={{ color: ch.color || '#F9FAFB' }}>{ch.count}</span><span className="text-xs" style={{ color: '#6B7280' }}>{'\u25BC'}</span></div>
+      <div className="flex items-center justify-between mt-3 mb-1">
+        <span className="text-xs" style={{ color: '#4B5563' }}>Channels</span>
+        <button onClick={reset} className="text-xs" style={{ color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset order</button>
+      </div>
+      <div className="space-y-2">
+        {channelCards.map((ch, index) => {
+          const dp = dragProps(index)
+          return (
+            <div key={ch.id} {...dp} style={{ ...dp.style }}>
+              <div className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-all" style={{ backgroundColor: ch.bg || '#111318', border: `1px solid ${ch.border || '#1F2937'}` }}>
+                <div className="w-full flex items-center justify-between p-3">
+                  <div className="flex items-center gap-2.5"><span style={{ color: '#334155', marginRight: 4, fontSize: 14, cursor: 'grab', opacity: 0.4 }}>&#x2807;</span><span className="text-base">{ch.icon}</span><span className="text-sm font-bold" style={{ color: ch.color || '#F9FAFB' }}>{ch.label}</span>{ch.count > 0 && <span className="text-xs" style={{ color: '#6B7280' }}>{ch.sub}</span>}</div>
+                  <div className="flex items-center gap-2"><span className="text-base font-black" style={{ color: ch.color || '#F9FAFB' }}>{ch.count}</span><span className="text-xs" style={{ color: '#6B7280' }}>{'\u25BC'}</span></div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -1263,8 +1276,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
         {(() => {
           const allButtons = [
-            { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
-            { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
+            { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}' },
+            { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', red: true },
             { id: 'new-concern', label: 'New Concern', icon: '\u26A0\uFE0F' },
             { id: 'mark-register', label: 'Mark Register', icon: '\u2705' },
             { id: 'behaviour-incident', label: 'Behaviour Incident', icon: '\u{1F4CB}' },
@@ -1309,7 +1322,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                   'Report Staff Absence': () => setShowReportAbsence(true),
                 }
                 handlers[a.label]?.()
-              }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
+              }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 `} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
                 <span>{a.icon}</span>{a.label}
               </button>
             ))}
@@ -1997,7 +2010,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* Lockdown drill banner */}
       {lockdownBanner && (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626', color: '#fff' }}>
-          <span className="text-sm font-bold animate-pulse">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
+          <span className="text-sm font-bold">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
           <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
         </div>
       )}
@@ -2140,14 +2153,14 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
                         <p className="text-sm font-bold text-white mb-3">Call emergency services now</p>
                         {demoDataActive ? (
                           <div className="space-y-2">
-                            <button className="w-full py-4 rounded-xl text-lg font-black animate-pulse" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2 }}
+                            <button className="w-full py-4 rounded-xl text-lg font-black" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2 }}
                               onClick={() => alert('DEMO MODE: In a live workspace this would open your phone dialler to call 999.')}>
                               {'\u{1F4DE}'} Call 999 NOW (DEMO)
                             </button>
                             <p className="text-xs text-gray-500">Demo mode — no call will be made</p>
                           </div>
                         ) : (
-                          <a href="tel:999" className="block w-full py-4 rounded-xl text-lg font-black text-center animate-pulse" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2, textDecoration: 'none' }}>
+                          <a href="tel:999" className="block w-full py-4 rounded-xl text-lg font-black text-center" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2, textDecoration: 'none' }}>
                             {'\u{1F4DE}'} Call 999 NOW
                           </a>
                         )}

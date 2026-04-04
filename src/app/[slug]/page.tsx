@@ -22,6 +22,7 @@ import {
   Laptop, ClipboardCheck, GraduationCap, ShoppingCart, Key, Timer,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import { useDraggableList } from '@/hooks/useDraggableList'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import OverviewActionModal from '@/components/demo/OverviewActionModal'
@@ -1083,7 +1084,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
               {voiceCommandsEnabled && (
@@ -1096,7 +1097,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
                   backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
                   border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
                   color: isListening ? '#EF4444' : '#F9FAFB',
-                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                  
                 }}>
                 <Mic size={14} strokeWidth={1.75} />
               </button>
@@ -1115,7 +1116,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
               <div key={item.label} onClick={() => onScrollTo?.(item.widget)} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px] cursor-pointer transition-transform hover:scale-105`}>
                 <span className="text-base">{item.icon}</span>
                 {liveCounts.meetings === null && !demoDataActive ? (
-                  <div className="w-6 h-5 rounded animate-pulse my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                  <div className="w-6 h-5 rounded my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 ) : (
                   <span className="text-lg font-black text-white">{item.value}</span>
                 )}
@@ -1143,7 +1144,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
         borderRadius: 999, padding: '8px 20px', zIndex: 50,
         display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
       }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: postBriefingListening ? '#A78BFA' : '#EF4444', animation: 'pulse 1s infinite' }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: postBriefingListening ? '#A78BFA' : '#EF4444' }} />
         {postBriefingListening ? 'Listening... what can I help with?' : 'Listening... say a command'}
       </div>
     )}
@@ -1427,7 +1428,8 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loaded, setLoaded] = useState(false)
   const [unreadFilter, setUnreadFilter] = useState<Record<string, boolean>>({})
-  const items = demoDataActive ? ROUNDUP_ITEMS : []
+  const { items: orderedItems, dragProps, reset } = useDraggableList(ROUNDUP_ITEMS, 'lumio_business_overview_order')
+  const items = demoDataActive ? orderedItems : []
 
   function handleToggleRead(sourceKey: string, msgId: string, newIsRead: boolean) {
     setLiveMessages(prev => ({
@@ -1524,7 +1526,10 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
           <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
           {totalUnread > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>{totalUnread} unread</span>}
         </div>
-        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        <div className="flex items-center gap-2">
+          {demoDataActive && <button onClick={reset} style={{ fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset order</button>}
+          <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        </div>
       </div>
 
       {/* Errors */}
@@ -1675,13 +1680,15 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
         {!anyConnected && !demoDataActive && items.length === 0 && (
           <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your tools in Settings to see messages here.</p>
         )}
-        {items.map(item => {
+        {items.map((item, index) => {
           const isOpen = expanded === item.id
+          const dp = demoDataActive ? dragProps(index) : null
           return (
-            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+            <div key={item.id} {...(dp || {})} className="rounded-xl overflow-hidden" style={{ ...(dp?.style || {}), backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
               {/* Header row */}
               <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
                 <div className="flex items-center gap-2.5">
+                  {demoDataActive && <span style={{ color: '#334155', marginRight: 4, fontSize: 14, cursor: 'grab', opacity: 0.4 }}>⠿</span>}
                   <span className="text-base">{item.icon}</span>
                   <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
                   {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
@@ -1893,7 +1900,7 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                         {evt.location ? ` · ${evt.location}` : ''}
                       </p>
                     </div>
-                    {isNow && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
+                    {isNow && <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
                   </div>
                   {!isPast && (
                     <div className="px-3 pb-1">
@@ -1939,7 +1946,7 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
               <div key={m.id}>
                 {live && (
                   <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                     <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{m.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {m.duration}</p></div>
                     <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
                     <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
@@ -4458,7 +4465,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="relative" id="notif-bell">
           <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
             <Bell size={16} strokeWidth={1.75} />
-            {urgentCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">{urgentCount}</span>}
+            {urgentCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center ">{urgentCount}</span>}
           </button>
           {notificationsOpen && (
             <div className="absolute right-0 top-full mt-2 rounded-2xl shadow-2xl overflow-hidden" style={{ width: 380, backgroundColor: '#0d0f1a', border: '1px solid #374151', zIndex: 9999 }}>
