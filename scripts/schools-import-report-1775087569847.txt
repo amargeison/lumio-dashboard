@@ -1,0 +1,20 @@
+════════════════════════════════════════
+LUMIO SCHOOLS — PROVISIONING REPORT
+Run: 02/04/2026, 00:52:49
+════════════════════════════════════════
+Total:   3
+Success: 3
+Skipped: 0 (already existed)
+Errors:  0
+
+── Provisioned Schools ─────────────────
+✅ Parkside Elementary
+   https://dev.lumiocms.com/telted/parkside-elementary
+✅ Riverside Academy
+   https://dev.lumiocms.com/telted/riverside-academy
+✅ Greenfields School
+   https://dev.lumiocms.com/telted/greenfields-school
+
+
+
+════════════════════════════════════════

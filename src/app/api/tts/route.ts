@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// ElevenLabs voice ID for "Rachel" — warm, natural British female
-// Renamed as "Lumio" in the UI
-const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
+// Default ElevenLabs voice — "Dallin" (positive, inspiring & clear)
+const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'
 const MODEL_ID = 'eleven_turbo_v2_5'
 const TRIAL_DAILY_LIMIT = 5
 
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { text, voice } = await req.json()
+    const { text, voice, voice_id, preview } = await req.json()
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 })
@@ -31,11 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Text too long — max 500 characters' }, { status: 400 })
     }
 
-    // Check if caller is trial — enforce daily limit
+    // Skip rate limit for voice previews
+    const isPreview = preview === true || req.headers.get('x-preview') === 'true'
+
+    // Check if caller is trial — enforce daily limit (skip for previews)
     const demoToken = req.headers.get('x-demo-token')
     const workspaceToken = req.headers.get('x-workspace-token')
 
-    if (demoToken && !workspaceToken) {
+    if (demoToken && !workspaceToken && !isPreview) {
       // Trial user — check daily usage
       const supabase = getSupabase()
       const { data: session } = await supabase
@@ -73,7 +75,9 @@ export async function POST(req: NextRequest) {
     }
     // Paid users (workspaceToken) — no limit
 
-    const voiceId = voice || VOICE_ID
+    const voiceId = voice_id || voice || VOICE_ID
+
+    console.log('[TTS] API key present:', !!process.env.ELEVENLABS_API_KEY, '| key prefix:', process.env.ELEVENLABS_API_KEY?.slice(0, 8))
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
@@ -99,7 +103,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const err = await response.text().catch(() => 'Unknown error')
       console.error('[TTS] ElevenLabs error:', response.status, err)
-      return NextResponse.json({ error: 'TTS failed' }, { status: 500 })
+      return NextResponse.json({ error: 'TTS failed', detail: err, status: response.status }, { status: 500 })
     }
 
     const audioBuffer = await response.arrayBuffer()

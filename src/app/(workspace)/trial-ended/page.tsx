@@ -35,7 +35,7 @@ export default function TrialEndedPage() {
           </Link>
 
           <Link
-            href="/demo"
+            href="/demo?signup=true"
             className="flex items-center justify-center w-full py-3 rounded-xl font-semibold text-sm"
             style={{ backgroundColor: 'transparent', border: '1px solid #1F2937', color: '#9CA3AF' }}
           >

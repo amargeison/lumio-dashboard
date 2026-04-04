@@ -1,0 +1,770 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
+import { ExternalLink } from 'lucide-react'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
+import { createClient } from '@supabase/supabase-js'
+
+const VOICES = [
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
+  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.', gender: 'Female', accent: 'American' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Dominant & firm \u2014 authoritative and commanding', sample: 'Good morning. Here\'s what matters today.', gender: 'Male', accent: 'American' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'British & captivating \u2014 warm storyteller', sample: 'Good morning. Let me walk you through your day.', gender: 'Male', accent: 'British' },
+  { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice', desc: 'Clear & engaging \u2014 British educator', sample: 'Good morning. Here\'s your briefing for today.', gender: 'Female', accent: 'British' },
+  { id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda', desc: 'Knowledgeable & professional \u2014 polished and precise', sample: 'Good morning. Your priorities are ready.', gender: 'Female', accent: 'American' },
+  { id: 'cjVigY5qzO86Huf0OWal', name: 'Eric', desc: 'Smooth & trustworthy \u2014 calm and reliable', sample: 'Good morning. Here\'s your morning roundup.', gender: 'Male', accent: 'American' },
+  { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', desc: 'Steady broadcaster \u2014 British and professional', sample: 'Good morning. The headlines from your dashboard.', gender: 'Male', accent: 'British' },
+  { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', desc: 'Playful & bright \u2014 warm and approachable', sample: 'Good morning. Let\'s see what today brings.', gender: 'Female', accent: 'American' },
+]
+
+const ALL_TIMEZONES = [
+  { label: 'London', tz: 'Europe/London' },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai', tz: 'Asia/Dubai' },
+  { label: 'Tokyo', tz: 'Asia/Tokyo' },
+  { label: 'Sydney', tz: 'Australia/Sydney' },
+  { label: 'Los Angeles', tz: 'America/Los_Angeles' },
+  { label: 'Chicago', tz: 'America/Chicago' },
+  { label: 'Toronto', tz: 'America/Toronto' },
+  { label: 'Paris', tz: 'Europe/Paris' },
+  { label: 'Berlin', tz: 'Europe/Berlin' },
+  { label: 'Amsterdam', tz: 'Europe/Amsterdam' },
+  { label: 'Singapore', tz: 'Asia/Singapore' },
+  { label: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+  { label: 'Mumbai', tz: 'Asia/Kolkata' },
+  { label: 'Auckland', tz: 'Pacific/Auckland' },
+  { label: 'Riyadh', tz: 'Asia/Riyadh' },
+  { label: 'Johannesburg', tz: 'Africa/Johannesburg' },
+  { label: 'Cairo', tz: 'Africa/Cairo' },
+  { label: 'Mexico City', tz: 'America/Mexico_City' },
+  { label: 'S\u00e3o Paulo', tz: 'America/Sao_Paulo' },
+]
+
+const S = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none', width: '100%' } as const
+
+function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button onClick={onChange} className="relative flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+    </button>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{title}</p>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Row({ label, value, isStatus }: { label: string; value: string; isStatus?: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: isStatus ? '#22C55E' : value === 'Not connected' ? '#6B7280' : '#F9FAFB' }}>{value}</span>
+    </div>
+  )
+}
+
+function ConnectRow({ label, connected }: { label: string; connected: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      <span className="text-sm" style={{ color: '#9CA3AF' }}>{label}</span>
+      {connected ? (
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)' }}>Connected</span>
+      ) : (
+        <div className="flex items-center gap-3">
+          <span className="text-xs" style={{ color: '#6B7280' }}>Not connected</span>
+          <button onClick={() => alert('Connect in production — demo mode')} className="text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
+            Connect <ExternalLink size={10} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function SchoolSettingsPage() {
+  const pathname = usePathname()
+  const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+  const schoolSlug = slugMatch?.[1] ?? 'school'
+
+  const [schoolName, setSchoolName] = useState('')
+  const [plan, setPlan] = useState('Trial')
+  const [demoDataActive, setDemoDataActive] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
+
+  // AI Briefing
+  const [briefingEnabled, setBriefingEnabled] = useState(true)
+  const [includeAttendance, setIncludeAttendance] = useState(true)
+  const [includeSafeguarding, setIncludeSafeguarding] = useState(true)
+  const [includeStaffAbsences, setIncludeStaffAbsences] = useState(true)
+  const [includeSchedule, setIncludeSchedule] = useState(true)
+  const [briefingTime, setBriefingTime] = useState('8:00am')
+
+  // Voice
+  const [ttsEnabled, setTtsEnabled] = useState(true)
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [activeVoice, setActiveVoice] = useState(VOICES[0].id)
+  const [previewing, setPreviewing] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
+  const [voiceFilter, setVoiceFilter] = useState('all')
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Timezones
+  const [zones, setZones] = useState<{ label: string; tz: string }[]>([])
+  const [tzSearch, setTzSearch] = useState('')
+
+  useEffect(() => {
+    const name = localStorage.getItem('lumio_school_name') || ''
+    setSchoolName(name)
+    setPlan(localStorage.getItem('lumio_school_plan') || 'Trial')
+    const storedLogo = localStorage.getItem(`lumio_school_logo_${schoolSlug}`)
+    if (storedLogo) setSchoolLogo(storedLogo)
+    // Check demo data status
+    setDemoDataActive(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
+    fetch(`/api/schools/${schoolSlug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.demo_data_active) setDemoDataActive(true) })
+      .catch(() => {})
+    if (localStorage.getItem('lumio_tts_enabled') === 'false') setTtsEnabled(false)
+    if (localStorage.getItem('lumio_voice_commands_enabled') === 'true') setVoiceEnabled(true)
+    const v = localStorage.getItem('lumio_tts_voice')
+    if (v) setActiveVoice(v)
+    try {
+      const z = localStorage.getItem('lumio_world_zones')
+      if (z) setZones(JSON.parse(z))
+      else setZones([{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }])
+    } catch { setZones([{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }]) }
+  }, [])
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.size > 2 * 1024 * 1024) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) return
+    const blobUrl = URL.createObjectURL(file)
+    setSchoolLogo(blobUrl)
+    const token = localStorage.getItem('workspace_session_token')
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: token ? { 'x-workspace-token': token } : {}, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setSchoolLogo(data.logo_url)
+        localStorage.setItem(`lumio_school_logo_${schoolSlug}`, data.logo_url)
+      }
+      URL.revokeObjectURL(blobUrl)
+    } catch { /* ignore */ }
+  }
+
+  async function handleLogoRemove() {
+    setSchoolLogo(null)
+    localStorage.removeItem(`lumio_school_logo_${schoolSlug}`)
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
+      } catch { /* ignore */ }
+    }
+  }
+
+  function selectVoice(id: string) { setActiveVoice(id); localStorage.setItem('lumio_tts_voice', id) }
+  function toggleZone(zone: { label: string; tz: string }) {
+    const exists = zones.some(z => z.tz === zone.tz)
+    let next: typeof zones
+    if (exists) next = zones.filter(z => z.tz !== zone.tz)
+    else { if (zones.length >= 4) return; next = [...zones, zone] }
+    setZones(next)
+    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
+  }
+
+  async function preview(voice: typeof VOICES[0]) {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    if (previewing === voice.id) { setPreviewing(null); setPreviewLoading(null); return }
+    setPreviewing(voice.id)
+    setPreviewLoading(voice.id)
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      const t = localStorage.getItem('workspace_session_token') || localStorage.getItem('demo_session_token')
+      if (t) { headers['x-workspace-token'] = t; headers['x-demo-token'] = t }
+      const res = await fetch('/api/tts', { method: 'POST', headers, body: JSON.stringify({ text: voice.sample, voice_id: voice.id, preview: true }) })
+      if (!res.ok) throw new Error()
+      const buf = await res.arrayBuffer()
+      const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }))
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setPreviewing(null); setPreviewLoading(null); audioRef.current = null; URL.revokeObjectURL(url) }
+      audio.onerror = () => { setPreviewing(null); setPreviewLoading(null); URL.revokeObjectURL(url) }
+      setPreviewLoading(null)
+      await audio.play()
+    } catch { setPreviewing(null); setPreviewLoading(null) }
+  }
+
+  const filteredVoices = voiceFilter === 'all' ? VOICES : VOICES.filter(v => v.gender === voiceFilter || v.accent === voiceFilter)
+
+  const isDev = typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_ENV') === 'dev'
+  const filteredTz = tzSearch ? ALL_TIMEZONES.filter(z => z.label.toLowerCase().includes(tzSearch.toLowerCase())) : ALL_TIMEZONES
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Settings</h1>
+        <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{schoolName || 'School'} workspace settings</p>
+      </div>
+
+      {/* Section 1 — School Details */}
+      <Section title="School Details">
+        <Row label="School Name" value={schoolName || 'School'} />
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>School phase</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Primary (KS1-KS2)</option><option>Nursery/Reception</option><option>Junior</option><option>Middle</option><option>Secondary (KS3-KS4)</option><option>Sixth Form</option><option>All-through</option><option>Special</option><option>PRU</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>URN number</p><p className="text-xs" style={{ color: '#6B7280' }}>Unique Reference Number from DfE</p></div>
+          <input type="text" placeholder="e.g. 123456" className="text-sm rounded-lg px-3 py-1.5 outline-none w-28 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Local Authority</p></div>
+          <input type="text" placeholder="e.g. Oxfordshire" className="text-sm rounded-lg px-3 py-1.5 outline-none w-36 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Ofsted rating</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Outstanding</option><option>Good</option><option>Requires Improvement</option><option>Inadequate</option><option>Not yet inspected</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Last Ofsted inspection</p></div>
+          <input type="date" className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', colorScheme: 'dark' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Academic year</p></div>
+          <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>MIS system</p><p className="text-xs" style={{ color: '#6B7280' }}>Management Information System</p></div>
+          <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+            <option>Arbor</option><option>SIMS</option><option>Bromcom</option><option>ScholarPack</option><option>iMIS</option><option>Other</option><option>None</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Pupil Premium eligible</p></div>
+          <input type="number" placeholder="0" className="text-sm rounded-lg px-3 py-1.5 outline-none w-20 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>SEND register pupils</p></div>
+          <input type="number" placeholder="0" className="text-sm rounded-lg px-3 py-1.5 outline-none w-20 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <Row label="Plan" value={plan} />
+        <Row label="Status" value="Active" isStatus />
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+          <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Manage billing</button>
+        </div>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div>
+            <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>School logo</div>
+            <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Upload or change in Settings only.</div>
+          </div>
+          <div className="flex items-center gap-3">
+            {schoolLogo ? (
+              <>
+                <img src={schoolLogo} alt="School logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                  Change
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+                <button onClick={handleLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                  Remove
+                </button>
+              </>
+            ) : (
+              <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#0D9488', color: '#fff' }}>
+                Upload logo
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              </label>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      {/* Section 2 — Profile */}
+      <Section title="Profile">
+        <Row label="Display name" value={schoolName || 'Staff Member'} />
+        <Row label="Email" value="staff@school.co.uk" />
+        <Row label="Job title" value="Headteacher" />
+        <Row label="Department" value="SLT" />
+      </Section>
+
+      {/* Section 3 — Team */}
+      <Section title="Team">
+        <Row label="Staff members" value="1 (you)" />
+        <Row label="Pending invites" value="0" />
+      </Section>
+
+      {/* Section 3 — AI Morning Briefing */}
+      <Section title="AI Morning Briefing">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Enable Morning Briefing</p><p className="text-xs" style={{ color: '#6B7280' }}>AI-generated daily summary read aloud</p></div>
+            <Toggle on={briefingEnabled} onChange={() => setBriefingEnabled(!briefingEnabled)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include attendance summary</span>
+            <Toggle on={includeAttendance} onChange={() => setIncludeAttendance(!includeAttendance)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include safeguarding alerts</span>
+            <Toggle on={includeSafeguarding} onChange={() => setIncludeSafeguarding(!includeSafeguarding)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include staff absences</span>
+            <Toggle on={includeStaffAbsences} onChange={() => setIncludeStaffAbsences(!includeStaffAbsences)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Include today's schedule</span>
+            <Toggle on={includeSchedule} onChange={() => setIncludeSchedule(!includeSchedule)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Briefing time</span>
+            <select value={briefingTime} onChange={e => setBriefingTime(e.target.value)} style={{ ...S, width: 'auto' }}>
+              <option>7:00am</option><option>7:30am</option><option>8:00am</option><option>8:30am</option>
+            </select>
+          </div>
+        </div>
+      </Section>
+
+      {/* Section 4 — Voice Assistant */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎙️</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Choose the voice for your AI morning briefing</p>
+            </div>
+          </div>
+        </div>
+        <div className="px-5 pt-4 space-y-3">
+          {/* TTS Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🔊 Text to Speech</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>AI voice reads your morning briefing and responds to actions</div>
+            </div>
+            <button onClick={() => { const v = !ttsEnabled; setTtsEnabled(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} className="flex-shrink-0"
+              style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: ttsEnabled ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: 3, left: ttsEnabled ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
+          {/* Voice Commands Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🎙️ Voice Commands</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice control — navigate, open forms, get briefings</div>
+            </div>
+            <button onClick={() => { const v = !voiceEnabled; setVoiceEnabled(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} className="flex-shrink-0"
+              style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: voiceEnabled ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: 3, left: voiceEnabled ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
+        </div>
+        {/* Voice filter chips */}
+        <div className="flex gap-2 px-5 pt-4 flex-wrap">
+          {['all', 'Male', 'Female', 'British', 'American'].map(f => (
+            <button key={f} onClick={() => setVoiceFilter(f)} className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${voiceFilter === f ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+              {f === 'all' ? `All (${VOICES.length})` : f}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
+          {filteredVoices.map(voice => {
+            const isActive = activeVoice === voice.id
+            const isPreviewing = previewing === voice.id
+            const isLoading = previewLoading === voice.id
+            return (
+              <div key={voice.id} className="rounded-xl p-4 transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #0D9488' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.gender}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.accent}</span>
+                    {isActive && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{'\u2713'}</span>}
+                  </div>
+                </div>
+                <p className="text-xs mb-3 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => preview(voice)} disabled={isLoading} className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors" style={{ backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', color: isPreviewing ? '#A78BFA' : '#9CA3AF', border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937', opacity: isLoading ? 0.5 : 1 }}>
+                    {isLoading ? '\u21BB Loading...' : isPreviewing ? '\u25A0 Stop' : '\u25B6 Preview'}
+                  </button>
+                  {!isActive && <button onClick={() => selectVoice(voice.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Select</button>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Section — Staff Roles & Permissions */}
+      <Section title="Staff Roles & Permissions">
+        <div className="px-5 py-4">
+          <p className="text-xs mb-3" style={{ color: '#6B7280', lineHeight: 1.6 }}>In Lumio, staff roles and permissions are set automatically when you connect your MIS. Each staff member&apos;s job title in Arbor, SIMS, or Bromcom maps directly to their Lumio access level — no manual setup required.</p>
+          <div className="overflow-x-auto mb-4">
+            <table className="w-full text-xs">
+              <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>MIS Job Title</th>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>Lumio Role</th>
+                <th className="py-2 text-left font-semibold" style={{ color: '#6B7280' }}>Access</th>
+              </tr></thead>
+              <tbody>
+                {[
+                  ['Headteacher, Principal', '👑 Headteacher', 'Full access'],
+                  ['Deputy/Assistant Head', '🏫 Deputy Head', 'All areas'],
+                  ['SENCO, Inclusion Manager', '🧠 SENCO', 'SEND + Safeguarding'],
+                  ['DSL, Safeguarding Lead', '🛡️ DSL', 'Safeguarding + Pastoral'],
+                  ['Head of Year', '💛 Pastoral', 'Students + Classes'],
+                  ['Teacher, ECT', '📚 Teacher', 'Classes + Timetable'],
+                  ['Business Manager, Bursar', '💼 SBM', 'Finance + HR'],
+                  ['Admin Officer, Secretary', '🗂️ Admin', 'Office + Students'],
+                  ['Caretaker, Site Manager', '🔧 Facilities', 'Facilities only'],
+                  ['Governor', '🏛️ Governor', 'Read-only reports'],
+                ].map(([mis, role, access]) => (
+                  <tr key={mis} style={{ borderBottom: '1px solid rgba(31,41,55,0.4)' }}>
+                    <td className="py-2" style={{ color: '#D1D5DB' }}>{mis}</td>
+                    <td className="py-2" style={{ color: '#0D9488' }}>{role}</td>
+                    <td className="py-2" style={{ color: '#6B7280' }}>{access}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Configure MIS sync</button>
+        </div>
+      </Section>
+
+      {/* Section 5 — SSO & Rostering */}
+      <Section title="SSO & Rostering">
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Google Workspace domain</p><p className="text-xs" style={{ color: '#6B7280' }}>For SSO and Google Classroom</p></div>
+          <input type="text" placeholder="school.org.uk" className="text-sm rounded-lg px-3 py-1.5 outline-none w-40 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#9CA3AF' }}>Microsoft 365 tenant</p><p className="text-xs" style={{ color: '#6B7280' }}>For SSO and Teams for Education</p></div>
+          <input type="text" placeholder="school.onmicrosoft.com" className="text-sm rounded-lg px-3 py-1.5 outline-none w-48 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+        </div>
+        <ConnectRow label="Google Workspace" connected={false} />
+        <ConnectRow label="Microsoft 365" connected={false} />
+        <ConnectRow label="Arbor" connected={false} />
+        <ConnectRow label="SIMS" connected={false} />
+        <ConnectRow label="Bromcom" connected={false} />
+      </Section>
+
+      {/* Section 6 — Integrations */}
+      <Section title="Integrations">
+        <ConnectRow label="ParentPay" connected={false} />
+        <ConnectRow label="Google Classroom" connected={false} />
+        <ConnectRow label="Teams for Education" connected={false} />
+        <ConnectRow label="SchoolMoney" connected={false} />
+      </Section>
+
+      {/* Section — Notifications */}
+      <Section title="🔔 Notifications">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive safeguarding and attendance alerts via email</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your school activity every Monday</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Safeguarding alerts <span className="text-[10px] ml-1" style={{ color: '#6B7280' }}>🔒 Always on</span></p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification for safeguarding concerns — cannot be disabled</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Attendance threshold alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Alert when attendance drops below 95%</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+        </div>
+      </Section>
+
+      {/* Section 7 — World Clock Timezones */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>🕐 World Clock Timezones</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Choose up to 4 timezones to display in your dashboard</p>
+        </div>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+            <span style={{ color: '#6B7280' }}>🔍</span>
+            <input value={tzSearch} onChange={e => setTzSearch(e.target.value)} placeholder="Search timezones..." className="text-sm bg-transparent outline-none flex-1" style={{ color: '#F9FAFB' }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[280px] overflow-y-auto">
+            {filteredTz.map(zone => {
+              const isSelected = zones.some(z => z.tz === zone.tz)
+              return (
+                <button key={zone.tz} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left"
+                  style={{ backgroundColor: isSelected ? 'rgba(13,148,136,0.08)' : '#0A0B10', border: isSelected ? '1px solid rgba(13,148,136,0.3)' : '1px solid #1F2937', opacity: !isSelected && zones.length >= 4 ? 0.4 : 1, cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer' }}>
+                  <span className="text-sm" style={{ color: isSelected ? '#0D9488' : '#9CA3AF' }}>{zone.label}</span>
+                  {isSelected && <span style={{ color: '#0D9488' }}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
+        </div>
+      </div>
+
+      {/* Section — Login & Security */}
+      <Section title="Login & Security">
+        <Row label="Current method" value="Email OTP" />
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <button onClick={() => alert('PIN login setup — coming soon')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Set up PIN login</button>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Two-factor authentication</p><p className="text-xs" style={{ color: '#6B7280' }}>Adds extra security to your account</p></div>
+          <Toggle on={false} onChange={() => {}} />
+        </div>
+        <Row label="Active sessions" value="1 (this device)" />
+      </Section>
+
+      {/* Section — Emergency & Safety */}
+      <Section title="🚨 Emergency & Safety">
+        <div className="px-5 py-4 space-y-4">
+          <div><label className="text-xs text-gray-400 mb-1 block">Police liaison phone number</label><input type="tel" placeholder="101 or direct line" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Local authority emergency contact</label><input type="tel" placeholder="LA emergency number" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Trust safeguarding lead</label><input type="text" placeholder="Name and contact" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Additional SMS recipients (up to 10)</label><input type="text" placeholder="Comma-separated phone numbers" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Auto-send SMS on lockdown</p><p className="text-xs" style={{ color: '#6B7280' }}>Automatically notify all SMS recipients when lockdown initiates</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Auto-initiate police liaison call</p><p className="text-xs" style={{ color: '#6B7280' }}>Automatically call police liaison on genuine lockdown</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+          <button onClick={() => alert('Test alert would be sent to all configured recipients')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>🔔 Send Test Alert</button>
+        </div>
+      </Section>
+
+      {/* Section — Appearance */}
+      <Section title="Appearance">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Theme</p><p className="text-xs" style={{ color: '#6B7280' }}>Choose your preferred colour scheme</p></div>
+            <div className="flex gap-2">{['Dark', 'Light', 'System'].map(t => <button key={t} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: t === 'Dark' ? 'rgba(13,148,136,0.15)' : '#1F2937', color: t === 'Dark' ? '#0D9488' : '#6B7280', border: t === 'Dark' ? '1px solid rgba(13,148,136,0.3)' : '1px solid #374151' }}>{t}</button>)}</div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Pin sidebar open</p><p className="text-xs" style={{ color: '#6B7280' }}>Keep sidebar expanded by default</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Compact mode</p><p className="text-xs" style={{ color: '#6B7280' }}>Reduce spacing for more content on screen</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+        </div>
+      </Section>
+
+      {/* Section — Billing */}
+      <Section title="Billing">
+        <Row label="Current plan" value="Lumio Schools" />
+        <Row label="Status" value="Active" isStatus />
+        <Row label="Next renewal" value="1 September 2026" />
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex gap-2">
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Manage subscription</button>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>Download invoices</button>
+          </div>
+        </div>
+      </Section>
+
+      {/* Section 9 — Voice Settings */}
+      <Section title="Voice & Speech">
+        <div className="px-5 py-4">
+          <VoiceSettings commands={[
+            { phrase: 'Show attendance today', description: "Today's whole school attendance percentage" },
+            { phrase: 'Any safeguarding alerts', description: 'Open safeguarding concerns requiring action' },
+            { phrase: "What's on the timetable", description: "Today's full school timetable" },
+            { phrase: 'Ofsted readiness score', description: 'Current Ofsted readiness rating' },
+            { phrase: 'How many pupils absent', description: 'Total absences recorded today' },
+            { phrase: 'Any unauthorised absences', description: 'Pupils with unexplained absences' },
+            { phrase: 'Show SEND updates', description: 'Latest SEND pupil alerts and reviews' },
+            { phrase: 'Any behaviour incidents today', description: 'Behaviour logs from today' },
+            { phrase: 'Show staff cover needed', description: 'Classes requiring cover today' },
+            { phrase: 'What year groups are in', description: 'Year group attendance overview' },
+            { phrase: 'Show pupil progress updates', description: 'Recent assessment and progress data' },
+            { phrase: 'Any parents to call back', description: 'Outstanding parent contact callbacks' },
+            { phrase: 'Show exclusions this week', description: 'Fixed term and permanent exclusions' },
+            { phrase: 'What interventions are running', description: 'Active pupil intervention programmes' },
+            { phrase: 'Show free school meal numbers', description: 'FSM eligibility and uptake today' },
+            { phrase: 'Any EHC plan reviews due', description: 'Education health care plans up for review' },
+            { phrase: 'Show staff absence today', description: 'Staff members absent today' },
+            { phrase: 'What CPD is coming up', description: 'Upcoming staff training and development' },
+            { phrase: 'Show the duty rota', description: "Today's playground and duty rota" },
+            { phrase: 'Any medical alerts', description: 'Pupils with medical needs flagged today' },
+            { phrase: 'Show new admissions', description: 'Recent and upcoming new starters' },
+            { phrase: 'What is our pupil premium spend', description: 'Current PP allocation and spend' },
+            { phrase: 'Show governor updates', description: 'Latest governor meeting notes and actions' },
+            { phrase: 'Any complaints received', description: 'Open parent or community complaints' },
+            { phrase: 'Show the SEF', description: 'Current self evaluation form summary' },
+            { phrase: 'What subjects need attention', description: 'Subjects below target or flagged' },
+            { phrase: 'Show assessment results', description: 'Latest internal assessment data' },
+            { phrase: 'Any looked after children alerts', description: 'LAC pupils requiring follow up' },
+            { phrase: 'Show the improvement plan', description: 'School improvement plan progress' },
+            { phrase: 'What is our progress 8 score', description: 'Current Progress 8 estimate' },
+            { phrase: 'Show phonics results', description: 'Latest phonics screening check data' },
+            { phrase: 'Any trips coming up', description: 'Upcoming school trips and visits' },
+            { phrase: 'Show the budget summary', description: 'Current school budget vs spend' },
+            { phrase: 'What clubs are running today', description: 'After school clubs and activities' },
+            { phrase: 'Show literacy data', description: 'Reading ages and literacy progress' },
+            { phrase: 'Any supply staff today', description: 'Supply teachers currently in school' },
+            { phrase: 'Show numeracy progress', description: 'Maths attainment and progress data' },
+            { phrase: 'What is our attendance target', description: 'School attendance target and current rate' },
+            { phrase: 'Show vulnerable pupils list', description: 'Pupils on watchlist or requiring support' },
+            { phrase: 'Any fixed term exclusions', description: 'Current and recent FTE decisions' },
+            { phrase: 'Show the EYFS data', description: 'Early years foundation stage progress' },
+            { phrase: 'What meetings are today', description: 'Staff and governor meetings scheduled today' },
+            { phrase: 'Show parent engagement stats', description: 'Parent portal usage and communication stats' },
+            { phrase: 'Any curriculum updates', description: 'Recent changes to curriculum planning' },
+            { phrase: 'Show sports premium spend', description: 'PE and sport premium allocation and use' },
+            { phrase: 'What is our KS2 data', description: 'Key stage 2 attainment summary' },
+            { phrase: 'Show reading scheme progress', description: 'Pupils progress through reading scheme' },
+            { phrase: 'Any school council updates', description: 'Latest school council meeting notes' },
+            { phrase: 'Show mental health referrals', description: 'Pupils referred for mental health support' },
+            { phrase: 'What is our pupil to teacher ratio', description: 'Current class size averages' },
+            { phrase: 'Show the curriculum map', description: 'Long term curriculum planning overview' },
+            { phrase: 'Any first aid incidents today', description: 'First aid log entries from today' },
+            { phrase: 'Show attendance by year group', description: 'Attendance breakdown per year group' },
+            { phrase: 'What homework is overdue', description: 'Pupils with outstanding homework submissions' },
+            { phrase: 'Show the timetable changes', description: "Any changes to today's timetable" },
+            { phrase: 'Any transition meetings', description: 'Year 6 or sixth form transition meetings' },
+            { phrase: 'Show disadvantaged pupil progress', description: 'PP and disadvantaged cohort data' },
+            { phrase: 'What is our staff turnover', description: 'Staff retention and turnover rate' },
+            { phrase: 'Show the inspection checklist', description: 'Pre-inspection preparation checklist' },
+            { phrase: 'Any fire drill scheduled', description: 'Upcoming health and safety drills' },
+            { phrase: 'Show subject leader reports', description: 'Latest subject leadership reports' },
+            { phrase: 'What enrichment activities are on', description: 'Enrichment programme schedule' },
+            { phrase: 'Show the rewards leaderboard', description: 'Top pupils for house points or rewards' },
+            { phrase: 'Any late arrivals today', description: 'Pupils who arrived late this morning' },
+            { phrase: 'Show the wellbeing dashboard', description: 'Pupil and staff wellbeing indicators' },
+            { phrase: 'What assessments are due', description: 'Upcoming assessments and test dates' },
+            { phrase: 'Show the reading challenge progress', description: 'School reading challenge stats' },
+            { phrase: 'Any new SEND referrals', description: 'New pupils referred for SEND assessment' },
+            { phrase: 'Show sport fixtures', description: 'Upcoming school sports fixtures' },
+            { phrase: 'What is our exclusion rate', description: 'Exclusion rate vs national average' },
+            { phrase: 'Show the action plan', description: 'Current departmental action plans' },
+            { phrase: 'Any staff performance reviews due', description: 'Appraisals coming up this term' },
+            { phrase: 'Show the canteen menu', description: "Today's school lunch menu" },
+            { phrase: 'What is our GLD percentage', description: 'Good level of development EYFS rate' },
+            { phrase: 'Show pupil voice feedback', description: 'Recent pupil survey and feedback results' },
+            { phrase: 'Any parent events this week', description: 'Parents evening or events schedule' },
+            { phrase: 'Show the CEIAG plan', description: 'Careers education and guidance programme' },
+            { phrase: 'What is our arts provision', description: 'Arts and creative subject overview' },
+            { phrase: 'Show term dates', description: 'Current and upcoming term dates' },
+            { phrase: 'Any SEMH concerns', description: 'Social emotional mental health flagged pupils' },
+            { phrase: 'Show the transition data', description: 'Year 6 to secondary transition tracking' },
+            { phrase: 'What is our PP gap', description: 'Attainment gap between PP and non-PP pupils' },
+            { phrase: 'Show the library stats', description: 'Library usage and book borrowing data' },
+            { phrase: 'Any outstanding DBS checks', description: 'Staff with DBS renewals pending' },
+            { phrase: 'Show the sports day plan', description: 'Sports day organisation and schedule' },
+            { phrase: 'What residentials are planned', description: 'Upcoming residential trips and costs' },
+            { phrase: 'Show the class dojo summary', description: 'Behaviour and engagement points summary' },
+            { phrase: 'Any county lines concerns', description: 'Safeguarding county lines flagged cases' },
+            { phrase: 'Show the PSHE schedule', description: 'Personal social health education plan' },
+            { phrase: 'What is our reading age average', description: 'School-wide average reading age' },
+            { phrase: 'Show the remote learning plan', description: 'Remote or blended learning provisions' },
+            { phrase: 'Any OFSTED category changes', description: 'Recent Ofsted judgement or monitoring' },
+            { phrase: 'Show the enrichment budget', description: 'Enrichment and trips budget remaining' },
+            { phrase: 'What is our staff wellbeing score', description: 'Staff survey wellbeing indicators' },
+            { phrase: 'Show homework club attendance', description: 'After school homework club register' },
+            { phrase: 'Any child protection cases', description: 'Active CP cases requiring DSL review' },
+            { phrase: 'Show the digital literacy plan', description: 'Computing and digital skills programme' },
+            { phrase: 'What INSET days are left', description: 'Remaining INSET days this academic year' },
+          ]} />
+        </div>
+      </Section>
+
+      {/* Section 10 — Data & Display */}
+      <Section title="Data & Display">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>
+                {demoDataActive ? 'Demo data is active' : 'Demo data'}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                {demoDataActive
+                  ? 'Your portal is showing sample data. Clear it to see your real workspace.'
+                  : 'Load sample data to explore all features before connecting your real data.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              setDemoLoading(true)
+              const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+              if (demoDataActive) {
+                // Clear demo data — preserve identity fields
+                const savedPhoto = localStorage.getItem('lumio_user_photo')
+                const savedName = localStorage.getItem('lumio_user_name')
+                Object.keys(localStorage)
+                  .filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData'))
+                  .forEach(k => localStorage.removeItem(k))
+                localStorage.removeItem('lumio_schools_demo_loaded')
+                if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
+                if (savedName) localStorage.setItem('lumio_user_name', savedName)
+                await supabase.from('schools').update({ demo_data_active: false }).eq('slug', schoolSlug)
+                setDemoDataActive(false)
+              } else {
+                // Load demo data
+                localStorage.setItem('lumio_schools_demo_loaded', 'true')
+                await supabase.from('schools').update({ demo_data_active: true }).eq('slug', schoolSlug)
+                setDemoDataActive(true)
+              }
+              setDemoLoading(false)
+              window.location.href = `/schools/${schoolSlug}`
+            }}
+            disabled={demoLoading}
+            className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: demoDataActive ? 'rgba(239,68,68,0.1)' : 'rgba(13,148,136,0.1)',
+              color: demoDataActive ? '#EF4444' : '#0D9488',
+              border: `1px solid ${demoDataActive ? 'rgba(239,68,68,0.3)' : 'rgba(13,148,136,0.3)'}`,
+              opacity: demoLoading ? 0.6 : 1,
+            }}
+          >
+            {demoLoading ? 'Loading...' : demoDataActive ? 'Clear demo data' : 'Load demo data'}
+          </button>
+        </div>
+      </Section>
+
+      {/* Section 10 — Dev Tools */}
+      {isDev && (
+        <Section title="Dev Tools">
+          <div className="px-5 py-4">
+            <button onClick={() => { localStorage.clear(); window.location.reload() }} className="text-xs px-4 py-2 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+              Reset Onboarding
+            </button>
+          </div>
+        </Section>
+      )}
+    </div>
+  )
+}

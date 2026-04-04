@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const { data: business, error: createError } = await supabase
     .from('businesses')
     .insert({
-      company_name: trial.company_name,
+      company_name: (trial.company_name || '').trim(),
       slug: bizSlug,
       logo_url: trial.logo_url,
       owner_email: trial.owner_email,

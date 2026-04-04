@@ -1,7 +1,11 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users } from 'lucide-react'
+import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users, BarChart3, ShoppingCart, Landmark, Calendar, Search, Download } from 'lucide-react'
+import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
+import { PurchaseRequestModal, SpendVsForecastModal, GrantApplicationModal, AuditPrepModal, SupplierSearchModal, ExportAccountsModal } from '@/components/modals/FinanceExtraModals'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   '7 invoices awaiting approval — 2 are over 30 days old and require urgent action',
@@ -10,12 +14,16 @@ const HIGHLIGHTS = [
   'Budget on track — projected underspend of £18k by year end (July 2026)',
 ]
 
-const ACTIONS = [
-  { label: 'Approve Invoice', icon: <CheckCircle size={14} /> },
-  { label: 'Budget Check', icon: <PieChart size={14} /> },
-  { label: 'Raise PO', icon: <FileText size={14} /> },
-  { label: 'Grant Update', icon: <TrendingUp size={14} /> },
-  { label: 'Payroll Change', icon: <Users size={14} /> },
+const ACTIONS_BASE = [
+  { label: 'Claim Expenses', icon: <PieChart size={14} /> },
+  { label: 'Purchase Request', icon: <ShoppingCart size={14} /> },
+  { label: 'Budget Report', icon: <FileText size={14} /> },
+  { label: 'Invoice Query', icon: <FileText size={14} /> },
+  { label: 'Spend vs Forecast', icon: <BarChart3 size={14} /> },
+  { label: 'Grant Application', icon: <Landmark size={14} /> },
+  { label: 'Audit Prep', icon: <Calendar size={14} /> },
+  { label: 'Supplier Search', icon: <Search size={14} /> },
+  { label: 'Export Accounts', icon: <Download size={14} /> },
 ]
 
 const STATS = [
@@ -91,17 +99,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -120,12 +131,28 @@ function budgetBarColor(pct: number) {
 
 export default function FinancePage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showInvoice, setShowInvoice] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
+  const [showBudget, setShowBudget] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showPurchase, setShowPurchase] = useState(false)
+  const [showSpendForecast, setShowSpendForecast] = useState(false)
+  const [showGrant, setShowGrant] = useState(false)
+  const [showAudit, setShowAudit] = useState(false)
+  const [showSupplier, setShowSupplier] = useState(false)
+  const [showExportAccounts, setShowExportAccounts] = useState(false)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
     const slugMatch = pathname.match(/\/schools\/([^/]+)/)
     const slug = slugMatch?.[1] ?? 'school'
-    setHasData(localStorage.getItem(`lumio_${slug}_finance_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_finance_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [])
 
   if (hasData === null) return null
@@ -150,11 +177,20 @@ export default function FinancePage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Budget overview, invoice approval, grants and financial deadlines</p>
       </div>
 
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
-
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} />
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'Claim Expenses' ? () => setShowExpense(true)
+          : a.label === 'Invoice Query' ? () => setShowInvoice(true)
+          : a.label === 'Budget Report' ? () => setShowBudget(true)
+          : a.label === 'Purchase Request' ? () => setShowPurchase(true)
+          : a.label === 'Spend vs Forecast' ? () => setShowSpendForecast(true)
+          : a.label === 'Grant Application' ? () => setShowGrant(true)
+          : a.label === 'Audit Prep' ? () => setShowAudit(true)
+          : a.label === 'Supplier Search' ? () => setShowSupplier(true)
+          : a.label === 'Export Accounts' ? () => setShowExportAccounts(true)
+          : () => showToast('Feature coming soon'),
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -263,6 +299,28 @@ export default function FinancePage() {
           ))}
         </div>
       </div>
+
+      {showInvoice && <RaiseInvoiceModal onClose={() => setShowInvoice(false)} onToast={showToast} />}
+      {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
+      {showBudget && <BudgetReviewModal onClose={() => setShowBudget(false)} onToast={showToast} />}
+      {showPurchase && <PurchaseRequestModal onClose={() => setShowPurchase(false)} />}
+      {showSpendForecast && <SpendVsForecastModal onClose={() => setShowSpendForecast(false)} />}
+      {showGrant && <GrantApplicationModal onClose={() => setShowGrant(false)} />}
+      {showAudit && <AuditPrepModal onClose={() => setShowAudit(false)} />}
+      {showSupplier && <SupplierSearchModal onClose={() => setShowSupplier(false)} />}
+      {showExportAccounts && <ExportAccountsModal onClose={() => setShowExportAccounts(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="finance-school" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="finance-school" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

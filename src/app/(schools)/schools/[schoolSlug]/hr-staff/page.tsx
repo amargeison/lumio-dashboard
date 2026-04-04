@@ -1,7 +1,11 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, UserX, Calendar, UserPlus, Shield, FileText } from 'lucide-react'
+import { Sparkles, UserPlus, ClipboardList, GraduationCap, FileText, PoundSterling, Calendar, AlertTriangle, Heart, BarChart3 } from 'lucide-react'
+import { AddStaffModal, LogStaffAbsenceModal, StaffReviewModal, SubmitExpenseModal } from '@/components/modals/SchoolModals'
+import { BookCPDModal, ContractChangeModal, RequestLeaveModal, RaiseHRConcernModal, StaffWellbeingCheckModal } from '@/components/modals/HRExtraModals'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'M. Taylor DBS expired 10 March — urgent renewal needed before next classroom contact',
@@ -10,12 +14,16 @@ const HIGHLIGHTS = [
   'CPD day scheduled 28 March — 6 staff members have not yet confirmed attendance',
 ]
 
-const ACTIONS = [
-  { label: 'Log Absence', icon: <UserX size={14} /> },
-  { label: 'Book Cover', icon: <Calendar size={14} /> },
-  { label: 'New Staff Member', icon: <UserPlus size={14} /> },
-  { label: 'DBS Check', icon: <Shield size={14} /> },
+const ACTIONS_BASE = [
+  { label: 'New Staff Record', icon: <UserPlus size={14} /> },
+  { label: 'Log Absence', icon: <ClipboardList size={14} /> },
+  { label: 'Book CPD', icon: <GraduationCap size={14} /> },
   { label: 'Performance Review', icon: <FileText size={14} /> },
+  { label: 'Contract Change', icon: <FileText size={14} /> },
+  { label: 'Claim Expenses', icon: <PoundSterling size={14} /> },
+  { label: 'Request Leave', icon: <Calendar size={14} /> },
+  { label: 'Raise HR Concern', icon: <AlertTriangle size={14} /> },
+  { label: 'Staff Wellbeing Check', icon: <Heart size={14} /> },
 ]
 
 const STATS = [
@@ -90,17 +98,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -120,12 +131,28 @@ function statusBadge(status: string) {
 
 export default function HRStaffPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showAddStaff, setShowAddStaff] = useState(false)
+  const [showLogStaffAbsence, setShowLogStaffAbsence] = useState(false)
+  const [showStaffReview, setShowStaffReview] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showBookCPD, setShowBookCPD] = useState(false)
+  const [showContractChange, setShowContractChange] = useState(false)
+  const [showRequestLeave, setShowRequestLeave] = useState(false)
+  const [showHRConcern, setShowHRConcern] = useState(false)
+  const [showWellbeing, setShowWellbeing] = useState(false)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const pathname = window.location.pathname
     const slugMatch = pathname.match(/\/schools\/([^/]+)/)
     const slug = slugMatch?.[1] ?? 'school'
-    setHasData(localStorage.getItem(`lumio_${slug}_hr-staff_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_hr-staff_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [])
 
   if (hasData === null) return null
@@ -151,11 +178,20 @@ export default function HRStaffPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Staff attendance, cover, DBS compliance and professional development</p>
       </div>
 
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
-
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} />
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'New Staff Record' ? () => setShowAddStaff(true)
+          : a.label === 'Log Absence' ? () => setShowLogStaffAbsence(true)
+          : a.label === 'Performance Review' ? () => setShowStaffReview(true)
+          : a.label === 'Claim Expenses' ? () => setShowExpense(true)
+          : a.label === 'Book CPD' ? () => setShowBookCPD(true)
+          : a.label === 'Contract Change' ? () => setShowContractChange(true)
+          : a.label === 'Request Leave' ? () => setShowRequestLeave(true)
+          : a.label === 'Raise HR Concern' ? () => setShowHRConcern(true)
+          : a.label === 'Staff Wellbeing Check' ? () => setShowWellbeing(true)
+          : () => showToast('Feature coming soon'),
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -260,6 +296,28 @@ export default function HRStaffPage() {
           ))}
         </div>
       </div>
+
+      {showAddStaff && <AddStaffModal onClose={() => setShowAddStaff(false)} onToast={showToast} />}
+      {showLogStaffAbsence && <LogStaffAbsenceModal onClose={() => setShowLogStaffAbsence(false)} onToast={showToast} />}
+      {showStaffReview && <StaffReviewModal onClose={() => setShowStaffReview(false)} onToast={showToast} />}
+      {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
+      {showBookCPD && <BookCPDModal onClose={() => setShowBookCPD(false)} />}
+      {showContractChange && <ContractChangeModal onClose={() => setShowContractChange(false)} />}
+      {showRequestLeave && <RequestLeaveModal onClose={() => setShowRequestLeave(false)} />}
+      {showHRConcern && <RaiseHRConcernModal onClose={() => setShowHRConcern(false)} />}
+      {showWellbeing && <StaffWellbeingCheckModal onClose={() => setShowWellbeing(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="hr-staff" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="hr-staff" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

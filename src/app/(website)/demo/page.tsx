@@ -1,13 +1,23 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   ArrowRight, Check, Play, Zap, Shield, Clock,
   Users, GitBranch, Star, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
+
+/** Reads ?signup=true and auto-opens the trial modal */
+function AutoOpenSignup({ onOpen }: { onOpen: () => void }) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('signup') === 'true') onOpen()
+  }, [searchParams, onOpen])
+  return null
+}
 
 // ─── FAQ items ─────────────────────────────────────────────────────────────────
 
@@ -29,6 +39,10 @@ export default function DemoLandingPage() {
 
   return (
     <div style={{ backgroundColor: '#07080F', color: '#F9FAFB', minHeight: '100vh' }}>
+      {/* Auto-open signup from ?signup=true */}
+      <Suspense fallback={null}>
+        <AutoOpenSignup onOpen={() => setShowTrial(true)} />
+      </Suspense>
       {/* Modals */}
       {showTrial   && <BookTrialModal onClose={() => setShowTrial(false)} />}
       {showTellMore && (

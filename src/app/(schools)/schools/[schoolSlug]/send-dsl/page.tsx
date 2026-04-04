@@ -3,7 +3,11 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, AlertTriangle, FileText, User, ClipboardList, TrendingDown } from 'lucide-react'
+import { Sparkles, AlertTriangle, ShieldAlert, Brain, ClipboardList, Phone, FileText, Building2, Calendar, BarChart3 } from 'lucide-react'
+import { AddSENDRecordModal, SafeguardingConcernModal, EHCPReviewModal, ParentContactModal } from '@/components/modals/SchoolModals'
+import { RiskAssessmentModal, GenerateSENDReportModal, ExternalAgencyReferralModal, ReviewMeetingModal, LACUpdateModal } from '@/components/modals/SENDExtraModals'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'Open safeguarding concern SG-2026-047 — DSL review is overdue by 2 days',
@@ -12,12 +16,16 @@ const HIGHLIGHTS = [
   'KCSIE annual sign-off — 2 staff members still outstanding',
 ]
 
-const ACTIONS = [
-  { label: 'Log Concern', icon: <AlertTriangle size={14} /> },
-  { label: 'EHCP Review', icon: <FileText size={14} /> },
-  { label: 'Pupil Passport', icon: <User size={14} /> },
-  { label: 'Intervention Log', icon: <ClipboardList size={14} /> },
-  { label: 'Attendance Concern', icon: <TrendingDown size={14} /> },
+const ACTIONS_BASE: { label: string; icon: React.ReactNode; urgent?: boolean }[] = [
+  { label: 'Safeguarding Referral', icon: <ShieldAlert size={14} />, urgent: true },
+  { label: 'SEND Referral', icon: <Brain size={14} /> },
+  { label: 'EHCP Review', icon: <ClipboardList size={14} /> },
+  { label: 'Parent/Carer Contact', icon: <Phone size={14} /> },
+  { label: 'Risk Assessment', icon: <FileText size={14} /> },
+  { label: 'Generate SEND Report', icon: <FileText size={14} /> },
+  { label: 'External Agency Referral', icon: <Building2 size={14} /> },
+  { label: 'Review Meeting', icon: <Calendar size={14} /> },
+  { label: 'LAC/CiC Update', icon: <AlertTriangle size={14} /> },
 ]
 
 const STATS = [
@@ -86,17 +94,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode }[] }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -113,9 +124,25 @@ export default function SendDslPage() {
   const slug = slugMatch?.[1] ?? 'school'
 
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showAddSEND, setShowAddSEND] = useState(false)
+  const [showSafeguarding, setShowSafeguarding] = useState(false)
+  const [showEHCP, setShowEHCP] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showRiskAssessment, setShowRiskAssessment] = useState(false)
+  const [showSENDReport, setShowSENDReport] = useState(false)
+  const [showExternalReferral, setShowExternalReferral] = useState(false)
+  const [showReviewMeeting, setShowReviewMeeting] = useState(false)
+  const [showLAC, setShowLAC] = useState(false)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
-    setHasData(localStorage.getItem(`lumio_${slug}_send-dsl_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_send-dsl_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [slug])
 
   if (hasData === null) return null
@@ -157,11 +184,20 @@ export default function SendDslPage() {
         <span className="shrink-0 text-sm font-semibold" style={{ color: '#0D9488' }}>Open →</span>
       </Link>
 
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
-
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} />
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'Safeguarding Referral' ? () => setShowSafeguarding(true)
+          : a.label === 'SEND Referral' ? () => setShowAddSEND(true)
+          : a.label === 'EHCP Review' ? () => setShowEHCP(true)
+          : a.label === 'Parent/Carer Contact' ? () => setShowParentContact(true)
+          : a.label === 'Risk Assessment' ? () => setShowRiskAssessment(true)
+          : a.label === 'Generate SEND Report' ? () => setShowSENDReport(true)
+          : a.label === 'External Agency Referral' ? () => setShowExternalReferral(true)
+          : a.label === 'Review Meeting' ? () => setShowReviewMeeting(true)
+          : a.label === 'LAC/CiC Update' ? () => setShowLAC(true)
+          : () => showToast('Feature coming soon'),
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -293,6 +329,28 @@ export default function SendDslPage() {
           ))}
         </div>
       </div>
+
+      {showAddSEND && <AddSENDRecordModal onClose={() => setShowAddSEND(false)} onToast={showToast} />}
+      {showSafeguarding && <SafeguardingConcernModal onClose={() => setShowSafeguarding(false)} onToast={showToast} />}
+      {showEHCP && <EHCPReviewModal onClose={() => setShowEHCP(false)} onToast={showToast} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showRiskAssessment && <RiskAssessmentModal onClose={() => setShowRiskAssessment(false)} />}
+      {showSENDReport && <GenerateSENDReportModal onClose={() => setShowSENDReport(false)} />}
+      {showExternalReferral && <ExternalAgencyReferralModal onClose={() => setShowExternalReferral(false)} />}
+      {showReviewMeeting && <ReviewMeetingModal onClose={() => setShowReviewMeeting(false)} />}
+      {showLAC && <LACUpdateModal onClose={() => setShowLAC(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="send-dsl" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="send-dsl" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

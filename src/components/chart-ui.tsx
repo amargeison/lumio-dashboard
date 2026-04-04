@@ -278,7 +278,10 @@ export function ChartSection({
   const [chart, setChart] = useState<ChartType>('table')
   return (
     <div className="flex flex-col gap-3">
-      <ChartToolbar current={chart} onChange={setChart} />
+      {/* Toolbar floats to top-right of nearest relative ancestor (PageShell) */}
+      <div className="absolute top-0 right-0 z-10">
+        <ChartToolbar current={chart} onChange={setChart} />
+      </div>
       <style>{FADE}</style>
       <div key={chart} style={{ animation: '_cu_fade 0.22s ease forwards' }}>
         {chart === 'table'

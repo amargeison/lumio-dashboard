@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/emails/send'
 
 function getSupabase() {
   return createClient(
@@ -11,7 +11,6 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   const supabase = getSupabase()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const { email, slug, type = 'demo' } = await request.json()
 
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.lumiocms.com'
     const magicLinkUrl = `${appUrl}/demo/auth?token=${token}&slug=${slug}`
 
-    await resend.emails.send({
+    await sendEmail({
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: type === 'demo'

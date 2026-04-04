@@ -1,6 +1,44 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useSyncExternalStore } from 'react'
+
+const DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL' // Rachel
+
+function getVoiceId(): string {
+  if (typeof window === 'undefined') return DEFAULT_VOICE_ID
+  return localStorage.getItem('lumio_tts_voice') || DEFAULT_VOICE_ID
+}
+
+// Subscribe to localStorage changes (cross-tab + same-tab)
+const voiceListeners = new Set<() => void>()
+let voiceSnapshot = typeof window !== 'undefined' ? getVoiceId() : DEFAULT_VOICE_ID
+
+function subscribeVoice(cb: () => void) {
+  voiceListeners.add(cb)
+  return () => { voiceListeners.delete(cb) }
+}
+function getVoiceSnapshot() { return voiceSnapshot }
+function getServerVoiceSnapshot() { return DEFAULT_VOICE_ID }
+
+if (typeof window !== 'undefined') {
+  // Listen for storage events (other tabs)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'lumio_tts_voice') {
+      voiceSnapshot = getVoiceId()
+      voiceListeners.forEach(cb => cb())
+    }
+  })
+
+  // Patch localStorage.setItem to detect same-tab changes
+  const origSetItem = localStorage.setItem.bind(localStorage)
+  localStorage.setItem = (key: string, value: string) => {
+    origSetItem(key, value)
+    if (key === 'lumio_tts_voice') {
+      voiceSnapshot = value || DEFAULT_VOICE_ID
+      voiceListeners.forEach(cb => cb())
+    }
+  }
+}
 
 // Simple hash for cache keys
 function hashText(text: string): string {
@@ -23,9 +61,10 @@ function cacheSet(key: string, buf: ArrayBuffer) {
   audioCache.set(key, buf)
 }
 
-// Web Speech API fallback (same settings as the old useSpeech hook)
-function fallbackSpeak(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
+// Web Speech API fallback — accepts optional onEnd callback to reset isPlaying
+function fallbackSpeak(text: string, onEnd?: () => void) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) { onEnd?.(); return }
+  window.speechSynthesis.cancel() // ensure no overlap
   const utterance = new SpeechSynthesisUtterance(text)
   const voices = window.speechSynthesis.getVoices()
   const preferred = ['Google UK English Female', 'Microsoft Sonia Online (Natural) - en-GB']
@@ -37,10 +76,13 @@ function fallbackSpeak(text: string) {
   utterance.rate = 0.88
   utterance.pitch = 1.08
   utterance.lang = 'en-GB'
+  utterance.onend = () => onEnd?.()
+  utterance.onerror = () => onEnd?.()
   window.speechSynthesis.speak(utterance)
 }
 
 export function useElevenLabsTTS() {
+  const voiceId = useSyncExternalStore(subscribeVoice, getVoiceSnapshot, getServerVoiceSnapshot)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -64,6 +106,11 @@ export function useElevenLabsTTS() {
 
   const speak = useCallback(async (text: string) => {
     if (isPlaying) { stop(); return }
+
+    // Always cancel any lingering browser TTS before starting
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
 
     const key = hashText(text)
 
@@ -102,15 +149,14 @@ export function useElevenLabsTTS() {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voice: voiceId }),
         signal: controller.signal,
       })
 
       if (res.status === 429) {
-        // Daily limit reached — fall back to browser TTS
+        // Daily limit reached — fall back to browser TTS (not both)
         console.warn('[Lumio TTS] Daily limit reached, falling back to browser TTS')
-        fallbackSpeak(text)
-        setIsPlaying(false)
+        fallbackSpeak(text, () => setIsPlaying(false))
         return
       }
 
@@ -118,6 +164,11 @@ export function useElevenLabsTTS() {
 
       const buf = await res.arrayBuffer()
       cacheSet(key, buf)
+
+      // Cancel browser TTS again before playing ElevenLabs audio (belt and suspenders)
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
 
       const blob = new Blob([buf], { type: 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
@@ -128,10 +179,11 @@ export function useElevenLabsTTS() {
       await audio.play()
     } catch (err) {
       if ((err as Error).name === 'AbortError') { setIsPlaying(false); return }
-      // Fallback to Web Speech API
+      // Fallback to Web Speech API — only if ElevenLabs truly failed
       console.warn('[Lumio TTS] ElevenLabs failed, falling back to browser TTS:', err)
-      fallbackSpeak(text)
-      setIsPlaying(false)
+      // Stop any ElevenLabs audio that might be buffering
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+      fallbackSpeak(text, () => setIsPlaying(false))
     }
   }, [isPlaying, stop])
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Check, X, ArrowLeft, ArrowRight, Building2, CreditCard,
   Lock, Sparkles, Zap, Shield, Star, ChevronDown, Eye, EyeOff,
-  Loader2, Users, BarChart2, GitBranch, Globe, Layers
+  Loader2, Users, BarChart2, GitBranch, Globe, Layers, Upload
 } from 'lucide-react'
 
 // ─── Plans ─────────────────────────────────────────────────────────────────
@@ -234,8 +234,12 @@ function StepPlan({ selected, onSelect }: { selected: string; onSelect: (id: str
 }
 
 // ─── Step 2: Company details ──────────────────────────────────────────────────
-function StepDetails({ form, setForm }: { form: Record<string, string>; setForm: (f: Record<string, string>) => void }) {
+function StepDetails({ form, setForm, logoFile, setLogoFile }: {
+  form: Record<string, string>; setForm: (f: Record<string, string>) => void
+  logoFile: File | null; setLogoFile: (f: File | null) => void
+}) {
   const set = (key: string) => (v: string) => setForm({ ...form, [key]: v })
+  const logoPreview = logoFile ? URL.createObjectURL(logoFile) : null
   return (
     <div className="flex flex-col gap-5 max-w-lg">
       <div>
@@ -246,6 +250,24 @@ function StepDetails({ form, setForm }: { form: Record<string, string>; setForm:
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <Input label="Company Name" value={form.companyName} onChange={set('companyName')} placeholder="e.g. Lumio Technologies Ltd" required />
+        </div>
+        {/* Logo upload */}
+        <div className="sm:col-span-2">
+          <label className="text-xs font-semibold mb-1.5 block" style={{ color: '#9CA3AF' }}>Company Logo (optional)</label>
+          <label className="flex items-center justify-center gap-3 rounded-xl p-4 cursor-pointer transition-colors"
+            style={{ border: '2px dashed #1F2937', backgroundColor: 'rgba(255,255,255,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo preview" className="h-10 rounded-lg" style={{ maxWidth: 120, objectFit: 'contain' }} />
+            ) : (
+              <>
+                <Upload size={16} style={{ color: '#6B7280' }} />
+                <span className="text-sm" style={{ color: '#6B7280' }}>Upload logo</span>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) setLogoFile(e.target.files[0]) }} />
+          </label>
         </div>
         <SelectField label="Industry" value={form.industry} onChange={set('industry')} required options={[
           { value: '', label: 'Select industry...' },
@@ -295,17 +317,11 @@ function StepDetails({ form, setForm }: { form: Record<string, string>; setForm:
 }
 
 // ─── Step 3: Payment ──────────────────────────────────────────────────────────
-function StepPayment({ form, setForm, plan }: {
-  form: Record<string, string>
-  setForm: (f: Record<string, string>) => void
+function StepPayment({ plan, onComplete }: {
   plan: typeof PLANS[0]
+  onComplete: () => void
 }) {
-  const set = (key: string) => (v: string) => setForm({ ...form, [key]: v })
-  const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
-  const formatExpiry = (v: string) => {
-    const c = v.replace(/\D/g, '').slice(0, 4)
-    return c.length >= 2 ? `${c.slice(0, 2)}/${c.slice(2)}` : c
-  }
+  const isDev = process.env.NEXT_PUBLIC_ENV !== 'production'
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
@@ -341,74 +357,41 @@ function StepPayment({ form, setForm, plan }: {
             <span className="text-xl font-black" style={{ color: '#22C55E' }}>£0.00</span>
           </div>
           <p className="text-xs text-center" style={{ color: '#4B5563' }}>Card charged £{plan.price}/month after trial ends. Cancel anytime.</p>
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <Lock size={11} style={{ color: '#6B7280' }} />
-            <p className="text-xs" style={{ color: '#6B7280' }}>Secured by Stripe · 256-bit SSL</p>
-          </div>
         </div>
       </div>
 
-      {/* Payment form */}
+      {/* Payment action */}
       <div className="lg:col-span-3 flex flex-col gap-5">
         <div>
-          <h2 className="text-2xl font-black mb-1" style={{ color: '#F9FAFB' }}>Payment details</h2>
+          <h2 className="text-2xl font-black mb-1" style={{ color: '#F9FAFB' }}>Payment</h2>
           <p className="text-sm" style={{ color: '#9CA3AF' }}>
             Free trial until {new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Nothing charged today.
           </p>
         </div>
 
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>Card number <span style={{ color: '#EF4444' }}>*</span></label>
-          <div className="relative">
-            <input type="text" inputMode="numeric" value={form.cardNumber}
-              onChange={e => setForm({ ...form, cardNumber: formatCard(e.target.value) })}
-              placeholder="1234 5678 9012 3456" maxLength={19}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#6C3FC5'}
-              onBlur={e => e.target.style.borderColor = '#374151'} />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-              {['VISA', 'MC', 'AMEX'].map(c => (
-                <span key={c} className="text-xs rounded px-1 font-bold" style={{ backgroundColor: '#1F2937', color: '#6B7280', fontSize: 8 }}>{c}</span>
-              ))}
+        {isDev ? (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#fef3c7', border: '2px solid #f59e0b' }}>
+              <p className="text-sm font-bold" style={{ color: '#92400e' }}>TEST MODE — no real payment will be taken</p>
+              <p className="text-xs mt-1" style={{ color: '#a16207' }}>Click below to simulate a successful purchase</p>
             </div>
+            <button
+              onClick={onComplete}
+              className="w-full py-4 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
+            >
+              Complete Purchase (Test Mode)
+            </button>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>Expiry <span style={{ color: '#EF4444' }}>*</span></label>
-            <input type="text" inputMode="numeric" value={form.expiry}
-              onChange={e => setForm({ ...form, expiry: formatExpiry(e.target.value) })}
-              placeholder="MM/YY" maxLength={5}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#6C3FC5'}
-              onBlur={e => e.target.style.borderColor = '#374151'} />
+        ) : (
+          <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>Coming Soon</p>
+            <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>Online payments are launching soon. Contact us to get started today.</p>
+            <a href="mailto:hello@lumiocms.com" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
+              Contact Us — hello@lumiocms.com
+            </a>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#D1D5DB' }}>CVV <span style={{ color: '#EF4444' }}>*</span></label>
-            <input type="text" inputMode="numeric" value={form.cvv}
-              onChange={e => setForm({ ...form, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-              placeholder="123" maxLength={4}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: '#0A0B11', border: '1px solid #374151', color: '#F9FAFB' }}
-              onFocus={e => e.target.style.borderColor = '#6C3FC5'}
-              onBlur={e => e.target.style.borderColor = '#374151'} />
-          </div>
-        </div>
-
-        <Input label="Name on card" value={form.cardName} onChange={set('cardName')} placeholder="e.g. Arron Margeison" required />
-        <Input label="Billing postcode" value={form.postcode} onChange={set('postcode')} placeholder="e.g. MK9 1AA" required />
-
-        <div className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: 'rgba(108,63,197,0.06)', border: '1px solid rgba(108,63,197,0.2)' }}>
-          <input type="checkbox" checked={form.terms === 'true'}
-            onChange={e => setForm({ ...form, terms: e.target.checked ? 'true' : '' })}
-            className="mt-0.5 flex-shrink-0" style={{ accentColor: '#6C3FC5' }} />
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            I agree to the <Link href="/terms" className="underline" style={{ color: '#6C3FC5' }}>Terms of Service</Link> and <Link href="/privacy" className="underline" style={{ color: '#6C3FC5' }}>Privacy Policy</Link>. I understand my 14-day free trial starts today and my card will be charged £{plan.price}/month afterwards. I can cancel anytime.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -490,6 +473,7 @@ export default function CompanyCheckoutPage() {
     firstName: '', lastName: '', role: '', email: '', password: '',
     cardNumber: '', expiry: '', cvv: '', cardName: '', postcode: '', terms: '',
   })
+  const [logoFile, setLogoFile] = useState<File | null>(null)
 
   const plan = PLANS.find(p => p.id === selectedPlan) ?? PLANS[1]
 
@@ -505,14 +489,7 @@ export default function CompanyCheckoutPage() {
       if (!form.email.includes('@')) { setError('Please enter a valid email address.'); return false }
       if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return false }
     }
-    if (step === 2) {
-      if (!form.cardNumber || form.cardNumber.replace(/\s/g, '').length < 16) { setError('Please enter a valid 16-digit card number.'); return false }
-      if (!form.expiry || form.expiry.length < 5) { setError('Please enter a valid expiry date (MM/YY).'); return false }
-      if (!form.cvv || form.cvv.length < 3) { setError('Please enter a valid CVV.'); return false }
-      if (!form.cardName) { setError('Please enter the name on your card.'); return false }
-      if (!form.postcode) { setError('Please enter your billing postcode.'); return false }
-      if (form.terms !== 'true') { setError('Please accept the Terms of Service to continue.'); return false }
-    }
+    // Step 2 (payment) is handled by the mock button or coming soon — no validation needed
     return true
   }
 
@@ -521,20 +498,83 @@ export default function CompanyCheckoutPage() {
     setStep(s => s + 1)
   }
 
-  function handleComplete() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lumio_company_active', 'true')
-      localStorage.setItem('lumio_company_name', form.companyName)
-      localStorage.setItem('lumio_company_plan', selectedPlan)
-      localStorage.setItem('lumio_company_initials',
-        `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase())
-      localStorage.setItem('lumio_company_industry', form.industry)
-      localStorage.setItem('lumio_company_size', form.size)
-      // Clear all hasData flags so every page starts empty
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
-      keys.forEach(k => localStorage.removeItem(k))
+  async function handleComplete() {
+    try {
+      // Create business + session via API
+      const res = await fetch('/api/workspace/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: form.companyName,
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          plan: selectedPlan,
+          industry: form.industry,
+          size: form.size,
+        }),
+      })
+      const data = await res.json()
+
+      if (typeof window !== 'undefined') {
+        if (data.session_token) localStorage.setItem('workspace_session_token', data.session_token)
+        localStorage.setItem('lumio_company_active', 'true')
+        localStorage.setItem('lumio_company_name', form.companyName)
+        localStorage.setItem('workspace_company_name', form.companyName)
+        localStorage.setItem('lumio_company_plan', selectedPlan)
+        const userInitials = `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase()
+        localStorage.setItem('lumio_company_initials', userInitials)
+        localStorage.setItem('lumio_company_industry', form.industry)
+        localStorage.setItem('lumio_company_size', form.size)
+        const fullName = `${form.firstName} ${form.lastName}`.trim()
+        localStorage.setItem('lumio_user_name', fullName)
+        localStorage.setItem('workspace_user_name', fullName)
+        localStorage.setItem('lumio_user_email', form.email)
+        localStorage.setItem('lumio_workspace_slug', data.slug || slug)
+        // Clear all hasData flags so every page starts empty
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_'))
+        keys.forEach(k => localStorage.removeItem(k))
+        // Clear demo/stale keys to prevent old session bleeding into live portal
+        Object.keys(localStorage).filter(k => k.startsWith('demo_')).forEach(k => localStorage.removeItem(k))
+        localStorage.removeItem('lumio_tenant_slug')
+        // Clear stale cookie
+        document.cookie = 'lumio_tenant_slug=; path=/; max-age=0'
+        // Mark as just purchased so live portal shows welcome overlay
+        localStorage.setItem('lumio_just_purchased', 'true')
+      }
+
+      const targetSlug = data.slug || slug
+
+      // Upload logo if provided — use server endpoint to persist to DB
+      if (logoFile && targetSlug) {
+        const token = localStorage.getItem('workspace_session_token')
+        if (token) {
+          try {
+            const fd = new FormData()
+            fd.append('logo', logoFile)
+            const logoRes = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+            const logoData = await logoRes.json()
+            if (logoData.logo_url) {
+              localStorage.setItem('lumio_company_logo', logoData.logo_url)
+              localStorage.setItem('workspace_company_logo', logoData.logo_url)
+            }
+          } catch (err) { console.error('Logo upload failed:', err) }
+        }
+      }
+
+      if (targetSlug && targetSlug !== 'my-company') {
+        router.push(`/${targetSlug}`)
+      } else {
+        router.push('/login')
+      }
+    } catch {
+      // Fallback: set localStorage and redirect anyway
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lumio_company_active', 'true')
+        localStorage.setItem('lumio_company_name', form.companyName)
+      }
+      router.push('/login')
     }
-    router.push('/')
   }
 
   const isBuilding = step === 3
@@ -547,7 +587,7 @@ export default function CompanyCheckoutPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)' }}>
             <Sparkles size={13} color="white" />
           </div>
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Lumio <span style={{ color: '#6C3FC5' }}>CRM</span></span>
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Lumio</span>
         </Link>
         <div className="flex items-center gap-2">
           <Lock size={12} style={{ color: '#6B7280' }} />
@@ -580,8 +620,8 @@ export default function CompanyCheckoutPage() {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pb-12">
         {step === 0 && <StepPlan selected={selectedPlan} onSelect={setSelectedPlan} />}
-        {step === 1 && <StepDetails form={form} setForm={setForm} />}
-        {step === 2 && <StepPayment form={form} setForm={setForm} plan={plan} />}
+        {step === 1 && <StepDetails form={form} setForm={setForm} logoFile={logoFile} setLogoFile={setLogoFile} />}
+        {step === 2 && <StepPayment plan={plan} onComplete={() => setStep(3)} />}
         {step === 3 && <StepBuilding companyName={form.companyName || 'Your Company'} slug={slug} onComplete={handleComplete} />}
 
         {error && (
@@ -605,13 +645,13 @@ export default function CompanyCheckoutPage() {
                 <ArrowLeft size={14} /> Back to home
               </Link>
             )}
-            <button onClick={next}
-              className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold"
-              style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)', color: '#F9FAFB' }}>
-              {step === 2
-                ? <><Lock size={14} /> {plan.price > 0 ? `Start Lumio — £${plan.price} Today` : 'Start Free Trial — £0 Today'}</>
-                : <>Continue <ArrowRight size={14} /></>}
-            </button>
+            {step !== 2 && (
+              <button onClick={next}
+                className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold"
+                style={{ background: 'linear-gradient(135deg, #6C3FC5, #4F46E5)', color: '#F9FAFB' }}>
+                Continue <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         )}
 

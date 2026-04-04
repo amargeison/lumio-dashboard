@@ -1,0 +1,4430 @@
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { use } from 'react'
+import {
+  Users, TrendingUp, Headphones, AlertCircle,
+  CheckCircle2, Loader2, Clock, ArrowRight,
+  Zap, Star, ChevronDown, ChevronUp, BarChart3, Sparkles,
+  X, Plus, Check,
+  Home, Settings, Hash, Menu, ChevronLeft,
+  Calendar, FileText, Target, Volume2, Mic,
+  Bell, Activity, Shield, Shirt, Clipboard, Trophy,
+  UserPlus, DollarSign, Heart, Eye, Video, MapPin,
+  Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
+  Search, Filter, ArrowUpDown, ExternalLink, Crown,
+} from 'lucide-react'
+import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
+import FootballActionModal from '@/components/modals/FootballActionModal'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
+import FootballStaffView from '@/components/football/StaffView'
+import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import ProSetPiecesView from '@/components/football/ProSetPiecesView'
+import { EmailActions } from '@/components/overview/MessageActions'
+import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type DeptId =
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
+  | 'medical' | 'scouting' | 'academy' | 'analytics'
+  | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
+  | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
+  | 'staff' | 'facilities' | 'settings'
+
+type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff' | 'team-info'
+
+type SidebarSection = null | 'Departments' | 'Tools'
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const FOOTBALL_QUOTES = [
+  { text: "Football is a simple game. Twenty-two men chase a ball for 90 minutes and at the end, the Germans always win.", author: "Gary Lineker" },
+  { text: "I wouldn't say I was the best manager in the business. But I was in the top one.", author: "Brian Clough" },
+  { text: "Some people believe football is a matter of life and death. I assure you it is much, much more important than that.", author: "Bill Shankly" },
+  { text: "In football, the worst blindness is only seeing the ball.", author: "Nelson Falcao" },
+  { text: "I am a firm believer that if you score one more than the opposition then you win.", author: "Sir Alex Ferguson" },
+  { text: "The greatest barrier to success is the fear of failure.", author: "Sven-Goran Eriksson" },
+  { text: "I don't have any weaknesses. I don't believe in them.", author: "Pep Guardiola" },
+  { text: "A manager needs three years to build a team, but can lose it in three months.", author: "Arsene Wenger" },
+  { text: "If a player is not interfering with play or seeking to gain an advantage, then he should be.", author: "Bill Shankly" },
+  { text: "We must have had 99% of the game. It was the other 1% that cost us.", author: "Ruud Gullit" },
+  { text: "The best teams in the world don't just play football. They create it.", author: "Pep Guardiola" },
+  { text: "Football is a game about feelings and intelligence.", author: "Arsene Wenger" },
+  { text: "The ball is round. The game lasts 90 minutes. Everything else is just theory.", author: "Sepp Herberger" },
+  { text: "Players lose you games, not tactics. There's so much crap talked about tactics.", author: "Brian Clough" },
+  { text: "Fail, and fail again. Because failure leads to success.", author: "Sir Alex Ferguson" },
+]
+
+const BG_GRADIENTS = [
+  'from-red-950/80 via-rose-900/90 to-red-950',
+  'from-rose-950 via-red-950/80 to-rose-900/90',
+  'from-red-950 via-rose-950/80 to-red-900/90',
+  'from-rose-950/90 via-red-950 to-rose-900/80',
+  'from-red-950/80 via-rose-900/90 to-rose-950',
+  'from-rose-900/90 via-red-950 to-rose-950/80',
+  'from-red-950 via-rose-950/90 to-red-900/80',
+]
+
+const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
+  { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
+  { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
+  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
+  { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
+  { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
+  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
+  { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
+  { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
+  { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
+  { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'Departments' },
+  { id: 'analytics',   label: 'Analytics',      icon: BarChart3,      section: 'Departments' },
+  { id: 'dynamics',    label: 'Dynamics',       icon: Heart,          section: 'Departments' },
+  { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
+  { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
+  { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
+  { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
+  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'Tools' },
+  { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
+  { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
+  { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
+  { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
+  { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
+  { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
+  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+]
+
+const FOOTBALL_ROLE_OPTIONS = [
+  { key: 'chairman', label: 'Chairman/CEO', emoji: '👑', level: 1 },
+  { key: 'dof', label: 'Director of Football', emoji: '⚽', level: 1 },
+  { key: 'head_coach', label: 'Head Coach', emoji: '🎽', level: 2 },
+  { key: 'dept_head', label: 'Department Head', emoji: '📋', level: 3 },
+  { key: 'support', label: 'Support Staff', emoji: '🔍', level: 4 },
+]
+
+// ─── Squad Data ──────────────────────────────────────────────────────────────
+
+type FitnessStatus = 'fit' | 'injured' | 'suspended' | 'modified' | 'doubt'
+
+interface Player {
+  name: string
+  number: number
+  position: string
+  nationality: string
+  age: number
+  contractExpiry: string
+  marketValue: string
+  fitness: FitnessStatus
+  lastRating: number
+  goals: number
+  assists: number
+}
+
+const SQUAD: Player[] = [
+  // Goalkeepers
+  { name: 'James Walker', number: 1, position: 'GK', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 28, contractExpiry: 'Jun 2026', marketValue: '£800k', fitness: 'fit', lastRating: 7.2, goals: 0, assists: 0 },
+  { name: 'Liam Burton', number: 13, position: 'GK', nationality: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', age: 22, contractExpiry: 'Jun 2027', marketValue: '£300k', fitness: 'fit', lastRating: 6.8, goals: 0, assists: 0 },
+  { name: 'Tomasz Kowalski', number: 30, position: 'GK', nationality: '🇵🇱', age: 19, contractExpiry: 'Jun 2029', marketValue: '£120k', fitness: 'fit', lastRating: 6.5, goals: 0, assists: 0 },
+  // Centre Backs
+  { name: 'Diego Martinez', number: 5, position: 'CB', nationality: '🇪🇸', age: 30, contractExpiry: 'Jun 2025', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 2, assists: 0 },
+  { name: 'Marcus Cole', number: 6, position: 'CB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 27, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.6, goals: 1, assists: 1 },
+  { name: 'Jake Phillips', number: 15, position: 'CB', nationality: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', age: 24, contractExpiry: 'Jun 2029', marketValue: '£900k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 0 },
+  { name: 'Luka Petrovic', number: 22, position: 'CB', nationality: '🇷🇸', age: 28, contractExpiry: 'Jun 2027', marketValue: '£1.1m', fitness: 'fit', lastRating: 7.1, goals: 1, assists: 2 },
+  // Right Backs
+  { name: 'Callum Henderson', number: 2, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.0m', fitness: 'fit', lastRating: 7.3, goals: 1, assists: 5 },
+  { name: 'Charlie Bennett', number: 24, position: 'RB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 19, contractExpiry: 'Jun 2029', marketValue: '£250k', fitness: 'fit', lastRating: 6.4, goals: 0, assists: 1 },
+  // Left Backs
+  { name: 'Tyrone Campbell', number: 3, position: 'LB', nationality: '🇯🇲', age: 26, contractExpiry: 'Jun 2027', marketValue: '£850k', fitness: 'fit', lastRating: 7.0, goals: 0, assists: 4 },
+  { name: 'Nathan Brooks', number: 18, position: 'LB', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 21, contractExpiry: 'Jun 2028', marketValue: '£350k', fitness: 'fit', lastRating: 6.7, goals: 0, assists: 2 },
+  // Central Midfielders
+  { name: 'Ryan Thompson', number: 8, position: 'CM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 29, contractExpiry: 'Jun 2026', marketValue: '£1.8m', fitness: 'suspended', lastRating: 7.8, goals: 4, assists: 7 },
+  { name: 'Kai Nakamura', number: 14, position: 'CM', nationality: '🇯🇵', age: 24, contractExpiry: 'Jun 2029', marketValue: '£1.3m', fitness: 'fit', lastRating: 7.5, goals: 3, assists: 6 },
+  { name: 'Ben Gallagher', number: 16, position: 'CM', nationality: '🇮🇪', age: 27, contractExpiry: 'Jun 2027', marketValue: '£950k', fitness: 'fit', lastRating: 7.1, goals: 2, assists: 3 },
+  { name: 'Kwame Asante', number: 25, position: 'CM', nationality: '🇬🇭', age: 21, contractExpiry: 'Jun 2030', marketValue: '£400k', fitness: 'fit', lastRating: 6.9, goals: 1, assists: 2 },
+  // Attacking Midfielders
+  { name: 'Ethan Price', number: 10, position: 'CAM', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£1.4m', fitness: 'fit', lastRating: 7.6, goals: 5, assists: 8 },
+  { name: 'Mateo Silva', number: 20, position: 'CAM', nationality: '🇧🇷', age: 26, contractExpiry: 'Jun 2027', marketValue: '£1.6m', fitness: 'modified', lastRating: 7.3, goals: 3, assists: 5 },
+  // Left Wingers
+  { name: "Sean O'Brien", number: 11, position: 'LW', nationality: '🇮🇪', age: 25, contractExpiry: 'Jun 2027', marketValue: '£1.2m', fitness: 'injured', lastRating: 7.4, goals: 6, assists: 4 },
+  { name: 'Jayden Clarke', number: 19, position: 'LW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 20, contractExpiry: 'Jun 2029', marketValue: '£500k', fitness: 'fit', lastRating: 6.8, goals: 2, assists: 3 },
+  // Right Wingers
+  { name: 'Rafa Correia', number: 7, position: 'RW', nationality: '🇵🇹', age: 24, contractExpiry: 'Jun 2028', marketValue: '£1.5m', fitness: 'fit', lastRating: 7.7, goals: 5, assists: 9 },
+  { name: 'Daniel Foster', number: 17, position: 'RW', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 23, contractExpiry: 'Jun 2027', marketValue: '£600k', fitness: 'fit', lastRating: 6.6, goals: 1, assists: 2 },
+  // Strikers
+  { name: 'Lucas Santos', number: 9, position: 'ST', nationality: '🇧🇷', age: 27, contractExpiry: 'Jun 2027', marketValue: '£2.2m', fitness: 'injured', lastRating: 8.1, goals: 14, assists: 3 },
+  { name: 'Tommy Richards', number: 21, position: 'ST', nationality: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', age: 22, contractExpiry: 'Jun 2029', marketValue: '£700k', fitness: 'fit', lastRating: 7.0, goals: 4, assists: 1 },
+  { name: 'Aiden Murphy', number: 12, position: 'ST', nationality: '🇮🇪', age: 30, contractExpiry: 'Jun 2026', marketValue: '£500k', fitness: 'fit', lastRating: 6.9, goals: 3, assists: 2 },
+  { name: 'Omar Hassan', number: 23, position: 'ST', nationality: '🇪🇬', age: 23, contractExpiry: 'Jun 2028', marketValue: '£650k', fitness: 'doubt', lastRating: 7.2, goals: 5, assists: 1 },
+]
+
+const INJURIES = [
+  { player: 'Diego Martinez', type: 'Hamstring strain (Grade 2)', expectedReturn: '14 Apr 2026', phase: 'Rehab — jogging', since: '12 Mar 2026', matchesMissed: 4 },
+  { player: "Sean O'Brien", type: 'Ankle ligament damage', expectedReturn: '21 Apr 2026', phase: 'Boot — non-weight bearing', since: '8 Mar 2026', matchesMissed: 5 },
+  { player: 'Lucas Santos', type: 'Knee cartilage irritation', expectedReturn: '7 Apr 2026', phase: 'Light training', since: '22 Mar 2026', matchesMissed: 2 },
+]
+
+const TRANSFER_TARGETS = [
+  { name: 'Yannick Diallo', position: 'LB', club: 'KRC Genk', age: 22, value: '£1.8m', status: 'Bid submitted' },
+  { name: 'Tiago Ferreira', position: 'CM', club: 'SC Braga', age: 24, value: '£1.3m', status: 'Watching' },
+]
+
+// ─── Recent Form ────────────────────────────────────────────────────────────
+
+const RECENT_FORM = [
+  { opponent: 'Riverside United', score: '2-1', result: 'W' as const, home: true, scorers: "Santos 34', Thompson 67'" },
+  { opponent: 'City Vale', score: '0-0', result: 'D' as const, home: false, scorers: '' },
+  { opponent: 'Northern Town', score: '3-1', result: 'W' as const, home: true, scorers: "Santos 12', 45', O'Brien 78'" },
+  { opponent: 'Westfield Athletic', score: '1-2', result: 'L' as const, home: false, scorers: "Thompson 55'" },
+  { opponent: 'South Park Rangers', score: '4-0', result: 'W' as const, home: true, scorers: "Santos 22', 41', Collins 67', Martinez 89'" },
+]
+
+// ─── GPS Training Data ──────────────────────────────────────────────────────
+
+const GPS_DATA = [
+  { player: 'Santos', distance: 10.2, hiSpeed: 1420, sprints: 34, maxSpeed: 33.1, load: 'optimal' as const },
+  { player: 'Thompson', distance: 11.4, hiSpeed: 1680, sprints: 28, maxSpeed: 31.8, load: 'high' as const },
+  { player: 'Walker', distance: 5.8, hiSpeed: 320, sprints: 8, maxSpeed: 24.2, load: 'optimal' as const },
+  { player: 'Henderson', distance: 10.8, hiSpeed: 1550, sprints: 42, maxSpeed: 34.2, load: 'optimal' as const },
+  { player: "O'Brien", distance: 9.1, hiSpeed: 1200, sprints: 22, maxSpeed: 32.6, load: 'amber' as const },
+  { player: 'Collins', distance: 10.6, hiSpeed: 1380, sprints: 30, maxSpeed: 33.8, load: 'high' as const },
+  { player: 'Martinez', distance: 9.8, hiSpeed: 890, sprints: 18, maxSpeed: 28.4, load: 'optimal' as const },
+  { player: 'Okafor', distance: 10.1, hiSpeed: 1490, sprints: 36, maxSpeed: 34.8, load: 'overload' as const },
+]
+
+// ─── Scout Targets ──────────────────────────────────────────────────────────
+
+const SCOUT_TARGETS = [
+  { name: 'Rui Silva', position: 'LB', age: 23, club: 'KRC Genk', nationality: '🇵🇹', value: '£1.8m', contract: 'Jun 2027', rating: 4, status: 'Approached', notes: 'Athletic, good crosser' },
+  { name: 'André Costa', position: 'CM', age: 25, club: 'SC Braga', nationality: '🇧🇷', value: '£2.4m', contract: 'Jun 2026', rating: 5, status: 'Bid Submitted', notes: 'Box-to-box, excellent range' },
+  { name: 'Kasper Eriksen', position: 'ST', age: 21, club: 'FC Nordsjælland', nationality: '🇩🇰', value: '£1.2m', contract: 'Jun 2028', rating: 3, status: 'Monitoring', notes: 'Pacy, needs development' },
+  { name: "Jean-Marc N'Golo", position: 'CB', age: 27, club: 'Metz', nationality: '🇫🇷', value: '£0.9m', contract: 'Jun 2025', rating: 4, status: 'Shortlisted', notes: 'Free agent June, strong aerial' },
+  { name: 'Liam Brennan', position: 'GK', age: 20, club: 'Shamrock Rovers', nationality: '🇮🇪', value: '£0.3m', contract: 'Jun 2027', rating: 3, status: 'Monitoring', notes: 'Good shot-stopper, needs loans' },
+]
+
+// ─── Contract Data ──────────────────────────────────────────────────────────
+
+const CONTRACT_DATA = [
+  { player: 'Diego Martinez', position: 'CB', weeklyWage: '£18,000', end: 'Jun 2025', status: 'Negotiating' as const, agent: 'Stellar Group' },
+  { player: 'Ryan Thompson', position: 'CM', weeklyWage: '£22,000', end: 'Jun 2026', status: 'Offered' as const, agent: 'CAA Base' },
+  { player: 'James Walker', position: 'GK', weeklyWage: '£15,000', end: 'Jun 2026', status: 'No Action' as const, agent: 'Unique Sports' },
+  { player: "Sean O'Brien", position: 'LW', weeklyWage: '£20,000', end: 'Jun 2027', status: 'Signed' as const, agent: 'Wasserman' },
+]
+
+// ─── Academy Standouts ─────────────────────────────────────────────────────
+
+const ACADEMY_STANDOUTS = [
+  { name: 'Tyler James', age: 17, position: 'AMF', ageGroup: 'U18', devRating: '9.1', pathway: 'First Team Ready' },
+  { name: 'Luca Ferreira', age: 16, position: 'CB', ageGroup: 'U18', devRating: '8.4', pathway: 'Pathway' },
+  { name: 'Kai Thompson', age: 15, position: 'ST', ageGroup: 'U16', devRating: '8.8', pathway: 'Developing' },
+  { name: 'Remi Santos', age: 18, position: 'CM', ageGroup: 'U23', devRating: '9.3', pathway: 'First Team Ready' },
+]
+
+// ─── Match Formations ───────────────────────────────────────────────────────
+
+const MATCH_FORMATIONS = [
+  { match: 'vs Riverside (W 2-1)', formation: '4-3-3', positions: [
+    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
+    { num: 5, x: 60, y: 75, name: 'Martinez' }, { num: 6, x: 40, y: 75, name: 'Clarke' },
+    { num: 3, x: 20, y: 75, name: 'Davies' }, { num: 8, x: 65, y: 55, name: 'Thompson' },
+    { num: 4, x: 50, y: 50, name: 'Okafor' }, { num: 14, x: 35, y: 55, name: 'Fernandez' },
+    { num: 7, x: 80, y: 30, name: 'Collins' }, { num: 9, x: 50, y: 20, name: 'Santos' },
+    { num: 11, x: 20, y: 30, name: "O'Brien" },
+  ], stats: { possession: 58, shots: 14, xG: 1.82, passes: 487, duels: 52 }},
+  { match: 'vs City Vale (D 0-0)', formation: '4-2-3-1', positions: [
+    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
+    { num: 5, x: 60, y: 75, name: 'Cole' }, { num: 6, x: 40, y: 75, name: 'Phillips' },
+    { num: 3, x: 20, y: 75, name: 'Campbell' }, { num: 8, x: 60, y: 55, name: 'Nakamura' },
+    { num: 16, x: 40, y: 55, name: 'Gallagher' }, { num: 7, x: 80, y: 38, name: 'Correia' },
+    { num: 10, x: 50, y: 35, name: 'Price' }, { num: 11, x: 20, y: 38, name: 'Clarke' },
+    { num: 9, x: 50, y: 20, name: 'Richards' },
+  ], stats: { possession: 47, shots: 6, xG: 0.42, passes: 382, duels: 61 }},
+  { match: 'vs Northern (W 3-1)', formation: '4-3-3', positions: [
+    { num: 1, x: 50, y: 90, name: 'Walker' }, { num: 2, x: 80, y: 75, name: 'Henderson' },
+    { num: 5, x: 60, y: 75, name: 'Cole' }, { num: 6, x: 40, y: 75, name: 'Martinez' },
+    { num: 3, x: 20, y: 75, name: 'Campbell' }, { num: 8, x: 65, y: 55, name: 'Thompson' },
+    { num: 14, x: 50, y: 50, name: 'Nakamura' }, { num: 16, x: 35, y: 55, name: 'Gallagher' },
+    { num: 7, x: 80, y: 30, name: 'Correia' }, { num: 9, x: 50, y: 20, name: 'Santos' },
+    { num: 11, x: 20, y: 30, name: "O'Brien" },
+  ], stats: { possession: 62, shots: 18, xG: 2.41, passes: 521, duels: 48 }},
+]
+
+const FIXTURES = [
+  { opponent: 'Riverside United', date: 'Sat 4 Apr', time: '15:00', venue: 'Home', competition: 'League' },
+  { opponent: 'Northgate City', date: 'Tue 7 Apr', time: '19:45', venue: 'Away', competition: 'League Cup QF' },
+  { opponent: 'Crestwood Athletic', date: 'Sat 11 Apr', time: '15:00', venue: 'Away', competition: 'League' },
+]
+
+const ACADEMY_PLAYERS = [
+  { name: 'Josh Collins', age: 17, position: 'ST', highlight: 'U21 hat-trick vs Riverside. Recommended for first-team training.' },
+  { name: 'Alfie Morgan', age: 16, position: 'CM', highlight: 'Outstanding passing range. Youth coach rates as generational talent.' },
+  { name: 'Rhys Okonkwo', age: 18, position: 'CB', highlight: 'Bench squad inclusion pending. Dominant in U21 aerial duels.' },
+  { name: 'Elijah Shaw', age: 17, position: 'LW', highlight: 'Pace merchant. 7 assists in last 8 U18 appearances.' },
+]
+
+// ─── Football Roundup Data ──────────────────────────────────────────────────
+
+const FOOTBALL_ROUNDUP_ITEMS = [
+  {
+    id: 'agents', icon: '📱', label: 'Agent Messages', count: 3, urgent: true,
+    color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)',
+    messages: [
+      { id: 'a1', from: 'Stellar Group', avatar: 'SG', subject: 'Martinez contract — urgent', preview: 'Diego\'s representatives want to discuss the renewal terms before the window. They have interest from Serie A.', time: '8:05am', urgent: true, read: false },
+      { id: 'a2', from: 'ProSport Agency', avatar: 'PA', subject: 'Santos availability', preview: 'Lucas Santos is open to a loan move in January if he isn\'t first choice by then. Interested clubs in touch.', time: '7:30am', urgent: false, read: false },
+      { id: 'a3', from: 'Elite Sports Mgmt', avatar: 'ES', subject: 'Academy prospect query', preview: 'We represent Josh Collins. His family want to discuss first-team pathway and improved academy terms.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'board', icon: '🏛️', label: 'Board Messages', count: 2, urgent: false,
+    color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
+    messages: [
+      { id: 'b1', from: 'Chairman\'s Office', avatar: 'CO', subject: 'Transfer budget update', preview: 'The board has approved an additional £500k for the summer window. Total budget now £4.2m.', time: '9:15am', urgent: false, read: false },
+      { id: 'b2', from: 'Finance Director', avatar: 'FD', subject: 'Wage bill review', preview: 'Current wage bill at 62% of revenue. Board target is 60%. Need to discuss before renewals.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'media', icon: '📰', label: 'Media & Press', count: 4, urgent: false,
+    color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',
+    messages: [
+      { id: 'm1', from: 'BBC Sport', avatar: 'BB', subject: 'Pre-match interview request', preview: 'We\'d like to arrange a 15-minute pre-match interview for Saturday\'s game. Available Thursday PM?', time: '8:45am', urgent: false, read: false },
+      { id: 'm2', from: 'Sky Sports', avatar: 'SS', subject: 'Transfer rumours — comment?', preview: 'We\'re running a piece on your interest in Yannick Diallo. Any comment from the club?', time: '8:00am', urgent: false, read: false },
+      { id: 'm3', from: 'Local Gazette', avatar: 'LG', subject: 'Fan forum coverage', preview: 'We\'re covering the fan forum on Thursday evening. Will the manager be attending?', time: 'Yesterday', urgent: false, read: true },
+      { id: 'm4', from: 'Press Officer', avatar: 'PO', subject: 'Press conference at 2pm', preview: 'Reminder: pre-match presser at 2pm today in the media suite. AI briefing notes attached.', time: '7:30am', urgent: false, read: false },
+    ]
+  },
+  {
+    id: 'transfers', icon: '🔄', label: 'Transfer Activity', count: 2, urgent: true,
+    color: '#10B981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)',
+    messages: [
+      { id: 't1', from: 'Chief Scout', avatar: 'CS', subject: 'Diallo update — Genk respond', preview: 'Genk have countered at £2.1m. They want a 15% sell-on clause. Recommend we push back to £1.9m.', time: '9:02am', urgent: true, read: false },
+      { id: 't2', from: 'Analyst Team', avatar: 'AT', subject: 'Ferreira video analysis ready', preview: 'Full match analysis of Tiago Ferreira vs Porto is ready for review. 94-minute breakdown with heat maps.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'staff', icon: '👔', label: 'Staff Updates', count: 2, urgent: false,
+    color: '#06B6D4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)',
+    messages: [
+      { id: 's1', from: 'Head Physio', avatar: 'HP', subject: 'Injury update — morning report', preview: 'Martinez did light jogging this morning. Santos completed pool session. O\'Brien still in boot.', time: '8:30am', urgent: false, read: false },
+      { id: 's2', from: 'Goalkeeping Coach', avatar: 'GC', subject: 'Walker — distribution drill results', preview: 'Walker\'s long distribution accuracy improved to 74% in yesterday\'s session. Significant progress.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+  {
+    id: 'academy', icon: '🎓', label: 'Academy', count: 2, urgent: false,
+    color: '#F97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)',
+    messages: [
+      { id: 'ac1', from: 'U21 Coach', avatar: 'U2', subject: 'Collins hat-trick — match report', preview: 'Josh Collins scored a hat-trick in yesterday\'s U21 win. Strong recommendation for first-team bench.', time: '8:15am', urgent: false, read: false },
+      { id: 'ac2', from: 'Academy Director', avatar: 'AD', subject: 'Scholarship intake review', preview: 'We have 4 offers out for next season\'s scholarship cohort. 2 have accepted, 2 pending.', time: 'Yesterday', urgent: false, read: true },
+    ]
+  },
+]
+
+// ─── Football Opening / Closing Lines ───────────────────────────────────────
+
+const FOOTBALL_OPENING_LINES = [
+  "Let's get into the morning briefing, gaffer.",
+  "Here's what's happened overnight and what's ahead today.",
+  "Morning, boss. Here's your daily football operations rundown.",
+  "Right, let's run through today's priorities.",
+  "Here's everything you need before training kicks off.",
+]
+
+const FOOTBALL_CLOSING_LINES = [
+  "That's your briefing. Now go run that training session.",
+  "Have a good day, gaffer. The lads are waiting.",
+  "That's everything. Go make it a good one.",
+  "Briefing done. Time to get to work on the training pitch.",
+  "All set. Go put that session plan into action.",
+]
+
+// ─── Morning Highlights ─────────────────────────────────────────────────────
+
+const MORNING_HIGHLIGHTS_FOOTBALL = [
+  '3 injured players — Martinez, O\'Brien, Santos. Santos closest to return (7 Apr).',
+  'Thompson suspended for Saturday. Nakamura or Gallagher to start in CM.',
+  'Transfer target Diallo — Genk countered at £2.1m. Budget remaining: £4.2m.',
+  'Press conference at 2pm today. AI briefing notes prepared.',
+  'U21s won 3-0 yesterday. Collins hat-trick — recommended for first-team bench.',
+  'Saturday\'s match vs Riverside United at home, 3pm kick-off. Team sheet needed by Thursday.',
+]
+
+// ─── World Clock (reused) ───────────────────────────────────────────────────
+
+const DEFAULT_WORLD_ZONES = [
+  { label: 'London',   tz: 'Europe/London'    },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai',    tz: 'Asia/Dubai'       },
+  { label: 'Tokyo',    tz: 'Asia/Tokyo'       },
+]
+
+const ALL_TIMEZONES = [
+  { label: 'London', tz: 'Europe/London' },
+  { label: 'New York', tz: 'America/New_York' },
+  { label: 'Dubai', tz: 'Asia/Dubai' },
+  { label: 'Tokyo', tz: 'Asia/Tokyo' },
+  { label: 'Sydney', tz: 'Australia/Sydney' },
+  { label: 'Los Angeles', tz: 'America/Los_Angeles' },
+  { label: 'Paris', tz: 'Europe/Paris' },
+  { label: 'Berlin', tz: 'Europe/Berlin' },
+  { label: 'Singapore', tz: 'Asia/Singapore' },
+  { label: 'Madrid', tz: 'Europe/Madrid' },
+  { label: 'Lisbon', tz: 'Europe/Lisbon' },
+  { label: 'Rio de Janeiro', tz: 'America/Sao_Paulo' },
+  { label: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
+  { label: 'Mumbai', tz: 'Asia/Kolkata' },
+  { label: 'Riyadh', tz: 'Asia/Riyadh' },
+]
+
+function getStoredZones(): { label: string; tz: string }[] {
+  if (typeof window === 'undefined') return DEFAULT_WORLD_ZONES
+  try {
+    const stored = localStorage.getItem('lumio_world_zones')
+    if (stored) return JSON.parse(stored)
+  } catch {}
+  return DEFAULT_WORLD_ZONES
+}
+
+function getUserLocalTz(): { label: string; tz: string } {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const match = ALL_TIMEZONES.find(z => z.tz === tz)
+  return match || { label: tz.split('/').pop()?.replace(/_/g, ' ') || 'Local', tz }
+}
+
+function WorldClock() {
+  const [now, setNow] = useState(() => new Date())
+  const [zones, setZones] = useState(getStoredZones)
+  const localTz = getUserLocalTz()
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id) }, [])
+  useEffect(() => {
+    function onStorage(e: StorageEvent) { if (e.key === 'lumio_world_zones') setZones(getStoredZones()) }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 relative" style={{ minWidth: 160 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+        {zones.map(z => {
+          const isLocal = z.tz === localTz.tz
+          return (
+            <div key={z.label} className="flex items-center gap-1.5">
+              <span className="font-mono text-sm font-black text-white">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: z.tz, hour12: false })}</span>
+              <span className="text-xs" style={{ color: isLocal ? '#FBBF24' : 'rgba(248,113,113,0.7)' }}>{z.label}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="text-xs mt-1" style={{ color: '#FBBF24' }}>World Clock</div>
+    </div>
+  )
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
+function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
+  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string
+}) {
+  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
+  const [hovered, setHovered] = useState(false)
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = pinned || hovered
+
+  function togglePin() {
+    setPinned(p => { const next = !p; localStorage.setItem('lumio_sidebar_pinned', String(next)); return next })
+  }
+  function handleMouseEnter() { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null }; setHovered(true) }
+  function handleMouseLeave() { leaveTimer.current = setTimeout(() => setHovered(false), 400) }
+
+  const PRIMARY = '#C0392B'
+  const DARK = '#922B21'
+
+  // group items by section — filter sidebar based on impersonated role level
+  const impRole = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_impersonated_role') : null
+  const impLevel = FOOTBALL_ROLE_OPTIONS.find(r => r.key === impRole)?.level ?? 1
+  const HEAD_COACH_DEPTS: DeptId[] = ['overview', 'insights', 'squad', 'tactics', 'medical', 'training', 'analytics', 'dynamics', 'matchday', 'squad-planner', 'staff', 'settings']
+  const DEPT_HEAD_DEPTS: DeptId[] = ['overview', 'insights', 'staff', 'settings']
+  const SUPPORT_DEPTS: DeptId[] = ['overview', 'staff', 'settings']
+  const visibleItems = SIDEBAR_ITEMS.filter(i => {
+    if (impLevel <= 1) {
+      // Chairman/DoF: see everything; DoF hides Financial Strategy tab (handled in BoardSuiteView)
+      return true
+    }
+    if (impLevel === 2) return HEAD_COACH_DEPTS.includes(i.id) // Head Coach
+    if (impLevel === 3) return DEPT_HEAD_DEPTS.includes(i.id) // Dept Head
+    return SUPPORT_DEPTS.includes(i.id) // Support Staff
+  })
+  const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
+    { label: null, items: visibleItems.filter(i => i.section === null) },
+    { label: 'Departments', items: visibleItems.filter(i => i.section === 'Departments') },
+    { label: 'Tools', items: visibleItems.filter(i => i.section === 'Tools') },
+  ]
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex flex-col shrink-0 overflow-hidden"
+        style={{ width: expanded ? 208 : 48, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: PRIMARY, color: '#F9FAFB' }}>
+            FC
+          </div>
+          {expanded && (
+            <>
+              <div className="flex-1 min-w-0">
+                {clubName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{clubName}</p>}
+                <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Football Portal</p>
+              </div>
+              <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? PRIMARY : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} title={pinned ? 'Unpin' : 'Pin open'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+              </button>
+            </>
+          )}
+        </div>
+        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto football-sidebar-scroll">
+          {sections.map((sec, si) => (
+            <div key={si}>
+              {sec.label && expanded && (
+                <p className="text-[10px] font-semibold uppercase tracking-wider px-3 pt-3 pb-1.5" style={{ color: '#4B5563' }}>{sec.label}</p>
+              )}
+              {sec.items.map(item => {
+                const active = activeDept === item.id
+                return (
+                  <button key={item.id}
+                    onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
+                    className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
+                    style={{
+                      backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
+                      color: active ? PRIMARY : '#9CA3AF',
+                      borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
+                      paddingLeft: expanded ? 12 : 0,
+                      justifyContent: expanded ? 'flex-start' : 'center',
+                    }}
+                    title={expanded ? undefined : item.label}>
+                    <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                    {expanded && <span className="truncate">{item.label}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
+        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+          {expanded && (
+            <div className="pb-3">
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
+              </a>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
+          <aside className="relative z-50 w-56 flex flex-col" style={{ backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+              <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>NAVIGATION</span>
+              <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
+            </div>
+            <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto football-sidebar-scroll">
+              {SIDEBAR_ITEMS.map(item => {
+                const active = activeDept === item.id
+                return (
+                  <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full"
+                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF' }}>
+                    <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                )
+              })}
+            </nav>
+            <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
+              </a>
+            </div>
+          </aside>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Personal Banner ─────────────────────────────────────────────────────────
+
+function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void
+}) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const [bg] = useState(() => BG_GRADIENTS[new Date().getDay()])
+  const { speak, stop, isPlaying } = useSpeech()
+  const [quote, setQuote] = useState(FOOTBALL_QUOTES[0])
+  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
+
+  useEffect(() => {
+    const start = new Date(new Date().getFullYear(), 0, 1).getTime()
+    const dayOfYear = Math.floor((Date.now() - start) / 86400000)
+    setQuote(FOOTBALL_QUOTES[dayOfYear % FOOTBALL_QUOTES.length])
+  }, [])
+
+  useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
+
+  const { isListening, lastCommand, startListening, stopListening } = useFootballVoiceCommands()
+
+  useEffect(() => {
+    if (!lastCommand) return
+    speak(lastCommand.response)
+    if (lastCommand.action === 'PLAY_BRIEFING') {
+      setTimeout(() => handleBriefing(), 1800)
+    } else if (lastCommand.action === 'STOP_AUDIO') {
+      stop()
+    }
+    if (onVoiceCommand) onVoiceCommand(lastCommand)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastCommand])
+
+  function handleBriefing() {
+    if (isPlaying) { stop(); return }
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+    const openingLine = FOOTBALL_OPENING_LINES[dayOfYear % FOOTBALL_OPENING_LINES.length]
+    const closingLine = FOOTBALL_CLOSING_LINES[dayOfYear % FOOTBALL_CLOSING_LINES.length]
+    const fitCount = SQUAD.filter(p => p.fitness === 'fit').length
+    const injuredCount = SQUAD.filter(p => p.fitness === 'injured').length
+    const script = `${greeting}, ${firstName || 'gaffer'}. ${openingLine} You have ${fitCount} players fit for selection, ${injuredCount} injured, and 1 suspended. ${FIXTURES[0] ? `Next match: ${FIXTURES[0].opponent} on ${FIXTURES[0].date} at ${FIXTURES[0].time}, ${FIXTURES[0].venue}.` : ''} ${closingLine}`
+    speak(script)
+  }
+
+  const fitCount = SQUAD.filter(p => p.fitness === 'fit').length
+  const injuredCount = SQUAD.filter(p => p.fitness === 'injured').length
+  const suspendedCount = SQUAD.filter(p => p.fitness === 'suspended').length
+
+  return (
+    <>
+      <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-red-600 rounded-full opacity-10 blur-3xl" />
+        <div className="relative z-10 px-6 py-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'gaffer'} ⚽</h1>
+                <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(192,57,43,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(192,57,43,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#E74C3C' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                  <Volume2 size={15} strokeWidth={1.75} />
+                </button>
+                <button
+                  onClick={() => isListening ? stopListening() : startListening()}
+                  title={isListening ? 'Listening...' : "Voice Commands — say 'who\\'s fit' or 'transfer budget'"}
+                  className="flex items-center justify-center rounded-lg transition-all"
+                  style={{
+                    width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
+                    backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                    border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                    color: isListening ? '#EF4444' : '#F9FAFB',
+                    animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                  }}>
+                  <Mic size={14} strokeWidth={1.75} />
+                </button>
+              </div>
+              <p className="text-red-300 text-sm mb-2">{date}</p>
+              <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {[
+                { label: 'Squad', value: SQUAD.length, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '👥' },
+                { label: 'Fit', value: fitCount, color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
+                { label: 'Injured', value: injuredCount, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🏥' },
+                { label: 'Suspended', value: suspendedCount, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '🟨' },
+              ].map(item => (
+                <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-lg font-black text-white">{item.value}</span>
+                  <span className="text-xs opacity-70">{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-start gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                <span className="text-3xl">{weather.icon}</span>
+                <div>
+                  <div className="text-xl font-black text-white">{weather.temp}</div>
+                  <div className="text-xs text-red-300">{weather.condition}</div>
+                </div>
+              </div>
+              <WorldClock />
+            </div>
+          </div>
+        </div>
+      </div>
+      {isListening && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          backgroundColor: '#111318', border: '1px solid #EF4444',
+          borderRadius: 999, padding: '8px 20px', zIndex: 50,
+          display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
+          Listening... say a command
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Quick Actions Bar ──────────────────────────────────────────────────────
+
+const FOOTBALL_QUICK_ACTIONS = [
+  { label: 'Team Sheet', icon: Clipboard },
+  { label: 'Log Injury', icon: Heart },
+  { label: 'Send Email', icon: MessageSquare },
+  { label: 'Transfer Hub', icon: ArrowUpDown },
+  { label: 'Book Video Room', icon: Video },
+  { label: 'Press Conf', icon: Newspaper },
+  { label: 'Training Plan', icon: Activity },
+  { label: 'Scout Report', icon: Eye },
+  { label: 'Board Report', icon: Briefcase },
+  { label: 'Dept Insights', icon: BarChart3 },
+]
+
+function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+      <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+      {FOOTBALL_QUICK_ACTIONS.map(a => (
+        <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
+          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+          <a.icon size={12} />{a.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ─── Tab Bar ─────────────────────────────────────────────────────────────────
+
+const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'today', label: 'Today', icon: '🏠' },
+  { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
+  { id: 'match-week', label: 'Match Week', icon: '⚽' },
+  { id: 'insights', label: 'Insights', icon: '📊' },
+  { id: 'dont-miss', label: "Don't Miss", icon: '🔴' },
+  { id: 'staff', label: 'Staff', icon: '👥' },
+  { id: 'team-info', label: 'Team Info', icon: '🃏' },
+]
+
+function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
+  return (
+    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+      <div className="flex items-center gap-0 min-w-max px-2">
+        {OVERVIEW_TABS.map(t => (
+          <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{ borderBottomColor: tab === t.id ? '#C0392B' : 'transparent', color: tab === t.id ? '#E74C3C' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(192,57,43,0.05)' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Morning Roundup (Football) ─────────────────────────────────────────────
+
+function MorningRoundup() {
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [replied, setReplied] = useState<string[]>([])
+  const [replyText, setReplyText] = useState<Record<string, string>>({})
+  const [showReply, setShowReply] = useState<string | null>(null)
+
+  function handleReply(msgId: string) {
+    if (replyText[msgId]?.trim()) {
+      setReplied(r => [...r, msgId])
+      setShowReply(null)
+      setReplyText(t => ({ ...t, [msgId]: '' }))
+    }
+  }
+
+  return (
+    <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
+        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+      </div>
+      <div className="space-y-2">
+        {FOOTBALL_ROUNDUP_ITEMS.map(item => {
+          const isOpen = expanded === item.id
+          return (
+            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+              <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
+                  {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-2">
+                  {item.messages.map(msg => (
+                    <div key={msg.id} className="rounded-lg p-3 relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.75 : 1 }}>
+                      {!msg.read && <span className="absolute top-2 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#C0392B', color: '#fff' }}>Unread</span>}
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: item.color + '22', color: item.color }}>
+                            {msg.avatar}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`text-xs truncate ${msg.read ? 'font-normal' : 'font-bold'}`} style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              {!msg.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />}
+                              {msg.urgent && <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171', fontSize: 10 }}>Urgent</span>}
+                            </div>
+                            <div className={`text-xs ${msg.read ? 'font-normal' : 'font-semibold'}`} style={{ color: msg.read ? '#6B7280' : '#D1D5DB' }}>{msg.subject}</div>
+                          </div>
+                        </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                      </div>
+                      <p className="text-xs mb-2 leading-relaxed" style={{ color: '#9CA3AF' }}>{msg.preview}</p>
+                      <EmailActions msgId={msg.id} source="outlook" senderEmail={msg.from} subject={msg.subject} preview={msg.preview} isRead={msg.read} onToast={() => {}} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Fixtures Panel ─────────────────────────────────────────────────────────
+
+function FixturesPanel() {
+  return (
+    <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 This Week&apos;s Fixtures</h3>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{FIXTURES.length} matches</span>
+      </div>
+      <div className="space-y-3">
+        {FIXTURES.map((f, i) => (
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(192,57,43,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(192,57,43,0.25)' : '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+                <span className="text-sm font-bold" style={{ color: i === 0 ? '#E74C3C' : '#F9FAFB' }}>{f.opponent}</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>
+                {f.venue}
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-xs" style={{ color: '#9CA3AF' }}>
+              <span>{f.date}</span>
+              <span>{f.time} KO</span>
+              <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>{f.competition}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 pt-3" style={{ borderTop: '1px solid #1F2937' }}>
+        <div className="text-xs" style={{ color: '#6B7280' }}>
+          <span className="font-semibold" style={{ color: '#9CA3AF' }}>Team Sheet Deadline:</span> Thursday 5pm for Saturday&apos;s match
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Photo Frame ─────────────────────────────────────────────────────────────
+
+const DEMO_PHOTOS = [
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+]
+
+function PhotoFrame() {
+  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return DEMO_PHOTOS })
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [intervalSecs, setIntervalSecs] = useState(5)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [photoPositions, setPhotoPositions] = useState<Record<number, { x: number; y: number }>>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-positions') : null; return s ? JSON.parse(s) : {} } catch { return {} } })
+  const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
+  const [hoveringFrame, setHoveringFrame] = useState(false)
+  const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const isDragging = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const posStartRef = useRef({ x: 50, y: 50 })
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [isPlaying, photos.length, intervalSecs])
+  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+
+  function onDragStart(cx: number, cy: number) {
+    isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
+    posStartRef.current = photoPositions[currentIdx] || { x: 50, y: 50 }
+    if (!hasEverDragged) { setHasEverDragged(true); localStorage.setItem('lumio-photo-dragged', 'true') }
+  }
+  function onDragMove(cx: number, cy: number, el: HTMLElement) {
+    if (!isDragging.current) return
+    const r = el.getBoundingClientRect()
+    const dx = (cx - dragStartRef.current.x) / r.width * 100
+    const dy = (cy - dragStartRef.current.y) / r.height * 100
+    setPhotoPositions(p => ({ ...p, [currentIdx]: { x: Math.min(100, Math.max(0, posStartRef.current.x - dx)), y: Math.min(100, Math.max(0, posStartRef.current.y - dy)) } }))
+  }
+  function onDragEnd() { isDragging.current = false }
+  function resetPosition() { setPhotoPositions(p => { const n = { ...p }; delete n[currentIdx]; return n }) }
+  const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
+
+  return (
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+        <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
+        <div className="flex items-center gap-2">
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
+        </div>
+      </div>
+      {photos.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
+        </div>
+      ) : (
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+        onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
+        onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
+        onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
+        onMouseUp={onDragEnd}
+        onTouchStart={e => { const t = e.touches[0]; if (t) onDragStart(t.clientX, t.clientY) }}
+        onTouchMove={e => { const t = e.touches[0]; if (t) onDragMove(t.clientX, t.clientY, e.currentTarget as HTMLElement) }}
+        onTouchEnd={onDragEnd}>
+        <img src={photos[currentIdx]} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, position: 'absolute', inset: 0, pointerEvents: 'none', transition: isDragging.current ? 'none' : 'object-position 0.15s ease', userSelect: 'none' }} />
+        {photos.length > 1 && (<>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + photos.length) % photos.length) }} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'‹'}</button>
+          <button onClick={e => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % photos.length) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center" style={{ width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12 }}>{'›'}</button>
+        </>)}
+        <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
+        {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
+        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+      </div>
+      )}
+      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
+        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+            Google Photos ✦
+          </button>
+          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
+            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+            iCloud ✦
+          </button>
+        </div>
+      </div>
+      {showCloudModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
+          <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>{showCloudModal === 'google' ? '📸' : '☁️'}</div>
+            <h3 style={{ color: '#F9FAFB', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>{showCloudModal === 'google' ? 'Google Photos' : 'iCloud Photos'}</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>Connect your {showCloudModal === 'google' ? 'Google Photos' : 'iCloud'} to import photos directly into your frame. Available in the next update — for now, upload photos directly using the + Add button above.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: '#1A1B23', borderRadius: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Notify me when available</span>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: '#0D9488', position: 'relative', cursor: 'pointer' }}><div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, right: 2 }} /></div>
+            </div>
+            <button onClick={() => setShowCloudModal(null)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#0D9488', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>Got it</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── AI Morning Summary ─────────────────────────────────────────────────────
+
+function MorningAIPanel() {
+  const [open, setOpen] = useState(true)
+  const now = new Date()
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const dayLabel = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`
+
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ border: '1px solid #C0392B' }}>
+      <button className="flex w-full items-center justify-between px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: open ? '1px solid rgba(192,57,43,0.3)' : undefined }} onClick={() => setOpen(v => !v)}>
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} style={{ color: '#C0392B' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Morning Summary</span>
+          <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{dayLabel}</span>
+        </div>
+        {open ? <ChevronUp size={14} style={{ color: '#C0392B' }} /> : <ChevronDown size={14} style={{ color: '#C0392B' }} />}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '12rem' }}>
+          {MORNING_HIGHLIGHTS_FOOTBALL.map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{item}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Stat Card ──────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
+  return (
+    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 90 }}>
+      <span className="text-xs truncate" style={{ color: '#9CA3AF' }}>{label}</span>
+      <div className="flex items-center justify-between w-full">
+        <div className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{value}</div>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}1a` }}>
+          <Icon size={14} style={{ color }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Status Badge ───────────────────────────────────────────────────────────
+
+function FitnessBadge({ status }: { status: FitnessStatus }) {
+  const cfg: Record<FitnessStatus, { label: string; color: string; bg: string }> = {
+    fit: { label: 'FIT', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+    injured: { label: 'INJURED', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+    suspended: { label: 'SUSPENDED', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+    modified: { label: 'MODIFIED', color: '#06B6D4', bg: 'rgba(6,182,212,0.12)' },
+    doubt: { label: 'DOUBT', color: '#F97316', bg: 'rgba(249,115,22,0.12)' },
+  }
+  const c = cfg[status]
+  return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold" style={{ color: c.color, backgroundColor: c.bg }}>{c.label}</span>
+}
+
+// ─── Workflow Activity Feed ─────────────────────────────────────────────────
+
+const WORKFLOW_FEED = [
+  { name: 'Pre-match analysis — Riverside United', status: 'COMPLETE' as const, ts: 'Just now' },
+  { name: 'Injury assessment — Santos', status: 'RUNNING' as const, ts: '3 min ago' },
+  { name: 'Transfer negotiation — Diallo', status: 'ACTION' as const, ts: '15 min ago' },
+  { name: 'Training load report — weekly', status: 'COMPLETE' as const, ts: '1 hr ago' },
+  { name: 'Academy performance review', status: 'COMPLETE' as const, ts: '2 hr ago' },
+  { name: 'Press conference prep — AI brief', status: 'COMPLETE' as const, ts: '3 hr ago' },
+  { name: 'Opposition scouting — Northgate City', status: 'RUNNING' as const, ts: '4 hr ago' },
+  { name: 'Matchday operations checklist', status: 'ACTION' as const, ts: 'Yesterday' },
+]
+
+type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
+
+function WFStatusBadge({ status }: { status: WFStatus }) {
+  const cfg = {
+    COMPLETE: { label: 'COMPLETE', color: '#22C55E', bg: 'rgba(34,197,94,0.12)', Icon: CheckCircle2 },
+    RUNNING: { label: 'RUNNING', color: '#C0392B', bg: 'rgba(192,57,43,0.12)', Icon: Loader2 },
+    ACTION: { label: 'ACTION', color: '#EF4444', bg: 'rgba(239,68,68,0.12)', Icon: AlertCircle },
+  }[status]
+  return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold" style={{ color: cfg.color, backgroundColor: cfg.bg }}><cfg.Icon size={11} /> {cfg.label}</span>
+}
+
+// ─── Tab Content Placeholder ────────────────────────────────────────────────
+
+function QWItem({ priority, title, desc, action }: { priority: '🔴' | '🟡' | '🟢'; title: string; desc: string; action: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <span className="text-lg mt-0.5">{priority}</span>
+      <div className="flex-1 min-w-0"><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{title}</p><p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{desc}</p></div>
+      <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>{action}</button>
+    </div>
+  )
+}
+
+function TabContent({ tab }: { tab: OverviewTab }) {
+  const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'>('today')
+  if (tab === 'today') return null // handled separately
+
+  if (tab === 'quick-wins') return (
+    <div className="space-y-3">
+      <QWItem priority="🔴" title="Tyler James contract — expires June" desc="No offer made yet. Board approval needed. Player could leave on free." action="Open Contract" />
+      <QWItem priority="🔴" title="GPS flags Okafor as overloaded" desc="3 consecutive high-load sessions. Rest recommended before Saturday." action="View Load" />
+      <QWItem priority="🟡" title="Agent for Diallo called twice" desc="Transfer interest from Championship rivals. Call back today." action="Log Call" />
+      <QWItem priority="🟡" title="Press conference prep — 2pm today" desc="AI notes ready but manager hasn't reviewed." action="View Prep" />
+      <QWItem priority="🟡" title="Tyler James eligible for first team squad" desc="Academy standout — include in squad for Saturday?" action="Add to Squad" />
+      <QWItem priority="🟢" title="Scout report on target overdue" desc="Report on Martinez (Valencia B) assigned to Clarke, 3 days overdue." action="Chase Scout" />
+      <QWItem priority="🟢" title="EPPP quarterly report — 80% complete" desc="Submission due Friday. Academy director needs to finalise." action="Complete Report" />
+      <QWItem priority="🟢" title="Kit sponsor deliverables" desc="2 social posts owed this month, 0 delivered." action="Schedule Posts" />
+    </div>
+  )
+
+  if (tab === 'match-week') return (
+    <div className="space-y-5">
+      {/* Match Card */}
+      <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #922B21, #C0392B)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <p className="text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>CHAMPIONSHIP · MATCHDAY 19</p>
+        <div className="flex items-center justify-center gap-6">
+          <div><p className="text-lg font-black text-white">Oakridge FC</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Home</p></div>
+          <div className="text-2xl font-black" style={{ color: '#F1C40F' }}>vs</div>
+          <div><p className="text-lg font-black text-white">Bristol City</p><p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Away</p></div>
+        </div>
+        <p className="text-sm mt-3 font-semibold text-white">Saturday 3:00pm · Bet365 Stadium</p>
+        <p className="text-xs mt-1" style={{ color: '#F1C40F' }}>3 days · 14 hours remaining</p>
+      </div>
+      {/* Preparation Timeline */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>Match Week Preparation</p>
+        {[
+          { day: 'Mon', status: '✅', tasks: 'Recovery session, opposition video sent to squad' },
+          { day: 'Tue', status: '✅', tasks: 'Tactical training, set piece work' },
+          { day: 'Wed', status: '🔄', tasks: 'Press conference 2pm, training 10am (TODAY)' },
+          { day: 'Thu', status: '⬜', tasks: 'Final preparation session, team meeting' },
+          { day: 'Fri', status: '⬜', tasks: "Travel/rest day, captain's meeting" },
+          { day: 'Sat', status: '⬜', tasks: 'MATCH DAY' },
+        ].map(d => (
+          <div key={d.day} className="flex items-center gap-3 py-2">
+            <span className="text-sm w-8 font-bold" style={{ color: '#C0392B' }}>{d.day}</span>
+            <span className="text-sm w-6">{d.status}</span>
+            <span className="text-xs flex-1" style={{ color: d.status === '⬜' ? '#6B7280' : '#D1D5DB', fontWeight: d.status === '🔄' ? 700 : 400 }}>{d.tasks}</span>
+          </div>
+        ))}
+      </div>
+      {/* Squad Availability */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
+        <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+          {SQUAD.map(p => (
+            <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+              <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+              <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Weather */}
+      <div className="rounded-xl p-4 flex items-center gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <span className="text-3xl">🌧️</span>
+        <div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Saturday 3pm — 12°C, Light rain</p><p className="text-xs" style={{ color: '#6B7280' }}>Wind 15mph NW · Pitch: Good</p></div>
+      </div>
+    </div>
+  )
+
+  if (tab === 'insights') return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        {[{ l: 'League Position', v: '8th', c: '#F1C40F' }, { l: 'Squad Value', v: '£34.2m', c: '#22C55E' }, { l: 'Transfer Budget', v: '£3.2m', c: '#C0392B' }, { l: 'Injury Rate', v: '12%', c: '#F59E0B' }, { l: 'Form (Last 5)', v: 'WWDLW', c: '#22C55E' }].map(s => (
+          <div key={s.l} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p>
+            <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{ emoji: '🟢', dept: 'Medical', status: '21 fit — healthy', color: '#22C55E' }, { emoji: '🟡', dept: 'Transfers', status: '2 targets, window 11 days', color: '#F59E0B' }, { emoji: '🔴', dept: 'Contracts', status: '3 expiring, no offers', color: '#EF4444' }, { emoji: '🟢', dept: 'Academy', status: 'EPPP 94% compliant', color: '#22C55E' }].map(d => (
+          <div key={d.dept} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${d.color}33` }}>
+            <div className="flex items-center gap-2 mb-1"><span>{d.emoji}</span><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{d.dept}</p></div>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>{d.status}</p>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Metrics</p>
+        <div className="grid grid-cols-2 gap-2">{[{ l: 'Top Scorer', v: 'Marcus Webb — 12 goals' }, { l: 'Clean Sheet Rate', v: '39% (7/18)' }, { l: 'Wage Budget Used', v: '91% (£187k/wk)' }, { l: 'Academy Ready', v: '2 players' }, { l: 'Fan NPS', v: '72/100' }, { l: 'Position Trend', v: '11→10→9→8→8' }].map(m => (
+          <div key={m.l} className="flex justify-between py-1.5 px-2 rounded" style={{ backgroundColor: '#0A0B10' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{m.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{m.v}</span></div>
+        ))}</div>
+      </div>
+    </div>
+  )
+
+  if (tab === 'dont-miss') return (
+    <div className="space-y-5">
+      {[
+        { level: '🔴 URGENT', items: ['Transfer deadline: 11 days remaining — Diallo bid not yet submitted. Rivals circling.', 'Tyler James contract expires June — no renewal offer. Player could leave on free.', 'Work permit application for Santos — deadline Friday or signing falls through.'] },
+        { level: '🟡 THIS WEEK', items: ['Mensah fitness: scan results back Thursday — decide if available Saturday.', 'Board meeting Thursday: DoF presentation on winter window activity required.', 'Kit manufacturer deadline: squad numbers and names for new kit by Friday.', 'FA registration: loan player window closes 5pm Thursday.'] },
+        { level: '🟢 THIS MONTH', items: ['Pre-season friendlies: 3 venues need confirming by month end.', 'Academy scholarship decisions: 4 players need contracts or release by 30th.', 'Annual accounts submission: finance team needs commercial data by 28th.'] },
+      ].map(group => (
+        <div key={group.level}>
+          <p className="text-xs font-bold mb-2" style={{ color: group.level.includes('URGENT') ? '#EF4444' : group.level.includes('WEEK') ? '#F59E0B' : '#22C55E' }}>{group.level}</p>
+          <div className="space-y-2">{group.items.map((item, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-xs mt-0.5">{group.level.includes('URGENT') ? '🔴' : group.level.includes('WEEK') ? '🟡' : '🟢'}</span>
+              <p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p>
+            </div>
+          ))}</div>
+        </div>
+      ))}
+    </div>
+  )
+
+  if (tab === 'staff') return (
+    <div className="space-y-5">
+      {/* Sub-tab pills */}
+      <div className="flex gap-2">
+        {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
+          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
+            style={{ backgroundColor: activeStaffTab === t.id ? '#C0392B' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ═══ STAFF TODAY ═══ */}
+      {activeStaffTab === 'today' && <>
+        <div><h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Staff Today</h2><p className="text-xs" style={{ color: '#6B7280' }}>12 staff · 2 away · 0 alerts</p></div>
+        <div className="flex gap-1 flex-wrap">
+          {['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Scouting', 'Academy'].map(f => (
+            <button key={f} className="px-3 py-1.5 text-xs font-bold rounded-xl" style={{ backgroundColor: f === 'All' ? '#C0392B' : 'rgba(255,255,255,0.05)', color: f === 'All' ? '#fff' : '#6B7280' }}>{f}</button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {[
+            { name: 'Marcus Reid', role: 'Head Coach', dept: 'Coaching', status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Your manager', color: '#C0392B' },
+            { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', status: 'In today', location: 'Training ground', rel: 'Works closely with you', color: '#C0392B' },
+            { name: 'Dr Sarah Phillips', role: 'Club Doctor', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Pete Morrison', role: 'Head Physio', dept: 'Medical', status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept', color: '#2980B9' },
+            { name: 'Dave Thompson', role: 'Head of Recruitment', dept: 'Scouting', status: 'In today', location: 'Office + scout trip tomorrow', rel: 'Direct report', color: '#F39C12' },
+            { name: 'Ian Brooks', role: 'Academy Director', dept: 'Academy', status: 'In today', location: 'Academy building', rel: 'Direct report', color: '#27AE60' },
+            { name: 'Steve Walsh', role: 'Chief Scout', dept: 'Scouting', status: 'Away', location: 'Valencia scouting trip', rel: 'Scouting dept', color: '#F39C12' },
+            { name: 'Lisa Chen', role: 'Sports Scientist', dept: 'Performance', status: 'Away', location: 'Conference — back Thursday', rel: 'Performance dept', color: '#8E44AD' },
+            { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', status: 'In today', location: 'Analysis suite', rel: 'Analytics dept', color: '#8E44AD' },
+            { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', status: 'Away', location: 'UEFA Pro Licence course Mon-Wed', rel: 'Coaching dept', color: '#C0392B' },
+            { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept', color: '#8E44AD' },
+            { name: 'Mark Evans', role: 'Scout', dept: 'Scouting', status: 'In today', location: 'Office', rel: 'Scouting dept', color: '#F39C12' },
+          ].map(m => (
+            <div key={m.name} className="rounded-2xl p-4 cursor-pointer transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: m.status === 'In today' ? '#22C55E' : '#F59E0B', borderColor: '#111318' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2"><span className="font-bold text-sm truncate" style={{ color: '#E5E7EB' }}>{m.name}</span></div>
+                  <p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.role} · {m.dept}</p>
+                  <div className="flex gap-1 mt-1"><span className="text-xs font-medium" style={{ color: m.status === 'In today' ? '#4ADE80' : '#FBBF24' }}>{m.status}</span><span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{m.rel}</span></div>
+                  <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{m.location}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Staff Events</p>
+          {['Board meeting Thursday 2pm', 'Staff reviews: Clarke, Morrison — end of month', 'New analyst starts Monday'].map(e => (
+            <p key={e} className="text-xs py-1" style={{ color: '#D1D5DB' }}>📅 {e}</p>
+          ))}
+        </div>
+      </>}
+
+      {/* ═══ ORG CHART ═══ */}
+      {activeStaffTab === 'orgchart' && (
+        <div>
+          <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Club Organisation</h2>
+          <div className="flex justify-center mb-8">
+            <div className="rounded-xl p-4 text-center cursor-pointer w-48" style={{ backgroundColor: '#111318', border: '2px solid #7F8C8D' }}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(127,140,141,0.2)', color: '#7F8C8D' }}>RB</div>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Robert Blackwell</p>
+              <p className="text-[10px]" style={{ color: '#7F8C8D' }}>Chairman</p>
+            </div>
+          </div>
+          <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
+          <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '40%' }} /></div>
+          <div className="flex justify-center gap-6 mb-4">
+            {[{ name: 'Dave Thompson', role: 'Director of Football', color: '#F39C12' }, { name: 'Marcus Reid', role: 'Head Coach', color: '#C0392B' }].map(m => (
+              <div key={m.name} className="flex flex-col items-center">
+                <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
+                <div className="rounded-xl p-3 text-center cursor-pointer w-44" style={{ backgroundColor: '#111318', border: `1px solid ${m.color}` }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                  <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
+                  <p className="text-[10px] truncate" style={{ color: m.color }}>{m.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3 pl-4">
+            {[
+              { name: 'David Hughes', role: 'Asst Manager', color: '#C0392B' },
+              { name: 'Alan Cooper', role: 'GK Coach', color: '#C0392B' },
+              { name: 'Tom Wallace', role: 'Fitness Coach', color: '#8E44AD' },
+              { name: 'Lisa Chen', role: 'Sports Scientist', color: '#8E44AD' },
+              { name: 'Emma Clark', role: 'Analyst', color: '#8E44AD' },
+              { name: 'Dr Sarah Phillips', role: 'Club Doctor', color: '#2980B9' },
+              { name: 'Pete Morrison', role: 'Head Physio', color: '#2980B9' },
+              { name: 'Steve Walsh', role: 'Chief Scout', color: '#F39C12' },
+              { name: 'Ian Brooks', role: 'Academy Director', color: '#27AE60' },
+            ].map(m => (
+              <div key={m.name} className="rounded-xl p-3 text-center cursor-pointer" style={{ backgroundColor: '#0A0B10', border: `1px solid ${m.color}40` }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                <p className="text-xs font-medium truncate" style={{ color: '#D1D5DB' }}>{m.name}</p>
+                <p className="text-[10px] truncate" style={{ color: m.color }}>{m.role}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 justify-center mt-6 flex-wrap">
+            {[['#C0392B','Coaching'],['#2980B9','Medical'],['#F39C12','Scouting'],['#27AE60','Academy'],['#8E44AD','Performance']].map(([c,l]) => (
+              <div key={l} className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />{l}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CLUB INFO ═══ */}
+      {activeStaffTab === 'clubinfo' && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Info</h2>
+          <div>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Documents</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { icon: '📋', title: 'Staff Code of Conduct', desc: 'Professional standards and disciplinary procedures' },
+                { icon: '🏥', title: 'Medical & Welfare', desc: 'Player medical confidentiality and treatment protocols' },
+                { icon: '🔒', title: 'Data & GDPR', desc: 'Player data handling and scouting database compliance' },
+                { icon: '💰', title: 'Expenses & Travel', desc: 'Away trips, scouting travel and meal allowances' },
+                { icon: '🎓', title: 'Coaching & CPD', desc: 'UEFA licence requirements and CPD policy' },
+                { icon: '🤝', title: 'Agent Policy', desc: 'FA regulations on agent contacts and disclosure' },
+                { icon: '📱', title: 'Media & Social', desc: 'What staff can post and player privacy rules' },
+                { icon: '👔', title: 'Employment', desc: 'Staff contracts, notice periods and exit procedures' },
+              ].map(p => (
+                <div key={p.title} className="rounded-xl p-4 cursor-pointer transition-all hover:border-[#C0392B]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <span className="text-2xl block mb-2">{p.icon}</span>
+                  <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{p.title}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
+              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+                <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Key Contacts</p>
+              {[['Chairman','Robert Blackwell'],['Director of Football','Dave Thompson'],['Head Coach','Marcus Reid'],['Club Doctor','Dr Sarah Phillips'],['Club Secretary','James Morton'],['Media Manager','Claire Hughes']].map(([r,n]) => (
+                <div key={r} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{r}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{n}</span></div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming This Month</p>
+            {[['🎂','Pete Morrison','Birthday 3 Apr'],['🎉','David Hughes','5 year club anniversary 8 Apr'],['🎂','Emma Clark','Birthday 22 Apr']].map(([icon,name,event]) => (
+              <p key={name} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{icon} {name} — {event}</p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  if (tab === 'team-info') return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+      <p className="text-xs" style={{ color: '#6B7280' }}>Player cards — first team squad</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { name: 'Marcus Reid', role: 'ST', overall: 87, color: '#C0392B', avatar: 'MR', stats: { PAC: 91, SHO: 88, PAS: 72, DRI: 84, DEF: 35, PHY: 79 } },
+          { name: 'Jamie Torres', role: 'CM', overall: 84, color: '#0D9488', avatar: 'JT', stats: { PAC: 78, SHO: 71, PAS: 89, DRI: 82, DEF: 68, PHY: 74 } },
+          { name: 'Kyle Brennan', role: 'CB', overall: 82, color: '#1B3060', avatar: 'KB', stats: { PAC: 72, SHO: 42, PAS: 68, DRI: 61, DEF: 89, PHY: 86 } },
+          { name: 'Sam Fletcher', role: 'GK', overall: 79, color: '#22C55E', avatar: 'SF', stats: { PAC: 55, SHO: 28, PAS: 65, DRI: 48, DEF: 82, PHY: 83 } },
+          { name: 'Dele Adeyemi', role: 'LW', overall: 85, color: '#7C3AED', avatar: 'DA', stats: { PAC: 93, SHO: 79, PAS: 81, DRI: 90, DEF: 41, PHY: 72 } },
+          { name: 'Ryan Cole', role: 'RB', overall: 81, color: '#EF4444', avatar: 'RC', stats: { PAC: 82, SHO: 55, PAS: 74, DRI: 78, DEF: 81, PHY: 80 } },
+        ].map(card => (
+          <div key={card.name} className="rounded-2xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${card.color}20 0%, #111318 60%)`, border: `1px solid ${card.color}40` }}>
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-3xl font-black" style={{ color: card.color }}>{card.overall}</p>
+                  <p className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>{card.role}</p>
+                </div>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: card.color + '25', color: card.color, border: `2px solid ${card.color}50` }}>{card.avatar}</div>
+              </div>
+              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{card.name}</p>
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>{card.role === 'ST' ? 'Striker' : card.role === 'CM' ? 'Midfielder' : card.role === 'CB' ? 'Centre Back' : card.role === 'GK' ? 'Goalkeeper' : card.role === 'LW' ? 'Left Wing' : 'Right Back'}</p>
+            </div>
+            <div className="grid grid-cols-6 gap-px mx-4 mb-3" style={{ backgroundColor: '#1F2937', borderRadius: 8, overflow: 'hidden' }}>
+              {Object.entries(card.stats).map(([key, val]) => (
+                <div key={key} className="flex flex-col items-center py-2" style={{ backgroundColor: '#0A0B10' }}>
+                  <span className="text-[10px] font-bold" style={{ color: val >= 85 ? '#22C55E' : val >= 70 ? '#F59E0B' : '#9CA3AF' }}>{val}</span>
+                  <span className="text-[8px] font-semibold" style={{ color: '#4B5563' }}>{key}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 px-4 pb-4">
+              <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: card.color + '20', color: card.color, border: `1px solid ${card.color}40` }}>Message</button>
+              <button className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Profile</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return null
+}
+
+// ─── Overview View ──────────────────────────────────────────────────────────
+
+function OverviewView({ clubName, firstName, onAction }: { clubName: string; firstName?: string; onAction: (msg: string) => void }) {
+  const [tab, setTab] = useState<OverviewTab>('today')
+
+  function handleVoiceCommand(cmd: FootballCommandResult) {
+    onAction(cmd.response)
+  }
+
+  return (
+    <div className="space-y-4">
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
+      <TabBar tab={tab} onChange={setTab} />
+
+      {tab === 'today' ? (
+        <div className="space-y-4">
+          <QuickActionsBar onAction={onAction} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <div className="lg:col-span-1 flex flex-col">
+              <MorningRoundup />
+            </div>
+            <div className="lg:col-span-1 flex flex-col">
+              <FixturesPanel />
+            </div>
+            <div className="lg:col-span-1 flex flex-col gap-4">
+              <PhotoFrame />
+              <MorningAIPanel />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#C0392B" />
+                <StatCard label="Fit Players" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
+                <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#F59E0B" />
+                <StatCard label="Next Match" value={FIXTURES[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
+                  <span className="text-xs" style={{ color: '#C0392B' }}>Live</span>
+                </div>
+                {WORKFLOW_FEED.map((run, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < WORKFLOW_FEED.length - 1 ? '1px solid #1F2937' : undefined }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <WFStatusBadge status={run.status} />
+                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <TabContent tab={tab} />
+      )}
+    </div>
+  )
+}
+
+// ─── Placeholder Department View ────────────────────────────────────────────
+
+function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, onActionClick, children }: {
+  title: string
+  subtitle: string
+  stats: { label: string; value: string; icon: React.ElementType; color: string }[]
+  highlights: string[]
+  actionButtons?: { label: string; icon: React.ElementType }[]
+  onActionClick?: (label: string) => void
+  children?: React.ReactNode
+}) {
+  const [toast, setToast] = useState<string | null>(null)
+  function handleAction(label: string) {
+    if (onActionClick) { onActionClick(label); return }
+    setToast(`${label} — opening workflow...`)
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>{title}</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>{subtitle}</p>
+      </div>
+
+      {/* Quick Actions — always at the top */}
+      {actionButtons && actionButtons.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {actionButtons.map((a, i) => (
+            <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+              <a.icon size={12} />{a.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {stats.map((s, i) => (
+          <StatCard key={i} label={s.label} value={s.value} icon={s.icon} color={s.color} />
+        ))}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
+        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
+          <Sparkles size={14} style={{ color: '#C0392B' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        </div>
+        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          {highlights.map((h, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {children && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          {children}
+        </div>
+      )}
+
+      {toast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{toast}</div>}
+    </div>
+  )
+}
+
+// ─── Insights View (8 Role-Based Dashboards) ────────────────────────────────
+
+const ROLES = [
+  { id: 'dof', emoji: '👔', title: 'Director of Football', summary: 'Transfers & Squad' },
+  { id: 'chairman', emoji: '🧑‍💼', title: 'Chairman / CEO', summary: 'Finance & Strategy' },
+  { id: 'coach', emoji: '⚽', title: 'Head Coach', summary: 'Squad & Tactics' },
+  { id: 'medical', emoji: '🏥', title: 'Head of Medical', summary: 'Injuries & Load' },
+  { id: 'recruitment', emoji: '🔭', title: 'Head of Recruitment', summary: 'Targets & Scouts' },
+  { id: 'academy', emoji: '🎓', title: 'Academy Director', summary: 'Youth & EPPP' },
+  { id: 'analysis', emoji: '📊', title: 'Head of Analysis', summary: 'xG & Tactics' },
+  { id: 'commercial', emoji: '📣', title: 'Commercial Director', summary: 'Revenue & Sponsors' },
+]
+
+function InsightCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{label}</p>
+      <p className="text-2xl font-black" style={{ color: color || '#F9FAFB' }}>{value}</p>
+      {sub && <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{sub}</p>}
+    </div>
+  )
+}
+
+function InsightTable({ cols, rows }: { cols: string[]; rows: (string | React.ReactNode)[][] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+      <table className="w-full text-sm">
+        <thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>
+          {cols.map(c => <th key={c} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: '#6B7280' }}>{c}</th>)}
+        </tr></thead>
+        <tbody>{rows.map((row, i) => (
+          <tr key={i} style={{ borderBottom: i < rows.length - 1 ? '1px solid #1F2937' : 'none' }}>
+            {row.map((cell, j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : '#9CA3AF' }}>{cell}</td>)}
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
+}
+
+function InsightsView() {
+  const [role, setRole] = useState('dof')
+  const [range, setRange] = useState('season')
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Club Intelligence</h1>
+          <p className="text-xs" style={{ color: '#6B7280' }}>Everything your club needs to know — by role, by department, by moment</p>
+        </div>
+        <div className="flex gap-2">
+          {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['season', 'This Season']].map(([k, l]) => (
+            <button key={k} onClick={() => setRange(k)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: range === k ? '#C0392B' : '#111318', color: range === k ? '#F9FAFB' : '#9CA3AF', border: range === k ? 'none' : '1px solid #1F2937' }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Role Selector */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {ROLES.map(r => (
+          <button key={r.id} onClick={() => setRole(r.id)} className="rounded-xl p-4 text-left transition-all"
+            style={{ backgroundColor: role === r.id ? 'rgba(192,57,43,0.12)' : '#111318', border: role === r.id ? '2px solid #C0392B' : '1px solid #1F2937' }}>
+            <span className="text-2xl block mb-2">{r.emoji}</span>
+            <p className="text-sm font-bold" style={{ color: role === r.id ? '#F1C40F' : '#F9FAFB' }}>{r.title}</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>{r.summary}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* ── DIRECTOR OF FOOTBALL ── */}
+      {role === 'dof' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="League Position" value="8th" sub="Championship" color="#F1C40F" />
+          <InsightCard label="Squad Value" value="£34.2m" sub="↑ 12% vs start of season" color="#22C55E" />
+          <InsightCard label="Net Transfer Spend" value="-£2.1m" sub="Sales £4.8m · Purchases £6.9m" />
+          <InsightCard label="Window Closes" value="11 days" color="#EF4444" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Overview</p>
+            {[{ label: 'Fitness', values: [{ l: 'Fit', v: 21, c: '#22C55E' }, { l: 'Injured', v: 3, c: '#EF4444' }, { l: 'Suspended', v: 1, c: '#F59E0B' }] },
+              { label: 'Contracts', values: [{ l: 'Expiring', v: 8, c: '#EF4444' }, { l: 'Negotiating', v: 4, c: '#F59E0B' }, { l: 'Secure', v: 13, c: '#22C55E' }] },
+              { label: 'Age Profile', values: [{ l: 'U21', v: 6, c: '#22D3EE' }, { l: '21-25', v: 8, c: '#0D9488' }, { l: '26-30', v: 9, c: '#8B5CF6' }, { l: '30+', v: 2, c: '#6B7280' }] },
+            ].map(row => (
+              <div key={row.label} className="mb-3">
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{row.label}</p>
+                <div className="flex h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                  {row.values.map(v => <div key={v.l} style={{ width: `${(v.v / 25) * 100}%`, backgroundColor: v.c }} title={`${v.l}: ${v.v}`} />)}
+                </div>
+                <div className="flex gap-3 mt-1">{row.values.map(v => <span key={v.l} className="text-[10px]" style={{ color: v.c }}>{v.l}: {v.v}</span>)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Financial Snapshot</p>
+            {[{ l: 'Weekly Wage Bill', v: '£187,000', s: 'Budget: £200,000', pct: 94 }, { l: 'Transfer Budget Used', v: '£4.8m of £8m', s: '£3.2m remaining', pct: 60 }, { l: 'Commercial Revenue', v: '£2.1m', s: 'Target: £2.8m (75%)', pct: 75 }].map(f => (
+              <div key={f.l} className="mb-3">
+                <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{f.l}</span><span style={{ color: '#F9FAFB' }}>{f.v}</span></div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${f.pct}%`, backgroundColor: f.pct > 90 ? '#EF4444' : f.pct > 75 ? '#F59E0B' : '#22C55E' }} /></div>
+                <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.s}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <InsightTable cols={['Target', 'Position', 'Club', 'Value', 'Status', 'Agent', 'Deadline']}
+          rows={SCOUT_TARGETS.map(t => [t.name, t.position, t.club, t.value, <span key={t.name} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: t.status === 'Bid Submitted' ? 'rgba(239,68,68,0.12)' : t.status === 'Approached' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)', color: t.status === 'Bid Submitted' ? '#EF4444' : t.status === 'Approached' ? '#F59E0B' : '#6B7280' }}>{t.status}</span>, 'CAA Base', '11 days'])} />
+      </>}
+
+      {/* ── HEAD COACH ── */}
+      {role === 'coach' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Next Match" value="Saturday 3pm" sub="vs Bristol City (H)" color="#C0392B" />
+          <InsightCard label="Days to Match" value="4" />
+          <InsightCard label="Squad Available" value="21 / 25" sub="3 injured, 1 suspended" />
+          <InsightCard label="Last Result" value="W 2-1" sub="vs Riverside United" color="#22C55E" />
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability</p>
+          <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+            {SQUAD.map(p => (
+              <div key={p.name} className="rounded-lg p-2 text-center" style={{ backgroundColor: p.fitness === 'fit' ? 'rgba(34,197,94,0.08)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${p.fitness === 'fit' ? 'rgba(34,197,94,0.2)' : p.fitness === 'doubt' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+                <p className="text-xs font-bold" style={{ color: p.fitness === 'fit' ? '#22C55E' : p.fitness === 'doubt' ? '#F59E0B' : '#EF4444' }}>{p.number}</p>
+                <p className="text-[10px] truncate" style={{ color: '#D1D5DB' }}>{p.name.split(' ').pop()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Form — Last 5</p>
+            <div className="flex gap-2">{RECENT_FORM.map((r, i) => (
+              <div key={i} className="flex-1 rounded-lg p-3 text-center" style={{ backgroundColor: r.result === 'W' ? 'rgba(34,197,94,0.08)' : r.result === 'D' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                <p className="text-lg font-black" style={{ color: r.result === 'W' ? '#22C55E' : r.result === 'D' ? '#F59E0B' : '#EF4444' }}>{r.result}</p>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{r.score}</p>
+                <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{r.opponent}</p>
+              </div>
+            ))}</div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Season Stats</p>
+            <div className="grid grid-cols-4 gap-2">{[{ l: 'xG For', v: '28.4', c: '#22C55E' }, { l: 'xG Against', v: '22.1', c: '#EF4444' }, { l: 'Possession', v: '52%' }, { l: 'Clean Sheets', v: '7' }].map(s => (
+              <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: s.c || '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+            ))}</div>
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Opposition — Bristol City</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div><p className="text-xs font-bold mb-2" style={{ color: '#C0392B' }}>THEIR THREATS</p>{['Top scorer: A. Wells (12 goals)', 'Set piece danger from corners', 'Fast counter-attack through right side'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>⚠️ {t}</p>)}</div>
+            <div><p className="text-xs font-bold mb-2" style={{ color: '#22C55E' }}>THEIR WEAKNESSES</p>{['Poor defending from crosses (12 goals conceded)', 'Slow build-up on left side', 'Vulnerable to high press (9.2 PPDA)'].map(t => <p key={t} className="text-xs mb-1" style={{ color: '#D1D5DB' }}>✅ {t}</p>)}</div>
+          </div>
+        </div>
+      </>}
+
+      {/* ── HEAD OF MEDICAL ── */}
+      {role === 'medical' && <>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <InsightCard label="Currently Injured" value="3" color="#EF4444" />
+          <InsightCard label="In Rehab" value="2" />
+          <InsightCard label="Returning This Week" value="1" color="#22C55E" />
+          <InsightCard label="Days Lost (Season)" value="47" />
+          <InsightCard label="Injury Cost Est." value="£284k" sub="Wages during absence" color="#F59E0B" />
+        </div>
+        <InsightTable cols={['Player', 'Injury', 'Phase', 'Injured', 'Expected Return', 'Missed', 'Physio']}
+          rows={INJURIES.map(inj => [inj.player, inj.type, <span key={inj.player} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>{inj.phase || 'Rehab'}</span>, inj.since || '12 Mar', inj.expectedReturn, `${inj.matchesMissed || 3}`, 'Dr. J. Williams'])} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>GPS Load — Last Session</p>
+          <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Distance', 'Hi-Speed', 'Sprints', 'Max Speed', 'Load'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+          <tbody>{GPS_DATA.map(g => <tr key={g.player} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{g.player}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.distance}km</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.hiSpeed}m</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.sprints}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{g.maxSpeed}km/h</td><td className="px-3 py-2"><span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: g.load === 'optimal' ? 'rgba(34,197,94,0.12)' : g.load === 'high' ? 'rgba(245,158,11,0.12)' : g.load === 'overload' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : g.load === 'overload' ? '#EF4444' : '#F59E0B' }}>{g.load}</span></td></tr>)}</tbody></table></div>
+        </div>
+      </>}
+
+      {/* ── HEAD OF RECRUITMENT ── */}
+      {role === 'recruitment' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Active Targets" value="5" />
+          <InsightCard label="Bid Submitted" value="1" color="#EF4444" />
+          <InsightCard label="Budget Remaining" value="£3.2m" color="#22C55E" />
+          <InsightCard label="Window Closes" value="11 days" color="#F59E0B" />
+        </div>
+        <InsightTable cols={['Player', 'Club', 'Age', 'Pos', 'Value', 'Contract', '⭐', 'Status']}
+          rows={SCOUT_TARGETS.map(t => [t.name, t.club, String(t.age), t.position, t.value, t.contract, '⭐'.repeat(t.rating), <span key={t.name} className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: t.status === 'Bid Submitted' ? 'rgba(239,68,68,0.12)' : t.status === 'Approached' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)', color: t.status === 'Bid Submitted' ? '#EF4444' : t.status === 'Approached' ? '#F59E0B' : '#6B7280' }}>{t.status}</span>])} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Scouting Activity This Month</p>
+          <div className="grid grid-cols-4 gap-3">{[{ l: 'Reports Submitted', v: '12' }, { l: 'Scouts Deployed', v: '4' }, { l: 'Countries Covered', v: '8' }, { l: 'Top Pick', v: 'André Costa ⭐⭐⭐⭐⭐' }].map(s => (
+            <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+          ))}</div>
+        </div>
+      </>}
+
+      {/* ── ACADEMY DIRECTOR ── */}
+      {role === 'academy' && <>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <InsightCard label="Academy Players" value="68" />
+          <InsightCard label="On Pathway" value="8" color="#22C55E" />
+          <InsightCard label="EPPP Compliance" value="94%" color="#F1C40F" />
+          <InsightCard label="Scholarships" value="6" />
+          <InsightCard label="Released" value="4" color="#EF4444" />
+        </div>
+        <InsightTable cols={['Player', 'Age', 'Position', 'Age Group', 'Dev. Rating', 'Pathway', 'Status']}
+          rows={ACADEMY_STANDOUTS.map(p => [p.name, String(p.age), p.position, p.ageGroup || 'U21', `${p.devRating || 82}/100`, p.pathway || 'Developing', <span key={p.name} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>Active</span>])} />
+      </>}
+
+      {/* ── HEAD OF ANALYSIS ── */}
+      {role === 'analysis' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="xG For" value="28.4" color="#22C55E" />
+          <InsightCard label="xG Against" value="22.1" color="#EF4444" />
+          <InsightCard label="Possession Avg" value="52%" />
+          <InsightCard label="PPDA" value="8.4" sub="Press intensity" />
+        </div>
+        <InsightTable cols={['Formation', 'Games', 'W', 'D', 'L', 'Win%', 'GF', 'GA', 'xG Diff']}
+          rows={[['4-3-3', '10', '6', '2', '2', '60%', '14', '9', '+4.2'], ['4-2-3-1', '6', '3', '1', '2', '50%', '8', '7', '+1.8'], ['3-5-2', '2', '1', '0', '1', '50%', '3', '3', '-0.4']]} />
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Set Piece Record</p>
+          <div className="grid grid-cols-4 gap-3">{[{ l: 'Corners/Game', v: '4.2' }, { l: 'Goals from Corners', v: '3 (8%)' }, { l: 'Penalties', v: '3/3 (100%)' }, { l: 'Set Pieces Conceded', v: '4 goals' }].map(s => (
+            <div key={s.l} className="text-center"><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</p></div>
+          ))}</div>
+        </div>
+      </>}
+
+      {/* ── COMMERCIAL DIRECTOR ── */}
+      {role === 'commercial' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Match Day Revenue" value="£1.4m" sub="Budget: £1.6m" />
+          <InsightCard label="Commercial Revenue" value="£2.1m" sub="Budget: £2.8m" />
+          <InsightCard label="Season Tickets" value="8,400" sub="of 9,000 (93%)" color="#22C55E" />
+          <InsightCard label="Fan Sentiment" value="72/100" />
+        </div>
+        <InsightTable cols={['Sponsor', 'Deal Value', 'Contract End', 'Deliverables', 'Status']}
+          rows={[['MK Insurance', '£400k/yr', 'Jun 2027', '12/14 complete', <span key="1" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>On Track</span>], ['Apex Motors', '£250k/yr', 'Jun 2026', '8/10 complete', <span key="2" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>On Track</span>], ['LocalBrew Co', '£80k/yr', 'Dec 2025', '3/6 complete', <span key="3" className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>Behind</span>]]} />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Social & Digital</p>
+            {[{ l: 'Total Followers', v: '284,000' }, { l: 'Engagement Rate', v: '4.2%' }, { l: 'Shirt Sales', v: '4,200 (↑10%)' }].map(s => <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>)}
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Attendance</p>
+            {[{ l: 'Average', v: '16,200 / 24,000 (68%)' }, { l: 'Hospitality', v: '89% sold' }, { l: 'Next Match Projected', v: '18,500' }].map(s => <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>)}
+          </div>
+        </div>
+      </>}
+
+      {/* ── CHAIRMAN / CEO ── */}
+      {role === 'chairman' && <>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <InsightCard label="Total Revenue (YTD)" value="£8.2m" sub="Budget: £9.4m (87%)" />
+          <InsightCard label="Wage/Revenue Ratio" value="62%" sub="PSR limit: 70%" color={62 > 65 ? '#F59E0B' : '#22C55E'} />
+          <InsightCard label="Net Spend" value="-£2.1m" sub="FFP position: Safe" color="#22C55E" />
+          <InsightCard label="Board Meeting" value="Thu 2pm" sub="3 agenda items" />
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board Agenda Items</p>
+          {['Martinez contract renewal — £22k/week proposed, agent wants £28k', 'Academy EPPP Cat 2 re-assessment — due May, compliance at 94%', 'Commercial pipeline — 3 new sponsor conversations active, 1 near close'].map((item, i) => (
+            <div key={i} className="flex gap-3 py-2"><span className="text-xs font-bold shrink-0" style={{ color: '#C0392B' }}>{i + 1}.</span><p className="text-xs" style={{ color: '#D1D5DB' }}>{item}</p></div>
+          ))}
+        </div>
+      </>}
+    </div>
+  )
+}
+
+// ─── Squad View ─────────────────────────────────────────────────────────────
+
+function SquadView() {
+  const [sortCol, setSortCol] = useState<string>('number')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [posFilter, setPosFilter] = useState<string>('All')
+
+  function handleSort(col: string) {
+    if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  const filtered = posFilter === 'All' ? SQUAD : SQUAD.filter(p => p.position === posFilter)
+  const sorted = [...filtered].sort((a, b) => {
+    const key = sortCol as keyof Player
+    const av = a[key], bv = b[key]
+    if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'asc' ? av - bv : bv - av
+    return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
+  })
+
+  const topScorer = [...SQUAD].sort((a, b) => b.goals - a.goals)[0]
+  const topAssists = [...SQUAD].sort((a, b) => b.assists - a.assists)[0]
+  const topRated = [...SQUAD].sort((a, b) => b.lastRating - a.lastRating)[0]
+
+  const [sqToast, setSqToast] = useState<string | null>(null)
+  function sqAction(l: string) { setSqToast(`${l} — opening workflow...`); setTimeout(() => setSqToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Management</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Full squad overview, contracts, fitness, and availability.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#C0392B" />
+        <StatCard label="Fit" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Injured" value={String(SQUAD.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
+        <StatCard label="Avg Age" value={(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length).toFixed(1)} icon={Users} color="#3B82F6" />
+      </div>
+
+      {/* Top Performers */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {[
+          { title: 'Top Scorer', player: topScorer, stat: `${topScorer.goals} goals`, color: '#EF4444', icon: '⚽' },
+          { title: 'Most Assists', player: topAssists, stat: `${topAssists.assists} assists`, color: '#3B82F6', icon: '🅰️' },
+          { title: 'Highest Rated', player: topRated, stat: `${topRated.lastRating.toFixed(1)} avg`, color: '#F59E0B', icon: '⭐' },
+        ].map((card, i) => (
+          <div key={i} className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: `${card.color}1a` }}>{card.icon}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs" style={{ color: '#6B7280' }}>{card.title}</p>
+              <p className="text-sm font-bold truncate" style={{ color: '#F9FAFB' }}>{card.player.name}</p>
+              <p className="text-xs font-semibold" style={{ color: card.color }}>{card.stat}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Form */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Form (Last 5)</p>
+          <div className="flex gap-1">
+            {RECENT_FORM.map((r, i) => (
+              <span key={i} className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{
+                backgroundColor: r.result === 'W' ? 'rgba(34,197,94,0.15)' : r.result === 'D' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
+                color: r.result === 'W' ? '#22C55E' : r.result === 'D' ? '#F59E0B' : '#EF4444',
+              }}>{r.result}</span>
+            ))}
+          </div>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {RECENT_FORM.map((r, i) => (
+            <div key={i} className="flex items-center justify-between px-5 py-2.5">
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{
+                  backgroundColor: r.result === 'W' ? 'rgba(34,197,94,0.15)' : r.result === 'D' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
+                  color: r.result === 'W' ? '#22C55E' : r.result === 'D' ? '#F59E0B' : '#EF4444',
+                }}>{r.result}</span>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{r.home ? 'vs' : '@'} {r.opponent}</p>
+                  {r.scorers && <p className="text-xs" style={{ color: '#6B7280' }}>{r.scorers}</p>}
+                </div>
+              </div>
+              <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{r.score}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Season Stats */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Season Stats</p>
+        </div>
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-0">
+          {[
+            { label: 'P', value: '28' }, { label: 'W', value: '17' }, { label: 'D', value: '5' }, { label: 'L', value: '6' },
+            { label: 'GF', value: '48' }, { label: 'GA', value: '24' }, { label: 'CS', value: '11' }, { label: 'Pos', value: '3rd' },
+          ].map((s, i) => (
+            <div key={i} className="flex flex-col items-center py-4" style={{ borderRight: i < 7 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{s.label}</span>
+              <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Today's Training */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Training Schedule</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { time: '09:00', session: 'Recovery Group (Martinez, O\'Brien, Santos)', type: 'Rehab', color: '#EF4444' },
+            { time: '10:00', session: 'Tactical — Pressing Triggers', type: 'Tactical', color: '#3B82F6' },
+            { time: '10:45', session: 'Possession Drills (Full Squad)', type: 'Technical', color: '#22C55E' },
+            { time: '11:30', session: 'Set Pieces — Corners & Free Kicks', type: 'Set Piece', color: '#F59E0B' },
+            { time: '12:00', session: 'Cool Down & Individual Meetings', type: 'Recovery', color: '#8B5CF6' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-center gap-4 px-5 py-3">
+              <span className="text-xs font-mono font-bold w-12" style={{ color: '#9CA3AF' }}>{s.time}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{s.session}</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${s.color}1a`, color: s.color }}>{s.type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Full Squad Table */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Full Squad</p>
+          <div className="flex items-center gap-2">
+            <Filter size={12} style={{ color: '#6B7280' }} />
+            <select value={posFilter} onChange={e => setPosFilter(e.target.value)} className="text-xs rounded-lg px-2 py-1" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+              <option value="All">All Positions</option>
+              {['GK','CB','RB','LB','CM','CAM','LW','RW','ST'].map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                {[
+                  { key: 'number', label: '#' }, { key: 'name', label: 'Player' }, { key: 'position', label: 'Pos' },
+                  { key: 'nationality', label: 'Nat' }, { key: 'age', label: 'Age' }, { key: 'marketValue', label: 'Value' },
+                  { key: 'contractExpiry', label: 'Contract' }, { key: 'lastRating', label: 'Rating' },
+                  { key: 'goals', label: 'G' }, { key: 'assists', label: 'A' }, { key: 'fitness', label: 'Status' },
+                ].map(h => (
+                  <th key={h.key} className="text-left px-4 py-3 font-semibold cursor-pointer select-none hover:text-white" style={{ color: sortCol === h.key ? '#C0392B' : '#6B7280' }} onClick={() => handleSort(h.key)}>
+                    {h.label} {sortCol === h.key ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((p, i) => (
+                <tr key={i} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
+                  <td className="px-4 py-2.5 font-bold" style={{ color: '#6B7280' }}>{p.number}</td>
+                  <td className="px-4 py-2.5 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
+                  <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{p.position}</span></td>
+                  <td className="px-4 py-2.5">{p.nationality}</td>
+                  <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{p.age}</td>
+                  <td className="px-4 py-2.5" style={{ color: '#9CA3AF' }}>{p.marketValue}</td>
+                  <td className="px-4 py-2.5" style={{ color: p.contractExpiry === 'Jun 2025' ? '#EF4444' : p.contractExpiry === 'Jun 2026' ? '#F59E0B' : '#9CA3AF' }}>{p.contractExpiry}</td>
+                  <td className="px-4 py-2.5">
+                    <span className="font-bold" style={{ color: p.lastRating >= 7.5 ? '#22C55E' : p.lastRating >= 7.0 ? '#F59E0B' : '#9CA3AF' }}>{p.lastRating.toFixed(1)}</span>
+                  </td>
+                  <td className="px-4 py-2.5 font-bold" style={{ color: p.goals > 0 ? '#F9FAFB' : '#4B5563' }}>{p.goals}</td>
+                  <td className="px-4 py-2.5 font-bold" style={{ color: p.assists > 0 ? '#F9FAFB' : '#4B5563' }}>{p.assists}</td>
+                  <td className="px-4 py-2.5"><FitnessBadge status={p.fitness} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Team Sheet Builder', icon: Clipboard },
+          { label: 'Contract Manager', icon: FileText },
+          { label: 'Log Injury', icon: Heart },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Tactics View ───────────────────────────────────────────────────────────
+
+function TacticsView({ onActionClick }: { onActionClick?: (label: string) => void }) {
+  return (
+    <PlaceholderView
+      title="Tactics & Formation"
+      subtitle="Formation planner, set pieces, and opposition analysis."
+      stats={[
+        { label: 'Current Formation', value: '4-2-3-1', icon: Clipboard, color: '#C0392B' },
+        { label: 'Win Rate', value: '62%', icon: Trophy, color: '#22C55E' },
+        { label: 'Goals Scored', value: '48', icon: Target, color: '#3B82F6' },
+        { label: 'Clean Sheets', value: '11', icon: Shield, color: '#F59E0B' },
+      ]}
+      highlights={[
+        'Current 4-2-3-1 has a 68% win rate compared to 54% with 4-3-3.',
+        'Set piece conversion at 14% — above league average of 11%.',
+        'Opposition (Riverside United) weak against high press — 34% turnover rate in own half.',
+        'Rafa Correia averages 3.2 key passes per game from right wing.',
+      ]}
+      actionButtons={[
+        { label: 'Formation Builder', icon: Clipboard },
+        { label: 'Opposition Report', icon: Eye },
+        { label: 'Set Piece Planner', icon: Target },
+        { label: 'Video Analysis', icon: Video },
+        { label: 'Dept Insights', icon: BarChart3 },
+      ]}
+      onActionClick={onActionClick}
+    >
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Recent Formations Used</p>
+      </div>
+      <div className="space-y-0">
+        {[
+          { formation: '4-2-3-1', matches: 14, wins: 9, draws: 3, losses: 2 },
+          { formation: '4-3-3', matches: 8, wins: 4, draws: 2, losses: 2 },
+          { formation: '3-5-2', matches: 4, wins: 3, draws: 0, losses: 1 },
+          { formation: '4-4-2', matches: 2, wins: 1, draws: 1, losses: 0 },
+        ].map((f, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{f.formation}</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{f.matches} matches</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span style={{ color: '#22C55E' }}>W{f.wins}</span>
+              <span style={{ color: '#F59E0B' }}>D{f.draws}</span>
+              <span style={{ color: '#EF4444' }}>L{f.losses}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </PlaceholderView>
+  )
+}
+
+// ─── Transfers View (with Multi-Step Researcher) ────────────────────────────
+
+function TransfersView({ onActionClick }: { onActionClick?: (label: string) => void }) {
+  const [researchStep, setResearchStep] = useState(1)
+
+  const RESEARCH_TARGETS = [
+    { name: 'Yannick Diallo', position: 'LB', club: 'KRC Genk', age: 22, value: '£1.8m', fit: 92, summary: 'Athletic left-back, strong in 1v1 duels. 4 assists this season. Suited to overlapping style.' },
+    { name: 'Tiago Ferreira', position: 'CM', club: 'SC Braga', age: 24, value: '£1.3m', fit: 87, summary: 'Box-to-box midfielder, high work rate. Press-resistant with 89% pass accuracy.' },
+    { name: 'Andrei Popescu', position: 'CB', club: 'CFR Cluj', age: 23, value: '£900k', fit: 78, summary: 'Left-footed centre-back, good distribution. 2 goals from set pieces this season.' },
+  ]
+
+  return (
+    <PlaceholderView
+      title="Transfer Hub"
+      subtitle="Target research, negotiations, and budget tracking."
+      stats={[
+        { label: 'Budget Remaining', value: '£4.2m', icon: DollarSign, color: '#22C55E' },
+        { label: 'Active Targets', value: '2', icon: Target, color: '#C0392B' },
+        { label: 'Window Closes', value: '11 days', icon: Clock, color: '#F59E0B' },
+        { label: 'Bids Submitted', value: '1', icon: ArrowUpDown, color: '#3B82F6' },
+      ]}
+      highlights={[
+        'Diallo bid submitted at £1.8m — Genk countered at £2.1m with 15% sell-on clause.',
+        'Ferreira on watchlist. Full video analysis report now available.',
+        'Budget: £4.2m remaining. Board approved extra £500k this morning.',
+        'Transfer window closes in 11 days. Prioritise Diallo negotiation.',
+        'Agent for Popescu has made contact — willing to discuss personal terms.',
+      ]}
+      actionButtons={[
+        { label: 'Submit Bid', icon: DollarSign },
+        { label: 'New Target', icon: Plus },
+        { label: 'Scout Network', icon: Eye },
+        { label: 'Board Approval', icon: Briefcase },
+        { label: 'Dept Insights', icon: BarChart3 },
+      ]}
+      onActionClick={onActionClick}
+    >
+      {/* Multi-step Researcher */}
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Transfer Researcher</p>
+        <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Use the 4-step process to identify and action transfer targets</p>
+      </div>
+
+      {/* Steps indicator */}
+      <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937' }}>
+        {['Configure', 'Research', 'Results', 'Action'].map((step, i) => {
+          const stepNum = i + 1
+          const isActive = researchStep === stepNum
+          const isComplete = researchStep > stepNum
+          return (
+            <React.Fragment key={step}>
+              <button onClick={() => setResearchStep(stepNum)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  backgroundColor: isActive ? 'rgba(192,57,43,0.15)' : isComplete ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
+                  color: isActive ? '#E74C3C' : isComplete ? '#22C55E' : '#6B7280',
+                  border: isActive ? '1px solid rgba(192,57,43,0.3)' : '1px solid transparent',
+                }}>
+                {isComplete ? <Check size={10} /> : <span>{stepNum}</span>}
+                {step}
+              </button>
+              {i < 3 && <span style={{ color: '#374151' }}>→</span>}
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      {/* Step content */}
+      <div className="p-5">
+        {researchStep === 1 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Position Needed</label>
+                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                  <option>Left Back</option><option>Centre Midfielder</option><option>Centre Back</option><option>Striker</option><option>Winger</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Max Budget</label>
+                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                  <option>£500k - £1m</option><option>£1m - £2m</option><option>£2m - £3m</option><option>£3m+</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Age Range</label>
+                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                  <option>18-23</option><option>21-26</option><option>24-30</option><option>Any</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>League Preference</label>
+                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                  <option>Any</option><option>Belgian Pro League</option><option>Primeira Liga</option><option>Eredivisie</option><option>Championship</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>
+              Start Research →
+            </button>
+          </div>
+        )}
+
+        {researchStep === 2 && (
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <Loader2 size={28} className="animate-spin" style={{ color: '#C0392B' }} />
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Researcher scanning databases...</p>
+            <p className="text-xs" style={{ color: '#6B7280' }}>Analysing 2,400+ players across 12 leagues</p>
+            <div className="flex gap-2 mt-2">
+              {['Stats', 'Video', 'Medical', 'Agent'].map((stage, i) => (
+                <span key={stage} className="text-xs px-2 py-1 rounded-lg" style={{
+                  backgroundColor: i < 2 ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
+                  color: i < 2 ? '#22C55E' : '#6B7280',
+                }}>{i < 2 ? '✓' : '...'} {stage}</span>
+              ))}
+            </div>
+            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#922B21', color: '#fff' }}>
+              Skip to Results →
+            </button>
+          </div>
+        )}
+
+        {researchStep === 3 && (
+          <div className="space-y-3">
+            <p className="text-xs" style={{ color: '#6B7280' }}>3 targets identified matching your criteria</p>
+            {RESEARCH_TARGETS.map((t, i) => (
+              <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{t.name}</span>
+                    <span className="text-xs ml-2" style={{ color: '#6B7280' }}>{t.position} · {t.club} · Age {t.age}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold" style={{ color: '#22C55E' }}>{t.value}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                      backgroundColor: t.fit >= 90 ? 'rgba(34,197,94,0.12)' : t.fit >= 80 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                      color: t.fit >= 90 ? '#22C55E' : t.fit >= 80 ? '#F59E0B' : '#EF4444',
+                    }}>{t.fit}% fit</span>
+                  </div>
+                </div>
+                <p className="text-xs" style={{ color: '#9CA3AF' }}>{t.summary}</p>
+              </div>
+            ))}
+            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#C0392B', color: '#fff' }}>
+              Take Action →
+            </button>
+          </div>
+        )}
+
+        {researchStep === 4 && (
+          <div className="space-y-4">
+            <p className="text-xs" style={{ color: '#6B7280' }}>Choose an action for your selected targets</p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Submit Bid', desc: 'Create a formal offer and send to the club', icon: DollarSign, color: '#22C55E' },
+                { label: 'Request Video Analysis', desc: 'Queue a full match analysis from the scouting team', icon: Video, color: '#3B82F6' },
+                { label: 'Contact Agent', desc: 'Send an enquiry to the player\'s representative', icon: Phone, color: '#F59E0B' },
+                { label: 'Add to Shortlist', desc: 'Save to your transfer shortlist for board review', icon: Star, color: '#C0392B' },
+              ].map((action, i) => (
+                <button key={i} className="rounded-xl p-4 text-left transition-all hover:opacity-90" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}
+                  onClick={() => setResearchStep(1)}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <action.icon size={14} style={{ color: action.color }} />
+                    <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{action.label}</span>
+                  </div>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>{action.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </PlaceholderView>
+  )
+}
+
+// ─── Medical View ───────────────────────────────────────────────────────────
+
+function MedicalView() {
+  const [toast, setToast] = useState<string | null>(null)
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false)
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2000) }
+  const fitCount = SQUAD.filter(p => p.fitness === 'fit').length
+  const injuredCount = SQUAD.filter(p => p.fitness === 'injured').length
+  const suspendedCount = SQUAD.filter(p => p.fitness === 'suspended').length
+  const doubtfulCount = SQUAD.filter(p => p.fitness === 'doubt').length
+  const modifiedCount = SQUAD.filter(p => p.fitness === 'modified').length
+  const totalSquad = SQUAD.length
+  const injuryTrend = [
+    { week: 'W-8', softTissue: 1, muscle: 2, contact: 0 },{ week: 'W-7', softTissue: 0, muscle: 1, contact: 1 },
+    { week: 'W-6', softTissue: 2, muscle: 0, contact: 0 },{ week: 'W-5', softTissue: 1, muscle: 1, contact: 1 },
+    { week: 'W-4', softTissue: 0, muscle: 2, contact: 0 },{ week: 'W-3', softTissue: 1, muscle: 1, contact: 2 },
+    { week: 'W-2', softTissue: 0, muscle: 0, contact: 1 },{ week: 'W-1', softTissue: 1, muscle: 1, contact: 0 },
+  ]
+  const avgLoadThisWeek = 872, avgLoadLastWeek = 803, loadChange = 69
+  const highRiskPlayers = [
+    { name: 'Okafor', load: 1120, threshold: 950, reason: 'Exceeded threshold 3 consecutive sessions' },
+    { name: 'Thompson', load: 1045, threshold: 950, reason: 'Acute:chronic ratio > 1.4' },
+    { name: 'Henderson', load: 980, threshold: 950, reason: 'Spike after 2-week break' },
+  ]
+  const rehabPlayers = [
+    { name: 'Martinez', injury: 'ACL Reconstruction', weekCurrent: 6, weekTotal: 20, pct: 30, phase: 'Strength building' },
+    { name: "O'Brien", injury: 'Ankle Ligament', weekCurrent: 4, weekTotal: 10, pct: 40, phase: 'Functional rehab' },
+    { name: 'Santos', injury: 'Knee Cartilage', weekCurrent: 2, weekTotal: 4, pct: 50, phase: 'Return to training' },
+    { name: 'Silva', injury: 'Groin Tightness', weekCurrent: 1, weekTotal: 2, pct: 50, phase: 'Light training' },
+  ]
+  const screenedCount = 21
+  const screenPct = Math.round((screenedCount / totalSquad) * 100)
+  const totalMatchesMissed = INJURIES.reduce((s, inj) => s + (inj.matchesMissed || 0), 0)
+  const estimatedWeeklyWage = 85000
+  const weeksOut = 12
+  const estimatedWageCost = weeksOut * estimatedWeeklyWage
+  const injuredPlayersEnriched = [
+    { ...INJURIES[0], dateOfInjury: '14 Feb 2026', severity: 'Serious', statusEmoji: '\u{1F534}', statusLabel: 'Out', bodyArea: 'left-knee' as const, view: 'front' as const, color: '#C0392B' },
+    { ...INJURIES[1], dateOfInjury: '1 Mar 2026', severity: 'Moderate', statusEmoji: '\u{1F7E1}', statusLabel: 'Doubtful', bodyArea: 'right-hamstring' as const, view: 'back' as const, color: '#E74C3C' },
+    { ...INJURIES[2], dateOfInjury: '22 Mar 2026', severity: 'Minor', statusEmoji: '\u{1F7E2}', statusLabel: 'Returning', bodyArea: 'left-calf' as const, view: 'back' as const, color: '#FADBD8' },
+  ]
+  const BodyFrontSVG = ({ highlight, color }: { highlight?: string; color?: string }) => (
+    <svg viewBox="0 0 120 260" width="100" height="220" style={{ display: 'block' }}>
+      <ellipse cx="60" cy="22" rx="14" ry="17" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <line x1="60" y1="39" x2="60" y2="48" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M38 48 L82 48 L86 120 L34 120 Z" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M38 48 L22 58 L16 100 L20 102 L28 68 L34 58" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M82 48 L98 58 L104 100 L100 102 L92 68 L86 58" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M42 120 L38 180 L36 230 L44 232 L46 185 L50 120" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M70 120 L74 180 L76 230 L84 232 L82 185 L78 120" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      {highlight === 'left-knee' && <ellipse cx="42" cy="185" rx="8" ry="12" fill={color || '#C0392B'} fillOpacity="0.7" stroke={color || '#C0392B'} strokeWidth="1" />}
+    </svg>
+  )
+  const BodyBackSVG = ({ highlight, color }: { highlight?: string; color?: string }) => (
+    <svg viewBox="0 0 120 260" width="100" height="220" style={{ display: 'block' }}>
+      <ellipse cx="60" cy="22" rx="14" ry="17" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <line x1="60" y1="39" x2="60" y2="48" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M38 48 L82 48 L86 120 L34 120 Z" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M38 48 L22 58 L16 100 L20 102 L28 68 L34 58" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M82 48 L98 58 L104 100 L100 102 L92 68 L86 58" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M42 120 L38 180 L36 230 L44 232 L46 185 L50 120" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <path d="M70 120 L74 180 L76 230 L84 232 L82 185 L78 120" fill="none" stroke="#9CA3AF" strokeWidth="1.5" />
+      <line x1="60" y1="48" x2="60" y2="120" stroke="#4B5563" strokeWidth="0.8" strokeDasharray="3,3" />
+      {highlight === 'right-hamstring' && <ellipse cx="76" cy="155" rx="8" ry="20" fill={color || '#E74C3C'} fillOpacity="0.7" stroke={color || '#E74C3C'} strokeWidth="1" />}
+      {highlight === 'left-calf' && <ellipse cx="40" cy="210" rx="6" ry="16" fill={color || '#FADBD8'} fillOpacity="0.7" stroke={color || '#FADBD8'} strokeWidth="1" />}
+    </svg>
+  )
+  return (
+    <div className="space-y-6">
+      {toast && <div className="fixed top-6 right-6 z-50 px-4 py-2 rounded-lg text-sm font-medium shadow-lg" style={{ background: '#C0392B', color: '#F9FAFB' }}>{toast}</div>}
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Medical Centre</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Injury tracking, rehabilitation, GPS load monitoring, and return-to-play pipeline.</p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => showToast(`${a.l} — opening workflow...`)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Currently Injured" value={String(injuredCount)} icon={Heart} color="#EF4444" />
+        <StatCard label="Avg Recovery (days)" value="18" icon={Activity} color="#F1C40F" />
+        <StatCard label="Squad Availability" value={`${Math.round((fitCount / totalSquad) * 100)}%`} icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Matches Missed" value={String(totalMatchesMissed)} icon={Calendar} color="#E74C3C" />
+      </div>
+      {/* Squad Availability Bar */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold mb-3" style={{ color: '#F9FAFB' }}>Squad Availability — {totalSquad} Players</p>
+        <div className="flex rounded-lg overflow-hidden" style={{ height: 32 }}>
+          <div style={{ width: `${(fitCount / totalSquad) * 100}%`, backgroundColor: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', minWidth: 40 }}>Fit {fitCount}</div>
+          {injuredCount > 0 && <div style={{ width: `${(injuredCount / totalSquad) * 100}%`, backgroundColor: '#C0392B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', minWidth: 40 }}>Injured {injuredCount}</div>}
+          {modifiedCount > 0 && <div style={{ width: `${(modifiedCount / totalSquad) * 100}%`, backgroundColor: '#06B6D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', minWidth: 40 }}>Modified {modifiedCount}</div>}
+          {doubtfulCount > 0 && <div style={{ width: `${(doubtfulCount / totalSquad) * 100}%`, backgroundColor: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', minWidth: 40 }}>Doubtful {doubtfulCount}</div>}
+          {suspendedCount > 0 && <div style={{ width: `${(suspendedCount / totalSquad) * 100}%`, backgroundColor: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', minWidth: 40 }}>Susp {suspendedCount}</div>}
+        </div>
+        <div className="flex gap-4 mt-2" style={{ fontSize: 11, color: '#9CA3AF' }}>
+          {[{ l: 'Fit', c: '#22C55E' }, { l: 'Injured', c: '#C0392B' }, { l: 'Modified', c: '#06B6D4' }, { l: 'Doubtful', c: '#F97316' }, { l: 'Suspended', c: '#F59E0B' }].map(s => (
+            <span key={s.l} className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.c, display: 'inline-block' }} />{s.l}</span>
+          ))}
+        </div>
+      </div>
+      {/* AI Highlights */}
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
+        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
+          <Sparkles size={14} style={{ color: '#C0392B' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        </div>
+        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          {['Santos (knee) cleared for light training — expected return 7 Apr.','Martinez (hamstring Grade 2) — jogging resumed. Target: 14 Apr.',"O'Brien (ankle ligament) still in boot. Earliest return: 21 Apr.",'Silva on modified programme — light contact only until Thursday assessment.','GPS data shows 3 players exceeding acute:chronic workload ratio of 1.3 — injury risk elevated.'].map((h, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Injured Players Table */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Injured Players</p>
+          <button className="text-xs px-3 py-1 rounded-md" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }} onClick={() => showToast('Medical report exported')}>Export PDF</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Status', 'Player', 'Injury', 'Severity', 'Date', 'Expected Return', 'Phase', 'Missed'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+            <tbody>
+              {injuredPlayersEnriched.map((p, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #1F2937', cursor: 'pointer', backgroundColor: selectedPlayer === p.player ? 'rgba(192,57,43,0.1)' : 'transparent' }} onClick={() => setSelectedPlayer(selectedPlayer === p.player ? null : p.player)} className="hover:bg-white/[0.02]">
+                  <td className="px-4 py-3 text-base">{p.statusEmoji}</td>
+                  <td className="px-4 py-3 font-semibold" style={{ color: '#F9FAFB' }}>{p.player}</td>
+                  <td className="px-4 py-3" style={{ color: '#F9FAFB' }}>{p.type}</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: p.severity === 'Serious' ? 'rgba(192,57,43,0.2)' : p.severity === 'Moderate' ? 'rgba(231,76,60,0.2)' : 'rgba(34,197,94,0.2)', color: p.severity === 'Serious' ? '#E74C3C' : p.severity === 'Moderate' ? '#F59E0B' : '#22C55E' }}>{p.severity}</span></td>
+                  <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{p.dateOfInjury}</td>
+                  <td className="px-4 py-3" style={{ color: '#F59E0B' }}>{p.expectedReturn}</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg text-xs" style={{ backgroundColor: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>{p.phase}</span></td>
+                  <td className="px-4 py-3 font-bold text-center" style={{ color: '#F9FAFB' }}>{p.matchesMissed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* Injury Body Maps */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Injury Body Maps</p></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-5">
+          {injuredPlayersEnriched.map((p, i) => (
+            <div key={i} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2 mb-1"><span style={{ fontSize: 14 }}>{p.statusEmoji}</span><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{p.player}</span></div>
+              <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{p.type} — {p.severity}</p>
+              <div className="flex items-start gap-3 justify-center">
+                <div className="text-center"><span style={{ fontSize: 9, color: '#6B7280', display: 'block', marginBottom: 2 }}>FRONT</span><BodyFrontSVG highlight={p.view === 'front' ? p.bodyArea : undefined} color={p.view === 'front' ? p.color : undefined} /></div>
+                <div className="text-center"><span style={{ fontSize: 9, color: '#6B7280', display: 'block', marginBottom: 2 }}>BACK</span><BodyBackSVG highlight={p.view === 'back' ? p.bodyArea : undefined} color={p.view === 'back' ? p.color : undefined} /></div>
+              </div>
+              <div className="mt-2 text-center"><span className="inline-block px-2 py-1 rounded text-xs" style={{ backgroundColor: `${p.color}22`, color: p.color, border: `1px solid ${p.color}44` }}>{p.bodyArea.replace('-', ' ').toUpperCase()} — {p.view.toUpperCase()} VIEW</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Injury Trend Chart */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Injury Trend — Last 8 Weeks</p></div>
+        <div className="p-5">
+          <div className="flex gap-3 mb-3" style={{ fontSize: 11, color: '#9CA3AF' }}>
+            <span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#E74C3C', display: 'inline-block' }} /> Soft Tissue</span>
+            <span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#F1C40F', display: 'inline-block' }} /> Muscle</span>
+            <span className="flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#3B82F6', display: 'inline-block' }} /> Contact</span>
+          </div>
+          <svg viewBox="0 0 520 160" className="w-full" style={{ height: 160, display: 'block' }}>
+            {[0,1,2,3,4,5].map(v => (<g key={v}><line x1="40" y1={140-v*26} x2="510" y2={140-v*26} stroke="#1F2937" strokeWidth="0.5" /><text x="30" y={144-v*26} fill="#6B7280" fontSize="9" textAnchor="end">{v}</text></g>))}
+            {injuryTrend.map((w, i) => { const x = 50+i*58; const barW = 14; return (<g key={i}><rect x={x} y={140-w.softTissue*26} width={barW} height={w.softTissue*26} fill="#E74C3C" rx="2" /><rect x={x+barW+2} y={140-w.muscle*26} width={barW} height={w.muscle*26} fill="#F1C40F" rx="2" /><rect x={x+(barW+2)*2} y={140-w.contact*26} width={barW} height={w.contact*26} fill="#3B82F6" rx="2" /><text x={x+22} y={155} fill="#6B7280" fontSize="9" textAnchor="middle">{w.week}</text></g>) })}
+          </svg>
+        </div>
+      </div>
+      {/* GPS Load + Rehab side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>GPS Load Monitoring</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>This Week Avg</p><p style={{ fontSize: 22, fontWeight: 700, color: '#F9FAFB' }}>{avgLoadThisWeek}<span style={{ fontSize: 11, color: '#9CA3AF' }}> AU</span></p></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>Last Week Avg</p><p style={{ fontSize: 22, fontWeight: 700, color: '#F9FAFB' }}>{avgLoadLastWeek}<span style={{ fontSize: 11, color: '#9CA3AF' }}> AU</span></p></div>
+          </div>
+          <div className="flex items-center gap-2 mb-4 px-2 py-1.5 rounded" style={{ backgroundColor: 'rgba(241,196,15,0.08)' }}>
+            <Activity size={12} style={{ color: '#F1C40F' }} /><span style={{ fontSize: 11, color: '#F1C40F' }}>Week-on-week: +{loadChange} AU (+{((loadChange / avgLoadLastWeek) * 100).toFixed(1)}%)</span>
+          </div>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', marginBottom: 8 }}><AlertCircle size={12} className="inline mr-1" /> High-Risk Players</p>
+          {highRiskPlayers.map((hp, i) => (
+            <div key={i} className="flex items-center justify-between rounded-md px-3 py-2 mb-2" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
+              <div><p style={{ fontSize: 12, fontWeight: 600, color: '#F9FAFB' }}>{hp.name}</p><p style={{ fontSize: 10, color: '#9CA3AF' }}>{hp.reason}</p></div>
+              <div className="text-right"><p style={{ fontSize: 14, fontWeight: 700, color: '#EF4444' }}>{hp.load} AU</p><p style={{ fontSize: 9, color: '#9CA3AF' }}>Threshold: {hp.threshold}</p></div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Rehabilitation Tracker</p>
+          {rehabPlayers.map((rp, i) => (
+            <div key={i} className="rounded-lg p-3 mb-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-1"><span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>{rp.name}</span><span style={{ fontSize: 11, color: '#9CA3AF' }}>Week {rp.weekCurrent}/{rp.weekTotal}</span></div>
+              <p style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>{rp.injury} — {rp.phase}</p>
+              <div style={{ width: '100%', height: 8, backgroundColor: '#1F2937', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${rp.pct}%`, height: '100%', borderRadius: 4, backgroundColor: rp.pct < 35 ? '#C0392B' : rp.pct < 60 ? '#F1C40F' : '#22C55E' }} /></div>
+              <div className="flex items-center justify-between mt-1"><span style={{ fontSize: 10, color: '#6B7280' }}>Progress</span><span style={{ fontSize: 11, fontWeight: 700, color: rp.pct < 35 ? '#E74C3C' : rp.pct < 60 ? '#F1C40F' : '#22C55E' }}>{rp.pct}%</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Pre-season Screening + Injury Cost */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Pre-season Screening Status</p>
+          <div className="flex items-center gap-4 mb-4">
+            <svg viewBox="0 0 100 100" width="90" height="90"><circle cx="50" cy="50" r="42" fill="none" stroke="#1F2937" strokeWidth="8" /><circle cx="50" cy="50" r="42" fill="none" stroke="#22C55E" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${screenPct * 2.64} ${264 - screenPct * 2.64}`} strokeDashoffset="66" transform="rotate(-90 50 50)" /><text x="50" y="54" fill="#F9FAFB" fontSize="20" fontWeight="700" textAnchor="middle">{screenPct}%</text></svg>
+            <div><p style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>{screenedCount} of {totalSquad} screened</p><p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{totalSquad - screenedCount} remaining</p><p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Cardiac, Musculoskeletal, Bloodwork, Vision</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {[{ test: 'Cardiac', done: 23, total: totalSquad },{ test: 'Musculoskeletal', done: 21, total: totalSquad },{ test: 'Bloodwork', done: 25, total: totalSquad },{ test: 'Vision', done: 18, total: totalSquad }].map((t, i) => (
+              <div key={i} className="rounded-md px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-1"><span style={{ fontSize: 10, color: '#9CA3AF' }}>{t.test}</span><span style={{ fontSize: 10, fontWeight: 600, color: t.done === t.total ? '#22C55E' : '#F1C40F' }}>{t.done}/{t.total}</span></div>
+                <div style={{ width: '100%', height: 4, backgroundColor: '#1F2937', borderRadius: 2, overflow: 'hidden' }}><div style={{ width: `${(t.done / t.total) * 100}%`, height: '100%', borderRadius: 2, backgroundColor: t.done === t.total ? '#22C55E' : '#F1C40F' }} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Injury Cost Calculator</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>Total Matches Missed</p><p style={{ fontSize: 26, fontWeight: 700, color: '#EF4444' }}>{totalMatchesMissed}</p><p style={{ fontSize: 10, color: '#6B7280' }}>across {INJURIES.length} injuries</p></div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>Est. Wage Cost</p><p style={{ fontSize: 26, fontWeight: 700, color: '#F1C40F' }}>{'\u00A3'}{(estimatedWageCost / 1000).toFixed(0)}k</p><p style={{ fontSize: 10, color: '#6B7280' }}>{weeksOut} weeks absence</p></div>
+          </div>
+          <button className="w-full text-xs px-3 py-2 rounded-md mb-3" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', cursor: 'pointer' }} onClick={() => setShowCostBreakdown(!showCostBreakdown)}>{showCostBreakdown ? 'Hide' : 'Show'} Breakdown</button>
+          {showCostBreakdown && <div className="space-y-2">{INJURIES.map((inj, i) => { const wk = [8,3,1][i]||2; return (<div key={i} className="flex items-center justify-between rounded-md px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><div><p style={{ fontSize: 12, fontWeight: 600, color: '#F9FAFB' }}>{inj.player}</p><p style={{ fontSize: 10, color: '#9CA3AF' }}>{inj.type} — {wk}w</p></div><span style={{ fontSize: 13, fontWeight: 700, color: '#F1C40F' }}>{'\u00A3'}{(wk * estimatedWeeklyWage / 1000).toFixed(0)}k</span></div>)})}</div>}
+        </div>
+      </div>
+      {/* Season Comparison */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Injury Season Comparison</p></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+          {[{ label: 'Total Injuries', thisYear: '9', lastYear: '14', better: true },{ label: 'Muscle Injuries', thisYear: '4', lastYear: '8', better: true },{ label: 'Days Lost', thisYear: '142', lastYear: '231', better: true },{ label: 'Avg Recovery (d)', thisYear: '15.8', lastYear: '16.5', better: true }].map((s, i) => (
+            <div key={i} className="flex flex-col items-center py-4 px-3" style={{ borderRight: i < 3 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</span><span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.thisYear}</span><span className="text-xs mt-0.5" style={{ color: '#22C55E' }}>vs {s.lastYear} last season ↓</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ label: 'Log Injury', icon: Heart },{ label: 'Rehab Plan', icon: Activity },{ label: 'Fitness Report', icon: FileText },{ label: 'Dept Insights', icon: BarChart3 }].map((a, i) => (
+          <button key={i} onClick={() => showToast(`${a.label} — opening...`)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Scouting View ──────────────────────────────────────────────────────────
+
+function ScoutingView() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('All')
+  const pipelineColumns = {
+    identified: { title: 'Identified', color: '#3B82F6', players: [
+      { name: 'Callum Doyle', club: 'Man City (Loan)', age: 22, position: 'CB', value: '\u00A3800k', status: 'Monitoring' },
+      { name: 'Tyrese Campbell', club: 'Stoke City', age: 26, position: 'ST', value: '\u00A31.2m', status: 'Scouted 3x' },
+      { name: 'Hannibal Mejbri', club: 'Man Utd (Loan)', age: 23, position: 'CM', value: '\u00A3900k', status: 'Initial Interest' },
+    ]},
+    inTalks: { title: 'In Talks', color: '#F59E0B', players: [
+      { name: 'Josh Brownhill', club: 'Burnley', age: 30, position: 'CM', value: '\u00A31.5m', status: 'Agent contacted' },
+      { name: "Dara O'Shea", club: 'Burnley', age: 25, position: 'CB', value: '\u00A32m', status: 'Club open to sell' },
+    ]},
+    offerMade: { title: 'Offer Made', color: '#22C55E', players: [
+      { name: 'Luke McNally', club: 'Burnley', age: 25, position: 'CB', value: '\u00A3600k', status: '\u00A3500k bid' },
+      { name: 'Kasey Palmer', club: 'Coventry', age: 29, position: 'AM', value: '\u00A3450k', status: 'Free transfer offer' },
+    ]},
+  }
+  const enhancedTargets = SCOUT_TARGETS.map((t, i) => ({ ...t, priority: i === 0 ? 'High' : i < 3 ? 'Med' : 'Low' }))
+  const scouts = [
+    { name: 'Mark Evans', initials: 'ME', region: 'Belgium / Netherlands', trip: 'KRC Genk vs Club Brugge (Fri)', lastReport: '28 Mar 2026' },
+    { name: 'Carlos Mendes', initials: 'CM', region: 'Portugal / Spain', trip: 'SC Braga vs Benfica (Sat)', lastReport: '25 Mar 2026' },
+    { name: 'Elena Vasquez', initials: 'EV', region: 'Scotland / Ireland', trip: 'Celtic B vs Motherwell (Sun)', lastReport: '30 Mar 2026' },
+    { name: 'Paul Connolly', initials: 'PC', region: 'London & South East', trip: 'Millwall vs QPR (Sat)', lastReport: '22 Mar 2026' },
+    { name: 'James Okafor', initials: 'JO', region: 'France / Belgium', trip: 'Metz vs Auxerre (Sun)', lastReport: '18 Mar 2026' },
+  ]
+  const agentContacts = [
+    { agent: 'Jonathan Barnett', player: 'Josh Brownhill', date: '30 Mar 2026', outcome: 'Positive \u2014 follow up' },
+    { agent: "Meissa N'Diaye", player: 'Hannibal Mejbri', date: '28 Mar 2026', outcome: 'Terms discussed' },
+    { agent: 'Paul Stretford', player: "Dara O'Shea", date: '25 Mar 2026', outcome: 'Club willing to negotiate' },
+    { agent: 'Sky Andrew', player: 'Tyrese Campbell', date: '22 Mar 2026', outcome: 'No interest at valuation' },
+    { agent: 'Mark Curtis', player: 'Kasey Palmer', date: '20 Mar 2026', outcome: 'Free agent \u2014 personal terms' },
+  ]
+  const budget = { total: 4.2, spent: 1.3, committed: 0.8, remaining: 2.1 }
+  const permitRisks = [
+    { name: 'Hannibal Mejbri', nationality: 'Tunisia', eu: false, gbePoints: 12, risk: 'Medium' },
+    { name: 'Callum Doyle', nationality: 'England', eu: true, gbePoints: 0, risk: 'Low' },
+    { name: "Dara O'Shea", nationality: 'Ireland', eu: true, gbePoints: 0, risk: 'Low' },
+    { name: 'Kasey Palmer', nationality: 'England', eu: true, gbePoints: 0, risk: 'Low' },
+    { name: 'Luke McNally', nationality: 'Ireland', eu: true, gbePoints: 0, risk: 'Low' },
+  ]
+  const priorityColor = (p: string) => p === 'High' ? '#EF4444' : p === 'Med' ? '#F59E0B' : '#6B7280'
+  const riskColor = (r: string) => r === 'High' ? '#EF4444' : r === 'Medium' ? '#F59E0B' : '#22C55E'
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Scouting Network</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Scout reports, watchlists, recruitment pipeline, and target tracking.</p></div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ label: 'New Report', icon: FileText }, { label: 'Watchlist', icon: Star }, { label: 'Trip Planner', icon: MapPin }, { label: 'Compare Players', icon: ArrowUpDown }, { label: 'Budget Overview', icon: DollarSign }, { label: 'Dept Insights', icon: BarChart3 }].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.icon size={12} />{a.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Active Targets" value={String(enhancedTargets.length)} icon={Target} color="#C0392B" />
+        <StatCard label="Scouts Deployed" value="5" icon={Eye} color="#3B82F6" />
+        <StatCard label="Budget Remaining" value="\u00A32.1m" icon={DollarSign} color="#22C55E" />
+        <StatCard label="Offers Pending" value="2" icon={FileText} color="#F59E0B" />
+      </div>
+      {/* Transfer Pipeline */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Transfer Pipeline</p></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5">
+          {Object.values(pipelineColumns).map(col => (
+            <div key={col.title} className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2 mb-4"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: col.color }} /><span className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>{col.title}</span><span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: col.color + '22', color: col.color }}>{col.players.length}</span></div>
+              <div className="space-y-3">{col.players.map(player => (
+                <div key={player.name} className="rounded-lg p-3 space-y-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-center justify-between"><span className="font-medium text-sm" style={{ color: '#F9FAFB' }}>{player.name}</span><span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: col.color + '22', color: col.color }}>{player.status}</span></div>
+                  <div className="flex items-center gap-3 text-xs" style={{ color: '#9CA3AF' }}><span>{player.club}</span><span>{player.position}</span></div>
+                  <div className="flex items-center justify-between text-xs"><span style={{ color: '#9CA3AF' }}>Age {player.age}</span><span className="font-semibold" style={{ color: '#F1C40F' }}>{player.value}</span></div>
+                </div>
+              ))}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Active Targets */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Active Targets</p>
+          <div className="flex items-center gap-3">
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#9CA3AF' }} /><input type="text" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 pr-3 py-1.5 rounded-lg text-xs outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+            <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="px-3 py-1.5 rounded-lg text-xs outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}><option value="All">All</option><option value="High">High</option><option value="Med">Med</option><option value="Low">Low</option></select>
+          </div>
+        </div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Pos', 'Age', 'Club', 'Nat', 'Value', 'Contract', 'Rating', 'Priority'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+          <tbody>{enhancedTargets.filter(t => { const ms = searchTerm === '' || t.name.toLowerCase().includes(searchTerm.toLowerCase()); const mp = priorityFilter === 'All' || t.priority === priorityFilter; return ms && mp }).map((t, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+              <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{t.name}</td>
+              <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{t.position}</span></td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{t.age}</td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{t.club}</td>
+              <td className="px-4 py-3">{t.nationality}</td>
+              <td className="px-4 py-3 font-semibold" style={{ color: '#22C55E' }}>{t.value}</td>
+              <td className="px-4 py-3" style={{ color: t.contract === 'Jun 2025' ? '#EF4444' : '#9CA3AF' }}>{t.contract}</td>
+              <td className="px-4 py-3"><div className="flex gap-0.5">{Array.from({ length: 5 }).map((_, si) => (<span key={si} style={{ color: si < t.rating ? '#F59E0B' : '#374151' }}>{'\u2605'}</span>))}</div></td>
+              <td className="px-4 py-3"><span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: priorityColor(t.priority) + '22', color: priorityColor(t.priority) }}>{t.priority}</span></td>
+            </tr>
+          ))}</tbody></table></div>
+      </div>
+      {/* Scout Network */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Scout Network</p></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
+          {scouts.map(scout => (
+            <div key={scout.name} className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{scout.initials}</div><div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{scout.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{scout.region}</p></div></div>
+              <div className="space-y-1.5"><p className="text-xs" style={{ color: '#9CA3AF' }}><span style={{ color: '#F9FAFB', fontWeight: 500 }}>Next:</span> {scout.trip}</p><p className="text-xs" style={{ color: '#6B7280' }}>Last report: {scout.lastReport}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Agent Contacts */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Agent Contacts Log</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Agent', 'Player', 'Date', 'Outcome'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+          <tbody>{agentContacts.map((ac, i) => { const isPos = ac.outcome.toLowerCase().includes('positive') || ac.outcome.toLowerCase().includes('willing'); const isNeg = ac.outcome.toLowerCase().includes('no interest'); const oc = isPos ? '#22C55E' : isNeg ? '#EF4444' : '#F59E0B'; return (
+            <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{ac.agent}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{ac.player}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{ac.date}</td><td className="px-4 py-3"><span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: oc + '22', color: oc }}>{ac.outcome}</span></td></tr>
+          )})}</tbody></table></div>
+      </div>
+      {/* Transfer Budget */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Transfer Budget Tracker</p>
+        <div className="flex items-center justify-between text-xs mb-2"><span style={{ color: '#9CA3AF' }}>Total: <span style={{ color: '#F9FAFB', fontWeight: 600 }}>{'\u00A3'}4.2m</span></span><span style={{ color: '#9CA3AF' }}>Remaining: <span style={{ color: '#22C55E', fontWeight: 600 }}>{'\u00A3'}2.1m</span></span></div>
+        <div className="w-full h-8 rounded-full overflow-hidden flex" style={{ backgroundColor: '#1F2937' }}>
+          <div className="h-full flex items-center justify-center text-xs font-semibold" style={{ width: `${(budget.spent/budget.total)*100}%`, backgroundColor: '#C0392B', color: '#F9FAFB' }}>{'\u00A3'}1.3m</div>
+          <div className="h-full flex items-center justify-center text-xs font-semibold" style={{ width: `${(budget.committed/budget.total)*100}%`, backgroundColor: '#F59E0B', color: '#0A0B10' }}>{'\u00A3'}0.8m</div>
+          <div className="h-full flex items-center justify-center text-xs font-semibold" style={{ width: `${(budget.remaining/budget.total)*100}%`, backgroundColor: '#22C55E', color: '#0A0B10' }}>{'\u00A3'}2.1m</div>
+        </div>
+        <div className="flex flex-wrap gap-6 text-xs mt-3" style={{ color: '#9CA3AF' }}>
+          {[{ l: 'Spent', a: '\u00A31.3m', c: '#C0392B' }, { l: 'Committed', a: '\u00A30.8m', c: '#F59E0B' }, { l: 'Remaining', a: '\u00A32.1m', c: '#22C55E' }].map(item => (<div key={item.l} className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.c }} /><span>{item.l}: <span style={{ color: '#F9FAFB', fontWeight: 500 }}>{item.a}</span></span></div>))}
+        </div>
+      </div>
+      {/* Work Permit Risk */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Post-Brexit Work Permit Risk</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Nationality', 'Category', 'GBE Points', 'Risk'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+          <tbody>{permitRisks.map((pr, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+              <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{pr.name}</td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{pr.nationality}</td>
+              <td className="px-4 py-3"><span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: pr.eu ? '#3B82F622' : '#F59E0B22', color: pr.eu ? '#3B82F6' : '#F59E0B' }}>{pr.eu ? 'EU / UK / IE' : 'Non-EU'}</span></td>
+              <td className="px-4 py-3" style={{ color: pr.gbePoints > 0 ? '#F1C40F' : '#9CA3AF' }}>{pr.gbePoints > 0 ? `${pr.gbePoints} pts` : 'N/A'}</td>
+              <td className="px-4 py-3"><span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: riskColor(pr.risk) + '22', color: riskColor(pr.risk) }}>{pr.risk}</span></td>
+            </tr>
+          ))}</tbody></table></div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Academy View ───────────────────────────────────────────────────────────
+
+function AcademyView({ onActionClick }: { onActionClick?: (label: string) => void }) {
+  const ageGroupResults = [
+    { group: 'U9', lastResult: 'W 4-1 vs Chelsea', leaguePos: '2nd', nextFixture: 'Arsenal (H) — Sat 5 Apr' },
+    { group: 'U10', lastResult: 'D 2-2 vs Tottenham', leaguePos: '4th', nextFixture: 'West Ham (A) — Sun 6 Apr' },
+    { group: 'U11', lastResult: 'W 3-0 vs Fulham', leaguePos: '1st', nextFixture: 'Crystal Palace (H) — Sat 5 Apr' },
+    { group: 'U12', lastResult: 'L 1-2 vs Man City', leaguePos: '3rd', nextFixture: 'Leicester (A) — Sun 6 Apr' },
+    { group: 'U13', lastResult: 'W 5-2 vs Brighton', leaguePos: '1st', nextFixture: 'Everton (H) — Sat 5 Apr' },
+    { group: 'U14', lastResult: 'W 2-0 vs Wolves', leaguePos: '2nd', nextFixture: 'Aston Villa (A) — Sun 6 Apr' },
+    { group: 'U16', lastResult: 'D 1-1 vs Liverpool', leaguePos: '3rd', nextFixture: 'Newcastle (H) — Sat 5 Apr' },
+    { group: 'U18', lastResult: 'W 3-1 vs Southampton', leaguePos: '2nd', nextFixture: 'Man Utd (A) — Mon 7 Apr' },
+    { group: 'U21', lastResult: 'W 3-0 vs Riverside', leaguePos: '5th', nextFixture: 'Tottenham (H) — Tue 8 Apr' },
+  ]
+  const topPerformers = [
+    { name: 'Tyler James', ageGroup: 'U18', position: 'AMF', stat: '3 goals' },
+    { name: 'Remi Santos', ageGroup: 'U23', position: 'CM', stat: '92% pass accuracy' },
+    { name: 'Kai Thompson', ageGroup: 'U16', position: 'ST', stat: '2 goals, 1 assist' },
+    { name: 'Luca Ferreira', ageGroup: 'U18', position: 'CB', stat: '4 clean sheets' },
+    { name: 'Josh Collins', ageGroup: 'U21', position: 'ST', stat: 'Hat-trick vs Riverside' },
+  ]
+  const pathwayPlayers = [
+    { name: 'Tyler James', age: 17, position: 'AMF', readiness: 91 },
+    { name: 'Remi Santos', age: 18, position: 'CM', readiness: 93 },
+    { name: 'Josh Collins', age: 17, position: 'ST', readiness: 78 },
+    { name: 'Rhys Okonkwo', age: 18, position: 'CB', readiness: 65 },
+    { name: 'Elijah Shaw', age: 17, position: 'LW', readiness: 52 },
+  ]
+  const complianceItems = [
+    { item: 'Category 1 Audit', status: 'green' as const, deadline: '30 Jun 2026', detail: 'Passed — next review due' },
+    { item: 'Coach:Player Ratios', status: 'green' as const, deadline: 'Ongoing', detail: 'All age groups compliant' },
+    { item: 'Education Hours (U16-U18)', status: 'amber' as const, deadline: '31 May 2026', detail: '94% tracked — 3 players behind' },
+    { item: 'Safeguarding Training', status: 'green' as const, deadline: '1 Sep 2026', detail: 'All staff certified' },
+    { item: 'Medical Screening', status: 'amber' as const, deadline: '15 Jul 2026', detail: 'Scheduling in progress' },
+    { item: 'Pitch Facility Standards', status: 'green' as const, deadline: 'Annual', detail: 'Inspected Feb 2026' },
+    { item: 'Parental Consent Forms', status: 'red' as const, deadline: '15 Apr 2026', detail: '12 forms outstanding' },
+    { item: 'FA Player Registration', status: 'green' as const, deadline: '1 Sep 2026', detail: 'All players registered' },
+  ]
+  const loanPlayers = [
+    { name: 'Dylan Carter', club: 'Barnsley (L1)', apps: 28, ga: '5G / 3A', recall: '1 Jun 2026' },
+    { name: 'Alfie Jennings', club: 'Wycombe (L1)', apps: 22, ga: '2G / 7A', recall: '15 May 2026' },
+    { name: 'Toby Pearce', club: 'Doncaster (L2)', apps: 31, ga: '9G / 2A', recall: '30 Jun 2026' },
+    { name: 'Nathan Gomez', club: 'Crawley Town (L2)', apps: 18, ga: '0G / 1A', recall: '1 May 2026' },
+    { name: 'Sam Whitehouse', club: 'Burton Albion (L2)', apps: 25, ga: '3G / 4A', recall: '30 Jun 2026' },
+  ]
+  const safeguardingMetrics = [
+    { label: 'DBS Checks', value: 100 },{ label: 'Education Plans Filed', value: 94 },{ label: 'Welfare Reviews', value: 88 },{ label: 'Anti-Doping Education', value: 97 },{ label: 'Parental Engagement', value: 82 },
+  ]
+  const overallSafeguarding = Math.round(safeguardingMetrics.reduce((a, b) => a + b.value, 0) / safeguardingMetrics.length)
+  const readinessColor = (pct: number) => pct >= 75 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#EF4444'
+  const statusColor = (s: 'green' | 'amber' | 'red') => s === 'green' ? '#22C55E' : s === 'amber' ? '#F59E0B' : '#EF4444'
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Academy</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Youth development, scholarships, pathway tracking, and EPPP compliance.</p></div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ label: 'Promote to First Team', icon: ArrowRight }, { label: 'Development Plan', icon: FileText }, { label: 'Scholarship Offers', icon: GraduationCap }, { label: 'Dept Insights', icon: BarChart3 }].map((a, i) => (
+          <button key={i} onClick={() => onActionClick?.(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.icon size={12} />{a.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Academy Players" value="127" icon={GraduationCap} color="#F97316" />
+        <StatCard label="U21 Record" value="W8 D2 L1" icon={Trophy} color="#22C55E" />
+        <StatCard label="First-Team Ready" value="3" icon={Star} color="#C0392B" />
+        <StatCard label="Players on Loan" value="5" icon={ArrowRight} color="#3B82F6" />
+      </div>
+      {/* Age Group Results */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Age Group Results</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Age Group', 'Last Result', 'League Position', 'Next Fixture'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+          <tbody>{ageGroupResults.map((row, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+              <td className="px-4 py-3 font-bold" style={{ color: '#F1C40F' }}>{row.group}</td>
+              <td className="px-4 py-3"><span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: row.lastResult.startsWith('W') ? '#22C55E' : row.lastResult.startsWith('D') ? '#F59E0B' : '#EF4444' }} /><span style={{ color: '#F9FAFB' }}>{row.lastResult}</span></td>
+              <td className="px-4 py-3" style={{ color: '#F9FAFB' }}>{row.leaguePos}</td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{row.nextFixture}</td>
+            </tr>
+          ))}</tbody></table></div>
+      </div>
+      {/* Top Performers */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Top Academy Performers This Week</p></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-5">
+          {topPerformers.map((player, idx) => (
+            <div key={player.name} className="rounded-lg p-4 relative" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              {idx === 0 && <Sparkles size={14} className="absolute top-2 right-2" style={{ color: '#F1C40F' }} />}
+              <p className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{player.name}</p>
+              <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>{player.ageGroup} {'\u00B7'} {player.position}</p>
+              <span className="text-xs font-semibold px-2 py-1 rounded inline-block" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{player.stat}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Pathway Tracker */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>First Team Pathway Tracker</p>
+        <div className="space-y-4">
+          {pathwayPlayers.map(player => (
+            <div key={player.name}>
+              <div className="flex items-center justify-between mb-1.5"><div><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{player.name}</span><span className="text-xs ml-2" style={{ color: '#9CA3AF' }}>Age {player.age} {'\u00B7'} {player.position}</span></div><span className="text-sm font-bold" style={{ color: readinessColor(player.readiness) }}>{player.readiness}%</span></div>
+              <div className="w-full h-2.5 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-2.5 rounded-full" style={{ width: `${player.readiness}%`, backgroundColor: readinessColor(player.readiness) }} /></div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid #1F2937' }}>
+          {[{ l: 'Ready (>75%)', c: '#22C55E' }, { l: 'Developing (50-75%)', c: '#F59E0B' }, { l: 'Early (<50%)', c: '#EF4444' }].map(s => (<div key={s.l} className="flex items-center gap-1.5 text-xs" style={{ color: '#9CA3AF' }}><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: s.c }} /> {s.l}</div>))}
+        </div>
+      </div>
+      {/* EPPP Compliance */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>EPPP Compliance Dashboard</p></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-5">
+          {complianceItems.map(item => (
+            <div key={item.item} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="mt-0.5">{item.status === 'green' ? <CheckCircle2 size={18} style={{ color: '#22C55E' }} /> : <AlertCircle size={18} style={{ color: statusColor(item.status) }} />}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between"><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{item.item}</span><span className="text-xs px-2 py-0.5 rounded-full font-medium ml-2 shrink-0" style={{ backgroundColor: `${statusColor(item.status)}20`, color: statusColor(item.status) }}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span></div>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{item.detail}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Deadline: {item.deadline}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Players on Loan */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Players on Loan</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Loan Club', 'Apps', 'G / A', 'Recall Date'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead>
+          <tbody>{loanPlayers.map((p, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+              <td className="px-4 py-3 font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{p.club}</td>
+              <td className="px-4 py-3" style={{ color: '#F9FAFB' }}>{p.apps}</td>
+              <td className="px-4 py-3" style={{ color: '#F9FAFB' }}>{p.ga}</td>
+              <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{p.recall}</td>
+            </tr>
+          ))}</tbody></table></div>
+      </div>
+      {/* Safeguarding */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-semibold mb-4" style={{ color: '#F9FAFB' }}>Safeguarding & Education</p>
+        <div className="flex items-center gap-6 mb-5">
+          <svg viewBox="0 0 100 100" width="80" height="80"><circle cx="50" cy="50" r="42" fill="none" stroke="#1F2937" strokeWidth="8" /><circle cx="50" cy="50" r="42" fill="none" stroke="#22C55E" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${overallSafeguarding * 2.64} ${264 - overallSafeguarding * 2.64}`} strokeDashoffset="66" transform="rotate(-90 50 50)" /><text x="50" y="54" fill="#F9FAFB" fontSize="20" fontWeight="700" textAnchor="middle">{overallSafeguarding}%</text></svg>
+          <div><p style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>Overall Compliance Score</p><p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Across all safeguarding and education metrics</p></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {safeguardingMetrics.map(metric => (
+            <div key={metric.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{metric.label}</span><span className="text-sm font-bold" style={{ color: metric.value >= 95 ? '#22C55E' : metric.value >= 85 ? '#F59E0B' : '#EF4444' }}>{metric.value}%</span></div>
+              <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-1.5 rounded-full" style={{ width: `${metric.value}%`, backgroundColor: metric.value >= 95 ? '#22C55E' : metric.value >= 85 ? '#F59E0B' : '#EF4444' }} /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Pitch Diagram ──────────────────────────────────────────────────────────
+
+function PitchDiagram({ positions, onPlayerClick }: { positions: { num: number; x: number; y: number; name: string }[]; onPlayerClick?: (name: string) => void }) {
+  return (
+    <svg viewBox="0 0 100 100" className="w-full" style={{ maxHeight: 400 }}>
+      {/* Pitch background */}
+      <rect x="0" y="0" width="100" height="100" fill="#2d5a27" rx="2" />
+      {/* Pitch markings */}
+      <rect x="5" y="5" width="90" height="90" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <circle cx="50" cy="50" r="9" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.4)" />
+      {/* Penalty areas */}
+      <rect x="25" y="5" width="50" height="16" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <rect x="35" y="5" width="30" height="6" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <rect x="25" y="79" width="50" height="16" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      <rect x="35" y="89" width="30" height="6" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.3" />
+      {/* Players */}
+      {positions.map(p => (
+        <g key={p.num} onClick={() => onPlayerClick?.(p.name)} style={{ cursor: 'pointer' }}>
+          <circle cx={p.x} cy={p.y} r="3.5" fill="#C0392B" stroke="white" strokeWidth="0.4" />
+          <text x={p.x} y={p.y + 0.8} textAnchor="middle" fill="white" fontSize="2.2" fontWeight="bold">{p.num}</text>
+          <text x={p.x} y={p.y + 5.5} textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="1.8">{p.name}</text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+// ─── Generic Dept Views ─────────────────────────────────────────────────────
+
+function AnalyticsView() {
+  const [selectedMatch, setSelectedMatch] = useState(0)
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+
+  const currentFormation = MATCH_FORMATIONS[selectedMatch]
+
+  const [anToast, setAnToast] = useState<string | null>(null)
+  function anAction(l: string) { setAnToast(`${l} — opening workflow...`); setTimeout(() => setAnToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Performance Analytics</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>xG, formations, match stats, and AI-powered analysis.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.i size={12} />{a.l}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="xG (Season)" value="42.6" icon={BarChart3} color="#C0392B" />
+        <StatCard label="xGA (Season)" value="28.3" icon={Shield} color="#3B82F6" />
+        <StatCard label="Possession Avg" value="58%" icon={Activity} color="#22C55E" />
+        <StatCard label="Pass Accuracy" value="84%" icon={Target} color="#F59E0B" />
+      </div>
+
+      {/* AI Highlights */}
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #C0392B' }}>
+        <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: 'rgba(192,57,43,0.08)', borderBottom: '1px solid rgba(192,57,43,0.3)' }}>
+          <Sparkles size={14} style={{ color: '#C0392B' }} />
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        </div>
+        <div className="flex flex-col gap-3 p-5" style={{ backgroundColor: '#0f0e17' }}>
+          {[
+            "xG overperformance of +5.4 this season — expect regression if finishing doesn't maintain.",
+            'Right-side attacks account for 43% of all chances created (Correia influence).',
+            'Defensive shape weakest in minutes 60-75 — conceded 38% of goals in this window.',
+            'Pressing intensity dropped 12% in away games — fitness or tactical?',
+          ].map((h, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(192,57,43,0.2)', color: '#E74C3C' }}>{i + 1}</span>
+              <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{h}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Formation Viewer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Formation Viewer</p>
+            <select value={selectedMatch} onChange={e => { setSelectedMatch(Number(e.target.value)); setSelectedPlayer(null) }} className="text-xs rounded-lg px-2 py-1" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+              {MATCH_FORMATIONS.map((m, i) => <option key={i} value={i}>{m.match} ({m.formation})</option>)}
+            </select>
+          </div>
+          <div className="p-4">
+            <PitchDiagram positions={currentFormation.positions} onPlayerClick={name => setSelectedPlayer(name === selectedPlayer ? null : name)} />
+          </div>
+        </div>
+
+        {/* Match Stats */}
+        <div className="space-y-4">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Match Stats — {currentFormation.match}</p>
+            </div>
+            <div className="grid grid-cols-5 gap-0">
+              {[
+                { label: 'Poss', value: `${currentFormation.stats.possession}%` },
+                { label: 'Shots', value: String(currentFormation.stats.shots) },
+                { label: 'xG', value: currentFormation.stats.xG.toFixed(2) },
+                { label: 'Passes', value: String(currentFormation.stats.passes) },
+                { label: 'Duels', value: `${currentFormation.stats.duels}%` },
+              ].map((s, i) => (
+                <div key={i} className="flex flex-col items-center py-4" style={{ borderRight: i < 4 ? '1px solid #1F2937' : undefined }}>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{s.label}</span>
+                  <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Player Modal */}
+          {selectedPlayer && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #C0392B' }}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{selectedPlayer} — Match Stats</p>
+                <button onClick={() => setSelectedPlayer(null)} className="p-1 rounded" style={{ color: '#6B7280' }}><X size={14} /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Passes', value: String(Math.floor(Math.random() * 40 + 20)) },
+                  { label: 'Pass %', value: `${Math.floor(Math.random() * 15 + 80)}%` },
+                  { label: 'Duels Won', value: `${Math.floor(Math.random() * 8 + 2)}/${Math.floor(Math.random() * 5 + 8)}` },
+                  { label: 'Touches', value: String(Math.floor(Math.random() * 50 + 30)) },
+                  { label: 'Distance', value: `${(Math.random() * 4 + 8).toFixed(1)}km` },
+                  { label: 'Rating', value: (Math.random() * 2 + 6.5).toFixed(1) },
+                ].map((s, i) => (
+                  <div key={i} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{s.label}</p>
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Season Formation Summary */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Season Formation Summary</p>
+            </div>
+            {[
+              { formation: '4-3-3', matches: 14, wins: 9, winRate: '64%' },
+              { formation: '4-2-3-1', matches: 8, wins: 5, winRate: '63%' },
+              { formation: '3-5-2', matches: 4, wins: 3, winRate: '75%' },
+              { formation: '4-4-2', matches: 2, wins: 0, winRate: '0%' },
+            ].map((f, i) => (
+              <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{f.formation}</span>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{f.matches} matches</span>
+                </div>
+                <span className="text-xs font-bold" style={{ color: '#22C55E' }}>{f.winRate} win rate</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Set Piece Record */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Set Piece Record</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+          {[
+            { label: 'Corner Goals', value: '6', total: '142 corners', rate: '4.2%' },
+            { label: 'Free Kick Goals', value: '3', total: '48 attempts', rate: '6.3%' },
+            { label: 'Penalties', value: '4/5', total: '80% conversion', rate: '' },
+            { label: 'Throw-in Chances', value: '8', total: 'Long throws', rate: '' },
+          ].map((s, i) => (
+            <div key={i} className="flex flex-col items-center py-4 px-3" style={{ borderRight: i < 3 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs mb-1" style={{ color: '#6B7280' }}>{s.label}</span>
+              <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.value}</span>
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>{s.total}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Last 5 Matches */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Last 5 Matches — Key Metrics</p>
+        </div>
+        {[
+          { match: 'Oakridge 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
+          { match: 'Ashford 0-0 Oakridge', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
+          { match: 'Oakridge 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
+          { match: 'Crestwood 1-2 Oakridge', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
+          { match: 'Oakridge 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
+        ].map((m, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.match}</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>{m.date}</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span style={{ color: '#22C55E' }}>xG {m.xg}</span>
+              <span style={{ color: '#EF4444' }}>xGA {m.xga}</span>
+              <span style={{ color: '#9CA3AF' }}>{m.poss}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Match Report', icon: FileText },
+          { label: 'Player Comparison', icon: Users },
+          { label: 'Heat Maps', icon: BarChart3 },
+          { label: 'Video Clips', icon: Video },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MediaView() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Media & PR</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Press conferences, media requests, social media, and public relations.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Press Brief', icon: FileText },
+          { label: 'Social Post', icon: MessageSquare },
+          { label: 'Media Schedule', icon: Calendar },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Press Conf Today" value="2pm" icon={Newspaper} color="#8B5CF6" />
+        <StatCard label="Media Requests" value="4" icon={MessageSquare} color="#3B82F6" />
+        <StatCard label="Social Followers" value="124k" icon={Users} color="#C0392B" />
+        <StatCard label="Press Coverage" value="+12%" icon={TrendingUp} color="#22C55E" />
+      </div>
+
+      {/* Media Requests Table */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Pending Media Requests</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                {['Outlet', 'Type', 'Subject', 'Deadline', 'Status', 'Recommendation'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { outlet: 'BBC Sport', type: 'Interview', subject: 'Pre-match preview', deadline: 'Thu PM', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
+                { outlet: 'Sky Sports', type: 'Comment', subject: 'Diallo transfer rumour', deadline: 'Today', status: 'Urgent', rec: 'No comment', recColor: '#EF4444' },
+                { outlet: 'Local Gazette', type: 'Access', subject: 'Fan forum coverage', deadline: 'Thu Eve', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
+                { outlet: 'TalkSport', type: 'Phone-in', subject: 'Weekend preview', deadline: 'Fri AM', status: 'New', rec: 'Decline — schedule clash', recColor: '#F59E0B' },
+              ].map((r, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+                  <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.outlet}</td>
+                  <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.type}</td>
+                  <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.subject}</td>
+                  <td className="px-4 py-3" style={{ color: r.status === 'Urgent' ? '#EF4444' : '#9CA3AF' }}>{r.deadline}</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: r.status === 'Urgent' ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)', color: r.status === 'Urgent' ? '#EF4444' : '#3B82F6' }}>{r.status}</span></td>
+                  <td className="px-4 py-3 font-semibold" style={{ color: r.recColor }}>{r.rec}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Social Media Performance */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Social Media Performance (7 days)</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+          {[
+            { platform: 'X / Twitter', followers: '68.2k', engagement: '+18%', color: '#1DA1F2' },
+            { platform: 'Instagram', followers: '42.1k', engagement: '+12%', color: '#E4405F' },
+            { platform: 'Facebook', followers: '11.4k', engagement: '+5%', color: '#1877F2' },
+            { platform: 'TikTok', followers: '2.3k', engagement: '+34%', color: '#FE2C55' },
+          ].map((s, i) => (
+            <div key={i} className="flex flex-col items-center py-4 px-3" style={{ borderRight: i < 3 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs mb-1" style={{ color: s.color }}>{s.platform}</span>
+              <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.followers}</span>
+              <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>{s.engagement}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Press Conference Schedule */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Press Conference Schedule</p>
+        </div>
+        {[
+          { time: 'Today 2:00pm', event: 'Pre-match press conference', venue: 'Media Suite', briefing: 'AI notes ready', status: 'Confirmed' },
+          { time: 'Sat 1:00pm', event: 'Matchday flash interview zone', venue: 'Tunnel Area', briefing: 'Pending', status: 'Scheduled' },
+          { time: 'Sat 5:15pm', event: 'Post-match press conference', venue: 'Media Suite', briefing: 'Auto-generated post-match', status: 'Scheduled' },
+        ].map((e, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono font-bold w-24" style={{ color: '#9CA3AF' }}>{e.time}</span>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{e.event}</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>{e.venue} · {e.briefing}</p>
+              </div>
+            </div>
+            <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: e.status === 'Confirmed' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: e.status === 'Confirmed' ? '#22C55E' : '#3B82F6' }}>{e.status}</span>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  )
+}
+
+function MatchdayView() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Match Day Operations</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Matchday logistics, team sheet, ticketing, and operational checklists.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Team Sheet', icon: Clipboard },
+          { label: 'Operations Checklist', icon: CheckCircle2 },
+          { label: 'Ticketing', icon: FileText },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Next Match" value="Sat 4 Apr" icon={Calendar} color="#C0392B" />
+        <StatCard label="Kick Off" value="15:00" icon={Clock} color="#3B82F6" />
+        <StatCard label="Expected Attendance" value="8,200" icon={Users} color="#22C55E" />
+        <StatCard label="Matchday Revenue" value="£42k" icon={DollarSign} color="#F59E0B" />
+      </div>
+
+      {/* Operations Checklist */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Operations Checklist</p>
+          <span className="text-xs font-bold" style={{ color: '#22C55E' }}>14/22 complete</span>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { task: 'Pitch inspection', status: 'done' }, { task: 'Referee confirmation', status: 'done' },
+            { task: 'Team sheet submitted', status: 'pending' }, { task: 'Corporate hospitality setup', status: 'done' },
+            { task: 'Steward briefing', status: 'pending' }, { task: 'PA system check', status: 'done' },
+            { task: 'First aid stations ready', status: 'done' }, { task: 'Media accreditation', status: 'pending' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center justify-between px-5 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: item.status === 'done' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)', color: item.status === 'done' ? '#22C55E' : '#F59E0B' }}>
+                  {item.status === 'done' ? '✓' : '○'}
+                </span>
+                <span className="text-sm" style={{ color: '#F9FAFB' }}>{item.task}</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: item.status === 'done' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)', color: item.status === 'done' ? '#22C55E' : '#F59E0B' }}>{item.status === 'done' ? 'Complete' : 'Pending'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Ticketing */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Ticketing & Attendance</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+          {[
+            { label: 'General', sold: 6800, capacity: 8000 },
+            { label: 'Away', sold: 620, capacity: 800 },
+            { label: 'Corporate', sold: 280, capacity: 300 },
+            { label: 'Season Tickets', sold: 4200, capacity: 4200 },
+          ].map((t, i) => (
+            <div key={i} className="flex flex-col items-center py-4 px-3" style={{ borderRight: i < 3 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs mb-1" style={{ color: '#6B7280' }}>{t.label}</span>
+              <span className="text-lg font-black" style={{ color: '#F9FAFB' }}>{t.sold.toLocaleString()}</span>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+                <div className="h-1.5 rounded-full" style={{ width: `${(t.sold / t.capacity) * 100}%`, backgroundColor: t.sold / t.capacity > 0.9 ? '#22C55E' : '#F59E0B' }} />
+              </div>
+              <span className="text-xs mt-1" style={{ color: '#6B7280' }}>{Math.round((t.sold / t.capacity) * 100)}% sold</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+function TrainingView() {
+  const [activeTab, setActiveTab] = useState<string>('plan')
+  const weeklyPlan = [
+    { day: 'Monday', am: 'Recovery & Pool Session', pm: 'Tactical Shape (Defensive Block)', duration: '75 min', intensity: 'Low', focus: 'Recovery' },
+    { day: 'Tuesday', am: 'High Intensity Pressing Drills', pm: 'Set Piece Rehearsal (Attacking)', duration: '105 min', intensity: 'High', focus: 'Pressing Triggers' },
+    { day: 'Wednesday', am: 'Possession Circuits (8v8)', pm: 'Opposition Analysis Video', duration: '90 min', intensity: 'Med', focus: 'Build-Up Play' },
+    { day: 'Thursday', am: 'Sprint & Acceleration Testing', pm: '11v11 Match Simulation', duration: '100 min', intensity: 'High', focus: 'Match Prep' },
+    { day: 'Friday', am: 'Light Technical / Walk-Through', pm: 'Set Piece Rehearsal (Defensive)', duration: '60 min', intensity: 'Low', focus: 'Fine Tuning' },
+    { day: 'Saturday', am: 'MATCHDAY vs Riverside United', pm: '\u2014', duration: '90 min', intensity: 'High', focus: 'MATCHDAY' },
+  ]
+  const attendanceLog = [
+    { name: 'Walker', position: 'GK', status: '\u2705', notes: 'Full session' },{ name: 'Henderson', position: 'RB', status: '\u2705', notes: 'Full session' },{ name: 'Cole', position: 'CB', status: '\u2705', notes: 'Full session' },{ name: 'Phillips', position: 'CB', status: '\u2705', notes: 'Full session' },{ name: 'Campbell', position: 'LB', status: '\u2705', notes: 'Full session' },{ name: 'Thompson', position: 'CM', status: '\u2705', notes: 'Captain \u2014 full session' },{ name: 'Nakamura', position: 'CM', status: '\u2705', notes: 'Full session' },{ name: 'Gallagher', position: 'CM', status: '\u26A1', notes: 'Reduced load \u2014 tight hamstring' },{ name: 'Correia', position: 'RW', status: '\u2705', notes: 'Full session' },{ name: 'Price', position: 'CAM', status: '\u2705', notes: 'Full session' },{ name: 'Richards', position: 'ST', status: '\u2705', notes: 'Full session' },{ name: 'Silva', position: 'CAM', status: '\u26A1', notes: 'Modified \u2014 groin tightness' },{ name: 'Hassan', position: 'ST', status: '\u2705', notes: 'Full session' },{ name: 'Martinez', position: 'CB', status: '\uD83C\uDFE5', notes: 'ACL rehab \u2014 gym only' },{ name: "O'Brien", position: 'LW', status: '\uD83C\uDFE5', notes: 'Ankle \u2014 non-weight bearing' },{ name: 'Santos', position: 'ST', status: '\u26A1', notes: 'Light training \u2014 knee rehab' },{ name: 'Clarke', position: 'LW', status: '\u2705', notes: 'Full session' },{ name: 'Foster', position: 'RW', status: '\u274C', notes: 'Illness \u2014 flu symptoms' },
+  ]
+  const performanceRatings = [
+    { name: 'Walker', position: 'GK', rating: 7.2, keyStat: '4 saves' },{ name: 'Henderson', position: 'RB', rating: 7.3, keyStat: '87% pass accuracy' },{ name: 'Cole', position: 'CB', rating: 7.6, keyStat: '9 clearances' },{ name: 'Phillips', position: 'CB', rating: 7.0, keyStat: '6 aerial duels won' },{ name: 'Campbell', position: 'LB', rating: 7.0, keyStat: '3 tackles' },{ name: 'Correia', position: 'RW', rating: 7.7, keyStat: '3 key passes, 1 assist' },{ name: 'Thompson', position: 'CM', rating: 7.8, keyStat: '92% pass accuracy' },{ name: 'Nakamura', position: 'CM', rating: 7.5, keyStat: '5 interceptions' },{ name: 'Price', position: 'CAM', rating: 7.6, keyStat: '2 chances created' },{ name: 'Clarke', position: 'LW', rating: 6.8, keyStat: '2/5 dribbles' },{ name: 'Santos', position: 'ST', rating: 8.1, keyStat: '2 goals, 4 shots on target' },
+  ]
+  const intensityColor = (level: string) => level === 'High' ? '#EF4444' : level === 'Med' ? '#F59E0B' : level === 'Low' ? '#22C55E' : '#6B7280'
+  const ratingColor = (r: number) => r >= 7.5 ? '#22C55E' : r >= 6 ? '#F59E0B' : '#EF4444'
+  const statusColor = (s: string) => s === '\u2705' ? '#22C55E' : s === '\u26A1' ? '#F59E0B' : s === '\u274C' ? '#EF4444' : '#3B82F6'
+  const PitchHeatmap = ({ playerName, position, zones }: { playerName: string; position: string; zones: { cx: number; cy: number; rx: number; ry: number; opacity: number }[] }) => (
+    <div className="rounded-xl p-4 flex-1" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', minWidth: 280 }}>
+      <div className="mb-2 flex items-center gap-2"><span style={{ color: '#F1C40F', fontWeight: 700, fontSize: 15 }}>{playerName}</span><span style={{ color: '#9CA3AF', fontSize: 13 }}>({position})</span></div>
+      <svg viewBox="0 0 340 220" className="w-full" style={{ borderRadius: 8 }}>
+        <rect x="10" y="10" width="320" height="200" fill="none" stroke="#4B5563" strokeWidth="1.5" /><line x1="170" y1="10" x2="170" y2="210" stroke="#4B5563" strokeWidth="1" /><circle cx="170" cy="110" r="30" fill="none" stroke="#4B5563" strokeWidth="1" /><circle cx="170" cy="110" r="2" fill="#4B5563" /><rect x="10" y="55" width="55" height="110" fill="none" stroke="#4B5563" strokeWidth="1" /><rect x="10" y="80" width="22" height="60" fill="none" stroke="#4B5563" strokeWidth="1" /><rect x="275" y="55" width="55" height="110" fill="none" stroke="#4B5563" strokeWidth="1" /><rect x="308" y="80" width="22" height="60" fill="none" stroke="#4B5563" strokeWidth="1" /><rect x="2" y="95" width="8" height="30" fill="none" stroke="#6B7280" strokeWidth="1" /><rect x="330" y="95" width="8" height="30" fill="none" stroke="#6B7280" strokeWidth="1" />
+        {zones.map((z, i) => <ellipse key={i} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} fill="#F1C40F" opacity={z.opacity} />)}
+      </svg>
+    </div>
+  )
+  const tabs = [{ id: 'plan', label: 'Training Plan' },{ id: 'attendance', label: 'Attendance' },{ id: 'opposition', label: 'Opposition' },{ id: 'ratings', label: 'Ratings' },{ id: 'setpieces', label: 'Set Pieces' },{ id: 'press', label: 'Press Conf' },{ id: 'heatmaps', label: 'Heatmaps' }]
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Coaching & Analysis</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Matchweek 28 — Next: Riverside United (A) Saturday 3:00 PM</p></div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ label: 'Session Plan', icon: Clipboard }, { label: 'Load Report', icon: BarChart3 }, { label: 'Recovery Schedule', icon: Heart }, { label: 'Record Session', icon: Video }, { label: 'Dept Insights', icon: BarChart3 }].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.icon size={12} />{a.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        <StatCard label="Squad Fitness" value="91%" icon={Heart} color="#22C55E" /><StatCard label="Avg Training Load" value="847 AU" icon={Activity} color="#C0392B" /><StatCard label="Days to Match" value="3" icon={Clock} color="#F1C40F" /><StatCard label="Available Players" value="22/25" icon={Users} color="#3B82F6" /><StatCard label="Form (Last 5)" value="WWDWL" icon={BarChart3} color="#C0392B" />
+      </div>
+      <div className="flex gap-1 flex-wrap rounded-lg p-1" style={{ backgroundColor: '#0A0B10' }}>{tabs.map(tab => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="px-3 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: activeTab === tab.id ? '#C0392B' : 'transparent', color: activeTab === tab.id ? '#F9FAFB' : '#9CA3AF' }}>{tab.label}</button>))}</div>
+      {activeTab === 'plan' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>This Week{"'"}s Training Plan</p></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Day', 'AM Session', 'PM Session', 'Duration', 'Intensity', 'Focus'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>{weeklyPlan.map((d, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937', backgroundColor: d.day === 'Saturday' ? 'rgba(192,57,43,0.05)' : undefined }} className="hover:bg-white/[0.02]"><td className="px-4 py-3 font-bold" style={{ color: d.day === 'Saturday' ? '#F1C40F' : '#F9FAFB' }}>{d.day}</td><td className="px-4 py-3" style={{ color: d.day === 'Saturday' ? '#F1C40F' : '#9CA3AF' }}>{d.am}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{d.pm}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{d.duration}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${intensityColor(d.intensity)}1a`, color: intensityColor(d.intensity) }}>{d.intensity}</span></td><td className="px-4 py-3" style={{ color: '#6B7280' }}>{d.focus}</td></tr>))}</tbody></table></div></div>)}
+      {activeTab === 'attendance' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Attendance Log</p><span className="text-xs" style={{ color: '#6B7280' }}>Today{"'"}s AM Session</span></div><div className="px-5 py-3 flex gap-4 flex-wrap" style={{ borderBottom: '1px solid #1F2937' }}>{[{ label: 'Attended', count: attendanceLog.filter(a => a.status === '\u2705').length, color: '#22C55E' }, { label: 'Modified', count: attendanceLog.filter(a => a.status === '\u26A1').length, color: '#F59E0B' }, { label: 'Absent', count: attendanceLog.filter(a => a.status === '\u274C').length, color: '#EF4444' }, { label: 'Medical', count: attendanceLog.filter(a => a.status === '\uD83C\uDFE5').length, color: '#3B82F6' }].map(s => (<div key={s.label} className="flex items-center gap-2 text-xs" style={{ color: '#9CA3AF' }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />{s.label}: <span style={{ color: '#F9FAFB', fontWeight: 700 }}>{s.count}</span></div>))}</div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Pos', 'Status', 'Notes'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>{attendanceLog.map((p, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td><td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{p.position}</span></td><td className="px-4 py-3"><span style={{ color: statusColor(p.status), fontWeight: 600 }}>{p.status}</span></td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{p.notes}</td></tr>))}</tbody></table></div></div>)}
+      {activeTab === 'opposition' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Opposition Analysis — Riverside United</p></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5"><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#F1C40F', letterSpacing: '0.05em' }}>Formation & Style</p><div className="flex items-center gap-3 mb-3"><span style={{ fontSize: 28, fontWeight: 800, color: '#F9FAFB' }}>4-4-2</span><div className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.6 }}><div>Compact mid-block</div><div>Direct transitions</div><div>Physical duels</div></div></div><p className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>Structured 4-4-2 with narrow wingers. Quick vertical passes to front two. Possession: 44%.</p></div><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#EF4444', letterSpacing: '0.05em' }}>Key Threats</p>{[{ name: 'Jake Morrison', pos: 'ST', note: '14 goals. Runs behind on shoulder.' },{ name: 'Callum Reed', pos: 'LM', note: 'Cuts inside onto right. 7 set piece assists.' },{ name: 'Dan Ashworth', pos: 'CB', note: "Aerial threat — 6 headed goals. 6'4\"." }].map((t, i) => (<div key={i} className="mb-2 pb-2" style={{ borderBottom: i < 2 ? '1px solid #1F2937' : undefined }}><p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{t.name} <span style={{ color: '#9CA3AF', fontWeight: 400 }}>({t.pos})</span></p><p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{t.note}</p></div>))}</div><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#F1C40F', letterSpacing: '0.05em' }}>Set Piece Vulnerabilities</p><ul className="text-xs space-y-1.5" style={{ color: '#9CA3AF', paddingLeft: 16 }}><li>Zonal marking — weak near post</li><li>GK doesn{"'"}t command beyond 6-yard box</li><li>Slow reset after wide FKs</li><li>Only 1 man at edge during corners</li></ul></div><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #C0392B' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#C0392B', letterSpacing: '0.05em' }}>Suggested Approach</p><div className="text-xs space-y-2" style={{ color: '#F9FAFB', lineHeight: 1.6 }}><p><span style={{ color: '#F1C40F', fontWeight: 700 }}>Press:</span> High press first 20 min — their CBs poor under pressure.</p><p><span style={{ color: '#F1C40F', fontWeight: 700 }}>Build-up:</span> Through midfield, exploit CM-winger gap.</p><p><span style={{ color: '#F1C40F', fontWeight: 700 }}>Wide:</span> Overload right — Henderson overlapping Correia.</p><p><span style={{ color: '#F1C40F', fontWeight: 700 }}>Set pieces:</span> Near post corners. Santos at back post.</p></div></div></div></div>)}
+      {activeTab === 'ratings' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Player Ratings — Last Match (vs Riverside United, W 2-1)</p></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Position', 'Rating', 'Key Stat'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>{performanceRatings.sort((a, b) => b.rating - a.rating).map((p, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td><td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{p.position}</span></td><td className="px-4 py-3"><span className="px-2.5 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: ratingColor(p.rating), color: '#fff' }}>{p.rating.toFixed(1)}</span></td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{p.keyStat}</td></tr>))}</tbody></table></div><div className="px-5 py-3 flex gap-4" style={{ borderTop: '1px solid #1F2937' }}>{[{ l: '7.5+', c: '#22C55E' }, { l: '6.0\u20147.4', c: '#F59E0B' }, { l: '<6.0', c: '#EF4444' }].map(s => (<span key={s.l} className="flex items-center gap-1.5 text-xs" style={{ color: '#9CA3AF' }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.c }} />{s.l}</span>))}</div></div>)}
+      {activeTab === 'setpieces' && (<div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Attacking Corners — 3 Routines</p></div><div className="p-4 space-y-3">{[{ name: 'Near Post Flick', code: 'CORNER-A1', detail: 'Inswinger to near post. Cole flicks on. Santos and Price attack.' },{ name: 'Short Corner Switch', code: 'CORNER-A2', detail: 'Short to Correia. Draws 2 defenders, switches to Clarke. Low cross to Santos.' },{ name: 'Back Post Overload', code: 'CORNER-A3', detail: 'Outswinger to back post. Cole and Phillips attack far. Henderson late run.' }].map((r, i) => (<div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold" style={{ color: '#F1C40F' }}>{r.name}</span><span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{r.code}</span></div><p className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>{r.detail}</p></div>))}</div></div><div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Defensive Set Pieces</p></div><div className="p-4 space-y-3"><div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold mb-2" style={{ color: '#C0392B' }}>Corner Defence — Hybrid</p><p className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>Zonal back 3 across 6-yard box. Man markers on Ashworth and Morrison. Thompson at edge.</p></div><div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold mb-2" style={{ color: '#C0392B' }}>Free Kick Wall</p><p className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>4-man wall: Nakamura, Campbell, Henderson, Correia. Santos behind for counter.</p></div><div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #F1C40F' }}><p className="text-xs font-bold mb-2" style={{ color: '#F1C40F' }}>Set Piece Record</p><div className="grid grid-cols-2 gap-2 text-xs"><div style={{ color: '#9CA3AF' }}>Corners scored: <span style={{ color: '#F9FAFB', fontWeight: 700 }}>8</span></div><div style={{ color: '#9CA3AF' }}>FK scored: <span style={{ color: '#F9FAFB', fontWeight: 700 }}>3</span></div><div style={{ color: '#9CA3AF' }}>Conceded (corners): <span style={{ color: '#F9FAFB', fontWeight: 700 }}>5</span></div><div style={{ color: '#9CA3AF' }}>Conceded (FK): <span style={{ color: '#F9FAFB', fontWeight: 700 }}>2</span></div></div></div></div></div></div>)}
+      {activeTab === 'press' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Press Conference Prep</p><span className="text-xs px-3 py-1 rounded-full font-bold" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>Today 2:00 PM</span></div><div className="p-5"><div className="rounded-lg p-4 mb-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #F1C40F' }}><p className="text-xs font-bold mb-2" style={{ color: '#F1C40F' }}>CONFIDENTIAL — Manager{"'"}s Briefing</p><p className="text-xs" style={{ color: '#9CA3AF' }}>Pre-match presser ahead of Riverside United (A). Expected: 8 journalists incl. Sky Sports. ~15 min.</p></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#22C55E', letterSpacing: '0.05em' }}>Talking Points</p><ol className="text-xs space-y-2 list-decimal pl-4" style={{ color: '#F9FAFB', lineHeight: 1.8 }}><li>Positive momentum — unbeaten in last 4</li><li>Santos{"'"} form — 6 goals in last 5</li><li>Respect for Riverside — strong at home</li><li>Squad depth improving</li><li>&quot;One game at a time&quot;</li></ol></div><div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs font-bold uppercase mb-3" style={{ color: '#EF4444', letterSpacing: '0.05em' }}>Likely Questions</p><div className="space-y-3">{[{ q: 'Injury updates?', a: "Keep vague. \"Couple of knocks. Decision on matchday.\"" },{ q: 'Santos linked with move?', a: "\"Fully focused here. No comment on speculation.\"" },{ q: 'Title race realistic?', a: "\"Long way to go. Focus on next game.\"" },{ q: 'Williams quiet — changes?', a: "\"Full confidence. Selection stays private.\"" }].map((item, i) => (<div key={i} className="pb-2" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : undefined }}><p className="text-xs font-semibold mb-1" style={{ color: '#F9FAFB' }}>Q: {item.q}</p><p className="text-xs italic" style={{ color: '#9CA3AF' }}>{item.a}</p></div>))}</div></div></div></div></div>)}
+      {activeTab === 'heatmaps' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Player Heatmaps — Last Match</p></div><div className="p-5 flex gap-4 flex-wrap">
+        <PitchHeatmap playerName="Santos" position="ST" zones={[{ cx: 295, cy: 110, rx: 30, ry: 35, opacity: 0.7 },{ cx: 310, cy: 100, rx: 18, ry: 22, opacity: 0.7 },{ cx: 310, cy: 120, rx: 16, ry: 18, opacity: 0.7 },{ cx: 255, cy: 110, rx: 35, ry: 30, opacity: 0.4 },{ cx: 240, cy: 90, rx: 20, ry: 18, opacity: 0.4 },{ cx: 200, cy: 110, rx: 25, ry: 20, opacity: 0.15 }]} />
+        <PitchHeatmap playerName="Thompson" position="CM" zones={[{ cx: 170, cy: 110, rx: 40, ry: 35, opacity: 0.7 },{ cx: 150, cy: 100, rx: 25, ry: 20, opacity: 0.7 },{ cx: 190, cy: 120, rx: 25, ry: 20, opacity: 0.7 },{ cx: 130, cy: 110, rx: 30, ry: 25, opacity: 0.4 },{ cx: 210, cy: 110, rx: 30, ry: 25, opacity: 0.4 },{ cx: 100, cy: 110, rx: 20, ry: 20, opacity: 0.15 },{ cx: 240, cy: 110, rx: 20, ry: 20, opacity: 0.15 }]} />
+        <PitchHeatmap playerName="Henderson" position="RB" zones={[{ cx: 80, cy: 45, rx: 35, ry: 22, opacity: 0.7 },{ cx: 110, cy: 40, rx: 25, ry: 18, opacity: 0.7 },{ cx: 55, cy: 50, rx: 22, ry: 18, opacity: 0.7 },{ cx: 140, cy: 45, rx: 25, ry: 18, opacity: 0.4 },{ cx: 80, cy: 70, rx: 20, ry: 15, opacity: 0.4 },{ cx: 200, cy: 45, rx: 20, ry: 15, opacity: 0.15 }]} />
+      </div><div className="px-5 py-3 flex gap-4" style={{ borderTop: '1px solid #1F2937' }}>{[{ l: 'High activity', o: 0.7 }, { l: 'Medium', o: 0.4 }, { l: 'Low', o: 0.15 }].map(s => (<span key={s.l} className="flex items-center gap-1.5 text-xs" style={{ color: '#9CA3AF' }}><div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#F1C40F', opacity: s.o }} />{s.l}</span>))}</div></div>)}
+    </div>
+  )
+}
+
+function FinanceView() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Club Finance</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Revenue, expenditure, wage bill, transfer budgets, and contract management.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Budget Overview', icon: DollarSign },
+          { label: 'Wage Report', icon: FileText },
+          { label: 'Revenue Dashboard', icon: BarChart3 },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#22C55E" />
+        <StatCard label="Wage Bill" value="£2.1m/yr" icon={Users} color="#C0392B" />
+        <StatCard label="Revenue (YTD)" value="£3.4m" icon={TrendingUp} color="#3B82F6" />
+        <StatCard label="Wage/Rev Ratio" value="62%" icon={BarChart3} color="#F59E0B" />
+      </div>
+
+      {/* Contract Tracker */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Contract Tracker</p>
+          <span className="text-xs" style={{ color: '#6B7280' }}>Sorted by expiry</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                {['Player', 'Position', 'Weekly Wage', 'Expiry', 'Status', 'Agent'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {CONTRACT_DATA.map((c, i) => {
+                const statusColor = c.status === 'Signed' ? '#22C55E' : c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
+                return (
+                  <tr key={i} style={{ borderBottom: i < CONTRACT_DATA.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
+                    <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{c.player}</td>
+                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{c.position}</span></td>
+                    <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{c.weeklyWage}</td>
+                    <td className="px-4 py-3" style={{ color: c.end === 'Jun 2025' ? '#EF4444' : c.end === 'Jun 2026' ? '#F59E0B' : '#9CA3AF' }}>{c.end}</td>
+                    <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}>{c.status}</span></td>
+                    <td className="px-4 py-3" style={{ color: '#6B7280' }}>{c.agent}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Revenue Breakdown */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Revenue Breakdown (YTD)</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { source: 'Matchday Revenue', amount: '£1.2m', pct: '35%', trend: '+8%', color: '#22C55E' },
+            { source: 'Broadcasting', amount: '£980k', pct: '29%', trend: '+2%', color: '#3B82F6' },
+            { source: 'Sponsorship', amount: '£620k', pct: '18%', trend: '+15%', color: '#F59E0B' },
+            { source: 'Merchandise', amount: '£340k', pct: '10%', trend: '+22%', color: '#8B5CF6' },
+            { source: 'Youth Grants', amount: '£180k', pct: '5%', trend: '—', color: '#06B6D4' },
+            { source: 'Other', amount: '£80k', pct: '3%', trend: '-5%', color: '#6B7280' },
+          ].map((r, i) => (
+            <div key={i} className="flex items-center justify-between px-5 py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }} />
+                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{r.source}</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="font-bold" style={{ color: '#F9FAFB' }}>{r.amount}</span>
+                <span style={{ color: '#6B7280' }}>{r.pct}</span>
+                <span style={{ color: r.trend.startsWith('+') ? '#22C55E' : r.trend === '—' ? '#6B7280' : '#EF4444' }}>{r.trend}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+function StaffView() { return <FootballStaffView /> }
+
+function _OriginalStaffView() {
+  return (
+    <div className="space-y-5" style={{display:'none'}}>
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Staff Management</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Coaching staff, medical team, scouts, and administrative personnel.</p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Staff Directory', icon: Users },
+          { label: 'Leave Calendar', icon: Calendar },
+          { label: 'Recruitment', icon: UserPlus },
+          { label: 'Dept Insights', icon: BarChart3 },
+        ].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}>
+            <a.icon size={12} />{a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Coaching Staff" value="8" icon={Users} color="#C0392B" />
+        <StatCard label="Medical Team" value="4" icon={Heart} color="#22C55E" />
+        <StatCard label="Scouts" value="4" icon={Eye} color="#3B82F6" />
+        <StatCard label="Total Staff" value="32" icon={Briefcase} color="#F59E0B" />
+      </div>
+
+      {/* Staff Directory */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Staff Directory</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                {['Name', 'Role', 'Department', 'Qualifications', 'Status'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'David Hughes', role: 'Assistant Manager', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
+                { name: 'Mike Reynolds', role: 'First Team Coach', dept: 'Coaching', quals: 'UEFA A', status: 'Available' },
+                { name: 'Alan Cooper', role: 'GK Coach', dept: 'Coaching', quals: 'UEFA Pro (in progress)', status: 'Course Mon-Wed' },
+                { name: 'Sarah Mitchell', role: 'Head Physio', dept: 'Medical', quals: 'MSc Sports Med', status: 'Available' },
+                { name: 'Dr. James Hart', role: 'Club Doctor', dept: 'Medical', quals: 'MBBS, MRCGP', status: 'Available' },
+                { name: 'Tom Wallace', role: 'Fitness Coach', dept: 'Coaching', quals: 'BSc S&C', status: 'Available' },
+                { name: 'Mark Evans', role: 'Chief Scout', dept: 'Scouting', quals: 'UEFA B', status: 'Belgium trip' },
+                { name: 'Emma Clark', role: 'Performance Analyst', dept: 'Analytics', quals: 'MSc Data Science', status: 'Starts Monday' },
+              ].map((s, i) => {
+                const statusColor = s.status === 'Available' ? '#22C55E' : '#F59E0B'
+                return (
+                  <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
+                    <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{s.name}</td>
+                    <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{s.role}</td>
+                    <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(192,57,43,0.1)', color: '#E74C3C' }}>{s.dept}</span></td>
+                    <td className="px-4 py-3" style={{ color: '#6B7280' }}>{s.quals}</td>
+                    <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}>{s.status}</span></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Leave Calendar */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Leave & Absences</p>
+        </div>
+        {[
+          { name: 'Alan Cooper', dates: '28-30 Mar', reason: 'UEFA Pro Licence course', cover: 'David Hughes' },
+          { name: 'Sarah Mitchell', dates: '14-18 Apr', reason: 'Annual leave', cover: 'Dr. James Hart' },
+          { name: 'Mark Evans', dates: '25-29 Mar', reason: 'Scouting trip — Belgium', cover: 'Carlos Mendes (remote)' },
+        ].map((l, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{l.name}</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>{l.reason}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-semibold" style={{ color: '#F59E0B' }}>{l.dates}</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Cover: {l.cover}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  )
+}
+
+function FacilitiesView() {
+  const [activeTab, setActiveTab] = useState<string>('overview')
+  const complianceItems = [
+    { item: 'DBS Checks (all staff)', status: 'green', deadline: '\u2014', notes: 'All 32 staff cleared' },
+    { item: 'Safeguarding Level 1', status: 'green', deadline: '\u2014', notes: 'All coaching staff certified' },
+    { item: 'Safeguarding Level 3 (DSO)', status: 'amber', deadline: '15 Apr 2026', notes: 'DSO renewal due \u2014 course booked' },
+    { item: 'Kit Sponsor Agreement', status: 'green', deadline: '\u2014', notes: 'Signed through 2027/28' },
+    { item: 'Public Liability Insurance', status: 'green', deadline: '\u2014', notes: 'Renewed 1 Jan 2026' },
+    { item: 'Stadium Safety Certificate', status: 'amber', deadline: '8 Apr 2026', notes: 'Council inspection scheduled' },
+    { item: 'EFL Registration Compliance', status: 'green', deadline: '\u2014', notes: 'Fully compliant' },
+    { item: 'Anti-Doping Education', status: 'red', deadline: '22 Apr 2026', notes: '3 players outstanding' },
+  ]
+  const staffDepartments = [
+    { dept: 'Football (Coaching)', count: 8, color: '#C0392B' },{ dept: 'Medical', count: 4, color: '#22C55E' },{ dept: 'Academy', count: 6, color: '#3B82F6' },{ dept: 'Scouting', count: 5, color: '#8B5CF6' },{ dept: 'Commercial', count: 3, color: '#F1C40F' },{ dept: 'Administration', count: 4, color: '#F97316' },{ dept: 'Facilities', count: 2, color: '#06B6D4' },
+  ]
+  const totalStaff = staffDepartments.reduce((s, d) => s + d.count, 0)
+  const deadlines = [
+    { event: 'FA Cup 1st Round Registration', date: '15 Apr 2026', daysAway: 14 },{ event: 'Season Ticket Renewal Deadline', date: '30 Apr 2026', daysAway: 29 },{ event: 'EFL Financial Submission', date: '1 May 2026', daysAway: 30 },{ event: 'End of Season Awards', date: '20 May 2026', daysAway: 49 },{ event: 'Transfer Window Opens', date: '9 Jun 2026', daysAway: 69 },
+  ]
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+  const bookings = [
+    { room: 'Main Pitch', slots: ['1st Team 09\u201311', '1st Team 09\u201311', 'Academy U21 09\u201312', '1st Team 09\u201311', 'Match Prep 10\u201312'] },
+    { room: 'Training Pitch B', slots: ['Academy U18 10\u201312', '1st Team Tactical 13\u201315', 'Academy U18 10\u201312', 'Reserves 09\u201311', 'Academy U18 10\u201312'] },
+    { room: 'Gym / Weights', slots: ['1st Team 07\u201309', 'Medical Rehab 08\u201310', '1st Team 07\u201309', '1st Team 07\u201309', 'Open 07\u201312'] },
+    { room: 'Video Suite', slots: ['Coaching 14\u201316', 'Scouting 11\u201313', '1st Team 14\u201316', 'Academy 14\u201315:30', 'Pre-Match 14\u201317'] },
+    { room: 'Meeting Room A', slots: ['Board 10\u201312', '\u2014', 'Commercial 10\u201311:30', '\u2014', 'Staff Brief 09\u201310'] },
+  ]
+  const disciplinaryData = [
+    { name: 'Ryan Thompson', number: 8, yellows: 4, reds: 0 },{ name: 'Ben Gallagher', number: 16, yellows: 4, reds: 0 },{ name: 'Luka Petrovic', number: 22, yellows: 3, reds: 1 },{ name: 'Tyrone Campbell', number: 3, yellows: 3, reds: 0 },{ name: 'Callum Henderson', number: 2, yellows: 2, reds: 1 },{ name: 'Marcus Cole', number: 6, yellows: 2, reds: 0 },{ name: 'Rafa Correia', number: 7, yellows: 2, reds: 0 },{ name: 'Tommy Richards', number: 21, yellows: 1, reds: 0 },{ name: 'Jake Phillips', number: 15, yellows: 1, reds: 0 },{ name: 'Omar Hassan', number: 23, yellows: 1, reds: 0 },
+  ]
+  const totalYellows = disciplinaryData.reduce((s, p) => s + p.yellows, 0)
+  const totalReds = disciplinaryData.reduce((s, p) => s + p.reds, 0)
+  const statusBadge = (status: string) => {
+    const cfg: Record<string, { label: string; color: string }> = { green: { label: '\u2705 Complete', color: '#22C55E' }, amber: { label: '\uD83D\uDFE1 Due Soon', color: '#F1C40F' }, red: { label: '\uD83D\uDD34 Action Needed', color: '#C0392B' } }
+    const c = cfg[status] || cfg.green
+    return <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: `${c.color}1a`, color: c.color }}>{c.label}</span>
+  }
+  const tabs = [{ id: 'overview', label: 'Overview' },{ id: 'compliance', label: 'Compliance' },{ id: 'staff', label: 'Staff' },{ id: 'deadlines', label: 'Deadlines' },{ id: 'bookings', label: 'Bookings' },{ id: 'disciplinary', label: 'Disciplinary' }]
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Club Operations</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Administration, compliance, staffing & facility management.</p></div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ label: 'Export Report', icon: FileText }, { label: 'Audit Log', icon: Clipboard }, { label: 'Booking Schedule', icon: Calendar }, { label: 'Dept Insights', icon: BarChart3 }].map((a, i) => (
+          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap" style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.icon size={12} />{a.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Registered Players" value="22/25" icon={Shield} color="#22C55E" /><StatCard label="Pending Registrations" value="2" icon={Clock} color="#F1C40F" /><StatCard label="Total Staff" value={String(totalStaff)} icon={Users} color="#3B82F6" /><StatCard label="Compliance Issues" value="2" icon={AlertCircle} color="#C0392B" />
+      </div>
+      <div className="flex gap-1 flex-wrap rounded-lg p-1" style={{ backgroundColor: '#0A0B10' }}>{tabs.map(tab => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="px-3 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: activeTab === tab.id ? '#C0392B' : 'transparent', color: activeTab === tab.id ? '#F9FAFB' : '#9CA3AF' }}>{tab.label}</button>))}</div>
+      {activeTab === 'overview' && (<div className="space-y-4"><div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-sm font-semibold mb-3" style={{ color: '#F9FAFB' }}>FA Registration Summary</p><div className="w-full h-3 rounded-full overflow-hidden flex mb-3" style={{ backgroundColor: '#1F2937' }}><div style={{ width: '88%', backgroundColor: '#22C55E', height: '100%' }} /><div style={{ width: '8%', backgroundColor: '#F1C40F', height: '100%' }} /><div style={{ width: '4%', backgroundColor: '#C0392B', height: '100%' }} /></div><div className="flex gap-4 text-xs" style={{ color: '#9CA3AF' }}><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#22C55E' }} /> Registered (22)</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#F1C40F' }} /> Pending (2)</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#C0392B' }} /> Int{"'"}l Clearance (1)</span></div></div><div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F1C40F' }}>Pending Registrations</p></div>{[{ name: 'J. Morrison', num: 28, reason: 'Awaiting FA confirmation', date: '22 Mar 2026' },{ name: 'R. Fernandez', num: 31, reason: 'Loan paperwork processing', date: '28 Mar 2026' }].map((p, i) => (<div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}><div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>#{p.num} {p.name}</p><p className="text-xs" style={{ color: '#9CA3AF' }}>{p.reason}</p></div><span className="text-xs" style={{ color: '#6B7280' }}>Submitted: {p.date}</span></div>))}</div><div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid rgba(192,57,43,0.3)' }}><p className="text-sm font-semibold mb-2" style={{ color: '#C0392B' }}>International Clearance Outstanding (1)</p><div className="flex items-center justify-between"><div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>#14 K. Diallo</p><p className="text-xs" style={{ color: '#9CA3AF' }}>France — FIFA TMS pending</p></div><span className="text-xs" style={{ color: '#6B7280' }}>Submitted: 15 Mar 2026</span></div></div></div>)}
+      {activeTab === 'compliance' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Compliance Checklist</p><span className="text-xs" style={{ color: '#6B7280' }}>{complianceItems.filter(c => c.status === 'green').length}/{complianceItems.length} complete</span></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Item', 'Status', 'Deadline', 'Notes'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>{complianceItems.map((item, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937', backgroundColor: item.status === 'red' ? 'rgba(192,57,43,0.05)' : item.status === 'amber' ? 'rgba(241,196,15,0.03)' : undefined }} className="hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{item.item}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3" style={{ color: item.deadline === '\u2014' ? '#9CA3AF' : '#F1C40F', fontWeight: item.deadline === '\u2014' ? 400 : 600 }}>{item.deadline}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{item.notes}</td></tr>))}</tbody></table></div></div>)}
+      {activeTab === 'staff' && (<div className="space-y-4"><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{staffDepartments.map((d, i) => (<div key={i} className="rounded-xl p-4 flex flex-col items-center gap-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${d.color}1a` }}><Users size={18} style={{ color: d.color }} /></div><span className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>{d.count}</span><span className="text-xs text-center" style={{ color: '#9CA3AF' }}>{d.dept}</span></div>))}<div className="rounded-xl p-4 flex flex-col items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #C0392B, #922B21)' }}><span className="text-xs font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.7)', letterSpacing: '0.05em' }}>Total Staff</span><span className="text-3xl font-black" style={{ color: '#F9FAFB' }}>{totalStaff}</span></div></div><div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs font-semibold mb-3" style={{ color: '#9CA3AF' }}>Staff Distribution</p><div className="w-full h-7 rounded-lg overflow-hidden flex">{staffDepartments.map((d, i) => (<div key={i} style={{ width: `${(d.count/totalStaff)*100}%`, backgroundColor: d.color, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: d.color === '#F1C40F' ? '#111318' : '#FFF' }} title={`${d.dept}: ${d.count}`}>{d.count > 3 ? d.count : ''}</div>))}</div><div className="flex flex-wrap gap-3 mt-3">{staffDepartments.map((d, i) => (<span key={i} className="flex items-center gap-1.5 text-xs" style={{ color: '#9CA3AF' }}><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />{d.dept}</span>))}</div></div></div>)}
+      {activeTab === 'deadlines' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Deadlines</p></div>{deadlines.map((d, i) => { const urgency = d.daysAway <= 14 ? '#C0392B' : d.daysAway <= 30 ? '#F1C40F' : '#22C55E'; return (<div key={i} className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: d.daysAway <= 14 ? 'rgba(192,57,43,0.05)' : undefined }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${urgency}15` }}><Calendar size={16} style={{ color: urgency }} /></div><div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{d.event}</p><p className="text-xs" style={{ color: '#9CA3AF' }}>{d.date}</p></div></div><span className="text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: `${urgency}15`, color: urgency }}>{d.daysAway} days</span></div>)})}</div>)}
+      {activeTab === 'bookings' && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>This Week{"'"}s Bookings</p><span className="text-xs" style={{ color: '#6B7280' }}>Week commencing 30 Mar 2026</span></div><div className="overflow-x-auto"><table className="w-full text-xs" style={{ minWidth: 700 }}><thead><tr style={{ borderBottom: '1px solid #1F2937' }}><th className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280', width: 140 }}>Room / Pitch</th>{days.map(day => <th key={day} className="text-left px-3 py-3 font-semibold" style={{ color: '#6B7280' }}>{day}</th>)}</tr></thead><tbody>{bookings.map((row, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{row.room}</td>{row.slots.map((slot, j) => (<td key={j} className="px-3 py-2" style={{ color: slot === '\u2014' ? '#4B5563' : '#F9FAFB', verticalAlign: 'top' }}>{slot !== '\u2014' ? <div className="rounded-md px-2 py-1.5" style={{ backgroundColor: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)', lineHeight: 1.3, fontSize: 11 }}>{slot}</div> : <span className="px-2 py-1.5 block" style={{ color: '#4B5563' }}>Available</span>}</td>))}</tr>))}</tbody></table></div></div>)}
+      {activeTab === 'disciplinary' && (<div className="space-y-4"><div className="grid grid-cols-3 gap-3"><StatCard label="Total Yellow Cards" value={String(totalYellows)} icon={AlertCircle} color="#F1C40F" /><StatCard label="Total Red Cards" value={String(totalReds)} icon={AlertCircle} color="#C0392B" /><StatCard label="Suspension Risk" value={String(disciplinaryData.filter(p => p.yellows >= 4).length)} icon={Shield} color="#F97316" /></div><div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Disciplinary Record</p></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player', 'Yellow Cards', 'Red Cards', 'Total', 'Suspension Risk'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>{disciplinaryData.map((p, i) => { const atRisk = p.yellows >= 4; return (<tr key={i} style={{ borderBottom: '1px solid #1F2937', backgroundColor: atRisk ? 'rgba(249,115,22,0.06)' : undefined }} className="hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>#{p.number} {p.name}</td><td className="px-4 py-3"><span className="flex items-center gap-1">{Array.from({ length: Math.min(p.yellows, 5) }).map((_, idx) => (<span key={idx} style={{ display: 'inline-block', width: 10, height: 14, borderRadius: 2, backgroundColor: '#F1C40F' }} />))}<span className="ml-1 font-semibold" style={{ color: p.yellows >= 3 ? '#F1C40F' : '#9CA3AF' }}>{p.yellows}</span></span></td><td className="px-4 py-3"><span className="flex items-center gap-1">{Array.from({ length: p.reds }).map((_, idx) => (<span key={idx} style={{ display: 'inline-block', width: 10, height: 14, borderRadius: 2, backgroundColor: '#C0392B' }} />))}<span className={p.reds > 0 ? 'ml-1' : ''} style={{ fontWeight: 600, color: p.reds > 0 ? '#C0392B' : '#9CA3AF' }}>{p.reds}</span></span></td><td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>{p.yellows + p.reds}</td><td className="px-4 py-3">{atRisk ? <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: '#F97316' }}>1 away from ban</span> : p.yellows >= 3 ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(241,196,15,0.1)', color: '#F1C40F' }}>Watch</span> : <span style={{ color: '#4B5563' }}>{'\u2014'}</span>}</td></tr>)})}</tbody></table></div><div className="px-5 py-3 flex justify-end gap-4" style={{ borderTop: '1px solid #1F2937' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>Team Total: <span style={{ color: '#F1C40F', fontWeight: 700 }}>{totalYellows} yellows</span>, <span style={{ color: '#C0392B', fontWeight: 700 }}>{totalReds} reds</span></span></div></div></div>)}
+    </div>
+  )
+}
+
+// ─── Settings View ──────────────────────────────────────────────────────────
+
+const VOICES = [
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring — your daily motivator' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting — reassuring and steady' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear' },
+]
+
+// ─── Social Media View ──────────────────────────────────────────────────────
+
+const SOCIAL_MENTIONS = [
+  { user: '@OakridgeFan92', content: 'Great performance from Oakridge FC last night! Santos was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+  { user: '@SportsBlogger', content: 'Hearing Oakridge FC are close to signing André Costa — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Oakridge! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
+  { user: '@ChampionshipNews', content: 'Oakridge FC move up to 8th after beating Riverside. Genuine playoff push?', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+  { user: '@TacticsBoard', content: 'Thompson\'s pass map vs Riverside was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
+  { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
+  { user: '@YouthFootball', content: 'Tyler James (17) training with Oakridge first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+  { user: '@TransferWatch', content: 'Oakridge FC have reportedly bid for SC Braga midfielder. Championship clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+]
+
+const SOCIAL_PLATFORMS = [
+  { name: 'X / Twitter', emoji: '🐦', followers: '124k', growth: '+840', engagement: '5.1%', bestTime: '12:30pm' },
+  { name: 'Instagram', emoji: '📸', followers: '89k', growth: '+620', engagement: '4.8%', bestTime: '6:00pm' },
+  { name: 'Facebook', emoji: '📘', followers: '42k', growth: '+180', engagement: '2.1%', bestTime: '9:00am' },
+  { name: 'YouTube', emoji: '▶️', followers: '18k', growth: '+340', engagement: '6.2%', bestTime: '2:00pm' },
+  { name: 'LinkedIn', emoji: '💼', followers: '8k', growth: '+90', engagement: '3.4%', bestTime: '8:00am' },
+  { name: 'TikTok', emoji: '🎵', followers: '3k', growth: '+420', engagement: '8.7%', bestTime: '7:00pm' },
+]
+
+const SOCIAL_CALENDAR = [
+  { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
+  { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
+  { day: 'Wed', time: '12pm', content: 'Player spotlight — Santos', platforms: 'All' },
+  { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
+  { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
+  { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
+  { day: 'Sun', time: '11am', content: 'Highlights + report', platforms: 'All' },
+]
+
+function SocialMediaView() {
+  const [platform, setPlatform] = useState(0)
+  const [sentimentFilter, setSentimentFilter] = useState<string>('all')
+  const [socToast, setSocToast] = useState<string | null>(null)
+  function socAction(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
+
+  const filtered = sentimentFilter === 'all' ? SOCIAL_MENTIONS : SOCIAL_MENTIONS.filter(m => m.sentiment === sentimentFilter)
+  const p = SOCIAL_PLATFORMS[platform]
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Oakridge FC</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Total Followers" value="284k" icon={Users} color="#C0392B" />
+        <StatCard label="Engagement Rate" value="4.2%" icon={Activity} color="#22C55E" />
+        <StatCard label="Mentions Today" value="847" icon={MessageSquare} color="#8B5CF6" />
+        <StatCard label="Sentiment Score" value="72/100" icon={Heart} color="#F1C40F" />
+      </div>
+
+      {/* Platform Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {SOCIAL_PLATFORMS.map((sp, i) => (
+          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#C0392B' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
+            {sp.emoji} {sp.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Platform Stats */}
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.emoji} {p.name}</p>
+          {[{ l: 'Followers', v: p.followers }, { l: 'Weekly Growth', v: p.growth }, { l: 'Engagement', v: p.engagement }, { l: 'Best Post Time', v: p.bestTime }].map(s => (
+            <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>
+          ))}
+        </div>
+
+        {/* Mentions Feed */}
+        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Mentions</p>
+            <div className="flex gap-1">{['all', 'positive', 'neutral', 'negative'].map(f => (
+              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#C0392B' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
+            ))}</div>
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {filtered.map((m, i) => (
+              <div key={i} className="px-5 py-3 flex gap-3" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #1F2937' : undefined }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{m.user[1].toUpperCase()}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs"><span className="font-bold" style={{ color: '#F9FAFB' }}>{m.user}</span> <span style={{ color: '#6B7280' }}>· {m.time}</span></p>
+                  <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>{m.content}</p>
+                  <div className="flex items-center gap-3 mt-1"><span className="text-[10px]" style={{ color: '#6B7280' }}>❤️ {m.likes}</span><span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: m.sentiment === 'positive' ? 'rgba(34,197,94,0.12)' : m.sentiment === 'negative' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: m.sentiment === 'positive' ? '#22C55E' : m.sentiment === 'negative' ? '#EF4444' : '#F59E0B' }}>{m.sentiment}</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sentiment + Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Sentiment Analysis</p>
+          {[{ l: 'Positive', v: 68, c: '#22C55E' }, { l: 'Neutral', v: 22, c: '#F59E0B' }, { l: 'Negative', v: 10, c: '#EF4444' }].map(s => (
+            <div key={s.l} className="mb-2"><div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{s.l}</span><span style={{ color: s.c }}>{s.v}%</span></div><div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${s.v}%`, backgroundColor: s.c }} /></div></div>
+          ))}
+        </div>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Content Calendar</p></div>
+          {SOCIAL_CALENDAR.map((c, i) => (
+            <div key={i} className="flex items-center gap-3 px-5 py-2.5" style={{ borderBottom: i < SOCIAL_CALENDAR.length - 1 ? '1px solid #1F2937' : undefined }}>
+              <span className="text-xs font-bold w-8" style={{ color: '#C0392B' }}>{c.day}</span>
+              <span className="text-xs w-10" style={{ color: '#6B7280' }}>{c.time}</span>
+              <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{c.content}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{c.platforms}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+    </div>
+  )
+}
+
+function DynamicsView() {
+  const [socToast, setSocToast] = useState<string | null>(null)
+  function action(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
+
+  const PLAYER_HAPPINESS = [
+    { name: 'Marcus Webb', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
+    { name: 'Jordan Ellis', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
+    { name: 'Lucas Santos', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
+    { name: 'Ryan Thompson', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
+    { name: 'Danny Okafor', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
+    { name: 'Kenji Nakamura', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
+    { name: 'Chris Walsh', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Dressing Room Intelligence</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Squad harmony, morale and player wellbeing</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-xs" style={{ color: '#6B7280' }}>DRESSING ROOM ATMOSPHERE</p>
+          <p className="text-4xl font-black my-2" style={{ color: '#F1C40F' }}>74<span className="text-lg">/100</span></p>
+          <p className="text-xs" style={{ color: '#22C55E' }}>Good — ↑3 from last week</p>
+          <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'linear-gradient(90deg, #EF4444, #F59E0B, #22C55E)' }}><div className="h-full" style={{ width: '74%', backgroundColor: 'transparent' }} /></div>
+        </div>
+        <div className="lg:col-span-2 grid grid-cols-2 gap-3">
+          {[{ l: 'Squad Cohesion', v: 78, s: '🟢' }, { l: 'Manager Trust', v: 82, s: '🟢' }, { l: 'Playing Time Satisfaction', v: 61, s: '🟡' }, { l: 'Training Happiness', v: 71, s: '🟢' }].map(p => (
+            <div key={p.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-xs mb-1" style={{ color: '#6B7280' }}>{p.l}</p>
+              <p className="text-xl font-black" style={{ color: p.v >= 70 ? '#22C55E' : p.v >= 50 ? '#F59E0B' : '#EF4444' }}>{p.v}/100 {p.s}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Player Happiness</p></div>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player','Overall','Morale','Training','Playing Time','Contract','Form','Risk'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{PLAYER_HAPPINESS.map(p => {
+          function sc(v: number) { return v >= 8 ? '#22C55E' : v >= 5 ? '#F59E0B' : '#EF4444' }
+          return <tr key={p.name} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>{[p.overall,p.morale,p.training,p.playingTime,p.contract,p.form].map((v,i) => <td key={i} className="px-3 py-2 font-bold" style={{ color: sc(v) }}>{v}</td>)}<td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: p.risk === 'High' ? 'rgba(239,68,68,0.12)' : p.risk === 'Medium' ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: p.risk === 'High' ? '#EF4444' : p.risk === 'Medium' ? '#F59E0B' : '#22C55E' }}>{p.risk}</span></td></tr>
+        })}</tbody></table>
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Disciplinary Log (Last 30 Days)</p>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Player','Offence','Date','Punishment','Status'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[{ p: 'Marcus Webb', o: 'Late to training', d: '12 Mar', pun: 'Verbal warning', s: 'Resolved' },{ p: 'Danny Okafor', o: 'Missed training', d: '18 Mar', pun: 'Fine: £500', s: 'Active' },{ p: 'Kenji Nakamura', o: 'Red card reaction', d: '22 Mar', pun: 'Fine: £1,000', s: 'Active' }].map(r => <tr key={r.p} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{r.p}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.o}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.d}</td><td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{r.pun}</td><td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: r.s === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: r.s === 'Active' ? '#EF4444' : '#22C55E' }}>{r.s}</span></td></tr>)}</tbody></table>
+      </div>
+
+      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{socToast}</div>}
+    </div>
+  )
+}
+
+function PSRView() {
+  const [purchaseSlider, setPurchaseSlider] = useState(0)
+  const [saleSlider, setSaleSlider] = useState(0)
+  const baseLoss = 20.7
+  const projected = baseLoss + purchaseSlider - saleSlider
+  const [psrToast, setPsrToast] = useState<string | null>(null)
+  function psrAction(l: string) { setPsrToast(`${l} — generating...`); setTimeout(() => setPsrToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance & Profit & Sustainability Rules</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Championship PSR limit: £39m loss over 3 rolling years</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '2px solid #F59E0B' }}>
+        <p className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>PSR STATUS: ⚠️ MONITOR</p>
+        <div className="flex items-center gap-6"><div><p className="text-3xl font-black" style={{ color: '#F9FAFB' }}>£{projected.toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>3-year rolling loss</p></div><div><p className="text-3xl font-black" style={{ color: '#22C55E' }}>£{(39 - projected).toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>Headroom remaining</p></div><div className="flex-1"><div className="h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${(projected / 39) * 100}%`, backgroundColor: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }} /></div><p className="text-[10px] text-right mt-0.5" style={{ color: '#6B7280' }}>£39m limit</p></div></div>
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <table className="w-full text-sm"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['Year','Revenue','Expenditure','Net P&L','Deductions','PSR Figure'].map(h => <th key={h} className="text-left px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[['2023/24','£42.1m','£54.3m','-£12.2m','-£4.1m','-£8.1m'],['2024/25','£46.8m','£57.2m','-£10.4m','-£3.8m','-£6.6m'],['2025/26*','£51.2m','£61.1m','-£9.9m','-£3.9m','-£6.0m']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : c.startsWith('-') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}<tr style={{ backgroundColor: '#0A0B10' }}><td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>TOTAL</td><td colSpan={3} /><td /><td className="px-4 py-3 font-bold" style={{ color: '#22C55E' }}>-£20.7m ✅</td></tr></tbody></table>
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[{ l: 'Match Day', v: '£8.2m', b: '£8.5m' },{ l: 'Broadcasting', v: '£22.4m', b: '£22.0m' },{ l: 'Commercial', v: '£12.1m', b: '£14.0m' },{ l: 'Weekly Wages', v: '£187k', b: '£200k limit' }].map(r => (
+          <div key={r.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{r.l}</p><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{r.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>Budget: {r.b}</p></div>
+        ))}
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>What-If PSR Calculator</p>
+        <div className="grid grid-cols-2 gap-6">
+          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#C0392B' }} /></div>
+          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Sale: £{saleSlider}m</p><input type="range" min={0} max={20} step={0.5} value={saleSlider} onChange={e => setSaleSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#22C55E' }} /></div>
+        </div>
+        <div className="mt-4 rounded-lg p-3 text-center" style={{ backgroundColor: projected > 30 ? 'rgba(239,68,68,0.08)' : projected > 20 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${projected > 30 ? 'rgba(239,68,68,0.3)' : projected > 20 ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}` }}>
+          <p className="text-sm font-bold" style={{ color: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }}>Projected PSR: -£{projected.toFixed(1)}m of £39m limit — {projected > 39 ? '❌ BREACH' : projected > 30 ? '⚠️ AT RISK' : '✅ SAFE'}</p>
+        </div>
+      </div>
+
+      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{psrToast}</div>}
+    </div>
+  )
+}
+
+function SquadPlannerView() {
+  const [season, setSeason] = useState<'current' | 'next' | 'after'>('current')
+  const [spToast, setSpToast] = useState<string | null>(null)
+  function spAction(l: string) { setSpToast(`${l} — opening...`); setTimeout(() => setSpToast(null), 2500) }
+
+  return (
+    <div className="space-y-5">
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Planner</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Plan your squad for this season, next season and beyond</p></div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+          <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
+            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#922B21', color: '#F9FAFB' }}><a.i size={12} />{a.l}</button>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        {[{ k: 'current' as const, l: '2025/26 — Current' },{ k: 'next' as const, l: '2026/27 — Next' },{ k: 'after' as const, l: '2027/28 — After' }].map(s => (
+          <button key={s.k} onClick={() => setSeason(s.k)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: season === s.k ? '#C0392B' : '#111318', color: '#F9FAFB', border: season === s.k ? 'none' : '1px solid #1F2937' }}>{s.l}</button>
+        ))}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <table className="w-full text-xs"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['#','Player','Pos','Age','Contract','Value','Status'].map(h => <th key={h} className="text-left px-3 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{SQUAD.map((p, i) => {
+          const expiring = p.contractExpiry.includes('2025') || p.contractExpiry.includes('2026')
+          const leaving = season !== 'current' && p.contractExpiry.includes('2025')
+          return <tr key={i} style={{ borderBottom: '1px solid #1F2937', opacity: leaving ? 0.3 : 1, textDecoration: leaving ? 'line-through' : 'none' }}>
+            <td className="px-3 py-2" style={{ color: '#6B7280' }}>{p.number}</td>
+            <td className="px-3 py-2 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{p.position}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{season === 'current' ? p.age : season === 'next' ? p.age + 1 : p.age + 2}</td>
+            <td className="px-3 py-2" style={{ color: expiring ? '#EF4444' : '#9CA3AF' }}>{p.contractExpiry}</td>
+            <td className="px-3 py-2" style={{ color: '#9CA3AF' }}>{p.marketValue}</td>
+            <td className="px-3 py-2"><span className="px-2 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: leaving ? 'rgba(239,68,68,0.12)' : expiring ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: leaving ? '#EF4444' : expiring ? '#F59E0B' : '#22C55E' }}>{leaving ? 'Leaving' : expiring ? 'Expiring' : 'Secure'}</span></td>
+          </tr>
+        })}</tbody></table>
+      </div>
+
+      {season !== 'current' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #F59E0B' }}>
+          <p className="text-sm font-bold mb-2" style={{ color: '#F59E0B' }}>Positions Needing Recruitment</p>
+          <div className="flex gap-3">{['RB', 'CM', 'ST'].map(pos => <span key={pos} className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>{pos} — Recruit Needed</span>)}</div>
+        </div>
+      )}
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Academy Pipeline</p>
+        {ACADEMY_STANDOUTS.map(p => <div key={p.name} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#F9FAFB' }}>{p.name} — {p.position}</span><span className="text-xs" style={{ color: '#F1C40F' }}>Ready: {p.pathway === 'First Team Ready' ? 'Now' : '2027'}</span></div>)}
+      </div>
+
+      {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>{spToast}</div>}
+    </div>
+  )
+}
+
+function ClubProfileView() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#C0392B' }}>⚽</div>
+        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Oakridge FC</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL Championship · Founded 1887</p></div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
+          <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F1C40F' }}>🏆 Honours</p>
+          {['League One title: 2019/20','League Two title: 2015/16','FA Cup Semi-finals: 1978, 1994','League Cup QF: 2021'].map(h => <p key={h} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{h}</p>)}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</p>
+          {[{ l: 'Training Ground', v: '⭐⭐⭐⭐ Cat 1' },{ l: 'Stadium', v: '⭐⭐⭐ Championship' },{ l: 'Academy', v: '⭐⭐⭐⭐ EPPP Cat 2' },{ l: 'Medical Centre', v: '⭐⭐⭐⭐' }].map(f => <div key={f.l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#9CA3AF' }}>{f.l}</span><span className="text-xs" style={{ color: '#F1C40F' }}>{f.v}</span></div>)}
+        </div>
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
+        {[['Chairman', 'Robert Blackwell (since 2018)'],['Owner', 'Oakridge FC Holdings Ltd'],['Manager', 'Marcus Reid (since Jan 2024)'],['Philosophy', '"Develop. Compete. Inspire."']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
+      </div>
+
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Recent League History</p></div>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Season','Division','Position','Pts'].map(h => <th key={h} className="text-left px-4 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
+        <tbody>{[['2025/26','Championship','8th','—'],['2024/25','Championship','14th','58'],['2023/24','Championship','11th','62'],['2022/23','League One','1st 🏆','92'],['2021/22','League One','4th','78']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? '#F9FAFB' : c.includes('🏆') ? '#F1C40F' : '#9CA3AF' }}>{c}</td>)}</tr>)}</tbody></table>
+      </div>
+    </div>
+  )
+}
+
+// ─── Board Suite View ────────────────────────────────────────────────────────
+
+function BoardSuiteView() {
+  const [tab, setTab] = useState<'overview' | 'notes' | 'meetings' | 'financial' | 'transfers'>('overview')
+  const [noteContent, setNoteContent] = useState('')
+  const TABS = [
+    { id: 'overview' as const, label: 'Club Overview', icon: '🏟️' },
+    { id: 'notes' as const, label: 'Confidential Notes', icon: '🔒' },
+    { id: 'meetings' as const, label: 'Board Meetings', icon: '📅' },
+    { id: 'financial' as const, label: 'Financial Strategy', icon: '💰' },
+    { id: 'transfers' as const, label: 'Transfer Strategy', icon: '🎯' },
+  ]
+
+  function StatCard({ label, value, sub, color = '#F1C40F' }: { label: string; value: string; sub?: string; color?: string }) {
+    return (
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+        <p className="text-xs" style={{ color: '#9CA3AF' }}>{label}</p>
+        <p className="text-xl font-black mt-1" style={{ color }}>{value}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(241,196,15,0.12)' }}>
+          <Crown size={20} style={{ color: '#F1C40F' }} />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Board Suite</h1>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>Confidential board-level information</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+            style={{ backgroundColor: tab === t.id ? 'rgba(241,196,15,0.15)' : 'transparent', color: tab === t.id ? '#F1C40F' : '#6B7280', border: `1px solid ${tab === t.id ? 'rgba(241,196,15,0.3)' : '#1F2937'}` }}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Club Overview */}
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <StatCard label="League Position" value="8th" sub="Championship" />
+            <StatCard label="Transfer Budget" value="£2.4m" sub="£1.8m remaining" />
+            <StatCard label="Squad Value" value="£14.2m" sub="+£1.8m vs last season" color="#22C55E" />
+            <StatCard label="PSR Headroom" value="£3.1m" sub="Within limits" color="#22C55E" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Revenue vs Expenditure</h3>
+              <div className="space-y-2">
+                {[{ label: 'Matchday Revenue', value: '£1.2m', pct: 60 }, { label: 'Broadcast Income', value: '£3.8m', pct: 85 }, { label: 'Commercial', value: '£2.1m', pct: 70 }, { label: 'Player Sales', value: '£600k', pct: 30 }].map(r => (
+                  <div key={r.label}>
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.value}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: '#F1C40F' }} /></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Next Match</h3>
+              <div className="text-center py-4">
+                <p className="text-2xl font-black" style={{ color: '#F9FAFB' }}>vs Sheffield Wednesday</p>
+                <p className="text-sm mt-1" style={{ color: '#F1C40F' }}>Saturday 3pm · Home</p>
+                <p className="text-xs mt-2" style={{ color: '#6B7280' }}>Championship · Matchday 38</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confidential Notes */}
+      {tab === 'notes' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>📝 Board Notes (Confidential)</h3>
+          <textarea value={noteContent} onChange={e => setNoteContent(e.target.value)} rows={10} placeholder="Type confidential board notes here..." className="w-full text-sm rounded-lg p-4 outline-none resize-vertical" style={{ backgroundColor: '#0F0505', border: '1px solid #2D1515', color: '#F9FAFB' }} />
+          <button className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#F1C40F', color: '#0A0A0A' }}>Save Notes</button>
+        </div>
+      )}
+
+      {/* Board Meetings */}
+      {tab === 'meetings' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Upcoming Board Meetings</h3>
+            {[{ date: '15 Apr', title: 'Monthly Board Meeting', attendees: 'All Board Members', status: 'Confirmed' }, { date: '1 May', title: 'Transfer Strategy Review', attendees: 'Chairman, DoF, Head Coach', status: 'Pending' }, { date: '20 May', title: 'End of Season Review', attendees: 'All Board Members + Senior Staff', status: 'Draft' }].map(m => (
+              <div key={m.title} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #2D1515' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{m.title}</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>{m.date} · {m.attendees}</p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: m.status === 'Confirmed' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: m.status === 'Confirmed' ? '#22C55E' : '#F59E0B' }}>{m.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financial Strategy */}
+      {tab === 'financial' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+            <StatCard label="Wage Bill" value="£4.8m/yr" sub="62% of revenue" color="#EF4444" />
+            <StatCard label="Player Amortisation" value="£1.2m" sub="Annual charge" />
+            <StatCard label="Net Spend (Season)" value="-£800k" sub="Transfer deficit" color="#EF4444" />
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>PSR/FFP Breakdown</h3>
+            <div className="space-y-2">
+              {[{ label: 'Allowable Losses (3yr)', limit: '£39m', current: '£12.4m', pct: 32, ok: true }, { label: 'Squad Cost Ratio', limit: '70%', current: '62%', pct: 89, ok: true }, { label: 'Agent Fees', limit: '£500k', current: '£380k', pct: 76, ok: true }].map(r => (
+                <div key={r.label} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{r.label}</span><span style={{ color: '#F9FAFB' }}>{r.current} / {r.limit}</span></div>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2D1515' }}><div className="h-full rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.ok ? '#22C55E' : '#EF4444' }} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Strategy */}
+      {tab === 'transfers' && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔒 Confidential Transfer Targets</h3>
+            <div className="space-y-2">
+              {[
+                { pos: 'ST', name: 'Target A', club: 'League One', fee: '£400k', priority: 'High', status: 'Agent contacted' },
+                { pos: 'CB', name: 'Target B', club: 'Championship', fee: '£200k loan', priority: 'High', status: 'Terms discussed' },
+                { pos: 'CM', name: 'Target C', club: 'Abroad', fee: '£150k', priority: 'Medium', status: 'Scouted 3x' },
+                { pos: 'LW', name: 'Target D', club: 'Free Agent', fee: 'Free', priority: 'Low', status: 'Monitoring' },
+              ].map(t => (
+                <div key={t.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(241,196,15,0.15)', color: '#F1C40F' }}>{t.pos}</span>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{t.name}</p>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>{t.club} · {t.fee}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{t.status}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: t.priority === 'High' ? 'rgba(239,68,68,0.1)' : t.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(107,114,128,0.1)', color: t.priority === 'High' ? '#EF4444' : t.priority === 'Medium' ? '#F59E0B' : '#6B7280' }}>{t.priority}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515' }}>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>💸 Offload Pipeline</h3>
+            <div className="space-y-2">
+              {[
+                { name: 'Player X', reason: 'Surplus to requirements', value: '£300k', interest: '2 clubs' },
+                { name: 'Player Y', reason: 'High wages, low output', value: '£150k', interest: '1 club (loan)' },
+              ].map(p => (
+                <div key={p.name} className="flex items-center justify-between py-2.5 px-3 rounded-lg" style={{ backgroundColor: '#0F0505' }}>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.reason}</p></div>
+                  <div className="text-right"><p className="text-xs font-semibold" style={{ color: '#F1C40F' }}>{p.value}</p><p className="text-xs" style={{ color: '#6B7280' }}>{p.interest}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SettingsView() {
+  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
+  const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
+  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
+  const [zones, setZones] = useState(getStoredZones)
+  const localTz = getUserLocalTz()
+
+  function ToggleButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+    return (
+      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#C0392B' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+        <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+      </button>
+    )
+  }
+
+  function toggleZone(zone: { label: string; tz: string }) {
+    const exists = zones.some(z => z.tz === zone.tz)
+    let next: { label: string; tz: string }[]
+    if (exists) { next = zones.filter(z => z.tz !== zone.tz) }
+    else { if (zones.length >= 4) return; next = [...zones, zone] }
+    setZones(next)
+    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your football portal preferences.</p>
+      </div>
+
+      {/* TTS & Voice Commands */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎙️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Text to Speech</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</p>
+            </div>
+            <ToggleButton on={ttsOn} onToggle={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Commands</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Say &ldquo;who&apos;s fit&rdquo;, &ldquo;transfer budget&rdquo;, or &ldquo;team sheet&rdquo;</p>
+            </div>
+            <ToggleButton on={vcOn} onToggle={() => { const v = !vcOn; setVcOn(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Voice Selector */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Selection</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
+          {VOICES.map(voice => {
+            const isActive = activeVoice === voice.id
+            return (
+              <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
+                className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #C0392B' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
+                  {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B' }}>Active</span>}
+                </div>
+                <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* World Clock */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🕐</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>World Clock Timezones</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Choose up to 4 timezones for your dashboard</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: '#FBBF24' }}>📍</span>
+              <span className="text-sm font-medium" style={{ color: '#FBBF24' }}>{localTz.label}</span>
+              <span className="text-xs" style={{ color: 'rgba(251,191,36,0.6)' }}>Your timezone</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto">
+            {ALL_TIMEZONES.map(zone => {
+              const isSelected = zones.some(z => z.tz === zone.tz)
+              return (
+                <button key={zone.tz} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(192,57,43,0.08)' : '#0A0B10',
+                    border: isSelected ? '1px solid rgba(192,57,43,0.3)' : '1px solid #1F2937',
+                    opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
+                    cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
+                  }}>
+                  <span className="text-sm" style={{ color: isSelected ? '#C0392B' : '#9CA3AF' }}>{zone.label}</span>
+                  {isSelected && <span style={{ color: '#C0392B' }}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
+        </div>
+      </div>
+
+      {/* Integrations */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Connect your email and calendar</p>
+        </div>
+        <div className="p-5 space-y-2">
+          {[
+            { key: 'outlook', label: 'Outlook / Microsoft 365', desc: 'Email sync', icon: '📧', type: 'microsoft' as const },
+            { key: 'outlook_cal', label: 'Outlook Calendar', desc: 'Calendar sync', icon: '📅', type: 'microsoft' as const },
+            { key: 'gmail', label: 'Gmail', desc: 'Email sync', icon: '📨', type: 'google' as const },
+            { key: 'gcal', label: 'Google Calendar', desc: 'Calendar sync', icon: '📅', type: 'google' as const },
+          ].map(integ => {
+            const connected = typeof window !== 'undefined' && localStorage.getItem(`lumio_integration_${integ.key}`) === 'true'
+            return (
+              <div key={integ.key} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: connected ? '1px solid rgba(34,197,94,0.3)' : '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>{integ.icon}</span>
+                  <div><p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{integ.label}</p><p className="text-xs" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                </div>
+                {connected ? (
+                  <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Connected</span>
+                ) : (
+                  <button onClick={() => {
+                    const slug = typeof window !== 'undefined' ? localStorage.getItem('lumio_workspace_slug') || '' : ''
+                    if (integ.type === 'microsoft') {
+                      const cid = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: 'microsoft_all', slug })
+                      window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/microsoft', scope: 'openid email profile offline_access Mail.Read Mail.Send Calendars.Read Calendars.ReadWrite', state, response_mode: 'query', prompt: 'consent' })}`
+                    } else {
+                      const cid = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID; if (!cid) return
+                      const state = JSON.stringify({ key: integ.key, slug })
+                      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: 'https://lumiocms.com/api/auth/callback/google', scope: `openid email profile ${integ.key === 'gmail' ? 'https://www.googleapis.com/auth/gmail.readonly' : 'https://www.googleapis.com/auth/calendar.readonly'}`, state, access_type: 'offline', prompt: 'consent' })}`
+                    }
+                  }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(192,57,43,0.15)', color: '#C0392B', border: '1px solid rgba(192,57,43,0.3)' }}>
+                    Connect
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────────────
+
+function Toast({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#C0392B', color: '#F9FAFB' }}>
+      {message}
+    </div>
+  )
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
+
+export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+
+  const [activeDept, setActiveDept] = useState<DeptId>('overview')
+  const [clubName, setClubName] = useState('Oakridge FC')
+  const [userName, setUserName] = useState('')
+
+  useEffect(() => {
+    const cn = localStorage.getItem('football_club_name'); if (cn) setClubName(cn)
+    const un = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name'); if (un) setUserName(un)
+  }, [])
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [activeAction, setActiveAction] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+  const [footballRole, setFootballRole] = useState<string | null>(null)
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [showMeetingBook, setShowMeetingBook] = useState(false)
+
+  useEffect(() => {
+    setFootballRole(localStorage.getItem('lumio_football_impersonated_role'))
+    const email = localStorage.getItem('lumio_user_email')
+    if (email) {
+      const p = localStorage.getItem(`lumio_staff_photo_${email}`)
+      if (p && !p.startsWith('data:')) setUserPhoto(p)
+    }
+    const cachedPhoto = localStorage.getItem('lumio_user_photo')
+    if (cachedPhoto && !cachedPhoto.startsWith('data:')) setUserPhoto(cachedPhoto)
+    function onAvatarUpdated(e: Event) { setUserPhoto((e as CustomEvent).detail || null) }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
+    return () => window.removeEventListener('lumio-avatar-updated', onAvatarUpdated)
+  }, [])
+
+  function fireToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const LABEL_TO_ACTION: Record<string, string> = {
+    'Team Sheet': 'team-sheet', 'Log Injury': 'log-injury', 'Scout Report': 'scout-report',
+    'Board Report': 'board-report', 'Training Plan': 'training-plan', 'Press Conf': 'press-conference',
+    'Book Video Room': 'video-analysis', 'Opposition Report': 'match-prep', 'Set Piece Planner': 'set-pieces',
+    'Video Analysis': 'video-analysis', 'Submit Bid': 'submit-bid', 'New Target': 'add-target',
+    'Rehab Plan': 'return-to-play', 'Fitness Report': 'load-report',
+    'New Report': 'scout-report', 'Watchlist': 'add-target', 'Trip Planner': 'travel-booking',
+    'Development Plan': 'development-plan', 'Match Report': 'match-report',
+    'Player Comparison': 'market-value', 'Heat Maps': 'load-report', 'Video Clips': 'video-analysis',
+    'Press Brief': 'press-conference', 'Social Post': 'social-post', 'Media Schedule': 'interview-request',
+    'Session Plan': 'training-plan', 'Load Report': 'load-report', 'Recovery Schedule': 'recovery-session',
+    'Budget Overview': 'board-report', 'Wage Report': 'renewal', 'Revenue Dashboard': 'sponsor-report',
+    'Operations Checklist': 'compliance-check', 'Match Prep': 'match-prep', 'Set Pieces': 'set-pieces',
+    'Recovery Session': 'recovery-session', 'Formation Builder': 'team-sheet',
+    'Ticketing': 'travel-booking', 'Pitch Report': 'compliance-check',
+  }
+
+  function handleActionClick(label: string) {
+    if (label === 'Dept Insights') { setShowAIInsights(true); return }
+    if (label === 'Send Email') { setShowEmailCompose(true); return }
+    if (label === 'Book Video Room' || label === 'Book Meeting') { setShowMeetingBook(true); return }
+    if (label === 'Press Conf') { setShowMeetingBook(true); return }
+    const actionId = LABEL_TO_ACTION[label]
+    if (actionId) setActiveAction(actionId)
+    else fireToast(`${label} — coming soon`)
+  }
+
+  useEffect(() => {
+    const name = localStorage.getItem('football_club_name') || 'Oakridge FC'
+    const user = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
+    setClubName(name)
+    setUserName(user)
+  }, [slug])
+
+  const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
+  const initials = userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'FC'
+
+  return (
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+      <Toast message={toast} />
+
+      {/* Impersonation banner */}
+      {footballRole && footballRole !== 'chairman' && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ backgroundColor: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
+          <Eye size={14} style={{ color: '#F59E0B' }} />
+          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+            Previewing as: {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === footballRole)?.label} — your actual role is Chairman
+          </span>
+          <button onClick={() => { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role'); window.location.reload() }} className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <X size={10} /> Exit Preview
+          </button>
+        </div>
+      )}
+
+      {/* Top-right role switcher + avatar */}
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Football role switcher */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+            style={{ backgroundColor: footballRole ? 'rgba(245,158,11,0.15)' : 'rgba(241,196,15,0.1)', color: footballRole ? '#F59E0B' : '#F1C40F', border: `1px solid ${footballRole ? 'rgba(245,158,11,0.3)' : 'rgba(241,196,15,0.2)'}` }}>
+            <Eye size={12} /> {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.emoji} {FOOTBALL_ROLE_OPTIONS.find(r => r.key === (footballRole || 'chairman'))?.label} <ChevronDown size={10} />
+          </button>
+          {roleSwitcherOpen && (
+            <div className="absolute top-full right-0 mt-1.5 rounded-xl py-1.5 shadow-xl" style={{ backgroundColor: '#1A0A0A', border: '1px solid #2D1515', zIndex: 100, minWidth: 200 }}>
+              {FOOTBALL_ROLE_OPTIONS.map(r => (
+                <button key={r.key} onClick={() => {
+                  if (r.key === 'chairman') { setFootballRole(null); localStorage.removeItem('lumio_football_impersonated_role') }
+                  else { setFootballRole(r.key); localStorage.setItem('lumio_football_impersonated_role', r.key) }
+                  setRoleSwitcherOpen(false); window.location.reload()
+                }} className="flex w-full items-center gap-2 px-4 py-2 text-xs transition-colors"
+                  style={{ color: (footballRole || 'chairman') === r.key ? '#F9FAFB' : '#9CA3AF', backgroundColor: (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2D1515' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = (footballRole || 'chairman') === r.key ? 'rgba(241,196,15,0.08)' : 'transparent' }}>
+                  <span>{r.emoji}</span> {r.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <Bell size={16} strokeWidth={1.75} />
+          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+        </button>
+        <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#C0392B', border: 'none', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600, overflow: 'hidden' }}>
+          {userPhoto ? <img src={userPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} onError={() => setUserPhoto(null)} /> : initials}
+        </button>
+      </div>
+
+      {/* Mobile menu button */}
+      <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+        <button className="p-1.5 rounded-lg" style={{ color: '#9CA3AF' }} onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+        <span className="text-sm font-semibold ml-2 truncate" style={{ color: '#F9FAFB' }}>{clubName}</span>
+      </div>
+
+      {/* Body: sidebar + content */}
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} />
+
+        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
+          <main className="flex-1 p-4 sm:p-5">
+            {activeDept !== 'overview' && (
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-lg font-bold">{deptLabel}</h1>
+                  <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Club: <span style={{ color: '#F9FAFB' }}>{clubName}</span></p>
+                </div>
+              </div>
+            )}
+
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} />}
+            {activeDept === 'insights' && <InsightsView />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && (
+              <>
+                <DeptAISummary dept={activeDept} portal="football" />
+                <div className="mb-2">
+                  <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+                    📊 Insights
+                  </button>
+                </div>
+              </>
+            )}
+            {activeDept === 'squad' && <SquadView />}
+            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'set-pieces' && <ProSetPiecesView />}
+            {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {activeDept === 'medical' && <MedicalView />}
+            {activeDept === 'scouting' && <ScoutingView />}
+            {activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
+            {activeDept === 'analytics' && <AnalyticsView />}
+            {activeDept === 'media' && <MediaView />}
+            {activeDept === 'social' && <SocialMediaView />}
+            {activeDept === 'matchday' && <MatchdayView />}
+            {activeDept === 'training' && <TrainingView />}
+            {activeDept === 'performance' && <GPSPerformanceView />}
+            {activeDept === 'finance' && <FinanceView />}
+            {activeDept === 'staff' && <StaffView />}
+            {activeDept === 'facilities' && <FacilitiesView />}
+            {activeDept === 'dynamics' && <DynamicsView />}
+            {activeDept === 'psr' && <PSRView />}
+            {activeDept === 'squad-planner' && <SquadPlannerView />}
+            {activeDept === 'club-profile' && <ClubProfileView />}
+            {activeDept === 'board' && <BoardSuiteView />}
+            {activeDept === 'settings' && <SettingsView />}
+          </main>
+        </div>
+      </div>
+
+      {activeAction && (
+        <FootballActionModal
+          actionId={activeAction}
+          onClose={() => setActiveAction(null)}
+          onToast={fireToast}
+        />
+      )}
+      {showEmailCompose && <EmailComposeModal onClose={() => setShowEmailCompose(false)} onToast={fireToast} />}
+      {showMeetingBook && <MeetingBookModal onClose={() => setShowMeetingBook(false)} onToast={fireToast} />}
+      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+    </div>
+  )
+}

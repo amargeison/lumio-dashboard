@@ -22,18 +22,22 @@ const URGENCY = {
 }
 
 const MOCK_ITEMS: NotToMissItem[] = [
-  { id: '1', urgency: 'critical', title: 'Stripe is still in TEST MODE', body: 'You have paying customers but Stripe is not live. Any payments will be rejected silently. Switch to live mode before The Feed Network signs up.', deadline: 'Before first invoice', consequence: 'Payments will silently fail', action: 'Switch Stripe live', actionUrl: 'https://dashboard.stripe.com/settings/account', category: 'Finance', dismissed: false },
-  { id: '2', urgency: 'critical', title: 'Company not yet registered', body: 'You cannot legally sign customer contracts, hold IP, or accept money as an unregistered entity. Takes 24 hours and costs £12 at Companies House.', deadline: 'Before any contract signing', consequence: 'Contracts are unenforceable', action: 'Register at Companies House', actionUrl: 'https://www.gov.uk/limited-company-formation', category: 'Legal', dismissed: false },
-  { id: '3', urgency: 'today', title: 'The Feed Network go-live is imminent', body: 'Testing guide has 13 flagged gaps. 6 phases need sign-off. Go-live is blocked until this is complete.', deadline: 'This week', consequence: 'Delays first revenue', action: 'Open testing guide', category: 'Operations', dismissed: false },
-  { id: '4', urgency: 'today', title: 'Update Calendly link in the website nav', body: 'The "Book a Demo" button links to a placeholder. Every visitor who tries to book a demo hits a broken link.', deadline: 'Today', consequence: 'Lost demo bookings', action: 'Update in code', category: 'Marketing', dismissed: false },
-  { id: '5', urgency: 'soon', title: 'Trademark "Lumio" before you scale marketing', body: 'IPO Class 42 registration. Check for conflicts first — there is a US edtech company called Lumio. UK trademark costs £170.', deadline: 'Before major marketing push', consequence: 'Brand protection risk', action: 'Search IPO register', actionUrl: 'https://trademarks.ipo.gov.uk/ipo-tmcase/page/Results/1/', category: 'Legal', dismissed: false },
+  { id: '1', urgency: 'critical', title: 'Payment terms not yet set on client contracts', body: 'Three new client contracts have been signed without payment terms defined. Finance team need sign-off before first invoices are raised.', deadline: 'Before first invoice', consequence: 'Invoicing disputes risk', action: 'Review Contracts', category: 'Finance', dismissed: false },
+  { id: '2', urgency: 'critical', title: 'NDA outstanding — Bramble Hill partnership', body: 'Bramble Hill have requested an NDA before sharing their technical requirements. Legal have drafted it but it has not been sent for signature.', deadline: 'Before next client call', consequence: 'Partnership stalls', action: 'Send NDA', category: 'Legal', dismissed: false },
+  { id: '3', urgency: 'today', title: 'Proposal due — Greenfield Group', body: 'Proposal requested by Greenfield Group CEO after last week\'s demo. Deadline is end of business today. Three slides still need revenue projections added.', deadline: 'Today', consequence: 'Lose the deal', action: 'Open Proposal', category: 'Sales', dismissed: false },
+  { id: '4', urgency: 'today', title: 'Q2 board report — data not yet pulled', body: 'Board meeting is Thursday. The Q2 report template is ready but revenue, churn, and NPS data has not been pulled from the integrations.', deadline: 'This week', consequence: 'Unprepared for board', action: 'Open Board Report', category: 'Operations', dismissed: false },
+  { id: '5', urgency: 'soon', title: 'Three team members — probation reviews overdue', body: 'Probation reviews for Sarah (Marketing), Tom (Engineering), and Priya (Success) were due last week. HR have flagged this twice.', deadline: 'Before end of month', consequence: 'HR compliance risk', action: 'Open HR Dashboard', category: 'HR', dismissed: false },
+  { id: '6', urgency: 'soon', title: 'Website case study — approval pending', body: 'Bramble Hill case study is written and designed. Awaiting sign-off from their marketing director before publishing.', deadline: 'Next week', consequence: 'Delay lead generation content', action: 'Chase Approval', category: 'Marketing', dismissed: false },
 ]
 
 export default function NotToMiss() {
   const [items, setItems] = useState<NotToMissItem[]>([])
 
   useEffect(() => {
-    fetch('/api/home/not-to-miss')
+    const token = localStorage.getItem('workspace_session_token')
+    fetch('/api/home/not-to-miss', {
+      headers: token ? { 'x-workspace-token': token } : {},
+    })
       .then(r => r.json())
       .then(d => setItems(d.items || MOCK_ITEMS))
       .catch(() => setItems(MOCK_ITEMS))

@@ -10,7 +10,7 @@ interface SignInButtonProps {
 
 export default function SignInButton({ variant = 'ghost', className = '' }: SignInButtonProps) {
   const pathname = usePathname()
-  const redirectTo = encodeURIComponent(pathname || '/overview')
+  const redirectTo = encodeURIComponent(pathname || '/')
 
   if (variant === 'primary') {
     return (

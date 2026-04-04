@@ -5,7 +5,7 @@ export const metadata = { title: 'Lumio Schools — Pricing' }
 const PLANS = [
   {
     name: 'Starter',
-    price: '599',
+    price: '299',
     desc: 'Everything a single school needs to automate attendance, safeguarding, and cover.',
     features: [
       'AI Morning Briefing',
@@ -17,13 +17,13 @@ const PLANS = [
       'Email support',
     ],
     cta: 'Start Free Trial',
-    ctaHref: '/schools/register',
+    ctaHref: '/signup?portal=schools',
     outline: true,
     featured: false,
   },
   {
     name: 'Growth',
-    price: '1,199',
+    price: '599',
     desc: 'Advanced insights and integrations for schools serious about data-led improvement.',
     features: [
       'Everything in Starter',
@@ -36,13 +36,13 @@ const PLANS = [
       'Priority support & onboarding',
     ],
     cta: 'Start Free Trial',
-    ctaHref: '/schools/register',
+    ctaHref: '/signup?portal=schools',
     outline: false,
     featured: true,
   },
   {
-    name: 'Trust',
-    price: '2,499',
+    name: 'Trust / Academies',
+    price: '1,499',
     desc: 'Cross-school visibility and trust-wide analytics for Multi-Academy Trusts.',
     features: [
       'Everything in Growth',
@@ -55,7 +55,7 @@ const PLANS = [
       'Custom onboarding & training',
     ],
     cta: 'Contact Sales',
-    ctaHref: 'https://calendly.com/lumiocms',
+    ctaHref: 'https://calendly.com/lumiocms/lumio-schools',
     outline: true,
     featured: false,
   },
@@ -119,7 +119,7 @@ export default function SchoolsPricingPage() {
               <div className="flex items-baseline gap-1">
                 <span className="font-bold" style={{ color: '#C8960C', fontSize: 24, alignSelf: 'flex-start', marginTop: 10 }}>£</span>
                 <span className="font-black leading-none" style={{ color: '#F9FAFB', fontSize: 56, fontFamily: 'inherit' }}>{plan.price}</span>
-                <span className="text-sm ml-1" style={{ color: '#6B7280' }}>/year</span>
+                <span className="text-sm ml-1" style={{ color: '#6B7280' }}>/month</span>
               </div>
               <p className="text-sm leading-relaxed pb-4" style={{ color: '#9CA3AF', borderBottom: '1px solid #1F3460' }}>
                 {plan.desc}

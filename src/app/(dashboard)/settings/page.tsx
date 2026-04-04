@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Users, CreditCard, Key, Bell, Copy, Check, Shield } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { Users, CreditCard, Key, Bell, Copy, Check, Shield, Upload } from 'lucide-react'
 import { Badge, SectionCard, PageShell } from '@/components/page-ui'
 
 const teamMembers = [
-  { name: 'Arron Margeison', email: 'arron@lumio.io',     role: 'Admin',   lastLogin: '21 Mar 2026, 09:14' },
+  { name: 'James Hartley', email: 'james@lumiodemo.com',     role: 'Admin',   lastLogin: '21 Mar 2026, 09:14' },
   { name: 'Dan Marsh',       email: 'dan@lumio.io',        role: 'Admin',   lastLogin: '21 Mar 2026, 08:52' },
   { name: 'Sophie Bell',     email: 'sophie@lumio.io',     role: 'Manager', lastLogin: '20 Mar 2026, 17:30' },
   { name: 'Raj Patel',       email: 'raj@lumio.io',        role: 'Member',  lastLogin: '20 Mar 2026, 14:05' },
@@ -73,9 +74,72 @@ function NotificationRow({ label, defaultChecked }: { label: string; defaultChec
   )
 }
 
+function LogoUpload() {
+  const [logo, setLogo] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_company_logo') || '' : '')
+  const [uploading, setUploading] = useState(false)
+  const [toast, setToast] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const companyName = typeof window !== 'undefined' ? localStorage.getItem('lumio_company_name') || 'Lumio' : 'Lumio'
+  const initials = companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
+  async function handleUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) { setToast('File too large (max 2MB)'); setTimeout(() => setToast(''), 3000); return }
+    setUploading(true)
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) { setUploading(false); return }
+    const fd = new FormData()
+    fd.append('logo', file)
+    try {
+      const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+      const data = await res.json()
+      if (data.logo_url) {
+        setLogo(data.logo_url)
+        localStorage.setItem('lumio_company_logo', data.logo_url)
+        localStorage.setItem('workspace_company_logo', data.logo_url)
+        // Dispatch custom event so same-tab components (Sidebar) pick up the change
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+        setToast('✓ Logo updated')
+        setTimeout(() => setToast(''), 3000)
+      }
+    } catch { setToast('Upload failed'); setTimeout(() => setToast(''), 3000) }
+    setUploading(false)
+  }
+
+  return (
+    <SectionCard title="Company Logo">
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: logo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
+          {logo ? <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={() => setLogo('')} /> : <span className="text-xl font-bold">{initials}</span>}
+        </div>
+        <div>
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]) }} />
+          <button onClick={() => fileRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: uploading ? 0.6 : 1 }}>
+            <Upload size={14} /> {uploading ? 'Uploading...' : 'Upload Logo'}
+          </button>
+          <p className="text-xs mt-1" style={{ color: '#6B7280' }}>PNG, JPG, SVG or WebP · Max 2MB</p>
+        </div>
+        {toast && <span className="text-xs font-medium ml-2" style={{ color: toast.startsWith('✓') ? '#22C55E' : '#EF4444' }}>{toast}</span>}
+      </div>
+    </SectionCard>
+  )
+}
+
 export default function SettingsPage() {
+  const router = useRouter()
+  const [redirecting, setRedirecting] = useState(true)
+  useEffect(() => {
+    const slug = localStorage.getItem('lumio_workspace_slug') || document.cookie.split('; ').find(r => r.startsWith('lumio_tenant_slug='))?.split('=')[1]
+    if (slug) { localStorage.setItem('lumio_active_dept', 'settings'); router.replace(`/${slug}`); return }
+    setRedirecting(false)
+  }, [router])
+
+  if (redirecting) return null
+
   return (
     <PageShell>
+
+      {/* Company Logo */}
+      <LogoUpload />
 
       {/* Team Members */}
       <SectionCard title="Team Members" action="Invite member">

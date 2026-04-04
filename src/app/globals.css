@@ -25,6 +25,30 @@ body {
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #1F2937 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 @keyframes briefing-pulse {
@@ -34,6 +58,53 @@ body {
 
 .briefing-pulse {
   animation: briefing-pulse 1.4s ease-in-out infinite;
+}
+
+/* Football portal sidebar scrollbar */
+.football-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #4a1a1a transparent;
+}
+.football-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.football-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.football-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #4a1a1a;
+  border-radius: 4px;
+}
+.football-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #C0392B;
+}
+
+/* Amateur football portal sidebar scrollbar */
+.amateur-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #166534 transparent;
+}
+.amateur-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.amateur-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.amateur-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #166534;
+  border-radius: 4px;
+}
+.amateur-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #16A34A;
+}
+
+/* Football portal quick actions — hide scrollbar, keep scroll */
+.football-quickactions-hide-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.football-quickactions-hide-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 @media print {

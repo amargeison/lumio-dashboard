@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Check, X, Sparkles, Zap } from 'lucide-react'
+import BookDemoModal from '@/app/(website)/components/BookDemoModal'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,7 @@ function Cell({ val }: { val: CellVal }) {
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [showDemoModal, setShowDemoModal] = useState(false)
 
   return (
     <div style={{ color: '#F9FAFB' }} className="pt-28 pb-20">
@@ -371,13 +373,13 @@ export default function PricingPage() {
             Book a 30-minute demo. We'll walk you through the platform and help you work out exactly what you need.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/demo"
+            <button onClick={() => setShowDemoModal(true)}
               className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
               Book a Demo →
-            </Link>
+            </button>
             <a href="mailto:hello@lumiocms.com"
               className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium"
               style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
@@ -387,6 +389,7 @@ export default function PricingPage() {
         </div>
 
       </div>
+      {showDemoModal && <BookDemoModal onClose={() => setShowDemoModal(false)} />}
     </div>
   )
 }

@@ -16,10 +16,31 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
   const [resendCountdown, setResendCountdown] = useState(0)
   const [verified, setVerified] = useState(false)
   const [alreadyExists, setAlreadyExists] = useState<{ slug: string; companyName: string } | null>(null)
+  const [showConfirmClose, setShowConfirmClose] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  // Persist form state in sessionStorage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('lumio_trial_form')
+    if (saved) { try { setForm(f => ({ ...f, ...JSON.parse(saved) })) } catch {} }
+  }, [])
+
   function set(k: keyof typeof form, v: string | boolean) {
-    setForm(f => ({ ...f, [k]: v }))
+    setForm(f => {
+      const next = { ...f, [k]: v }
+      sessionStorage.setItem('lumio_trial_form', JSON.stringify({ name: next.name, email: next.email, company: next.company }))
+      return next
+    })
+  }
+
+  function handleClose() {
+    const hasContent = form.name || form.email || form.company
+    if (hasContent && step === 'form') {
+      setShowConfirmClose(true)
+    } else {
+      sessionStorage.removeItem('lumio_trial_form')
+      onClose()
+    }
   }
 
   // Countdown for resend
@@ -144,6 +165,13 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
 
+  // Close on Escape key
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') handleClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
@@ -165,7 +193,7 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
                 : `We sent a 6-digit code to ${form.email}`}
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg transition-colors"
+          <button onClick={handleClose} className="p-1 rounded-lg transition-colors"
             style={{ color: '#6B7280' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#F9FAFB')}
             onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}>
@@ -343,6 +371,20 @@ export default function BookTrialModal({ onClose }: { onClose: () => void }) {
         </>
         )}
       </div>
+
+      {/* Confirm close dialog */}
+      {showConfirmClose && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="rounded-xl p-6 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', maxWidth: 340 }}>
+            <p className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>Are you sure?</p>
+            <p className="text-xs mb-5" style={{ color: '#6B7280' }}>Your details will be lost.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setShowConfirmClose(false)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>Cancel</button>
+              <button onClick={() => { sessionStorage.removeItem('lumio_trial_form'); onClose() }} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Discard</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

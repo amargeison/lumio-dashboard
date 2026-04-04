@@ -10,6 +10,7 @@ import {
 import TellMeMoreModal from '@/app/(website)/components/TellMeMoreModal'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
+import BookDemoModal from '@/app/(website)/components/BookDemoModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -566,6 +567,7 @@ export default function HomePage() {
   const [showTellMore, setShowTellMore] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
   const [showTypeModal, setShowTypeModal] = useState(false)
+  const [showDemoModal, setShowDemoModal] = useState(false)
 
   const dept = DEPT_TABS[activeDeptIdx]
   const workflow = dept.workflows?.[activeWorkflowIdx]
@@ -621,7 +623,7 @@ export default function HomePage() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
             Tell me more
           </button>
-          <button onClick={() => setShowTypeModal(true)}
+          <button onClick={() => setShowDemoModal(true)}
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
@@ -652,6 +654,7 @@ export default function HomePage() {
           onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
         />
       )}
+      {showDemoModal && <BookDemoModal onClose={() => setShowDemoModal(false)} />}
 
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section style={{ borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B12' }}>
@@ -963,6 +966,42 @@ export default function HomePage() {
               style={{ backgroundColor: '#F9FAFB', color: '#07080F' }}>
               See all workflows <ArrowRight size={15} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Built for Schools — SSO & MIS section ────────────────────────────── */}
+      <section style={{ backgroundColor: '#0f172a', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#F9FAFB' }}>
+              The only UK school platform that plugs straight into your existing tools
+            </h2>
+            <p className="text-base md:text-lg mx-auto" style={{ color: '#9CA3AF', maxWidth: 720 }}>
+              No new logins. No middleware. No ripping out your MIS. Lumio connects to Google Workspace, Microsoft 365, Arbor, SIMS, and Bromcom — so your staff are up and running in minutes, not months.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
+            {[
+              { emoji: '🔐', title: 'Single Sign-On', desc: 'Staff sign in with the Google or Microsoft account they already use. One click, straight into their dashboard.' },
+              { emoji: '🔄', title: 'MIS Sync', desc: 'Pupil data, class lists, and staff roles sync automatically from Arbor, SIMS, and Bromcom. No manual imports, no data entry.' },
+              { emoji: '🇬🇧', title: 'UK-First', desc: 'Built exclusively for UK schools. Ofsted-ready, SEND-compliant, GDPR-first. Not a US product retrofitted for Britain.' },
+            ].map(f => (
+              <div key={f.title} className="rounded-xl p-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937' }}>
+                <span className="text-3xl mb-4 block">{f.emoji}</span>
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#F9FAFB' }}>{f.title}</h3>
+                <p className="text-sm" style={{ color: '#9CA3AF', lineHeight: 1.7 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {['Google Workspace', 'Microsoft 365', 'Arbor', 'SIMS', 'Bromcom', 'OneRoster Certified'].map(name => (
+              <span key={name} className="rounded-full px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.25)' }}>
+                {name}
+              </span>
+            ))}
           </div>
         </div>
       </section>

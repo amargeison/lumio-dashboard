@@ -131,23 +131,30 @@ export function StatCard({
 // ─── Quick Actions ─────────────────────────────────────────────────────────────
 
 export function QuickActions({ items }: { items: { label: string; icon: LucideIcon; onClick?: () => void }[] }) {
+  const rows: typeof items[] = []
+  for (let i = 0; i < items.length; i += 10) {
+    rows.push(items.slice(i, i + 10))
+  }
   return (
-    <div className="flex flex-wrap gap-3 rounded-xl p-4"
-      style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-      <p className="w-full text-xs font-semibold uppercase tracking-widest"
-        style={{ color: '#9CA3AF' }}>Quick Actions</p>
-      {items.map(({ label, icon: Icon, onClick }) => (
-        <button
-          key={label}
-          onClick={onClick}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}
-        >
-          <Icon size={15} strokeWidth={2} />
-          {label}
-        </button>
+    <div className="rounded-xl p-4"
+      style={{ backgroundColor: '#111318', border: '1px solid #1F2937', display: 'flex', flexDirection: 'column' }}>
+      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF', marginBottom: 10 }}>Quick Actions</p>
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 8, marginBottom: ri < rows.length - 1 ? 6 : 0 }}>
+          {row.map(({ label, icon: Icon, onClick }) => (
+            <button
+              key={label}
+              onClick={onClick}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}
+            >
+              <Icon size={15} strokeWidth={2} />
+              {label}
+            </button>
+          ))}
+        </div>
       ))}
     </div>
   )
@@ -275,8 +282,21 @@ export function PanelItem({ title, sub, badge, extra }: {
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
-export function PageShell({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-6">{children}</div>
+export function PageShell({ children, title, subtitle, action }: { children: React.ReactNode; title?: string; subtitle?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-6 relative">
+      {title && (
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{title}</h1>
+            {subtitle && <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{subtitle}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
 }
 
 export function TwoCol({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {

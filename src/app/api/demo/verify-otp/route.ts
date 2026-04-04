@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/emails/send'
+import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
+import { logEmail } from '@/lib/emails/log'
 
 function getSupabase() {
   return createClient(
@@ -99,6 +102,26 @@ export async function POST(req: NextRequest) {
           expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq('id', tenant.id)
+
+      // Send welcome email and mark as sent
+      const firstName = (tenant.owner_name || '').split(' ')[0] || 'there'
+      const expiresDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      try {
+        const { error: emailErr } = await sendEmail({
+          from: 'Lumio <hello@lumiocms.com>',
+          to: [email],
+          subject: 'Welcome to Lumio — your 14-day trial starts now 🚀',
+          html: welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
+        })
+        if (emailErr) {
+          console.error('[demo/verify-otp] Welcome email failed:', emailErr)
+        } else {
+          await supabase.from('demo_tenants').update({ welcome_email_sent: true }).eq('id', tenant.id)
+          logEmail(tenant.id, 'welcome_trial', email).catch(() => {})
+        }
+      } catch (err) {
+        console.error('[demo/verify-otp] Welcome email error:', err)
+      }
     }
 
     // Create session token (30-day expiry)

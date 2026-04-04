@@ -59,9 +59,9 @@ export default function ConvertModal({ onClose }: { onClose: () => void }) {
         const companyName = localStorage.getItem('demo_company_name')
         const userName = localStorage.getItem('demo_user_name')
         const logo = localStorage.getItem('demo_company_logo')
-        if (companyName) localStorage.setItem('workspace_company_name', companyName)
-        if (userName) localStorage.setItem('workspace_user_name', userName)
-        if (logo) localStorage.setItem('workspace_company_logo', logo)
+        if (companyName) { localStorage.setItem('workspace_company_name', companyName); localStorage.setItem('lumio_company_name', companyName) }
+        if (userName) { localStorage.setItem('workspace_user_name', userName); localStorage.setItem('lumio_user_name', userName) }
+        if (logo) { localStorage.setItem('workspace_company_logo', logo); localStorage.setItem('lumio_company_logo', logo) }
         setNewSlug(data.slug)
       }
       setStep('done')

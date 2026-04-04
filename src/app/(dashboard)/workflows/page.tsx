@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { GitBranch, Activity, Clock, AlertCircle, Plus, Play, FileText, Download, Loader2, CheckCircle2, XCircle, Star, Building2, Sparkles } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
+import DeptAISummary from '@/components/DeptAISummary'
+import DeptInfoModal from '@/components/DeptInfoModal'
+import AIInsightsReport from '@/components/AIInsightsReport'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
+import { useToast } from '@/components/modals/useToast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,13 +20,6 @@ const stats = [
   { label: 'Active',             value: '38',   trend: '+3',   trendDir: 'up' as const, trendGood: true,  icon: Activity,    sub: 'currently live' },
   { label: 'Last 24hr Runs',     value: '312',  trend: '+28%', trendDir: 'up' as const, trendGood: true,  icon: Clock,       sub: 'vs prior day'   },
   { label: 'Errors',             value: '3',    trend: '+1',   trendDir: 'up' as const, trendGood: false, icon: AlertCircle, sub: 'vs yesterday'   },
-]
-
-const actions = [
-  { label: 'New Workflow',  icon: Plus      },
-  { label: 'Run Now',       icon: Play      },
-  { label: 'View Logs',     icon: FileText  },
-  { label: 'Export Report', icon: Download  },
 ]
 
 // ─── HR wired workflows ───────────────────────────────────────────────────────
@@ -119,6 +116,18 @@ function RunButton({ status, onClick }: { status: RunStatus; onClick: () => void
 
 export default function WorkflowsPage() {
   const [runStatus, setRunStatus] = useState<Record<string, RunStatus>>({})
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showDeptInfo, setShowDeptInfo] = useState(false)
+  const { showToast, Toast } = useToast()
+
+  const actions = [
+    { label: 'New Workflow',  icon: Plus,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Run Now',       icon: Play,     onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'View Logs',     icon: FileText, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Export Report', icon: Download, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Dept Insights', icon: Star, onClick: () => setShowAIInsights(true) },
+    { label: 'Dept Info',    icon: Building2, onClick: () => setShowDeptInfo(true) },
+  ]
 
   const hasData = useHasDashboardData('workflows')
   if (hasData === null) return null
@@ -147,8 +156,10 @@ export default function WorkflowsPage() {
 
   const otherDepts = [...new Set(OTHER_WORKFLOWS.map(w => w.dept))]
 
+  const wfHighlights = ['1,847 workflow executions this month — 0 critical failures', 'Most triggered: Invoice Chase (saves £2,400/month)', '3 workflows running slower than baseline', 'Automation coverage up to 67% across departments', '23 active workflows, 2 paused, 4 erroring']
+
   return (
-    <PageShell>
+    <PageShell title="Workflows" subtitle="Automations, integrations and workflow management">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
@@ -225,6 +236,31 @@ export default function WorkflowsPage() {
           </>
         }
       />
+      <AIInsightsReport dept="workflows" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+      <Toast />
+      {showDeptInfo && <DeptInfoModal dept="workflows" onClose={() => setShowDeptInfo(false)} />}
+
+      <div className="mt-8 pt-6 border-t border-gray-800">
+        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">{'✨'} AI Intelligence</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="workflows" portal="business" />
+          <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+              <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Workflows</span>
+            </div>
+            <ul className="space-y-2.5">
+              {wfHighlights.map((h: string, i: number) => (
+                <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                  {h}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
     </PageShell>
   )
 }

@@ -1,7 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone } from 'lucide-react'
+import { Sparkles, AlertTriangle, CheckCircle, XCircle, Clock, Users, DollarSign, Calendar, Sun, Coffee, Sunset, Star, ChevronRight, Phone, BarChart3 } from 'lucide-react'
+import { RegisterSessionModal, PaymentLogModal, AddChildToClubModal } from '@/components/modals/SchoolModals'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -194,7 +197,7 @@ function OverviewTab({ onAction }: { onAction: (s: string) => void }) {
       {/* Live status banner */}
       <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(6,182,212,0.1))', border: '1px solid rgba(13,148,136,0.3)' }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#22C55E' }} />
+          <div className="w-2 h-2 rounded-full " style={{ backgroundColor: '#22C55E' }} />
           <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Live — Tuesday 24 Mar 2026</p>
           <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>After School Club in session · 15:30</span>
         </div>
@@ -888,12 +891,19 @@ export default function WraparoundPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
+  const [showRegisterSession, setShowRegisterSession] = useState(false)
+  const [showPaymentLog, setShowPaymentLog] = useState(false)
+  const [showAddChild, setShowAddChild] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   useEffect(() => {
     const pathname = window.location.pathname
     const slugMatch = pathname.match(/\/schools\/([^/]+)/)
     const slug = slugMatch?.[1] ?? 'school'
-    setHasData(localStorage.getItem(`lumio_${slug}_wraparound_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_wraparound_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [])
 
   if (hasData === null) return null
@@ -912,6 +922,9 @@ export default function WraparoundPage() {
   )
 
   function fireToast(action: string) {
+    if (action === 'Take register') { setShowRegisterSession(true); return }
+    if (action === 'Chase payment') { setShowPaymentLog(true); return }
+    if (action === 'Add booking') { setShowAddChild(true); return }
     setToast(`${action} — demo data only, no changes saved`)
     setTimeout(() => setToast(''), 3000)
   }
@@ -926,30 +939,40 @@ export default function WraparoundPage() {
         </p>
       </div>
 
-      {/* AI highlights */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
-          <Sparkles size={14} style={{ color: '#0D9488' }} />
-          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Summary</span>
-          <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
-        </div>
-        <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
-          {[
-            'Breakfast club attended by 22 of 28 registered pupils this morning (78.6%) — on track for DfE data return due 31 March.',
-            'After school club: 4 pupils still in club, 4 already collected. All staff:child ratios met. No incidents today.',
-            '2 families have overdue payments totalling £195 — S. Williams (£117, 3 weeks) and C. Osei (£78, 1 week). Automated reminders sent.',
-            'Mrs. Okafor has 3 outstanding statutory training requirements (first aid, safeguarding, food hygiene) — action before next session.',
-            'Easter HAF: 14 of 18 FSM-eligible pupils booked. 4 families not yet engaged — contact recommended before end of term.',
-            'Children\'s Wellbeing & Schools Bill: free breakfast clubs are now statutory from April 2026. This school is already an Early Adopter — national rollout now begins.',
-          ].map((item, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
-              <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
-            </div>
-          ))}
+      {/* AI Summary + Highlights side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <DeptAISummary dept="wraparound" portal="schools" />
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+            <Sparkles size={14} style={{ color: '#0D9488' }} />
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+          </div>
+          <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+            {[
+              'Breakfast club attended by 22 of 28 registered pupils this morning (78.6%) — on track for DfE data return due 31 March.',
+              'After school club: 4 pupils still in club, 4 already collected. All staff:child ratios met. No incidents today.',
+              '2 families have overdue payments totalling £195 — S. Williams (£117, 3 weeks) and C. Osei (£78, 1 week). Automated reminders sent.',
+              'Mrs. Okafor has 3 outstanding statutory training requirements (first aid, safeguarding, food hygiene) — action before next session.',
+              'Easter HAF: 14 of 18 FSM-eligible pupils booked. 4 families not yet engaged — contact recommended before end of term.',
+              'Children\'s Wellbeing & Schools Bill: free breakfast clubs are now statutory from April 2026. This school is already an Early Adopter — national rollout now begins.',
+            ].map((item, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+                <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+        style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
+        <BarChart3 size={14} />Dept Insights
+      </button>
 
       {/* Tabs */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -964,7 +987,11 @@ export default function WraparoundPage() {
         {tab === 'settings' && <SettingsTab />}
       </div>
 
+      {showRegisterSession && <RegisterSessionModal onClose={() => setShowRegisterSession(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
+      {showPaymentLog && <PaymentLogModal onClose={() => setShowPaymentLog(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
+      {showAddChild && <AddChildToClubModal onClose={() => setShowAddChild(false)} onToast={(msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }} />}
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      <AIInsightsReport dept="wraparound" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

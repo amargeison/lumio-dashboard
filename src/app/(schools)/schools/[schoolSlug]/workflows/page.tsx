@@ -190,12 +190,16 @@ function WorkflowCard({ workflow }: { workflow: Workflow }) {
 
 export default function WorkflowsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
+  const [statusFilter, setStatusFilter] = useState<WorkflowStatus | 'ALL'>('ALL')
 
   useEffect(() => {
     const pathname = window.location.pathname
     const slugMatch = pathname.match(/\/schools\/([^/]+)/)
     const slug = slugMatch?.[1] ?? 'school'
-    setHasData(localStorage.getItem(`lumio_${slug}_workflows_hasData`) === 'true')
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_workflows_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
   }, [])
 
   if (hasData === null) return null
@@ -203,8 +207,6 @@ export default function WorkflowsPage() {
     { key: 'data', label: 'Upload Data (CSV)' },
     { key: 'mis', label: 'Connect Data Source' },
   ]} />
-
-  const [statusFilter, setStatusFilter] = useState<WorkflowStatus | 'ALL'>('ALL')
 
   const totalWorkflows = departments.reduce((sum, d) => sum + d.workflows.length, 0)
   const activeCount = departments.reduce((sum, d) => sum + d.workflows.filter(w => w.status === 'ACTIVE').length, 0)
