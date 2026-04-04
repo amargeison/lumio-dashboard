@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Layers, Plus, ChevronRight, AlertTriangle, CheckCircle, Clock,
   TrendingUp, TrendingDown, Users, Flag, Zap, BarChart2,
@@ -291,72 +291,70 @@ function Overview() {
 
 // ─── Kanban Tab ───────────────────────────────────────────────────────────────
 function KanbanBoard() {
-  const columns: { id: Status; label: string }[] = [
-    { id: 'todo', label: 'To Do' },
-    { id: 'in-progress', label: 'In Progress' },
-    { id: 'review', label: 'In Review' },
-    { id: 'done', label: 'Done' },
-    { id: 'blocked', label: 'Blocked' },
+  const COLS = [
+    { id: 'todo', label: 'To Do', color: '#6B7280' },
+    { id: 'inprogress', label: 'In Progress', color: '#3B82F6' },
+    { id: 'inreview', label: 'In Review', color: '#8B5CF6' },
+    { id: 'done', label: 'Done', color: '#10B981' },
+    { id: 'blocked', label: 'Blocked', color: '#EF4444' },
   ]
-
+  const [boardCards, setBoardCards] = useState<Record<string, any[]>>(() => {
+    try { const s = localStorage.getItem('lumio_board_cards'); if (s) return JSON.parse(s) } catch {}
+    return {
+      todo: [{ id:'c1',title:'Pipeline drag-and-drop stage migration',tag:'CPR',priority:'Medium',points:5,assignee:'JP' },{ id:'c2',title:'Lead scoring formula \u2014 weighted attributes',tag:'CPR',priority:'High',points:8,assignee:'DM' },{ id:'c3',title:'OpenAPI spec export \u2014 all v2 endpoints',tag:'APD',priority:'Low',points:3,assignee:'TL' }],
+      inprogress: [{ id:'c4',title:'Empty states with CSV upload for live portal pages',tag:'LSP',priority:'High',points:5,assignee:'DM' },{ id:'c5',title:'Fix TypeScript build errors \u2014 duplicate styles',tag:'LSP',priority:'Critical',points:2,assignee:'SH' },{ id:'c6',title:'CRM deal scoring model \u2014 AI integration',tag:'CRP',priority:'High',points:8,assignee:'DM' }],
+      inreview: [{ id:'c7',title:'Add Ofsted section to marketing page',tag:'LSP',priority:'High',points:3,assignee:'KB' },{ id:'c8',title:'Email sequence builder \u2014 3 templates',tag:'MAU',priority:'Medium',points:5,assignee:'KB' }],
+      done: [{ id:'c9',title:'Build MAT Trust Dashboard \u2014 11 tabs',tag:'LSP',priority:'Critical',points:13,assignee:'SH' },{ id:'c10',title:'SEND White Paper in-app viewer',tag:'MAM',priority:'High',points:8,assignee:'SH' }],
+      blocked: [{ id:'c11',title:'iOS push notification \u2014 Apple cert blocked',tag:'MAM',priority:'Critical',points:13,assignee:'JP' },{ id:'c12',title:'Android deep link routing',tag:'MAM',priority:'High',points:8,assignee:'TL' }],
+    }
+  })
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  useEffect(() => { try { localStorage.setItem('lumio_board_cards', JSON.stringify(boardCards)) } catch {} }, [boardCards])
+  const moveCard = (cardId: string, toCol: string) => {
+    setBoardCards(prev => {
+      const next: Record<string, any[]> = {}; let card: any
+      Object.keys(prev).forEach(col => { next[col] = prev[col].filter(c => { if (c.id === cardId) { card = c; return false } return true }) })
+      if (card) next[toCol] = [...(next[toCol] || []), card]
+      return next
+    })
+  }
   return (
     <div className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Sprint 8 Board</p>
-          <span className="text-xs rounded-full px-2 py-0.5" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#0D9488' }}>Mar 17–31</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="text-xs rounded-lg px-2 py-1.5 flex items-center gap-1" style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}>
-            <Filter size={11} /> Filter
-          </button>
-          <button className="flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            <Plus size={12} /> Add Task
-          </button>
-        </div>
+        <div className="flex items-center gap-2"><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Sprint 8 Board</p><span className="text-xs rounded-full px-2 py-0.5" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: '#0D9488' }}>Mar 17\u201331</span></div>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {columns.map(col => {
-          const tasks = TASKS.filter(t => t.status === col.id)
-          const s = statusCfg[col.id]
-          return (
-            <div key={col.id} className="flex-shrink-0 w-64 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                  <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{col.label}</p>
-                </div>
-                <span className="text-xs rounded-full px-1.5" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{tasks.length}</span>
-              </div>
-              <div className="p-2 flex flex-col gap-2 min-h-[200px]">
-                {tasks.map(task => (
-                  <div key={task.id} className="rounded-lg p-3 cursor-pointer" style={{ backgroundColor: '#0A0B11', border: '1px solid #1F2937' }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = '#374151'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = '#1F2937'}>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-xs font-medium leading-snug" style={{ color: '#F9FAFB' }}>{task.title}</p>
+        {COLS.map(col => (
+          <div key={col.id} onDragOver={e => { e.preventDefault(); setDragOver(col.id) }} onDrop={e => { e.preventDefault(); if (dragging) moveCard(dragging, col.id); setDragging(null); setDragOver(null) }} onDragLeave={() => setDragOver(null)}
+            className={`flex-shrink-0 w-72 rounded-xl p-3 transition-all ${dragOver === col.id ? 'ring-2 ring-teal-500 bg-gray-800/80' : 'bg-gray-900/50'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color }} /><span className="text-sm font-semibold text-white">{col.label}</span><span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full">{boardCards[col.id]?.length || 0}</span></div>
+              <button onClick={() => { const t = prompt('Card title:'); if (t) setBoardCards(prev => ({ ...prev, [col.id]: [...prev[col.id], { id: `c${Date.now()}`, title: t, tag: 'NEW', priority: 'Medium', points: 1, assignee: '?' }] })) }} className="text-gray-600 hover:text-teal-400 text-lg leading-none">+</button>
+            </div>
+            <div className="space-y-2 min-h-[100px]">
+              {(boardCards[col.id] || []).map((card: any) => (
+                <div key={card.id} draggable onDragStart={() => setDragging(card.id)} onDragEnd={() => { setDragging(null); setDragOver(null) }}
+                  className={`bg-[#0d0f1a] border border-gray-800 rounded-xl p-3 cursor-grab active:cursor-grabbing transition-all select-none ${dragging === card.id ? 'opacity-40 scale-95' : 'hover:border-gray-600 hover:shadow-lg'}`}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-xs text-white font-medium leading-snug">{card.title}</p>
+                    <button onClick={() => setBoardCards(prev => ({ ...prev, [col.id]: prev[col.id].filter((c: any) => c.id !== card.id) }))} className="text-gray-700 hover:text-red-400 text-sm flex-shrink-0">&times;</button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded font-mono">{card.tag}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${card.priority === 'Critical' ? 'bg-red-900/30 text-red-400' : card.priority === 'High' ? 'bg-amber-900/30 text-amber-400' : card.priority === 'Medium' ? 'bg-blue-900/30 text-blue-400' : 'bg-gray-800 text-gray-500'}`}>{card.priority}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono rounded px-1 py-0.5" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{task.project}</span>
-                        <PriorityBadge priority={task.priority} />
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs" style={{ color: '#6B7280' }}>{task.points}pt</span>
-                        <Avatar initials={task.assignee} color="#0D9488" />
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-500">{card.points}pt</span>
+                      <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-[9px] font-bold text-white">{card.assignee}</div>
                     </div>
                   </div>
-                ))}
-                <button className="flex items-center gap-1 text-xs mt-1 px-2 py-1.5 rounded-lg w-full" style={{ color: '#4B5563' }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#0D9488'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#4B5563'}>
-                  <Plus size={10} /> Add task
-                </button>
-              </div>
+                </div>
+              ))}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -473,64 +471,69 @@ function SprintTab() {
 
 // ─── Roadmap Tab ──────────────────────────────────────────────────────────────
 function Roadmap() {
-  const roadmapItems = [
-    { id: 1, name: 'Schools Portal MVP', status: 'done', q: 'Q4 2025', type: 'Product', color: '#22C55E', width: 20 },
-    { id: 2, name: 'SEND & DSL Module', status: 'done', q: 'Q4 2025', type: 'Product', color: '#22C55E', width: 15 },
-    { id: 3, name: 'Trust Dashboard', status: 'done', q: 'Q1 2026', type: 'Product', color: '#22C55E', width: 12 },
-    { id: 4, name: 'Marketing Automation', status: 'in-progress', q: 'Q1 2026', type: 'Internal', color: '#0D9488', width: 20 },
-    { id: 5, name: 'CRM Pipeline Rebuild', status: 'in-progress', q: 'Q1 2026', type: 'Internal', color: '#0D9488', width: 18 },
-    { id: 6, name: 'Schools Live Portal — 10 pilots', status: 'in-progress', q: 'Q1 2026', type: 'Growth', color: '#F59E0B', width: 25 },
-    { id: 7, name: 'Parent Portal MVP', status: 'planned', q: 'Q2 2026', type: 'Product', color: '#6B7280', width: 22 },
-    { id: 8, name: 'Mobile App (iOS + Android)', status: 'blocked', q: 'Q2–3 2026', type: 'Product', color: '#EF4444', width: 35 },
-    { id: 9, name: 'Enterprise SSO', status: 'planned', q: 'Q3 2026', type: 'Product', color: '#8B5CF6', width: 18 },
-    { id: 10, name: 'API v2 + Developer Portal', status: 'planned', q: 'Q2 2026', type: 'Platform', color: '#8B5CF6', width: 20 },
-    { id: 11, name: 'AI Lesson Plan Generator', status: 'planned', q: 'Q3 2026', type: 'Product', color: '#8B5CF6', width: 22 },
-    { id: 12, name: 'Ofsted Evidence Pack Export', status: 'planned', q: 'Q2 2026', type: 'Product', color: '#8B5CF6', width: 15 },
-  ]
-
-  const quarters = ['Q4 2025', 'Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026']
-  const qColors: Record<string, string> = { 'Product': '#0D9488', 'Internal': '#8B5CF6', 'Growth': '#F59E0B', 'Platform': '#F97316' }
-
+  const QUARTERS = ['Q4 2025', 'Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026']
+  const QW = 200
+  const [items, setItems] = useState(() => {
+    try { const s = localStorage.getItem('lumio_roadmap_items'); if (s) return JSON.parse(s) } catch {}
+    return [
+      { id:'r1',title:'Schools Portal MVP',status:'done',color:'#10B981',startQ:0,spanQ:1,cat:'Product' },
+      { id:'r2',title:'SEND & DSL Module',status:'done',color:'#10B981',startQ:0,spanQ:1,cat:'Product' },
+      { id:'r3',title:'Trust Dashboard',status:'done',color:'#10B981',startQ:1,spanQ:1,cat:'Product' },
+      { id:'r4',title:'Marketing Automation',status:'active',color:'#3B82F6',startQ:1,spanQ:2,cat:'Growth' },
+      { id:'r5',title:'CRM Pipeline Rebuild',status:'active',color:'#3B82F6',startQ:1,spanQ:1,cat:'Growth' },
+      { id:'r6',title:'Schools Live Portal \u2014 10 pilots',status:'active',color:'#F59E0B',startQ:1,spanQ:2,cat:'Growth' },
+      { id:'r7',title:'Parent Portal MVP',status:'planned',color:'#8B5CF6',startQ:2,spanQ:1,cat:'Product' },
+      { id:'r8',title:'Mobile App (iOS + Android)',status:'planned',color:'#EF4444',startQ:2,spanQ:2,cat:'Platform' },
+      { id:'r9',title:'Enterprise SSO',status:'planned',color:'#8B5CF6',startQ:3,spanQ:1,cat:'Platform' },
+      { id:'r10',title:'API v2 + Developer Portal',status:'planned',color:'#8B5CF6',startQ:2,spanQ:1,cat:'Platform' },
+      { id:'r11',title:'AI Lesson Plan Generator',status:'planned',color:'#8B5CF6',startQ:3,spanQ:1,cat:'Product' },
+      { id:'r12',title:'Ofsted Evidence Pack Export',status:'planned',color:'#8B5CF6',startQ:2,spanQ:1,cat:'Product' },
+      { id:'r13',title:'Lumio GPS Launch',status:'planned',color:'#F59E0B',startQ:2,spanQ:2,cat:'Growth' },
+      { id:'r14',title:'Football Portal V2',status:'planned',color:'#6B7280',startQ:3,spanQ:1,cat:'Product' },
+    ]
+  })
+  useEffect(() => { try { localStorage.setItem('lumio_roadmap_items', JSON.stringify(items)) } catch {} }, [items])
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dragSX, setDragSX] = useState(0)
+  const [dragSQ, setDragSQ] = useState(0)
+  const cats = ['Product','Growth','Platform']
+  const catC: Record<string,string> = { Product:'#8B5CF6', Growth:'#F59E0B', Platform:'#3B82F6' }
   return (
     <div className="p-5 flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Product Roadmap</p>
-          <p className="text-xs" style={{ color: '#6B7280' }}>Q4 2025 → Q4 2026 · Theme-based view</p>
-        </div>
+        <div><p className="text-sm font-semibold" style={{ color:'#F9FAFB' }}>Product Roadmap</p><p className="text-xs" style={{ color:'#6B7280' }}>Drag bars to reschedule. Resize from the right edge.</p></div>
         <div className="flex gap-2">
-          {['Product', 'Internal', 'Growth', 'Platform'].map(t => (
-            <span key={t} className="text-xs rounded px-2 py-0.5" style={{ backgroundColor: `${qColors[t]}15`, color: qColors[t] }}>{t}</span>
-          ))}
+          {cats.map(c => <span key={c} className="flex items-center gap-1 text-xs rounded px-2 py-0.5" style={{ backgroundColor: `${catC[c]}15`, color: catC[c] }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: catC[c] }} />{c}</span>)}
+          <button onClick={() => { const t = prompt('Initiative name:'); if (t) setItems((prev: any[]) => [...prev, { id:`r${Date.now()}`,title:t,status:'planned',color:'#8B5CF6',startQ:2,spanQ:1,cat:'Product' }]) }} className="text-xs rounded px-2 py-0.5 border border-dashed border-gray-700 text-gray-500 hover:text-teal-400">+ Add</button>
         </div>
       </div>
-
-      {/* Timeline header */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
-        <div className="grid border-b" style={{ gridTemplateColumns: '200px repeat(5, 1fr)', borderColor: '#1F2937', backgroundColor: '#0A0B11' }}>
-          <div className="px-3 py-2 text-xs font-medium" style={{ color: '#6B7280' }}>Initiative</div>
-          {quarters.map(q => (
-            <div key={q} className="px-3 py-2 text-xs font-semibold border-l text-center" style={{ color: '#9CA3AF', borderColor: '#1F2937' }}>{q}</div>
-          ))}
+      <div className="overflow-x-auto rounded-xl" style={{ border:'1px solid #1F2937' }}>
+        <div className="flex border-b" style={{ borderColor:'#1F2937', backgroundColor:'#0A0B11' }}>
+          <div className="w-48 flex-shrink-0 px-3 py-2 text-xs text-gray-500">Initiative</div>
+          {QUARTERS.map(q => <div key={q} className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 font-semibold border-l border-gray-800 text-center" style={{ width: QW }}>{q}</div>)}
         </div>
-        {roadmapItems.map((item, i) => (
-          <div key={item.id} className="grid items-center border-b" style={{ gridTemplateColumns: '200px repeat(5, 1fr)', borderColor: '#1F2937', backgroundColor: i % 2 === 0 ? '#111318' : 'transparent', minHeight: 44 }}>
-            <div className="px-3 py-2 flex items-center gap-2">
+        {items.map((item: any, i: number) => (
+          <div key={item.id} className="flex items-center hover:bg-gray-900/30 group" style={{ borderBottom:'1px solid #1F2937', minHeight:40 }}>
+            <div className="w-48 flex-shrink-0 px-3 py-1.5 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-              <p className="text-xs" style={{ color: '#D1D5DB' }}>{item.name}</p>
+              <span className="text-xs text-gray-300 truncate">{item.title}</span>
             </div>
-            {quarters.map((q, qi) => {
-              const active = item.q.includes(q) || item.q === q
-              return (
-                <div key={q} className="px-1 py-2 border-l" style={{ borderColor: '#1F2937' }}>
-                  {active && (
-                    <div className="rounded h-6 flex items-center px-2" style={{ backgroundColor: `${item.color}25`, border: `1px solid ${item.color}50` }}>
-                      <p className="text-xs truncate" style={{ color: item.color, fontSize: 10 }}>{item.status === 'done' ? '✓ Done' : item.status === 'blocked' ? '⛔ Blocked' : item.status === 'in-progress' ? '▶ Active' : '◦ Planned'}</p>
-                    </div>
-                  )}
+            <div className="relative" style={{ width: QUARTERS.length * QW, height: 32 }}>
+              {QUARTERS.map((_,qi) => <div key={qi} className="absolute top-0 bottom-0 border-l border-gray-800/50" style={{ left: qi * QW }} />)}
+              <div className="absolute top-1 bottom-1 rounded-lg flex items-center px-2 cursor-grab active:cursor-grabbing select-none group/bar"
+                style={{ left: item.startQ * QW + 4, width: item.spanQ * QW - 8, backgroundColor: item.status === 'done' ? '#10B981' : item.status === 'active' ? item.color : item.color + '40', border: `1px solid ${item.color}`, minWidth: 50 }}
+                draggable onDragStart={e => { setDragId(item.id); setDragSX(e.clientX); setDragSQ(item.startQ) }}
+                onDragEnd={e => { const dq = Math.round((e.clientX - dragSX) / QW); const nq = Math.max(0, Math.min(QUARTERS.length - item.spanQ, dragSQ + dq)); setItems((prev: any[]) => prev.map((r: any) => r.id === item.id ? { ...r, startQ: nq } : r)); setDragId(null) }}>
+                <span className="text-[10px] font-medium truncate" style={{ color: item.status === 'planned' ? item.color : 'white' }}>{item.status === 'done' ? '\u2713 Done' : item.status === 'active' ? '\u25B6 Active' : '+ Planned'}</span>
+                <div className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover/bar:opacity-100"
+                  onMouseDown={e => { e.stopPropagation(); const sx = e.clientX; const ss = item.spanQ; const onM = (ev: MouseEvent) => { const dq = Math.round((ev.clientX - sx) / QW); const ns = Math.max(1, Math.min(QUARTERS.length - item.startQ, ss + dq)); setItems((prev: any[]) => prev.map((r: any) => r.id === item.id ? { ...r, spanQ: ns } : r)) }; const onU = () => { window.removeEventListener('mousemove', onM); window.removeEventListener('mouseup', onU) }; window.addEventListener('mousemove', onM); window.addEventListener('mouseup', onU) }}>
+                  <div className="w-0.5 h-4 bg-white/40 rounded-full" />
                 </div>
-              )
-            })}
+              </div>
+            </div>
+            <div className="w-8 flex-shrink-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <button onClick={() => setItems((prev: any[]) => prev.filter((r: any) => r.id !== item.id))} className="text-gray-700 hover:text-red-400 text-sm">&times;</button>
+            </div>
           </div>
         ))}
       </div>
