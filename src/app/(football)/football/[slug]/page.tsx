@@ -4607,7 +4607,7 @@ const SOCIAL_PLATFORMS = [
 const SOCIAL_CALENDAR = [
   { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
   { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
-  { day: 'Wed', time: '12pm', content: 'Player spotlight — Santos', platforms: 'All' },
+  { day: 'Wed', time: '12pm', content: 'Player spotlight — Browne', platforms: 'All' },
   { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
   { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
   { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
@@ -4713,13 +4713,13 @@ function DynamicsView() {
   function action(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
 
   const PLAYER_HAPPINESS = [
-    { name: 'Marcus Webb', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
-    { name: 'Jordan Ellis', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
-    { name: 'Lucas Santos', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
-    { name: 'Ryan Thompson', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
-    { name: 'Danny Okafor', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
-    { name: 'Kenji Nakamura', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
-    { name: 'Chris Walsh', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
+    { name: 'Marcus Browne', overall: 9, morale: 9, training: 8, playingTime: 9, contract: 8, form: 9, risk: 'Low' },
+    { name: 'Mathew Stevens', overall: 8, morale: 8, training: 9, playingTime: 7, contract: 8, form: 8, risk: 'Low' },
+    { name: 'Omar Bugiel', overall: 7, morale: 7, training: 8, playingTime: 6, contract: 7, form: 8, risk: 'Low' },
+    { name: 'Steve Seddon', overall: 7, morale: 7, training: 7, playingTime: 8, contract: 5, form: 7, risk: 'Medium' },
+    { name: 'Callum Maycock', overall: 4, morale: 4, training: 5, playingTime: 2, contract: 6, form: 3, risk: 'High' },
+    { name: 'Jake Reeves', overall: 5, morale: 6, training: 7, playingTime: 5, contract: 3, form: 5, risk: 'High' },
+    { name: 'Sam Hutchinson', overall: 5, morale: 4, training: 6, playingTime: 5, contract: 7, form: 3, risk: 'Medium' },
   ]
 
   return (
