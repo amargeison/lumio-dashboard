@@ -11,7 +11,6 @@ import {
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
   Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, DoorOpen, Clock,
 } from 'lucide-react'
-import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
 import { SCHOOL_ROLES, type SchoolRole } from '@/lib/schoolRoles'
@@ -43,6 +42,65 @@ const NAV = [
   { section: null,          path: '/parent',       label: 'Parent Portal',          icon: Users,           badge: null },
   { section: null,          path: 'settings',      label: 'Settings',               icon: Settings,        badge: null },
 ]
+
+// ─── School notifications (demo) ─────────────────────────────────────────────
+const SCHOOL_NOTIFICATIONS = [
+  { id: 'sn1', dept: 'safeguarding', icon: '🛡️', title: 'Safeguarding concern logged', body: 'Year 9 pupil — DSL review required before 3pm today.', time: '12 mins ago', read: false },
+  { id: 'sn2', dept: 'hr-staff', icon: '📋', title: 'DBS renewal overdue', body: 'M. Taylor DBS expired 10 March — renewal action needed.', time: '45 mins ago', read: false },
+  { id: 'sn3', dept: 'students', icon: '🫥', title: '3 unexplained absences', body: 'Reception, Year 4, Year 6 — parents not yet contacted.', time: '1 hour ago', read: false },
+  { id: 'sn4', dept: 'send-dsl', icon: '🧠', title: 'SENCO review at 11:30', body: '4 pupils on agenda — meeting papers circulated to staff.', time: '2 hours ago', read: true },
+  { id: 'sn5', dept: 'finance', icon: '💰', title: 'Expense claim awaiting approval', body: '£42.50 travel claim from Mrs Collins — 3 days overdue.', time: '3 hours ago', read: true },
+  { id: 'sn6', dept: 'facilities', icon: '🔧', title: 'Maintenance request', body: 'Year 2 classroom heater not working — logged by site team.', time: 'Yesterday', read: true },
+  { id: 'sn7', dept: 'school-office', icon: '📞', title: 'Parent callback requested', body: 'Mrs Morris (Year 4) — regarding Thursday school trip.', time: 'Yesterday', read: true },
+  { id: 'sn8', dept: 'all', icon: '⚡', title: 'Workflow completed', body: 'Daily Absence Alert ran successfully at 7:32am.', time: 'Today 7:32am', read: true },
+  { id: 'sn9', dept: 'all', icon: '🤖', title: 'Lumio AI insight', body: 'Attendance dropped below 93% for Year 6 this week.', time: 'Yesterday', read: true },
+  { id: 'sn10', dept: 'all', icon: '📅', title: 'Staff meeting tomorrow', body: 'Whole-school CPD session — 3:30pm in the Main Hall.', time: '2 days ago', read: true },
+]
+
+function SchoolNotificationsPanel({ onClose, depts }: { onClose: () => void; depts: string[] }) {
+  const filtered = SCHOOL_NOTIFICATIONS.filter(n => depts.includes('all') || depts.includes(n.dept) || n.dept === 'all')
+  const [items, setItems] = useState(filtered)
+  const unreadCount = items.filter(n => !n.read).length
+  return (
+    <>
+      <div className="fixed inset-0 z-[79]" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full z-[80] flex flex-col" style={{ width: 380, backgroundColor: '#111318', borderLeft: '1px solid #1F2937', boxShadow: '-8px 0 32px rgba(0,0,0,0.4)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Notifications</h2>
+            {unreadCount > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>{unreadCount}</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && <button onClick={() => setItems(prev => prev.map(n => ({ ...n, read: true })))} className="text-xs font-medium" style={{ color: '#0D9488' }}>Mark all read</button>}
+            <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <span className="text-3xl mb-3">🔔</span>
+              <p className="text-sm font-semibold" style={{ color: '#6B7280' }}>No notifications for your role</p>
+            </div>
+          ) : items.map(n => (
+            <div key={n.id} className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937', borderLeft: n.read ? 'none' : '3px solid #0D9488', backgroundColor: n.read ? 'transparent' : 'rgba(13,148,136,0.04)' }}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base" style={{ backgroundColor: '#1F2937' }}>{n.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold truncate" style={{ color: n.read ? '#9CA3AF' : '#F9FAFB' }}>{n.title}</p>
+                    {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#0D9488' }} />}
+                  </div>
+                  <p className="text-xs mb-1 leading-relaxed" style={{ color: '#6B7280' }}>{n.body}</p>
+                  <p className="text-xs" style={{ color: '#4B5563' }}>{n.time}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
 
 interface Props { children: React.ReactNode; params: Promise<{ schoolSlug: string }> }
 
@@ -310,15 +368,21 @@ export default function SchoolLayout({ children }: Props) {
       <div className="flex flex-1 flex-col overflow-hidden transition-[padding] duration-200" style={{ paddingLeft: sidebarW }}>
         {/* Top-right: bell + avatar */}
         <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-          <button onClick={() => setNotificationsOpen(o => !o)}
-            className="relative flex items-center justify-center rounded-full"
-            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}>
-            <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
-          </button>
+          {(() => {
+            const depts = roleConfig.permissions.notificationDepts
+            const bellCount = depts.length === 0 ? 0 : SCHOOL_NOTIFICATIONS.filter(n => !n.read && (depts.includes('all') || depts.includes(n.dept) || n.dept === 'all')).length
+            return (
+              <button onClick={() => { if (depts.length > 0) setNotificationsOpen(o => !o) }}
+                className="relative flex items-center justify-center rounded-full"
+                style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: depts.length === 0 ? '#374151' : '#9CA3AF', cursor: depts.length === 0 ? 'not-allowed' : 'pointer', opacity: depts.length === 0 ? 0.5 : 1 }}>
+                <Bell size={16} strokeWidth={1.75} />
+                {bellCount > 0 && <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>{bellCount}</span>}
+              </button>
+            )
+          })()}
           <AvatarDropdown initials={initials} logoutRedirect="/schools/login" logoutClearKeys={['lumio_school_']} settingsHref={`${base}/settings`} />
         </div>
-        {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+        {notificationsOpen && <SchoolNotificationsPanel onClose={() => setNotificationsOpen(false)} depts={roleConfig.permissions.notificationDepts} />}
 
         {/* Mobile menu bar */}
         <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -342,6 +406,12 @@ export default function SchoolLayout({ children }: Props) {
               className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>
               Clear Demo Data
             </button>
+          </div>
+        )}
+        {activeRole === 'governor' && isSchoolDemo && (
+          <div className="flex items-center gap-2 px-6 shrink-0" style={{ height: 36, minHeight: 36, background: 'linear-gradient(90deg, #1E293B, #111827)', color: '#9CA3AF', borderBottom: '1px solid #1F2937' }}>
+            <span style={{ fontSize: 14 }}>🏛️</span>
+            <span className="text-xs font-medium">Governor view — read-only dashboard and reports. No quick actions or editing capabilities.</span>
           </div>
         )}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">

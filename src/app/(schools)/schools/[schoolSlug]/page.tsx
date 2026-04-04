@@ -1126,6 +1126,11 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [showLockdown, setShowLockdown] = useState(false)
   const [lockdownStep, setLockdownStep] = useState(0)
   const [lockdownType, setLockdownType] = useState<'emergency' | 'drill' | ''>('')
+  const [lockdownBanner, setLockdownBanner] = useState(false)
+  const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
+  const [lockdownDesc, setLockdownDesc] = useState('')
+  const [lockdownLocation, setLockdownLocation] = useState('Main entrance')
+  const [lockdownChecks, setLockdownChecks] = useState<Record<string, boolean>>({})
   const [showSafeguardingReview, setShowSafeguardingReview] = useState(false)
   const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
@@ -1271,7 +1276,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           return rows.filter(r => r.length > 0).map((row, ri) => (
           <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri === 0 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
             {row.map((a: any) => (
-              <button key={a.label} onClick={() => { if (a.label === 'School Lockdown') { setShowLockdown(true); setLockdownStep(0); setLockdownType('') } }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
+              <button key={a.label} onClick={() => { if (a.label === 'School Lockdown') { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance') } }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
                 <span>{a.icon}</span>{a.label}
               </button>
             ))}
@@ -1958,15 +1963,27 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* Lockdown drill banner */}
       {lockdownBanner && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: '#DC2626', color: '#fff' }}>
-          <span className="text-sm font-bold animate-pulse">{'\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL' : ''} ACTIVE &mdash; Click Stand Down when complete</span>
-          <button onClick={() => setLockdownBanner(false)} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-6 py-3" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626', color: '#fff' }}>
+          <span className="text-sm font-bold animate-pulse">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'} LOCKDOWN {lockdownType === 'drill' ? 'DRILL ' : ''}ACTIVE &mdash; Click Stand Down when complete</span>
+          <button onClick={() => { setLockdownBanner(false); setLockdownType('') }} className="px-4 py-1.5 rounded-lg text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>{'\u{1F7E2}'} Stand Down</button>
         </div>
       )}
 
       {/* Lockdown wizard */}
       {showSafeguardingReview && <SafeguardingReviewModal onClose={() => setShowSafeguardingReview(false)} isDemoMode={demoDataActive} />}
-      {showLockdown && (
+      {showLockdown && (() => {
+        const COMMS_ITEMS = [
+          { id: 'staff-broadcast', label: 'Alert all staff via emergency broadcast' },
+          { id: 'sms-parents', label: 'Send SMS to all parents/carers' },
+          { id: 'email-parents', label: 'Send email to all parents/carers' },
+          { id: 'website-notice', label: 'Post notice on school website' },
+          { id: 'notify-la', label: 'Notify local authority designated officer' },
+          { id: 'call-999', label: 'Contact emergency services (999)' },
+          { id: 'lock-doors', label: 'Lock all external doors' },
+          { id: 'pa-system', label: 'Activate PA system announcement' },
+        ]
+        const wants999 = lockdownChecks['call-999'] !== false
+        return (
         <div className="fixed inset-0 bg-black/80 z-[9998] flex items-center justify-center p-4">
           <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -1974,15 +1991,185 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               <button onClick={() => setShowLockdown(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
             </div>
             <div className="px-6 py-5">
-              {lockdownStep === 0 && (<div className="space-y-4"><div className="rounded-xl p-5 text-center" style={{ backgroundColor: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.4)' }}><div className="text-4xl mb-3">{'\u26A0\uFE0F'}</div><h3 className="text-lg font-bold text-white mb-2">You are initiating a School Lockdown</h3><p className="text-sm text-gray-400">This will alert staff, parents, and emergency services. Only proceed if genuine emergency or authorised drill.</p></div><div className="grid grid-cols-2 gap-3"><button onClick={() => { setLockdownType('emergency'); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'\u{1F534}'} GENUINE EMERGENCY</button><button onClick={() => { setLockdownType('drill'); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'\u{1F7E1}'} DRILL / PRACTICE</button></div></div>)}
-              {lockdownStep === 1 && (<div className="space-y-4"><h3 className="text-white font-semibold">Incident Details</h3><div><label className="text-xs text-gray-400 mb-1 block">Incident type</label><select value={lockdownIncident} onChange={e => setLockdownIncident(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Intruder on site</option><option>Threat received</option><option>Nearby police incident</option><option>Suspicious person</option><option>Other</option></select></div><div><label className="text-xs text-gray-400 mb-1 block">Brief description</label><textarea value={lockdownDesc} onChange={e => setLockdownDesc(e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Location of threat</label><select value={lockdownLocation} onChange={e => setLockdownLocation(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Main entrance</option><option>School grounds</option><option>Nearby area</option><option>Unknown</option></select></div><div className="flex gap-3"><button onClick={() => setLockdownStep(0)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button></div></div>)}
-              {lockdownStep === 2 && (<div className="space-y-4"><h3 className="text-white font-semibold">Communications to trigger</h3><div className="space-y-2">{['Alert all staff via emergency broadcast','Send SMS to all parents/carers','Send email to all parents/carers','Post notice on school website','Notify local authority designated officer','Contact emergency services (999)','Lock all external doors','Activate PA system announcement'].map(item => <label key={item} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-900 text-sm text-gray-300 cursor-pointer"><input type="checkbox" defaultChecked className="rounded" />{item}</label>)}</div><div className="flex gap-3"><button onClick={() => setLockdownStep(1)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(3)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button></div></div>)}
-              {lockdownStep === 3 && (<div className="space-y-4"><h3 className="text-white font-semibold">Message Preview</h3><div><label className="text-xs text-gray-400 mb-1 block">SMS to parents</label><textarea rows={3} defaultValue={`URGENT: We have initiated a lockdown ${lockdownType === 'drill' ? 'drill ' : ''}procedure. Your child is safe. Do NOT come to school. We will update you shortly.`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Email subject</label><input defaultValue={`URGENT: School Lockdown ${lockdownType === 'drill' ? 'Drill ' : ''}Initiated`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div className="flex gap-3"><button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button><button onClick={() => setLockdownStep(4)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">{lockdownType === 'drill' ? 'Initiate Drill' : 'INITIATE LOCKDOWN'}</button></div></div>)}
-              {lockdownStep === 4 && (<div className="space-y-4 text-center"><div className="text-5xl mb-2">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'}</div><h3 className="text-lg font-bold text-white">Lockdown {lockdownType === 'drill' ? 'Drill' : 'Protocol'} Initiated {demoDataActive ? '(DEMO)' : ''}</h3>{demoDataActive ? (<div className="text-left space-y-2 bg-gray-900 rounded-xl p-4"><p className="text-xs text-gray-400 mb-2">In a live plan this would:</p>{['\u2705 Broadcast emergency alert to all 89 staff','\u2705 Send SMS to 1,147 parent contacts','\u2705 Send email to all registered parents','\u2705 Post lockdown notice on school website','\u2705 Log incident with timestamp for Ofsted/legal records','\u2705 Notify local authority','\u2705 Auto-generate incident report'].map((item, i) => <div key={i} className="text-xs text-gray-300">{item}</div>)}</div>) : (<div className="text-left bg-red-900/20 border border-red-700/30 rounded-xl p-4"><p className="text-xs text-red-400 font-bold">LOCKDOWN ACTIVE</p><p className="text-xs text-gray-400">{lockdownIncident} &middot; {lockdownLocation} &middot; Ref: LKD-{new Date().toISOString().slice(0,10).replace(/-/g,'')}-{Math.floor(Math.random()*900)+100}</p></div>)}<button onClick={() => { setShowLockdown(false); setLockdownBanner(true) }} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Close &mdash; Lockdown Active</button></div>)}
+              {/* Step 0: Choose emergency or drill */}
+              {lockdownStep === 0 && (
+                <div className="space-y-4">
+                  <div className="rounded-xl p-5 text-center" style={{ backgroundColor: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.4)' }}>
+                    <div className="text-4xl mb-3">{'\u26A0\uFE0F'}</div>
+                    <h3 className="text-lg font-bold text-white mb-2">You are initiating a School Lockdown</h3>
+                    <p className="text-sm text-gray-400">This will alert staff, parents, and emergency services. Only proceed if genuine emergency or authorised drill.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => { setLockdownType('emergency'); setLockdownChecks({}); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#DC2626', color: '#fff' }}>{'\u{1F534}'} GENUINE EMERGENCY</button>
+                    <button onClick={() => { setLockdownType('drill'); setLockdownChecks({ 'call-999': false }); setLockdownStep(1) }} className="py-4 rounded-xl text-sm font-bold" style={{ backgroundColor: '#CA8A04', color: '#fff' }}>{'\u{1F7E1}'} DRILL / PRACTICE</button>
+                  </div>
+                </div>
+              )}
+              {/* Step 1: Incident Details */}
+              {lockdownStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-white font-semibold">Incident Details</h3>
+                  <div><label className="text-xs text-gray-400 mb-1 block">Incident type</label>
+                    <select value={lockdownIncident} onChange={e => setLockdownIncident(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm">
+                      <option>Intruder on site</option><option>Threat received</option><option>Nearby police incident</option><option>Suspicious person</option><option>Other</option>
+                    </select>
+                  </div>
+                  <div><label className="text-xs text-gray-400 mb-1 block">Brief description</label>
+                    <textarea value={lockdownDesc} onChange={e => setLockdownDesc(e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" placeholder="Describe the situation briefly..." />
+                  </div>
+                  <div><label className="text-xs text-gray-400 mb-1 block">Location of threat</label>
+                    <select value={lockdownLocation} onChange={e => setLockdownLocation(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm">
+                      <option>Main entrance</option><option>School grounds</option><option>Nearby area</option><option>Unknown</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setLockdownStep(0)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button>
+                    <button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button>
+                  </div>
+                </div>
+              )}
+              {/* Step 2: Communications — tracked checkboxes */}
+              {lockdownStep === 2 && (
+                <div className="space-y-4">
+                  <h3 className="text-white font-semibold">Communications to trigger</h3>
+                  {lockdownType === 'drill' && (
+                    <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: 'rgba(202,138,4,0.15)', border: '1px solid rgba(202,138,4,0.3)', color: '#FBBF24' }}>
+                      Drill mode — 999 is disabled. No emergency services will be contacted.
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {COMMS_ITEMS.map(item => {
+                      const isDrill999 = lockdownType === 'drill' && item.id === 'call-999'
+                      const checked = isDrill999 ? false : lockdownChecks[item.id] !== false
+                      return (
+                        <label key={item.id} className={`flex items-center gap-3 py-2 px-3 rounded-lg text-sm cursor-pointer ${isDrill999 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          style={{ backgroundColor: item.id === 'call-999' && checked && lockdownType === 'emergency' ? 'rgba(220,38,38,0.15)' : '#111827', border: item.id === 'call-999' && checked && lockdownType === 'emergency' ? '1px solid rgba(220,38,38,0.4)' : '1px solid transparent' }}>
+                          <input type="checkbox" checked={checked} disabled={isDrill999}
+                            onChange={() => { if (!isDrill999) setLockdownChecks(prev => ({ ...prev, [item.id]: !checked })) }}
+                            className="rounded" />
+                          <span style={{ color: isDrill999 ? '#4B5563' : '#D1D5DB' }}>{item.label}</span>
+                          {item.id === 'call-999' && checked && lockdownType === 'emergency' && <span className="ml-auto text-xs font-bold" style={{ color: '#EF4444' }}>999 will be prompted</span>}
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setLockdownStep(1)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button>
+                    <button onClick={() => setLockdownStep(3)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-700 text-white">Next</button>
+                  </div>
+                </div>
+              )}
+              {/* Step 3: Message Preview */}
+              {lockdownStep === 3 && (
+                <div className="space-y-4">
+                  <h3 className="text-white font-semibold">Message Preview</h3>
+                  <div><label className="text-xs text-gray-400 mb-1 block">SMS to parents</label>
+                    <textarea rows={3} defaultValue={`URGENT: We have initiated a lockdown ${lockdownType === 'drill' ? 'drill ' : ''}procedure. Your child is safe. Do NOT come to school. We will update you shortly.`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" />
+                  </div>
+                  <div><label className="text-xs text-gray-400 mb-1 block">Email subject</label>
+                    <input defaultValue={`URGENT: School Lockdown ${lockdownType === 'drill' ? 'Drill ' : ''}Initiated`} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" />
+                  </div>
+                  {lockdownType === 'emergency' && wants999 && (
+                    <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(220,38,38,0.2)', border: '2px solid rgba(220,38,38,0.5)' }}>
+                      <p className="text-xs text-red-400 font-semibold mb-1">Emergency services will be prompted on the next step</p>
+                      <p className="text-xs text-gray-500">You will see a Call 999 button after initiating lockdown</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <button onClick={() => setLockdownStep(2)} className="flex-1 py-2.5 rounded-xl text-sm bg-gray-800 text-gray-400">Back</button>
+                    <button onClick={() => setLockdownStep(4)} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626', color: '#fff' }}>{lockdownType === 'drill' ? 'Initiate Drill' : 'INITIATE LOCKDOWN'}</button>
+                  </div>
+                </div>
+              )}
+              {/* Step 4: Confirmation — with 999 call button for genuine emergencies */}
+              {lockdownStep === 4 && (
+                <div className="space-y-4 text-center">
+                  <div className="text-5xl mb-2">{lockdownType === 'drill' ? '\u{1F7E1}' : '\u{1F534}'}</div>
+                  <h3 className="text-lg font-bold text-white">Lockdown {lockdownType === 'drill' ? 'Drill' : 'Protocol'} Initiated {demoDataActive ? '(DEMO)' : ''}</h3>
+
+                  {/* GENUINE EMERGENCY + 999 selected */}
+                  {lockdownType === 'emergency' && wants999 && (
+                    <div className="space-y-3">
+                      <div className="rounded-xl p-5" style={{ backgroundColor: 'rgba(220,38,38,0.25)', border: '2px solid #DC2626' }}>
+                        <p className="text-sm font-bold text-white mb-3">Call emergency services now</p>
+                        {demoDataActive ? (
+                          <div className="space-y-2">
+                            <button className="w-full py-4 rounded-xl text-lg font-black animate-pulse" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2 }}
+                              onClick={() => alert('DEMO MODE: In a live workspace this would open your phone dialler to call 999.')}>
+                              {'\u{1F4DE}'} Call 999 NOW (DEMO)
+                            </button>
+                            <p className="text-xs text-gray-500">Demo mode — no call will be made</p>
+                          </div>
+                        ) : (
+                          <a href="tel:999" className="block w-full py-4 rounded-xl text-lg font-black text-center animate-pulse" style={{ backgroundColor: '#DC2626', color: '#fff', border: '2px solid #FCA5A5', letterSpacing: 2, textDecoration: 'none' }}>
+                            {'\u{1F4DE}'} Call 999 NOW
+                          </a>
+                        )}
+                      </div>
+                      {/* SMS alerts to emergency contacts */}
+                      <div className="rounded-xl p-4 text-left" style={{ backgroundColor: '#111827', border: '1px solid #1F2937' }}>
+                        <p className="text-xs font-semibold text-white mb-2">{'\u{1F4F1}'} Emergency SMS alerts</p>
+                        {demoDataActive ? (
+                          <div className="space-y-1.5">
+                            {[
+                              { name: 'Sarah Mitchell (Headteacher)', number: '07700 900001' },
+                              { name: 'James Okafor (Deputy Head)', number: '07700 900002' },
+                              { name: 'Priya Patel (DSL)', number: '07700 900003' },
+                              { name: 'Mark Davis (Business Manager)', number: '07700 900004' },
+                            ].map(c => (
+                              <div key={c.name} className="flex items-center gap-2 text-xs">
+                                <span style={{ color: '#22C55E' }}>{'\u2705'}</span>
+                                <span style={{ color: '#9CA3AF' }}>{c.name}</span>
+                                <span style={{ color: '#4B5563' }}>{c.number}</span>
+                                <span className="ml-auto text-xs" style={{ color: '#6B7280' }}>Demo — not sent</span>
+                              </div>
+                            ))}
+                            <p className="text-xs mt-2" style={{ color: '#4B5563' }}>In a live workspace, Twilio SMS would be sent to all configured emergency contacts.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <p className="text-xs" style={{ color: '#6B7280' }}>Sending emergency SMS to all configured contacts...</p>
+                            <p className="text-xs" style={{ color: '#9CA3AF' }}>Configure emergency contacts in Settings {'>'} Emergency Contacts</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary of actions taken */}
+                  {demoDataActive ? (
+                    <div className="text-left space-y-2 bg-gray-900 rounded-xl p-4">
+                      <p className="text-xs text-gray-400 mb-2">In a live plan this would:</p>
+                      {[
+                        lockdownChecks['staff-broadcast'] !== false && '\u2705 Broadcast emergency alert to all 89 staff',
+                        lockdownChecks['sms-parents'] !== false && '\u2705 Send SMS to 1,147 parent contacts',
+                        lockdownChecks['email-parents'] !== false && '\u2705 Send email to all registered parents',
+                        lockdownChecks['website-notice'] !== false && '\u2705 Post lockdown notice on school website',
+                        lockdownChecks['notify-la'] !== false && '\u2705 Notify local authority',
+                        lockdownType === 'emergency' && wants999 && '\u2705 Prompt 999 emergency call',
+                        lockdownChecks['lock-doors'] !== false && '\u2705 Lock all external doors',
+                        lockdownChecks['pa-system'] !== false && '\u2705 Activate PA system announcement',
+                        '\u2705 Log incident with timestamp for Ofsted/legal records',
+                        '\u2705 Auto-generate incident report',
+                      ].filter(Boolean).map((item, i) => <div key={i} className="text-xs text-gray-300">{item}</div>)}
+                    </div>
+                  ) : (
+                    <div className="text-left bg-red-900/20 border border-red-700/30 rounded-xl p-4">
+                      <p className="text-xs text-red-400 font-bold">LOCKDOWN ACTIVE</p>
+                      <p className="text-xs text-gray-400">{lockdownIncident} &middot; {lockdownLocation} &middot; Ref: LKD-{new Date().toISOString().slice(0,10).replace(/-/g,'')}-{Math.floor(Math.random()*900)+100}</p>
+                    </div>
+                  )}
+
+                  <button onClick={() => { setShowLockdown(false); setLockdownBanner(true) }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: lockdownType === 'drill' ? '#CA8A04' : '#DC2626' }}>
+                    Close &mdash; Lockdown {lockdownType === 'drill' ? 'Drill ' : ''}Active
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
