@@ -19,7 +19,7 @@ const DEPT_LABELS: Record<string, string> = {
   safeguarding: 'Safeguarding', 'send-dsl': 'SEND & DSL', 'finance-school': 'Finance',
   admissions: 'Admissions', ofsted: 'Ofsted', trust: 'Trust', students: 'Students',
   wraparound: 'Wraparound', 'facilities-school': 'Facilities', timetable: 'Timetable',
-  reports: 'Reports', classes: 'Classes',
+  reports: 'Reports', classes: 'Classes', slt: 'SLT Suite', facilities: 'Facilities',
   squad: 'First Team', tactics: 'Tactics', medical: 'Medical', scouting: 'Scouting',
   academy: 'Academy', transfers: 'Transfers', analytics: 'Analytics', media: 'Media & PR',
   matchday: 'Match Day', training: 'Training', 'finance-football': 'Finance',
@@ -42,6 +42,74 @@ const DEPT_METRICS: Record<string, { label: string; current: string; previous: s
     { label: 'Active Leads', current: '34', previous: '29', target: '40' },
     { label: 'Avg Deal Size', current: '£12.4k', previous: '£11.8k', target: '£15k' },
     { label: 'Meetings Booked', current: '18', previous: '14', target: '20' },
+  ],
+  // ── Schools departments ──────────────────────────────────────────────────
+  'school-office': [
+    { label: 'Emails flagged for action', current: '7', previous: '4', target: '0' },
+    { label: 'Unread SMS alerts', current: '3', previous: '1', target: '0' },
+    { label: 'Visitors today', current: '4', previous: '6', target: '—' },
+    { label: 'First aid logs today', current: '1', previous: '2', target: '—' },
+    { label: 'Urgent parent responses', current: '3', previous: '1', target: '0' },
+  ],
+  timetable: [
+    { label: 'Cover needed', current: '3', previous: '2', target: '0' },
+    { label: 'Unassigned lessons', current: '2', previous: '0', target: '0' },
+    { label: 'Room conflicts', current: '0', previous: '1', target: '0' },
+    { label: 'Change requests pending', current: '3', previous: '2', target: '0' },
+  ],
+  'hr-staff': [
+    { label: 'Staff absent today', current: '1', previous: '2', target: '0' },
+    { label: 'Leave requests pending', current: '1', previous: '0', target: '0' },
+    { label: 'CPD bookings this month', current: '1', previous: '3', target: '5' },
+    { label: 'Contracts expiring', current: '0', previous: '1', target: '0' },
+  ],
+  students: [
+    { label: 'New admissions pending', current: '1', previous: '2', target: '0' },
+    { label: 'Behaviour incidents (week)', current: '4', previous: '6', target: '<3' },
+    { label: 'Parent contacts needed', current: '3', previous: '2', target: '0' },
+    { label: 'Exclusions pending', current: '0', previous: '0', target: '0' },
+  ],
+  'send-dsl': [
+    { label: 'SEND referrals pending', current: '2', previous: '1', target: '0' },
+    { label: 'EHCPs due for review', current: '3', previous: '2', target: '0' },
+    { label: 'LAC pupils', current: '1', previous: '1', target: '—' },
+    { label: 'SEMH concerns', current: '2', previous: '3', target: '0' },
+  ],
+  safeguarding: [
+    { label: 'Open concerns', current: '1', previous: '0', target: '0' },
+    { label: 'Referrals pending', current: '0', previous: '1', target: '0' },
+    { label: 'Actions overdue', current: '1', previous: '0', target: '0' },
+    { label: 'Staff training complete', current: '95%', previous: '92%', target: '100%' },
+  ],
+  'finance-school': [
+    { label: 'Expenses claims pending', current: '2', previous: '1', target: '0' },
+    { label: 'Invoices unpaid', current: '3', previous: '2', target: '0' },
+    { label: 'Budget remaining', current: '78%', previous: '82%', target: '>70%' },
+    { label: 'Grant deadlines', current: '1', previous: '0', target: '0' },
+  ],
+  facilities: [
+    { label: 'Maintenance requests open', current: '4', previous: '3', target: '0' },
+    { label: 'Room bookings today', current: '12', previous: '8', target: '—' },
+    { label: 'Compliance checks due', current: '2', previous: '0', target: '0' },
+    { label: 'H&S incidents (month)', current: '0', previous: '1', target: '0' },
+  ],
+  curriculum: [
+    { label: 'Scheme of work gaps', current: '2', previous: '3', target: '0' },
+    { label: 'Assessments due', current: '1', previous: '2', target: '0' },
+    { label: 'Resource requests', current: '3', previous: '2', target: '0' },
+    { label: 'Moderation due', current: '1', previous: '0', target: '0' },
+  ],
+  classes: [
+    { label: 'Registers missed', current: '0', previous: '1', target: '0' },
+    { label: 'Cover lessons today', current: '3', previous: '2', target: '0' },
+    { label: 'Behaviour incidents today', current: '2', previous: '4', target: '0' },
+    { label: 'Homework overdue', current: '14', previous: '18', target: '<10' },
+  ],
+  slt: [
+    { label: 'Ofsted readiness', current: '87%', previous: '83%', target: '90%' },
+    { label: 'Governor report due', current: 'Yes', previous: 'No', target: '—' },
+    { label: 'Improvement plan actions', current: '5', previous: '7', target: '0' },
+    { label: 'Staff appraisals due', current: '3', previous: '5', target: '0' },
   ],
 }
 
