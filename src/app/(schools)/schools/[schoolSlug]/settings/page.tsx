@@ -286,7 +286,15 @@ export default function SchoolSettingsPage() {
         </div>
       </Section>
 
-      {/* Section 2 — Team */}
+      {/* Section 2 — Profile */}
+      <Section title="Profile">
+        <Row label="Display name" value={schoolName || 'Staff Member'} />
+        <Row label="Email" value="staff@school.co.uk" />
+        <Row label="Job title" value="Headteacher" />
+        <Row label="Department" value="SLT" />
+      </Section>
+
+      {/* Section 3 — Team */}
       <Section title="Team">
         <Row label="Staff members" value="1 (you)" />
         <Row label="Pending invites" value="0" />

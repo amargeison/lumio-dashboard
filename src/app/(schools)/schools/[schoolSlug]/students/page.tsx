@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3, Sparkles, UserPlus, AlertCircle, Calendar } from 'lucide-react'
 import { AddStudentModal, StudentNoteModal, BehaviourLogModal, SafeguardingConcernModal, NewAdmissionModal, ParentContactModal, AddSENDRecordModal } from '@/components/modals/SchoolModals'
+import { ProgressNoteModal, ExclusionRequestModal, PastoralMeetingModal, CAFReferralModal } from '@/components/modals/StudentsExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -722,6 +723,10 @@ export default function StudentsPage() {
   const [showSENDRecord, setShowSENDRecord] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showProgressNote, setShowProgressNote] = useState(false)
+  const [showExclusion, setShowExclusion] = useState(false)
+  const [showPastoralMeeting, setShowPastoralMeeting] = useState(false)
+  const [showCAF, setShowCAF] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -790,10 +795,10 @@ export default function StudentsPage() {
         { label: 'Parent Contact', icon: <Phone size={14} />, onClick: () => setShowParentContact(true) },
         { label: 'Refer to SENCO', icon: <BookOpen size={14} />, onClick: () => setShowSENDRecord(true) },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
-        { label: 'Progress Note', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Exclusion Request', icon: <AlertCircle size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Pastoral Meeting', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'CAF Referral', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Progress Note', icon: <FileText size={14} />, onClick: () => setShowProgressNote(true) },
+        { label: 'Exclusion Request', icon: <AlertCircle size={14} />, onClick: () => setShowExclusion(true) },
+        { label: 'Pastoral Meeting', icon: <Calendar size={14} />, onClick: () => setShowPastoralMeeting(true) },
+        { label: 'CAF Referral', icon: <FileText size={14} />, onClick: () => setShowCAF(true) },
       ]} />
 
       {/* Quick stats */}
@@ -1004,6 +1009,10 @@ export default function StudentsPage() {
       {showNewAdmission && <NewAdmissionModal onClose={() => setShowNewAdmission(false)} onToast={showToast} />}
       {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
       {showSENDRecord && <AddSENDRecordModal onClose={() => setShowSENDRecord(false)} onToast={showToast} />}
+      {showProgressNote && <ProgressNoteModal onClose={() => setShowProgressNote(false)} />}
+      {showExclusion && <ExclusionRequestModal onClose={() => setShowExclusion(false)} />}
+      {showPastoralMeeting && <PastoralMeetingModal onClose={() => setShowPastoralMeeting(false)} />}
+      {showCAF && <CAFReferralModal onClose={() => setShowCAF(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="students" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 

@@ -15,6 +15,7 @@ import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
 import { useSchoolRole } from '@/lib/SchoolRoleContext'
 import { SCHOOL_ROLES } from '@/lib/schoolRoles'
+import { MarkRegisterModal, BookCoverModal, NewAdmissionWizardModal, SubmitRiskAssessmentModal, CreateLessonPlanModal, SendParentEmailModal, PupilProgressNoteModal, RequestResourcesModal, ITSupportModal, BookCPDModal, ClaimExpensesWizardModal, RequestLeaveModal, ReportStaffAbsenceModal } from '@/components/modals/OverviewSchoolModals'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1132,6 +1133,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [lockdownLocation, setLockdownLocation] = useState('Main entrance')
   const [lockdownChecks, setLockdownChecks] = useState<Record<string, boolean>>({})
   const [showSafeguardingReview, setShowSafeguardingReview] = useState(false)
+  const [showMarkRegister, setShowMarkRegister] = useState(false)
+  const [showBookCover, setShowBookCover] = useState(false)
+  const [showNewAdmission, setShowNewAdmission] = useState(false)
+  const [showRiskAssessment, setShowRiskAssessment] = useState(false)
+  const [showCreateLesson, setShowCreateLesson] = useState(false)
+  const [showSendEmail, setShowSendEmail] = useState(false)
+  const [showProgressNote, setShowProgressNote] = useState(false)
+  const [showRequestResources, setShowRequestResources] = useState(false)
+  const [showITSupport, setShowITSupport] = useState(false)
+  const [showBookCPD, setShowBookCPD] = useState(false)
+  const [showClaimExpenses, setShowClaimExpenses] = useState(false)
+  const [showRequestLeave, setShowRequestLeave] = useState(false)
+  const [showReportAbsence, setShowReportAbsence] = useState(false)
   const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
   const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
   const [siToast, setSiToast] = useState<string | null>(null)
@@ -1276,7 +1290,26 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           return rows.filter(r => r.length > 0).map((row, ri) => (
           <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri === 0 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
             {row.map((a: any) => (
-              <button key={a.label} onClick={() => { if (a.label === 'School Lockdown') { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance') } }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
+              <button key={a.label} onClick={() => {
+                const handlers: Record<string, () => void> = {
+                  'School Lockdown': () => { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance') },
+                  'Safeguarding Referral': () => setShowSafeguardingReview(true),
+                  'Mark Register': () => setShowMarkRegister(true),
+                  'Book Cover': () => setShowBookCover(true),
+                  'New Admission': () => setShowNewAdmission(true),
+                  'Submit Risk Assessment': () => setShowRiskAssessment(true),
+                  'Create Lesson Plan': () => setShowCreateLesson(true),
+                  'Send Parent Email': () => setShowSendEmail(true),
+                  'Pupil Progress Note': () => setShowProgressNote(true),
+                  'Request Resources': () => setShowRequestResources(true),
+                  'IT Support': () => setShowITSupport(true),
+                  'Book CPD / Training': () => setShowBookCPD(true),
+                  'Claim Expenses': () => setShowClaimExpenses(true),
+                  'Request Leave': () => setShowRequestLeave(true),
+                  'Report Staff Absence': () => setShowReportAbsence(true),
+                }
+                handlers[a.label]?.()
+              }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all hover:opacity-90 ${a.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: a.label === 'Safeguarding Referral' || a.red ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}>
                 <span>{a.icon}</span>{a.label}
               </button>
             ))}
@@ -1971,6 +2004,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
       {/* Lockdown wizard */}
       {showSafeguardingReview && <SafeguardingReviewModal onClose={() => setShowSafeguardingReview(false)} isDemoMode={demoDataActive} />}
+      {showMarkRegister && <MarkRegisterModal onClose={() => setShowMarkRegister(false)} isDemoMode={demoDataActive} />}
+      {showBookCover && <BookCoverModal onClose={() => setShowBookCover(false)} isDemoMode={demoDataActive} />}
+      {showNewAdmission && <NewAdmissionWizardModal onClose={() => setShowNewAdmission(false)} isDemoMode={demoDataActive} />}
+      {showRiskAssessment && <SubmitRiskAssessmentModal onClose={() => setShowRiskAssessment(false)} isDemoMode={demoDataActive} />}
+      {showCreateLesson && <CreateLessonPlanModal onClose={() => setShowCreateLesson(false)} isDemoMode={demoDataActive} />}
+      {showSendEmail && <SendParentEmailModal onClose={() => setShowSendEmail(false)} isDemoMode={demoDataActive} />}
+      {showProgressNote && <PupilProgressNoteModal onClose={() => setShowProgressNote(false)} isDemoMode={demoDataActive} />}
+      {showRequestResources && <RequestResourcesModal onClose={() => setShowRequestResources(false)} isDemoMode={demoDataActive} />}
+      {showITSupport && <ITSupportModal onClose={() => setShowITSupport(false)} isDemoMode={demoDataActive} />}
+      {showBookCPD && <BookCPDModal onClose={() => setShowBookCPD(false)} isDemoMode={demoDataActive} />}
+      {showClaimExpenses && <ClaimExpensesWizardModal onClose={() => setShowClaimExpenses(false)} isDemoMode={demoDataActive} />}
+      {showRequestLeave && <RequestLeaveModal onClose={() => setShowRequestLeave(false)} isDemoMode={demoDataActive} />}
+      {showReportAbsence && <ReportStaffAbsenceModal onClose={() => setShowReportAbsence(false)} isDemoMode={demoDataActive} />}
       {showLockdown && (() => {
         const COMMS_ITEMS = [
           { id: 'staff-broadcast', label: 'Alert all staff via emergency broadcast' },

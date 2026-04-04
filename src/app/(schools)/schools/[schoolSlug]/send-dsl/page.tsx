@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, AlertTriangle, ShieldAlert, Brain, ClipboardList, Phone, FileText, Building2, Calendar, BarChart3 } from 'lucide-react'
 import { AddSENDRecordModal, SafeguardingConcernModal, EHCPReviewModal, ParentContactModal } from '@/components/modals/SchoolModals'
+import { RiskAssessmentModal, GenerateSENDReportModal, ExternalAgencyReferralModal, ReviewMeetingModal, LACUpdateModal } from '@/components/modals/SENDExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -129,6 +130,11 @@ export default function SendDslPage() {
   const [showParentContact, setShowParentContact] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showRiskAssessment, setShowRiskAssessment] = useState(false)
+  const [showSENDReport, setShowSENDReport] = useState(false)
+  const [showExternalReferral, setShowExternalReferral] = useState(false)
+  const [showReviewMeeting, setShowReviewMeeting] = useState(false)
+  const [showLAC, setShowLAC] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -185,6 +191,11 @@ export default function SendDslPage() {
           : a.label === 'SEND Referral' ? () => setShowAddSEND(true)
           : a.label === 'EHCP Review' ? () => setShowEHCP(true)
           : a.label === 'Parent/Carer Contact' ? () => setShowParentContact(true)
+          : a.label === 'Risk Assessment' ? () => setShowRiskAssessment(true)
+          : a.label === 'Generate SEND Report' ? () => setShowSENDReport(true)
+          : a.label === 'External Agency Referral' ? () => setShowExternalReferral(true)
+          : a.label === 'Review Meeting' ? () => setShowReviewMeeting(true)
+          : a.label === 'LAC/CiC Update' ? () => setShowLAC(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
@@ -323,6 +334,11 @@ export default function SendDslPage() {
       {showSafeguarding && <SafeguardingConcernModal onClose={() => setShowSafeguarding(false)} onToast={showToast} />}
       {showEHCP && <EHCPReviewModal onClose={() => setShowEHCP(false)} onToast={showToast} />}
       {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showRiskAssessment && <RiskAssessmentModal onClose={() => setShowRiskAssessment(false)} />}
+      {showSENDReport && <GenerateSENDReportModal onClose={() => setShowSENDReport(false)} />}
+      {showExternalReferral && <ExternalAgencyReferralModal onClose={() => setShowExternalReferral(false)} />}
+      {showReviewMeeting && <ReviewMeetingModal onClose={() => setShowReviewMeeting(false)} />}
+      {showLAC && <LACUpdateModal onClose={() => setShowLAC(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="send-dsl" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 

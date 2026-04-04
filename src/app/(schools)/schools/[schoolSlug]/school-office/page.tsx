@@ -8,6 +8,7 @@ import { LogIncidentModal, LogMaintenanceModal } from '@/components/modals/Schoo
 import { SchoolLockdownModal } from '@/components/modals/SchoolLockdownModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
+import { VisitorSignInModal, FirstAidLogModal, LetterGeneratorModal, DataRequestModal, MedicationLogModal, SendAnnouncementModal } from '@/components/modals/SchoolOfficeExtraModals'
 
 const HIGHLIGHTS = [
   '14 pupils marked absent today — 3 with no parent contact yet',
@@ -130,6 +131,12 @@ export default function SchoolOfficePage() {
   const [showMaintenance, setShowMaintenance] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
   const [showLockdown, setShowLockdown] = useState(false)
+  const [showVisitor, setShowVisitor] = useState(false)
+  const [showFirstAid, setShowFirstAid] = useState(false)
+  const [showLetter, setShowLetter] = useState(false)
+  const [showDataRequest, setShowDataRequest] = useState(false)
+  const [showMedication, setShowMedication] = useState(false)
+  const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -175,6 +182,12 @@ export default function SchoolOfficePage() {
           onClick: a.label === 'Parent Contact' ? () => setShowParentContact(true)
             : a.label === 'Log Absence' ? () => setShowLogAbsence(true)
             : a.label === 'Mark Register' ? () => setShowRegister(true)
+            : a.label === 'Visitor Sign-in' ? () => setShowVisitor(true)
+            : a.label === 'First Aid Log' ? () => setShowFirstAid(true)
+            : a.label === 'Letter Generator' ? () => setShowLetter(true)
+            : a.label === 'Data Request' ? () => setShowDataRequest(true)
+            : a.label === 'Medication Log' ? () => setShowMedication(true)
+            : a.label === 'Send Announcement' ? () => setShowAnnouncement(true)
             : () => showToast('Feature coming soon'),
         })),
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
@@ -314,6 +327,12 @@ export default function SchoolOfficePage() {
       {showMaintenance && <LogMaintenanceModal onClose={() => setShowMaintenance(false)} />}
       {showRegister && <RegisterSessionModal onClose={() => setShowRegister(false)} onToast={showToast} />}
       {showLockdown && <SchoolLockdownModal onClose={() => setShowLockdown(false)} isDemoMode={localStorage.getItem('lumio_schools_demo_loaded') === 'true'} />}
+      {showVisitor && <VisitorSignInModal onClose={() => setShowVisitor(false)} />}
+      {showFirstAid && <FirstAidLogModal onClose={() => setShowFirstAid(false)} />}
+      {showLetter && <LetterGeneratorModal onClose={() => setShowLetter(false)} />}
+      {showDataRequest && <DataRequestModal onClose={() => setShowDataRequest(false)} />}
+      {showMedication && <MedicationLogModal onClose={() => setShowMedication(false)} />}
+      {showAnnouncement && <SendAnnouncementModal onClose={() => setShowAnnouncement(false)} />}
       <AIInsightsReport dept="school-office" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
 

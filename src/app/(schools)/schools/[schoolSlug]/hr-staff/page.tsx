@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, UserPlus, ClipboardList, GraduationCap, FileText, PoundSterling, Calendar, AlertTriangle, Heart, BarChart3 } from 'lucide-react'
 import { AddStaffModal, LogStaffAbsenceModal, StaffReviewModal, SubmitExpenseModal } from '@/components/modals/SchoolModals'
+import { BookCPDModal, ContractChangeModal, RequestLeaveModal, RaiseHRConcernModal, StaffWellbeingCheckModal } from '@/components/modals/HRExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -136,6 +137,11 @@ export default function HRStaffPage() {
   const [showExpense, setShowExpense] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showBookCPD, setShowBookCPD] = useState(false)
+  const [showContractChange, setShowContractChange] = useState(false)
+  const [showRequestLeave, setShowRequestLeave] = useState(false)
+  const [showHRConcern, setShowHRConcern] = useState(false)
+  const [showWellbeing, setShowWellbeing] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -179,6 +185,11 @@ export default function HRStaffPage() {
           : a.label === 'Log Absence' ? () => setShowLogStaffAbsence(true)
           : a.label === 'Performance Review' ? () => setShowStaffReview(true)
           : a.label === 'Claim Expenses' ? () => setShowExpense(true)
+          : a.label === 'Book CPD' ? () => setShowBookCPD(true)
+          : a.label === 'Contract Change' ? () => setShowContractChange(true)
+          : a.label === 'Request Leave' ? () => setShowRequestLeave(true)
+          : a.label === 'Raise HR Concern' ? () => setShowHRConcern(true)
+          : a.label === 'Staff Wellbeing Check' ? () => setShowWellbeing(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
@@ -290,6 +301,11 @@ export default function HRStaffPage() {
       {showLogStaffAbsence && <LogStaffAbsenceModal onClose={() => setShowLogStaffAbsence(false)} onToast={showToast} />}
       {showStaffReview && <StaffReviewModal onClose={() => setShowStaffReview(false)} onToast={showToast} />}
       {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
+      {showBookCPD && <BookCPDModal onClose={() => setShowBookCPD(false)} />}
+      {showContractChange && <ContractChangeModal onClose={() => setShowContractChange(false)} />}
+      {showRequestLeave && <RequestLeaveModal onClose={() => setShowRequestLeave(false)} />}
+      {showHRConcern && <RaiseHRConcernModal onClose={() => setShowHRConcern(false)} />}
+      {showWellbeing && <StaffWellbeingCheckModal onClose={() => setShowWellbeing(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="hr-staff" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 

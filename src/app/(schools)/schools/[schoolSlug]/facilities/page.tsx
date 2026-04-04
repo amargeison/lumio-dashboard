@@ -5,6 +5,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles, BarChart3, AlertTriangle, ClipboardList, Search, FileText, KeyRound, Flame } from 'lucide-react'
 import { MaintenanceRequestModal, RoomBookingModal } from '@/components/modals/SchoolModals'
 import BookContractorModal from '@/components/modals/BookContractorModal'
+import { HSIncidentModal, VisitorSignInModal, ContractorRequestModal, AssetCheckModal, ComplianceReportModal, KeyRequestModal, FireDrillLogModal } from '@/components/modals/FacilitiesExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -108,6 +109,13 @@ export default function FacilitiesPage() {
   const [showContractor, setShowContractor] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showHSIncident, setShowHSIncident] = useState(false)
+  const [showVisitor, setShowVisitor] = useState(false)
+  const [showContractorReq, setShowContractorReq] = useState(false)
+  const [showAssetCheck, setShowAssetCheck] = useState(false)
+  const [showCompliance, setShowCompliance] = useState(false)
+  const [showKeyRequest, setShowKeyRequest] = useState(false)
+  const [showFireDrill, setShowFireDrill] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -140,13 +148,13 @@ export default function FacilitiesPage() {
       <QuickActions actions={[
         { label: 'Log Maintenance', icon: <Wrench size={14} />, onClick: () => setShowMaintenance(true) },
         { label: 'Room Booking', icon: <Calendar size={14} />, onClick: () => setShowRoomBooking(true) },
-        { label: 'H&S Incident', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Visitor Sign-in', icon: <UserCheck size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Contractor Request', icon: <ClipboardList size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Asset Check', icon: <Search size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Compliance Report', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Key Request', icon: <KeyRound size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Fire Drill Log', icon: <Flame size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'H&S Incident', icon: <AlertTriangle size={14} />, onClick: () => setShowHSIncident(true) },
+        { label: 'Visitor Sign-in', icon: <UserCheck size={14} />, onClick: () => setShowVisitor(true) },
+        { label: 'Contractor Request', icon: <ClipboardList size={14} />, onClick: () => setShowContractorReq(true) },
+        { label: 'Asset Check', icon: <Search size={14} />, onClick: () => setShowAssetCheck(true) },
+        { label: 'Compliance Report', icon: <FileText size={14} />, onClick: () => setShowCompliance(true) },
+        { label: 'Key Request', icon: <KeyRound size={14} />, onClick: () => setShowKeyRequest(true) },
+        { label: 'Fire Drill Log', icon: <Flame size={14} />, onClick: () => setShowFireDrill(true) },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
       ]} />
 
@@ -287,6 +295,13 @@ export default function FacilitiesPage() {
       {showMaintenance && <MaintenanceRequestModal onClose={() => setShowMaintenance(false)} onToast={showToast} />}
       {showRoomBooking && <RoomBookingModal onClose={() => setShowRoomBooking(false)} onToast={showToast} />}
       {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
+      {showHSIncident && <HSIncidentModal onClose={() => setShowHSIncident(false)} />}
+      {showVisitor && <VisitorSignInModal onClose={() => setShowVisitor(false)} />}
+      {showContractorReq && <ContractorRequestModal onClose={() => setShowContractorReq(false)} />}
+      {showAssetCheck && <AssetCheckModal onClose={() => setShowAssetCheck(false)} />}
+      {showCompliance && <ComplianceReportModal onClose={() => setShowCompliance(false)} />}
+      {showKeyRequest && <KeyRequestModal onClose={() => setShowKeyRequest(false)} />}
+      {showFireDrill && <FireDrillLogModal onClose={() => setShowFireDrill(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="facilities" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
 

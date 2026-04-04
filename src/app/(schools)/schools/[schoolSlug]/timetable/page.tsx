@@ -5,6 +5,7 @@ import { Plus, Calendar, Search, Printer, FileText, AlertTriangle, X, BarChart3,
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
+import { CoverLessonModal, RoomFinderModal, PrintTimetableModal, ExportTimetablePDFModal, SwapTeacherModal, LogRoomConflictModal, BlockPlannerModal } from '@/components/modals/TimetableModals'
 
 const SUBJECTS = [
   { name: 'Maths', color: '#3B82F6' },
@@ -148,6 +149,13 @@ export default function TimetablePage() {
   const [showNewLesson, setShowNewLesson] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showInsights, setShowInsights] = useState(false)
+  const [showCoverLesson, setShowCoverLesson] = useState(false)
+  const [showRoomFinder, setShowRoomFinder] = useState(false)
+  const [showPrintTimetable, setShowPrintTimetable] = useState(false)
+  const [showExportPDF, setShowExportPDF] = useState(false)
+  const [showSwapTeacher, setShowSwapTeacher] = useState(false)
+  const [showRoomConflict, setShowRoomConflict] = useState(false)
+  const [showBlockPlanner, setShowBlockPlanner] = useState(false)
   const [newLesson, setNewLesson] = useState({ className: '', subject: SUBJECTS[0].name, teacher: TEACHERS[0], room: ROOMS[0], day: DAYS[0], periodId: 'p1' })
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -252,13 +260,13 @@ export default function TimetablePage() {
       {/* Quick Actions */}
       <QuickActions actions={[
         { label: 'New Lesson', icon: <Plus size={14} />, onClick: () => setShowNewLesson(true) },
-        { label: 'Cover Lesson', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Room Finder', icon: <Search size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Print Timetable', icon: <Printer size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Export to PDF', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Swap Teacher', icon: <RefreshCw size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Log Room Conflict', icon: <AlertTriangle size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Block Planner', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Cover Lesson', icon: <FileText size={14} />, onClick: () => setShowCoverLesson(true) },
+        { label: 'Room Finder', icon: <Search size={14} />, onClick: () => setShowRoomFinder(true) },
+        { label: 'Print Timetable', icon: <Printer size={14} />, onClick: () => setShowPrintTimetable(true) },
+        { label: 'Export to PDF', icon: <FileText size={14} />, onClick: () => setShowExportPDF(true) },
+        { label: 'Swap Teacher', icon: <RefreshCw size={14} />, onClick: () => setShowSwapTeacher(true) },
+        { label: 'Log Room Conflict', icon: <AlertTriangle size={14} />, onClick: () => setShowRoomConflict(true) },
+        { label: 'Block Planner', icon: <Calendar size={14} />, onClick: () => setShowBlockPlanner(true) },
         { label: 'Edit Period Times', icon: <Clock size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
       ]} />
@@ -353,6 +361,14 @@ export default function TimetablePage() {
           </div>
         </div>
       )}
+
+      {showCoverLesson && <CoverLessonModal onClose={() => setShowCoverLesson(false)} />}
+      {showRoomFinder && <RoomFinderModal onClose={() => setShowRoomFinder(false)} />}
+      {showPrintTimetable && <PrintTimetableModal onClose={() => setShowPrintTimetable(false)} />}
+      {showExportPDF && <ExportTimetablePDFModal onClose={() => setShowExportPDF(false)} />}
+      {showSwapTeacher && <SwapTeacherModal onClose={() => setShowSwapTeacher(false)} />}
+      {showRoomConflict && <LogRoomConflictModal onClose={() => setShowRoomConflict(false)} />}
+      {showBlockPlanner && <BlockPlannerModal onClose={() => setShowBlockPlanner(false)} />}
 
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="timetable" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />

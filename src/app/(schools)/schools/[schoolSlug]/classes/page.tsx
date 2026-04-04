@@ -34,6 +34,7 @@ import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { RegisterClassModal, AddPupilToClassModal, TimetableChangeModal, BehaviourLogModal, ParentContactModal } from '@/components/modals/SchoolModals'
+import { MovePupilModal, GenerateClassReportModal, AssessmentEntryModal, SetHomeworkModal } from '@/components/modals/ClassesExtraModals'
 
 const HIGHLIGHTS = [
   '32 classes registered this term \u2014 2 without an assigned teacher',
@@ -106,6 +107,10 @@ export default function ClassesPage() {
   const [showBehaviour, setShowBehaviour] = useState(false)
   const [showParentContact, setShowParentContact] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
+  const [showMovePupil, setShowMovePupil] = useState(false)
+  const [showClassReport, setShowClassReport] = useState(false)
+  const [showAssessmentEntry, setShowAssessmentEntry] = useState(false)
+  const [showHomework, setShowHomework] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -135,6 +140,10 @@ export default function ClassesPage() {
           : a.label === 'Log Behaviour' ? () => setShowBehaviour(true)
           : a.label === 'Add Pupil to Class' ? () => setShowAddPupil(true)
           : a.label === 'Parent Contact' ? () => setShowParentContact(true)
+          : a.label === 'Move Pupil' ? () => setShowMovePupil(true)
+          : a.label === 'Generate Class Report' ? () => setShowClassReport(true)
+          : a.label === 'Assessment Entry' ? () => setShowAssessmentEntry(true)
+          : a.label === 'Set Homework' ? () => setShowHomework(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) }]} />
 
@@ -215,6 +224,10 @@ export default function ClassesPage() {
       {showTimetable && <TimetableChangeModal onClose={() => setShowTimetable(false)} onToast={showToast} />}
       {showBehaviour && <BehaviourLogModal onClose={() => setShowBehaviour(false)} onToast={showToast} />}
       {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showMovePupil && <MovePupilModal onClose={() => setShowMovePupil(false)} />}
+      {showClassReport && <GenerateClassReportModal onClose={() => setShowClassReport(false)} />}
+      {showAssessmentEntry && <AssessmentEntryModal onClose={() => setShowAssessmentEntry(false)} />}
+      {showHomework && <SetHomeworkModal onClose={() => setShowHomework(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="classes" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
 

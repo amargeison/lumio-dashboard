@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, CheckCircle, PieChart, FileText, TrendingUp, Users, BarChart3, ShoppingCart, Landmark, Calendar, Search, Download } from 'lucide-react'
 import { RaiseInvoiceModal, SubmitExpenseModal, BudgetReviewModal } from '@/components/modals/SchoolModals'
+import { PurchaseRequestModal, SpendVsForecastModal, GrantApplicationModal, AuditPrepModal, SupplierSearchModal, ExportAccountsModal } from '@/components/modals/FinanceExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -135,6 +136,12 @@ export default function FinancePage() {
   const [showBudget, setShowBudget] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showPurchase, setShowPurchase] = useState(false)
+  const [showSpendForecast, setShowSpendForecast] = useState(false)
+  const [showGrant, setShowGrant] = useState(false)
+  const [showAudit, setShowAudit] = useState(false)
+  const [showSupplier, setShowSupplier] = useState(false)
+  const [showExportAccounts, setShowExportAccounts] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -176,6 +183,12 @@ export default function FinancePage() {
         onClick: a.label === 'Claim Expenses' ? () => setShowExpense(true)
           : a.label === 'Invoice Query' ? () => setShowInvoice(true)
           : a.label === 'Budget Report' ? () => setShowBudget(true)
+          : a.label === 'Purchase Request' ? () => setShowPurchase(true)
+          : a.label === 'Spend vs Forecast' ? () => setShowSpendForecast(true)
+          : a.label === 'Grant Application' ? () => setShowGrant(true)
+          : a.label === 'Audit Prep' ? () => setShowAudit(true)
+          : a.label === 'Supplier Search' ? () => setShowSupplier(true)
+          : a.label === 'Export Accounts' ? () => setShowExportAccounts(true)
           : () => showToast('Feature coming soon'),
       })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
@@ -290,6 +303,12 @@ export default function FinancePage() {
       {showInvoice && <RaiseInvoiceModal onClose={() => setShowInvoice(false)} onToast={showToast} />}
       {showExpense && <SubmitExpenseModal onClose={() => setShowExpense(false)} onToast={showToast} />}
       {showBudget && <BudgetReviewModal onClose={() => setShowBudget(false)} onToast={showToast} />}
+      {showPurchase && <PurchaseRequestModal onClose={() => setShowPurchase(false)} />}
+      {showSpendForecast && <SpendVsForecastModal onClose={() => setShowSpendForecast(false)} />}
+      {showGrant && <GrantApplicationModal onClose={() => setShowGrant(false)} />}
+      {showAudit && <AuditPrepModal onClose={() => setShowAudit(false)} />}
+      {showSupplier && <SupplierSearchModal onClose={() => setShowSupplier(false)} />}
+      {showExportAccounts && <ExportAccountsModal onClose={() => setShowExportAccounts(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="finance-school" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 
