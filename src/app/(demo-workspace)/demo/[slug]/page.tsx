@@ -94,7 +94,7 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'New Starter',        tooltip: 'Trigger the full onboarding workflow for a new hire',         icon: UserPlus  },
     { label: 'Leave Request',      tooltip: 'Submit or approve a leave request for a team member',         icon: Calendar  },
     { label: 'Offboarding',        tooltip: 'Start the offboarding process for a departing employee',      icon: Users     },
-    { label: 'Recruitment',        tooltip: 'Post a new role and trigger the recruitment workflow',         icon: Users     },
+    { label: 'Recruitment',        tooltip: 'AI-powered talent finder — salary benchmarks, candidate profiles, job descriptions, and outreach', icon: Users },
     { label: 'Performance Review', tooltip: 'Initiate a performance review cycle for selected employees',  icon: Star      },
     { label: 'Company Events',     tooltip: 'Plan and notify team of an upcoming company event',           icon: Megaphone },
     { label: 'Send Contract',      tooltip: 'Generate and send an employment contract via DocuSign',       icon: FileText  },
@@ -2287,9 +2287,9 @@ function HRView({ company }: { company: string }) {
             { label: 'Dept Insights', icon: BarChart3 },
             { label: 'Dept Info', icon: Users },
           ].map(a => (
-            <button key={a.label} onClick={() => { if (a.label === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.label === 'Dept Insights') window.dispatchEvent(new Event('lumio-dept-insights')) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
+            <button key={a.label} onClick={() => { if (a.label === 'Dept Info') window.dispatchEvent(new Event('lumio-dept-info')); if (a.label === 'Dept Insights') window.dispatchEvent(new Event('lumio-dept-insights')); if (a.label === 'Recruitment') router.push(`/demo/${slug}/recruit`); if (a.label === 'Company Events') router.push(`/demo/${slug}/events`) }} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              <a.icon size={12} />{a.label}
+              <a.icon size={12} />{a.label === 'Recruitment' ? '🔍 Recruit' : a.label}
             </button>
           ))}
         </div>
@@ -2312,6 +2312,22 @@ function HRView({ company }: { company: string }) {
             <div className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>Describe your event, headcount, and budget — get ranked venue recommendations with ratings, prices, and a ready-to-send enquiry email.</div>
           </div>
           <div className="text-xs font-medium mt-auto" style={{ color: '#2DD4BF' }}>Launch workflow →</div>
+        </div>
+        <div onClick={() => router.push(`/demo/${slug}/recruit`)} className="group flex flex-col gap-3 rounded-xl p-5 transition-all hover:border-[#374151] cursor-pointer" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(124,58,237,0.08)' }}>
+              <Users className="w-4 h-4" style={{ color: '#A78BFA' }} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#A78BFA' }} />
+              <span className="text-xs font-mono" style={{ color: '#A78BFA' }}>HR-REC-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold" style={{ color: '#F9FAFB' }}>Recruitment — Talent Finder & Hiring Researcher</div>
+            <div className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>Describe the role — get candidate profiles, salary benchmarks, job description, interview questions, and outreach messages.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto" style={{ color: '#A78BFA' }}>Launch workflow →</div>
         </div>
       </div>
 
@@ -4197,7 +4213,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     if (label === 'New Joiner' || label === 'New Starter') { setShowNewJoiner(true);        return }
     if (label === 'Leave Request')     { setShowLeaveRequest(true);                          return }
     if (label === 'Offboarding')       { setShowOffboarding(true);                           return }
-    if (label === 'Recruitment')       { setShowRecruitment(true);                           return }
+    if (label === 'Recruitment')       { router.push(`/demo/${slug}/recruit`);               return }
     if (label === 'Performance Review'){ setShowPerfReview(true);                            return }
     if (label === 'Company Events')    { router.push(`/demo/${slug}/events`);                return }
     if (label === 'RFP')               { router.push(`/demo/${slug}/rfp`);                   return }
