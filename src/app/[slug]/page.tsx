@@ -171,10 +171,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
         })
         .catch(() => {})
     }
-    // Listen for same-tab logo updates (e.g. from Settings page upload)
+    // Listen for same-tab logo updates (e.g. from Settings page upload or remove)
     function onLogoUpdated(e: Event) {
       const url = (e as CustomEvent).detail
-      if (url) setLogoUrl(url)
+      setLogoUrl(url || null)
     }
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
     return () => window.removeEventListener('lumio-logo-updated', onLogoUpdated)
@@ -2774,6 +2774,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (!file) return
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
+    // Sync sidebar + parent immediately via event
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: blobUrl }))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     const fd = new FormData()
@@ -2785,6 +2787,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
         setLogoUrl(data.logo_url)
         localStorage.setItem('workspace_company_logo', data.logo_url)
         localStorage.setItem('lumio_company_logo', data.logo_url)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
       }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
@@ -2794,11 +2797,12 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     setLogoUrl('')
     localStorage.removeItem('workspace_company_logo')
     localStorage.removeItem('lumio_company_logo')
+    // Sync sidebar + parent immediately
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: '' }))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     try {
       await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
-      window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: '' }))
     } catch (err) { console.error('Logo remove failed:', err) }
   }
 
