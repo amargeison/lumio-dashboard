@@ -51,6 +51,9 @@ function SectionCard({
         borderRadius: 12,
         padding: 20,
         marginBottom: 16,
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
       }}
     >
       <div
@@ -5528,7 +5531,7 @@ function SetPieceCoachTab() {
 
       {/* Season Stats */}
       <SectionCard title="Coach Season Summary">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
           {[
             ['Training Sessions', '8'],
             ['Routines Developed', '12'],
@@ -5572,9 +5575,9 @@ export default function ProSetPiecesView() {
   ]
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', padding: '24px 16px' }}>
+    <div style={{ background: C.bg, minHeight: '100vh', padding: '24px 16px', width: '100%', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', width: '100%', overflow: 'hidden' }}>
         <div style={{ marginBottom: 4 }}>
           <span
             style={{

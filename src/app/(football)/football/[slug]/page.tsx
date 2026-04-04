@@ -1704,6 +1704,62 @@ function FootballEmptyState({ dept }: { dept: string }) {
   )
 }
 
+// ─── Injury Room Card (Today tab) ──────────────────────────────────────────
+
+function InjuryRoomCard() {
+  const injured = SQUAD.filter(p => p.fitness === 'injured')
+  const suspended = SQUAD.filter(p => p.fitness === 'suspended')
+  const [manualInjuries, setManualInjuries] = useState<any[]>([])
+
+  useEffect(() => {
+    try { const stored = localStorage.getItem('football_injuries'); if (stored) setManualInjuries(JSON.parse(stored)) } catch { /* */ }
+  }, [])
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+        <span className="text-base">{'\u{1F3E5}'}</span>
+        <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Injury Room</p>
+        {(injured.length > 0 || manualInjuries.length > 0) && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>{injured.length + manualInjuries.length}</span>
+        )}
+      </div>
+      <div className="p-5 space-y-3">
+        <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{injured.length} player{injured.length !== 1 ? 's' : ''} currently injured</div>
+        {injured.map((p, i) => (
+          <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>INJ</span>
+            <div>
+              <div className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>{p.position}</div>
+            </div>
+          </div>
+        ))}
+        {manualInjuries.length > 0 && (
+          <>
+            <div className="text-xs font-semibold mt-2" style={{ color: '#6B7280' }}>Manual entries</div>
+            {manualInjuries.map((inj: any) => (
+              <div key={inj.id} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>MAN</span>
+                <div>
+                  <div className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{inj.playerName}</div>
+                  <div className="text-xs" style={{ color: '#6B7280' }}>{inj.injuryType}</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        {suspended.length > 0 && (
+          <div className="text-sm" style={{ color: '#F59E0B' }}>{suspended.length} suspended</div>
+        )}
+        {injured.length === 0 && manualInjuries.length === 0 && suspended.length === 0 && (
+          <div className="text-xs" style={{ color: '#22C55E' }}>All players available</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Overview View ──────────────────────────────────────────────────────────
 
 function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
@@ -1830,6 +1886,9 @@ function OverviewView({ clubName, firstName, onAction, isDemo = false, clubLogo 
                   <button className="text-xs font-semibold" style={{ color: '#003DA5' }}>View Performance Dashboard →</button>
                 </div>
               </div>
+
+              {/* Injury Room */}
+              <InjuryRoomCard />
             </div>
           </div>
           </>}
