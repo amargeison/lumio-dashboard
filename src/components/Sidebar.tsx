@@ -124,6 +124,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [companyLogo, setCompanyLogo] = useState<string | null>(null)
+  const [companyLogoKey, setCompanyLogoKey] = useState(Date.now())
   const [activeDepts, setActiveDepts] = useState<Set<string>>(new Set())
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -172,6 +173,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     function onLogoUpdated(e: Event) {
       const url = (e as CustomEvent).detail
       setCompanyLogo(url || null)
+      setCompanyLogoKey(Date.now())
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
@@ -241,7 +243,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
           >
             {companyLogo ? (
-              <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
+              <img key={companyLogoKey} src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
             ) : (
               companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
             )}
@@ -342,7 +344,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               style={{ backgroundColor: companyLogo ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
             >
               {companyLogo ? (
-                <img src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
+                <img key={companyLogoKey} src={companyLogo} alt="Company logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} onError={() => setCompanyLogo(null)} />
               ) : (
                 companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
               )}
