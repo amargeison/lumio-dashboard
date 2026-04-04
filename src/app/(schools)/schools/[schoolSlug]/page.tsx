@@ -1403,66 +1403,55 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       )}
 
-      {/* TAB: Daily Tasks */}
+      {/* TAB: Daily Tasks — matches business portal format */}
       {activeTab === 'tasks' && (
         <div className="max-w-4xl">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>✅ Daily Tasks</h2>
-              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your essential daily checklist — stay on top of operations.</p>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>{'✅'} Daily Tasks</h2>
+              <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>0/8 done · pulled from MIS, Lumio workflows, and manual entries</p>
             </div>
+            <button className="px-4 py-2 text-sm font-bold rounded-xl transition-colors" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>+ Add task</button>
           </div>
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
-            <span>🔗</span>
-            <span className="text-sm" style={{ color: '#5EEAD4' }}>These suggestions are AI-generated based on your role. Connect your tools in Settings for personalised insights.</span>
+          <div className="flex gap-2 mb-5 flex-wrap">
+            {[{f:'all',l:'All (8)'},{f:'critical',l:'Critical (1)'},{f:'high',l:'High (4)'},{f:'medium',l:'Medium (2)'},{f:'low',l:'Low (1)'}].map(p => (
+              <button key={p.f} className="px-3 py-1.5 rounded-full text-xs font-bold transition-all" style={{ backgroundColor: p.f === 'all' ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: p.f === 'all' ? '#fff' : '#6B7280' }}>{p.l}</button>
+            ))}
           </div>
-          {true ? (
-            <div className="space-y-3">
-              {([
-                { id: 'dt1', title: 'Review open safeguarding concern with DSL', description: 'Year 9 pupil — DSL review required before 3pm today.', impact: 'high' as const, effort: '10min', category: 'Safeguarding', action: 'Review now', source: 'Safeguarding' },
-                { id: 'dt2', title: 'Check cover arrangements for all periods', description: '3 cover lessons needed — 2 currently unassigned.', impact: 'high' as const, effort: '5min', category: 'Admin', action: 'Assign cover', source: 'Cover Manager' },
-                { id: 'dt3', title: 'Confirm attendance for all classes by 9:30am', description: 'Year 6 at 91.8% — below 94% target.', impact: 'high' as const, effort: '5min', category: 'Attendance', action: 'View registers', source: 'MIS' },
-                { id: 'dt4', title: 'Return 2 parent phone calls logged yesterday', description: 'Mrs Ahmed re: collection, Mr Singh re: absence.', impact: 'medium' as const, effort: '10min', category: 'Comms', action: 'View messages', source: 'Phone Log' },
-                { id: 'dt5', title: 'Confirm SENCO meeting agenda for 11:30', description: '4 pupils on agenda — EHCP updates needed.', impact: 'medium' as const, effort: '5min', category: 'SEND', action: 'View agenda', source: 'Calendar' },
-                { id: 'dt6', title: 'Complete lesson plan for Monday (due Friday)', description: 'Year 10 English — Romeo and Juliet Act 3.', impact: 'medium' as const, effort: '15min', category: 'Teaching', action: 'Open planner', source: 'Curriculum' },
-              ]).map(task => {
-                const impactColors = task.impact === 'high'
-                  ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171' }
-                  : { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' }
-                return (
-                  <div key={task.id} className="rounded-2xl p-5 transition-all"
-                    style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: impactColors.bg, color: impactColors.color }}>{task.impact.toUpperCase()} IMPACT</span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: 'rgba(124,58,237,0.12)', color: '#A78BFA' }}>⏱ {task.effort}</span>
-                          <span className="text-xs" style={{ color: '#6B7280' }}>{task.category}</span>
-                        </div>
-                        <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{task.title}</h3>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{task.description}</p>
-                        <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {task.source}</p>
-                      </div>
-                      <div className="flex flex-col gap-2 flex-shrink-0">
-                        <button onClick={() => { if (task.action === 'Review now' && task.category === 'Safeguarding') setShowSafeguardingReview(true) }} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
-                          style={{ backgroundColor: '#7C3AED' }}>
-                          {task.action} →
-                        </button>
-                        <button className="px-4 py-2 text-xs rounded-xl transition-colors"
-                          style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
-                          Mark done
-                        </button>
-                      </div>
-                    </div>
+          <div className="space-y-2">
+            {[
+              {id:'dt1',priority:'Critical',color:'#EF4444',dept:'Safeguarding',source:'lumio',time:'Before 3pm',title:'Review open safeguarding concern with DSL',desc:'Year 9 pupil — DSL sign-off required before 3pm today.',tag:'SG-2026-001',action:'Review now'},
+              {id:'dt2',priority:'High',color:'#F59E0B',dept:'Admin',source:'lumio',time:'09:30',title:'Confirm attendance for all classes',desc:'3 unexplained absences flagged — parents not yet contacted.',action:'View registers'},
+              {id:'dt3',priority:'High',color:'#F59E0B',dept:'Cover',source:'workflow',time:'08:45',title:'Assign cover for Period 3 and Period 5',desc:'Mr Johnson absent — 2 lessons currently unassigned.',tag:'COV-07',action:'Assign cover'},
+              {id:'dt4',priority:'High',color:'#F59E0B',dept:'Curriculum',source:'manual',time:'Any time',title:'Upload Year 11 mock results to MIS',desc:'Results due by 4pm — 3 classes outstanding.',action:'Upload results'},
+              {id:'dt5',priority:'Medium',color:'#3B82F6',dept:'HR',source:'workflow',time:'16:00',title:"Approve leave request — Ms O'Brien",desc:'Compassionate leave 7-8 April. Needs sign-off today.',tag:'HR-04',action:'Approve'},
+              {id:'dt6',priority:'Medium',color:'#3B82F6',dept:'Finance',source:'manual',time:'Any time',title:'Submit outstanding expense claim',desc:'£42.50 travel — overdue by 3 days.',action:'Submit claim'},
+              {id:'dt7',priority:'High',color:'#F59E0B',dept:'SEND',source:'lumio',time:'11:30',title:'Confirm SENCO meeting agenda',desc:'4 pupils on review — agenda not yet circulated.',action:'Open agenda'},
+              {id:'dt8',priority:'Low',color:'#6B7280',dept:'Facilities',source:'manual',time:'Any time',title:'Sign off Year 9 trip risk assessment',desc:'All approvals received — final sign-off needed.',action:'Sign off'},
+            ].map((t: any) => (
+              <div key={t.id} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: `1px solid ${t.id === 'dt1' ? 'rgba(239,68,68,0.3)' : '#1F2937'}` }}>
+                <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all" style={{ borderColor: '#4B5563', backgroundColor: 'transparent' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${t.color}1a`, color: t.color }}>{t.priority}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.dept}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(108,63,197,0.1)', color: '#A78BFA' }}>{t.source}</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
                   </div>
-                )
-              })}
-            </div>
-          ) : null}
+                  <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{t.title}</h4>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>{t.desc}</p>
+                  {t.tag && <span className="inline-block text-xs mt-2 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488' }}>{t.tag}</span>}
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>{t.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
 
       {/* TAB: Insights */}
       {activeTab === 'insights' && (
