@@ -125,7 +125,7 @@ export function SchoolDashboardModal({ onClose, isDemoMode }: ModalProps) {
   ]
 
   return (
-    <WizardShell onClose={onClose} title="School Dashboard" subtitle="Generate an AI overview dashboard" icon="\uD83D\uDCCA" step={step} totalSteps={3} stepLabels={['Configure', 'Generate', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="School Dashboard" subtitle="Generate an AI overview dashboard" icon="📊" step={step} totalSteps={3} stepLabels={['Configure', 'Generate', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-5">
           <div>
@@ -193,7 +193,7 @@ export function OfstedPrepModal({ onClose, isDemoMode }: ModalProps) {
   ]
 
   return (
-    <WizardShell onClose={onClose} title="Ofsted Preparation" subtitle="AI-powered inspection readiness audit" icon="\uD83D\uDD0D" step={step} totalSteps={4} stepLabels={['Focus', 'Evidence', 'AI Analysis', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Ofsted Preparation" subtitle="AI-powered inspection readiness audit" icon="🔍" step={step} totalSteps={4} stepLabels={['Focus', 'Evidence', 'AI Analysis', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div>
           <Label req>Inspection area</Label>
@@ -287,7 +287,7 @@ export function SLTMeetingAgendaModal({ onClose, isDemoMode }: ModalProps) {
   const perItem = enabledItems.length > 0 ? Math.floor(totalMins / (enabledItems.length + (additional ? 1 : 0) + 1)) : 10
 
   return (
-    <WizardShell onClose={onClose} title="SLT Meeting Agenda" subtitle="AI-generated meeting agenda" icon="\uD83D\uDCC5" step={step} totalSteps={3} stepLabels={['Meeting', 'Standing Items', 'AI Generate']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="SLT Meeting Agenda" subtitle="AI-generated meeting agenda" icon="📅" step={step} totalSteps={3} stepLabels={['Meeting', 'Standing Items', 'AI Generate']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -373,7 +373,7 @@ export function WholeSchoolInsightsModal({ onClose, isDemoMode }: ModalProps) {
   ]
 
   return (
-    <WizardShell onClose={onClose} title="Whole School Insights" subtitle="Cross-domain performance overview" icon="\uD83C\uDFEB" step={step} totalSteps={3} stepLabels={['Configure', 'Generate', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Whole School Insights" subtitle="Cross-domain performance overview" icon="🏫" step={step} totalSteps={3} stepLabels={['Configure', 'Generate', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -457,7 +457,7 @@ export function GovernorReportModal({ onClose, isDemoMode }: ModalProps) {
   }
 
   return (
-    <WizardShell onClose={onClose} title="Governor Report" subtitle="Generate a comprehensive governor report" icon="\uD83D\uDCCB" step={step} totalSteps={4} stepLabels={['Period', 'Sections', 'AI Generate', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Governor Report" subtitle="Generate a comprehensive governor report" icon="📋" step={step} totalSteps={4} stepLabels={['Period', 'Sections', 'AI Generate', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -539,7 +539,7 @@ export function ImprovementPlanModal({ onClose, isDemoMode }: ModalProps) {
   const areas = ['Teaching & Learning', 'Behaviour', 'Attendance', 'SEND', 'Leadership', 'Curriculum', 'Assessment']
 
   return (
-    <WizardShell onClose={onClose} title="School Improvement Plan" subtitle="Set targets, actions, and accountability" icon="\uD83C\uDFAF" step={step} totalSteps={4} stepLabels={['Priority', 'Targets', 'Actions', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="School Improvement Plan" subtitle="Set targets, actions, and accountability" icon="🎯" step={step} totalSteps={4} stepLabels={['Priority', 'Targets', 'Actions', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -652,7 +652,7 @@ export function StaffAppraisalModal({ onClose, isDemoMode }: ModalProps) {
   const updateNew = (i: number, field: string, val: string) => setNewObjectives(prev => prev.map((o, idx) => idx === i ? { ...o, [field]: val } : o))
 
   return (
-    <WizardShell onClose={onClose} title="Staff Appraisal" subtitle="Performance review and objective setting" icon="\uD83D\uDC64" step={step} totalSteps={4} stepLabels={['Select', 'Objectives', 'New Objectives', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Staff Appraisal" subtitle="Performance review and objective setting" icon="👤" step={step} totalSteps={4} stepLabels={['Select', 'Objectives', 'New Objectives', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -848,7 +848,7 @@ export function CalendarPlannerModal({ onClose, isDemoMode }: ModalProps) {
   }
 
   return (
-    <WizardShell onClose={onClose} title="Calendar Planner" subtitle="Plan and publish school calendar events" icon="\uD83D\uDDD3\uFE0F" step={step} totalSteps={3} stepLabels={['Configure', 'Events', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Calendar Planner" subtitle="Plan and publish school calendar events" icon="🗓️" step={step} totalSteps={3} stepLabels={['Configure', 'Events', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -974,7 +974,7 @@ The Senior Leadership Team`)
   const selectedChannels = Object.entries(channels).filter(([, v]) => v).map(([k]) => k)
 
   return (
-    <WizardShell onClose={onClose} title="Send All-Staff Message" subtitle="Compose and distribute a message to all staff" icon="\uD83D\uDCE8" step={step} totalSteps={3} stepLabels={['Compose', 'Channels', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Send All-Staff Message" subtitle="Compose and distribute a message to all staff" icon="📨" step={step} totalSteps={3} stepLabels={['Compose', 'Channels', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>

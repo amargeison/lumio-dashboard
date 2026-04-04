@@ -218,7 +218,7 @@ export function GenerateSENDReportModal({ onClose, isDemoMode }: ModalProps) {
   ]
 
   return (
-    <WizardShell onClose={onClose} title="Generate SEND Report" subtitle="AI-assisted report generation" icon="\uD83D\uDCCB" step={step} totalSteps={3} stepLabels={['Select', 'Generate', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Generate SEND Report" subtitle="AI-assisted report generation" icon="📋" step={step} totalSteps={3} stepLabels={['Select', 'Generate', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div><Label req>Pupil Name</Label><input value={pupil} onChange={e => setPupil(e.target.value)} placeholder="Full name" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={iS} /></div>
@@ -294,7 +294,7 @@ export function ExternalAgencyReferralModal({ onClose, isDemoMode }: ModalProps)
   const [ref] = useState(() => genRef('REF'))
 
   return (
-    <WizardShell onClose={onClose} title="External Agency Referral" subtitle="Refer a pupil to an external service" icon="\uD83D\uDCE4" step={step} totalSteps={4} stepLabels={['Pupil', 'Agency', 'Evidence', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="External Agency Referral" subtitle="Refer a pupil to an external service" icon="📤" step={step} totalSteps={4} stepLabels={['Pupil', 'Agency', 'Evidence', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="Full name" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={iS} /></div>
@@ -376,7 +376,7 @@ export function ReviewMeetingModal({ onClose, isDemoMode }: ModalProps) {
   }
 
   return (
-    <WizardShell onClose={onClose} title="Review Meeting" subtitle="Schedule and invite attendees" icon="\uD83D\uDCC5" step={step} totalSteps={3} stepLabels={['Details', 'Schedule', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Review Meeting" subtitle="Schedule and invite attendees" icon="📅" step={step} totalSteps={3} stepLabels={['Details', 'Schedule', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="Full name" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={iS} /></div>
@@ -458,7 +458,7 @@ export function LACUpdateModal({ onClose, isDemoMode }: ModalProps) {
   const [ppSpend, setPpSpend] = useState('')
 
   return (
-    <WizardShell onClose={onClose} title="LAC / CiC Update" subtitle="Update looked-after child records" icon="\uD83D\uDC64" step={step} totalSteps={3} stepLabels={['Pupil', 'Update', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="LAC / CiC Update" subtitle="Update looked-after child records" icon="👤" step={step} totalSteps={3} stepLabels={['Pupil', 'Update', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div><Label req>Pupil Name</Label><input value={pupilName} onChange={e => setPupilName(e.target.value)} placeholder="Full name" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={iS} /></div>

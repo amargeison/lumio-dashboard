@@ -106,7 +106,7 @@ export function SchemeOfWorkReviewModal({ onClose, isDemoMode }: ModalProps) {
   }, [step, reviewDone])
 
   return (
-    <WizardShell onClose={onClose} title="Scheme of Work Review" subtitle="AI-assisted curriculum audit" icon="\uD83D\uDCCB" step={step} totalSteps={3} stepLabels={['Select', 'Review', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Scheme of Work Review" subtitle="AI-assisted curriculum audit" icon="📋" step={step} totalSteps={3} stepLabels={['Select', 'Review', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -221,7 +221,7 @@ export function PlanAssessmentCalendarModal({ onClose, isDemoMode }: ModalProps)
   const totalAssessments = Object.values(grid).reduce((sum, row) => sum + row.filter(Boolean).length, 0)
 
   return (
-    <WizardShell onClose={onClose} title="Plan Assessment Calendar" subtitle="Map assessments across the half-term" icon="\uD83D\uDCC5" step={step} totalSteps={3} stepLabels={['Configure', 'Schedule', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Plan Assessment Calendar" subtitle="Map assessments across the half-term" icon="📅" step={step} totalSteps={3} stepLabels={['Configure', 'Schedule', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -330,7 +330,7 @@ export function ModerationRequestModal({ onClose, isDemoMode }: ModalProps) {
   }
 
   return (
-    <WizardShell onClose={onClose} title="Moderation Request" subtitle="Request internal or external moderation" icon="\uD83D\uDD0D" step={step} totalSteps={3} stepLabels={['Details', 'Invite', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Moderation Request" subtitle="Request internal or external moderation" icon="🔍" step={step} totalSteps={3} stepLabels={['Details', 'Invite', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
@@ -412,7 +412,7 @@ export function OrderResourcesModal({ onClose, isDemoMode }: ModalProps) {
   const [budgetCode, setBudgetCode] = useState('')
 
   return (
-    <WizardShell onClose={onClose} title="Order Resources" subtitle="Submit a resource purchase request" icon="\uD83D\uDCE6" step={step} totalSteps={3} stepLabels={['Item', 'Cost', 'Confirm']} setStep={setStep}>
+    <WizardShell onClose={onClose} title="Order Resources" subtitle="Submit a resource purchase request" icon="📦" step={step} totalSteps={3} stepLabels={['Item', 'Cost', 'Confirm']} setStep={setStep}>
       {step === 1 && (
         <div className="space-y-4">
           <div>
