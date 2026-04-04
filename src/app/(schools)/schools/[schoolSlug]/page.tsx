@@ -437,7 +437,7 @@ function PhotoFrame() {
           <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 220, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
         onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
         onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
         onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
@@ -452,23 +452,16 @@ function PhotoFrame() {
         </>)}
         <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
         {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
-        {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+        {/* Speed controls overlaid bottom-left */}
+        {photos.length > 1 && <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>{[3,5,10,30].map(s => <button key={s} onClick={e => { e.stopPropagation(); setIntervalSecs(s) }} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.4)' : 'transparent', color: intervalSecs === s ? '#0D9488' : '#9CA3AF' }}>{s}s</button>)}</div>}
+        {/* Import buttons overlaid bottom-right */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          <button onClick={e => { e.stopPropagation(); setShowCloudModal('google') }} className="flex items-center justify-center rounded-lg" style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer' }} title="Google Photos"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg></button>
+          <button onClick={e => { e.stopPropagation(); setShowCloudModal('icloud') }} className="flex items-center justify-center rounded-lg" style={{ width: 28, height: 28, backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer' }} title="iCloud"><svg width="12" height="8" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg></button>
+        </div>
+        {!hasEverDragged && <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>{'\u2725'} Drag to reposition</div>}
       </div>
       )}
-      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
-      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
-        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
-            Google Photos ✦
-          </button>
-          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
-            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
-            iCloud ✦
-          </button>
-        </div>
-      </div>
       {showCloudModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowCloudModal(null)}>
           <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 28, maxWidth: 380, width: '90%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
@@ -551,6 +544,7 @@ function SchoolMeetingsToday() {
             <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs" style={{ color: '#6B7280' }}>{m.type}</p></div>
             {m.status !== 'done' && (
               <div className="flex items-center gap-1 flex-shrink-0">
+                <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>{'\u2705'} Join</button>
                 <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>Forward</button>
                 <button className="px-2 py-1 rounded-lg text-[10px] font-medium" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>Decline</button>
               </div>
@@ -734,24 +728,22 @@ function SchoolMorningRoundup() {
           )
         })}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+      <div className="space-y-2 mt-3">
         {[
-          { icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts' },
-          { icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent' },
-          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action' },
-          { icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts' },
-          { icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS' },
-          { icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence' },
-          { icon: '💬', label: 'Teams/Slack', count: 5, sub: 'unread staff messages' },
-          { icon: '📟', label: 'Announcements', count: 0, sub: 'no new broadcasts' },
-        ].map(ch => (
-          <div key={ch.label} className="rounded-lg p-2.5 cursor-pointer hover:opacity-80 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{ch.icon}</span>
-              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{ch.label}</span>
-              {ch.count > 0 && <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>{ch.count}</span>}
+          { icon: '📱', label: 'SMS Alerts', count: 3, sub: 'unread parent texts', color: '#3B82F6', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.2)' },
+          { icon: '📞', label: 'Phone Messages', count: 1, sub: 'voicemail from parent', color: '#8B5CF6', bg: 'rgba(139,92,246,0.06)', border: 'rgba(139,92,246,0.2)' },
+          { icon: '📧', label: 'Email Inbox', count: 7, sub: 'flagged for action', color: '#0D9488', bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.2)' },
+          { icon: '🔔', label: 'Push Notifications', count: 4, sub: 'app alerts', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)' },
+          { icon: '📋', label: 'MIS Alerts', count: 2, sub: 'from Arbor/SIMS', color: '#EC4899', bg: 'rgba(236,72,153,0.06)', border: 'rgba(236,72,153,0.2)' },
+          { icon: '🏫', label: 'Ofsted Portal', count: 1, sub: 'new correspondence', color: '#EF4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
+          { icon: '💬', label: 'Teams/Slack', count: 5, sub: 'unread staff messages', color: '#6366F1', bg: 'rgba(99,102,241,0.06)', border: 'rgba(99,102,241,0.2)' },
+          { icon: '📟', label: 'Announcements', count: 0, sub: 'no new broadcasts', color: '#6B7280', bg: 'rgba(107,114,128,0.04)', border: 'rgba(107,114,128,0.15)' },
+        ].map((ch: any) => (
+          <div key={ch.label} className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-all" style={{ backgroundColor: ch.bg || '#111318', border: `1px solid ${ch.border || '#1F2937'}` }}>
+            <div className="w-full flex items-center justify-between p-3">
+              <div className="flex items-center gap-2.5"><span className="text-base">{ch.icon}</span><span className="text-sm font-bold" style={{ color: ch.color || '#F9FAFB' }}>{ch.label}</span>{ch.count > 0 && <span className="text-xs" style={{ color: '#6B7280' }}>{ch.sub}</span>}</div>
+              <div className="flex items-center gap-2"><span className="text-base font-black" style={{ color: ch.color || '#F9FAFB' }}>{ch.count}</span><span className="text-xs" style={{ color: '#6B7280' }}>{'\u25BC'}</span></div>
             </div>
-            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{ch.count > 0 ? `${ch.count} ${ch.sub}` : ch.sub}</p>
           </div>
         ))}
       </div>
