@@ -179,7 +179,7 @@ export default function SchoolLayout({ children }: Props) {
       >
         <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 10px' : '12px 4px', gap: expanded ? 10 : 0 }}>
           <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
-            {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            {schoolLogo ? <img key={schoolLogo} src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
           </div>
           {expanded && (
             <>
@@ -248,7 +248,7 @@ export default function SchoolLayout({ children }: Props) {
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
           <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: '12px 10px', gap: 10 }}>
             <div className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937' }}>
-              {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              {schoolLogo ? <img key={schoolLogo} src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</p>

@@ -510,7 +510,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
       >
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
           <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
-            {clubLogo ? <img src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
+            {clubLogo ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
           </div>
           {expanded && (
             <>
@@ -5402,7 +5402,7 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
             <div className="flex items-center gap-3">
               {clubLogo ? (
                 <>
-                  <img src={clubLogo} alt="Club badge" className="h-10 w-10 rounded-lg object-contain" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                  <img src={clubLogo} alt="Club badge" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
                   <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
                     Change
                     <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />

@@ -267,7 +267,7 @@ export default function SchoolSettingsPage() {
           <div className="flex items-center gap-3">
             {schoolLogo ? (
               <>
-                <img src={schoolLogo} alt="School logo" className="h-10 w-10 rounded-lg object-contain" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
+                <img src={schoolLogo} alt="School logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
                 <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
                   Change
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
