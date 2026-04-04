@@ -118,8 +118,9 @@ const DEPT_ACTIONS: Record<DeptId, { label: string; tooltip: string; icon: React
     { label: 'Send Proposal',  tooltip: 'Generate a proposal from a template and send to a prospect',     icon: Send      },
     { label: 'Log Call',       tooltip: 'Log a call with a prospect or lead',                             icon: FileText  },
     { label: 'New Lead',       tooltip: 'Add a new lead and start the qualification workflow',             icon: UserPlus  },
+    { label: 'RFP',            tooltip: 'Build a structured RFP response with AI research and pricing',   icon: FileText  },
+    { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
     { label: 'Dept Insights',  tooltip: 'View AI-generated insights for Sales',                           icon: BarChart3 },
-  { label: 'Dept Info', tooltip: 'View department information, team, and structure', icon: Users },
   ],
   crm:        [
     { label: 'Log Call',       tooltip: 'Log a call against a customer account',                          icon: FileText  },
@@ -4199,6 +4200,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
     if (label === 'Recruitment')       { setShowRecruitment(true);                           return }
     if (label === 'Performance Review'){ setShowPerfReview(true);                            return }
     if (label === 'Company Events')    { router.push(`/demo/${slug}/events`);                return }
+    if (label === 'RFP')               { router.push(`/demo/${slug}/rfp`);                   return }
     setToast('Demo mode — this would trigger in your live workspace')
     setTimeout(() => setToast(null), 3000)
   }
