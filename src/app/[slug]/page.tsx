@@ -138,6 +138,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [logoUrl, setLogoUrl] = useState(initialLogo || null)
+  const [logoKey, setLogoKey] = useState(Date.now())
   const [iconHover, setIconHover] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -175,6 +176,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     function onLogoUpdated(e: Event) {
       const url = (e as CustomEvent).detail
       setLogoUrl(url || null)
+      setLogoKey(Date.now())
     }
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
     return () => window.removeEventListener('lumio-logo-updated', onLogoUpdated)
@@ -199,6 +201,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     // Optimistic update — show local blob URL immediately
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
+    setLogoKey(Date.now())
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     const fd = new FormData()
@@ -231,7 +234,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
+              <img key={logoKey} src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
@@ -2488,6 +2491,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [companyNameDraft, setCompanyNameDraft] = useState(company)
   const [savingName, setSavingName] = useState(false)
   const [logoUrl, setLogoUrl] = useState('')
+  const [logoKey, setLogoKey] = useState(Date.now())
 
   // Team invite
   const [inviteEmail, setInviteEmail] = useState('')
@@ -2774,6 +2778,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (!file) return
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
+    setLogoKey(Date.now())
     // Sync sidebar + parent immediately via event
     window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: blobUrl }))
     const token = localStorage.getItem('workspace_session_token')
@@ -2795,6 +2800,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
   async function handleLogoRemove() {
     setLogoUrl('')
+    setLogoKey(Date.now())
     localStorage.removeItem('workspace_company_logo')
     localStorage.removeItem('lumio_company_logo')
     // Sync sidebar + parent immediately
@@ -2947,7 +2953,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             <div className="flex items-center gap-3">
               {logoUrl ? (
                 <>
-                  <img src={logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151' }} />
+                  <img key={logoKey} src={logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151' }} />
                   <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
                     Change
                     <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
