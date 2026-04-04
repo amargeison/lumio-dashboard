@@ -3019,7 +3019,7 @@ function MedicalView() {
             </thead>
             <tbody>
               {GPS_DATA.map((g, i) => {
-                const loadColor = g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : g.load === 'amber' ? '#F97316' : '#EF4444'
+                const loadColor = g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : '#EF4444'
                 return (
                   <tr key={i} style={{ borderBottom: i < GPS_DATA.length - 1 ? '1px solid #1F2937' : undefined }}>
                     <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{g.player}</td>
@@ -4293,7 +4293,7 @@ function TrainingView() {
             </thead>
             <tbody>
               {GPS_DATA.map((g, i) => {
-                const loadColor = g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : g.load === 'amber' ? '#F97316' : '#EF4444'
+                const loadColor = g.load === 'optimal' ? '#22C55E' : g.load === 'high' ? '#F59E0B' : '#EF4444'
                 return (
                   <tr key={i} style={{ borderBottom: i < GPS_DATA.length - 1 ? '1px solid #1F2937' : undefined }}>
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{g.player}</td>
