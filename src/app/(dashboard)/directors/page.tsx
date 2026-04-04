@@ -5,6 +5,9 @@ import {
   Crown, FileText, Calendar, Target, Shield, Users, TrendingUp,
   Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Lock,
 } from 'lucide-react'
+import { getClientRole } from '@/lib/check-role'
+import { canAccessDept } from '@/lib/permissions'
+import AccessRequest from '@/components/AccessRequest'
 import { PageShell } from '@/components/page-ui'
 import ExportPdfButton from '@/components/ExportPdfButton'
 import { DashboardEmptyState, useHasDashboardData } from '@/components/dashboard/EmptyState'
@@ -215,6 +218,23 @@ function NotesTab() {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function DirectorsSuite() {
+  // ── RBAC: Directors Suite requires director level (role_level <= 1) ──
+  const clientRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
+  const effectiveLevel = clientRole.isOwner ? 1 : clientRole.role_level
+  if (!canAccessDept('directors', effectiveLevel)) {
+    return (
+      <AccessRequest
+        dept="directors"
+        deptLabel="Directors Suite"
+        deptDescription="Board-level intelligence, financial performance, strategy, and confidential notes. Director access only."
+        userRole={clientRole.role}
+        roleLevel={effectiveLevel}
+        requiredLevel={1}
+        onRequest={() => console.log('Access request sent for directors')}
+      />
+    )
+  }
+
   const [tab, setTab] = useState<Tab>('board')
   const hasData = useHasDashboardData('insights')
 

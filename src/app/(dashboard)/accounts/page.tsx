@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Receipt, AlertCircle, TrendingUp, Clock, FileText, RefreshCw, DollarSign, Star, Building2, Sparkles, FileX, PiggyBank, Percent, ArrowLeftRight, ShoppingCart, CalendarCheck, BookOpen, Trash2, Landmark, Coins, ClipboardList } from 'lucide-react'
+import { getClientRole } from '@/lib/check-role'
+import { canAccessDept } from '@/lib/permissions'
+import AccessRequest from '@/components/AccessRequest'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -65,6 +68,24 @@ function fmtGBP(n: number): string {
 export default function AccountsPage() {
   const workspace = useWorkspace()
   const router = useRouter()
+
+  // ── RBAC: Accounts requires director level (role_level <= 1) ──
+  const clientRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
+  const effectiveLevel = clientRole.isOwner ? 1 : clientRole.role_level
+  if (!canAccessDept('accounts', effectiveLevel)) {
+    return (
+      <AccessRequest
+        dept="accounts"
+        deptLabel="Accounts & Finance"
+        deptDescription="Financial reports, invoices, payroll, and P&L data. Access restricted to Director level and above."
+        userRole={clientRole.role}
+        roleLevel={effectiveLevel}
+        requiredLevel={1}
+        onRequest={() => console.log('Access request sent for accounts')}
+      />
+    )
+  }
+
   const [showInvoice, setShowInvoice] = useState(false)
   const [showChase, setShowChase] = useState(false)
   const [showExpense, setShowExpense] = useState(false)

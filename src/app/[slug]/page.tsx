@@ -4006,6 +4006,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
+  const [demoRole, setDemoRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
+  const [showRoleTooltip, setShowRoleTooltip] = useState(false)
+  const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
+  const DEMO_ROLES = [{ id: 'admin', label: 'Admin', color: '#EF4444', desc: 'Full access' }, { id: 'director', label: 'Director', color: '#8B5CF6', desc: 'Finance + Directors Suite' }, { id: 'manager', label: 'Manager', color: '#3B82F6', desc: 'No finance figures' }, { id: 'standard', label: 'Standard', color: '#6B7280', desc: 'Own dept only' }]
+  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role) } catch {}; window.location.reload() }
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
     try {
       if (typeof window === 'undefined') return new Set()
@@ -4469,12 +4474,47 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Demo banner — in flow, first child of right column */}
           {demoDataActive && (
-            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
-              <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
-              <div className="flex items-center gap-2">
-                <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>Clear Demo Data</button>
+            <>
+              <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
+                <span className="text-xs font-medium">Demo workspace &middot; sample data</span>
+                <div className="flex items-center gap-2">
+                  {/* Role Switcher */}
+                  <div className="relative" onMouseEnter={() => setShowRoleTooltip(true)} onMouseLeave={() => setShowRoleTooltip(false)}>
+                    <div className="flex items-center gap-1.5 bg-black/20 rounded-xl px-2 py-1">
+                      <span className="text-xs text-teal-200 font-medium mr-1 hidden lg:block">{'\u{1F464}'} Viewing as:</span>
+                      {DEMO_ROLES.map(role => (
+                        <button key={role.id} onClick={() => switchRole(role.id)} title={role.desc}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${demoRole === role.id ? 'text-white shadow-sm' : 'text-teal-200/60 hover:text-teal-100'}`}
+                          style={{ backgroundColor: demoRole === role.id ? role.color : 'transparent' }}>
+                          {role.label}
+                        </button>
+                      ))}
+                    </div>
+                    {showRoleTooltip && (
+                      <div className="absolute top-full right-0 mt-2 rounded-xl p-3 z-50 shadow-xl min-w-[220px]" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>
+                        <div className="text-xs font-semibold text-white mb-2">{DEMO_ROLES.find(r => r.id === demoRole)?.label} &mdash; can see:</div>
+                        <div className="space-y-1.5">
+                          {([['All standard departments', ['admin','director','manager','standard']],['Finance figures', ['admin','director']],['HR salary &amp; sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['User management', ['admin']]] as [string, string[]][]).map(([label, roles]) => (
+                            <div key={label} className="flex items-center justify-between gap-3">
+                              <span className="text-[11px] text-gray-400">{label}</span>
+                              <span className="text-[11px]">{roles.includes(demoRole) ? '\u2705' : '\u{1F512}'}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role reloads the page</div>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff', marginRight: 120 }}>Clear Demo Data</button>
+                </div>
               </div>
-            </div>
+              {showRoleTip && (
+                <div className="hidden md:flex items-center justify-between px-4 py-2 text-xs" style={{ backgroundColor: 'rgba(124,58,237,0.15)', borderBottom: '1px solid rgba(124,58,237,0.3)', color: '#C4B5FD' }}>
+                  <span>{'\u{1F446}'} <strong>Try the role switcher</strong> &mdash; switch between Admin, Director, Manager, and Standard to see how permissions work</span>
+                  <button onClick={() => { setShowRoleTip(false); try { localStorage.setItem('lumio_role_tip_seen', '1') } catch {} }} className="ml-4 text-purple-400 hover:text-white flex-shrink-0">Got it {'\u2715'}</button>
+                </div>
+              )}
+            </>
           )}
           {/* Scrollable page content */}
           <main className="flex-1 p-4 sm:p-5 overflow-y-auto">

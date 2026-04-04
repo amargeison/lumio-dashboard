@@ -27,6 +27,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { getDeptStaff } from '@/lib/staff/deptMatch'
 import { getClientRole } from '@/lib/check-role'
+import { canAccessDept } from '@/lib/permissions'
 
 const BASE_NAV_ITEMS: {
   label: string
@@ -94,8 +95,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [pathname])
 
   const userRole = typeof window !== 'undefined' ? getClientRole() : { role: 'user' as const, role_level: 4 as const, isOwner: false }
+  const effectiveLevel = userRole.isOwner ? 1 : userRole.role_level
   const navItems = BASE_NAV_ITEMS
-    .filter(item => item.path !== '/directors' || userRole.role_level <= 1 || userRole.isOwner)
+    .filter(item => {
+      const dept = item.path.replace('/', '') || 'overview'
+      return canAccessDept(dept, effectiveLevel)
+    })
     .map(item => ({
       ...item,
       href: tenantSlug ? `/${tenantSlug}${item.path}` : (item.path || '/overview'),
