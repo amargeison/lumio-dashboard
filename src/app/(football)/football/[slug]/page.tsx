@@ -668,7 +668,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, isDemo = false, c
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <img src="/badges/afc_wimbledon_badge_studio.png" alt="" style={{ position: 'absolute', right: 180, bottom: -10, width: 200, height: 200, objectFit: 'contain', opacity: 0.08, filter: 'saturate(0) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 0 }} />
+        <img src="/badges/afc_wimbledon_badge_studio.png" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
         <img src="/badges/afc_wimbledon_badge_studio.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
         <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -5538,7 +5538,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
       {/* Demo banner */}
       {isFootballDemo && (
-        <div className="flex items-center justify-between px-6 pr-20 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F' }}>
+        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F', paddingRight: 120 }}>
           <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
           <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F' }}>Clear Demo Data</button>
         </div>
