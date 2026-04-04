@@ -2614,7 +2614,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_demo_active')
     localStorage.removeItem('lumio-photo-frame')
     // Clear task/win/don't-miss persistence
-    ;['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed'].forEach(k => localStorage.removeItem(k))
+    ;['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','lumio_dismissed_notifs'].forEach(k => localStorage.removeItem(k))
     // Clear all lumio_tasks_done_* keys
     Object.keys(localStorage).filter(k => k.startsWith('lumio_tasks_done')).forEach(k => localStorage.removeItem(k))
     // Restore identity fields
@@ -4064,6 +4064,35 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
   const [staffRefreshKey, setStaffRefreshKey] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifTab, setNotifTab] = useState('all')
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => { try { return new Set(JSON.parse(localStorage.getItem('lumio_dismissed_notifs') || '[]')) } catch { return new Set() } })
+  const dismissNotif = (id: string) => { setDismissedNotifs(prev => { const n = new Set(prev); n.add(id); try { localStorage.setItem('lumio_dismissed_notifs', JSON.stringify([...n])) } catch {}; return n }) }
+  useEffect(() => { if (!notificationsOpen) return; const h = (e: MouseEvent) => { const el = document.getElementById('notif-bell'); if (el && !el.contains(e.target as Node)) setNotificationsOpen(false) }; document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h) }, [notificationsOpen])
+  const DEMO_NOTIFS = [
+    { id:'n-01',priority:'high',icon:'\u{1F4B0}',title:'3 invoices overdue',body:'Bramblewood (\u00A34,200), Northgate (\u00A32,800), FitCore (\u00A31,400)',time:'Overdue',dept:'accounts',deptLabel:'Accounts',deptRoute:'/accounts',roles:['admin','director'],category:'finance' },
+    { id:'n-02',priority:'high',icon:'\u{1F464}',title:'3 probation reviews overdue',body:'Sarah Mitchell (Mktg), Tom Chen (Eng), Priya Patel (CS)',time:'This week',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director'],category:'hr' },
+    { id:'n-03',priority:'high',icon:'\u{1F3AF}',title:'Greenfield Group proposal due today',body:'\u00A385,000 deal \u2014 highest value in pipeline',time:'Due today',dept:'sales',deptLabel:'Sales',deptRoute:'/sales',roles:['admin','director','manager'],category:'sales' },
+    { id:'n-04',priority:'high',icon:'\u23F0',title:'3 trials expiring this week',body:'Bramblewood (Fri), Northgate (Thu), FitCore (Wed) \u2014 \u00A38,400',time:'This week',dept:'trials',deptLabel:'Trials',deptRoute:'/trials',roles:['admin','director','manager'],category:'trials' },
+    { id:'n-05',priority:'high',icon:'\u{1F534}',title:'10 customers in critical health',body:'Whitestone (34), Meridian Ventures (41), FitCore Leeds (38)',time:'Action needed',dept:'success',deptLabel:'CS',deptRoute:'/success',roles:['admin','director','manager'],category:'customers' },
+    { id:'n-06',priority:'high',icon:'\u{1F3AB}',title:'5 support tickets unassigned',body:'Oldest: Bramblewood \u2014 4hrs. SLA at risk.',time:'4 hrs',dept:'support',deptLabel:'Support',deptRoute:'/support',roles:['admin','director','manager'],category:'support' },
+    { id:'n-07',priority:'medium',icon:'\u{1F4C5}',title:'New Customer Demo \u2014 happening now',body:'Greenfield Group \u00B7 Google Meet \u00B7 45 min remaining',time:'Now',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'meetings' },
+    { id:'n-08',priority:'medium',icon:'\u2705',title:'Daily tasks: 0 of 6 complete',body:'Q2 invoice batch, Greenfield proposal, board report',time:'Today',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'tasks' },
+    { id:'n-09',priority:'medium',icon:'\u26A1',title:'Quick wins: 4 available',body:'Chase Bramble Hill \u00B7 Whitestone check-in \u00B7 3 LinkedIn messages',time:'Today',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'tasks' },
+    { id:'n-10',priority:'medium',icon:'\u{1F4CA}',title:'MRR up 12% this month',body:'\u00A341,999 MRR \u2014 Q2 target achievable if 2 deals close',time:'This month',dept:'accounts',deptLabel:'Accounts',deptRoute:'/accounts',roles:['admin','director'],category:'finance' },
+    { id:'n-11',priority:'medium',icon:'\u{1F504}',title:'Apex Learning renewal \u2014 Aug 2026',body:'\u00A324,000 ARR \u00B7 68% win rate \u00B7 QBR not booked',time:'Aug 2026',dept:'success',deptLabel:'CS',deptRoute:'/success',roles:['admin','director','manager'],category:'customers' },
+    { id:'n-12',priority:'medium',icon:'\u{1F4C8}',title:'Pipeline up 12% vs last month',body:'\u00A32.4M total \u00B7 34 open deals \u00B7 2 closing this week',time:'This month',dept:'sales',deptLabel:'Sales',deptRoute:'/sales',roles:['admin','director','manager'],category:'sales' },
+    { id:'n-13',priority:'medium',icon:'\u{1F41B}',title:'3 workflows failing intermittently',body:'Payment processing category \u2014 investigate',time:'Today',dept:'workflows',deptLabel:'Workflows',deptRoute:'/workflows',roles:['admin','director','manager'],category:'operations' },
+    { id:'n-14',priority:'low',icon:'\u{1F4E2}',title:'SEO traffic up 41% this month',body:'3 articles in top 10 results',time:'This month',dept:'marketing',deptLabel:'Marketing',deptRoute:'/marketing',roles:['admin','director','manager'],category:'marketing' },
+    { id:'n-15',priority:'low',icon:'\u{1F91D}',title:'Vertex Analytics \u2014 first deal Q3',body:'New partner onboarded. Pipeline building.',time:'Q3 2026',dept:'partners',deptLabel:'Partners',deptRoute:'/partners',roles:['admin','director','manager'],category:'partners' },
+    { id:'n-16',priority:'low',icon:'\u{1F6E1}\uFE0F',title:'IT security score: 94/100',body:'7 open tickets \u00B7 All critical patches current',time:'Today',dept:'it',deptLabel:'IT',deptRoute:'/it',roles:['admin','director'],category:'it' },
+    { id:'n-17',priority:'low',icon:'\u2699\uFE0F',title:'44 workflows active \u00B7 1,844 runs',body:'Automation saved 47 hours this month',time:'This month',dept:'workflows',deptLabel:'Workflows',deptRoute:'/workflows',roles:['admin','director','manager'],category:'operations' },
+    { id:'n-18',priority:'low',icon:'\u{1F49A}',title:'Staff wellbeing: 7.4/10',body:'Highest this quarter \u2014 2 flagged for workload review',time:'This quarter',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director'],category:'hr' },
+    { id:'n-19',priority:'low',icon:'\u{1F393}',title:'Training completion at 84%',body:'3 staff have overdue training',time:'This month',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director','manager'],category:'hr' },
+    { id:'n-20',priority:'medium',icon:'\u{1F4C5}',title:'Meeting with Andrew',body:'Tuesday 7 April \u00B7 11:00\u201312:00 \u00B7 Google Meet',time:'Tue 11:00',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'meetings' },
+  ]
+  const visibleNotifs = DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id))
+  const urgentCount = visibleNotifs.filter(n => n.priority === 'high').length
+  const filteredNotifs = notifTab === 'all' ? visibleNotifs : notifTab === 'urgent' ? visibleNotifs.filter(n => n.priority === 'high') : notifTab === 'meetings' ? visibleNotifs.filter(n => n.category === 'meetings') : notifTab === 'tasks' ? visibleNotifs.filter(n => n.category === 'tasks') : visibleNotifs.filter(n => n.category === notifTab)
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
@@ -4351,10 +4380,42 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       {/* Bell + Avatar — fixed top-right */}
       <div className="hidden md:flex" style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, alignItems: 'center', gap: 8 }}>
-        <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
-        </button>
+        <div className="relative" id="notif-bell">
+          <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={16} strokeWidth={1.75} />
+            {urgentCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">{urgentCount}</span>}
+          </button>
+          {notificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 rounded-2xl shadow-2xl overflow-hidden" style={{ width: 380, backgroundColor: '#0d0f1a', border: '1px solid #374151', zIndex: 9999 }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2"><span className="text-white font-semibold text-sm">Notifications</span>{urgentCount > 0 && <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">{urgentCount} urgent</span>}</div>
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-600 capitalize">{demoRole} view</span><button onClick={() => setNotificationsOpen(false)} className="text-gray-500 hover:text-white text-lg">&times;</button></div>
+              </div>
+              <div className="flex overflow-x-auto scrollbar-hide" style={{ borderBottom: '1px solid #1F2937' }}>
+                {[{ id:'all',label:'All',ct:visibleNotifs.length },{ id:'urgent',label:'\u{1F534} Urgent',ct:visibleNotifs.filter(n=>n.priority==='high').length },{ id:'meetings',label:'\u{1F4C5} Meetings',ct:visibleNotifs.filter(n=>n.category==='meetings').length },{ id:'tasks',label:'\u2705 Tasks',ct:visibleNotifs.filter(n=>n.category==='tasks').length },{ id:'finance',label:'\u{1F4B0} Finance',ct:visibleNotifs.filter(n=>n.category==='finance').length }].map(t=>(
+                  <button key={t.id} onClick={()=>setNotifTab(t.id)} className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all whitespace-nowrap ${notifTab===t.id?'text-teal-400 border-b-2 border-teal-400':'text-gray-500 hover:text-gray-300'}`}>{t.label}{t.ct>0&&<span className="ml-1 text-[10px] text-gray-600">({t.ct})</span>}</button>
+                ))}
+              </div>
+              <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                {filteredNotifs.length === 0 ? <div className="text-center py-10 text-gray-600"><div className="text-3xl mb-2">{'\u2705'}</div><div className="text-sm">All clear</div></div> : filteredNotifs.map(n=>(
+                  <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-all group" style={{ borderBottom: '1px solid rgba(31,41,55,0.4)', borderLeft: `2px solid ${n.priority==='high'?'#EF4444':n.priority==='medium'?'#F59E0B':'#374151'}` }}>
+                    <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>{ setNotificationsOpen(false); if(n.deptRoute){ window.location.href=`/${slug}${n.deptRoute}` } }}>
+                      <div className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-white leading-snug">{n.title}</span><span className="text-[10px] text-gray-600 flex-shrink-0 mt-0.5">{n.time}</span></div>
+                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{n.body}</p>
+                      {n.deptLabel&&<span className="text-[10px] text-teal-600 mt-1 inline-block">&rarr; {n.deptLabel}</span>}
+                    </div>
+                    <button onClick={()=>dismissNotif(n.id)} className="text-gray-700 hover:text-gray-400 text-sm opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 mt-0.5" title="Dismiss">&times;</button>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(17,19,24,0.5)' }}>
+                <span className="text-[10px] text-gray-600">{visibleNotifs.length} notifications &middot; {dismissedNotifs.size} dismissed</span>
+                <button onClick={()=>{ setDismissedNotifs(new Set(DEMO_NOTIFS.map(n=>n.id))); try{localStorage.setItem('lumio_dismissed_notifs',JSON.stringify(DEMO_NOTIFS.map(n=>n.id)))}catch{} }} className="text-[10px] text-gray-600 hover:text-gray-400">Dismiss all</button>
+              </div>
+            </div>
+          )}
+        </div>
         <AvatarDropdown initials={userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={`/${slug}/settings`} />
       </div>
 
@@ -4391,7 +4452,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         e.target.value = ''
       }} />
 
-      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+      {/* NotificationsPanel replaced by inline demo notifications above */}
 
       {/* SSO Welcome Modal */}
       {ssoWelcome && (
