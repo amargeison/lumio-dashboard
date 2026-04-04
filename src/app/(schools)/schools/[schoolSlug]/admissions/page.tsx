@@ -135,10 +135,14 @@ export default function AdmissionsPage() {
       {/* Quick Actions */}
       <QuickActions actions={[
         { label: 'New Enquiry', icon: <MessageSquare size={14} />, onClick: () => setShowEnquiry(true) },
-        { label: 'Book School Trip', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
-        { label: 'Send Newsletter', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Open Day', icon: <Users size={14} />, onClick: () => setShowOpenDay(true) },
+        { label: 'Application Review', icon: <ClipboardList size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Offer Letter', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Waiting List', icon: <Eye size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Tour Booking', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Send Newsletter', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Social Post', icon: <Share2 size={14} />, onClick: () => setShowSocialMedia(true) },
+        { label: 'Open Day Schedule', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
         { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
       ]} />
 
