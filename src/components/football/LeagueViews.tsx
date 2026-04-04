@@ -312,6 +312,269 @@ function MatchAnalyticsPanel({ match, events, onBack }: { match: SBMatch; events
   )
 }
 
+// ─── PLAYER PROFILE MODAL ───────────────────────────────────────────────────
+export function PlayerProfileModal({ player, onClose, teamName }: { player: any; onClose: () => void; teamName?: string }) {
+  const [ppTab, setPpTab] = useState<'season' | 'history' | 'career' | 'profile'>('season')
+  const [profileData, setProfileData] = useState<any>(null)
+  const [transferData, setTransferData] = useState<any[]>([])
+  const [careerStats, setCareerStats] = useState<any[]>([])
+  const [ppLoading, setPpLoading] = useState(false)
+  const [aiData, setAiData] = useState<any>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const playerId = player?.player?.id || player?.id
+  const ppStats = player?.statistics?.[0] || {}
+  const pInfo = player?.player || player || {}
+
+  useEffect(() => {
+    if (!playerId) {
+      const name = pInfo.name || ((pInfo.firstname || '') + ' ' + (pInfo.lastname || '')).trim()
+      if (name) {
+        setAiLoading(true)
+        fetch('/api/ai/football-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'player', query: `${name} ${teamName || ''}`.trim() }) })
+          .then(r => r.json()).then(d => setAiData(d.result)).catch(() => {}).finally(() => setAiLoading(false))
+      }
+      return
+    }
+    setPpLoading(true)
+    Promise.all([
+      fetch(`/api/football/player?playerId=${playerId}&season=2025`).then(r => r.json()).catch(() => null),
+      fetch(`/api/football/transfers?playerId=${playerId}`).then(r => r.json()).catch(() => null),
+      ...[2025, 2024, 2023, 2022, 2021].map(s =>
+        fetch(`/api/football/player?playerId=${playerId}&season=${s}`).then(r => r.json()).catch(() => null)
+      )
+    ]).then(([playerRes, transferRes, ...seasonResults]) => {
+      if (playerRes?.response?.[0]) setProfileData(playerRes.response[0])
+      if (transferRes?.response?.[0]?.transfers) setTransferData(transferRes.response[0].transfers)
+      const career: any[] = []
+      seasonResults.forEach((sr, idx) => {
+        const p = sr?.response?.[0]
+        if (p?.statistics) {
+          p.statistics.forEach((cst: any) => {
+            career.push({ season: `${2025 - idx}/${String(2026 - idx).slice(2)}`, club: cst.team?.name, clubLogo: cst.team?.logo, league: cst.league?.name, apps: cst.games?.appearences ?? 0, goals: cst.goals?.total ?? 0, assists: cst.goals?.assists ?? 0, rating: cst.games?.rating ? parseFloat(cst.games.rating).toFixed(1) : '—' })
+          })
+        }
+      })
+      setCareerStats(career)
+    }).finally(() => setPpLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId])
+
+  const pd = profileData || player
+  const pi = pd?.player || pInfo
+  const st = profileData?.statistics?.[0] || ppStats
+  const gm = st?.games || {}
+  const gl = st?.goals || {}
+  const ps = st?.passes || {}
+  const sh = st?.shots || {}
+  const dr = st?.dribbles || {}
+  const cd = st?.cards || {}
+  const tm = st?.team || {}
+  const pos = gm?.position || pInfo.position || ''
+  const posCol = pos === 'Goalkeeper' ? { bg: 'rgba(234,179,8,0.15)', c: '#EAB308' } : pos === 'Defender' ? { bg: 'rgba(59,130,246,0.15)', c: '#3B82F6' } : pos === 'Midfielder' ? { bg: 'rgba(34,197,94,0.15)', c: '#22C55E' } : { bg: 'rgba(239,68,68,0.15)', c: '#EF4444' }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#0F1117', border: `1px solid ${C.border}` }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="p-6 pb-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.2), rgba(0,0,0,0.1))' }}>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-4">
+              {(pi.photo || pInfo.photo) && <img src={pi.photo || pInfo.photo} alt="" className="w-20 h-20 rounded-xl object-cover" style={{ border: '2px solid rgba(0,61,165,0.3)' }} />}
+              <div>
+                <div className="text-xl font-black" style={{ color: C.text }}>{pi.name || pInfo.name || `${pi.firstname || ''} ${pi.lastname || ''}`.trim()}</div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {tm.logo && <img src={tm.logo} alt="" className="w-5 h-5 object-contain" />}
+                  {tm.name && <span className="text-sm" style={{ color: C.muted }}>{tm.name}</span>}
+                  <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: posCol.bg, color: posCol.c }}>{pos || pInfo.position || '—'}</span>
+                  {(pi.age || pInfo.age) && <span className="text-xs" style={{ color: C.muted }}>Age {pi.age || pInfo.age}</span>}
+                  {(pi.nationality || pInfo.nationality) && <span className="text-xs" style={{ color: C.muted }}>{pi.nationality || pInfo.nationality}</span>}
+                </div>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  {pInfo.number && <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow }}>#{pInfo.number}</span>}
+                  {gm.rating && <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: parseFloat(gm.rating) >= 7 ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: parseFloat(gm.rating) >= 7 ? '#22C55E' : '#F59E0B' }}>{parseFloat(gm.rating).toFixed(1)} avg</span>}
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-sm px-3 py-1.5 rounded-lg" style={{ border: `1px solid ${C.border}`, color: C.muted }}>&#x2715;</button>
+          </div>
+        </div>
+
+        {ppLoading && <Spinner text="Loading player profile..." />}
+        {aiLoading && <Spinner text="Searching player data via AI..." />}
+
+        {/* AI fallback (no API ID) */}
+        {!playerId && aiData && !aiLoading && (
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              {[{ l: 'Goals', v: aiData.goals }, { l: 'Assists', v: aiData.assists }, { l: 'Apps', v: aiData.apps }].map((s, i) => (
+                <div key={i} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#1A1D27' }}><div className="text-lg font-black" style={{ color: C.text }}>{s.v || '—'}</div><div className="text-xs" style={{ color: C.muted }}>{s.l}</div></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#1A1D27' }}>
+              {[{ l: 'Club', v: aiData.currentClub }, { l: 'League', v: aiData.league }, { l: 'Market Value', v: aiData.marketValue }, { l: 'Contract', v: aiData.contractUntil }, { l: 'Agent', v: aiData.agent || aiData.agencyName }, { l: 'Int. Caps', v: aiData.internationalCaps }, { l: 'Rating', v: aiData.rating }].filter(r => r.v).map((r, i) => (
+                <div key={i} className="flex justify-between text-sm" style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 8, marginBottom: 4 }}><span style={{ color: C.muted }}>{r.l}</span><span className="font-semibold" style={{ color: C.text }}>{r.v}</span></div>
+              ))}
+            </div>
+            {aiData.previousClubs?.length > 0 && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                <div className="text-xs font-bold mb-2" style={{ color: C.muted }}>PREVIOUS CLUBS</div>
+                <div className="flex flex-wrap gap-2">{aiData.previousClubs.map((c: string, i: number) => <span key={i} className="px-2 py-1 rounded-lg text-xs" style={{ backgroundColor: '#111318', color: C.text }}>{c}</span>)}</div>
+              </div>
+            )}
+            {aiData.strengths?.length > 0 && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                <div className="text-xs font-bold mb-2" style={{ color: C.muted }}>STRENGTHS</div>
+                <div className="flex flex-wrap gap-2">{aiData.strengths.map((s: string, i: number) => <span key={i} className="px-2 py-1 rounded-lg text-xs" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E' }}>{s}</span>)}</div>
+              </div>
+            )}
+            {aiData.summary && <div className="text-sm rounded-xl p-4" style={{ backgroundColor: '#1A1D27', color: C.muted }}>{aiData.summary}</div>}
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>Add to Scouting DB</button>
+              <button className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>Add to Transfer Pipeline</button>
+            </div>
+            <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>Data sourced via Claude AI — verify before making decisions</div>
+          </div>
+        )}
+
+        {/* Tabbed view with API data */}
+        {playerId && !ppLoading && (
+          <div className="p-6 pt-2 space-y-4">
+            <div className="flex gap-2 flex-wrap">{(['season', 'history', 'career', 'profile'] as const).map(tab => (
+              <button key={tab} onClick={() => setPpTab(tab)} className="px-4 py-2 rounded-lg text-xs font-semibold capitalize" style={{ backgroundColor: ppTab === tab ? 'rgba(0,61,165,0.15)' : '#111318', color: ppTab === tab ? C.yellow : C.muted, border: `1px solid ${ppTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>
+                {tab === 'season' ? 'This Season' : tab === 'history' ? 'Club History' : tab === 'career' ? 'Career Stats' : 'Profile'}
+              </button>
+            ))}</div>
+
+            {/* Tab 1: This Season */}
+            {ppTab === 'season' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-2">
+                  {[{ l: 'Apps', v: gm.appearences ?? '—' }, { l: 'Goals', v: gl.total ?? 0 }, { l: 'Assists', v: gl.assists ?? 0 }, { l: 'Minutes', v: gm.minutes ?? '—' }].map((s, i) => (
+                    <div key={i} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#1A1D27' }}><div className="text-lg font-black" style={{ color: C.text }}>{s.v}</div><div className="text-xs" style={{ color: C.muted }}>{s.l}</div></div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[{ l: 'Yellows', v: cd.yellow ?? 0, c: '#EAB308' }, { l: 'Reds', v: cd.red ?? 0, c: '#EF4444' }, { l: 'Rating', v: gm.rating ? parseFloat(gm.rating).toFixed(1) : '—', c: C.teal }].map((s, i) => (
+                    <div key={i} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#1A1D27' }}><div className="text-lg font-black" style={{ color: s.c }}>{s.v}</div><div className="text-xs" style={{ color: C.muted }}>{s.l}</div></div>
+                  ))}
+                </div>
+                <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                  <div className="text-xs font-bold mb-3" style={{ color: C.muted }}>DETAILED STATS</div>
+                  <div className="space-y-2">
+                    {[
+                      { l: 'Goals per 90', v: gm.minutes && gl.total ? ((gl.total / gm.minutes) * 90).toFixed(2) : '—' },
+                      { l: 'Assists per 90', v: gm.minutes && gl.assists ? ((gl.assists / gm.minutes) * 90).toFixed(2) : '—' },
+                      { l: 'Pass accuracy', v: ps.accuracy ? `${ps.accuracy}%` : '—' },
+                      { l: 'Shots per game', v: gm.appearences && sh.total ? (sh.total / gm.appearences).toFixed(1) : '—' },
+                      { l: 'Dribbles per game', v: gm.appearences && dr.attempts ? (dr.attempts / gm.appearences).toFixed(1) : '—' },
+                      { l: 'Key passes', v: ps.key ?? '—' },
+                      { l: 'Tackles', v: st?.tackles?.total ?? '—' },
+                      { l: 'Interceptions', v: st?.tackles?.interceptions ?? '—' },
+                    ].map((r, i) => (
+                      <div key={i} className="flex justify-between text-sm"><span style={{ color: C.muted }}>{r.l}</span><span className="font-semibold" style={{ color: C.text }}>{r.v}</span></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Club History */}
+            {ppTab === 'history' && (
+              <div className="space-y-1">
+                {transferData.length === 0 && <div className="text-sm text-center py-8" style={{ color: C.muted }}>No transfer history available</div>}
+                {transferData.map((t: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3 relative">
+                    <div className="flex flex-col items-center" style={{ width: 20, minHeight: 60 }}>
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: i === 0 ? C.blue : '#374151', border: `2px solid ${i === 0 ? C.yellow : '#6B7280'}`, marginTop: 4 }} />
+                      {i < transferData.length - 1 && <div className="w-0.5 flex-1" style={{ backgroundColor: '#374151' }} />}
+                    </div>
+                    <div className="flex-1 rounded-xl p-3 mb-2" style={{ backgroundColor: '#1A1D27' }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        {t.teams?.out?.logo && <img src={t.teams.out.logo} alt="" className="w-5 h-5 object-contain" />}
+                        <span className="text-xs" style={{ color: C.muted }}>{t.teams?.out?.name || '?'}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>&rarr;</span>
+                        {t.teams?.in?.logo && <img src={t.teams.in.logo} alt="" className="w-5 h-5 object-contain" />}
+                        <span className="text-sm font-semibold" style={{ color: C.text }}>{t.teams?.in?.name || '?'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span style={{ color: C.muted }}>{t.date ? new Date(t.date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—'}</span>
+                        <span className="px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: t.type === 'Free' ? 'rgba(34,197,94,0.12)' : t.type === 'Loan' ? 'rgba(59,130,246,0.12)' : 'rgba(245,158,11,0.12)', color: t.type === 'Free' ? '#22C55E' : t.type === 'Loan' ? '#3B82F6' : '#F59E0B' }}>{t.type || 'Transfer'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tab 3: Career Stats */}
+            {ppTab === 'career' && (
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#1A1D27', border: `1px solid ${C.border}` }}>
+                {careerStats.length === 0 && <div className="text-sm text-center py-8" style={{ color: C.muted }}>No career data available</div>}
+                {careerStats.length > 0 && (
+                  <table className="w-full text-xs">
+                    <thead><tr style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3">Season</th><th className="text-left p-3">Club</th><th className="text-left p-3">League</th><th className="text-center p-3">Apps</th><th className="text-center p-3">Goals</th><th className="text-center p-3">Assists</th><th className="text-center p-3">Rating</th></tr></thead>
+                    <tbody>{careerStats.map((s, i) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td className="p-3 font-semibold" style={{ color: C.text }}>{s.season}</td>
+                        <td className="p-3"><div className="flex items-center gap-2">{s.clubLogo && <img src={s.clubLogo} alt="" className="w-4 h-4 object-contain" />}<span style={{ color: C.text }}>{s.club}</span></div></td>
+                        <td className="p-3" style={{ color: C.muted }}>{s.league}</td>
+                        <td className="p-3 text-center" style={{ color: C.text }}>{s.apps}</td>
+                        <td className="p-3 text-center font-bold" style={{ color: C.text }}>{s.goals}</td>
+                        <td className="p-3 text-center" style={{ color: C.teal }}>{s.assists}</td>
+                        <td className="p-3 text-center" style={{ color: parseFloat(s.rating) >= 7 ? '#22C55E' : C.muted }}>{s.rating}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {/* Tab 4: Profile */}
+            {ppTab === 'profile' && (
+              <div className="space-y-4">
+                <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                  <div className="text-xs font-bold mb-3" style={{ color: C.muted }}>PERSONAL INFO</div>
+                  <div className="space-y-2">
+                    {[
+                      { l: 'Full Name', v: `${pi.firstname || ''} ${pi.lastname || ''}`.trim() || pi.name },
+                      { l: 'Date of Birth', v: pi.birth?.date ? new Date(pi.birth.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
+                      { l: 'Place of Birth', v: [pi.birth?.place, pi.birth?.country].filter(Boolean).join(', ') || '—' },
+                      { l: 'Nationality', v: pi.nationality || '—' },
+                      { l: 'Height', v: pi.height || '—' },
+                      { l: 'Weight', v: pi.weight || '—' },
+                    ].map((r, i) => (
+                      <div key={i} className="flex justify-between text-sm" style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 6 }}><span style={{ color: C.muted }}>{r.l}</span><span className="font-semibold" style={{ color: C.text }}>{r.v}</span></div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl p-4" style={{ backgroundColor: '#1A1D27' }}>
+                  <div className="text-xs font-bold mb-3" style={{ color: C.muted }}>SEASON DETAILS</div>
+                  <div className="space-y-2">
+                    {[
+                      { l: 'Position', v: gm.position || pos || '—' },
+                      { l: 'Shirt Number', v: gm.number ?? pInfo.number ?? '—' },
+                      { l: 'Captain', v: gm.captain ? 'Yes' : 'No' },
+                      { l: 'League', v: st?.league?.name || '—' },
+                      { l: 'Minutes Played', v: gm.minutes ? gm.minutes.toLocaleString() : '—' },
+                      { l: 'Lineups / Sub', v: `${gm.lineups ?? '—'} / ${(gm.appearences ?? 0) - (gm.lineups ?? 0)}` },
+                    ].map((r, i) => (
+                      <div key={i} className="flex justify-between text-sm" style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 6 }}><span style={{ color: C.muted }}>{r.l}</span><span className="font-semibold" style={{ color: C.text }}>{r.v}</span></div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>Add to Scouting DB</button>
+                  <button className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>Add to Transfer Pipeline</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── TEAMS VIEW ──────────────────────────────────────────────────────────────
 export function TeamsView() {
   const [selectedLeague, setSelectedLeague] = useState<typeof TIER_LEAGUES[0] | null>(null)
@@ -322,13 +585,18 @@ export function TeamsView() {
   const [squadLoading, setSquadLoading] = useState(false)
   const [standingsData, setStandingsData] = useState<any[]>([])
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb' | 'injuries'>('squad')
+  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb' | 'injuries' | 'staff'>('squad')
   const [injuryData, setInjuryData] = useState<any[]>([])
   const [injuryLoading, setInjuryLoading] = useState(false)
   const [showInjuredOnly, setShowInjuredOnly] = useState(false)
   const [manualInjuries, setManualInjuries] = useState<any[]>([])
   const [showInjuryForm, setShowInjuryForm] = useState(false)
   const [injuryForm, setInjuryForm] = useState({ playerName: '', injuryType: '', dateInjured: new Date().toISOString().split('T')[0], expectedReturn: '', notes: '' })
+  const [staffData, setStaffData] = useState<any>(null)
+  const [coachData, setCoachData] = useState<any[]>([])
+  const [staffLoading, setStaffLoading] = useState(false)
+  const [staffLoaded, setStaffLoaded] = useState(false)
+  const [profilePlayer, setProfilePlayer] = useState<any>(null)
 
   // Load manual injuries from localStorage
   useEffect(() => {
@@ -362,7 +630,7 @@ export function TeamsView() {
   }
 
   async function loadTeam(team: any) {
-    setSelectedTeam(team); setSquadLoading(true); setSquadData([]); setTeamFixtures([]); setInjuryData([])
+    setSelectedTeam(team); setSquadLoading(true); setSquadData([]); setTeamFixtures([]); setInjuryData([]); setStaffData(null); setCoachData([]); setStaffLoaded(false)
     const teamId = team.team?.id || TEAM_IDS[team.team?.name]
     if (!teamId) { setSquadLoading(false); return }
     try {
@@ -375,16 +643,39 @@ export function TeamsView() {
       setSquadData(squadJson?.response?.[0]?.players || [])
       setTeamFixtures([...(lastJson?.response || []).reverse(), ...(fixtJson?.response || [])])
     } catch { /* */ }
-    // Fetch injuries
+    // Fetch injuries + coach in parallel
     setInjuryLoading(true)
     try {
       const leagueId = selectedLeague?.leagueId || 41
-      const injRes = await fetch(`/api/football/injuries?teamId=${teamId}&season=2025&leagueId=${leagueId}`)
-      const injJson = await injRes.json()
+      const [injRes, coachRes] = await Promise.all([
+        fetch(`/api/football/injuries?teamId=${teamId}&season=2025&leagueId=${leagueId}`),
+        fetch(`/api/football/coach?teamId=${teamId}`),
+      ])
+      const [injJson, coachJson] = await Promise.all([injRes.json(), coachRes.json()])
       setInjuryData(injJson?.response || [])
+      setCoachData(coachJson?.response || [])
     } catch { setInjuryData([]) }
     setInjuryLoading(false)
     setSquadLoading(false)
+  }
+
+  async function loadStaff() {
+    if (staffLoaded || !selectedTeam) return
+    setStaffLoading(true)
+    const teamId = selectedTeam.team?.id || TEAM_IDS[selectedTeam.team?.name]
+    const clubName = selectedTeam.team?.name || ''
+    const league = selectedLeague?.name || ''
+    try {
+      const [coachRes, aiRes] = await Promise.all([
+        teamId ? fetch(`/api/football/coach?teamId=${teamId}`) : Promise.resolve(null),
+        fetch('/api/ai/club-staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clubName, league }) }),
+      ])
+      if (coachRes) { const cj = await coachRes.json(); setCoachData(cj?.response || []) }
+      const aj = await aiRes.json()
+      if (!aj.error) setStaffData(aj)
+    } catch { /* */ }
+    setStaffLoading(false)
+    setStaffLoaded(true)
   }
 
   const filteredTeams = search ? standingsData.filter((t: any) => t.team?.name?.toLowerCase().includes(search.toLowerCase())) : standingsData
@@ -422,15 +713,33 @@ export function TeamsView() {
               <div key={i} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-lg font-bold" style={{ color: C.text }}>{s.v}</div><div className="text-xs" style={{ color: C.muted }}>{s.l}</div></div>
             ))}</div>
             {selectedTeam.form && <div className="flex items-center gap-1.5 mt-3"><span className="text-xs mr-1" style={{ color: C.muted }}>Form:</span>{selectedTeam.form.split('').slice(-5).map((r: string, i: number) => (<div key={i} className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.2)' : r === 'D' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div>}
+            {/* Manager Profile Card */}
+            {coachData.length > 0 && (() => {
+              const mgr = coachData[0]
+              const currentCareer = mgr.career?.find((c: any) => c.team?.id === selectedTeam.team?.id)
+              const prevClubs = mgr.career?.filter((c: any) => c.team?.id !== selectedTeam.team?.id).slice(0, 5) || []
+              const w = currentCareer?.games?.win || 0; const d = currentCareer?.games?.draw || 0; const l = currentCareer?.games?.lose || 0
+              return (
+                <div className="mt-4 rounded-lg p-4 flex items-center gap-4 flex-wrap" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+                  {mgr.photo && <img src={mgr.photo} alt="" className="w-14 h-14 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(0,61,165,0.4)' }} />}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold" style={{ color: C.text }}>{mgr.name}</div>
+                    <div className="text-xs" style={{ color: C.muted }}>Manager{currentCareer?.start ? ` · In charge since ${currentCareer.start}` : ''}</div>
+                    {(w > 0 || d > 0 || l > 0) && <div className="flex gap-3 mt-1">{[{l:'W',v:w,c:C.teal},{l:'D',v:d,c:'#F59E0B'},{l:'L',v:l,c:'#EF4444'}].map(s => <span key={s.l} className="text-xs font-semibold" style={{ color: s.c }}>{s.l} {s.v}</span>)}</div>}
+                    {prevClubs.length > 0 && <div className="text-[11px] mt-1 truncate" style={{ color: C.muted }}>Previously: {prevClubs.map((c: any) => c.team?.name).filter(Boolean).join(', ')}</div>}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
-          <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'statsbomb', 'injuries'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : tab === 'injuries' ? '\u{1F915} Injuries' : 'Squad'}</button>
+          <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'statsbomb', 'injuries', 'staff'] as const).map(tab => (
+            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <Spinner text="Loading..." />}
           {activeTab === 'squad' && !squadLoading && (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
               <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
-                <div className="text-sm font-semibold" style={{ color: C.text }}>{selectedTeam.team?.name} — Squad ({squadData.length})</div>
+                <div><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedTeam.team?.name} — Squad ({squadData.length})</div><div className="text-xs mt-0.5" style={{ color: C.muted }}>Click a player for full profile</div></div>
                 {squadData.length > 0 && (
                   <button onClick={() => setShowInjuredOnly(!showInjuredOnly)} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all" style={{ backgroundColor: showInjuredOnly ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)', color: showInjuredOnly ? '#EF4444' : C.muted, border: `1px solid ${showInjuredOnly ? 'rgba(239,68,68,0.3)' : C.border}` }}>
                     {showInjuredOnly ? '🔴 Injured only' : 'Show injured only'}
@@ -445,7 +754,7 @@ export function TeamsView() {
                 }).map((p: any, i: number) => {
                   const injury = injuryData.find((inj: any) => inj.player?.name?.toLowerCase() === p.name?.toLowerCase())
                   return (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}><td className="p-3 text-xs" style={{ color: C.muted }}>{p.number || '—'}</td><td className="p-3">{p.photo && <img src={p.photo} alt="" className="w-6 h-6 rounded-full inline mr-2 object-cover" />}<span className="font-medium" style={{ color: C.text }}>{p.name}</span></td><td className="p-3 text-center"><span className={`text-xs px-1.5 py-0.5 rounded ${posColour(p.position)}`}>{posShort(p.position)}</span></td><td className="p-3 text-center" style={{ color: C.muted }}>{p.age}</td><td className="p-3 text-sm" style={{ color: C.muted }}>{p.nationality}</td>
+                  <tr key={i} onClick={() => setProfilePlayer(p)} className="cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: `1px solid ${C.border}` }}><td className="p-3 text-xs" style={{ color: C.muted }}>{p.number || '—'}</td><td className="p-3">{p.photo && <img src={p.photo} alt="" className="w-6 h-6 rounded-full inline mr-2 object-cover" />}<span className="font-medium" style={{ color: C.text }}>{p.name}</span></td><td className="p-3 text-center"><span className={`text-xs px-1.5 py-0.5 rounded ${posColour(p.position)}`}>{posShort(p.position)}</span></td><td className="p-3 text-center" style={{ color: C.muted }}>{p.age}</td><td className="p-3 text-sm" style={{ color: C.muted }}>{p.nationality}</td>
                   <td className="p-3 text-center">{injury ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>{injury.player?.reason || 'Injured'}</span>
                   ) : (
@@ -614,8 +923,85 @@ export function TeamsView() {
               })}
             </div>
           )}
+
+          {activeTab === 'staff' && (
+            <div className="space-y-5">
+              {staffLoading && <Spinner text="Loading staff & board..." />}
+              {!staffLoading && !staffData && staffLoaded && (
+                <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-3xl mb-2">{'\u{1F465}'}</div>
+                  <div className="text-sm font-semibold" style={{ color: C.text }}>Staff data unavailable</div>
+                  <div className="text-xs mt-1" style={{ color: C.muted }}>Could not load staff information for this club.</div>
+                </div>
+              )}
+              {!staffLoading && staffData && (() => {
+                const sections: { key: string; title: string; accent: string; accentBg: string; data: any[]; icon: string }[] = [
+                  { key: 'coaching', title: 'Coaching Staff', accent: '#EF4444', accentBg: 'rgba(239,68,68,0.12)', data: staffData.coaching || [], icon: '\u{1F9E0}' },
+                  { key: 'medical', title: 'Medical & Performance', accent: '#14B8A6', accentBg: 'rgba(20,184,166,0.12)', data: staffData.medical || [], icon: '\u{1FA7A}' },
+                  { key: 'management', title: 'Football Operations', accent: '#3B82F6', accentBg: 'rgba(59,130,246,0.12)', data: staffData.management || [], icon: '\u{1F4CB}' },
+                  { key: 'board', title: 'Board & Ownership', accent: '#A855F7', accentBg: 'rgba(168,85,247,0.12)', data: staffData.board || [], icon: '\u{1F3DB}\u{FE0F}' },
+                  { key: 'commercial', title: 'Commercial & Admin', accent: '#6B7280', accentBg: 'rgba(107,114,128,0.12)', data: staffData.commercial || [], icon: '\u{1F4BC}' },
+                ]
+
+                const mgrCoach = coachData.length > 0 ? coachData[0] : null
+
+                return (<>
+                  {sections.map(sec => sec.data.length > 0 && (
+                    <div key={sec.key} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937' }}>
+                        <span>{sec.icon}</span>
+                        <span className="text-sm font-bold" style={{ color: C.text }}>{sec.title}</span>
+                        <span className="text-xs ml-auto" style={{ color: C.muted }}>{sec.data.length} staff</span>
+                      </div>
+                      <div className="p-4 grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+                        {sec.data.map((person: any, i: number) => {
+                          const isManager = sec.key === 'coaching' && i === 0 && mgrCoach
+                          const photo = isManager && mgrCoach?.photo ? mgrCoach.photo : person.photo || null
+                          return (
+                            <div key={i} className={`rounded-lg p-4 ${isManager ? 'col-span-full' : ''}`} style={{ backgroundColor: '#0A0B10', border: `1px solid ${isManager ? sec.accent + '40' : '#1F2937'}` }}>
+                              <div className="flex items-start gap-3">
+                                {photo ? (
+                                  <img src={photo} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" style={{ border: `2px solid ${sec.accent}40` }} />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold" style={{ backgroundColor: sec.accentBg, color: sec.accent }}>
+                                    {person.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-bold truncate" style={{ color: C.text }}>{person.name}</div>
+                                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mt-1" style={{ backgroundColor: sec.accentBg, color: sec.accent }}>{person.role}</span>
+                                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    {person.nationality && <span className="text-[11px]" style={{ color: C.muted }}>{person.nationality}</span>}
+                                    {person.since && <span className="text-[11px]" style={{ color: C.muted }}>&middot; Since {person.since}</span>}
+                                  </div>
+                                  {(person as any).background && <div className="text-[11px] mt-1" style={{ color: C.muted }}>{(person as any).background}</div>}
+                                  {isManager && mgrCoach && (() => {
+                                    const cur = mgrCoach.career?.find((c: any) => c.team?.id === selectedTeam.team?.id)
+                                    const w = cur?.games?.win || 0; const d = cur?.games?.draw || 0; const l = cur?.games?.lose || 0
+                                    const prev = mgrCoach.career?.filter((c: any) => c.team?.id !== selectedTeam.team?.id).slice(0, 4) || []
+                                    return (<>
+                                      {(w > 0 || d > 0 || l > 0) && <div className="flex gap-3 mt-2">{[{lb:'W',v:w,c:C.teal},{lb:'D',v:d,c:'#F59E0B'},{lb:'L',v:l,c:'#EF4444'}].map(s => <span key={s.lb} className="text-xs font-semibold" style={{ color: s.c }}>{s.lb} {s.v}</span>)}</div>}
+                                      {prev.length > 0 && <div className="text-[11px] mt-1" style={{ color: C.muted }}>Previously: {prev.map((c: any) => c.team?.name).filter(Boolean).join(', ')}</div>}
+                                    </>)
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {sec.key === 'board' && <div className="px-5 py-2 text-[10px]" style={{ color: C.muted, borderTop: '1px solid #1F2937' }}>Board information sourced from public records</div>}
+                    </div>
+                  ))}
+                </>)
+              })()}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Player Profile Modal */}
+      {profilePlayer && <PlayerProfileModal player={profilePlayer} onClose={() => setProfilePlayer(null)} teamName={selectedTeam?.team?.name} />}
     </div>
   )
 }
@@ -799,48 +1185,8 @@ export function LeaguesView() {
         )}
       </>)}
 
-      {/* Player Stats Modal */}
-      {selectedPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedPlayer(null)}>
-          <div className="rounded-2xl p-6 w-full max-w-md mx-4 space-y-4" style={{ backgroundColor: '#111318', border: `1px solid ${C.border}` }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {selectedPlayer.player?.photo && <img src={selectedPlayer.player.photo} alt="" className="w-12 h-12 rounded-full object-cover" />}
-                <div>
-                  <div className="text-lg font-bold" style={{ color: C.text }}>{selectedPlayer.player?.name}</div>
-                  <div className="flex items-center gap-2 text-xs" style={{ color: C.muted }}>
-                    {selectedPlayer.statistics?.[0]?.team?.logo && <img src={selectedPlayer.statistics[0].team.logo} alt="" className="w-4 h-4 object-contain" />}
-                    {selectedPlayer.statistics?.[0]?.team?.name}
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setSelectedPlayer(null)} className="text-xl" style={{ color: C.muted }}>x</button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Nationality</div><div className="text-sm font-semibold mt-1" style={{ color: C.text }}>{selectedPlayer.player?.nationality || '—'}</div></div>
-              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Goals</div><div className="text-lg font-black mt-1" style={{ color: C.text }}>{selectedPlayer.statistics?.[0]?.goals?.total || 0}</div></div>
-              <div className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0A0B10' }}><div className="text-xs" style={{ color: C.muted }}>Assists</div><div className="text-lg font-black mt-1" style={{ color: C.teal }}>{selectedPlayer.statistics?.[0]?.goals?.assists || 0}</div></div>
-            </div>
-
-            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm">📊</span>
-                <div className="text-sm font-semibold" style={{ color: C.text }}>StatsBomb Analytics</div>
-              </div>
-              <div className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span style={{ color: C.muted }}>xG per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
-                  <div className="flex justify-between"><span style={{ color: C.muted }}>xA per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
-                  <div className="flex justify-between"><span style={{ color: C.muted }}>Progressive passes per 90</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
-                  <div className="flex justify-between"><span style={{ color: C.muted }}>Pressure success rate</span><span className="font-semibold" style={{ color: '#FBBF24' }}>—</span></div>
-                </div>
-                <div className="mt-3 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>Extended analytics available with StatsBomb Pro licence</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Player Profile Modal */}
+      {selectedPlayer && <PlayerProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} teamName={selectedPlayer?.statistics?.[0]?.team?.name} />}
     </div>
   )
 }
