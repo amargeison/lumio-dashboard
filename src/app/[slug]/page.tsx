@@ -2230,17 +2230,26 @@ function BriefingSettings() {
 // ─── Voice Selector ─────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady', sample: 'Good morning. Everything is under control.' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
+  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear \u2014 your daily motivator', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep \u2014 reassuring and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic \u2014 upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.', gender: 'Female', accent: 'American' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Deep & authoritative \u2014 professional and commanding', sample: 'Hi, I\'m Adam. Clear, authoritative and professional.', gender: 'Male', accent: 'American' },
+  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', desc: 'Smooth & confident \u2014 great for presentations', sample: 'Hi, I\'m Antoni. Smooth, confident and easy to listen to.', gender: 'Male', accent: 'American' },
+  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', desc: 'Strong & crisp \u2014 clear and decisive', sample: 'Hi, I\'m Arnold. Strong, clear and focused.', gender: 'Male', accent: 'American' },
+  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', desc: 'Bold & expressive \u2014 energetic and engaging', sample: 'Hi, I\'m Domi. Bold, expressive and full of energy.', gender: 'Female', accent: 'American' },
+  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', desc: 'Young & bright \u2014 friendly and approachable', sample: 'Hi, I\'m Elli. Friendly, bright and easy to connect with.', gender: 'Female', accent: 'American' },
+  { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', desc: 'Raspy & distinctive \u2014 character and personality', sample: 'Hi, I\'m Sam. Distinctive, real and full of character.', gender: 'Male', accent: 'American' },
+  { id: 'CYw3kZ28abi6tjtxIwYk', name: 'Dave', desc: 'British & warm \u2014 sophisticated and trustworthy', sample: 'Hi, I\'m Dave. Warm, British and thoroughly trustworthy.', gender: 'Male', accent: 'British' },
 ]
 
 function VoiceSelector() {
   const [activeVoice, setActiveVoice] = useState('21m00Tcm4TlvDq8ikWAM')
   const [previewing, setPreviewing] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [ttsOn, setTtsOn] = useState(true)
   const [vcOn, setVcOn] = useState(true)
+  const [voiceFilter, setVoiceFilter] = useState('all')
 
   useEffect(() => {
     const v = localStorage.getItem('lumio_tts_voice'); if (v) setActiveVoice(v)
@@ -2254,40 +2263,36 @@ function VoiceSelector() {
   }
 
   async function preview(voice: typeof VOICES[0]) {
-    // Stop any current preview
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
-    if (previewing === voice.id) { setPreviewing(null); return }
+    if (previewing === voice.id) { setPreviewing(null); setPreviewLoading(null); return }
 
     setPreviewing(voice.id)
+    setPreviewLoading(voice.id)
     try {
-      console.log('[TTS Preview] calling with voice_id:', voice.id, 'text:', voice.sample)
-      const wsToken = localStorage.getItem('workspace_session_token') || ''
-      const demoToken = localStorage.getItem('demo_session_token') || ''
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (wsToken) headers['x-workspace-token'] = wsToken
-      if (demoToken) headers['x-demo-token'] = demoToken
-
       const res = await fetch('/api/tts', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ text: voice.sample, voice_id: voice.id }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: voice.sample, voice_id: voice.id, preview: true }),
       })
-      console.log('[TTS Preview] response status:', res.status)
-      if (!res.ok) throw new Error('TTS failed')
+      if (!res.ok) { const err = await res.text(); console.error(`[Voice Preview] Failed for ${voice.name}:`, res.status, err); throw new Error(`TTS failed: ${res.status}`) }
 
       const buf = await res.arrayBuffer()
       const blob = new Blob([buf], { type: 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => { setPreviewing(null); audioRef.current = null; URL.revokeObjectURL(url) }
-      audio.onerror = (e) => { console.error('[TTS Preview] audio error:', e); setPreviewing(null); URL.revokeObjectURL(url) }
+      audio.onended = () => { setPreviewing(null); setPreviewLoading(null); audioRef.current = null; URL.revokeObjectURL(url) }
+      audio.onerror = (e) => { console.error('[Voice Preview] audio error:', e); setPreviewing(null); setPreviewLoading(null); URL.revokeObjectURL(url) }
+      setPreviewLoading(null)
       await audio.play()
     } catch (err) {
-      console.error('[TTS Preview] error:', err)
+      console.error('[Voice Preview] error:', err)
       setPreviewing(null)
+      setPreviewLoading(null)
     }
   }
+
+  const filteredVoices = voiceFilter === 'all' ? VOICES : VOICES.filter(v => v.gender === voiceFilter || v.accent === voiceFilter)
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -2324,49 +2329,35 @@ function VoiceSelector() {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
-        {VOICES.map(voice => {
+      {/* Voice filter chips */}
+      <div className="flex gap-2 px-5 pt-4 flex-wrap">
+        {['all', 'Male', 'Female', 'British', 'American'].map(f => (
+          <button key={f} onClick={() => setVoiceFilter(f)} className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${voiceFilter === f ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+            {f === 'all' ? `All (${VOICES.length})` : f}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
+        {filteredVoices.map(voice => {
           const isActive = activeVoice === voice.id
           const isPreviewing = previewing === voice.id
+          const isLoading = previewLoading === voice.id
           return (
-            <div
-              key={voice.id}
-              className="rounded-xl p-4 transition-colors"
-              style={{
-                backgroundColor: '#0A0B10',
-                border: isActive ? '1px solid #0D9488' : '1px solid #1F2937',
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
+            <div key={voice.id} className="rounded-xl p-4 transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #0D9488' : '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-1">
                 <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
-                {isActive && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>
-                    ✓ Active
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.gender}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.accent}</span>
+                  {isActive && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{'\u2713'}</span>}
+                </div>
               </div>
-              <p className="text-xs mb-4 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
+              <p className="text-xs mb-3 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => preview(voice)}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors"
-                  style={{
-                    backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)',
-                    color: isPreviewing ? '#A78BFA' : '#9CA3AF',
-                    border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937',
-                  }}
-                >
-                  {isPreviewing ? '■ Stop' : '▶ Preview'}
+                <button onClick={() => preview(voice)} disabled={isLoading} className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors" style={{ backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', color: isPreviewing ? '#A78BFA' : '#9CA3AF', border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937', opacity: isLoading ? 0.5 : 1 }}>
+                  {isLoading ? '\u21BB Loading...' : isPreviewing ? '\u25A0 Stop' : '\u25B6 Preview'}
                 </button>
-                {!isActive && (
-                  <button
-                    onClick={() => selectVoice(voice.id)}
-                    className="flex-1 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                  >
-                    Select
-                  </button>
-                )}
+                {!isActive && <button onClick={() => selectVoice(voice.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Select</button>}
               </div>
             </div>
           )
