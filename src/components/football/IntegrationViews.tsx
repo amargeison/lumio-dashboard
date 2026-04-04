@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PlayerProfileModal } from './LeagueViews'
 
 const C = { card: '#0d0f1a', border: '#1F2937', text: '#F9FAFB', muted: '#6B7280', teal: '#0D9488', blue: '#003DA5', yellow: '#F1C40F' } as const
 
@@ -115,6 +116,7 @@ export function WyscoutView() {
 // ─── SCOUTING DATABASE VIEW ──────────────────────────────────────────────────
 export function ScoutingDBView() {
   const [searchPos, setSearchPos] = useState('All')
+  const [scoutProfilePlayer, setScoutProfilePlayer] = useState<any>(null)
   const positions = ['All','GK','CB','RB','LB','CDM','CM','CAM','RW','LW','ST']
   const database = [
     { name: 'Marcus Haraldsen', flag: '🇸🇪', pos: 'CM', age: 22, club: 'IFK Göteborg', market: '€2.1M', contract: 'Jun 2026', scout: 'Tom Webb', status: 'Shortlisted', xG90: 0.08, xA90: 0.21 },
@@ -148,7 +150,7 @@ export function ScoutingDBView() {
           <tbody>{filtered.map((p, i) => {
             const [bg, color] = (statusColours[p.status] || 'rgba(107,114,128,0.15):#6B7280').split(':')
             return (
-              <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+              <tr key={i} onClick={() => setScoutProfilePlayer({ player: { name: p.name, nationality: p.flag, age: p.age }, position: p.pos, club: p.club })} className="cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td className="p-3"><div className="flex items-center gap-2"><span>{p.flag}</span><span className="font-medium" style={{ color: C.text }}>{p.name}</span></div></td>
                 <td className="p-3"><span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#D1D5DB' }}>{p.pos}</span></td>
                 <td className="p-3 text-xs" style={{ color: C.muted }}>{p.club}</td>
@@ -162,6 +164,9 @@ export function ScoutingDBView() {
           })}</tbody>
         </table>
       </div>
+
+      {/* Player Profile Modal */}
+      {scoutProfilePlayer && <PlayerProfileModal player={scoutProfilePlayer} onClose={() => setScoutProfilePlayer(null)} teamName={scoutProfilePlayer.club} />}
     </div>
   )
 }
