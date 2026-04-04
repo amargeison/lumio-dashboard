@@ -13,6 +13,8 @@ import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
+import { useSchoolRole } from '@/lib/SchoolRoleContext'
+import { SCHOOL_ROLES } from '@/lib/schoolRoles'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -1105,6 +1107,8 @@ function OnboardingModal({
 
 export default function SchoolDashboard({ params }: { params: Promise<{ schoolSlug: string }> }) {
   const { schoolSlug: _slug } = use(params)
+  const activeRole = useSchoolRole()
+  const rolePerms = SCHOOL_ROLES[activeRole]?.permissions
   const attendanceAvg = Math.round(ATTENDANCE_BY_YEAR.reduce((s, y) => s + y.pct, 0) / ATTENDANCE_BY_YEAR.length * 10) / 10
   const staffIn = STAFF_TODAY.filter(s => s.status === 'in').length
 
@@ -1121,6 +1125,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [lockdownStep, setLockdownStep] = useState(0)
   const [lockdownType, setLockdownType] = useState<'emergency' | 'drill' | ''>('')
   const [showSafeguardingReview, setShowSafeguardingReview] = useState(false)
+  const [schoolInfoDoc, setSchoolInfoDoc] = useState<string | null>(null)
+  const [schoolInfoLink, setSchoolInfoLink] = useState<string | null>(null)
+  const [siToast, setSiToast] = useState<string | null>(null)
+  function fireSchoolToast(msg: string) { setSiToast(msg); setTimeout(() => setSiToast(null), 3500) }
   const [lockdownIncident, setLockdownIncident] = useState('Intruder on site')
   const [lockdownDesc, setLockdownDesc] = useState('')
   const [lockdownLocation, setLockdownLocation] = useState('Unknown')
@@ -1197,6 +1205,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
+  const [dismissedDM, setDismissedDM] = useState<Set<string>>(new Set())
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1231,13 +1240,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
       </div>
 
-      {/* 3. Quick actions — 2 rows of 10 */}
+      {/* 3. Quick actions — filtered by role */}
       <div className="px-4 py-3" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937', borderRadius: 12 }}>
-        <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions</span>
-        {[
-          [
-            { label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
-            { label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
+        <span className="text-xs font-semibold mb-1.5 block" style={{ color: '#4B5563' }}>Quick actions {activeRole === 'governor' && <span className="ml-2 text-gray-600">(read-only view)</span>}</span>
+        {(() => { const ALL_QA = [
+            { id: 'safeguarding-referral', label: 'Safeguarding Referral', icon: '\u{1F6A8}', pulse: false },
+            { id: 'school-lockdown', label: 'School Lockdown', icon: '\u{1F534}', pulse: false, red: true },
             { label: 'New Concern', icon: '\u26A0\uFE0F' },
             { label: 'Mark Register', icon: '\u2705' },
             { label: 'Behaviour Incident', icon: '\u{1F4CB}' },
@@ -1559,8 +1567,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           { id: 'dm5', urgency: 'today', category: 'CPD', deadline: 'Sunday midnight', title: 'CPD booking closes Sunday — Trauma-informed teaching', body: '3 staff have not confirmed attendance. Course is fully funded and counts toward appraisal targets.', consequence: 'Places lost', action: 'Book now' },
           { id: 'dm6', urgency: 'soon', category: 'Compliance', deadline: 'End of month', title: 'Ofsted self-assessment due end of month', body: 'Currently 87% complete. 3 sections outstanding: Behaviour, SEND provision, and Curriculum impact. Target is 90%.', consequence: 'Inspection readiness at risk', action: 'Complete now' },
         ]
-        const [dismissed, setDismissedDM] = useState<Set<string>>(new Set())
-        const active = ALL.filter(i => !dismissed.has(i.id))
+        const active = ALL.filter(i => !dismissedDM.has(i.id))
         return (
           <div className="max-w-4xl">
             <div className="flex items-center justify-between mb-4">
