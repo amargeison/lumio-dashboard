@@ -5267,6 +5267,56 @@ function SettingsView({ isDemo = false, slug = '' }: { isDemo?: boolean; slug?: 
 
 // ─── Toast ──────────────────────────────────────────────────────────────────
 
+// ─── Football Notifications Panel ───────────────────────────────────────────
+
+const FB_NOTIFICATIONS = [
+  { id: '1', read: false, icon: '🔴', cat: 'Transfer', title: 'Agent response received — Harvey Knibbs representation', time: '2 min ago' },
+  { id: '2', read: false, icon: '🟡', cat: 'Medical', title: 'Omar Bugiel fitness test — result available', time: '1 hour ago' },
+  { id: '3', read: false, icon: '🔵', cat: 'Match', title: 'Team sheet deadline — Stockport County (A) · 2 hours remaining', time: '2 hours ago' },
+  { id: '4', read: true, icon: '✅', cat: 'Board', title: 'PSR calculation updated — within limits', time: '3 hours ago' },
+  { id: '5', read: true, icon: '🔵', cat: 'Scouting', title: 'Aaron Collins — Wrexham confirm availability to sell', time: 'Yesterday' },
+  { id: '6', read: true, icon: '🟡', cat: 'Training', title: 'GPS alert — Sean O\'Brien ACWR 1.58 · rest recommended', time: 'Yesterday' },
+]
+
+function FootballNotificationsPanel({ onClose }: { onClose: () => void }) {
+  const [items, setItems] = useState(FB_NOTIFICATIONS)
+  const unread = items.filter(n => !n.read).length
+  return (
+    <>
+      <div className="fixed inset-0 z-[79]" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full z-[80] flex flex-col" style={{ width: 380, backgroundColor: '#111318', borderLeft: '1px solid #1F2937', boxShadow: '-8px 0 32px rgba(0,0,0,0.4)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Notifications</h2>
+            {unread > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>{unread}</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            {unread > 0 && <button onClick={() => setItems(p => p.map(n => ({ ...n, read: true })))} className="text-xs font-medium" style={{ color: '#0D9488' }}>Mark all read</button>}
+            <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {items.map(n => (
+            <div key={n.id} onClick={() => setItems(p => p.map(x => x.id === n.id ? { ...x, read: true } : x))} className="px-5 py-4 cursor-pointer" style={{ borderBottom: '1px solid #1F2937', borderLeft: n.read ? 'none' : '3px solid #003DA5', backgroundColor: n.read ? 'transparent' : 'rgba(0,61,165,0.04)' }}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base" style={{ backgroundColor: '#1F2937' }}>{n.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#60A5FA' }}>{n.cat}</span>
+                    {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#003DA5' }} />}
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: n.read ? '#6B7280' : '#F9FAFB' }}>{n.title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#4B5563' }}>{n.time}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 function Toast({ message }: { message: string | null }) {
   if (!message) return null
   return (
@@ -5434,6 +5484,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     return ''
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [fbNotifOpen, setFbNotifOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
@@ -5546,12 +5597,13 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
       {/* Top-right avatar */}
       <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-        <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+        <button onClick={() => setFbNotifOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</span>
+          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} />
         </button>
         <AvatarDropdown initials={initials} settingsHref={`/football/${slug}/settings`} />
       </div>
+      {fbNotifOpen && <FootballNotificationsPanel onClose={() => setFbNotifOpen(false)} />}
 
       {/* Mobile menu button */}
       <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
