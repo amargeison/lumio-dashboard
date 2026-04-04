@@ -1559,7 +1559,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           { id: 'dm5', urgency: 'today', category: 'CPD', deadline: 'Sunday midnight', title: 'CPD booking closes Sunday — Trauma-informed teaching', body: '3 staff have not confirmed attendance. Course is fully funded and counts toward appraisal targets.', consequence: 'Places lost', action: 'Book now' },
           { id: 'dm6', urgency: 'soon', category: 'Compliance', deadline: 'End of month', title: 'Ofsted self-assessment due end of month', body: 'Currently 87% complete. 3 sections outstanding: Behaviour, SEND provision, and Curriculum impact. Target is 90%.', consequence: 'Inspection readiness at risk', action: 'Complete now' },
         ]
-        const [dismissed, setDismissedDM] = React.useState<Set<string>>(new Set())
+        const [dismissed, setDismissedDM] = useState<Set<string>>(new Set())
         const active = ALL.filter(i => !dismissed.has(i.id))
         return (
           <div className="max-w-4xl">
