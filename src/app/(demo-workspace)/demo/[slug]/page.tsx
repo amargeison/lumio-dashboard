@@ -984,11 +984,11 @@ function DemoPersonalBanner({ company, companyLogo, firstName, dept = 'overview'
         {/* Left: logo + greeting + date */}
         <div className="flex items-center gap-3 min-w-0">
           {companyLogo ? (
-            <div className="shrink-0 ring-2 ring-white/20 overflow-hidden" style={{ width: 56, height: 56, borderRadius: 12, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+            <div className="shrink-0 ring-2 ring-white/20 overflow-hidden rounded-xl flex items-center justify-center" style={{ width: 64, height: 64, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
               <img src={companyLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
           ) : (
-            <div className="shrink-0 flex items-center justify-center font-bold ring-2 ring-white/20" style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: 'rgba(108,63,197,0.3)', color: '#A78BFA', fontSize: 18, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+            <div className="shrink-0 flex items-center justify-center font-bold ring-2 ring-white/20 rounded-xl" style={{ width: 64, height: 64, backgroundColor: 'rgba(108,63,197,0.3)', color: '#A78BFA', fontSize: 22, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
               {company?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'LC'}
             </div>
           )}
@@ -1516,25 +1516,33 @@ const DEMO_DAILY_TASKS = [
   { id: 'task-6', priority: 'Medium', color: '#3B82F6', dept: 'Sales', source: 'notion', time: '17:30', title: 'Follow up — Apex Learning trial expiring Friday', desc: 'Trial ends in 3 days. No conversion action taken yet. Call or email needed today.' },
 ]
 
-function DemoTabPlaceholder({ tab, completedTasks, onComplete }: { tab: OverviewTab; completedTasks: Set<string>; onComplete: (id: string) => void }) {
-  if (tab === 'quick-wins') return (
+function DemoTabPlaceholder({ tab, completedTasks, onComplete, dismissedWins, onDismissWin }: { tab: OverviewTab; completedTasks: Set<string>; onComplete: (id: string) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void }) {
+  if (tab === 'quick-wins') {
+    const WINS = [
+      {id:'qw-1',task:'Reply to Apex Consulting email — contract renewal query',time:'5 min',dept:'Sales'},
+      {id:'qw-2',task:'Approve leave request — 28 Mar to 1 Apr',time:'2 min',dept:'HR'},
+      {id:'qw-3',task:'Review new trial signup — Crestview Academy',time:'10 min',dept:'Trials'},
+      {id:'qw-4',task:'Chase overdue invoice — Pinebrook Primary (14d overdue)',time:'5 min',dept:'Accounts'},
+      {id:'qw-5',task:'Update CRM stage for Oakridge deal — move to Verbal Yes',time:'3 min',dept:'CRM'},
+    ]
+    const visibleWins = WINS.filter(w => !dismissedWins.has(w.id))
+    return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>⚡ Quick Wins — do these in under 15 minutes</p><span className="text-xs" style={{color:'#6B7280'}}>5 items · ~35 min total</span></div>
-      {[
-        {task:'Reply to Apex Consulting email — contract renewal query',time:'5 min',dept:'Sales',done:false},
-        {task:"Approve Rachel's leave request — 28 Mar to 1 Apr",time:'2 min',dept:'HR',done:false},
-        {task:'Review new trial signup — Crestview Academy',time:'10 min',dept:'Trials',done:false},
-        {task:'Chase overdue invoice — Pinebrook Primary (14d overdue)',time:'5 min',dept:'Accounts',done:false},
-        {task:'Update CRM stage for Oakridge deal — move to Verbal Yes',time:'3 min',dept:'CRM',done:false},
-      ].map((w,i)=>(
-        <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
-          <input type="checkbox" className="shrink-0 w-4 h-4 rounded" style={{accentColor:'#0D9488'}} />
+      <div className="flex items-center justify-between mb-2"><p className="text-sm font-bold" style={{color:'#F9FAFB'}}>{'\u26A1'} Quick Wins — do these in under 15 minutes</p><span className="text-xs" style={{color:'#6B7280'}}>{visibleWins.length} items</span></div>
+      {visibleWins.length === 0 ? (
+        <div className="rounded-xl p-8 text-center" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+          <div className="text-4xl mb-2">{'\u26A1'}</div>
+          <p className="text-sm font-bold" style={{color:'#F9FAFB'}}>All quick wins completed!</p>
+        </div>
+      ) : visibleWins.map(w => (
+        <div key={w.id} className="flex items-center gap-3 rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+          <button onClick={() => onDismissWin(w.id)} className="w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-all" style={{borderColor:'#4B5563',backgroundColor:'transparent'}} />
           <div className="flex-1 min-w-0"><p className="text-sm font-medium" style={{color:'#F9FAFB'}}>{w.task}</p><p className="text-xs mt-0.5" style={{color:'#6B7280'}}>{w.dept} · {w.time}</p></div>
           <span className="text-xs px-2 py-0.5 rounded shrink-0" style={{backgroundColor:'rgba(13,148,136,0.1)',color:'#0D9488'}}>{w.time}</span>
         </div>
       ))}
     </div>
-  )
+  )}
 
   if (tab === 'tasks') {
     const visible = DEMO_DAILY_TASKS.filter(t => !completedTasks.has(t.id))
@@ -1775,9 +1783,15 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
       return saved ? new Set(JSON.parse(saved)) : new Set()
     } catch { return new Set() }
   })
+  useEffect(() => { try { localStorage.setItem('demo_completed_tasks', JSON.stringify([...completedTasks])) } catch {} }, [completedTasks])
   const markTaskComplete = (taskId: string) => {
-    setCompletedTasks(prev => { const next = new Set(prev); next.add(taskId); try { localStorage.setItem('demo_completed_tasks', JSON.stringify([...next])) } catch {}; return next })
+    setCompletedTasks(prev => { const next = new Set(prev); next.add(taskId); return next })
   }
+  const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
+    try { const saved = localStorage.getItem('demo_dismissed_wins'); return saved ? new Set(JSON.parse(saved)) : new Set() } catch { return new Set() }
+  })
+  useEffect(() => { try { localStorage.setItem('demo_dismissed_wins', JSON.stringify([...dismissedWins])) } catch {} }, [dismissedWins])
+  const dismissWin = (id: string) => { setDismissedWins(prev => { const next = new Set(prev); next.add(id); return next }) }
   const wf  = fakeNum(47, company, 'wf')
   const cu  = fakeNum(181, company, 'cu')
   const mrr = fakeNum(42000, company, 'mrr')
@@ -1851,7 +1865,7 @@ function OverviewView({ company, companyLogo, firstName, bannerRef, statsRef, ac
       ) : tab === 'team' ? (
         <DemoTeamPanel />
       ) : (
-        <DemoTabPlaceholder tab={tab} completedTasks={completedTasks} onComplete={markTaskComplete} />
+        <DemoTabPlaceholder tab={tab} completedTasks={completedTasks} onComplete={markTaskComplete} dismissedWins={dismissedWins} onDismissWin={dismissWin} />
       )}
     </div>
   )
@@ -4480,7 +4494,7 @@ export default function DemoDashboard({ params }: { params: Promise<{ slug: stri
             <button onClick={() => setShowInvite(true)} className="hidden lg:inline-flex items-center gap-1.5 font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#F9FAFB' }}>
               <UserPlus size={11} /> Invite team
             </button>
-            <button onClick={() => { const logo = localStorage.getItem('demo_company_logo'); const photo = localStorage.getItem('lumio_user_photo'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); if (logo) localStorage.setItem('demo_company_logo', logo); if (photo) localStorage.setItem('lumio_user_photo', photo); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+            <button onClick={() => { const logo = localStorage.getItem('demo_company_logo'); const photo = localStorage.getItem('lumio_user_photo'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_')).forEach(k => localStorage.removeItem(k)); localStorage.setItem('lumio_demo_active', 'false'); if (logo) localStorage.setItem('demo_company_logo', logo); if (photo) localStorage.setItem('lumio_user_photo', photo); window.location.reload() }} className="hidden lg:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', marginRight: 120 }}>
               Clear Demo Data
             </button>
             <Link href="/pricing" className="font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>Buy <ArrowRight size={11} className="inline" /></Link>

@@ -5593,7 +5593,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
       {isFootballDemo && (
         <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F', paddingRight: 140 }}>
           <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F' }}>Clear Demo Data</button>
+          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(241,196,15,0.4)', background: 'transparent', color: '#F1C40F', marginRight: 120 }}>Clear Demo Data</button>
         </div>
       )}
 
