@@ -449,7 +449,7 @@ export default function SchoolSettingsPage() {
             <Toggle on={true} onChange={() => {}} />
           </div>
           <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Safeguarding alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification for safeguarding concerns</p></div>
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Safeguarding alerts <span className="text-[10px] ml-1" style={{ color: '#6B7280' }}>🔒 Always on</span></p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification for safeguarding concerns — cannot be disabled</p></div>
             <Toggle on={true} onChange={() => {}} />
           </div>
           <div className="flex items-center justify-between">
@@ -487,13 +487,66 @@ export default function SchoolSettingsPage() {
         </div>
       </div>
 
-      {/* Section 8 — Login & Security */}
+      {/* Section — Login & Security */}
       <Section title="Login & Security">
         <Row label="Current method" value="Email OTP" />
         <div className="px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-          <button onClick={() => alert('PIN login setup — coming soon')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-            Set up PIN login
-          </button>
+          <button onClick={() => alert('PIN login setup — coming soon')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Set up PIN login</button>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Two-factor authentication</p><p className="text-xs" style={{ color: '#6B7280' }}>Adds extra security to your account</p></div>
+          <Toggle on={false} onChange={() => {}} />
+        </div>
+        <Row label="Active sessions" value="1 (this device)" />
+      </Section>
+
+      {/* Section — Emergency & Safety */}
+      <Section title="🚨 Emergency & Safety">
+        <div className="px-5 py-4 space-y-4">
+          <div><label className="text-xs text-gray-400 mb-1 block">Police liaison phone number</label><input type="tel" placeholder="101 or direct line" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Local authority emergency contact</label><input type="tel" placeholder="LA emergency number" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Trust safeguarding lead</label><input type="text" placeholder="Name and contact" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div><label className="text-xs text-gray-400 mb-1 block">Additional SMS recipients (up to 10)</label><input type="text" placeholder="Comma-separated phone numbers" className="text-sm rounded-lg px-3 py-2 outline-none w-full" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} /></div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Auto-send SMS on lockdown</p><p className="text-xs" style={{ color: '#6B7280' }}>Automatically notify all SMS recipients when lockdown initiates</p></div>
+            <Toggle on={true} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Auto-initiate police liaison call</p><p className="text-xs" style={{ color: '#6B7280' }}>Automatically call police liaison on genuine lockdown</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+          <button onClick={() => alert('Test alert would be sent to all configured recipients')} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>🔔 Send Test Alert</button>
+        </div>
+      </Section>
+
+      {/* Section — Appearance */}
+      <Section title="Appearance">
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Theme</p><p className="text-xs" style={{ color: '#6B7280' }}>Choose your preferred colour scheme</p></div>
+            <div className="flex gap-2">{['Dark', 'Light', 'System'].map(t => <button key={t} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: t === 'Dark' ? 'rgba(13,148,136,0.15)' : '#1F2937', color: t === 'Dark' ? '#0D9488' : '#6B7280', border: t === 'Dark' ? '1px solid rgba(13,148,136,0.3)' : '1px solid #374151' }}>{t}</button>)}</div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Pin sidebar open</p><p className="text-xs" style={{ color: '#6B7280' }}>Keep sidebar expanded by default</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Compact mode</p><p className="text-xs" style={{ color: '#6B7280' }}>Reduce spacing for more content on screen</p></div>
+            <Toggle on={false} onChange={() => {}} />
+          </div>
+        </div>
+      </Section>
+
+      {/* Section — Billing */}
+      <Section title="Billing">
+        <Row label="Current plan" value="Lumio Schools" />
+        <Row label="Status" value="Active" isStatus />
+        <Row label="Next renewal" value="1 September 2026" />
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex gap-2">
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Manage subscription</button>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>Download invoices</button>
+          </div>
         </div>
       </Section>
 
