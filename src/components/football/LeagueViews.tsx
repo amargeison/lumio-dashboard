@@ -322,7 +322,34 @@ export function TeamsView() {
   const [squadLoading, setSquadLoading] = useState(false)
   const [standingsData, setStandingsData] = useState<any[]>([])
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb'>('squad')
+  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb' | 'injuries'>('squad')
+  const [injuryData, setInjuryData] = useState<any[]>([])
+  const [injuryLoading, setInjuryLoading] = useState(false)
+  const [showInjuredOnly, setShowInjuredOnly] = useState(false)
+  const [manualInjuries, setManualInjuries] = useState<any[]>([])
+  const [showInjuryForm, setShowInjuryForm] = useState(false)
+  const [injuryForm, setInjuryForm] = useState({ playerName: '', injuryType: '', dateInjured: new Date().toISOString().split('T')[0], expectedReturn: '', notes: '' })
+
+  // Load manual injuries from localStorage
+  useEffect(() => {
+    try { const stored = localStorage.getItem('football_injuries'); if (stored) setManualInjuries(JSON.parse(stored)) } catch { /* */ }
+  }, [])
+
+  function saveManualInjury() {
+    if (!injuryForm.playerName || !injuryForm.injuryType) return
+    const entry = { ...injuryForm, id: Date.now().toString(), manual: true }
+    const updated = [...manualInjuries, entry]
+    setManualInjuries(updated)
+    localStorage.setItem('football_injuries', JSON.stringify(updated))
+    setInjuryForm({ playerName: '', injuryType: '', dateInjured: new Date().toISOString().split('T')[0], expectedReturn: '', notes: '' })
+    setShowInjuryForm(false)
+  }
+
+  function markAsReturned(id: string) {
+    const updated = manualInjuries.filter(m => m.id !== id)
+    setManualInjuries(updated)
+    localStorage.setItem('football_injuries', JSON.stringify(updated))
+  }
 
   async function loadLeague(league: typeof TIER_LEAGUES[0]) {
     setSelectedLeague(league); setSelectedTeam(null); setSquadData([]); setLoading(true)
@@ -335,7 +362,7 @@ export function TeamsView() {
   }
 
   async function loadTeam(team: any) {
-    setSelectedTeam(team); setSquadLoading(true); setSquadData([]); setTeamFixtures([])
+    setSelectedTeam(team); setSquadLoading(true); setSquadData([]); setTeamFixtures([]); setInjuryData([])
     const teamId = team.team?.id || TEAM_IDS[team.team?.name]
     if (!teamId) { setSquadLoading(false); return }
     try {
@@ -348,6 +375,15 @@ export function TeamsView() {
       setSquadData(squadJson?.response?.[0]?.players || [])
       setTeamFixtures([...(lastJson?.response || []).reverse(), ...(fixtJson?.response || [])])
     } catch { /* */ }
+    // Fetch injuries
+    setInjuryLoading(true)
+    try {
+      const leagueId = selectedLeague?.leagueId || 41
+      const injRes = await fetch(`/api/football/injuries?teamId=${teamId}&season=2025&leagueId=${leagueId}`)
+      const injJson = await injRes.json()
+      setInjuryData(injJson?.response || [])
+    } catch { setInjuryData([]) }
+    setInjuryLoading(false)
     setSquadLoading(false)
   }
 
@@ -387,18 +423,35 @@ export function TeamsView() {
             ))}</div>
             {selectedTeam.form && <div className="flex items-center gap-1.5 mt-3"><span className="text-xs mr-1" style={{ color: C.muted }}>Form:</span>{selectedTeam.form.split('').slice(-5).map((r: string, i: number) => (<div key={i} className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.2)' : r === 'D' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div>}
           </div>
-          <div className="flex gap-2">{(['squad', 'fixtures', 'results', 'statsbomb'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : 'Squad'}</button>
+          <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'statsbomb', 'injuries'] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : tab === 'injuries' ? '\u{1F915} Injuries' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <Spinner text="Loading..." />}
           {activeTab === 'squad' && !squadLoading && (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
-              <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedTeam.team?.name} — Squad ({squadData.length})</div></div>
+              <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>{selectedTeam.team?.name} — Squad ({squadData.length})</div>
+                {squadData.length > 0 && (
+                  <button onClick={() => setShowInjuredOnly(!showInjuredOnly)} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all" style={{ backgroundColor: showInjuredOnly ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)', color: showInjuredOnly ? '#EF4444' : C.muted, border: `1px solid ${showInjuredOnly ? 'rgba(239,68,68,0.3)' : C.border}` }}>
+                    {showInjuredOnly ? '🔴 Injured only' : 'Show injured only'}
+                  </button>
+                )}
+              </div>
               {squadData.length > 0 ? (
-                <table className="w-full text-sm"><thead><tr className="text-xs" style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3">#</th><th className="text-left p-3">Player</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-left p-3">Nationality</th></tr></thead>
-                <tbody>{squadData.sort((a: any, b: any) => ['Goalkeeper','Defender','Midfielder','Attacker'].indexOf(a.position) - ['Goalkeeper','Defender','Midfielder','Attacker'].indexOf(b.position)).map((p: any, i: number) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}><td className="p-3 text-xs" style={{ color: C.muted }}>{p.number || '—'}</td><td className="p-3">{p.photo && <img src={p.photo} alt="" className="w-6 h-6 rounded-full inline mr-2 object-cover" />}<span className="font-medium" style={{ color: C.text }}>{p.name}</span></td><td className="p-3 text-center"><span className={`text-xs px-1.5 py-0.5 rounded ${posColour(p.position)}`}>{posShort(p.position)}</span></td><td className="p-3 text-center" style={{ color: C.muted }}>{p.age}</td><td className="p-3 text-sm" style={{ color: C.muted }}>{p.nationality}</td></tr>
-                ))}</tbody></table>
+                <table className="w-full text-sm"><thead><tr className="text-xs" style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3">#</th><th className="text-left p-3">Player</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-left p-3">Nationality</th><th className="text-center p-3">Status</th></tr></thead>
+                <tbody>{squadData.sort((a: any, b: any) => ['Goalkeeper','Defender','Midfielder','Attacker'].indexOf(a.position) - ['Goalkeeper','Defender','Midfielder','Attacker'].indexOf(b.position)).filter((p: any) => {
+                  if (!showInjuredOnly) return true
+                  return injuryData.some((inj: any) => inj.player?.name?.toLowerCase() === p.name?.toLowerCase())
+                }).map((p: any, i: number) => {
+                  const injury = injuryData.find((inj: any) => inj.player?.name?.toLowerCase() === p.name?.toLowerCase())
+                  return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}><td className="p-3 text-xs" style={{ color: C.muted }}>{p.number || '—'}</td><td className="p-3">{p.photo && <img src={p.photo} alt="" className="w-6 h-6 rounded-full inline mr-2 object-cover" />}<span className="font-medium" style={{ color: C.text }}>{p.name}</span></td><td className="p-3 text-center"><span className={`text-xs px-1.5 py-0.5 rounded ${posColour(p.position)}`}>{posShort(p.position)}</span></td><td className="p-3 text-center" style={{ color: C.muted }}>{p.age}</td><td className="p-3 text-sm" style={{ color: C.muted }}>{p.nationality}</td>
+                  <td className="p-3 text-center">{injury ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>{injury.player?.reason || 'Injured'}</span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>{'\u2713'} Fit</span>
+                  )}</td></tr>
+                )})}</tbody></table>
               ) : <div className="p-8 text-center text-sm" style={{ color: C.muted }}>Squad data not available — connect API-Football key</div>}
             </div>
           )}
@@ -422,6 +475,145 @@ export function TeamsView() {
             </div>
           )}
           {activeTab === 'statsbomb' && <StatsBombPanel teamName={selectedTeam.team?.name || ''} />}
+
+          {activeTab === 'injuries' && !squadLoading && (
+            <div className="space-y-4">
+              {/* Summary strip */}
+              {(() => {
+                const apiInjured = injuryData.length
+                const returningThisWeek = injuryData.filter((inj: any) => {
+                  // Estimate from date if available
+                  return false // API doesn't always provide return dates
+                }).length
+                const manualCount = manualInjuries.length
+                const total = apiInjured + manualCount
+                const longTerm = injuryData.filter((inj: any) => inj.player?.type === 'Missing Fixture').length
+                return (
+                  <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{total} player{total !== 1 ? 's' : ''} injured</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>&middot;</span>
+                      <span className="text-xs" style={{ color: '#F59E0B' }}>{returningThisWeek} returning this week</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>&middot;</span>
+                      <span className="text-xs" style={{ color: '#EF4444' }}>{longTerm} long-term</span>
+                    </div>
+                    <div className="mt-2 h-2 rounded-full overflow-hidden flex" style={{ backgroundColor: '#1F2937' }}>
+                      {total > 0 && <div className="h-full" style={{ width: `${Math.round((apiInjured / Math.max(total, 1)) * 100)}%`, backgroundColor: '#EF4444' }} />}
+                      {manualCount > 0 && <div className="h-full" style={{ width: `${Math.round((manualCount / Math.max(total, 1)) * 100)}%`, backgroundColor: '#F59E0B' }} />}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Log Injury button */}
+              <button onClick={() => setShowInjuryForm(!showInjuryForm)} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.3)' }}>
+                {showInjuryForm ? 'Cancel' : '+ Log Injury'}
+              </button>
+
+              {/* Manual injury form */}
+              {showInjuryForm && (
+                <div className="rounded-xl p-5 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Log Manual Injury</div>
+                  <div>
+                    <label className="text-xs block mb-1" style={{ color: '#6B7280' }}>Player</label>
+                    <select value={injuryForm.playerName} onChange={e => setInjuryForm(f => ({ ...f, playerName: e.target.value }))} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }}>
+                      <option value="">Select player...</option>
+                      {squadData.map((p: any, i: number) => <option key={i} value={p.name}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs block mb-1" style={{ color: '#6B7280' }}>Injury Type</label>
+                    <input value={injuryForm.injuryType} onChange={e => setInjuryForm(f => ({ ...f, injuryType: e.target.value }))} placeholder="e.g. Hamstring, Ankle ligament" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs block mb-1" style={{ color: '#6B7280' }}>Date Injured</label>
+                      <input type="date" value={injuryForm.dateInjured} onChange={e => setInjuryForm(f => ({ ...f, dateInjured: e.target.value }))} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }} />
+                    </div>
+                    <div>
+                      <label className="text-xs block mb-1" style={{ color: '#6B7280' }}>Expected Return</label>
+                      <input type="date" value={injuryForm.expectedReturn} onChange={e => setInjuryForm(f => ({ ...f, expectedReturn: e.target.value }))} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs block mb-1" style={{ color: '#6B7280' }}>Notes (optional)</label>
+                    <textarea value={injuryForm.notes} onChange={e => setInjuryForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }} />
+                  </div>
+                  <button onClick={saveManualInjury} disabled={!injuryForm.playerName || !injuryForm.injuryType} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ backgroundColor: injuryForm.playerName && injuryForm.injuryType ? '#003DA5' : '#1F2937', color: injuryForm.playerName && injuryForm.injuryType ? '#F1C40F' : '#6B7280' }}>Save Injury</button>
+                </div>
+              )}
+
+              {/* Injury loading */}
+              {injuryLoading && <Spinner text="Loading injury data..." />}
+
+              {/* API injuries */}
+              {!injuryLoading && injuryData.length === 0 && manualInjuries.length === 0 && (
+                <div className="rounded-xl p-8 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-3xl mb-2">{'\u2705'}</div>
+                  <div className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>No injuries reported</div>
+                  <div className="text-xs mt-1" style={{ color: '#6B7280' }}>Full squad available. Use &quot;Log Injury&quot; to add manual entries.</div>
+                </div>
+              )}
+
+              {/* Injury cards - API */}
+              {injuryData.map((inj: any, i: number) => {
+                const reason = inj.player?.reason || 'Unknown'
+                const injType = inj.player?.type || 'Unknown'
+                // Severity: we don't have exact days from API, estimate from type
+                const severityColor = injType === 'Missing Fixture' ? { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', label: 'Serious' }
+                  : injType === 'Questionable' ? { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: 'Moderate' }
+                  : injType === 'Minor' || injType === 'Doubtful' ? { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: 'Minor' }
+                  : { bg: 'rgba(107,114,128,0.12)', color: '#6B7280', label: 'Unknown' }
+                return (
+                  <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{inj.player?.name || 'Unknown'}</div>
+                        <div className="text-xs" style={{ color: '#6B7280' }}>{inj.player?.position || ''}</div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: severityColor.bg, color: severityColor.color }}>{severityColor.label}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs" style={{ color: '#EF4444' }}>{reason}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{injType}</span>
+                      {inj.fixture?.date && <span className="text-xs" style={{ color: '#6B7280' }}>Since {new Date(inj.fixture.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* Manual injuries */}
+              {manualInjuries.map((inj: any) => {
+                const daysOut = inj.dateInjured && inj.expectedReturn ? Math.round((new Date(inj.expectedReturn).getTime() - new Date(inj.dateInjured).getTime()) / 86400000) : null
+                const severityColor = daysOut === null ? { bg: 'rgba(107,114,128,0.12)', color: '#6B7280', label: 'Unknown' }
+                  : daysOut > 28 ? { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', label: 'Serious' }
+                  : daysOut >= 14 ? { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: 'Moderate' }
+                  : { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: 'Minor' }
+                return (
+                  <div key={inj.id} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{inj.playerName}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#60A5FA' }}>Manual</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: severityColor.bg, color: severityColor.color }}>{severityColor.label}</span>
+                        <button onClick={() => markAsReturned(inj.id)} className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>Mark as Returned</button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs" style={{ color: '#EF4444' }}>{inj.injuryType}</span>
+                      {inj.dateInjured && <span className="text-xs" style={{ color: '#6B7280' }}>Since {new Date(inj.dateInjured).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                      {inj.expectedReturn && <span className="text-xs" style={{ color: '#6B7280' }}>Return: {new Date(inj.expectedReturn).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                      {inj.notes && <span className="text-xs" style={{ color: '#9CA3AF' }}>{inj.notes}</span>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
