@@ -54,6 +54,8 @@ const SIDEBAR_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
   { id: 'morning',      label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
   { id: 'rankings',     label: 'Rankings & Race',     icon: '📊', group: 'PERFORMANCE' },
+  { id: 'forecaster',   label: 'Points Forecaster',   icon: '🔮', group: 'PERFORMANCE' },
+  { id: 'entries',       label: 'Entry Manager',       icon: '📋', group: 'PERFORMANCE' },
   { id: 'schedule',     label: 'Tournament Sched',    icon: '🗓️', group: 'PERFORMANCE' },
   { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'PERFORMANCE' },
   { id: 'scout',       label: 'Opponent Scout',      icon: '🔍', group: 'PERFORMANCE' },
@@ -3513,6 +3515,180 @@ const AccreditationsView = () => {
   );
 };
 
+// ─── POINTS FORECASTER VIEW ──────────────────────────────────────────────────
+const PointsForecasterView = ({ player }: { player: TennisPlayer }) => {
+  const [selectedRound, setSelectedRound] = useState(1);
+  const scenarios = [
+    { round: 'R32', points: 10, rankingImpact: -80 },
+    { round: 'R16', points: 45, rankingImpact: -45 },
+    { round: 'QF', points: 180, rankingImpact: -12 },
+    { round: 'SF', points: 360, rankingImpact: +8 },
+    { round: 'Final', points: 600, rankingImpact: +19 },
+    { round: 'Winner', points: 1000, rankingImpact: +34 },
+  ];
+  const defending = [
+    { month: 'Apr', pts: 90, label: 'Madrid QF' },
+    { month: 'May', pts: 0, label: '' },
+    { month: 'Jun', pts: 45, label: "Queen's R2" },
+    { month: 'Jul', pts: 180, label: 'Wimbledon R16' },
+    { month: 'Aug', pts: 0, label: '' },
+    { month: 'Sep', pts: 45, label: 'US Open R2' },
+    { month: 'Oct', pts: 250, label: 'Tokyo F' },
+    { month: 'Nov', pts: 0, label: '' },
+    { month: 'Dec', pts: 0, label: '' },
+    { month: 'Jan', pts: 0, label: '' },
+    { month: 'Feb', pts: 90, label: 'Marseille SF' },
+    { month: 'Mar', pts: 45, label: 'Indian Wells R2' },
+  ];
+  const s = scenarios[selectedRound];
+  const projectedRank = player.ranking - s.rankingImpact;
+  const racePoints = 1420;
+  const raceTarget = 3000;
+  return (
+    <div>
+      <SectionHeader title="Ranking Points Forecaster" subtitle="Madrid Open — Masters 1000 · Clay" icon="🔮" />
+      {/* Current position strip */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatCard label="Current Ranking" value={`#${player.ranking}`} sub={`${player.ranking_points} pts`} color="purple" />
+        <StatCard label="Race to Turin" value="#18" sub="1,420 pts" color="teal" />
+        <StatCard label="Defending (Madrid)" value="90 pts" sub="QF last year — expires Apr" color="orange" />
+      </div>
+      {/* Round selector */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">If Alex reaches…</h3>
+        <div className="flex gap-2 mb-5">
+          {scenarios.map((sc, i) => (
+            <button key={sc.round} onClick={() => setSelectedRound(i)}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${selectedRound === i ? 'bg-purple-600 text-white' : 'bg-[#07080F] border border-gray-700 text-gray-400 hover:text-white'}`}>
+              {sc.round}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-green-400">{s.points}</div>
+            <div className="text-xs text-gray-500 mt-1">Points earned</div>
+          </div>
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-white">#{projectedRank > 0 ? projectedRank : 1}</div>
+            <div className="text-xs text-gray-500 mt-1">Projected ranking</div>
+            <div className={`text-xs mt-1 font-semibold ${s.rankingImpact > 0 ? 'text-green-400' : 'text-red-400'}`}>{s.rankingImpact > 0 ? '↑' : '↓'} {Math.abs(s.rankingImpact)} places</div>
+          </div>
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-amber-400">90</div>
+            <div className="text-xs text-gray-500 mt-1">Points expiring</div>
+            <div className="text-xs text-gray-600 mt-1">Net: {s.points > 90 ? '+' : ''}{s.points - 90}</div>
+          </div>
+        </div>
+      </div>
+      {/* Points to defend calendar */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Points to Defend — Next 12 Months</h3>
+        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+          {defending.map(d => (
+            <div key={d.month} className={`rounded-lg p-3 text-center border ${d.pts > 100 ? 'bg-red-600/10 border-red-600/30' : d.pts >= 45 ? 'bg-amber-600/10 border-amber-600/30' : 'bg-gray-800/50 border-gray-800'}`}>
+              <div className="text-xs font-semibold text-gray-400">{d.month}</div>
+              <div className={`text-lg font-bold ${d.pts > 100 ? 'text-red-400' : d.pts >= 45 ? 'text-amber-400' : 'text-gray-600'}`}>{d.pts}</div>
+              {d.label && <div className="text-[10px] text-gray-500 mt-0.5">{d.label}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Race to Turin */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">ATP Race to Turin — Top 8 Qualification</h3>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-sm text-gray-400">18th</span>
+          <div className="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+            <div className="h-3 rounded-full bg-gradient-to-r from-purple-600 to-teal-500" style={{ width: `${(racePoints / raceTarget) * 100}%` }} />
+          </div>
+          <span className="text-sm text-gray-400">Top 8</span>
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{racePoints.toLocaleString()} pts</span>
+          <span>Need +{(raceTarget - racePoints).toLocaleString()} pts for qualification ({raceTarget.toLocaleString()} threshold)</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── ENTRY MANAGER VIEW ─────────────────────────────────────────────────────────
+const EntryManagerView = () => {
+  const entries = [
+    { tournament: 'Madrid Open', level: 'Masters 1000', surface: 'Clay', date: '28 Apr', deadline: 'CLOSED', signin: '26 Apr', status: 'Entered', daysLeft: 0 },
+    { tournament: 'Rome Masters', level: 'Masters 1000', surface: 'Clay', date: '12 May', deadline: '14 Apr', signin: '10 May', status: 'Entered', daysLeft: 9 },
+    { tournament: 'Geneva Open', level: 'ATP 250', surface: 'Clay', date: '19 May', deadline: '21 Apr', signin: '17 May', status: 'Enter now', daysLeft: 6 },
+    { tournament: 'Lyon Open', level: 'ATP 250', surface: 'Clay', date: '19 May', deadline: '21 Apr', signin: '17 May', status: 'Decide', daysLeft: 6 },
+    { tournament: 'Roland Garros', level: 'Grand Slam', surface: 'Clay', date: '26 May', deadline: '28 Apr', signin: '25 May', status: 'Entered', daysLeft: 23 },
+    { tournament: 'Halle Open', level: 'ATP 500', surface: 'Grass', date: '16 Jun', deadline: '19 May', signin: '14 Jun', status: 'Not yet open', daysLeft: 44 },
+    { tournament: 'Wimbledon', level: 'Grand Slam', surface: 'Grass', date: '30 Jun', deadline: '3 Jun', signin: '27 Jun', status: 'Not yet open', daysLeft: 59 },
+    { tournament: 'Bastad', level: 'ATP 250', surface: 'Clay', date: '14 Jul', deadline: '16 Jun', signin: '12 Jul', status: 'Not yet open', daysLeft: 72 },
+  ];
+  const statusColor = (s: string) => s === 'Entered' ? 'bg-green-600/20 text-green-400 border-green-600/30' : s === 'Enter now' ? 'bg-red-600/20 text-red-400 border-red-600/30' : s === 'Decide' ? 'bg-amber-600/20 text-amber-400 border-amber-600/30' : 'bg-gray-700/30 text-gray-500 border-gray-700';
+  const withdrawals = [
+    { tournament: 'Rome Masters', deadline: '9 May', note: '1 day before sign-in. Late withdrawal fine: $1,500' },
+    { tournament: 'Geneva Open', deadline: '16 Apr', note: 'No fine if withdrawn before deadline' },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Tournament Entry Manager" subtitle="Manage entries, deadlines and withdrawals" icon="📋" />
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6 bg-red-600/10 border border-red-600/30">
+        <span className="text-red-400 text-sm">⚠️</span>
+        <span className="text-sm text-red-300">3 entry deadlines in the next 14 days</span>
+      </div>
+      {/* Entry table */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6 overflow-x-auto">
+        <h3 className="text-sm font-bold text-white mb-4">Upcoming Entry Deadlines</h3>
+        <div className="grid grid-cols-7 gap-2 text-xs text-center mb-2 min-w-[700px]">
+          <div className="text-gray-500 font-semibold text-left">Tournament</div>
+          <div className="text-gray-500 font-semibold">Level</div>
+          <div className="text-gray-500 font-semibold">Surface</div>
+          <div className="text-gray-500 font-semibold">Date</div>
+          <div className="text-gray-500 font-semibold">Entry Deadline</div>
+          <div className="text-gray-500 font-semibold">Sign-in</div>
+          <div className="text-gray-500 font-semibold">Status</div>
+        </div>
+        {entries.map(e => (
+          <div key={e.tournament} className="grid grid-cols-7 gap-2 text-sm text-center py-2.5 border-t border-gray-800 items-center min-w-[700px]">
+            <div className="text-left text-white text-xs font-semibold">{e.tournament}</div>
+            <div><CategoryBadge category={e.level} /></div>
+            <div><SurfaceBadge surface={e.surface} /></div>
+            <div className="text-gray-400 text-xs">{e.date}</div>
+            <div className="text-xs">
+              <span className={e.daysLeft > 0 && e.daysLeft <= 7 ? 'text-red-400 font-semibold' : 'text-gray-400'}>{e.deadline}</span>
+              {e.daysLeft > 0 && e.daysLeft <= 7 && <span className="text-red-400 text-[10px] ml-1">← {e.daysLeft}d</span>}
+            </div>
+            <div className="text-gray-400 text-xs">{e.signin}</div>
+            <div><span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColor(e.status)}`}>{e.status}</span></div>
+          </div>
+        ))}
+      </div>
+      {/* Withdrawal tracker */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Withdrawal Windows</h3>
+        {withdrawals.map(w => (
+          <div key={w.tournament} className="flex items-center justify-between py-3 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white font-semibold">{w.tournament}</div>
+              <div className="text-xs text-gray-500">Withdrawal deadline: {w.deadline}</div>
+            </div>
+            <div className="text-xs text-gray-400 max-w-xs text-right">{w.note}</div>
+          </div>
+        ))}
+      </div>
+      {/* Season summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <StatCard label="Entered" value="18" sub="tournaments" color="purple" />
+        <StatCard label="Completed" value="7" sub="this season" color="green" />
+        <StatCard label="Upcoming" value="11" sub="remaining" color="blue" />
+        <StatCard label="Wildcards" value="1" sub="used" color="orange" />
+        <StatCard label="Protected Ranking" value="0" sub="entries used" color="teal" />
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function TennisTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -3540,6 +3716,8 @@ export default function TennisTourPage() {
       case 'dashboard':    return <DashboardView player={player} />;
       case 'morning':      return <MorningBriefingView player={player} />;
       case 'rankings':     return <RankingsView player={player} />;
+      case 'forecaster':   return <PointsForecasterView player={player} />;
+      case 'entries':      return <EntryManagerView />;
       case 'schedule':     return <ScheduleView />;
       case 'performance':  return <PerformanceView player={player} />;
       case 'matchprep':    return <MatchPrepView />;
