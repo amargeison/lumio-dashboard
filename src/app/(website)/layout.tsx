@@ -12,7 +12,6 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/product'  },
   { label: 'Workflows',    href: '/product#workflows' },
   { label: 'Schools',      href: '/schools' },
-  { label: 'Sports',       href: '/sports' },
   { label: 'CRM',          href: '/lumio-crm' },
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing'  },
