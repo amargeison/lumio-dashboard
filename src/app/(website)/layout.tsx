@@ -16,6 +16,7 @@ const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
   { label: 'Darts',    href: '/darts' },
   { label: 'Rugby',    href: '/rugby' },
   { label: 'Cricket',  href: '/cricket' },
+  { label: 'Boxing',   href: '/boxing' },
   { label: 'About',    href: '/about' },
   { label: 'Blog',     href: '/blog' },
 ]
