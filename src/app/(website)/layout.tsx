@@ -9,14 +9,15 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',      href: '/product'  },
-  { label: 'Workflows',    href: '/product#workflows' },
-  { label: 'Schools',      href: '/schools' },
-  { label: 'CRM',          href: '/lumio-crm' },
-  { label: 'Integrations', href: '/product#integrations' },
-  { label: 'Pricing',      href: '/pricing'  },
-  { label: 'About',        href: '/about'    },
-  { label: 'Blog',         href: '/blog'     },
+  { label: 'Product',  href: '/product' },
+  { label: 'Football', href: '/football' },
+  { label: 'Tennis',   href: '/tennis' },
+  { label: 'Golf',     href: '/golf' },
+  { label: 'Darts',    href: '/darts' },
+  { label: 'Rugby',    href: '/rugby' },
+  { label: 'Cricket',  href: '/cricket' },
+  { label: 'About',    href: '/about' },
+  { label: 'Blog',     href: '/blog' },
 ]
 
 const SCHOOLS_EXTRA_LINKS = [
@@ -91,7 +92,7 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/lumio-transparent-new.png" alt="Lumio" width={360} height={180}
+          <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={360} height={180}
             style={{ width: 180, height: 'auto', objectFit: 'contain' }} priority />
         </Link>
 
@@ -245,7 +246,7 @@ function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Image src="/lumio-transparent-new.png" alt="Lumio" width={200} height={100}
+            <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={200} height={100}
               style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
