@@ -66,6 +66,8 @@ const SIDEBAR_ITEMS = [
   { id: 'matchreports', label: 'Match Reports',        icon: '📄', group: 'PERFORMANCE' },
   { id: 'practice',     label: 'Practice Log',        icon: '📝', group: 'PERFORMANCE' },
   { id: 'video',        label: 'Video Library',       icon: '🎬', group: 'PERFORMANCE' },
+  { id: 'shotheatmaps', label: 'Shot Heatmaps',       icon: '🔥', group: 'PERFORMANCE' },
+  { id: 'perfrating',   label: 'Performance Rating',  icon: '⭐', group: 'PERFORMANCE' },
   { id: 'team',         label: 'Team Hub',            icon: '👥', group: 'TEAM' },
   { id: 'physio',       label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM' },
   { id: 'racket',       label: 'Racket & Strings',    icon: '🎾', group: 'TEAM' },
@@ -1003,6 +1005,8 @@ function ScheduleView() {
 
 // ─── PERFORMANCE VIEW ──────────────────────────────────────────────────────────
 function PerformanceView({ player }: { player: TennisPlayer }) {
+  const [perfTab, setPerfTab] = useState<'overview' | 'serve' | 'return' | 'pressure'>('overview');
+
   const surfaces = [
     { name: 'Clay', matches: 12, wins: 8, winPct: 67, serve1: 61, serve1Pts: 74, returnPtsWon: 42, aces: 4.2, dfaults: 2.1, rallyAvg: 7.8 },
     { name: 'Hard', matches: 24, wins: 17, winPct: 71, serve1: 65, serve1Pts: 79, returnPtsWon: 39, aces: 6.8, dfaults: 2.8, rallyAvg: 5.2 },
@@ -1023,103 +1027,578 @@ function PerformanceView({ player }: { player: TennisPlayer }) {
       <QuickActionsBar />
       <SectionHeader icon="📈" title="Performance Stats" subtitle={`${player.name} . 2026 season statistics by surface, match patterns, and form tracker.`} />
 
-      {/* Season Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          { label: 'Matches', value: '50', sub: '34W / 16L' },
-          { label: 'Win Rate', value: '68%', sub: '2026 season' },
-          { label: 'Aces/match', value: '6.1', sub: '^0.4 vs 2025' },
-          { label: 'Serve % (1st)', value: '63%', sub: 'Season avg' },
-          { label: 'Break pts conv.', value: '41%', sub: 'On return' },
-        ].map((s, i) => (
-          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
-            <div className="text-xl font-bold text-white">{s.value}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
-            <div className="text-xs text-gray-600 mt-1">{s.sub}</div>
-          </div>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['overview', 'Overview'], ['serve', 'Serve Analysis'], ['return', 'Return'], ['pressure', 'Under Pressure']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setPerfTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${perfTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ServePercentChart />
-        <WinRateTrendChart />
-      </div>
-
-      {/* Surface Split */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <div className="text-sm font-semibold text-white">Performance by Surface — 2026 Season</div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-                <th className="text-left p-3">Surface</th>
-                <th className="text-left p-3">W/L</th>
-                <th className="text-left p-3">Win%</th>
-                <th className="text-left p-3">1st Serve%</th>
-                <th className="text-left p-3">1st Serve Pts Won</th>
-                <th className="text-left p-3">Return Pts Won</th>
-                <th className="text-left p-3">Aces/match</th>
-                <th className="text-left p-3">Avg Rally</th>
-              </tr>
-            </thead>
-            <tbody>
-              {surfaces.map((s, i) => (
-                <tr key={i} className="border-b border-gray-800/50">
-                  <td className="p-3"><SurfaceBadge surface={s.name} /></td>
-                  <td className="p-3 text-gray-300">{s.wins}/{s.matches - s.wins}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-800 rounded-full h-1.5">
-                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${s.winPct}%` }}></div>
-                      </div>
-                      <span className="text-gray-300 text-xs">{s.winPct}%</span>
-                    </div>
-                  </td>
-                  <td className="p-3 text-gray-300">{s.serve1}%</td>
-                  <td className="p-3 text-gray-300">{s.serve1Pts}%</td>
-                  <td className="p-3 text-gray-300">{s.returnPtsWon}%</td>
-                  <td className="p-3 text-gray-300">{s.aces}</td>
-                  <td className="p-3 text-gray-300">{s.rallyAvg} shots</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Recent Form */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Recent Form — Last 5 Matches</div>
-        <div className="space-y-3">
-          {recentForm.map((m, i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.wl === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
-                {m.wl}
+      {perfTab === 'overview' && (
+        <>
+          {/* Season Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { label: 'Matches', value: '50', sub: '34W / 16L' },
+              { label: 'Win Rate', value: '68%', sub: '2026 season' },
+              { label: 'Aces/match', value: '6.1', sub: '^0.4 vs 2025' },
+              { label: 'Serve % (1st)', value: '63%', sub: 'Season avg' },
+              { label: 'Break pts conv.', value: '41%', sub: 'On return' },
+            ].map((s, i) => (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
+                <div className="text-xl font-bold text-white">{s.value}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+                <div className="text-xs text-gray-600 mt-1">{s.sub}</div>
               </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-200">{m.tournament} <span className="text-gray-500 text-xs">({m.result})</span></div>
-                <div className="text-xs text-gray-500">vs {m.opponent} . {m.score}</div>
-              </div>
-              <SurfaceBadge surface={m.surface} />
-              <CategoryBadge category={m.cat} />
+            ))}
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ServePercentChart />
+            <WinRateTrendChart />
+          </div>
+
+          {/* Surface Split */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800">
+              <div className="text-sm font-semibold text-white">Performance by Surface — 2026 Season</div>
             </div>
-          ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+                    <th className="text-left p-3">Surface</th>
+                    <th className="text-left p-3">W/L</th>
+                    <th className="text-left p-3">Win%</th>
+                    <th className="text-left p-3">1st Serve%</th>
+                    <th className="text-left p-3">1st Serve Pts Won</th>
+                    <th className="text-left p-3">Return Pts Won</th>
+                    <th className="text-left p-3">Aces/match</th>
+                    <th className="text-left p-3">Avg Rally</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surfaces.map((s, i) => (
+                    <tr key={i} className="border-b border-gray-800/50">
+                      <td className="p-3"><SurfaceBadge surface={s.name} /></td>
+                      <td className="p-3 text-gray-300">{s.wins}/{s.matches - s.wins}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-800 rounded-full h-1.5">
+                            <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${s.winPct}%` }}></div>
+                          </div>
+                          <span className="text-gray-300 text-xs">{s.winPct}%</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-gray-300">{s.serve1}%</td>
+                      <td className="p-3 text-gray-300">{s.serve1Pts}%</td>
+                      <td className="p-3 text-gray-300">{s.returnPtsWon}%</td>
+                      <td className="p-3 text-gray-300">{s.aces}</td>
+                      <td className="p-3 text-gray-300">{s.rallyAvg} shots</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Form */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Recent Form — Last 5 Matches</div>
+            <div className="space-y-3">
+              {recentForm.map((m, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.wl === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
+                    {m.wl}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-200">{m.tournament} <span className="text-gray-500 text-xs">({m.result})</span></div>
+                    <div className="text-xs text-gray-500">vs {m.opponent} . {m.score}</div>
+                  </div>
+                  <SurfaceBadge surface={m.surface} />
+                  <CategoryBadge category={m.cat} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              {['L', 'L', 'L', 'W', 'L'].reverse().map((r, i) => (
+                <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-teal-600/30 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>{r}</div>
+              ))}
+              <span className="ml-2 text-xs text-gray-500 self-center">most recent</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {perfTab === 'serve' && (
+        <>
+          {/* 1st Serve Direction Breakdown */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">1st Serve — Direction Breakdown</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { dir: 'T', pct: '42%', winPct: '78%', color: 'teal' },
+                { dir: 'Wide', pct: '38%', winPct: '71%', color: 'purple' },
+                { dir: 'Body', pct: '20%', winPct: '69%', color: 'orange' },
+              ].map((d, i) => (
+                <div key={i} className={`bg-gradient-to-br from-${d.color}-600/20 to-${d.color}-900/10 border border-${d.color}-600/20 rounded-xl p-4 text-center`}>
+                  <div className="text-lg font-bold text-white">{d.dir}</div>
+                  <div className="text-2xl font-bold text-white mt-1">{d.pct}</div>
+                  <div className="text-xs text-gray-400 mt-1">Win rate: <span className="text-teal-400 font-medium">{d.winPct}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2nd Serve Direction Breakdown */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">2nd Serve — Direction Breakdown</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { dir: 'T', pct: '31%', winPct: '61%' },
+                { dir: 'Wide', pct: '28%', winPct: '58%' },
+                { dir: 'Body', pct: '41%', winPct: '63%' },
+              ].map((d, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4 text-center">
+                  <div className="text-lg font-bold text-white">{d.dir}</div>
+                  <div className="text-2xl font-bold text-white mt-1">{d.pct}</div>
+                  <div className="text-xs text-gray-400 mt-1">Win rate: <span className="text-amber-400 font-medium">{d.winPct}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Serve Speed Distribution */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Serve Speed Distribution (km/h)</div>
+            <svg viewBox="0 0 400 160" className="w-full">
+              {[
+                { label: '<170', pct: 2, x: 20 },
+                { label: '170-185', pct: 8, x: 85 },
+                { label: '185-200', pct: 22, x: 150 },
+                { label: '200-215', pct: 41, x: 215 },
+                { label: '215-230', pct: 21, x: 280 },
+                { label: '230+', pct: 6, x: 345 },
+              ].map((bin, i) => (
+                <g key={i}>
+                  <rect x={bin.x - 20} y={130 - bin.pct * 2.8} width={40} height={bin.pct * 2.8} rx={4} fill="#8B5CF6" opacity={0.6} />
+                  <text x={bin.x} y={145} textAnchor="middle" fill="#6b7280" fontSize="9">{bin.label}</text>
+                  <text x={bin.x} y={125 - bin.pct * 2.8} textAnchor="middle" fill="#e5e7eb" fontSize="10" fontWeight="bold">{bin.pct}%</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+
+          {/* Aces & DFs by Surface */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Aces & Double Faults by Surface</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { surface: 'Clay', aces: 4.2, dfs: 2.1 },
+                { surface: 'Hard', aces: 6.8, dfs: 3.4 },
+                { surface: 'Grass', aces: 8.1, dfs: 2.9 },
+              ].map((s, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+                  <SurfaceBadge surface={s.surface} />
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <div className="text-teal-400 font-bold text-lg">{s.aces}</div>
+                      <div className="text-gray-500">aces/match</div>
+                    </div>
+                    <div>
+                      <div className="text-red-400 font-bold text-lg">{s.dfs}</div>
+                      <div className="text-gray-500">DFs/match</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Serve +1 */}
+          <div className="bg-gradient-to-r from-teal-900/30 to-blue-900/20 border border-teal-600/30 rounded-xl p-5">
+            <div className="text-xs text-teal-400 font-semibold uppercase tracking-wider mb-2">Serve +1 Pattern Efficiency</div>
+            <div className="text-white text-sm">After a first serve winner, win rate on next point: <span className="text-teal-400 font-bold text-lg ml-1">67%</span></div>
+            <div className="text-xs text-gray-500 mt-1">Indicates strong momentum carry-over from big serves</div>
+          </div>
+        </>
+      )}
+
+      {perfTab === 'return' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm text-gray-400 text-center py-8">Return analysis data — coming soon</div>
         </div>
-        <div className="mt-3 flex gap-2">
-          {['L', 'L', 'L', 'W', 'L'].reverse().map((r, i) => (
-            <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-teal-600/30 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>{r}</div>
-          ))}
-          <span className="ml-2 text-xs text-gray-500 self-center">most recent</span>
+      )}
+
+      {perfTab === 'pressure' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm text-gray-400 text-center py-8">Under Pressure analysis — coming soon</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ─── MATCH PREP VIEW ───────────────────────────────────────────────────────────
+
+// ─── SHOT HEATMAPS VIEW ──────────────────────────────────────────────────────
+function ShotHeatmapsView() {
+  const [heatmapTab, setHeatmapTab] = useState<'serve' | 'return' | 'groundstroke' | 'net'>('serve');
+  const [handFilter, setHandFilter] = useState<string>('all');
+  const [surfaceFilter, setSurfaceFilter] = useState<string>('all');
+  const [showTourAvg, setShowTourAvg] = useState(false);
+
+  const CourtSVG = ({ children }: { children?: React.ReactNode }) => (
+    <svg viewBox="0 0 300 540" className="w-full max-w-[300px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+      {/* Court surface */}
+      <rect x="0" y="0" width="300" height="540" rx="4" fill="#1a6b3c" />
+      {/* Doubles sidelines */}
+      <line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" />
+      <line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" />
+      {/* Singles sidelines */}
+      <line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" />
+      <line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" />
+      {/* Baselines */}
+      <line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" />
+      <line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" />
+      {/* Net */}
+      <line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" />
+      {/* Service lines */}
+      <line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" />
+      <line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" />
+      {/* Centre service lines */}
+      <line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" />
+      {/* Centre marks */}
+      <line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" />
+      {children}
+    </svg>
+  );
+
+  const serveHeatmap = (
+    <CourtSVG>
+      {/* 1st serve - T serve deuce court (high frequency) */}
+      <ellipse cx="140" cy="170" rx="28" ry="22" fill="#1D9E75" opacity="0.6" />
+      <ellipse cx="140" cy="170" rx="18" ry="14" fill="#1D9E75" opacity="0.4" />
+      {/* 1st serve - Wide serve ad court (high frequency) */}
+      <ellipse cx="245" cy="360" rx="28" ry="22" fill="#1D9E75" opacity="0.6" />
+      <ellipse cx="245" cy="360" rx="18" ry="14" fill="#1D9E75" opacity="0.4" />
+      {/* Body serve both courts (medium frequency) */}
+      <ellipse cx="150" cy="180" rx="18" ry="15" fill="#EF9F27" opacity="0.45" />
+      <ellipse cx="150" cy="370" rx="18" ry="15" fill="#EF9F27" opacity="0.45" />
+      {/* 2nd serve kick - near T both sides */}
+      <ellipse cx="145" cy="200" rx="15" ry="12" fill="#EF9F27" opacity="0.35" />
+      <ellipse cx="155" cy="350" rx="15" ry="12" fill="#EF9F27" opacity="0.35" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="140" cy="175" rx="32" ry="26" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+          <ellipse cx="240" cy="365" rx="32" ry="26" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const returnHeatmap = (
+    <CourtSVG>
+      {/* Crosscourt forehand return (high frequency) */}
+      <ellipse cx="80" cy="50" rx="30" ry="20" fill="#1D9E75" opacity="0.55" />
+      <ellipse cx="80" cy="50" rx="18" ry="12" fill="#1D9E75" opacity="0.35" />
+      {/* Down-the-line backhand (medium frequency) */}
+      <ellipse cx="230" cy="55" rx="22" ry="16" fill="#EF9F27" opacity="0.45" />
+      {/* Chip-and-charge return (low frequency near net) */}
+      <ellipse cx="150" cy="240" rx="16" ry="12" fill="#EF9F27" opacity="0.25" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="85" cy="55" rx="34" ry="24" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+          <ellipse cx="225" cy="60" rx="26" ry="20" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const groundstrokeHeatmap = (
+    <CourtSVG>
+      {/* Forehand: behind baseline on backhand side (offensive) */}
+      <ellipse cx="200" cy="500" rx="40" ry="20" fill="#1D9E75" opacity="0.4" />
+      {/* Backhand: near centre mark (neutral) */}
+      <ellipse cx="140" cy="510" rx="35" ry="18" fill="#6b7280" opacity="0.35" />
+      {/* Defensive zone: deep corners */}
+      <ellipse cx="60" cy="520" rx="25" ry="14" fill="#f87171" opacity="0.3" />
+      <ellipse cx="250" cy="520" rx="25" ry="14" fill="#f87171" opacity="0.25" />
+      {/* Legend markers */}
+      {showTourAvg && (
+        <>
+          <ellipse cx="195" cy="505" rx="44" ry="24" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const netHeatmap = (
+    <CourtSVG>
+      {/* Net approach zones */}
+      <ellipse cx="100" cy="290" rx="25" ry="18" fill="#1D9E75" opacity="0.45" />
+      <ellipse cx="200" cy="290" rx="20" ry="15" fill="#EF9F27" opacity="0.35" />
+      <ellipse cx="150" cy="285" rx="18" ry="14" fill="#EF9F27" opacity="0.3" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="150" cy="290" rx="50" ry="22" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const heatmaps: Record<string, React.ReactNode> = { serve: serveHeatmap, return: returnHeatmap, groundstroke: groundstrokeHeatmap, net: netHeatmap };
+
+  const statsStrips: Record<string, Array<{ label: string; value: string }>> = {
+    serve: [
+      { label: 'T', value: '42%' }, { label: 'Wide', value: '38%' }, { label: 'Body', value: '20%' },
+      { label: '1st Serve %', value: '61%' }, { label: '2nd Serve Win%', value: '53%' },
+      { label: 'Avg Speed', value: '201 km/h' }, { label: 'Max Speed', value: '226 km/h' },
+    ],
+    return: [
+      { label: 'Crosscourt FH', value: '52%' }, { label: 'DTL BH', value: '28%' }, { label: 'Chip & Charge', value: '8%' },
+      { label: 'Return Win%', value: '42%' }, { label: 'Break Pts Conv', value: '41%' },
+    ],
+    groundstroke: [
+      { label: 'FH Winner Rate', value: '12%' }, { label: 'BH Winner Rate', value: '6%' },
+      { label: 'Offensive %', value: '34%' }, { label: 'Neutral %', value: '48%' }, { label: 'Defensive %', value: '18%' },
+    ],
+    net: [
+      { label: 'Net Approaches', value: '8.2/match' }, { label: 'Net Pts Won', value: '65%' },
+      { label: 'Pass Against', value: '28%' }, { label: 'Volley Winner', value: '42%' },
+    ],
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🔥" title="Court Shot Heatmaps" subtitle="Visual shot placement analysis across serve, return, groundstrokes, and net play." />
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['serve', 'Serve placement'], ['return', 'Return placement'], ['groundstroke', 'Groundstroke zones'], ['net', 'Net approaches']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setHeatmapTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${heatmapTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Court Diagram */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex justify-center">
+          {heatmaps[heatmapTab]}
+        </div>
+        {heatmapTab === 'groundstroke' && (
+          <div className="flex gap-4 mt-3 pt-3 border-t border-gray-800 justify-center">
+            {[
+              { label: 'Offensive', color: 'bg-teal-500' },
+              { label: 'Neutral', color: 'bg-gray-500' },
+              { label: 'Defensive', color: 'bg-red-400' },
+            ].map((l, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className={`w-3 h-3 rounded-full ${l.color} opacity-50`}></div>
+                <span className="text-[10px] text-gray-500">{l.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Stats Strip */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+          {(statsStrips[heatmapTab] || []).map((s, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
+              <div className="text-white font-bold text-sm">{s.value}</div>
+              <div className="text-gray-500 text-[10px] mt-0.5">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter Toggles */}
+      <div className="flex flex-wrap gap-2">
+        {['vs Right-handed', 'vs Left-handed', 'On Clay', 'On Hard', 'On Grass'].map(f => (
+          <button
+            key={f}
+            onClick={() => setSurfaceFilter(surfaceFilter === f ? 'all' : f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${surfaceFilter === f ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'bg-[#0d0f1a] border border-gray-800 text-gray-500 hover:text-gray-300'}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* Tour Average Comparison */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowTourAvg(!showTourAvg)}
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${showTourAvg ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}
+        >
+          {showTourAvg && <span className="text-teal-400 text-xs">+</span>}
+        </button>
+        <span className="text-xs text-gray-400">vs Tour average (dotted outlines)</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── PERFORMANCE RATING VIEW ─────────────────────────────────────────────────
+function PerformanceRatingView() {
+  const matchData = [
+    { opp: 'Alc', rating: 61 }, { opp: 'Med', rating: 73 }, { opp: 'Rub', rating: 58 },
+    { opp: 'Fri', rating: 79 }, { opp: 'Nda', rating: 44 }, { opp: 'Zve', rating: 68 },
+    { opp: 'Ber', rating: 72 }, { opp: 'Cas', rating: 55 }, { opp: 'Muz', rating: 66 }, { opp: 'Rub2', rating: 71 },
+  ];
+  const seasonAvg = 64.1;
+  const tourAvg = 62.0;
+
+  const winningPatterns = [
+    { pattern: 'Serve wide + forehand winner', occurrences: 31, winRate: '79%', insight: 'Your signature pattern' },
+    { pattern: 'Short ball attack → approach + volley', occurrences: 18, winRate: '72%', insight: 'Highly effective' },
+    { pattern: 'Return crosscourt + inside-out forehand', occurrences: 24, winRate: '68%', insight: 'Strong' },
+  ];
+
+  const losingPatterns = [
+    { pattern: 'Extended baseline rally >8 shots on clay', occurrences: 47, winRate: '38%', insight: 'Avoid long exchanges' },
+    { pattern: 'Second serve + backhand return', occurrences: 38, winRate: '41%', insight: 'Vulnerable spot' },
+    { pattern: 'Net approach off weak ball', occurrences: 12, winRate: '33%', insight: 'Timing needs work' },
+  ];
+
+  // SVG chart dimensions
+  const chartW = 500, chartH = 180, padL = 30, padR = 80, padT = 15, padB = 30;
+  const plotW = chartW - padL - padR;
+  const plotH = chartH - padT - padB;
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="⭐" title="Performance Rating" subtitle="TennisViz-style performance metric combining shot quality, attack rate, and conversion efficiency." />
+
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
+        <div className="text-xs text-gray-500">TennisViz-style performance metric combining shot quality, attack rate, and conversion efficiency. Updated after each match.</div>
+      </div>
+
+      {/* Current Rating */}
+      <div className="bg-gradient-to-r from-purple-900/30 to-teal-900/20 border border-purple-600/30 rounded-xl p-6 text-center">
+        <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-2">Performance Rating</div>
+        <div className="text-5xl font-bold text-white">68.4</div>
+        <div className="text-lg text-gray-400">/ 100</div>
+        <div className="flex justify-center gap-6 mt-3 text-xs">
+          <div><span className="text-gray-500">Season avg:</span> <span className="text-amber-400 font-medium">64.1</span></div>
+          <div><span className="text-gray-500">Career high:</span> <span className="text-teal-400 font-medium">79.2</span> <span className="text-gray-600">(Wimbledon 2023 SF)</span></div>
+          <div><span className="text-gray-500">Trend:</span> <span className="text-teal-400 font-medium">+4.3</span> <span className="text-gray-600">vs last 4 weeks</span></div>
+        </div>
+      </div>
+
+      {/* Component Breakdown */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Attack Rate', value: '54%', tourAvg: '48%', badge: 'Above average' },
+          { label: 'Conversion Score', value: '61%', tourAvg: '58%', badge: 'Above average' },
+          { label: 'Steal Score', value: '34%', tourAvg: '31%', badge: 'Above average' },
+        ].map((c, i) => (
+          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
+            <div className="text-xs text-gray-500 mb-1">{c.label}</div>
+            <div className="text-2xl font-bold text-white">{c.value}</div>
+            <div className="text-xs text-gray-500 mt-1">Tour avg: {c.tourAvg}</div>
+            <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">{c.badge}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Match-by-Match Line Chart */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Match-by-Match Performance Rating</div>
+        <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full">
+          {/* Y-axis grid lines */}
+          {[0, 25, 50, 75, 100].map(v => {
+            const y = padT + plotH - (v / 100) * plotH;
+            return (
+              <g key={v}>
+                <line x1={padL} y1={y} x2={padL + plotW} y2={y} stroke="#1f2937" strokeWidth="0.5" />
+                <text x={padL - 5} y={y + 3} textAnchor="end" fill="#6b7280" fontSize="8">{v}</text>
+              </g>
+            );
+          })}
+          {/* Season average dashed line */}
+          <line x1={padL} y1={padT + plotH - (seasonAvg / 100) * plotH} x2={padL + plotW} y2={padT + plotH - (seasonAvg / 100) * plotH} stroke="#EF9F27" strokeWidth="1" strokeDasharray="6 3" />
+          <text x={padL + plotW + 5} y={padT + plotH - (seasonAvg / 100) * plotH + 3} fill="#EF9F27" fontSize="8">Season avg ({seasonAvg})</text>
+          {/* Tour average dashed line */}
+          <line x1={padL} y1={padT + plotH - (tourAvg / 100) * plotH} x2={padL + plotW} y2={padT + plotH - (tourAvg / 100) * plotH} stroke="#4b5563" strokeWidth="1" strokeDasharray="4 3" />
+          <text x={padL + plotW + 5} y={padT + plotH - (tourAvg / 100) * plotH + 3} fill="#6b7280" fontSize="8">Tour avg ({tourAvg})</text>
+          {/* Data polyline */}
+          <polyline
+            fill="none"
+            stroke="#1D9E75"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            points={matchData.map((d, i) => `${padL + (i / (matchData.length - 1)) * plotW},${padT + plotH - (d.rating / 100) * plotH}`).join(' ')}
+          />
+          {/* Data dots and labels */}
+          {matchData.map((d, i) => {
+            const x = padL + (i / (matchData.length - 1)) * plotW;
+            const y = padT + plotH - (d.rating / 100) * plotH;
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r="3.5" fill="#1D9E75" stroke="#0d0f1a" strokeWidth="1.5" />
+                <text x={x} y={padT + plotH + 15} textAnchor="middle" fill="#6b7280" fontSize="7">{d.opp}</text>
+              </g>
+            );
+          })}
+          {/* Rating label at end */}
+          <text x={padL + plotW + 5} y={padT + plotH - (matchData[matchData.length - 1].rating / 100) * plotH + 3} fill="#1D9E75" fontSize="8" fontWeight="bold">Current ({matchData[matchData.length - 1].rating})</text>
+        </svg>
+      </div>
+
+      {/* Winning & Losing Plays */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Winning Patterns */}
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-white">Winning Patterns</div>
+          {winningPatterns.map((p, i) => (
+            <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 border-l-4 border-l-teal-500">
+              <div className="text-sm text-white font-medium mb-1">{p.pattern}</div>
+              <div className="flex gap-3 text-xs text-gray-400">
+                <span>{p.occurrences} occurrences</span>
+                <span className="text-teal-400 font-medium">{p.winRate} win rate</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 italic">{p.insight}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Losing Patterns */}
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-white">Losing Patterns</div>
+          {losingPatterns.map((p, i) => (
+            <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 border-l-4 border-l-red-400">
+              <div className="text-sm text-white font-medium mb-1">{p.pattern}</div>
+              <div className="flex gap-3 text-xs text-gray-400">
+                <span>{p.occurrences} occurrences</span>
+                <span className="text-red-400 font-medium">{p.winRate} win rate</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 italic">{p.insight}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 function MatchPrepView() {
   const opponent = {
     name: 'Carlos Martinez',
@@ -1219,6 +1698,9 @@ function MatchPrepView() {
 
 // ─── PRACTICE LOG VIEW ─────────────────────────────────────────────────────────
 function PracticeLogView() {
+  const [practiceTab, setPracticeTab] = useState<'log' | 'aiinsights' | 'progress'>('log');
+  const [aiAnalysis, setAiAnalysis] = useState<Record<number, { loading: boolean; result: string | null }>>({});
+
   const sessions = [
     { date: '9 Apr', type: 'On-court', partner: 'J. Draper', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
     { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Martinez deuce court patterns.' },
@@ -1236,85 +1718,360 @@ function PracticeLogView() {
     { drill: 'Net Points Won', target: '72%', current: '65%', progress: 65 / 72 * 100 },
   ];
 
+  const handleAiAnalysis = async (sessionIdx: number) => {
+    setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: true, result: null } }));
+    const session = sessions[sessionIdx];
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${session.date}, Type: ${session.type}, Duration: ${session.duration}, Partner: ${session.partner}, Coach notes: ${session.coachNotes}. Provide exactly: 3 specific technical observations, 2 areas to focus on next session, 1 tactical pattern to develop. Be concise and specific to tennis.`
+          }],
+        }),
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || 'Analysis unavailable.';
+      setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: text } }));
+    } catch {
+      setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: 'Failed to generate analysis. Check API key configuration.' } }));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="📝" title="Practice Log" subtitle="Session tracking, drill targets, ball machine logs, and weekly practice hours." />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
-        <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
-        <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
-        <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['log', 'Log'], ['aiinsights', 'AI Insights'], ['progress', 'Progress']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setPracticeTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${practiceTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Session Log */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <div className="text-sm font-semibold text-white">Session Log — Last 7 Days</div>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-              <th className="text-left p-3">Date</th>
-              <th className="text-left p-3">Type</th>
-              <th className="text-left p-3">Partner</th>
-              <th className="text-left p-3">Duration</th>
-              <th className="text-left p-3">Coach Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((s, i) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-400 text-xs">{s.date}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-0.5 rounded ${s.type === 'On-court' ? 'bg-teal-600/20 text-teal-400' : s.type === 'Ball Machine' ? 'bg-blue-600/20 text-blue-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.type}</span>
-                </td>
-                <td className="p-3 text-gray-300">{s.partner}</td>
-                <td className="p-3 text-gray-400">{s.duration}</td>
-                <td className="p-3 text-gray-400 text-xs">{s.coachNotes}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {practiceTab === 'log' && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
+            <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
+            <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
+            <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+          </div>
 
-      {/* Drill Targets */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
-        <div className="space-y-4">
-          {drillTargets.map((d, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-sm text-gray-200">{d.drill}</div>
-                <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+          {/* Session Log */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800">
+              <div className="text-sm font-semibold text-white">Session Log — Last 7 Days</div>
+            </div>
+            <div className="divide-y divide-gray-800/50">
+              {sessions.map((s, i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="text-xs text-gray-400 w-14 flex-shrink-0">{s.date}</div>
+                    <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${s.type === 'On-court' ? 'bg-teal-600/20 text-teal-400' : s.type === 'Ball Machine' ? 'bg-blue-600/20 text-blue-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.type}</span>
+                    <div className="text-sm text-gray-300 flex-shrink-0">{s.partner}</div>
+                    <div className="text-xs text-gray-400 flex-shrink-0">{s.duration}</div>
+                    <div className="text-xs text-gray-400 flex-1 truncate">{s.coachNotes}</div>
+                    <button
+                      onClick={() => handleAiAnalysis(i)}
+                      disabled={aiAnalysis[i]?.loading}
+                      className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                    >
+                      {aiAnalysis[i]?.loading ? 'Analysing...' : aiAnalysis[i]?.result ? 'Re-analyse' : 'AI Analysis'}
+                    </button>
+                  </div>
+                  {aiAnalysis[i]?.loading && (
+                    <div className="px-3 pb-3">
+                      <div className="bg-purple-600/5 border border-purple-600/20 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-xs text-purple-400">
+                          <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                          Analysing session...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {aiAnalysis[i]?.result && !aiAnalysis[i]?.loading && (
+                    <div className="px-3 pb-3">
+                      <div className="bg-purple-600/5 border border-purple-600/20 rounded-lg p-3">
+                        <div className="text-[10px] text-purple-400 font-semibold uppercase tracking-wider mb-2">AI Analysis</div>
+                        <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiAnalysis[i].result}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Drill Targets */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
+            <div className="space-y-4">
+              {drillTargets.map((d, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-gray-200">{d.drill}</div>
+                    <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Practice Hours */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
+            <div className="flex items-end gap-3 h-32">
+              {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs text-gray-400">{h}h</div>
+                  <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
+                  <div className="text-xs text-gray-600">W{i + 1}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {practiceTab === 'aiinsights' && (
+        <>
+          {/* Training Patterns This Month */}
+          <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5">
+            <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-3">Training Patterns This Month</div>
+            <div className="text-sm text-gray-300 leading-relaxed mb-3">
+              Alex has focused predominantly on serve accuracy drills (38% of sessions), followed by return of serve patterns (24%) and clay court movement (18%). Ball machine sessions have targeted the forehand inside-in and crosscourt backhand. There has been increased emphasis on body serve percentage ahead of Monte-Carlo, with improvement from 22% to 28% — trending toward the 30% target.
+            </div>
+            <div className="grid grid-cols-4 gap-3 text-xs">
+              {[
+                { label: 'Serve Drills', pct: '38%', color: 'text-purple-400' },
+                { label: 'Return Work', pct: '24%', color: 'text-teal-400' },
+                { label: 'Movement', pct: '18%', color: 'text-orange-400' },
+                { label: 'Match Play', pct: '20%', color: 'text-blue-400' },
+              ].map((p, i) => (
+                <div key={i} className="bg-black/20 rounded-lg p-2 text-center">
+                  <div className={`font-bold text-lg ${p.color}`}>{p.pct}</div>
+                  <div className="text-gray-500 mt-0.5">{p.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Readiness Score */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Readiness Score</div>
+            <div className="flex items-center gap-6">
+              <div className="relative w-32 h-32 flex-shrink-0">
+                <svg viewBox="0 0 120 120" className="w-full h-full">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1f2937" strokeWidth="8" />
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1D9E75" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${(74 / 100) * 314} 314`}
+                    transform="rotate(-90 60 60)" />
+                  <text x="60" y="55" textAnchor="middle" className="text-2xl font-bold" fill="white" fontSize="28">74</text>
+                  <text x="60" y="72" textAnchor="middle" fill="#6b7280" fontSize="10">/100</text>
+                </svg>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+              <div className="space-y-2 flex-1">
+                <div className="text-sm text-gray-300">Based on session intensity, recovery days, and training load this week.</div>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-teal-400 font-bold">Good</div>
+                    <div className="text-gray-500">Training Load</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-amber-400 font-bold">Moderate</div>
+                    <div className="text-gray-500">Recovery</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-teal-400 font-bold">High</div>
+                    <div className="text-gray-500">Match Ready</div>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Weekly Practice Hours */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
-        <div className="flex items-end gap-3 h-32">
-          {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="text-xs text-gray-400">{h}h</div>
-              <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
-              <div className="text-xs text-gray-600">W{i + 1}</div>
+          {/* Coach Recommendations */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Coach Recommendations — Based on Upcoming Clay Court Schedule</div>
+            <div className="space-y-3">
+              {[
+                { rec: 'Increase clay-specific slide drills to 3 sessions/week ahead of Barcelona and Madrid swing', priority: 'High', icon: '🏟️' },
+                { rec: 'Add 15 minutes of second-serve kick practice per on-court session — current 2nd serve win% of 53% needs to improve for clay', priority: 'High', icon: '🎾' },
+                { rec: 'Schedule one practice set per week against a left-hander to prepare for potential Nadal/Rafa Jr matchup in Madrid', priority: 'Medium', icon: '🎯' },
+              ].map((r, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+                  <span className="text-lg flex-shrink-0">{r.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-200">{r.rec}</div>
+                    <span className={`text-[10px] mt-1 inline-block px-2 py-0.5 rounded ${r.priority === 'High' ? 'bg-red-600/20 text-red-400' : 'bg-amber-600/20 text-amber-400'}`}>{r.priority} priority</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
+
+      {practiceTab === 'progress' && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
+            <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
+            <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
+            <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+          </div>
+
+          {/* Drill Targets */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
+            <div className="space-y-4">
+              {drillTargets.map((d, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-gray-200">{d.drill}</div>
+                    <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Practice Hours */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
+            <div className="flex items-end gap-3 h-32">
+              {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs text-gray-400">{h}h</div>
+                  <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
+                  <div className="text-xs text-gray-600">W{i + 1}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 // ─── VIDEO LIBRARY VIEW ────────────────────────────────────────────────────────
+
+// ─── SWINGVISION CARDS ────────────────────────────────────────────────────────
+function SwingVisionCards() {
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+
+  const svVideos = [
+    {
+      title: 'Match vs. Ferreira — Roland Garros',
+      source: 'Imported from SwingVision',
+      duration: '2h 14m',
+      stats: { shots: 187, firstServe: '72%', aces: 3 },
+      breakdown: [
+        { label: 'Total Shots Tracked', value: '187' },
+        { label: '1st Serve %', value: '72%' },
+        { label: 'Aces', value: '3' },
+        { label: 'Winners', value: '31' },
+        { label: 'Unforced Errors', value: '24' },
+        { label: 'Net Points Won', value: '68%' },
+      ],
+    },
+    {
+      title: 'Serve Practice Session — 45 min',
+      source: 'SwingVision Auto-Track',
+      duration: '45m',
+      stats: { shots: 234, firstServe: '68% in', aces: null, avgSpeed: '201 km/h' },
+      breakdown: [
+        { label: 'Serves Tracked', value: '234' },
+        { label: 'In %', value: '68%' },
+        { label: 'Avg Speed', value: '201 km/h' },
+        { label: 'Max Speed', value: '224 km/h' },
+        { label: 'T Accuracy', value: '41%' },
+        { label: 'Wide Accuracy', value: '37%' },
+      ],
+    },
+    {
+      title: 'Baseline Drill — Cross Court Forehands',
+      source: 'SwingVision Auto-Track',
+      duration: '30m',
+      stats: { shots: 89, accuracy: '81%' },
+      breakdown: [
+        { label: 'Shot Sequences', value: '89' },
+        { label: 'Accuracy', value: '81%' },
+        { label: 'Avg Spin (RPM)', value: '2,450' },
+        { label: 'Avg Speed', value: '118 km/h' },
+        { label: 'Deep Ball %', value: '64%' },
+        { label: 'Error Rate', value: '19%' },
+      ],
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {svVideos.map((v, i) => (
+        <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
+          <div className="h-28 flex items-center justify-center text-4xl relative" style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.15) 0%, rgba(13,148,136,0.1) 100%)' }}>
+            🎬
+            <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 border border-purple-500/30 font-medium">SwingVision</span>
+          </div>
+          <div className="p-4">
+            <div className="text-sm text-white font-medium mb-1">{v.title}</div>
+            <div className="text-xs text-gray-500 mb-2">{v.source} — {v.duration}</div>
+            <div className="flex gap-3 text-xs text-gray-400 mb-3">
+              {v.stats.shots && <span>{v.stats.shots} shots tracked</span>}
+              {v.stats.firstServe && <span>{v.stats.firstServe} first serve</span>}
+              {v.stats.aces !== undefined && v.stats.aces !== null && <span>{v.stats.aces} aces</span>}
+              {v.stats.accuracy && <span>{v.stats.accuracy} accuracy</span>}
+              {v.stats.avgSpeed && <span>avg {v.stats.avgSpeed}</span>}
+            </div>
+            <button
+              onClick={() => setExpandedCard(expandedCard === i ? null : i)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+            >
+              {expandedCard === i ? 'Hide Analysis' : 'View Analysis'}
+            </button>
+            {expandedCard === i && (
+              <div className="mt-3 pt-3 border-t border-gray-800">
+                <div className="text-[10px] text-teal-400 font-semibold uppercase tracking-wider mb-2">Shot Breakdown</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {v.breakdown.map((b, j) => (
+                    <div key={j} className="bg-black/20 rounded-lg p-2 text-center">
+                      <div className="text-white font-bold text-sm">{b.value}</div>
+                      <div className="text-gray-500 text-[10px] mt-0.5">{b.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 function VideoLibraryView() {
   const videos = [
     { title: 'Monte-Carlo R2 vs Hurkacz', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
@@ -1377,6 +2134,33 @@ function VideoLibraryView() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* SwingVision Integration */}
+      <div className="mt-8 space-y-4">
+        <div className="text-sm font-semibold text-white">SwingVision Integration</div>
+
+        {/* Connection Card */}
+        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center">
+                <span className="text-xs font-bold text-purple-400">SV</span>
+              </div>
+              <div>
+                <div className="text-white font-bold">SwingVision</div>
+                <div className="text-xs text-gray-400">AI-powered shot tracking & analysis</div>
+                <div className="text-xs text-red-400 mt-0.5">Not connected</div>
+              </div>
+            </div>
+            <button className="px-4 py-2 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors">
+              Connect SwingVision
+            </button>
+          </div>
+        </div>
+
+        {/* SwingVision Video Cards */}
+        <SwingVisionCards />
       </div>
     </div>
   );
@@ -4087,6 +4871,280 @@ export default function TennisTourPage() {
 
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
 
+
+// ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
+function MatchReportsView() {
+  const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportContent, setReportContent] = useState<Record<string, string>>({});
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+
+  const matches = [
+    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'Quarter-Final', score: '4-6 6-3 7-6', surface: 'Clay', result: 'W', date: '14 Apr 2025' },
+    { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'Round of 16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr 2025' },
+    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
+    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo', round: 'Semi-Final', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr 2025' },
+    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
+    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'Round of 32', score: '6-7 4-6', surface: 'Clay', result: 'L', date: '22 Mar 2025' },
+  ];
+
+  const handleGenerateReport = async (match: typeof matches[0]) => {
+    setGeneratingReport(match.id);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Write a post-match analysis report for Alex Rivera (ATP #67) who ${match.result === 'W' ? 'won' : 'lost'} against ${match.opponent} (ranked ${match.oppRank}) at the ${match.tournament} ${match.round}, score ${match.score} on ${match.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead. Write in a professional coach/analyst voice.`
+          }]
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text ?? 'No response';
+      setReportContent(prev => ({ ...prev, [match.id]: text }));
+      setActiveReport(match.id);
+    } catch {
+      setReportContent(prev => ({ ...prev, [match.id]: 'Error generating report. Please try again.' }));
+      setActiveReport(match.id);
+    }
+    setGeneratingReport(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📄" title="Match Reports & AI Summaries" subtitle="Post-match analysis, AI-generated reports, and team sharing." />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Recent Matches" value={String(matches.length)} sub="Last 4 weeks" color="purple" />
+        <StatCard label="Win Rate" value={`${Math.round((matches.filter(m => m.result === 'W').length / matches.length) * 100)}%`} sub={`${matches.filter(m => m.result === 'W').length}W / ${matches.filter(m => m.result === 'L').length}L`} color="teal" />
+        <StatCard label="Reports Generated" value={String(Object.keys(reportContent).length)} sub="AI summaries" color="blue" />
+        <StatCard label="Clay Season" value="Active" sub="Spring clay swing" color="orange" />
+      </div>
+
+      <div className="space-y-3">
+        {matches.map(match => (
+          <div key={match.id}>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${match.result === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
+                    {match.result}
+                  </div>
+                  <div>
+                    <div className="text-sm text-white font-medium">
+                      vs {match.opponent} <span className="text-gray-500 text-xs">#{match.oppRank}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {match.tournament} — {match.round}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-300 font-medium">{match.score}</span>
+                      <SurfaceBadge surface={match.surface} />
+                      <span className="text-xs text-gray-600">{match.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {reportContent[match.id] && (
+                    <button
+                      onClick={() => setActiveReport(activeReport === match.id ? null : match.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+                    >
+                      {activeReport === match.id ? 'Hide report' : 'View report'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleGenerateReport(match)}
+                    disabled={generatingReport === match.id}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                  >
+                    {generatingReport === match.id ? 'Generating...' : reportContent[match.id] ? 'Regenerate' : 'Generate AI summary'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {generatingReport === match.id && (
+              <div className="mt-2 bg-purple-600/5 border border-purple-600/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-xs text-purple-400" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+                  <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                  Generating match analysis...
+                </div>
+              </div>
+            )}
+
+            {activeReport === match.id && reportContent[match.id] && !generatingReport && (
+              <div className="mt-2 bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-white">AI Match Analysis</div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Generated by Claude</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(reportContent[match.id])}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => alert('Sent to coach & physio ✓')}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+                    >
+                      Share with team
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{reportContent[match.id]}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── DATA HUB VIEW ��───────────────────────────────────────────────────────────
+function DataHubView() {
+  const [showComStatConfirm, setShowComStatConfirm] = useState(false);
+
+  const hasApiKey = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_TENNIS_API_KEY;
+
+  const dataSources = [
+    { section: 'Live Scores', source: 'API-Tennis (live)' },
+    { section: 'Rankings & Race', source: 'API-Tennis + Lumio' },
+    { section: 'Opponent Scout', source: 'API-Tennis' },
+    { section: 'Surface Analysis', source: 'API-Tennis + Lumio' },
+    { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
+    { section: 'Performance Rating', source: 'Lumio analytics engine' },
+    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🗄️" title="Data & Analytics Hub" subtitle="Your connected analytics ecosystem — Lumio pulls from these sources to power your portal." />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ATP Tennis IQ */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">ATP Tennis IQ</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30">Free for ATP members</span>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">External — visit to access</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Official ATP analytics platform. Shot quality AI, live in-match data, wearables insights. Built with TennisViz.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Shot Quality AI', 'In Attack Score', 'Live Coaching', 'Wearables'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => window.open('https://www.atptour.com', '_blank')}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+          >
+            Open ATP Tennis IQ →
+          </button>
+        </div>
+
+        {/* TennisRatio */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">TennisRatio</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30">Free</span>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">Connected — public data</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Public analytics dashboard. H2H records, surface splits, pressure point data updated after every match.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['H2H Heatmaps', 'Surface Win%', 'Pressure Stats', 'Dominance Ratios'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => window.open('https://www.tennisratio.com', '_blank')}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+          >
+            Browse TennisRatio →
+          </button>
+        </div>
+
+        {/* Tennis ComStat */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">Tennis ComStat</div>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not connected</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Professional video + stats analysis. Upload match footage and receive shot maps, heatmaps, and rally analysis within 24 hours.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Video-Synced Stats', 'Shot Maps', 'Serve Heatmaps', 'Opponent Patterns'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          {showComStatConfirm ? (
+            <div className="text-xs text-teal-400 font-medium">Request sent ��� check your email within 24h ✓</div>
+          ) : (
+            <button
+              onClick={() => setShowComStatConfirm(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+            >
+              Request Access ↗
+            </button>
+          )}
+        </div>
+
+        {/* API-Tennis */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">API-Tennis</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">From $40/mo</span>
+          </div>
+          {hasApiKey ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">Connected</span>
+          ) : (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not connected</span>
+          )}
+          <div className="text-xs text-gray-400 mt-3 mb-3">Real-time ATP/WTA fixtures, live scores, rankings, H2H records, and tournament data.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Live Scores', 'Fixtures', 'H2H', 'Rankings'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            disabled
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed"
+          >
+            {hasApiKey ? 'Live data active' : 'Add API key to .env.local'}
+          </button>
+        </div>
+      </div>
+
+      {/* Data Sources Mapping */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Data Sources</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {dataSources.map((ds, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <div className="text-xs text-gray-500">{ds.section}</div>
+              <div className="text-xs text-purple-400 font-medium">{ds.source}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
   const renderView = () => {
     switch (activeSection) {
       case 'dashboard':    return <DashboardView player={player} />;
@@ -4100,6 +5158,8 @@ export default function TennisTourPage() {
       case 'matchreports': return <MatchReportsView />;
       case 'practice':     return <PracticeLogView />;
       case 'video':        return <VideoLibraryView />;
+      case 'shotheatmaps': return <ShotHeatmapsView />;
+      case 'perfrating':   return <PerformanceRatingView />;
       case 'team':         return <TeamHubView player={player} />;
       case 'physio':       return <PhysioView />;
       case 'racket':       return <RacketView />;
