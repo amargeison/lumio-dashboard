@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 
@@ -47,6 +48,13 @@ const PRICING = [
 ]
 
 export default function SportsPage() {
+  // Redirect lumiocms.com/sports to lumiosports.com
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.host.includes('lumiocms.com')) {
+      window.location.replace('https://www.lumiosports.com')
+    }
+  }, [])
+
   return (
     <div style={{ backgroundColor: '#07080F', color: '#F9FAFB' }}>
       {/* Hero */}

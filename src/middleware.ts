@@ -38,12 +38,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect / → /home
-  if (pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/demo/lumio-demo'
-    return NextResponse.redirect(url)
-  }
+  // Root / is handled by src/app/page.tsx (host-based routing)
+  // lumiosports.com/ → /sports, lumiocms.com/ → /home
 
   // Handle /{slug}/{department} → rewrite to /{department} internally
   // while keeping the URL as /{slug}/{department}
