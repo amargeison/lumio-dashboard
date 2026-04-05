@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash } from 'lucide-react';
+import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList } from 'lucide-react';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface DartsPlayer {
@@ -138,7 +138,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const QuickActionsBar = ({ onNavigate }: { onNavigate: (id: string) => void }) => {
   const actions = [
-    { label: 'Log Practice', icon: <Clipboard className="w-3.5 h-3.5" />, target: 'practicelog' },
+    { label: 'Log Practice', icon: <ClipboardList className="w-3.5 h-3.5" />, target: 'practicelog' },
     { label: 'Match Report', icon: <FileText className="w-3.5 h-3.5" />, target: 'matchreports' },
     { label: 'Equipment Check', icon: <Package className="w-3.5 h-3.5" />, target: 'equipment' },
     { label: 'Sponsor Post', icon: <Mic className="w-3.5 h-3.5" />, target: 'media' },
