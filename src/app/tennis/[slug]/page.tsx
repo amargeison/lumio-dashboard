@@ -78,6 +78,9 @@ const SIDEBAR_ITEMS = [
   { id: 'career',       label: 'Career Planning',     icon: '🚀', group: 'OPERATIONS' },
   { id: 'academy',      label: 'Academy & Dev',       icon: '🎓', group: 'OPERATIONS' },
   { id: 'mental',       label: 'Mental Performance',  icon: '🧠', group: 'OPERATIONS' },
+  { id: 'courtbooking', label: 'Court Booking',        icon: '🏟️', group: 'OPERATIONS' },
+  { id: 'teamcomms',    label: 'Team Comms',           icon: '💬', group: 'OPERATIONS' },
+  { id: 'accreditations',label: 'Accreditations',      icon: '🪪', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ];
 
@@ -3354,6 +3357,162 @@ const DrawBracketView = () => {
   );
 };
 
+// ─── TEAM COMMS VIEW ────────────────────────────────────────────────────────────
+const TeamCommsView = () => {
+  const [recipient, setRecipient] = useState('All Team');
+  const [msgType, setMsgType] = useState('Update');
+  const [msgText, setMsgText] = useState('');
+  const RECIPIENTS = ['All Team', 'Coach', 'Physio', 'Agent', 'Stringer', 'Doubles Partner'];
+  const MSG_TYPES = ['Update', 'Urgent', 'Schedule Change', 'Match Report'];
+  const MESSAGES = [
+    { id: 1, from: 'Alex Rivera', role: 'Player', to: 'All Team', initial: 'AR', color: '#7c3aed', text: 'Match report from Brighton: Won 7-5 6-3. Serve felt strong, backhand needs work on clay. Full video review tomorrow.', time: '2h ago', read: true },
+    { id: 2, from: 'Alex Rivera', role: 'Player', to: 'Coach', initial: 'AR', color: '#7c3aed', text: 'Can we move Tuesday\'s session to 8am? Physio slot at 10.', time: '5h ago', read: true },
+    { id: 3, from: 'Alex Rivera', role: 'Player', to: 'Coach + Physio', initial: 'AR', color: '#7c3aed', text: 'Recovery score this morning: 84. Good to train full intensity today.', time: 'Yesterday', read: true },
+    { id: 4, from: 'James Whitfield', role: 'Agent', to: 'Alex Rivera', initial: 'JW', color: '#0d9488', text: 'IMG confirmed exhibition slot in Dubai, Dec 12–15. Check diary.', time: 'Yesterday', read: false },
+    { id: 5, from: 'Tom Bradley', role: 'Stringer', to: 'Alex Rivera', initial: 'TB', color: '#3b82f6', text: 'String tension adjusted to 54lbs for clay swing. Let me know if you want further tweaks.', time: '2d ago', read: true },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Team Communications" subtitle="Messages between you and your support team" icon="💬" />
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">Recipient</label>
+            <select value={recipient} onChange={e => setRecipient(e.target.value)} className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+              {RECIPIENTS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">Type</label>
+            <select value={msgType} onChange={e => setMsgType(e.target.value)} className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+              {MSG_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <textarea value={msgText} onChange={e => setMsgText(e.target.value)} rows={3} placeholder="Write a message to your team..." className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 mb-3" />
+        <button className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-semibold">Send Message</button>
+      </div>
+      <div className="space-y-3">
+        {MESSAGES.map(m => (
+          <div key={m.id} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: m.color }}>{m.initial}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-sm font-semibold text-white">{m.from}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">{m.role}</span>
+                <span className="text-xs text-gray-600">→ {m.to}</span>
+              </div>
+              <p className="text-sm text-gray-300 leading-relaxed">{m.text}</p>
+            </div>
+            <div className="flex flex-col items-end shrink-0 gap-1">
+              <span className="text-xs text-gray-600">{m.time}</span>
+              {m.read && <span className="text-xs text-blue-400">✓✓</span>}
+              {!m.read && <span className="w-2 h-2 rounded-full bg-purple-500" />}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── ACCREDITATIONS VIEW ────────────────────────────────────────────────────────
+const AccreditationsView = () => {
+  const accreditations = [
+    { name: 'ATP Tour Card', status: 'Active', org: 'ATP', expires: 'Dec 2026', daysLeft: 270 },
+    { name: 'ITF Registration', status: 'Active', org: 'ITF', expires: 'Dec 2026', daysLeft: 270 },
+    { name: 'LTA Licence', status: 'Active', org: 'LTA (British)', expires: 'Mar 2027', daysLeft: 360 },
+    { name: 'Wimbledon Accreditation', status: 'Seasonal', org: 'AELTC', expires: 'Jun 2026', daysLeft: 87 },
+    { name: 'US Open Accreditation', status: 'Applied', org: 'USTA', expires: 'Aug 2026', daysLeft: 148 },
+    { name: 'Roland Garros', status: 'Active', org: 'FFT', expires: 'May 2026', daysLeft: 56 },
+    { name: 'Australian Open', status: 'Active', org: 'Tennis Australia', expires: 'Jan 2027', daysLeft: 300 },
+  ];
+  const documents = [
+    { name: 'Passport Copy', uploaded: '12 Jan 2026', type: 'ID' },
+    { name: 'Medical Certificate', uploaded: '3 Mar 2026', type: 'Medical' },
+    { name: 'Anti-Doping Registration', uploaded: '1 Jan 2026', type: 'WADA' },
+    { name: 'ATP Player Agreement', uploaded: '15 Nov 2025', type: 'Contract' },
+    { name: 'ITF Code of Conduct', uploaded: '1 Jan 2026', type: 'Compliance' },
+  ];
+  const contacts = [
+    { org: 'ATP Player Services', name: 'Michael Torres', email: 'players@atptour.com', phone: '+1 561 330 5000' },
+    { org: 'LTA Player Services', name: 'Rebecca Clarke', email: 'players@lta.org.uk', phone: '+44 20 8487 7000' },
+    { org: 'ITF', name: 'Player Support', email: 'players@itftennis.com', phone: '+44 20 8878 6464' },
+  ];
+  const statusColor = (s: string) => s === 'Active' ? 'bg-green-600/20 text-green-400 border-green-600/30' : s === 'Applied' || s === 'Seasonal' ? 'bg-amber-600/20 text-amber-400 border-amber-600/30' : 'bg-red-600/20 text-red-400 border-red-600/30';
+  return (
+    <div>
+      <SectionHeader title="Accreditations & Licences" subtitle="Tour cards, federation licences and tournament access" icon="🪪" />
+      {/* Player ID Card */}
+      <div className="bg-gradient-to-br from-purple-900/30 to-purple-600/10 border border-purple-600/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center gap-5">
+          <div className="w-20 h-24 bg-gray-800 rounded-lg flex items-center justify-center text-3xl">🎾</div>
+          <div>
+            <div className="text-xs text-purple-400 font-semibold mb-1">ATP TOUR MEMBER</div>
+            <div className="text-xl font-bold text-white">Alex Rivera</div>
+            <div className="text-sm text-gray-400">🇬🇧 British · Right-handed · #67</div>
+            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+              <span>Member ID: ATP-2018-0847</span>
+              <span>ITF Reg: ITF-UK-29814</span>
+              <span>Expires: Dec 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Renewal alert */}
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6 bg-amber-600/10 border border-amber-600/30">
+        <span className="text-amber-400 text-sm">⚠️</span>
+        <span className="text-sm text-amber-300">Roland Garros accreditation expires in 56 days — renew before April deadline</span>
+      </div>
+      {/* Accreditations table */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">All Accreditations</h3>
+        <div className="grid grid-cols-5 gap-2 text-xs text-center mb-2">
+          <div className="text-gray-500 font-semibold text-left">Accreditation</div>
+          <div className="text-gray-500 font-semibold">Organisation</div>
+          <div className="text-gray-500 font-semibold">Status</div>
+          <div className="text-gray-500 font-semibold">Expires</div>
+          <div className="text-gray-500 font-semibold">Days Left</div>
+        </div>
+        {accreditations.map(a => (
+          <div key={a.name} className="grid grid-cols-5 gap-2 text-sm text-center py-2.5 border-t border-gray-800 items-center">
+            <div className="text-left text-gray-300 text-xs">{a.name}</div>
+            <div className="text-gray-400 text-xs">{a.org}</div>
+            <div><span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColor(a.status)}`}>{a.status}</span></div>
+            <div className="text-gray-400 text-xs">{a.expires}</div>
+            <div className={`text-xs font-semibold ${a.daysLeft < 90 ? 'text-amber-400' : 'text-gray-400'}`}>{a.daysLeft}d</div>
+          </div>
+        ))}
+      </div>
+      {/* Documents */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Documents</h3>
+        {documents.map(d => (
+          <div key={d.name} className="flex items-center justify-between py-2.5 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white">{d.name}</div>
+              <div className="text-xs text-gray-500">{d.type} · Uploaded {d.uploaded}</div>
+            </div>
+            <button className="text-xs text-purple-400 hover:text-purple-300 font-semibold">View →</button>
+          </div>
+        ))}
+      </div>
+      {/* Federation contacts */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-4">Federation Contacts</h3>
+        {contacts.map(c => (
+          <div key={c.org} className="flex items-center justify-between py-2.5 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white">{c.org}</div>
+              <div className="text-xs text-gray-500">{c.name} · {c.email} · {c.phone}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function TennisTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -3401,6 +3560,9 @@ export default function TennisTourPage() {
       case 'career':       return <CareerView player={player} />;
       case 'academy':      return <AcademyView />;
       case 'mental':       return <MentalPerformanceView />;
+      case 'courtbooking': return <CourtBookingView />;
+      case 'teamcomms':    return <TeamCommsView />;
+      case 'accreditations': return <AccreditationsView />;
       case 'settings':     return <SettingsView player={player} />;
       case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
       case 'scout':       return <OpponentScoutView h2hData={h2hData} />;
