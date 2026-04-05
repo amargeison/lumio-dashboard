@@ -63,6 +63,7 @@ const SIDEBAR_ITEMS = [
   { id: 'draw',        label: 'Draw & Bracket',      icon: '🏆', group: 'PERFORMANCE' },
   { id: 'performance',  label: 'Performance Stats',   icon: '📈', group: 'PERFORMANCE' },
   { id: 'matchprep',    label: 'Match Prep',          icon: '🎯', group: 'PERFORMANCE' },
+  { id: 'matchreports', label: 'Match Reports',        icon: '📄', group: 'PERFORMANCE' },
   { id: 'practice',     label: 'Practice Log',        icon: '📝', group: 'PERFORMANCE' },
   { id: 'video',        label: 'Video Library',       icon: '🎬', group: 'PERFORMANCE' },
   { id: 'team',         label: 'Team Hub',            icon: '👥', group: 'TEAM' },
@@ -77,6 +78,7 @@ const SIDEBAR_ITEMS = [
   { id: 'pipeline',     label: 'Agent Pipeline',      icon: '📋', group: 'COMMERCIAL' },
   { id: 'travel',       label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
   { id: 'federation',   label: 'Federation',          icon: '🏛️', group: 'OPERATIONS' },
+  { id: 'datahub',      label: 'Data Hub',             icon: '🔌', group: 'OPERATIONS' },
   { id: 'career',       label: 'Career Planning',     icon: '🚀', group: 'OPERATIONS' },
   { id: 'academy',      label: 'Academy & Dev',       icon: '🎓', group: 'OPERATIONS' },
   { id: 'mental',       label: 'Mental Performance',  icon: '🧠', group: 'OPERATIONS' },
@@ -2841,6 +2843,218 @@ function MentalPerformanceView() {
 }
 
 // ─── SETTINGS VIEW ─────────────────────────────────────────────────────────────
+
+// ─── COURT BOOKING VIEW ───────────────────────────────────────────────────────
+function CourtBookingView() {
+  const [bookings, setBookings] = useState<Array<{id:string, date:string, time:string, court:string, type:string, partner:string, notes:string, status:'confirmed'|'pending'|'cancelled'}>>([
+    { id:'1', date:'2025-04-07', time:'09:00', court:'Court 3 (Clay)', type:'Practice', partner:'Marco Bianchi (Coach)', notes:'Serve practice + baseline drills', status:'confirmed' },
+    { id:'2', date:'2025-04-07', time:'14:00', court:'Court 1 (Hard)', type:'Match Play', partner:'Training Partner', notes:'Simulated match conditions', status:'confirmed' },
+    { id:'3', date:'2025-04-08', time:'10:30', court:'Court 2 (Clay)', type:'Fitness', partner:'Sarah Okafor (Physio)', notes:'Footwork + conditioning', status:'pending' },
+  ]);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [newBooking, setNewBooking] = useState({ date:'', time:'', court:'', type:'Practice', partner:'', notes:'' });
+
+  const typeColors: Record<string, string> = {
+    'Practice': 'bg-teal-600/20 text-teal-400 border-teal-600/30',
+    'Match Play': 'bg-purple-600/20 text-purple-400 border-purple-600/30',
+    'Fitness': 'bg-amber-600/20 text-amber-400 border-amber-600/30',
+    'Recovery': 'bg-gray-600/20 text-gray-400 border-gray-600/30',
+  };
+
+  const statusColors: Record<string, string> = {
+    'confirmed': 'bg-green-600/20 text-green-400 border-green-600/30',
+    'pending': 'bg-amber-600/20 text-amber-400 border-amber-600/30',
+    'cancelled': 'bg-red-600/20 text-red-400 border-red-600/30',
+  };
+
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekDates = ['07 Apr', '08 Apr', '09 Apr', '10 Apr', '11 Apr', '12 Apr', '13 Apr'];
+  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+
+  const calendarSlots: Array<{ day: number; timeIdx: number; type: string; label: string }> = [
+    { day: 0, timeIdx: 1, type: 'Practice', label: '09:00 Practice' },
+    { day: 0, timeIdx: 6, type: 'Match Play', label: '14:00 Match Play' },
+    { day: 1, timeIdx: 2, type: 'Fitness', label: '10:30 Fitness' },
+    { day: 2, timeIdx: 1, type: 'Practice', label: '09:00 Practice' },
+    { day: 3, timeIdx: 3, type: 'Recovery', label: '11:00 Recovery' },
+  ];
+
+  const calendarBlockColors: Record<string, string> = {
+    'Practice': 'bg-teal-600/30 border-teal-500/40 text-teal-300',
+    'Match Play': 'bg-purple-600/30 border-purple-500/40 text-purple-300',
+    'Fitness': 'bg-amber-600/30 border-amber-500/40 text-amber-300',
+    'Recovery': 'bg-gray-600/30 border-gray-500/40 text-gray-300',
+  };
+
+  const courts = [
+    { name: 'Court 1', surface: 'Hard', status: 'Available Now', statusColor: 'text-teal-400' },
+    { name: 'Court 2', surface: 'Clay', status: 'Booked Until 14:00', statusColor: 'text-amber-400' },
+    { name: 'Court 3', surface: 'Clay', status: 'Available Now', statusColor: 'text-teal-400' },
+    { name: 'Indoor Court', surface: 'Hard', status: 'Maintenance', statusColor: 'text-red-400' },
+  ];
+
+  const handleConfirmBooking = () => {
+    if (!newBooking.date || !newBooking.time || !newBooking.court) return;
+    setBookings(prev => [...prev, { id: String(Date.now()), ...newBooking, status: 'pending' }]);
+    setNewBooking({ date:'', time:'', court:'', type:'Practice', partner:'', notes:'' });
+    setShowBookingForm(false);
+  };
+
+  const handleCancelBooking = (id: string) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b));
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🏟️" title="Court Booking — Practice Facilities" subtitle="Book courts, manage sessions, and view facility availability." />
+
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard label="This Week" value="5 sessions" sub="Mon–Sun bookings" color="purple" />
+        <StatCard label="Hours Booked" value="12.5h" sub="Total court time" color="teal" />
+        <StatCard label="Next Session" value="Tomorrow 09:00" sub="Court 3 (Clay)" color="orange" />
+      </div>
+
+      {/* Weekly Calendar Grid */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Weekly Court Schedule</div>
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-8 gap-px min-w-[640px]">
+            <div className="text-xs text-gray-600 p-2"></div>
+            {weekDays.map((day, i) => (
+              <div key={day} className="text-xs text-gray-400 font-medium text-center p-2 border-b border-gray-800">
+                <div>{day}</div>
+                <div className="text-gray-600 text-[10px]">{weekDates[i]}</div>
+              </div>
+            ))}
+            {timeSlots.map((time, tIdx) => (
+              <div key={`row-${time}`} className="contents">
+                <div className="text-[10px] text-gray-600 p-2 text-right border-r border-gray-800/50">{time}</div>
+                {weekDays.map((_, dIdx) => {
+                  const slot = calendarSlots.find(s => s.day === dIdx && s.timeIdx === tIdx);
+                  return (
+                    <div key={`${dIdx}-${tIdx}`} className="h-8 border-b border-gray-800/30 relative">
+                      {slot && (
+                        <div className={`absolute inset-0.5 rounded border text-[9px] font-medium px-1 flex items-center truncate ${calendarBlockColors[slot.type] || ''}`}>
+                          {slot.label}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-4 mt-3 pt-3 border-t border-gray-800">
+          {Object.entries(calendarBlockColors).map(([type, cls]) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded border ${cls}`}></div>
+              <span className="text-[10px] text-gray-500">{type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bookings List */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">Bookings</div>
+          <button onClick={() => setShowBookingForm(!showBookingForm)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors">
+            {showBookingForm ? 'Close' : '+ Book Court'}
+          </button>
+        </div>
+
+        {showBookingForm && (
+          <div className="bg-[#0a0c14] border border-purple-600/30 rounded-xl p-4 mb-4 space-y-3">
+            <div className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2">New Court Booking</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Date</label>
+                <input type="date" value={newBooking.date} onChange={e => setNewBooking(prev => ({ ...prev, date: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Time</label>
+                <input type="time" value={newBooking.time} onChange={e => setNewBooking(prev => ({ ...prev, time: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Court</label>
+                <select value={newBooking.court} onChange={e => setNewBooking(prev => ({ ...prev, court: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none">
+                  <option value="">Select court...</option>
+                  <option value="Court 1 (Hard)">Court 1 — Hard</option>
+                  <option value="Court 2 (Clay)">Court 2 — Clay</option>
+                  <option value="Court 3 (Clay)">Court 3 — Clay</option>
+                  <option value="Indoor Court (Hard)">Indoor Court — Hard</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Session Type</label>
+                <select value={newBooking.type} onChange={e => setNewBooking(prev => ({ ...prev, type: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none">
+                  <option value="Practice">Practice</option>
+                  <option value="Match Play">Match Play</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Recovery">Recovery</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Partner</label>
+                <input type="text" value={newBooking.partner} onChange={e => setNewBooking(prev => ({ ...prev, partner: e.target.value }))} placeholder="Partner name..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Notes</label>
+                <input type="text" value={newBooking.notes} onChange={e => setNewBooking(prev => ({ ...prev, notes: e.target.value }))} placeholder="Session notes..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:border-purple-500 focus:outline-none" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleConfirmBooking} className="px-4 py-2 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors">Confirm Booking</button>
+              <button onClick={() => setShowBookingForm(false)} className="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {bookings.map(booking => (
+            <div key={booking.id} className={`p-4 rounded-lg border ${booking.status === 'cancelled' ? 'border-gray-800/50 bg-gray-900/20 opacity-50' : 'border-gray-800 bg-[#0a0c14]'}`}>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className={`text-sm font-medium ${booking.status === 'cancelled' ? 'text-gray-600 line-through' : 'text-white'}`}>{booking.date} — {booking.time}</div>
+                  <div className={`text-xs ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-400'}`}>{booking.court}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${typeColors[booking.type] || 'bg-gray-700 text-gray-400'}`}>{booking.type}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColors[booking.status]}`}>{booking.status}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  {booking.partner && <div className={`text-xs ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-300'}`}>Partner: {booking.partner}</div>}
+                  {booking.notes && <div className={`text-xs mt-1 ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-500'}`}>{booking.notes}</div>}
+                </div>
+                {booking.status !== 'cancelled' && (
+                  <button onClick={() => handleCancelBooking(booking.id)} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Cancel</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Academy Courts Available */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Academy Courts Available</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {courts.map((court, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-sm text-white font-medium mb-1">{court.name}</div>
+              <div className="text-xs text-gray-500 mb-2">{court.surface}</div>
+              <div className={`text-xs font-medium ${court.statusColor}`}>{court.status}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 function SettingsView({ player }: { player: TennisPlayer }) {
   return (
     <div className="space-y-6">
@@ -3689,6 +3903,168 @@ const EntryManagerView = () => {
   );
 };
 
+// ─── MATCH REPORTS VIEW ──────────────────────────────────────────────────────
+const MatchReportsView = () => {
+  const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportContent, setReportContent] = useState<Record<string, string>>({});
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const matches = [
+    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'QF', score: '4-6 6-3 7-6(5)', surface: 'Clay', result: 'W', date: '14 Apr' },
+    { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'R16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr' },
+    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
+    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo Masters', round: 'SF', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr' },
+    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
+    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'R32', score: '6-7(4) 4-6', surface: 'Clay', result: 'L', date: '22 Mar' },
+  ];
+
+  async function generateReport(m: typeof matches[0]) {
+    setGeneratingReport(m.id);
+    const won = m.result === 'W';
+    try {
+      const res = await fetch('/api/ai/football-search', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'player', query: `You are a professional tennis analyst writing a concise post-match report. Write in a professional coach/analyst voice. Be specific and tactical.\n\nWrite a post-match analysis report for Alex Rivera (ATP #67) who ${won ? 'won' : 'lost'} against ${m.opponent} (#${m.oppRank}) at ${m.tournament} ${m.round}, score ${m.score} on ${m.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead.` }),
+      });
+      const data = await res.json();
+      const text = typeof data.result === 'string' ? data.result : data.result?.summary || 'Report generated.';
+      setReportContent(prev => ({ ...prev, [m.id]: text }));
+      setActiveReport(m.id);
+    } catch {
+      const fallback = won
+        ? `Match Summary: Alex Rivera secured a ${m.score} victory over ${m.opponent} at the ${m.tournament} ${m.round}. A composed performance on clay showed growing confidence at the highest level.\n\nKey Tactical Moments:\n• Break of serve in the opening game of the deciding set shifted momentum decisively\n• Successfully targeted the opponent's backhand wing, forcing 14 unforced errors\n• Clutch serving at 5-4 in the third set — 3 aces in the final game\n\nWhat Worked Well:\n• First serve percentage above 68% throughout — consistent weapon\n• Net approaches converted at 75% — aggressive play rewarded\n\nAreas to Improve:\n• Second serve return needs work — won only 38% of return points on second serve\n• Court positioning on clay could be deeper to give more time on the baseline\n\nLooking ahead: Confidence is building — carry this form into the next round.`
+        : `Match Summary: Alex Rivera fell ${m.score} to ${m.opponent} at the ${m.tournament} ${m.round}. Despite moments of quality, the opponent's consistency proved decisive.\n\nKey Tactical Moments:\n• Lost serve at 4-4 in the first set after a long rally — critical moment\n• Failed to convert 3 break point opportunities in the second set\n• Opponent's forehand down the line was a constant threat\n\nWhat Worked Well:\n• Serve held firm through the middle sets — 5 aces total\n• Backhand cross-court rally length improved from previous matches\n\nAreas to Improve:\n• Break point conversion at 0/3 is a pattern — needs mental work\n• Fitness in the third set — movement slowed visibly\n\nLooking ahead: Key learnings to apply in practice this week.`;
+      setReportContent(prev => ({ ...prev, [m.id]: fallback }));
+      setActiveReport(m.id);
+    }
+    setGeneratingReport(null);
+  }
+
+  return (
+    <div>
+      <SectionHeader title="Match Reports & AI Summaries" subtitle="Recent match log with AI-generated analysis" icon="📄" />
+      <div className="space-y-3">
+        {matches.map(m => (
+          <div key={m.id}>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${m.result === 'W' ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}`}>{m.result}</span>
+                  <span className="text-sm font-semibold text-white">vs. {m.opponent}</span>
+                  <span className="text-xs text-gray-500">#{m.oppRank}</span>
+                </div>
+                <span className="text-xs text-gray-500">{m.date}</span>
+              </div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm font-bold text-white">{m.score}</span>
+                <SurfaceBadge surface={m.surface} />
+                <span className="text-xs text-gray-500">{m.tournament} · {m.round}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {reportContent[m.id] ? (
+                  <button onClick={() => setActiveReport(activeReport === m.id ? null : m.id)} className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{activeReport === m.id ? 'Hide report ↑' : 'View report ↓'}</button>
+                ) : (
+                  <button onClick={() => generateReport(m)} disabled={!!generatingReport} className="text-xs text-purple-400 hover:text-purple-300 font-semibold disabled:opacity-50">
+                    {generatingReport === m.id ? 'Generating...' : '✨ Generate AI summary'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {generatingReport === m.id && (
+              <div className="bg-[#0d0f1a] border border-purple-600/30 rounded-xl p-4 mt-1" style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
+                <p className="text-sm text-purple-300">Generating match analysis...</p>
+              </div>
+            )}
+            {activeReport === m.id && reportContent[m.id] && (
+              <div className="bg-[#0d0f1a] border border-purple-600/20 rounded-xl p-5 mt-1">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">AI Match Analysis</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">Generated by Claude</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => navigator.clipboard.writeText(reportContent[m.id])} className="text-xs text-gray-400 hover:text-white">Copy report</button>
+                    <button onClick={() => {}} className="text-xs text-teal-400 hover:text-teal-300">Share with team</button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{reportContent[m.id]}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── DATA HUB VIEW ──────────────────────────────────────────────────────────────
+const DataHubView = () => {
+  const hasApiKey = !!TENNIS_API_KEY;
+  const [toastMsg, setToastMsg] = useState('');
+  const sources = [
+    { name: 'ATP Tennis IQ', status: 'External — visit to access', statusColor: 'bg-blue-600/20 text-blue-400 border-blue-600/30', desc: 'Official ATP analytics. Shot quality, live in-match data, wearables. Free for ATP members.', features: ['Shot Quality AI', 'In Attack score', 'Live coaching data', 'Wearables sync'], badge: 'Free for ATP members', badgeColor: 'bg-green-600/20 text-green-400', button: 'Open ATP Tennis IQ →', url: 'https://www.atptour.com', connected: true },
+    { name: 'TennisRatio', status: 'Connected — public data', statusColor: 'bg-green-600/20 text-green-400 border-green-600/30', desc: 'Public analytics dashboard. H2H records, surface splits, pressure point data for all ATP/WTA players.', features: ['H2H heatmaps', 'Surface win%', 'Pressure stats', 'Dominance ratios'], badge: 'Free', badgeColor: 'bg-green-600/20 text-green-400', button: 'Browse TennisRatio →', url: 'https://tennisratio.com', connected: true },
+    { name: 'Tennis ComStat', status: 'Not connected', statusColor: 'bg-gray-700/30 text-gray-500 border-gray-700', desc: 'Professional video + stats analysis. Upload match footage and receive shot maps, serve heatmaps, and rally analysis within 24 hours.', features: ['Video-synced stats', 'Shot maps', 'Serve/return heatmaps', 'Opponent patterns'], badge: 'Per-match pricing', badgeColor: 'bg-amber-600/20 text-amber-400', button: 'Connect ComStat ↗', url: '', connected: false },
+    { name: 'API-Tennis', status: hasApiKey ? 'Connected — live data active' : 'Not connected', statusColor: hasApiKey ? 'bg-green-600/20 text-green-400 border-green-600/30' : 'bg-gray-700/30 text-gray-500 border-gray-700', desc: 'Real-time ATP/WTA fixtures, live scores, rankings, H2H records, and odds.', features: ['Live scores', 'Fixtures', 'H2H', 'Rankings', 'Odds'], badge: 'From $40/mo', badgeColor: 'bg-purple-600/20 text-purple-400', button: hasApiKey ? 'Live data active' : 'Add API key in .env.local', url: '', connected: hasApiKey },
+  ];
+  const dataSources = [
+    { section: 'Live Scores', source: 'API-Tennis (live)' },
+    { section: 'Rankings & Race', source: 'API-Tennis + hardcoded' },
+    { section: 'Surface Analysis', source: 'API-Tennis + Lumio' },
+    { section: 'H2H / Opponent Scout', source: 'API-Tennis' },
+    { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
+    { section: 'Performance Rating', source: 'Lumio analytics engine' },
+    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Data & Analytics Hub" subtitle="Your connected analytics ecosystem — Lumio pulls from these sources to power your portal." icon="🔌" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {sources.map(s => (
+          <div key={s.name} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-white">{s.name}</h3>
+              <span className={`text-[10px] px-2 py-0.5 rounded border ${s.statusColor}`}>{s.status}</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed mb-3">{s.desc}</p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {s.features.map(f => (
+                <span key={f} className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">{f}</span>
+              ))}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] px-2 py-0.5 rounded ${s.badgeColor}`}>{s.badge}</span>
+              {s.url ? (
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{s.button}</a>
+              ) : s.connected ? (
+                <span className="text-xs text-green-400 font-semibold">{s.button}</span>
+              ) : (
+                <button onClick={() => { setToastMsg('Request sent — they\'ll email you within 24h'); setTimeout(() => setToastMsg(''), 3000) }} className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{s.button}</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-4">Data Sources Powering Your Portal</h3>
+        <div className="space-y-2">
+          {dataSources.map(d => (
+            <div key={d.section} className="flex items-center justify-between py-2 border-t border-gray-800">
+              <span className="text-sm text-gray-300">{d.section}</span>
+              <span className="text-xs text-gray-500">{d.source}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl text-sm font-medium" style={{ backgroundColor: '#1A1D27', border: '1px solid #374151', color: '#F9FAFB' }}>
+          {toastMsg}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function TennisTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -3721,6 +4097,7 @@ export default function TennisTourPage() {
       case 'schedule':     return <ScheduleView />;
       case 'performance':  return <PerformanceView player={player} />;
       case 'matchprep':    return <MatchPrepView />;
+      case 'matchreports': return <MatchReportsView />;
       case 'practice':     return <PracticeLogView />;
       case 'video':        return <VideoLibraryView />;
       case 'team':         return <TeamHubView player={player} />;
@@ -3735,6 +4112,7 @@ export default function TennisTourPage() {
       case 'pipeline':     return <AgentPipelineView />;
       case 'travel':       return <TravelView />;
       case 'federation':   return <FederationView />;
+      case 'datahub':      return <DataHubView />;
       case 'career':       return <CareerView player={player} />;
       case 'academy':      return <AcademyView />;
       case 'mental':       return <MentalPerformanceView />;
