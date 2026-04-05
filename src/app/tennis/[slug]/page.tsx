@@ -2,6 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+// ─── TENNIS API ──────────────────────────────────────────────────────────────
+const TENNIS_API_KEY = process.env.NEXT_PUBLIC_TENNIS_API_KEY ?? '';
+const TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
+
+async function tennisAPI(method: string, params: Record<string, string> = {}) {
+  if (!TENNIS_API_KEY) return null;
+  const qs = new URLSearchParams({ method, APIkey: TENNIS_API_KEY, ...params });
+  try {
+    const res = await fetch(`${TENNIS_BASE}?${qs}`);
+    const data = await res.json();
+    return data.success ? data.result : null;
+  } catch { return null; }
+}
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface TennisPlayer {
   id: string;
@@ -41,6 +55,10 @@ const SIDEBAR_ITEMS = [
   { id: 'morning',      label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
   { id: 'rankings',     label: 'Rankings & Race',     icon: '📊', group: 'PERFORMANCE' },
   { id: 'schedule',     label: 'Tournament Sched',    icon: '🗓️', group: 'PERFORMANCE' },
+  { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'PERFORMANCE' },
+  { id: 'scout',       label: 'Opponent Scout',      icon: '🔍', group: 'PERFORMANCE' },
+  { id: 'surface',     label: 'Surface Analysis',    icon: '🏟️', group: 'PERFORMANCE' },
+  { id: 'draw',        label: 'Draw & Bracket',      icon: '🏆', group: 'PERFORMANCE' },
   { id: 'performance',  label: 'Performance Stats',   icon: '📈', group: 'PERFORMANCE' },
   { id: 'matchprep',    label: 'Match Prep',          icon: '🎯', group: 'PERFORMANCE' },
   { id: 'practice',     label: 'Practice Log',        icon: '📝', group: 'PERFORMANCE' },
@@ -3037,11 +3055,324 @@ function PlayerCard({ player }: { player: TennisPlayer }) {
   );
 }
 
+// ─── LIVE SCORES VIEW ──────────────────────────────────────────────────────────
+const LiveScoresView = ({ liveScores, fixtures }: { liveScores: any[]; fixtures: any[] }) => {
+  const DEMO_MATCHES = [
+    { p1: 'J. Sinner [1]', p2: 'C. Alcaraz [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
+    { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
+    { p1: 'A. Rivera [67]', p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
+    { p1: 'C. Ruud [7]', p2: 'S. Tsitsipas [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
+    { p1: 'T. Fritz [5]', p2: 'A. Rublev [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
+    { p1: 'H. Rune [12]', p2: 'A. De Minaur [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
+  ];
+  const matches = liveScores.length > 0 ? liveScores : DEMO_MATCHES;
+  const isDemo = liveScores.length === 0;
+  return (
+    <div>
+      <SectionHeader title="Live Scores — ATP Tour" subtitle={isDemo ? 'Demo data — add NEXT_PUBLIC_TENNIS_API_KEY for live scores' : `${matches.length} matches today`} icon="🔴" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {matches.map((m: any, i: number) => (
+          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <SurfaceBadge surface={m.surface} />
+                <span className="text-xs text-gray-500">{m.tournament}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {m.status === 'Live' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
+                <span className={`text-xs font-semibold ${m.status === 'Live' ? 'text-green-400' : m.status === 'Finished' ? 'text-gray-500' : 'text-gray-400'}`}>{m.status}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{m.p1}</span>
+                {m.score && <span className="text-sm font-bold text-white">{m.score.split(' ')[0] || ''}</span>}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-300">{m.p2}</span>
+                {m.score && <span className="text-sm text-gray-400">{m.score.split(' ').slice(1).join(' ')}</span>}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-800">
+              <span className="text-xs text-gray-500">{m.round}</span>
+              {m.set && <span className="text-xs text-purple-400">{m.set}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {isDemo && <p className="text-xs text-gray-600 text-center">Powered by API-Tennis — add NEXT_PUBLIC_TENNIS_API_KEY to enable live data</p>}
+    </div>
+  );
+};
+
+// ─── OPPONENT SCOUT VIEW ────────────────────────────────────────────────────────
+const OpponentScoutView = ({ h2hData }: { h2hData: any[] }) => {
+  const opponent = { name: 'Carlos Ferreira', ranking: 54, flag: '🇧🇷', nationality: 'Brazilian', age: 26, height: "6'0\" / 183cm", plays: 'Left-handed', backhand: 'Two-handed', coach: 'Ricardo Souza' };
+  return (
+    <div>
+      <SectionHeader title="Opponent Intelligence" subtitle={`Next: ${opponent.name} (${opponent.flag} #${opponent.ranking})`} icon="🔍" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="H2H Record" value="3-1" sub="Alex leads" color="green" />
+        <StatCard label="Last Meeting" value="Alex W" sub="7-5 6-3 — Roland Garros 2024" color="purple" />
+        <StatCard label="Clay Win %" value="61%" sub="Ferreira on clay" color="orange" />
+        <StatCard label="1st Serve Speed" value="198 km/h" sub="Average" color="blue" />
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Surface Breakdown — Ferreira</h3>
+        <div className="grid grid-cols-4 gap-4 text-center text-sm">
+          <div className="text-gray-500 font-semibold text-left">Surface</div>
+          <div className="text-gray-500 font-semibold">Win %</div>
+          <div className="text-gray-500 font-semibold">Matches</div>
+          <div className="text-gray-500 font-semibold">Avg Duration</div>
+          {[
+            { s: 'Clay', w: '61%', m: '48', d: '1h 52m' },
+            { s: 'Hard', w: '54%', m: '62', d: '1h 41m' },
+            { s: 'Grass', w: '42%', m: '12', d: '1h 28m' },
+          ].map(r => (<>
+            <div key={r.s} className="text-left"><SurfaceBadge surface={r.s} /></div>
+            <div className="text-white font-semibold">{r.w}</div>
+            <div className="text-gray-400">{r.m}</div>
+            <div className="text-gray-400">{r.d}</div>
+          </>))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {[
+          { title: '2nd Serve Return', desc: 'Exploitable — only 54% win rate on 2nd serve return points. Attack wide on deuce side.', color: 'border-red-600/30' },
+          { title: 'Tiebreak Record', desc: 'Weak — 38% tiebreak win rate this season. Push sets to tiebreaks when possible.', color: 'border-amber-600/30' },
+          { title: 'Under Pressure', desc: 'Breaks down in deciding sets — 3-7 record in 3rd sets this year. Apply early pressure.', color: 'border-red-600/30' },
+        ].map(w => (
+          <div key={w.title} className={`bg-[#0d0f1a] border ${w.color} rounded-xl p-4`}>
+            <h4 className="text-sm font-bold text-white mb-2">⚠️ {w.title}</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">{w.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">🎯 Tactical Notes — Coach</h3>
+        <ul className="space-y-2">
+          {['Target Ferreira\'s backhand side early — his two-handed backhand under pressure has a 23% error rate in rallies over 8 shots.',
+            'Serve wide on the ad side — Ferreira moves poorly to his left. 68% of his return errors come from wide serves.',
+            'Stay aggressive in the 3rd set — historical data shows his level drops significantly. Win the first 3 games and the set is yours.',
+          ].map((tip, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+              <span className="text-purple-400 font-bold mt-0.5">{i + 1}.</span>
+              <span>{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+// ─── SURFACE ANALYSIS VIEW ──────────────────────────────────────────────────────
+const SurfaceAnalysisView = ({ player }: { player: TennisPlayer }) => {
+  const surfaces = [
+    { name: 'Clay', emoji: '🟤', win: 68, matches: 50, titles: 1, wl: '34-16', best: 'QF Roland Garros', color: 'orange' },
+    { name: 'Hard', emoji: '🔵', win: 61, matches: 72, titles: 1, wl: '44-28', best: 'R16 US Open', color: 'blue' },
+    { name: 'Grass', emoji: '🟢', win: 55, matches: 20, titles: 0, wl: '11-9', best: 'R32 Wimbledon', color: 'green' },
+  ];
+  const levels = [
+    { level: 'Grand Slams', played: 14, w: 22, l: 14, best: 'QF', pts: '2000' },
+    { level: 'Masters 1000', played: 18, w: 28, l: 18, best: 'SF', pts: '1000' },
+    { level: 'ATP 500', played: 12, w: 19, l: 8, best: 'W', pts: '500' },
+    { level: 'ATP 250', played: 16, w: 18, l: 7, best: 'W', pts: '250' },
+    { level: 'Challengers', played: 8, w: 14, l: 4, best: 'W', pts: '125' },
+  ];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthData = [3,4,2,5,3,4,2,3,0,0,0,0]; // wins per month
+  const monthLoss = [1,2,1,1,2,1,1,2,0,0,0,0];
+  return (
+    <div>
+      <SectionHeader title="Surface & Tournament Breakdown" subtitle={`${player.name} — 2026 Season`} icon="🏟️" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {surfaces.map(s => (
+          <div key={s.name} className={`bg-[#0d0f1a] border border-gray-800 rounded-xl p-5`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{s.emoji}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">{s.name}</h3>
+                  <p className="text-xs text-gray-500">{s.wl} · {s.titles} title{s.titles !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{s.win}%</div>
+                <p className="text-xs text-gray-500">win rate</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2 mb-2">
+              <div className="h-2 rounded-full" style={{ width: `${s.win}%`, background: s.color === 'orange' ? '#ea580c' : s.color === 'blue' ? '#3b82f6' : '#22c55e' }} />
+            </div>
+            <p className="text-xs text-gray-500">Best result: {s.best}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Tournament Level Breakdown</h3>
+        <div className="grid grid-cols-6 gap-2 text-xs text-center mb-2">
+          <div className="text-gray-500 font-semibold text-left">Level</div>
+          <div className="text-gray-500 font-semibold">Events</div>
+          <div className="text-gray-500 font-semibold">W</div>
+          <div className="text-gray-500 font-semibold">L</div>
+          <div className="text-gray-500 font-semibold">Best</div>
+          <div className="text-gray-500 font-semibold">Pts</div>
+        </div>
+        {levels.map(l => (
+          <div key={l.level} className="grid grid-cols-6 gap-2 text-sm text-center py-2 border-t border-gray-800">
+            <div className="text-left text-gray-300 text-xs">{l.level}</div>
+            <div className="text-white font-semibold">{l.played}</div>
+            <div className="text-green-400">{l.w}</div>
+            <div className="text-red-400">{l.l}</div>
+            <div className="text-purple-400">{l.best}</div>
+            <div className="text-gray-400">{l.pts}</div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">12-Month Form — Wins & Losses</h3>
+        <div className="flex items-end gap-1 h-24">
+          {months.map((m, i) => (
+            <div key={m} className="flex-1 flex flex-col items-center gap-0.5">
+              <div className="w-full flex flex-col items-center">
+                {monthData[i] > 0 && <div className="w-full rounded-t" style={{ height: monthData[i] * 12, background: '#22c55e', opacity: 0.8 }} />}
+                {monthLoss[i] > 0 && <div className="w-full rounded-b" style={{ height: monthLoss[i] * 12, background: '#ef4444', opacity: 0.5 }} />}
+              </div>
+              <span className="text-[10px] text-gray-600">{m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Break Pts Saved" value="67%" sub="148/221" color="green" />
+        <StatCard label="Tiebreaks Won" value="58%" sub="11/19" color="purple" />
+        <StatCard label="Deciding Sets" value="64%" sub="9/14" color="blue" />
+        <StatCard label="5-Set Record" value="3-1" sub="75% win rate" color="teal" />
+      </div>
+    </div>
+  );
+};
+
+// ─── DRAW & BRACKET VIEW ────────────────────────────────────────────────────────
+const DrawBracketView = () => {
+  const [drawTab, setDrawTab] = useState<'draw'|'schedule'|'prize'|'points'>('draw');
+  const rounds = ['R16', 'QF', 'SF', 'Final'];
+  const bracket = [
+    // R16 matchups (8 matches)
+    [
+      { p1: 'T. Nakashima [1]', p2: 'Qualifier', score: '6-3 6-4', winner: 1 },
+      { p1: 'L. Musetti [8]', p2: 'M. Cressy', score: '7-6 6-4', winner: 1 },
+      { p1: 'J. Draper [3]', p2: 'D. Shapovalov', score: '6-2 7-5', winner: 1 },
+      { p1: 'B. Shelton [5]', p2: 'F. Cerundolo', score: '4-6 6-3 7-6', winner: 1 },
+      { p1: 'A. Fils [4]', p2: 'L. Djere', score: '6-1 6-3', winner: 1 },
+      { p1: 'A. Rivera [6]', p2: 'R. Carballes', score: '6-4 6-2', winner: 1 },
+      { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1 },
+      { p1: 'U. Humbert [2]', p2: 'M. Arnaldi', score: '6-3 6-4', winner: 1 },
+    ],
+    // QF (4 matches)
+    [
+      { p1: 'T. Nakashima [1]', p2: 'L. Musetti [8]', score: '', winner: 0 },
+      { p1: 'J. Draper [3]', p2: 'B. Shelton [5]', score: '', winner: 0 },
+      { p1: 'A. Fils [4]', p2: 'A. Rivera [6]', score: '', winner: 0 },
+      { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0 },
+    ],
+    // SF
+    [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }, { p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
+    // Final
+    [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
+  ];
+  const prizes = [
+    { round: 'Winner', prize: '€81,310', points: 250 },
+    { round: 'Final', prize: '€46,390', points: 150 },
+    { round: 'SF', prize: '€26,440', points: 90 },
+    { round: 'QF', prize: '€15,200', points: 45 },
+    { round: 'R16', prize: '€9,435', points: 20 },
+    { round: 'R32', prize: '€5,900', points: 0 },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Tournament Draw — Brighton Open ATP 250" subtitle="Hard Court · Brighton, UK · 7-13 April 2026" icon="🏆" />
+      <div className="flex gap-2 mb-6">
+        {(['draw','schedule','prize','points'] as const).map(t => (
+          <button key={t} onClick={() => setDrawTab(t)} className={`px-4 py-2 rounded-lg text-xs font-semibold ${drawTab === t ? 'bg-purple-600 text-white' : 'bg-[#0d0f1a] border border-gray-800 text-gray-400 hover:text-white'}`}>
+            {t === 'draw' ? 'Draw' : t === 'schedule' ? 'Schedule' : t === 'prize' ? 'Prize Money' : 'Points'}
+          </button>
+        ))}
+      </div>
+      {drawTab === 'draw' && (
+        <div className="overflow-x-auto">
+          <div className="flex gap-6 min-w-[800px]">
+            {bracket.map((round, ri) => (
+              <div key={ri} className="flex-1">
+                <div className="text-xs font-semibold text-gray-500 mb-3 text-center">{rounds[ri]}</div>
+                <div className="space-y-3" style={{ marginTop: ri * 24 }}>
+                  {round.map((match: any, mi: number) => {
+                    const isAlex = match.p1.includes('Rivera') || match.p2.includes('Rivera');
+                    const isFerreira = match.p1.includes('Ferreira') || match.p2.includes('Ferreira');
+                    return (
+                      <div key={mi} className={`bg-[#0d0f1a] border rounded-lg p-2.5 text-xs ${isAlex ? 'border-purple-600/50' : isFerreira ? 'border-amber-600/30' : 'border-gray-800'}`}>
+                        <div className={`flex justify-between ${match.winner === 1 ? 'font-bold text-white' : 'text-gray-400'}`}>
+                          <span className="truncate">{match.p1}</span>
+                          {match.score && <span className="ml-2 text-gray-500 whitespace-nowrap">{match.score.split(' ')[0]}</span>}
+                        </div>
+                        <div className={`flex justify-between mt-1 ${match.winner === 2 ? 'font-bold text-white' : 'text-gray-400'}`}>
+                          <span className="truncate">{match.p2}</span>
+                          {match.score && <span className="ml-2 text-gray-500 whitespace-nowrap">{match.score.split(' ').slice(1).join(' ')}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {drawTab === 'prize' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="grid grid-cols-3 gap-2 text-xs text-center mb-2">
+            <div className="text-gray-500 font-semibold text-left">Round</div>
+            <div className="text-gray-500 font-semibold">Prize Money</div>
+            <div className="text-gray-500 font-semibold">Ranking Points</div>
+          </div>
+          {prizes.map(p => (
+            <div key={p.round} className="grid grid-cols-3 gap-2 text-sm text-center py-2.5 border-t border-gray-800">
+              <div className="text-left text-gray-300">{p.round}</div>
+              <div className="text-green-400 font-semibold">{p.prize}</div>
+              <div className="text-purple-400 font-semibold">{p.points}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {(drawTab === 'schedule' || drawTab === 'points') && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-8 text-center">
+          <p className="text-gray-500 text-sm">{drawTab === 'schedule' ? 'Order of Play — updated daily by tournament' : 'Points breakdown by round'}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function TennisTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const player = DEMO_PLAYER;
+  const [liveScores, setLiveScores] = useState<any[]>([]);
+  const [h2hData, setH2hData] = useState<any[]>([]);
+  const [fixtures, setFixtures] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeSection === 'livescores') {
+      tennisAPI('get_livescore').then(d => { if (d) setLiveScores(d); });
+    }
+    if (activeSection === 'scout') {
+      const today = new Date().toISOString().split('T')[0];
+      const next = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+      tennisAPI('get_fixtures', { date_start: today, date_stop: next }).then(d => { if (d) setFixtures(d); });
+    }
+  }, [activeSection]);
 
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
 
@@ -3071,6 +3402,10 @@ export default function TennisTourPage() {
       case 'academy':      return <AcademyView />;
       case 'mental':       return <MentalPerformanceView />;
       case 'settings':     return <SettingsView player={player} />;
+      case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
+      case 'scout':       return <OpponentScoutView h2hData={h2hData} />;
+      case 'surface':     return <SurfaceAnalysisView player={player} />;
+      case 'draw':        return <DrawBracketView />;
       default:             return <DashboardView player={player} />;
     }
   };
