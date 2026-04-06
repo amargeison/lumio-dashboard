@@ -201,7 +201,7 @@ export default function ContactsPage() {
       {activeTab === 'duplicates' ? (
         <div className="space-y-3">
           {contacts.map((c: CRMContact) => (
-            <DedupeBanner key={c.id} recordId={c.id} recordType="contact" recordData={c as Record<string, unknown>} />
+            <DedupeBanner key={c.id} recordId={c.id} recordType="contact" recordData={c as unknown as Record<string, unknown>} />
           ))}
         </div>
       ) : (
