@@ -7,7 +7,7 @@ import { ArrowRight, Check } from 'lucide-react'
 const PORTALS = [
   {
     icon: '⚽', title: 'Football', subtitle: 'Lumio Pro Club', color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.25)',
-    desc: 'From League Two to the Premier League — squad management, GPS performance, PSR compliance, scouting pipeline, transfer tracking, board reporting, and AI match intelligence. Built for Directors of Football, managers, and club owners.',
+    desc: 'From League Two to the Premier League — squad management, GPS performance (PlayerData), PSR compliance, scouting pipeline, transfer tracking, board reporting, and AI match intelligence. Built for Directors of Football, managers, and club owners.',
     cta: 'Explore Pro Club', href: '/football/lumio-dev',
   },
   {
@@ -34,11 +34,11 @@ const PORTALS = [
 
 const FEATURES = [
   { icon: '🤖', title: 'AI Morning Briefing', desc: 'Personalised daily intelligence delivered to player, manager, coaching staff, and agents before the day begins.' },
-  { icon: '📊', title: 'Performance Analytics', desc: 'Strokes gained, GPS load, match ratings, xG, OWGR — every sport\'s key metrics in one dashboard.' },
+  { icon: '📊', title: 'Performance Analytics', desc: 'Strokes gained, GPS load (PlayerData), match ratings, xG, OWGR — every sport\'s key metrics in one dashboard.' },
   { icon: '💰', title: 'Commercial Manager', desc: 'Sponsorship tracking, deal renewals, financial dashboard, multi-jurisdiction tax, prize money ledger.' },
   { icon: '👥', title: 'Team Hub', desc: 'Coach, caddie, physio, agent, DoF — all working from the same data in role-specific views.' },
   { icon: '🎯', title: 'Career Planning', desc: '1, 3, 5 and 10-year goal setting with financial targets and milestone tracking.' },
-  { icon: '📡', title: 'Live Data Integrations', desc: 'Arccos, Catapult, STATSports, DataGolf, TrackMan, Wyscout, API-Football — all connected.' },
+  { icon: '📡', title: 'Live Data Integrations', desc: 'Arccos, PlayerData, DataGolf, TrackMan, Wyscout, API-Football — all connected.' },
 ]
 
 const PRICING = [

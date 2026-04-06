@@ -9,7 +9,7 @@ const BORDER = '#1F2937'
 
 const FEATURES = [
   { icon: '📋', title: 'Contract & Career Management', desc: 'Track contract status, renewal dates, release clauses and agent pipeline in one secure place.' },
-  { icon: '📈', title: 'Performance Analytics', desc: 'Match ratings, carries, tackles, lineouts, set piece stats and GPS load data from training and match days.' },
+  { icon: '📈', title: 'Performance Analytics', desc: 'Match ratings, carries, tackles, lineouts, set piece stats and GPS load data from training and match days — powered by PlayerData EDGE GPS units, World Rugby Approved.' },
   { icon: '🏥', title: 'Injury & Recovery', desc: 'Injury log, physio notes, return-to-play timelines and load management tools integrated with your medical team.' },
   { icon: '🎯', title: 'Match Prep & Opposition Analysis', desc: 'Opponent tendencies, set piece analysis, tactical notes and pre-match briefing packs.' },
   { icon: '🤝', title: 'Sponsorship & Appearances', desc: 'Endorsement deals, social obligations, appearance fees and renewal calendars — all in one commercial hub.' },
