@@ -1408,6 +1408,12 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
 
   const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'COMMERCIAL', 'OPERATIONS']
 
+  // Grassroots tier: hide FSR, salary, revenue, standalone, board, financial
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps'])
+  const filteredItems = club.tier === 'grassroots'
+    ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
+    : SIDEBAR_ITEMS
+
   const renderView = () => {
     switch (activeSection) {
       case 'dashboard':   return <DashboardView club={club} />
@@ -1444,10 +1450,13 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
           {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{club.name}</span>}
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
-          {groups.map(group => (
+          {groups.map((group: string) => {
+            const items = filteredItems.filter((i: { group: string }) => i.group === group)
+            if (items.length === 0) return null
+            return (
             <div key={group}>
               {!sidebarCollapsed && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
-              {SIDEBAR_ITEMS.filter(i => i.group === group).map(item => (
+              {items.map((item: { id: string; label: string; icon: string }) => (
                 <button key={item.id} onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center gap-2.5 px-4 py-2 text-xs transition-all ${
                     activeSection === item.id ? 'bg-pink-600/10 text-pink-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -1457,7 +1466,8 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
                 </button>
               ))}
             </div>
-          ))}
+            )
+          })}
         </nav>
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 text-gray-600 hover:text-gray-400 border-t border-gray-800 text-xs">
           {sidebarCollapsed ? '→' : '← Collapse'}
@@ -1471,12 +1481,26 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
             <span className="text-lg">⚽</span>
             <div>
               <h1 className="text-sm font-bold text-white">{club.name}</h1>
-              <p className="text-[10px] text-gray-500">{club.league} · FSR Compliant · Karen Carney Review Standards</p>
+              <p className="text-[10px] text-gray-500">
+                {club.tier === 'grassroots' ? `${club.league} Women's Football` : `${club.league} · FSR Compliant · Karen Carney Review Standards`}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded bg-green-600/20 text-green-400 border border-green-600/30">FSR: SAFE</span>
-            <span className="text-xs px-2 py-1 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">{club.league}</span>
+            {club.tier !== 'grassroots' && (
+              <span className={`text-xs px-2 py-1 rounded ${
+                club.salarySpend !== null && club.salarySpend > 80 ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
+                club.salarySpend !== null && club.salarySpend > 70 ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
+                'bg-green-600/20 text-green-400 border border-green-600/30'
+              }`}>
+                FSR: {club.salarySpend !== null && club.salarySpend > 80 ? 'AT RISK' : club.salarySpend !== null && club.salarySpend > 70 ? 'REVIEW' : 'SAFE'}
+              </span>
+            )}
+            <span className={`text-xs px-2 py-1 rounded ${
+              club.tier === 'pro' ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' :
+              club.tier === 'championship' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
+              'bg-green-600/20 text-green-400 border border-green-600/30'
+            }`}>{club.league}</span>
           </div>
         </div>
         <div className="p-6 max-w-6xl">
