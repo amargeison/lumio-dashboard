@@ -129,8 +129,8 @@ const NAV=[
   {id:'staff',label:'Staff & HR',icon:'👤'},
 ];
 
-const fmt=n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
-const pct=(a,b)=>Math.round((a/b)*100);
+const fmt=(n:number)=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
+const pct=(a:number,b:number)=>Math.round((a/b)*100);
 
 export default function LumioCricket(){
   const[page,setPage]=useState('briefing');
@@ -138,18 +138,18 @@ export default function LumioCricket(){
   const[gpsIdx,setGpsIdx]=useState(0);
   const gp=GPS_DATA[gpsIdx];
 
-  const statusColor=st=>{
+  const statusColor=(st:string)=>{
     if(st==='fit'||st==='confirmed'||st==='valid'||st==='active'||st==='Complete')return C.green;
     if(st==='monitoring'||st==='pending'||st==='expiring'||st==='negotiating'||st==='amber'||st==='In progress'||st==='Approved')return C.amber;
     if(st==='injury'||st==='expired'||st==='urgent'||st==='red')return C.red;
     return C.muted;
   };
-  const statusBg=st=>{
+  const statusBg=(st:string)=>{
     const s=statusColor(st);
     return s===C.green?C.greenDim:s===C.amber?C.amberDim:s===C.red?C.redDim:C.border;
   };
 
-  const Pill=({label,active,onClick})=>(
+  const Pill=({label,active,onClick}:{label:string;active:boolean;onClick:()=>void})=>(
     <button onClick={onClick} style={{padding:'6px 14px',borderRadius:20,fontSize:12,fontWeight:500,cursor:'pointer',
       border:'1px solid',transition:'all 0.15s',
       borderColor:active?C.purple:C.border,
@@ -159,7 +159,7 @@ export default function LumioCricket(){
     </button>
   );
 
-  const Stat=({label,value,sub,color=C.teal})=>(
+  const Stat=({label,value,sub,color=C.teal}:{label:string;value:string|number;sub?:string;color?:string})=>(
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:'14px 18px',flex:1,minWidth:0}}>
       <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>{label}</div>
       <div style={{fontSize:22,fontWeight:600,color,lineHeight:1}}>{value}</div>
@@ -167,25 +167,25 @@ export default function LumioCricket(){
     </div>
   );
 
-  const Card=({children,style={}})=>(
+  const Card=({children,style={}}:{children:React.ReactNode;style?:React.CSSProperties})=>(
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:20,...style}}>{children}</div>
   );
 
-  const SectionHead=({title,sub})=>(
+  const SectionHead=({title,sub}:{title:string;sub?:string})=>(
     <div style={{marginBottom:20}}>
       <h2 style={{fontSize:20,fontWeight:600,color:C.text,margin:0}}>{title}</h2>
       {sub&&<p style={{fontSize:13,color:C.muted,margin:'4px 0 0'}}>{sub}</p>}
     </div>
   );
 
-  const StatusBadge=({st,label})=>{
+  const StatusBadge=({st,label}:{st:string;label?:string})=>{
     const l=label||st;
     return <span style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:500,
       color:statusColor(st),background:statusBg(st)}}>{l}</span>;
   };
 
   // ── CRICKET GROUND SVG ────────────────────────────────────────────
-  const CricketGround=({player})=>(
+  const CricketGround=({player}:{player:{lines:{x1:number;y1:number;x2:number;y2:number}[];zones:{x:number;y:number;r:number;c:string;o:number}[]}})=>(
     <svg viewBox="0 0 400 400" style={{width:'100%',maxWidth:360,display:'block'}}>
       {/* Outfield */}
       <ellipse cx="200" cy="200" rx="175" ry="165" fill="#0a1f0a"/>
@@ -235,7 +235,7 @@ export default function LumioCricket(){
   );
 
   // ── BOWLING LOAD GAUGE ────────────────────────────────────────────
-  const BowlGauge=({bowl})=>{
+  const BowlGauge=({bowl}:{bowl:{del:number;lim:number;ov:number;st:string;acr?:number;note?:string}|null})=>{
     if(!bowl)return null;
     const pct=Math.min(bowl.del/bowl.lim,1);
     const r=52,cx=80,cy=80;
@@ -262,7 +262,7 @@ export default function LumioCricket(){
             <div>
               <div style={{fontSize:10,color:C.dim,marginBottom:2}}>Acute:Chronic Ratio</div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:20,fontWeight:600,color:bowl.acr>1.3?C.red:bowl.acr>1.0?C.amber:C.green}}>{bowl.acr.toFixed(2)}</span>
+                <span style={{fontSize:20,fontWeight:600,color:(bowl.acr??0)>1.3?C.red:(bowl.acr??0)>1.0?C.amber:C.green}}>{(bowl.acr??0).toFixed(2)}</span>
                 <span style={{padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:500,
                   color:statusColor(bowl.st),background:statusBg(bowl.st)}}>
                   {bowl.st==='green'?'Safe zone':bowl.st==='amber'?'Manage carefully':'Danger zone'}
@@ -350,15 +350,15 @@ export default function LumioCricket(){
   // ── PAGE: SQUAD ───────────────────────────────────────────────────
   const Squad=()=>{
     const fmts=[{id:'ch',label:'Championship'},{id:'t2',label:'T20 Blast'},{id:'od',label:'One Day Cup'},{id:'hu',label:'The Hundred'}];
-    const filtered=SQUAD.filter(p=>p[format]);
+    const filtered=SQUAD.filter(p=>(p as Record<string,unknown>)[format]);
     return(
       <div>
         <SectionHead title="Multi-Format Squad Manager" sub="Player availability, eligibility and format conflicts across all four competitions"/>
         <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
           {fmts.map(f=><Pill key={f.id} label={f.label} active={format===f.id} onClick={()=>setFormat(f.id)}/>)}
           <div style={{marginLeft:'auto',display:'flex',gap:8}}>
-            <span style={{padding:'6px 14px',borderRadius:20,fontSize:12,background:C.greenDim,color:C.green}}>✓ {SQUAD.filter(p=>p[format]&&p.st==='fit').length} fit</span>
-            {SQUAD.filter(p=>p[format]&&p.st==='injury').length>0&&<span style={{padding:'6px 14px',borderRadius:20,fontSize:12,background:C.redDim,color:C.red}}>⚠ {SQUAD.filter(p=>p[format]&&p.st==='injury').length} injured</span>}
+            <span style={{padding:'6px 14px',borderRadius:20,fontSize:12,background:C.greenDim,color:C.green}}>✓ {SQUAD.filter(p=>(p as Record<string,unknown>)[format]&&p.st==='fit').length} fit</span>
+            {SQUAD.filter(p=>(p as Record<string,unknown>)[format]&&p.st==='injury').length>0&&<span style={{padding:'6px 14px',borderRadius:20,fontSize:12,background:C.redDim,color:C.red}}>⚠ {SQUAD.filter(p=>(p as Record<string,unknown>)[format]&&p.st==='injury').length} injured</span>}
           </div>
         </div>
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:'hidden'}}>
@@ -400,7 +400,7 @@ export default function LumioCricket(){
                   <td style={{padding:'12px 16px'}}>
                     <div style={{display:'flex',gap:4}}>
                       {[{k:'ch',l:'CC'},{k:'t2',l:'T20'},{k:'od',l:'OD'},{k:'hu',l:'HUN'}].map(f=>(
-                        p[f.k]?<span key={f.k} style={{padding:'1px 6px',borderRadius:3,fontSize:10,background:format===f.k?C.purple:C.purpleDim,color:format===f.k?'white':C.purple}}>{f.l}</span>:
+                        (p as Record<string,unknown>)[f.k]?<span key={f.k} style={{padding:'1px 6px',borderRadius:3,fontSize:10,background:format===f.k?C.purple:C.purpleDim,color:format===f.k?'white':C.purple}}>{f.l}</span>:
                         <span key={f.k} style={{padding:'1px 6px',borderRadius:3,fontSize:10,background:C.border,color:C.dim}}>{f.l}</span>
                       ))}
                     </div>
@@ -493,7 +493,7 @@ export default function LumioCricket(){
                 <XAxis dataKey="t" tick={{fontSize:10,fill:C.dim}} axisLine={false} tickLine={false}/>
                 <YAxis tick={{fontSize:10,fill:C.dim}} axisLine={false} tickLine={false} domain={[0,35]}/>
                 <Area type="monotone" dataKey="v" stroke={C.teal} strokeWidth={2} fill="url(#spd)"/>
-                <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:12}} formatter={v=>[`${v.toFixed(1)} km/h`,'']}/>
+                <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:12}} formatter={((v:number)=>[`${v.toFixed(1)} km/h`,'']) as never}/>
               </AreaChart>
             </ResponsiveContainer>
           </Card>
@@ -574,7 +574,7 @@ export default function LumioCricket(){
                 {[{k:'sleep',l:'😴'},{k:'energy',l:'⚡'},{k:'soreness',l:'💪'},{k:'mood',l:'😊'}].map(m=>(
                   <div key={m.k} style={{textAlign:'center'}}>
                     <div style={{fontSize:9,color:C.dim}}>{m.l}</div>
-                    <div style={{fontSize:11,color:p[m.k]>=7?C.green:p[m.k]>=5?C.amber:C.red,fontWeight:500}}>{p[m.k]}</div>
+                    <div style={{fontSize:11,color:(p as unknown as Record<string,number>)[m.k]>=7?C.green:(p as unknown as Record<string,number>)[m.k]>=5?C.amber:C.red,fontWeight:500}}>{(p as unknown as Record<string,number>)[m.k]}</div>
                   </div>
                 ))}
                 <div style={{width:42,textAlign:'right'}}>
@@ -1014,7 +1014,7 @@ export default function LumioCricket(){
               {stream:'Media',budget:480000,actual:520000},
             ]} margin={{top:0,right:0,left:0,bottom:0}}>
               <XAxis dataKey="stream" tick={{fontSize:10,fill:C.dim}} axisLine={false} tickLine={false}/>
-              <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}} formatter={v=>[fmt(v),'']}/>
+              <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}} formatter={((v:number)=>[fmt(v),'']) as never}/>
               <Bar dataKey="budget" fill={C.border} radius={[3,3,0,0]} name="Budget"/>
               <Bar dataKey="actual" fill={C.teal} radius={[3,3,0,0]} name="Actual/Forecast"/>
             </BarChart>
@@ -1046,7 +1046,7 @@ export default function LumioCricket(){
             <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.purple} stopOpacity={0.3}/><stop offset="95%" stopColor={C.purple} stopOpacity={0}/></linearGradient></defs>
             <XAxis dataKey="m" tick={{fontSize:10,fill:C.dim}} axisLine={false} tickLine={false}/>
             <Area type="monotone" dataKey="v" stroke={C.purple} strokeWidth={2} fill="url(#rev)"/>
-            <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}} formatter={v=>[fmt(v),'']}/>
+            <Tooltip contentStyle={{background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}} formatter={((v:number)=>[fmt(v),'']) as never}/>
           </AreaChart>
         </ResponsiveContainer>
       </Card>
@@ -1139,7 +1139,7 @@ export default function LumioCricket(){
       </div>
       {/* Content */}
       <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
-        {pages[page]||<Briefing/>}
+        {(pages as Record<string,React.ReactNode>)[page]||<Briefing/>}
       </div>
     </div>
   );
