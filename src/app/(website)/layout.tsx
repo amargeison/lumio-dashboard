@@ -117,20 +117,24 @@ function Nav() {
     >
       <div
         className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
-        style={isSports ? { minHeight: 100 } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 64px', width: '100%', minHeight: 80 }}
+        style={isSports ? { minHeight: 100 } : isSchools ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 32px', width: '100%', minHeight: 80, overflow: 'visible' } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 64px', width: '100%', minHeight: 80, overflow: 'visible' }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0 } : { flexShrink: 0, marginRight: 48 }}>
+        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 24 : 48, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
             style={{ height: isSports ? '36px' : '120px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
         </Link>
 
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : { display: 'flex', alignItems: 'center', gap: 32, flexShrink: 0 }}>
-          {navLinks.map(l => (
+        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 } : { display: 'flex', alignItems: 'center', gap: 32, flexShrink: 0 }}>
+          {navLinks.filter((l: { label: string }) => {
+            // Hide secondary items from main schools nav — they go in "More" dropdown
+            if (isSchools && (l.label === 'Features' || l.label === 'SSO & Rostering' || l.label === 'Integrations')) return false
+            return true
+          }).map(l => (
             <Link key={l.label} href={l.href}
-              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : 'px-2 py-2 text-base font-medium'}`}
+              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : isSchools ? 'px-2 py-2 text-sm font-medium' : 'px-2 py-2 text-base font-medium'}`}
               style={{ color: '#9CA3AF' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
@@ -143,10 +147,34 @@ function Nav() {
               )}
             </Link>
           ))}
+          {isSchools && (
+            <div className="relative group">
+              <button type="button" className="flex items-center gap-1 px-2 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap" style={{ color: '#9CA3AF', backgroundColor: 'transparent' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}>
+                More <span style={{ fontSize: 10 }}>▾</span>
+              </button>
+              <div className="absolute left-0 top-full pt-2 hidden group-hover:block" style={{ minWidth: 200, zIndex: 60 }}>
+                <div className="rounded-lg py-2" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                  {[
+                    { label: 'Features', href: '/schools/features' },
+                    { label: 'SSO & Rostering', href: '/schools/sso' },
+                    { label: 'Integrations', href: '/schools/integrations' },
+                  ].map((l: { label: string; href: string }) => (
+                    <Link key={l.label} href={l.href} className="block px-4 py-2 text-sm transition-colors" style={{ color: '#9CA3AF' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB'; (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(255,255,255,0.04)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF'; (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'transparent' }}>
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center" style={isSports ? { gap: 8, flexShrink: 0 } : { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 32 }}>
+        <div className="hidden md:flex items-center" style={isSports ? { gap: 8, flexShrink: 0 } : isSchools ? { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 16 } : { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 32 }}>
           {!isSports && (
             <button
               type="button"
@@ -155,8 +183,8 @@ function Nav() {
                 color: '#0D9488',
                 border: '1px solid #0D9488',
                 borderRadius: 20,
-                padding: '6px 16px',
-                fontSize: 14,
+                padding: isSchools ? '4px 12px' : '6px 16px',
+                fontSize: isSchools ? 13 : 14,
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
                 backgroundColor: 'transparent',
@@ -180,7 +208,7 @@ function Nav() {
             </Link>
           ) : isSchools ? (
             <Link href="/demo/schools/oakridge-primary"
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap`}
+              className="px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0D9488' }}>
@@ -188,7 +216,7 @@ function Nav() {
             </Link>
           ) : (
             <button onClick={() => setShowTypeModal(true)}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap`}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
@@ -197,7 +225,7 @@ function Nav() {
           )}
           {isFootball ? (
             <Link href="/book-demo"
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors`}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
@@ -205,7 +233,7 @@ function Nav() {
             </Link>
           ) : (
             <Link href={isSchools ? '/schools/checkout' : '/buy'}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors`}
+              className={isSchools ? 'px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors' : 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors'}
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
@@ -213,7 +241,7 @@ function Nav() {
             </Link>
           )}
           <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors`}
+            className={isSchools ? 'px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors' : 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors'}
             style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#374151' }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1F2937' }}>
