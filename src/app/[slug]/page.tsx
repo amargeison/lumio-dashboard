@@ -1173,11 +1173,17 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posStartRef = useRef({ x: 50, y: 50 })
 
-  // Sync photos to demoDataActive state
+  // Sync photos to demoDataActive state — only seed demo photos when the user
+  // hasn't uploaded any of their own. Never wipes user uploads.
   useEffect(() => {
     if (photoImpCtx.isImpersonating) return
-    setPhotos(demoDataActive ? DEMO_PHOTOS : [])
-    if (!demoDataActive) localStorage.removeItem('lumio-photo-frame')
+    const stored = localStorage.getItem('lumio_photo_frame')
+    const userPhotos = stored ? JSON.parse(stored) : []
+    if (userPhotos.length === 0) {
+      setPhotos(demoDataActive ? DEMO_PHOTOS : [])
+    } else {
+      setPhotos(userPhotos)
+    }
   }, [demoDataActive])
 
   useEffect(() => {
@@ -1186,10 +1192,14 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
   const photosInitRef = useRef(false)
-  useEffect(() => { if (!photosInitRef.current) { photosInitRef.current = true; return }; localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { if (!photosInitRef.current) { photosInitRef.current = true; return }; localStorage.setItem('lumio_photo_frame', JSON.stringify(photos)) }, [photos])
   useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
-  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
-  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 3) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  function handleRemovePhoto() {
+    if (photos.length === 0) return
+    setPhotos(prev => prev.filter((_, i) => i !== currentIdx))
+    setCurrentIdx(prev => Math.max(0, Math.min(prev, photos.length - 2)))
+  }
 
   function onDragStart(cx: number, cy: number) {
     isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
@@ -1210,8 +1220,8 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       {photos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #374151', height: 220 }} onClick={() => fileInputRef.current?.click()}>
-          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #0D9488', height: 220 }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div><div className="text-sm font-semibold" style={{ color: '#0D9488' }}>Add up to 3 photos</div>
         </div>
       ) : (
       <div className="relative" style={{ height: 220, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
@@ -1250,7 +1260,7 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
         </div>
         <div className="flex items-center gap-1.5">
           {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕</button>}
-          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 3} title={photos.length >= 3 ? 'Maximum 3 photos' : 'Add a photo'} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 3 ? '#6B7280' : '#0D9488', cursor: photos.length >= 3 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
@@ -1826,6 +1836,11 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
   const [liveEvents, setLiveEvents] = useState<LiveCalEvent[] | null>(null)
   const [calError, setCalError] = useState<string | null>(null)
   const [meetingToast, setMeetingToast] = useState<string | null>(null)
+  const [actionModal, setActionModal] = useState<{
+    type: 'join' | 'decline' | 'forward'
+    title: string
+    organiser: string
+  } | null>(null)
   useEffect(() => { if (meetingToast) { const t = setTimeout(() => setMeetingToast(null), 3000); return () => clearTimeout(t) } }, [meetingToast])
   const impCtx = getImpersonationContext()
   const msCalConnected = !impCtx.isImpersonating && typeof window !== 'undefined' && localStorage.getItem('lumio_integration_outlook_cal') === 'true'
@@ -1946,9 +1961,9 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                   <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
                     <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                     <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{m.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {m.duration}</p></div>
-                    <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
-                    <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
-                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join &rarr;</a>}
+                    <button onClick={() => setActionModal({ type: 'forward', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                    <button onClick={() => setActionModal({ type: 'decline', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                    {m.link && <button onClick={() => setActionModal({ type: 'join', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A', border: 'none', cursor: 'pointer' }}>Join &rarr;</button>}
                   </div>
                 )}
                 {!live && (
@@ -1957,10 +1972,10 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                     <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
                     {m.status !== 'done' && <>
-                      <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
-                      <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                      <button onClick={() => setActionModal({ type: 'forward', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                      <button onClick={() => setActionModal({ type: 'decline', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
                     </>}
-                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join &rarr;</a>}
+                    {m.link && m.status !== 'done' && <button onClick={() => setActionModal({ type: 'join', title: m.title, organiser: m.attendees[0] || 'the organiser' })} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA', border: 'none', cursor: 'pointer' }}>Join &rarr;</button>}
                   </div>
                 )}
               </div>
@@ -1973,6 +1988,105 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
       {meetingToast && (
         <div className="mt-2 rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: '#22C55E' }}>
           {meetingToast}
+        </div>
+      )}
+
+      {/* Demo action modal — explains what the action would do in the live portal */}
+      {actionModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setActionModal(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0D1117',
+              border: '1px solid #1F2937',
+              borderRadius: 16,
+              padding: 32,
+              maxWidth: 480,
+              width: '90%',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, color: '#6B7280', letterSpacing: 2, marginBottom: 8 }}>
+                DEMO MODE
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+                {actionModal.type === 'join' && '🎥 Join Meeting'}
+                {actionModal.type === 'decline' && '❌ Decline Meeting'}
+                {actionModal.type === 'forward' && '↗ Forward Meeting'}
+              </h3>
+              <p style={{ fontSize: 14, color: '#9CA3AF' }}>
+                {actionModal.title}
+              </p>
+            </div>
+
+            {/* Demo explanation */}
+            <div style={{ backgroundColor: '#111827', borderRadius: 10, padding: 16, marginBottom: 20, border: '1px solid #1F2937' }}>
+              <p style={{ fontSize: 13, color: '#D1D5DB', lineHeight: 1.6, margin: 0 }}>
+                {actionModal.type === 'join' && 'In your live portal, this button would open your Teams or Google Meet link directly and mark you as attending.'}
+                {actionModal.type === 'decline' && 'In your live portal, this would send a decline to the organiser and optionally send an email asking to rebook.'}
+                {actionModal.type === 'forward' && 'In your live portal, this would let you forward the invite to a colleague via email, Teams, or Slack.'}
+              </p>
+            </div>
+
+            {/* Action buttons — what they'd see in live */}
+            <p style={{ fontSize: 11, color: '#6B7280', marginBottom: 12, letterSpacing: 1 }}>
+              IN THE LIVE PORTAL YOU COULD:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {actionModal.type === 'join' && (<>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#0D9488', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  🎥 Open in Microsoft Teams
+                </button>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  📧 Email organiser you&apos;re joining
+                </button>
+              </>)}
+
+              {actionModal.type === 'decline' && (<>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#7C3AED', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  ❌ Decline and notify {actionModal.organiser}
+                </button>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  📅 Decline and request rebook
+                </button>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  💬 Send via Slack instead
+                </button>
+              </>)}
+
+              {actionModal.type === 'forward' && (<>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#7C3AED', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  📧 Forward via Email
+                </button>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  💬 Forward via Slack
+                </button>
+                <button style={{ padding: '10px 16px', borderRadius: 8, backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+                  👥 Forward via Microsoft Teams
+                </button>
+              </>)}
+            </div>
+
+            {/* Close */}
+            <button
+              onClick={() => setActionModal(null)}
+              style={{ width: '100%', padding: '10px 16px', borderRadius: 8, backgroundColor: 'transparent', color: '#6B7280', border: '1px solid #374151', cursor: 'pointer', fontSize: 14 }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>
