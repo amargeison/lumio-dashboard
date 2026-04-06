@@ -6,7 +6,14 @@ import { ArrowRight, Check, ChevronRight, Target, Activity, Trophy, Users, Dolla
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const PORTALS = [
+interface Portal {
+  id: string; icon: string; label: string; color: string; desc: string;
+  modules: Array<{ name: string; detail: string }>;
+  integrations: string[]; checks: string[];
+  cta: string; href: string; comingSoon?: boolean;
+}
+
+const PORTALS: Portal[] = [
   {
     id: 'football', icon: '⚽', label: 'Football Pro', color: '#10B981',
     desc: 'From League Two to the Premier League — squad management, GPS performance tracking (PlayerData), PSR compliance, scouting pipeline, transfer tracking, board reporting and AI match intelligence.',
@@ -120,32 +127,32 @@ const PORTALS = [
     cta: "Book a Women's Football demo", href: '/contact',
   },
   {
-    id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6', comingSoon: true,
-    desc: 'Contract & career management, performance analytics, GPS load data (PlayerData, World Rugby Approved), injury & recovery tracking, match prep & opposition analysis, sponsorship manager and AI morning briefing.',
+    id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6',
+    desc: 'Salary cap management (ceiling + floor), franchise readiness tracker, concussion & HIA compliance, club-to-country data interface, GPS performance (PlayerData), sponsorship pipeline and AI morning briefing.',
     modules: [
-      { name: 'Contract & Career Management', detail: 'Coming soon' },
-      { name: 'GPS Performance (PlayerData)', detail: 'Coming soon' },
-      { name: 'Injury & Recovery', detail: 'Coming soon' },
-      { name: 'Match Prep & Opposition Analysis', detail: 'Coming soon' },
-      { name: 'Sponsorship & Appearances', detail: 'Coming soon' },
+      { name: 'Salary Cap Dashboard', detail: 'Three-zone cap indicator with floor, spend and ceiling. Exclusions, academy credits and central contract discounts calculated automatically.' },
+      { name: 'Franchise Readiness', detail: 'Six-criteria RAG tracker with Expression of Interest document builder for RFU Expansion Review Group.' },
+      { name: 'Concussion & HIA Tracker', detail: '21-day protocol management with independent doctor clearance workflow and cumulative threshold monitoring.' },
+      { name: 'Club-to-Country Data Interface', detail: 'Automated Kitman Labs data handoff to RFU, return-to-play protocol tracking and international window calendar.' },
+      { name: 'Sponsorship & Commercial', detail: 'Partnership pipeline, matchday revenue tracker, stadium venue management and sponsor obligation fulfilment dashboard.' },
     ],
-    integrations: ['PlayerData', 'World Rugby'],
-    checks: [],
-    cta: 'Join the Rugby waitlist', href: '/contact',
+    integrations: ['Kitman Labs', 'PlayerData', 'RFU', 'World Rugby'],
+    checks: ['Salary cap headroom tracked in real time — ceiling and floor', 'Franchise readiness score with RFU criteria mapping', 'HIA protocol tracker with 21-day minimum enforcement', 'Club-to-country data handoff — Kitman Labs auto-sync', 'Women\'s programme compliance (PWR or regional development plan)'],
+    cta: 'See Lumio Rugby live in a demo', href: '/rugby/rugby-demo',
   },
   {
-    id: 'cricket', icon: '🏏', label: 'Cricket', color: '#F59E0B', comingSoon: true,
+    id: 'cricket', icon: '🏏', label: 'Cricket', color: '#F59E0B',
     desc: 'Contract & central contract tracker, batting & bowling analytics, tour & franchise schedule planner (IPL, The Hundred, BBL), injury & fitness management, sponsorship pipeline and AI morning briefing.',
     modules: [
-      { name: 'Contract & Central Contract Tracker', detail: 'Coming soon' },
-      { name: 'Performance Analytics', detail: 'Coming soon' },
-      { name: 'Tour & Franchise Schedule', detail: 'Coming soon' },
-      { name: 'Injury & Fitness Management', detail: 'Coming soon' },
-      { name: 'Commercial Pipeline', detail: 'Coming soon' },
+      { name: 'Contract & Central Contract Tracker', detail: 'County, franchise and central contract status with release windows, renewal dates and earnings breakdown by format.' },
+      { name: 'Performance Analytics', detail: 'Batting averages, strike rates, bowling economy, wickets and form charts with Test/ODI/T20 format breakdowns.' },
+      { name: 'Tour & Franchise Schedule', detail: 'International tour calendar, IPL/Hundred/BBL franchise schedule and multi-format availability tracker.' },
+      { name: 'Injury & Fitness Management', detail: 'Injury log, physio notes, fitness testing, return-to-play protocols and workload management across formats.' },
+      { name: 'Commercial Pipeline', detail: 'Bat sponsorships, endorsements, appearance fees, social obligations and agent pipeline management.' },
     ],
-    integrations: ['ECB', 'ICC'],
-    checks: [],
-    cta: 'Join the Cricket waitlist', href: '/contact',
+    integrations: ['ECB', 'ICC', 'Kitman Labs'],
+    checks: ['Multi-format contract tracker — county, franchise and central', 'Format-specific analytics — Test, ODI, T20', 'Franchise schedule planner — IPL, Hundred, BBL, PSL', 'Workload management across all competitions', 'NOC and federation accreditation tracking'],
+    cta: 'See Lumio Cricket live in a demo', href: '/cricket/cricket-demo',
   },
 ]
 
@@ -237,31 +244,26 @@ export default function SportsProductPage() {
         </div>
 
         {/* Tab bar */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {PORTALS.map((p, i) => {
-            const isActive = i === activeTab
-            return (
-              <button
-                key={p.id}
-                onClick={() => setActiveTab(i)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
-                style={{
-                  backgroundColor: isActive ? p.color : '#111318',
-                  color: isActive ? '#F9FAFB' : '#6B7280',
-                  border: `1px solid ${isActive ? p.color : '#1F2937'}`,
-                }}>
-                <span role="img" aria-label={p.label} style={{ fontSize: 14 }}>{p.icon}</span>
-                {p.label}
-                {'comingSoon' in p && p.comingSoon && (
-                  <span
-                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1"
-                    style={{ backgroundColor: 'rgba(139,92,246,0.2)', color: '#A78BFA' }}>
-                    Soon
-                  </span>
-                )}
-              </button>
-            )
-          })}
+        <div className="flex justify-center mb-10">
+          <div className="flex gap-1.5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+            {PORTALS.map((p, i) => {
+              const isActive = i === activeTab
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setActiveTab(i)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  style={{
+                    backgroundColor: isActive ? p.color : '#111318',
+                    color: isActive ? '#F9FAFB' : '#6B7280',
+                    border: `1px solid ${isActive ? p.color : '#1F2937'}`,
+                  }}>
+                  <span role="img" aria-label={p.label} style={{ fontSize: 12 }}>{p.icon}</span>
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Tab content */}
@@ -281,7 +283,7 @@ export default function SportsProductPage() {
                 <h3 className="text-lg font-bold">{portal.label}</h3>
                 <p className="text-xs" style={{ color: portal.color }}>
                   {portal.modules.length} modules included
-                  {'comingSoon' in portal && portal.comingSoon && (
+                  {portal.comingSoon && (
                     <span className="ml-2 font-semibold" style={{ color: '#A78BFA' }}>· Coming soon</span>
                   )}
                 </p>
