@@ -77,6 +77,11 @@ function getPhoto(email?: string): string | null {
   return val || null
 }
 
+function getCartoon(email?: string): string | null {
+  if (!email || typeof window === 'undefined') return null
+  return localStorage.getItem(`lumio_staff_cartoon_${email}`) || null
+}
+
 function savePhoto(email: string, url: string) {
   // Only store URL strings — never base64
   if (url.startsWith('data:')) return
@@ -195,8 +200,9 @@ export function getGridCols(teamSize: number): string {
 
 // ─── Avatar component (photo or initials) ────────────────────────────────────
 
-function Avatar({ email, initials, size, deptColor, name, isCurrentUser }: { email?: string; initials: string; size: number; deptColor: string; name?: string; isCurrentUser?: boolean }) {
-  const photo = getPhoto(email)
+function Avatar({ email, initials, size, deptColor, name, isCurrentUser, avatarStyle = 'photo' }: { email?: string; initials: string; size: number; deptColor: string; name?: string; isCurrentUser?: boolean; avatarStyle?: 'photo' | 'cartoon' }) {
+  const cartoon = avatarStyle === 'cartoon' ? getCartoon(email) : null
+  const photo = cartoon || getPhoto(email)
   if (photo) {
     return (
       <img src={photo} alt="" className="rounded-full object-cover" style={{ width: size, height: size, border: `3px solid ${deptColor}50` }} />
@@ -225,10 +231,11 @@ function Avatar({ email, initials, size, deptColor, name, isCurrentUser }: { ema
 // ─── Sticker Card ────────────────────────────────────────────────────────────
 
 export function EmployeeProfileCard({
-  staff, index, isCurrentUser, onViewProfile, onMessage, variant = 'full', teamSize,
+  staff, index, isCurrentUser, onViewProfile, onMessage, variant = 'full', teamSize, avatarStyle = 'photo',
 }: {
   staff: StaffRecord; index: number; isCurrentUser: boolean
   onViewProfile: () => void; onMessage?: () => void; variant?: 'full' | 'mini'; teamSize?: number
+  avatarStyle?: 'photo' | 'cartoon'
 }) {
   useEffect(() => { injectShimmerCSS() }, [])
 
@@ -258,7 +265,7 @@ export function EmployeeProfileCard({
             </span>
           </div>
           <div className="flex justify-center py-2.5">
-            <Avatar email={staff.email} initials={initials} size={60} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} />
+            <Avatar email={staff.email} initials={initials} size={60} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} avatarStyle={avatarStyle} />
           </div>
           <div className="text-center px-2 pb-2.5">
             <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{shortName}</p>
@@ -310,7 +317,7 @@ export function EmployeeProfileCard({
           </div>
 
           <div className="flex justify-center py-3">
-            <Avatar email={staff.email} initials={initials} size={dim.avatar} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} />
+            <Avatar email={staff.email} initials={initials} size={dim.avatar} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} avatarStyle={avatarStyle} />
           </div>
         </div>
 
