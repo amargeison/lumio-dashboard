@@ -30,6 +30,26 @@ const PORTALS = [
     desc: 'Squad management, injury tracking, loan player administration, ground grading compliance, sponsorship management, match fees, training planning, and live league tables. Built for National League, Northern Premier League, Southern League, and Isthmian League clubs.',
     cta: 'Explore Non-League', href: '/football/nonleague/harfield-fc',
   },
+  {
+    icon: '🎯', title: 'Darts', subtitle: 'Lumio Tour (Darts)', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)',
+    desc: 'PDC Order of Merit tracker, exhibition manager, checkout analysis, opponent intel, three-dart average dashboard, tour card & Q-School tracker, sponsorship manager and AI morning briefing. Built for PDC tour card holders and Challenge Tour players.',
+    cta: 'Explore Darts Tour', href: '/darts',
+  },
+  {
+    icon: '🥊', title: 'Boxing', subtitle: 'Lumio Fight', color: '#B91C1C', bg: 'rgba(185,28,28,0.08)', border: 'rgba(185,28,28,0.25)',
+    desc: 'Fight camp planner, weight & cut tracker, world rankings across all four sanctioning bodies, purse breakdown simulator, multi-jurisdiction tax tracker, promoter pipeline and AI morning briefing. Built for world title contenders and British champions.',
+    cta: 'Explore Lumio Fight', href: '/boxing',
+  },
+  {
+    icon: '🏉', title: 'Rugby', subtitle: 'Lumio Tour (Rugby)', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)',
+    desc: 'Contract & career management, performance analytics, injury & recovery tracking, GPS load data (PlayerData), match prep & opposition analysis, sponsorship manager and AI morning briefing. Built for Premiership, Top 14 and international players.',
+    cta: 'Join the waitlist', href: '/rugby', badge: 'Coming soon',
+  },
+  {
+    icon: '🏏', title: 'Cricket', subtitle: 'Lumio Tour (Cricket)', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)',
+    desc: 'Contract & central contract tracker, batting & bowling analytics, tour & franchise schedule planner (IPL, The Hundred, BBL), injury & fitness management, sponsorship & commercial pipeline and AI morning briefing. Built for county, international and franchise players.',
+    cta: 'Join the waitlist', href: '/cricket', badge: 'Coming soon',
+  },
 ]
 
 const FEATURES = [
@@ -63,22 +83,22 @@ export default function SportsPage() {
         <div className="max-w-6xl mx-auto px-6 text-center relative">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
             <span className="text-sm">🏆</span>
-            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Five portals. One platform.</span>
+            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Nine portals. One platform.</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
             The operating system for<br />
             <span style={{ background: 'linear-gradient(135deg, #0D9488, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>professional sport</span>
           </h1>
           <p className="text-lg max-w-2xl mx-auto mb-10" style={{ color: '#9CA3AF' }}>
-            AI-powered career intelligence for football clubs, tennis players, and golfers. Every metric, every deal, every decision — in one place.
+            AI-powered career intelligence for football clubs, tennis players, golfers, darts players, boxers and more. Every metric, every deal, every decision — in one place.
           </p>
         </div>
       </section>
 
-      {/* Three portal cards */}
+      {/* Portal cards — top 3 in 3-col, next 4 in 2-col, last 2 in 2-col */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PORTALS.slice(0, 3).map(p => (
+          {PORTALS.slice(0, 3).map((p: any) => (
             <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{p.icon}</span>
@@ -87,15 +107,16 @@ export default function SportsPage() {
                   <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed flex-1 mb-6" style={{ color: '#9CA3AF' }}>{p.desc}</p>
-              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
+              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
+              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
+              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
                 {p.cta} <ArrowRight size={14} />
               </Link>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {PORTALS.slice(3).map(p => (
+          {PORTALS.slice(3, 7).map((p: any) => (
             <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{p.icon}</span>
@@ -104,8 +125,27 @@ export default function SportsPage() {
                   <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed flex-1 mb-6" style={{ color: '#9CA3AF' }}>{p.desc}</p>
-              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
+              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
+              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
+              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
+                {p.cta} <ArrowRight size={14} />
+              </Link>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {PORTALS.slice(7).map((p: any) => (
+            <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">{p.icon}</span>
+                <div>
+                  <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{p.title}</h3>
+                  <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
+                </div>
+              </div>
+              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
+              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
+              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
                 {p.cta} <ArrowRight size={14} />
               </Link>
             </div>
@@ -115,9 +155,9 @@ export default function SportsPage() {
 
       {/* One platform section */}
       <section className="max-w-4xl mx-auto px-6 pb-20 text-center">
-        <h2 className="text-2xl md:text-3xl font-black mb-4">One platform. Three sports. Every career stage.</h2>
+        <h2 className="text-2xl md:text-3xl font-black mb-4">One platform. Nine portals. Every career stage.</h2>
         <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
-          Lumio Tour and Lumio Pro Club share the same AI infrastructure, the same morning briefing system, the same team hub architecture — just adapted for each sport&apos;s unique needs. Whether you&apos;re a club owner managing a 25-man squad, a touring tennis professional tracking rankings across three surfaces, or a golfer optimising strokes gained on links courses — the platform speaks your language, uses your metrics, and fits your workflow.
+          Lumio Tour, Lumio Pro Club and Lumio Fight share the same AI infrastructure, the same morning briefing system, the same team hub architecture — just adapted for each sport&apos;s unique needs. Whether you&apos;re a club owner managing a 25-man squad, a touring tennis professional tracking rankings, a golfer optimising strokes gained, a darts player on the PDC circuit, or a boxer preparing for a world title shot — the platform speaks your language, uses your metrics, and fits your workflow.
         </p>
       </section>
 
