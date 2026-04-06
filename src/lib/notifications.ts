@@ -96,65 +96,75 @@ Rules:
         const { createClient } = await import('@supabase/supabase-js')
         const supabase = createClient(supabaseUrl, supabaseKey)
 
+        // Resolve workspace slug → business_id for business-scoped queries
+        const { data: business } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle()
+        const businessId = business?.id
+
         if (['admin', 'director'].includes(userRole)) {
-          // Overdue invoices
-          const { data: invoices } = await supabase
-            .from('invoices')
-            .select('id, amount, customer_name, due_date')
-            .eq('slug', slug)
-            .eq('status', 'overdue')
-            .limit(5)
+          if (businessId) {
+            // Overdue invoices
+            const { data: invoices } = await supabase
+              .from('business_invoices')
+              .select('id, amount, company, due_date')
+              .eq('business_id', businessId)
+              .eq('status', 'overdue')
+              .limit(5)
 
-          if (invoices && invoices.length > 0) {
-            const total = invoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0)
-            notifications.push({
-              id: 'live-invoices-overdue',
-              priority: 'high',
-              icon: '💰',
-              title: `${invoices.length} invoice${invoices.length > 1 ? 's' : ''} overdue`,
-              body: `£${total.toLocaleString()} outstanding — action needed`,
-              time: 'Overdue',
-              dept: 'accounts',
-              deptLabel: 'Accounts',
-              deptRoute: '/accounts',
-              roles: ['admin', 'director'],
-              category: 'finance',
-              source: 'supabase',
-            })
-          }
+            if (invoices && invoices.length > 0) {
+              const total = invoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0)
+              notifications.push({
+                id: 'live-invoices-overdue',
+                priority: 'high',
+                icon: '💰',
+                title: `${invoices.length} invoice${invoices.length > 1 ? 's' : ''} overdue`,
+                body: `£${total.toLocaleString()} outstanding — action needed`,
+                time: 'Overdue',
+                dept: 'accounts',
+                deptLabel: 'Accounts',
+                deptRoute: '/accounts',
+                roles: ['admin', 'director'],
+                category: 'finance',
+                source: 'supabase',
+              })
+            }
 
-          // At-risk customers
-          const { data: atRisk } = await supabase
-            .from('customers')
-            .select('id, name, health_score')
-            .eq('slug', slug)
-            .lt('health_score', 40)
-            .limit(10)
+            // At-risk CRM contacts
+            const { data: atRisk } = await supabase
+              .from('crm_contacts')
+              .select('id, name, aria_score')
+              .eq('tenant_id', businessId)
+              .lt('aria_score', 40)
+              .limit(10)
 
-          if (atRisk && atRisk.length > 0) {
-            notifications.push({
-              id: 'live-customers-atrisk',
-              priority: 'high',
-              icon: '🔴',
-              title: `${atRisk.length} customers in critical health`,
-              body: `${atRisk[0]?.name || 'Multiple accounts'} and others need attention`,
-              time: 'Action needed',
-              dept: 'success',
-              deptLabel: 'Customer Success',
-              deptRoute: '/success',
-              roles: ['admin', 'director', 'manager'],
-              category: 'customers',
-              source: 'supabase',
-            })
+            if (atRisk && atRisk.length > 0) {
+              notifications.push({
+                id: 'live-customers-atrisk',
+                priority: 'high',
+                icon: '🔴',
+                title: `${atRisk.length} contacts in critical health`,
+                body: `${atRisk[0]?.name || 'Multiple accounts'} and others need attention`,
+                time: 'Action needed',
+                dept: 'success',
+                deptLabel: 'Customer Success',
+                deptRoute: '/success',
+                roles: ['admin', 'director', 'manager'],
+                category: 'customers',
+                source: 'supabase',
+              })
+            }
           }
 
           // Expiring trials
           const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
           const { data: expiringTrials } = await supabase
             .from('demo_tenants')
-            .select('id, business_name, trial_ends_at')
-            .eq('status', 'trial')
-            .lt('trial_ends_at', threeDaysFromNow)
+            .select('id, company_name, expires_at')
+            .eq('status', 'active')
+            .lt('expires_at', threeDaysFromNow)
             .limit(5)
 
           if (expiringTrials && expiringTrials.length > 0) {
@@ -163,7 +173,7 @@ Rules:
               priority: 'high',
               icon: '⏰',
               title: `${expiringTrials.length} trial${expiringTrials.length > 1 ? 's' : ''} expiring soon`,
-              body: `${expiringTrials[0]?.business_name || 'Multiple trials'} expiring within 3 days`,
+              body: `${expiringTrials[0]?.company_name || 'Multiple trials'} expiring within 3 days`,
               time: 'Urgent',
               dept: 'trials',
               deptLabel: 'Trials',
@@ -175,30 +185,32 @@ Rules:
           }
         }
 
-        // Unassigned support tickets (visible to manager+)
-        const { data: openTickets } = await supabase
-          .from('support_tickets')
-          .select('id, title, created_at, priority')
-          .eq('slug', slug)
-          .eq('status', 'open')
-          .is('assignee_id', null)
-          .limit(10)
+        // Unassigned tasks (visible to manager+)
+        if (businessId) {
+          const { data: openTasks } = await supabase
+            .from('business_tasks')
+            .select('id, title, created_at, priority')
+            .eq('business_id', businessId)
+            .eq('done', false)
+            .is('assignee', null)
+            .limit(10)
 
-        if (openTickets && openTickets.length > 0) {
-          notifications.push({
-            id: 'live-tickets-unassigned',
-            priority: openTickets.length > 3 ? 'high' : 'medium',
-            icon: '🎫',
-            title: `${openTickets.length} ticket${openTickets.length > 1 ? 's' : ''} unassigned`,
-            body: `Oldest: ${openTickets[0]?.title || 'Unassigned ticket'} — SLA at risk`,
-            time: 'Now',
-            dept: 'support',
-            deptLabel: 'Support',
-            deptRoute: '/support',
-            roles: ['admin', 'director', 'manager'],
-            category: 'support',
-            source: 'supabase',
-          })
+          if (openTasks && openTasks.length > 0) {
+            notifications.push({
+              id: 'live-tickets-unassigned',
+              priority: openTasks.length > 3 ? 'high' : 'medium',
+              icon: '🎫',
+              title: `${openTasks.length} task${openTasks.length > 1 ? 's' : ''} unassigned`,
+              body: `Oldest: ${openTasks[0]?.title || 'Unassigned task'} — needs attention`,
+              time: 'Now',
+              dept: 'support',
+              deptLabel: 'Support',
+              deptRoute: '/support',
+              roles: ['admin', 'director', 'manager'],
+              category: 'support',
+              source: 'supabase',
+            })
+          }
         }
       }
     } catch (e) {
