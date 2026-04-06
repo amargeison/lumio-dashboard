@@ -34,8 +34,6 @@ interface Dept {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const SOCIAL_PROOF = ['Lighthouse Consulting', 'Meridian Recruitment', 'Apex Healthcare', 'Nova SaaS', 'Cornerstone Law']
-
 const PAIN_CARDS = [
   {
     icon: '🔗',
@@ -655,18 +653,6 @@ export default function HomePage() {
         />
       )}
       {showDemoModal && <BookDemoModal onClose={() => setShowDemoModal(false)} />}
-
-      {/* ── Social proof ─────────────────────────────────────────────────────── */}
-      <section style={{ borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937', backgroundColor: '#0A0B12' }}>
-        <div className="mx-auto max-w-5xl px-6 py-8 flex flex-wrap items-center justify-center gap-10">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4B5563' }}>
-            Trusted by growing businesses across the UK
-          </p>
-          {SOCIAL_PROOF.map(name => (
-            <span key={name} className="text-sm font-medium" style={{ color: '#6B7280' }}>{name}</span>
-          ))}
-        </div>
-      </section>
 
       {/* ── Problem section ──────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-6 py-24">
@@ -1415,6 +1401,50 @@ export default function HomePage() {
               </Link>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Early Access ─────────────────────────────────────────────────────── */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }} className="py-24">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#0D9488' }}>Early Access Programme</p>
+          <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: '#F9FAFB', lineHeight: 1.1 }}>
+            We&apos;re looking for businesses to help us build something better.
+          </h2>
+          <div className="space-y-5 text-left md:text-center mb-10" style={{ color: '#D1D5DB', fontSize: 16, lineHeight: 1.7 }}>
+            <p>
+              Lumio is new. We&apos;re not going to pretend otherwise. We&apos;re looking for a small number of forward-thinking businesses who want to be part of shaping it — not just using it.
+            </p>
+            <p>
+              Sign up and get 6 months completely free. No commitment. No contract. No pushy sales calls. At the end, all we ask is an honest case study and the chance to keep working with you to make Lumio exactly what your business needs.
+            </p>
+            <p style={{ color: '#F9FAFB', fontWeight: 600 }}>
+              If something doesn&apos;t work — we&apos;ll fix it. If you want a feature — we&apos;ll build it. That&apos;s the deal.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {[
+              '6 months free — no card required',
+              'We build what you ask for',
+              'Cancel anytime, no questions',
+            ].map(p => (
+              <span
+                key={p}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+                style={{ backgroundColor: 'rgba(13,148,136,0.08)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.35)' }}
+              >
+                <Check size={14} strokeWidth={3} /> {p}
+              </span>
+            ))}
+          </div>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-colors"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+          >
+            Apply for early access <ArrowRight size={18} />
+          </Link>
+          <p className="text-xs mt-4" style={{ color: '#6B7280' }}>Only 10 spots remaining</p>
         </div>
       </section>
 

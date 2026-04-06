@@ -87,12 +87,6 @@ const COMPARISON = [
   { feature: '14-day free trial', lumio: true, arbor: false, sims: false, bromcom: false },
 ]
 
-const TESTIMONIALS = [
-  { quote: 'Finally, a platform that actually understands how schools work. The Ofsted mode alone is worth it.', name: 'Deputy Head', school: 'Oakridge Primary' },
-  { quote: 'The morning voice briefing has transformed how our leadership team starts the day. We haven\'t missed an alert since.', name: 'Headteacher', school: 'St Mary\'s CE' },
-  { quote: 'We moved from SIMS six months ago. The safeguarding tracking is streets ahead of anything we\'ve used before.', name: 'DSL', school: 'Crestview Academy' },
-]
-
 const PLANS = [
   { name: 'Starter', price: '299', period: '/mo', desc: 'Up to 500 pupils', color: '#0D9488' },
   { name: 'Growth', price: '599', period: '/mo', desc: 'Up to 1,500 pupils', color: '#8B5CF6', featured: true },
@@ -193,22 +187,6 @@ export default function SchoolsFeaturesPage() {
                 <p className="mb-4" style={{ color: '#6B7280', fontSize: 13 }}>{p.desc}</p>
                 <p className="mb-6"><span className="text-3xl font-black" style={{ color: p.color }}>£{p.price}</span><span className="text-sm" style={{ color: '#6B7280' }}>{p.period}</span></p>
                 <Link href="/signup?portal=schools" className="block w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: p.color, color: '#F9FAFB' }}>Start Free Trial</Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-2xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Built for UK schools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map(t => (
-              <div key={t.school} className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <p className="text-sm mb-4" style={{ color: '#D1D5DB', lineHeight: 1.8 }}>&ldquo;{t.quote}&rdquo;</p>
-                <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{t.name}</p>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{t.school}</p>
               </div>
             ))}
           </div>

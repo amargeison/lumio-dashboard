@@ -150,34 +150,6 @@ export default function NonLeaguePage() {
         </div>
       </section>
 
-      {/* Testimonial */}
-      <section style={{ backgroundColor: '#07080F' }} className="py-24">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-12">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#475569' }}>Social Proof</p>
-            <h2 className="text-4xl font-black" style={{ color: '#F9FAFB' }}>Trusted by Non-League Clubs</h2>
-          </div>
-          <div className="max-w-3xl">
-            <div className="rounded-2xl p-7 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <p className="text-xl mb-3" style={{ color: '#F59E0B' }}>★★★★★</p>
-              <p className="text-sm leading-relaxed italic mb-6 flex-1" style={{ color: '#D1D5DB' }}>
-                &ldquo;We nearly got docked points because of a ground grading issue we&apos;d missed. Lumio flags it 30 days out now. That kind of thing can end a club at our level.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-full font-bold text-sm shrink-0"
-                  style={{ backgroundColor: '#475569', color: '#F9FAFB' }}>
-                  CS
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Club secretary</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Northern Premier League</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Banner */}
       <section
         className="py-24"

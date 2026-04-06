@@ -714,58 +714,54 @@ function FeaturesSection() {
   )
 }
 
-// ─── Social Proof Section ─────────────────────────────────────────────────────
+// ─── Early Access Section ─────────────────────────────────────────────────────
 
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      quote: "Lumio has transformed how our SENCO works. The EHCP tracker alone saves her 4 hours a week — and we're actually confident we won't miss an annual review deadline.",
-      title: 'Headteacher',
-      school: 'Milton Keynes',
-      initials: 'SH',
-    },
-    {
-      quote: "The insights page is the first thing I open every morning. My attendance data, safeguarding cases and Pupil Premium gap — all on one screen. I used to spend an hour pulling this together.",
-      title: 'Deputy Headteacher',
-      school: 'Northamptonshire',
-      initials: 'JW',
-    },
-    {
-      quote: "The wraparound management tools are incredible. Our breakfast club register, DfE grant tracker and after school payments — all automated. Our admin team can't believe how much time it saves.",
-      title: 'School Business Manager',
-      school: 'Bedfordshire',
-      initials: 'PS',
-    },
+function EarlyAccessSection() {
+  const pills = [
+    '6 months free — no card required',
+    "We fix things that week, not 'on the roadmap'",
+    'No lock-in, no exit fees',
   ]
-
   return (
-    <section style={{ backgroundColor: '#07080F' }} className="py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#0D9488' }}>Social Proof</p>
-          <h2 className="text-4xl font-black" style={{ color: '#F9FAFB' }}>Trusted by Schools and Trusts Across England</h2>
+    <section style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }} className="py-24">
+      <div className="max-w-4xl mx-auto px-6 text-center">
+        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#0D9488' }}>Early Access Programme</p>
+        <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: '#F9FAFB', lineHeight: 1.1 }}>
+          We&apos;re looking for schools to help us get this right.
+        </h2>
+        <div className="space-y-5 text-left md:text-center mb-10" style={{ color: '#D1D5DB', fontSize: 16, lineHeight: 1.7 }}>
+          <p>
+            Lumio for Schools is new. We know it. And we&apos;d rather be honest about that than pretend we have 500 schools already using it.
+          </p>
+          <p>
+            We&apos;re looking for a small number of schools — primary, secondary, or MAT — who are fed up with overpriced, over-promised edtech and want to try something different.
+          </p>
+          <p>
+            Sign up and get 6 months completely free. No commitment. No contract. No sales team breathing down your neck. At the end, all we ask is an honest case study and the chance to keep working with you — so we can build exactly what your school actually needs.
+          </p>
+          <p style={{ color: '#F9FAFB', fontWeight: 600 }}>
+            If something doesn&apos;t work — we&apos;ll fix it. If you want a feature — tell us and we&apos;ll build it. That week. Not on the roadmap. That week.
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map(t => (
-            <div key={t.initials} className="rounded-2xl p-7 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <p className="text-xl mb-3" style={{ color: '#F59E0B' }}>★★★★★</p>
-              <p className="text-sm leading-relaxed italic mb-6 flex-1" style={{ color: '#D1D5DB' }}>
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-full font-bold text-sm shrink-0"
-                  style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-                  {t.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{t.title}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{t.school}</p>
-                </div>
-              </div>
-            </div>
+        <div className="flex flex-wrap justify-center gap-3 mb-10">
+          {pills.map(p => (
+            <span
+              key={p}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.08)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.35)' }}
+            >
+              <Check size={14} strokeWidth={3} /> {p}
+            </span>
           ))}
         </div>
+        <Link
+          href="/signup?portal=schools"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-colors"
+          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+        >
+          Apply for early access <ArrowRight size={18} />
+        </Link>
+        <p className="text-xs mt-4" style={{ color: '#6B7280' }}>Only 5 school spots remaining</p>
       </div>
     </section>
   )
@@ -1249,7 +1245,7 @@ export default function SchoolsPage() {
       </section>
       <SSOSyncSection />
       <FeaturesSection />
-      <TestimonialsSection />
+      <EarlyAccessSection />
       <ComplianceSection />
       <OfstedSection />
       <FAQSection />

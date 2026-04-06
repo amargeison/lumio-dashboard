@@ -93,12 +93,6 @@ const FEATURES = [
   },
 ]
 
-const TESTIMONIALS = [
-  { quote: 'Lumio has completely changed how our board operates. The PSR dashboard alone has saved us thousands in consultancy fees.', name: 'James Whitworth', role: 'CEO', club: 'Championship Club' },
-  { quote: 'The morning roundup means I walk into the training ground knowing exactly what needs my attention. Game changer.', name: 'Mark Stevens', role: 'Head Coach', club: 'League One Club' },
-  { quote: 'Having GPS data, squad management and transfer tracking in one platform is something we\'ve needed for years.', name: 'Sarah Collins', role: 'Director of Football', club: 'League Two Club' },
-]
-
 const PRICING = [
   { tier: 'Academy', desc: 'Youth development and academy tracking', features: ['Academy player profiles', 'Development pathways', 'U18/U21 squad management', 'Basic reporting'] },
   { tier: 'First Team', desc: 'Complete first team operations', features: ['Everything in Academy', 'Squad management & GPS (PlayerData)', 'Tactics viewer & match day', 'Transfer hub', 'Media & PR tools', 'Live data feeds'], highlight: true },
@@ -761,35 +755,6 @@ export default function FootballPage() {
             </div>
           </div>
         ))}
-      </section>
-
-      {/* ── Testimonials ────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: '#0D0E14' }}>
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black mb-2">Trusted by Professional Clubs Across the EFL</h2>
-            <p className="text-sm" style={{ color: '#6B7280' }}>See how clubs are using Lumio to transform their operations</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-                <div className="flex mb-3">
-                  {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} fill={GOLD} style={{ color: GOLD }} />)}
-                </div>
-                <p className="text-sm mb-4 leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;{t.quote}&rdquo;</p>
-                <div>
-                  <p className="text-sm font-bold">{t.name}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{t.role} — {t.club}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Link href="/book-demo" className="text-sm font-semibold" style={{ color: RED, textDecoration: 'underline' }}>
-              Request a case study &rarr;
-            </Link>
-          </div>
-        </div>
       </section>
 
       {/* ── STEP 7: Data Source Trust Badges ──────────────────────────── */}

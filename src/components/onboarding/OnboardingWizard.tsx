@@ -789,29 +789,68 @@ function StepYourCard({
 // ─── Step 5: Book Your Onboarding Call ───────────────────────────────────────
 
 function StepBookCall({ onExploreWithDemo }: { onExploreWithDemo?: () => void }) {
+  const TEAL = '#0D9488'
+  const TEAL_FAINT = 'rgba(13,148,136,0.1)'
+  const TEAL_BORDER = 'rgba(13,148,136,0.35)'
+  const benefits = [
+    '6 months completely free',
+    'We build features you ask for',
+    'No commitment or lock-in',
+    'Honest feedback shapes the product',
+  ]
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>Want to see Lumio with your own data?</h1>
-      <p style={{ fontSize: 15, color: T.muted, marginBottom: 32 }}>Book a free 30-minute setup call and we&apos;ll load your real staff, workflows and data into a 2-week trial — so you can see exactly how Lumio works for your business.</p>
+      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>
+        Want 6 months free with your own data?
+      </h1>
+      <p style={{ fontSize: 15, color: T.muted, marginBottom: 28, lineHeight: 1.6 }}>
+        We&apos;re looking for a small number of businesses to help us shape Lumio. Sign up for our early access programme and get 6 months completely free — no commitment, no contract, no pushy sales.
+      </p>
+      <p style={{ fontSize: 15, color: T.muted, marginBottom: 32, lineHeight: 1.6 }}>
+        All we ask at the end is an honest case study and the chance to keep working with you.
+      </p>
 
-      <div style={{ backgroundColor: T.card, borderRadius: 16, border: `1px solid ${T.border}`, padding: 40, textAlign: 'center', maxWidth: 520, margin: '0 auto' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: T.purpleFaint, border: `1px solid ${T.borderHover}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          <Calendar size={28} style={{ color: T.purple }} />
+      <div style={{ backgroundColor: T.card, borderRadius: 16, border: `1px solid ${T.border}`, padding: 32, maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+          {benefits.map(b => (
+            <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  backgroundColor: TEAL_FAINT, border: `1px solid ${TEAL_BORDER}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, color: TEAL,
+                }}
+              >
+                <Check size={14} strokeWidth={3} />
+              </div>
+              <span style={{ fontSize: 15, color: T.text }}>{b}</span>
+            </div>
+          ))}
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: T.text, marginBottom: 8 }}>Free 2-week trial with your real data</div>
-        <p style={{ fontSize: 14, color: T.muted, marginBottom: 28, lineHeight: 1.6 }}>We&apos;ll walk you through setup, load your data, and answer any questions on a 30-minute call.</p>
-        <a href="https://calendly.com/lumio" target="_blank" rel="noopener noreferrer"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: T.purple, color: '#FFF', border: 'none', borderRadius: 10, padding: '14px 36px', fontSize: 16, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
-          <Calendar size={18} /> Book My Setup Call
-        </a>
-        <div style={{ marginTop: 24, fontSize: 14, color: T.muted }}>
-          Or{' '}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <a
+            href="mailto:hello@lumiocms.com?subject=Early%20Access%20Application"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: TEAL, color: '#FFFFFF', border: 'none', borderRadius: 10,
+              padding: '14px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            <Mail size={16} /> Apply for Early Access
+          </a>
           <button
             type="button"
             onClick={() => onExploreWithDemo?.()}
-            style={{ background: 'none', border: 'none', color: T.purple, fontWeight: 600, cursor: 'pointer', padding: 0, font: 'inherit', textDecoration: 'underline' }}
+            style={{
+              background: 'none', border: `1px solid ${T.border}`, color: T.muted,
+              borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
-            explore with demo data while you decide
+            Continue to my dashboard &rarr;
           </button>
         </div>
       </div>

@@ -416,39 +416,6 @@ export default function ProductPage() {
             })}
           </div>
 
-          {/* Case study callout */}
-          <div className="rounded-2xl p-8 md:p-10 mb-16"
-            style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937', borderLeft: '4px solid #0D9488' }}>
-            <div className="flex items-start gap-3 mb-5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                style={{ backgroundColor: 'rgba(13,148,136,0.15)' }}>
-                <LayoutDashboard size={17} style={{ color: '#0D9488' }} strokeWidth={1.75} />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: '#0D9488' }}>Real example</p>
-                <h3 className="text-xl font-black" style={{ color: '#F9FAFB' }}>DfE NELI Programme Dashboard</h3>
-              </div>
-            </div>
-            <p className="text-lg leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
-              OxEd &amp; Assessment reports to the Department for Education on the NELI programme — 10,973 registered schools, 50,052 pupils assessed, 76,567 course completions across Academic Year 2025/26. Previously this report took the team one week every month to compile manually. The Lumio DfE dashboard makes every metric available live, 24/7, with monthly trend charts, AI-generated highlights, a full data table, and one-click PDF export. The DfE can log in any time and see exactly where the programme stands — without a single email or spreadsheet.
-            </p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-              {[
-                { val: '10,973',   label: 'Schools' },
-                { val: '50,052',   label: 'Pupils Assessed' },
-                { val: '76,567',   label: 'Course Completions' },
-                { val: '1 wk/mo', label: 'Previously to report' },
-                { val: 'Live 24/7', label: 'Now' },
-              ].map(s => (
-                <div key={s.label} className="rounded-lg px-4 py-4 text-center"
-                  style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <p className="text-xl font-black mb-0.5" style={{ color: s.label === 'Now' ? '#0D9488' : '#F9FAFB' }}>{s.val}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* What's included */}
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 mb-16">
             <div>
