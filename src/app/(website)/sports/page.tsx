@@ -113,7 +113,7 @@ export default function SportsLandingPage() {
           </div>
 
           {/* Headline */}
-          <h1 className="font-black leading-[1.05] mb-6" style={{fontSize:'clamp(3rem, 8vw, 7rem)'}}>
+          <h1 className="font-black leading-[1.1] mb-6" style={{fontSize:'clamp(2.2rem, 5vw, 4rem)'}}>
             The operating system<br/>
             <span style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
               professional sport

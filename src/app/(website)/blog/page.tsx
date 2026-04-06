@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { headers } from 'next/headers'
 import { getAllPosts } from '@/lib/blog'
 import BlogFilter from './BlogFilter'
 import type { Metadata } from 'next'
@@ -25,8 +25,21 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-export default function BlogPage() {
-  const posts = getAllPosts()
+const SPORTS_CATEGORIES = new Set([
+  'Football', 'Rugby', 'Tennis', 'Golf', 'Darts', 'Boxing', 'Cricket',
+  "Women's Football", 'Product · Football', 'Club Stories', 'Player Stories',
+  'Product', 'General',
+])
+
+export default async function BlogPage() {
+  const headersList = await headers()
+  const host = headersList.get('host') || ''
+  const isSports = host.includes('lumiosports')
+
+  const allPosts = getAllPosts()
+  const posts = isSports
+    ? allPosts.filter((p: { category: string }) => SPORTS_CATEGORIES.has(p.category) && p.category !== 'Schools' && p.category !== 'Business')
+    : allPosts
 
   return (
     <div style={{ backgroundColor: '#07080F', minHeight: '100vh' }}>
@@ -46,10 +59,12 @@ export default function BlogPage() {
               lineHeight: 1.15,
             }}
           >
-            Insights & Resources
+            {isSports ? 'Lumio Sports — Insights & Intelligence' : 'Insights & Resources'}
           </h1>
           <p className="text-lg mt-4" style={{ color: '#9CA3AF', maxWidth: 640, margin: '16px auto 0' }}>
-            Expert thinking on school management, business operations, and the future of work.
+            {isSports
+              ? 'Analysis, features and stories from across professional sport.'
+              : 'Expert thinking on school management, business operations, and the future of work.'}
           </p>
         </div>
       </section>
@@ -57,7 +72,8 @@ export default function BlogPage() {
       {/* Filter + Grid */}
       <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
         <BlogFilter
-          posts={posts.map(p => ({
+          isSports={isSports}
+          posts={posts.map((p: { slug: string; title: string; date: string; category: string; excerpt: string }) => ({
             slug: p.slug,
             title: p.title,
             date: formatDate(p.date),
