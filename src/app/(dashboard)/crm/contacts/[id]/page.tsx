@@ -75,7 +75,7 @@ export default function ContactDetailPage() {
         <ArrowLeft size={16} /> Back to contacts
       </button>
 
-      <DedupeBanner recordId={contact.id} recordType="contact" recordData={contact as Record<string, unknown>} />
+      <DedupeBanner recordId={contact.id} recordType="contact" recordData={contact as unknown as Record<string, unknown>} />
 
       {/* Header card */}
       <div className="rounded-xl p-6" style={{ background: '#0F1019', border: '1px solid #1E2035' }}>
