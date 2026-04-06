@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check, ChevronRight, Target, Activity, Trophy, Users, DollarSign, Zap, Shield, BarChart2 } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight } from 'lucide-react'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Types & Data ─────────────────────────────────────────────────────────────
 
 interface Portal {
   id: string; icon: string; label: string; color: string; desc: string;
@@ -156,13 +156,6 @@ const PORTALS: Portal[] = [
   },
 ]
 
-const STATS = [
-  { value: '10', label: 'Sports portals' },
-  { value: '50,000+', label: 'Athletes on GPS partner' },
-  { value: '0', label: 'Platforms that existed before us' },
-  { value: '£0', label: 'Cost of a demo' },
-]
-
 const FEATURES = [
   { icon: '🤖', title: 'AI morning briefing', desc: 'Delivered before the day begins — for the player, coach, agent, manager and physio. Every relevant data point, every obligation, every flag — in one voice-powered briefing.' },
   { icon: '📡', title: 'GPS performance — powered by PlayerData', desc: 'FIFA Quality Certified. World Rugby Approved. Session load, ACWR, readiness scores and heat maps synced automatically from PlayerData EDGE units into your portal dashboard.' },
@@ -175,66 +168,75 @@ const FEATURES = [
 export default function SportsProductPage() {
   const [activeTab, setActiveTab] = useState(0)
   const portal = PORTALS[activeTab]
+  const tabsRef = useRef<HTMLElement>(null)
 
   return (
-    <div style={{ backgroundColor: '#07080F', color: '#F9FAFB' }} className="pt-28 pb-20">
+    <div style={{ backgroundColor: '#07080F', color: '#F9FAFB' }}>
 
-      {/* ── Hero ──────────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-4xl px-6 text-center mb-24">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
-          THE PLATFORM
-        </p>
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-          Built for every athlete{' '}
-          <span style={{ background: 'linear-gradient(135deg, #10B981, #38BDF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            in professional sport.
-          </span>
-        </h1>
-        <p className="text-base font-medium mb-6" style={{ color: '#10B981', maxWidth: 580, margin: '0 auto' }}>
-          Your career, fully connected.
-        </p>
-        <p className="text-xl leading-relaxed mb-4" style={{ color: '#9CA3AF', maxWidth: 580, margin: '0 auto' }}>
-          Lumio connects athletes, coaches, agents and clubs — automating the admin, tracking the data that matters, and delivering AI intelligence that gives you an edge before anyone else wakes up.
-        </p>
-        <p className="text-xl mb-10" style={{ color: '#9CA3AF', maxWidth: 560, margin: '0 auto 40px' }}>
-          Built for football, tennis, golf, boxing, darts, rugby, cricket and more. From the Premier League to the Sunday league.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link
-            href="/demo"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold"
-            style={{ backgroundColor: '#10B981', color: '#F9FAFB' }}>
-            Book a Demo <ArrowRight size={16} />
-          </Link>
-          <Link
-            href="/sports"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium"
-            style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
-            Explore all sports
-          </Link>
+      {/* ══ SECTION 1: HERO ══ */}
+      <section style={{ paddingTop: 140, paddingBottom: 80 }} className="relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(139,92,246,0.06) 0%, transparent 60%)' }} />
+        <div className="mx-auto max-w-3xl px-6 text-center relative">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: '#6B7280' }}>THE PLATFORM</p>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-4">
+            Built for every role<br />in professional sport.
+          </h1>
+          <p className="text-lg md:text-xl font-bold mb-6" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Your sport. Fully connected.
+          </p>
+          <p className="text-base leading-relaxed mb-10 mx-auto" style={{ color: '#9CA3AF', maxWidth: 640 }}>
+            Lumio Sports connects your squad data, your compliance obligations, your commercial pipeline, and your financial planning — and surfaces the intelligence that actually moves careers and clubs forward. Built for sport. Not adapted from business software.
+          </p>
+          {/* Stats strip */}
+          <div className="flex flex-wrap justify-center gap-8 mb-10">
+            {[
+              { value: '10', label: 'Portals across professional sport' },
+              { value: '300+', label: 'Modules and features' },
+              { value: '0', label: 'Generic business tools used' },
+              { value: '24h', label: 'Onboarding to first insight' },
+            ].map((s: { value: string; label: string }) => (
+              <div key={s.label} className="text-center">
+                <div className="text-2xl font-black" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.value}</div>
+                <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: '#fff', textDecoration: 'none' }}>
+              Book a demo <ArrowRight size={14} />
+            </Link>
+            <button onClick={() => tabsRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #1F2937' }}>
+              Explore all portals
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* ── Stats strip ───────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {STATS.map(s => (
-              <div key={s.label} className="text-center">
-                <div
-                  className="text-4xl md:text-5xl font-black mb-2"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #38BDF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  {s.value}
-                </div>
-                <div className="text-sm font-medium" style={{ color: '#6B7280' }}>{s.label}</div>
+      {/* ══ SECTION 2: HOW IT WORKS ══ */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }} className="py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>HOW IT WORKS</p>
+            <h2 className="text-3xl font-bold">Up and running in 48 hours.</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { num: '01', title: 'Connect your sport', body: 'Select your portal — Pro Club, Non-League, WSL, Championship Rugby, ATP/WTA, PGA/DP World Tour, PDC, professional boxing, cricket or women\'s football. Your demo environment is pre-seeded with realistic data. No setup. No configuration.' },
+              { num: '02', title: 'Add your data', body: 'Import your squad, contracts, fixture list, sponsor deals and financial data. Or start with demo data and layer in your own. Kitman Labs GPS data syncs automatically. Player registrations connect to the Whole Game System.' },
+              { num: '03', title: 'Intelligence from day one', body: 'Your AI morning briefing goes live on day one. Your compliance dashboard is live. Your commercial pipeline is live. Your board reporting is live. From onboarding to first insight in under 24 hours.' },
+            ].map((step: { num: string; title: string; body: string }) => (
+              <div key={step.num} className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <div className="text-2xl font-black mb-3" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{step.num}</div>
+                <h3 className="text-base font-bold text-white mb-2">{step.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{step.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Portal tabs ───────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
+      {/* ══ SECTION 3: PORTAL TABS ══ */}
+      <section ref={tabsRef} className="mx-auto max-w-7xl px-6 py-24">
         <div className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Sport Portals</p>
           <h2 className="text-3xl font-bold">Purpose-built for every sport</h2>
@@ -246,7 +248,7 @@ export default function SportsProductPage() {
         {/* Tab bar */}
         <div className="flex justify-center mb-10">
           <div className="flex gap-1.5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {PORTALS.map((p, i) => {
+            {PORTALS.map((p: Portal, i: number) => {
               const isActive = i === activeTab
               return (
                 <button
@@ -291,7 +293,7 @@ export default function SportsProductPage() {
             </div>
             <p className="text-base leading-relaxed mb-7" style={{ color: '#9CA3AF' }}>{portal.desc}</p>
             <div className="space-y-3">
-              {portal.modules.map(mod => (
+              {portal.modules.map((mod: { name: string; detail: string }) => (
                 <div
                   key={mod.name}
                   className="rounded-lg px-4 py-3.5"
@@ -315,7 +317,7 @@ export default function SportsProductPage() {
                 Key integrations for {portal.label}
               </p>
               <div className="flex flex-wrap gap-2">
-                {portal.integrations.map(int => (
+                {portal.integrations.map((int: string) => (
                   <span
                     key={int}
                     className="text-sm px-3 py-1.5 rounded-lg font-medium"
@@ -331,7 +333,7 @@ export default function SportsProductPage() {
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>What you get</p>
               {portal.checks.length > 0 ? (
                 <ul className="space-y-3">
-                  {portal.checks.map(point => (
+                  {portal.checks.map((point: string) => (
                     <li key={point} className="flex items-start gap-3 text-base" style={{ color: '#D1D5DB' }}>
                       <Check size={14} style={{ color: portal.color, flexShrink: 0, marginTop: 3 }} />
                       {point}
@@ -357,76 +359,264 @@ export default function SportsProductPage() {
         </div>
       </section>
 
-      {/* ── Features section ──────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-7xl px-6 py-20">
+      {/* ══ SECTION 4: INTELLIGENCE DASHBOARDS ══ */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }} className="py-20">
+        <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Platform features</p>
-            <h2 className="text-3xl font-bold">What every portal is built on</h2>
-            <p className="mt-4 text-base" style={{ color: '#6B7280' }}>
-              Every sport. Every level. The same core engine underneath.
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>INTELLIGENCE</p>
+            <h2 className="text-3xl font-bold">Dashboards that think for you.</h2>
+            <p className="mt-4 text-base mx-auto" style={{ color: '#6B7280', maxWidth: 560 }}>
+              Every portal ships with intelligence dashboards that surface the data points that matter — before you ask for them.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {FEATURES.map(f => (
-              <div
-                key={f.title}
-                className="rounded-xl p-7 transition-all duration-300"
-                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}
-                onMouseEnter={e => {
-                  ;(e.currentTarget as HTMLDivElement).style.borderColor = '#10B98133'
-                  ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 32px -8px #10B98122'
-                }}
-                onMouseLeave={e => {
-                  ;(e.currentTarget as HTMLDivElement).style.borderColor = '#1F2937'
-                  ;(e.currentTarget as HTMLDivElement).style.boxShadow = ''
-                }}>
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl mb-5"
-                  style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  {f.icon}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+            {[
+              { title: 'Compliance Radar', desc: 'Every deadline, every filing, every obligation — tracked, colour-coded and flagged before it becomes a problem. PSR, FSR, salary caps, ground grading, safeguarding.', tag: 'LIVE IN ALL PORTALS' },
+              { title: 'Financial Health', desc: 'Wage bill vs budget, earnings vs deductions, sponsor revenue vs target. One view that tells the chairman, the agent and the athlete exactly where they stand.', tag: 'REAL-TIME' },
+              { title: 'Performance Pulse', desc: 'GPS load, session readiness, injury risk, form trajectory — pulled from PlayerData, Kitman Labs, WHOOP and Garmin into a single readiness score per athlete.', tag: 'AUTO-SYNCED' },
+              { title: 'Commercial Pipeline', desc: 'Every sponsor deal, every renewal date, every obligation. Pipeline value, conversion rate and revenue attribution — whether you manage one deal or fifty.', tag: 'CRM BUILT-IN' },
+            ].map((d: { title: string; desc: string; tag: string }) => (
+              <div key={d.title} className="rounded-xl p-7" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>{d.tag}</span>
                 </div>
-                <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{f.title}</h3>
-                <p className="text-base leading-relaxed" style={{ color: '#9CA3AF' }}>{f.desc}</p>
+                <h3 className="text-base font-bold text-white mb-2">{d.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{d.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Real example card */}
+          <div className="rounded-xl p-8" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: '#6B7280' }}>EXAMPLE: FOOTBALL PRO MORNING BRIEFING</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { heading: 'Squad Status', items: ['3 players flagged high ACWR — recommend reduced load', 'James Walker: hamstring — day 8 of 14-day protocol', 'Contract expiry: 2 players inside 6-month window'] },
+                { heading: 'Compliance', items: ['PSR headroom: £1.2M — within safe zone', 'FA registration: 3 forms awaiting counter-signature', 'Next board report due: 12 days'] },
+                { heading: 'Commercial', items: ['Sponsor renewal: Apex Kit Deal — 34 days to deadline', 'New inbound lead: Regional energy brand, £40K est.', 'Matchday revenue vs target: +8% after 18 fixtures'] },
+              ].map((col: { heading: string; items: string[] }) => (
+                <div key={col.heading}>
+                  <h4 className="text-sm font-bold mb-3" style={{ color: '#A78BFA' }}>{col.heading}</h4>
+                  <ul className="space-y-2">
+                    {col.items.map((item: string) => (
+                      <li key={item} className="flex items-start gap-2 text-sm" style={{ color: '#9CA3AF' }}>
+                        <ChevronRight size={12} style={{ color: '#8B5CF6', flexShrink: 0, marginTop: 3 }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SECTION 5: AI — POWERED BY CLAUDE ══ */}
+      <section className="py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>ARTIFICIAL INTELLIGENCE</p>
+            <h2 className="text-3xl font-bold mb-3">AI that understands sport.</h2>
+            <p className="text-base mx-auto" style={{ color: '#6B7280', maxWidth: 560 }}>
+              Powered by Claude. Trained on the rules, regulations and rhythms of every sport we cover. Not a chatbot — an intelligence layer woven into every dashboard.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {[
+              { title: 'Morning Briefing', desc: 'Personalised daily intelligence delivered before the day begins. Different content for the manager, the physio, the agent and the chairman — same platform.' },
+              { title: 'Opponent Analysis', desc: 'Pre-match tactical briefing generated from historical data, formation tendencies, set piece patterns and key player threats. Available 48 hours before kick-off.' },
+              { title: 'Contract Intelligence', desc: 'AI reads contract terms, flags unusual clauses, models financial scenarios and compares deal structures across the market. Built for agents and clubs.' },
+              { title: 'Compliance Forecasting', desc: 'Predicts PSR, FSR and salary cap headroom 3, 6 and 12 months forward based on current commitments, pipeline deals and projected revenue.' },
+              { title: 'Injury Risk Modelling', desc: 'Combines GPS load data, training frequency, match minutes and historical injury patterns to flag athletes at elevated risk before symptoms appear.' },
+              { title: 'Voice Commands', desc: 'Log an injury, check availability, pull up a compliance report or cancel a training session — all by voice. Built for managers who are on the training pitch, not at a desk.' },
+            ].map((ai: { title: string; desc: string }) => (
+              <div key={ai.title} className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center mb-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.2))', border: '1px solid rgba(139,92,246,0.3)' }}>
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#8B5CF6' }} />
+                </div>
+                <h3 className="text-sm font-bold text-white mb-2">{ai.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{ai.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Example insight cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              { sport: 'Boxing', insight: '"Your purse for the July 19 fight in Riyadh nets £1.14M after all deductions. That is 23% less than the headline figure. The largest single deduction is the 15% Saudi withholding tax — which is not reclaimable under current HMRC treaty terms."', source: 'Lumio Fight AI — Purse Simulator' },
+              { sport: 'Non-League Football', insight: '"Your wage bill is at 78% of the season budget with 14 fixtures remaining. If the two trialists sign on current terms, you will exceed budget by matchday 38. Recommend capping any new signing-on fee at £500 to maintain headroom."', source: 'Lumio Non-League AI — Financial Forecast' },
+            ].map((ex: { sport: string; insight: string; source: string }) => (
+              <div key={ex.sport} className="rounded-xl p-6" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.05), rgba(6,182,212,0.05))', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: '#A78BFA' }}>{ex.sport}</p>
+                <p className="text-sm leading-relaxed mb-4 italic" style={{ color: '#D1D5DB' }}>{ex.insight}</p>
+                <p className="text-xs" style={{ color: '#4B5563' }}>{ex.source}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA banner ────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div
-          className="rounded-2xl px-8 py-14 text-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(56,189,248,0.1) 100%)',
-            border: '1px solid rgba(16,185,129,0.25)',
-          }}>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
-            Lumio Sport
-          </p>
-          <h2 className="text-3xl md:text-5xl font-black mb-5 leading-tight">
+      {/* ══ SECTION 6: MODULE LIBRARY ══ */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }} className="py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>MODULE LIBRARY</p>
+            <h2 className="text-3xl font-bold mb-3">300+ modules. Zero generic software.</h2>
+            <p className="text-base mx-auto" style={{ color: '#6B7280', maxWidth: 560 }}>
+              Every module is purpose-built for sport. Nothing has been borrowed from CRM software, HR platforms or project management tools.
+            </p>
+          </div>
+
+          {/* 3 stats */}
+          <div className="flex flex-wrap justify-center gap-10 mb-14">
+            {[
+              { value: '300+', label: 'Total modules across all portals' },
+              { value: '50+', label: 'Compliance-specific modules' },
+              { value: '10', label: 'Sport-specific portal configurations' },
+            ].map((stat: { value: string; label: string }) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl font-black" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{stat.value}</div>
+                <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 10 sport module counts */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-14">
+            {[
+              { sport: 'Football Pro', count: '42', icon: '⚽' },
+              { sport: 'Non-League', count: '38', icon: '🏟️' },
+              { sport: 'Grassroots', count: '24', icon: '🟡' },
+              { sport: 'Tennis', count: '31', icon: '🎾' },
+              { sport: 'Golf', count: '34', icon: '⛳' },
+              { sport: 'Darts', count: '27', icon: '🎯' },
+              { sport: 'Boxing', count: '36', icon: '🥊' },
+              { sport: "Women's FC", count: '40', icon: '⚽' },
+              { sport: 'Rugby', count: '39', icon: '🏉' },
+              { sport: 'Cricket', count: '33', icon: '🏏' },
+            ].map((s: { sport: string; count: string; icon: string }) => (
+              <div key={s.sport} className="rounded-lg p-4 text-center" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <div className="text-xl mb-1">{s.icon}</div>
+                <div className="text-lg font-black text-white">{s.count}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sport}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 6 featured modules */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { name: 'Salary Cap Engine', desc: 'Ceiling, floor, exclusions, academy credits — calculated automatically for rugby and football. Real-time headroom indicator with scenario modelling.', sports: 'Rugby, Football Pro, Women\'s FC' },
+              { name: 'Purse Simulator', desc: 'Input the headline figure, apply every deduction layer by layer — manager, trainer, sanctioning body, camp costs, tax — and see exactly what lands in the account.', sports: 'Boxing' },
+              { name: 'GPS Performance Suite', desc: 'PlayerData EDGE integration. Session load, ACWR, readiness scores, heat maps, high-speed distance and mechanical load — synced automatically after every session.', sports: 'Football Pro, Non-League, Rugby' },
+              { name: 'Franchise Readiness Tracker', desc: 'Six-criteria RAG assessment mapped to RFU expansion requirements. Expression of Interest document builder with evidence uploads.', sports: 'Rugby' },
+              { name: 'Exhibition Manager', desc: 'The largest revenue stream for PDC professionals — managed properly for the first time. Booking, fees, travel, obligations and tax implications per event.', sports: 'Darts' },
+              { name: 'FSR Compliance Dashboard', desc: 'Real-time salary spend vs 80% Relevant Revenue cap. Bundled sponsorship attribution. Age-band compliance. Demerger readiness scoring.', sports: 'Women\'s FC' },
+            ].map((m: { name: string; desc: string; sports: string }) => (
+              <div key={m.name} className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <h3 className="text-sm font-bold text-white mb-2">{m.name}</h3>
+                <p className="text-sm leading-relaxed mb-3" style={{ color: '#6B7280' }}>{m.desc}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#8B5CF6' }}>{m.sports}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SECTION 7: INTEGRATIONS ══ */}
+      <section className="py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>INTEGRATIONS</p>
+            <h2 className="text-3xl font-bold mb-3">Connected to the tools sport already uses.</h2>
+            <p className="text-base mx-auto" style={{ color: '#6B7280', maxWidth: 560 }}>
+              Lumio connects to the data sources, governing bodies and financial tools that professional sport runs on. No CSV exports. No manual syncs.
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            {[
+              { category: 'Performance & GPS', items: ['PlayerData EDGE', 'Kitman Labs', 'WHOOP', 'Garmin', 'TrackMan', 'Arccos', 'ShotLink'] },
+              { category: 'Video & Scouting', items: ['Hudl', 'Wyscout', 'Dartfish', 'DataGolf'] },
+              { category: 'Governing Bodies', items: ['FA Whole Game System', 'RFU', 'World Rugby', 'ATP/WTA APIs', 'PGA Tour API', 'PDC Rankings', 'ECB', 'ICC', 'BoxRec'] },
+              { category: 'Finance & Payments', items: ['Xero', 'Stripe', 'QuickBooks'] },
+              { category: 'Communication', items: ['WhatsApp Business', 'Google Calendar', 'Slack', 'Microsoft Teams'] },
+              { category: 'Welfare & Medical', items: ['PFA', 'WSL Football', 'Club medical systems'] },
+            ].map((group: { category: string; items: string[] }) => (
+              <div key={group.category}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#A78BFA' }}>{group.category}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.items.map((item: string) => (
+                    <span key={item} className="text-sm px-3 py-1.5 rounded-lg font-medium" style={{ backgroundColor: '#0D1117', color: '#9CA3AF', border: '1px solid #1E293B' }}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SECTION 8: SECURITY ══ */}
+      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }} className="py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: '#6B7280' }}>SECURITY & COMPLIANCE</p>
+            <h2 className="text-3xl font-bold mb-3">Enterprise-grade. Sport-specific.</h2>
+            <p className="text-base mx-auto" style={{ color: '#6B7280', maxWidth: 560 }}>
+              Player data is the most sensitive data in sport. We treat it that way.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: 'Role-Based Access', desc: 'Manager, coach, physio, agent, chairman, treasurer — each role sees only what they need. No data leaks between departments. Configurable per portal.' },
+              { title: 'End-to-End Encryption', desc: 'All data encrypted in transit and at rest. Player medical records, contract terms and financial data protected to the highest standard.' },
+              { title: 'GDPR Compliant', desc: 'Full GDPR compliance including right to erasure, data portability, consent management and processing records. Built for UK and EU regulations.' },
+              { title: 'Audit Trail', desc: 'Every action logged. Every access recorded. Every change timestamped. Full audit trail for compliance reviews, governing body inspections and internal governance.' },
+              { title: 'SOC 2 Type II', desc: 'Infrastructure hosted on SOC 2 Type II certified providers. Annual penetration testing. Vulnerability scanning. Incident response plan documented and tested.' },
+              { title: 'Data Residency', desc: 'UK data stays in UK data centres. No cross-border transfer of player data without explicit consent. Compliant with FA, RFU and governing body data requirements.' },
+            ].map((sec: { title: string; desc: string }) => (
+              <div key={sec.title} className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  <Check size={14} style={{ color: '#8B5CF6' }} />
+                </div>
+                <h3 className="text-sm font-bold text-white mb-2">{sec.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{sec.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SECTION 9: FINAL CTA ══ */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 60%)' }} />
+        <div className="mx-auto max-w-3xl px-6 text-center relative">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: '#6B7280' }}>LUMIO SPORTS</p>
+          <h2 className="text-3xl md:text-5xl font-black leading-tight mb-4">
             Ten portals.{' '}
-            <span style={{ background: 'linear-gradient(135deg, #10B981, #38BDF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               One platform.
             </span>
           </h2>
           <p className="text-lg leading-relaxed mb-10 mx-auto" style={{ color: '#9CA3AF', maxWidth: 560 }}>
-            Whether you're a Premier League club or a Sunday morning manager — Lumio gives you the same intelligence advantage that was previously only available to elite organisations.
+            Whether you are a Premier League club, a Championship rugby franchise, a PDC professional or a Sunday morning manager — Lumio gives you the same intelligence advantage that was previously only available to elite organisations with six-figure tech budgets.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href="/demo"
+              href="/contact"
               className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold"
-              style={{ backgroundColor: '#10B981', color: '#F9FAFB' }}>
+              style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: '#fff', textDecoration: 'none' }}>
               Book a demo <ArrowRight size={16} />
             </Link>
-            <Link
-              href="/sports"
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-medium"
-              style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}>
-              Explore all sports <ArrowRight size={16} />
-            </Link>
+            <button onClick={() => tabsRef.current?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold" style={{ border: '1px solid #1F2937', color: '#9CA3AF', backgroundColor: 'transparent' }}>
+              Explore all portals <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       </section>
