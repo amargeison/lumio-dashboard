@@ -97,6 +97,14 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedPolicy, setSelectedPolicy] = useState<typeof POLICIES[0] | null>(null)
   const [lastSynced, setLastSynced] = useState<string>('')
+  const [avatarStyle, setAvatarStyle] = useState<'photo' | 'cartoon'>(() => {
+    if (typeof window === 'undefined') return 'photo'
+    return (localStorage.getItem('lumio_team_avatar_style') as 'photo' | 'cartoon') || 'photo'
+  })
+  function changeAvatarStyle(s: 'photo' | 'cartoon') {
+    setAvatarStyle(s)
+    try { localStorage.setItem('lumio_team_avatar_style', s) } catch {}
+  }
 
   // Auto-sync directory on load + tab focus + 4hr interval
   useEffect(() => {
@@ -288,10 +296,16 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
       {/* ═══ TEAM INFO (FIFA CARDS — same component as live) ═══ */}
       {subTab === 'cards' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
-          <div className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Team Info</h2>
+            <div className="inline-flex rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+              <button onClick={() => changeAvatarStyle('photo')} className="px-3 py-1.5 text-xs font-semibold transition-colors" style={{ backgroundColor: avatarStyle === 'photo' ? '#7C3AED' : '#111318', color: avatarStyle === 'photo' ? '#FFFFFF' : '#9CA3AF' }}>📷 Photos</button>
+              <button onClick={() => changeAvatarStyle('cartoon')} className="px-3 py-1.5 text-xs font-semibold transition-colors" style={{ backgroundColor: avatarStyle === 'cartoon' ? '#7C3AED' : '#111318', color: avatarStyle === 'cartoon' ? '#FFFFFF' : '#9CA3AF' }}>🎨 Cartoon</button>
+            </div>
+          </div>
+          <div key={avatarStyle} className={`grid gap-4 justify-items-center ${getGridCols(DEMO_STAFF.length)}`} style={{ transition: 'opacity 0.25s' }}>
             {DEMO_STAFF.map((s, i) => (
-              <EmployeeProfileCard key={i} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => setSelectedMember(team.find(t => t.name.includes(s.last_name || '')) || null)} teamSize={DEMO_STAFF.length} />
+              <EmployeeProfileCard key={`${avatarStyle}-${i}`} staff={s} index={i} isCurrentUser={i === 0} onViewProfile={() => setSelectedMember(team.find(t => t.name.includes(s.last_name || '')) || null)} teamSize={DEMO_STAFF.length} avatarStyle={avatarStyle} />
             ))}
           </div>
         </div>

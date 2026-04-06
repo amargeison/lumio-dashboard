@@ -19,6 +19,33 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     const email = formData.get('email') as string | null
+    const urlParam = formData.get('url') as string | null
+    const cartoonUrlParam = formData.get('cartoon_url') as string | null
+
+    // URL-only mode: caller passes an existing public URL (e.g. cartoon_url
+    // from DeepAI) and we just persist it to workspace_staff / auth metadata
+    // without re-uploading any file.
+    if (!file && (urlParam || cartoonUrlParam)) {
+      const update: Record<string, string> = {}
+      if (urlParam) update.profile_photo_url = urlParam
+      if (cartoonUrlParam) update.cartoon_url = cartoonUrlParam
+
+      if (email) {
+        await supabase.from('workspace_staff').update(update).eq('business_id', business_id).eq('email', email)
+          .then(({ error: dbErr }) => { if (dbErr) console.warn('[upload-profile-photo] DB update note:', dbErr.message) })
+
+        if (urlParam) {
+          const { data: authUsers } = await supabase.auth.admin.listUsers()
+          const authUser = authUsers?.users?.find((u: { email?: string }) => u.email === email)
+          if (authUser) {
+            await supabase.auth.admin.updateUserById(authUser.id, { user_metadata: { avatar_url: urlParam } })
+              .then(({ error: authErr }) => { if (authErr) console.warn('[upload-profile-photo] Auth metadata update note:', authErr.message) })
+          }
+        }
+      }
+
+      return NextResponse.json({ success: true, url: urlParam || null, cartoon_url: cartoonUrlParam || null })
+    }
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     if (!ALLOWED_TYPES.includes(file.type)) return NextResponse.json({ error: 'Invalid file type — JPG, PNG or WebP only' }, { status: 400 })
@@ -41,9 +68,11 @@ export async function POST(req: NextRequest) {
 
     const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
 
-    // Update workspace_staff with the photo URL
+    // Update workspace_staff with the photo URL (and cartoon_url if also provided in this request)
     if (email) {
-      await supabase.from('workspace_staff').update({ profile_photo_url: publicUrl }).eq('business_id', business_id).eq('email', email)
+      const update: Record<string, string> = { profile_photo_url: publicUrl }
+      if (cartoonUrlParam) update.cartoon_url = cartoonUrlParam
+      await supabase.from('workspace_staff').update(update).eq('business_id', business_id).eq('email', email)
         .then(({ error: dbErr }) => { if (dbErr) console.warn('[upload-profile-photo] DB update note:', dbErr.message) })
     }
 
@@ -58,7 +87,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, url: publicUrl })
+    return NextResponse.json({ success: true, url: publicUrl, cartoon_url: cartoonUrlParam || null })
   } catch (err) {
     console.error('[upload-profile-photo] Error:', err)
     return NextResponse.json({ error: 'Upload failed — please try again' }, { status: 500 })

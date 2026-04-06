@@ -476,6 +476,14 @@ function StepYourCard({
   const [userName, setUserName] = useState('Your Name')
   const [userRole, setUserRole] = useState('Founder')
 
+  // Cartoon flow state
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
+  const [cartoonUrl, setCartoonUrl] = useState<string | null>(null)
+  const [cartoonLoading, setCartoonLoading] = useState(false)
+  const [cartoonError, setCartoonError] = useState<string | null>(null)
+  const [savingChoice, setSavingChoice] = useState<'original' | 'cartoon' | null>(null)
+  const [chosenUrl, setChosenUrl] = useState<string | null>(null)
+
   useEffect(() => {
     const name =
       localStorage.getItem('lumio_user_name')
@@ -486,6 +494,71 @@ function StepYourCard({
     if (role && role.toLowerCase() !== 'director') setUserRole(role)
   }, [])
 
+  async function startCartoonFlow(file: File) {
+    setUploadedUrl(null)
+    setCartoonUrl(null)
+    setCartoonError(null)
+    setChosenUrl(null)
+    setCartoonLoading(true)
+    try {
+      const email = localStorage.getItem('lumio_user_email')
+        || localStorage.getItem('workspace_user_email')
+        || ''
+      // 1. Upload original to workspace storage so we have a public URL
+      const upFd = new FormData()
+      upFd.append('file', file)
+      if (email) upFd.append('email', email)
+      const upRes = await fetch('/api/workspace/upload-profile-photo', { method: 'POST', body: upFd })
+      const upData = await upRes.json().catch(() => ({}))
+      if (upRes.ok && upData?.url) {
+        setUploadedUrl(upData.url)
+      }
+      // 2. Send the same file to DeepAI via our cartoon proxy
+      const cFd = new FormData()
+      cFd.append('image', file)
+      const cRes = await fetch('/api/cartoon', { method: 'POST', body: cFd })
+      const cData = await cRes.json().catch(() => ({}))
+      if (cRes.ok && cData?.success && cData?.cartoon_url) {
+        setCartoonUrl(cData.cartoon_url)
+      } else {
+        setCartoonError(cData?.error || 'Cartoon generation failed')
+      }
+    } catch (err) {
+      setCartoonError(err instanceof Error ? err.message : 'Cartoon generation failed')
+    } finally {
+      setCartoonLoading(false)
+    }
+  }
+
+  async function saveChoice(which: 'original' | 'cartoon') {
+    const url = which === 'original' ? uploadedUrl : cartoonUrl
+    if (!url) return
+    setSavingChoice(which)
+    try {
+      const email = localStorage.getItem('lumio_user_email')
+        || localStorage.getItem('workspace_user_email')
+        || ''
+      const fd = new FormData()
+      fd.append('url', url)
+      if (which === 'cartoon' && cartoonUrl) fd.append('cartoon_url', cartoonUrl)
+      if (email) fd.append('email', email)
+      await fetch('/api/workspace/upload-profile-photo', { method: 'POST', body: fd })
+      // Update local card display + global avatar storage
+      setChosenUrl(url)
+      try {
+        localStorage.setItem('lumio_user_photo', url)
+        localStorage.setItem('lumio_avatar_url', url)
+        if (email) localStorage.setItem(`lumio_staff_photo_${email}`, url)
+        if (cartoonUrl && email) localStorage.setItem(`lumio_staff_cartoon_${email}`, cartoonUrl)
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url } }))
+      } catch {}
+    } catch (err) {
+      console.warn('[StepYourCard] save choice failed', err)
+    } finally {
+      setSavingChoice(null)
+    }
+  }
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -495,6 +568,8 @@ function StepYourCard({
       if (dataUrl) onPhotoChange(file, dataUrl)
     }
     reader.readAsDataURL(file)
+    // Kick off the upload + cartoon pipeline in parallel
+    startCartoonFlow(file)
   }
 
   const initials =
@@ -523,6 +598,10 @@ function StepYourCard({
         @keyframes lumio-avatar-pop {
           0%   { opacity: 0.6; transform: scale(0.9); }
           100% { opacity: 1;   transform: scale(1);   }
+        }
+        @keyframes lumio-cartoon-pulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 1;    }
         }
       ` }} />
 
@@ -622,8 +701,9 @@ function StepYourCard({
 
             {/* Avatar */}
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '14px 0 10px' }}>
+              {(() => { const cardImage = chosenUrl || photoDataUrl; return (
               <div
-                key={photoDataUrl || 'avatar-placeholder'}
+                key={cardImage || 'avatar-placeholder'}
                 style={{
                   width: 126,
                   height: 126,
@@ -634,7 +714,7 @@ function StepYourCard({
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
-                  backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
+                  backgroundImage: cardImage ? `url(${cardImage})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   fontSize: 38,
@@ -644,8 +724,9 @@ function StepYourCard({
                   boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
                 }}
               >
-                {!photoDataUrl && initials}
+                {!cardImage && initials}
               </div>
+              )})()}
             </div>
 
             {/* Name + role */}
@@ -701,6 +782,73 @@ function StepYourCard({
           </div>
         </div>
       </div>
+
+      {/* ── Cartoon comparison panel ── */}
+      {(cartoonLoading || cartoonUrl || cartoonError) && (
+        <div style={{ maxWidth: 680, margin: '40px auto 0' }}>
+          {cartoonLoading && (
+            <div style={{
+              textAlign: 'center',
+              padding: '20px 16px',
+              borderRadius: 14,
+              border: `1px solid ${T.border}`,
+              backgroundColor: T.card,
+              color: T.muted,
+              fontSize: 14,
+              animation: 'lumio-cartoon-pulse 1.6s ease-in-out infinite',
+            }}>
+              ✨ Creating your cartoon...
+            </div>
+          )}
+
+          {cartoonError && !cartoonLoading && (
+            <div style={{
+              textAlign: 'center',
+              padding: '14px 16px',
+              borderRadius: 12,
+              border: '1px solid rgba(239,68,68,0.35)',
+              backgroundColor: 'rgba(239,68,68,0.08)',
+              color: '#FCA5A5',
+              fontSize: 13,
+            }}>
+              Couldn&apos;t generate cartoon: {cartoonError}
+            </div>
+          )}
+
+          {cartoonUrl && uploadedUrl && !cartoonLoading && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+                <div style={{ textAlign: 'center' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={uploadedUrl} alt="Original" style={{ width: 160, height: 160, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${T.border}` }} />
+                  <p style={{ marginTop: 10, fontSize: 13, fontWeight: 600, color: T.text }}>Original</p>
+                  <button
+                    type="button"
+                    onClick={() => saveChoice('original')}
+                    disabled={savingChoice !== null}
+                    style={{ marginTop: 10, padding: '8px 16px', borderRadius: 8, backgroundColor: T.card, border: `1px solid ${T.border}`, color: T.text, fontSize: 13, fontWeight: 600, cursor: savingChoice ? 'wait' : 'pointer' }}
+                  >
+                    {savingChoice === 'original' ? 'Saving…' : 'Save original'}
+                  </button>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cartoonUrl} alt="Cartoon" style={{ width: 160, height: 160, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(124,58,237,0.6)' }} />
+                  <p style={{ marginTop: 10, fontSize: 13, fontWeight: 600, color: T.text }}>Cartoon ✨</p>
+                  <button
+                    type="button"
+                    onClick={() => saveChoice('cartoon')}
+                    disabled={savingChoice !== null}
+                    style={{ marginTop: 10, padding: '8px 16px', borderRadius: 8, backgroundColor: T.purple, border: 'none', color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: savingChoice ? 'wait' : 'pointer' }}
+                  >
+                    {savingChoice === 'cartoon' ? 'Saving…' : 'Save cartoon'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
