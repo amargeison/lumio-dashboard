@@ -106,6 +106,20 @@ const PORTALS = [
     cta: 'See Lumio Fight live in a demo', href: '/boxing/lumio-demo',
   },
   {
+    id: 'womensfootball', icon: '⚽', label: "Women's FC", color: '#EC4899',
+    desc: "FSR compliance tracking, player welfare management (maternity, ACL, mental health), standalone sponsorship pipeline with FSR revenue attribution, board suite, dual registration management and AI Club Director morning briefing — built specifically for the women's game.",
+    modules: [
+      { name: 'FSR Compliance Dashboard', detail: 'Real-time salary spend vs. 80% Relevant Revenue cap. Bundled sponsorship attribution. Age-band salary compliance.' },
+      { name: 'Player Welfare Hub', detail: 'ACL risk monitor, maternity tracker, mental health log, PFA referral workflow. Karen Carney Review compliant.' },
+      { name: 'Standalone Sponsorship Pipeline', detail: 'FSR-aware commercial CRM with bundled deal attribution for parent club shared sponsors.' },
+      { name: 'Board Suite & Demerger Tracker', detail: 'FSR-constrained Club Planner, investor tools, standalone valuation model, Demerger Readiness Tracker.' },
+      { name: 'Squad, Pitch & Set Pieces', detail: 'FIFA-style pitch view, dual registration management, set pieces library, team talks builder.' },
+    ],
+    integrations: ['Kitman Labs', 'WSL Football', 'FA Whole Game System', 'PFA', 'Stripe', 'Xero'],
+    checks: ['FSR headroom tracked in real time', 'Maternity and ACL welfare log — Karen Carney compliant', 'Bundled sponsorship attribution for FSR revenue', 'Dual registration expiry alerts', 'AI morning briefing — FSR, welfare, commercial, squad'],
+    cta: "Book a Women's Football demo", href: '/contact',
+  },
+  {
     id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6', comingSoon: true,
     desc: 'Contract & career management, performance analytics, GPS load data (PlayerData, World Rugby Approved), injury & recovery tracking, match prep & opposition analysis, sponsorship manager and AI morning briefing.',
     modules: [
@@ -136,7 +150,7 @@ const PORTALS = [
 ]
 
 const STATS = [
-  { value: '9', label: 'Sports portals' },
+  { value: '10', label: 'Sports portals' },
   { value: '50,000+', label: 'Athletes on GPS partner' },
   { value: '0', label: 'Platforms that existed before us' },
   { value: '£0', label: 'Cost of a demo' },
@@ -390,7 +404,7 @@ export default function SportsProductPage() {
             Lumio Sport
           </p>
           <h2 className="text-3xl md:text-5xl font-black mb-5 leading-tight">
-            Nine portals.{' '}
+            Ten portals.{' '}
             <span style={{ background: 'linear-gradient(135deg, #10B981, #38BDF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               One platform.
             </span>
