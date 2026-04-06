@@ -258,7 +258,7 @@ export function EmployeeProfileCard({
             </span>
           </div>
           <div className="flex justify-center py-2.5">
-            <Avatar email={staff.email} initials={initials} size={60} deptColor={deptColor} />
+            <Avatar email={staff.email} initials={initials} size={60} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} />
           </div>
           <div className="text-center px-2 pb-2.5">
             <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{shortName}</p>
@@ -310,7 +310,7 @@ export function EmployeeProfileCard({
           </div>
 
           <div className="flex justify-center py-3">
-            <Avatar email={staff.email} initials={initials} size={dim.avatar} deptColor={deptColor} />
+            <Avatar email={staff.email} initials={initials} size={dim.avatar} deptColor={deptColor} name={name} isCurrentUser={isCurrentUser} />
           </div>
         </div>
 
