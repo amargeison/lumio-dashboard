@@ -1,13 +1,17 @@
 'use client'
+import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 
 interface Props {
   onClose: () => void
-  onBusiness: () => void
-  onSchool: () => void
+  onBusiness?: () => void
+  onSchool?: () => void
 }
 
 export default function TrialTypeModal({ onClose, onBusiness, onSchool }: Props) {
+  const router = useRouter()
+  const handleBusiness = onBusiness || (() => { onClose(); router.push('/signup?portal=business') })
+  const handleSchool = onSchool || (() => { onClose(); router.push('/signup?portal=schools') })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl shadow-2xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -16,12 +20,12 @@ export default function TrialTypeModal({ onClose, onBusiness, onSchool }: Props)
           <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
         </div>
         <div className="p-6 grid grid-cols-2 gap-4">
-          <button onClick={onBusiness} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+          <button onClick={handleBusiness} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
             <span className="text-4xl">🏢</span>
             <span className="text-base font-bold" style={{ color: '#F9FAFB' }}>Business</span>
             <span className="text-xs" style={{ color: '#9CA3AF' }}>CRM, HR, Sales, Operations and more</span>
           </button>
-          <button onClick={onSchool} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+          <button onClick={handleSchool} className="flex flex-col items-center gap-3 rounded-xl p-6 text-center transition-all" style={{ backgroundColor: '#07080F', border: '1px solid #1F2937' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0D9488' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
             <span className="text-4xl">🏫</span>
             <span className="text-base font-bold" style={{ color: '#F9FAFB' }}>School</span>
             <span className="text-xs" style={{ color: '#9CA3AF' }}>Attendance, safeguarding, staff, curriculum and more</span>

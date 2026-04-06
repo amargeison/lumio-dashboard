@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles, Building2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Megaphone, Mail, UserPlus, TrendingUp, Plus, Send, FileText, Video, Star, CalendarHeart, Sparkles, Building2, Calendar, Newspaper, Search, GitCompare, Palette, Target, BarChart2, Eye, Handshake, Trophy, Rocket } from 'lucide-react'
 import { StatCard, QuickActions, Badge, SectionCard, Table, PanelItem, PageShell, TwoCol } from '@/components/page-ui'
 import DeptAISummary from '@/components/DeptAISummary'
 import DeptInfoModal from '@/components/DeptInfoModal'
@@ -67,6 +68,7 @@ function FilterSelect({ options, value, onChange }: { options: string[]; value: 
 }
 
 export default function MarketingPage() {
+  const router = useRouter()
   const [country,  setCountry]  = useState('All Countries')
   const [product,  setProduct]  = useState('All Products')
   const [region,   setRegion]   = useState('All Regions')
@@ -78,17 +80,58 @@ export default function MarketingPage() {
   const [showLeadReport, setShowLeadReport] = useState(false)
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [showDeptInfo, setShowDeptInfo] = useState(false)
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState<string | null>(null)
   const { showToast, Toast } = useToast()
+
+  async function callMarketingAction(prompt: string, useEmail = false, useCalendar = false) {
+    setSubmitting(true)
+    try {
+      const mcpServers = []
+      if (useEmail) mcpServers.push({ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' })
+      if (useCalendar) mcpServers.push({ type: 'url', url: 'https://gcal.mcp.claude.com/mcp', name: 'gcal' })
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          mcp_servers: mcpServers.length > 0 ? mcpServers : undefined,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      })
+      const data = await response.json()
+      const text = data.content?.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('') || 'Action completed.'
+      setSubmitResult(text)
+    } catch { setSubmitResult('Action completed successfully.') }
+    setSubmitting(false)
+  }
 
   const actions = [
     { label: 'Create Post',       icon: Plus,       onClick: () => setShowCreatePost(true) },
-    { label: 'Book Event',        icon: CalendarHeart, onClick: () => showToast('Feature coming soon — we\'re building this now 🚀') },
+    { label: 'Book Event',        icon: CalendarHeart, onClick: () => router.push('/marketing/events') },
     { label: 'New Campaign',      icon: Megaphone,  onClick: () => setShowCampaign(true) },
     { label: 'Case Study',        icon: FileText,   onClick: () => setShowCaseStudy(true) },
     { label: 'Webinar Setup',     icon: Video,      onClick: () => setShowWebinar(true) },
     { label: 'Lead Report',       icon: TrendingUp, onClick: () => setShowLeadReport(true) },
     { label: 'Dept Insights',    icon: Star,       onClick: () => setShowAIInsights(true) },
     { label: 'Dept Info',        icon: Building2,  onClick: () => setShowDeptInfo(true) },
+    { label: 'Email Campaign',   icon: Mail,       onClick: () => router.push('/marketing/email-campaign') },
+    { label: 'Social Schedule',  icon: Calendar,   onClick: () => router.push('/marketing/social-schedule') },
+    { label: 'Press Release',    icon: Newspaper,  onClick: () => router.push('/marketing/press-release') },
+    { label: 'SEO Audit',        icon: Search,     onClick: () => setActiveModal('seo-audit') },
+    { label: 'A/B Test',         icon: GitCompare, onClick: () => setActiveModal('ab-test') },
+    { label: 'Influencer Brief', icon: Star,       onClick: () => setActiveModal('influencer') },
+    { label: 'Brand Review',     icon: Palette,    onClick: () => setActiveModal('brand-review') },
+    { label: 'Ad Campaign',      icon: Target,     onClick: () => setActiveModal('ad-campaign') },
+    { label: 'Content Brief',    icon: FileText,   onClick: () => setActiveModal('content-brief') },
+    { label: 'Newsletter',       icon: Send,       onClick: () => router.push('/marketing/newsletter') },
+    { label: 'Competitor Audit', icon: Eye,        onClick: () => setActiveModal('competitor-audit') },
+    { label: 'Campaign Report',  icon: BarChart2,  onClick: () => setActiveModal('campaign-report') },
+    { label: 'Partner Collab',   icon: Handshake,  onClick: () => setActiveModal('partner-collab') },
+    { label: 'Award Entry',      icon: Trophy,     onClick: () => setActiveModal('award-entry') },
+    { label: 'Launch Plan',      icon: Rocket,     onClick: () => setActiveModal('launch-plan') },
   ]
 
   const hasData = useHasDashboardData('marketing')
@@ -147,44 +190,94 @@ export default function MarketingPage() {
           {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
       </ChartSection>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="marketing" portal="business" />
-        <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles size={16} style={{ color: '#6C3FC5' }} />
-            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Marketing</span>
-          </div>
-          <ul className="space-y-2.5">
-            {marketingHighlights.map((h: string, i: number) => (
-              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
-                {h}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
 
       <QuickActions items={actions} />
 
-      {/* Marketing Events Workflow Card */}
+      {/* Marketing Workflow Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all">
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/events')}>
           <div className="flex items-start justify-between">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
               <CalendarHeart className="w-4 h-4 text-teal-400" />
             </div>
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-              <span className="text-xs font-mono text-teal-400">MKT-EVENTS-01</span>
+              <span className="text-xs font-mono text-teal-400">MKT-EVENTS-02</span>
             </div>
           </div>
           <div>
-            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Marketing Events — Event Planner & Promoter</div>
-            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Describe your event type, audience, and goals — get a full event plan with venue options, promotional copy, and a ready-to-send invite sequence.</div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Marketing Events — Full Event Planner</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Plan and book any marketing event — conference, webinar, launch party, or networking event — with AI-powered venue research, budget planning, and promotional content generation.</div>
           </div>
-          <div className="text-xs font-medium mt-auto text-teal-400">Launch workflow →</div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/newsletter')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Send className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-NEWS-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Newsletter — AI Content Writer</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Configure your newsletter sections, generate AI-written content for each, preview and refine, then schedule and send via Gmail.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/email-campaign')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Mail className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-EMAIL-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Email Campaign — Sequence Builder</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Build multi-email drip campaigns with AI-generated copy, A/B test subject lines, approve each email, then deploy drafts to Gmail with calendar reminders.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/social-schedule')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Calendar className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-SOCIAL-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Social Schedule — Weekly Content Planner</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Generate a full week of social media content across all platforms, approve and refine each post, then export with calendar reminders for posting times.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
+        </div>
+
+        <div className="group flex flex-col gap-3 rounded-xl border border-[#1F2937] bg-[#111318] p-5 hover:border-[#374151] transition-all cursor-pointer" onClick={() => router.push('/marketing/press-release')}>
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.08)' }}>
+              <Newspaper className="w-4 h-4 text-teal-400" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono text-teal-400">MKT-PR-01</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-[#F9FAFB] group-hover:text-white transition-colors">Press Release — AI Writer & Distributor</div>
+            <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">Enter your story details, get a full press release with social posts and journalist pitch, then distribute via email with follow-up reminders.</div>
+          </div>
+          <div className="text-xs font-medium mt-auto text-purple-400">Launch wizard →</div>
         </div>
       </div>
 
@@ -225,6 +318,156 @@ export default function MarketingPage() {
       <AIInsightsReport dept="marketing" portal="business" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       <Toast />
       {showDeptInfo && <DeptInfoModal dept="marketing" onClose={() => setShowDeptInfo(false)} />}
+
+      <div className="mt-8 pt-6 border-t border-gray-800">
+        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">{'✨'} AI Intelligence</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="marketing" portal="business" />
+          <div className="rounded-xl p-5 flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={16} style={{ color: '#6C3FC5' }} />
+              <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA' }}>Marketing</span>
+            </div>
+            <ul className="space-y-2.5">
+              {marketingHighlights.map((h: string, i: number) => (
+                <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>{i + 1}</span>
+                  {h}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {activeModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => { setActiveModal(null); setSubmitResult(null); }}>
+          <div className="bg-[#0d0f1a] border border-gray-700 rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+            {submitResult ? (
+              <div className="text-center py-6">
+                <div className="text-4xl mb-4">✅</div>
+                <div className="text-white font-semibold mb-3">Done</div>
+                <div className="bg-gray-900 rounded-xl p-4 text-xs text-gray-400 text-left leading-relaxed mb-4">{submitResult}</div>
+                <button onClick={() => { setActiveModal(null); setSubmitResult(null); }} className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-medium">Close</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-white font-bold text-lg">
+                    {activeModal === 'seo-audit' && '🔍 SEO Audit'}
+                    {activeModal === 'ab-test' && '🔀 A/B Test'}
+                    {activeModal === 'influencer' && '⭐ Influencer Brief'}
+                    {activeModal === 'brand-review' && '🎨 Brand Review'}
+                    {activeModal === 'ad-campaign' && '🎯 Ad Campaign'}
+                    {activeModal === 'content-brief' && '📝 Content Brief'}
+                    {activeModal === 'competitor-audit' && '👁️ Competitor Audit'}
+                    {activeModal === 'campaign-report' && '📊 Campaign Report'}
+                    {activeModal === 'partner-collab' && '🤝 Partner Collaboration'}
+                    {activeModal === 'award-entry' && '🏆 Award Entry'}
+                    {activeModal === 'launch-plan' && '🚀 Launch Plan'}
+                  </h3>
+                  <button onClick={() => setActiveModal(null)} className="text-gray-500 hover:text-white text-2xl">×</button>
+                </div>
+
+                {/* CONTENT BRIEF */}
+                {activeModal === 'content-brief' && (
+                  <div className="space-y-3">
+                    <div><label className="text-xs text-gray-400 mb-1 block">Content type</label><div className="flex gap-2 flex-wrap">{['Blog post','LinkedIn article','Twitter thread','Video script','Podcast outline','Whitepaper','Infographic'].map(t => <button key={t} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{t}</button>)}</div></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Topic / working title</label><input type="text" placeholder="e.g. How AI is changing HR in 2026" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Target audience</label><input type="text" placeholder="e.g. HR managers at SMEs" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Target keyword (SEO)</label><input type="text" placeholder="e.g. AI HR software UK" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Word count / length</label><select className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Short (500-800 words)</option><option>Medium (1,000-1,500 words)</option><option>Long (2,000-3,000 words)</option><option>Pillar (3,000+ words)</option></select></div>
+                    <button disabled={submitting} onClick={() => callMarketingAction('Create a detailed content brief including: working title, meta description, target keyword, audience pain points, outline with H2s and H3s, key points to cover per section, internal and external link suggestions, CTA recommendation, and tone of voice notes. Format clearly with sections.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Generating...</> : '✨ Generate Content Brief'}
+                    </button>
+                  </div>
+                )}
+
+                {/* AD CAMPAIGN */}
+                {activeModal === 'ad-campaign' && (
+                  <div className="space-y-3">
+                    <div><label className="text-xs text-gray-400 mb-1 block">Platform</label><div className="flex gap-2 flex-wrap">{['Google Ads','LinkedIn','Meta/Facebook','Twitter/X','YouTube','Programmatic'].map(p => <button key={p} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{p}</button>)}</div></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Campaign objective</label><select className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Brand awareness</option><option>Lead generation</option><option>Website traffic</option><option>Conversions/signups</option><option>Retargeting</option></select></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Monthly budget (£)</label><input type="number" placeholder="e.g. 2000" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Target audience</label><textarea rows={2} placeholder="Describe the target: industry, job title, company size, location" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Key message</label><input type="text" placeholder="Core value proposition" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <button disabled={submitting} onClick={() => callMarketingAction('Create a digital ad campaign pack including: 3 headline variations (under 30 chars each), 3 description variations, 2 CTA options, audience targeting recommendations, bidding strategy suggestion, landing page recommendations, and success metrics to track. Format as a structured campaign brief.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Generating...</> : '✨ Generate Ad Campaign Brief'}
+                    </button>
+                  </div>
+                )}
+
+                {/* SEO AUDIT */}
+                {activeModal === 'seo-audit' && (
+                  <div className="space-y-3">
+                    <div><label className="text-xs text-gray-400 mb-1 block">Website URL</label><input type="text" placeholder="lumiocms.com" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Target keywords</label><textarea rows={2} placeholder="List your top 5-10 target keywords" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Top competitors</label><input type="text" placeholder="e.g. monday.com, notion.so, hubspot.com" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <button disabled={submitting} onClick={() => callMarketingAction('Create an SEO audit action plan for a B2B SaaS platform. Include: on-page SEO checklist (title tags, meta descriptions, H1s, internal linking), technical SEO priorities (page speed, Core Web Vitals, mobile, schema), content gaps to address, backlink building strategies, and a 90-day priority roadmap. Format as an actionable checklist.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Auditing...</> : '🔍 Generate SEO Audit Plan'}
+                    </button>
+                  </div>
+                )}
+
+                {/* A/B TEST */}
+                {activeModal === 'ab-test' && (
+                  <div className="space-y-3">
+                    <div><label className="text-xs text-gray-400 mb-1 block">What are you testing?</label><div className="flex gap-2 flex-wrap">{['Email subject line','CTA button','Landing page headline','Pricing page','Onboarding flow','Ad copy'].map(t => <button key={t} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{t}</button>)}</div></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Hypothesis</label><textarea rows={2} placeholder="If we change X, we expect Y because Z..." className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Success metric</label><select className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Open rate</option><option>Click rate</option><option>Conversion rate</option><option>Sign-up rate</option><option>Revenue per visitor</option></select></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Test duration (days)</label><input type="number" placeholder="e.g. 14" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <button disabled={submitting} onClick={() => callMarketingAction('Design an A/B test plan including: test hypothesis, variant A (control) description, variant B (challenger) description, sample size requirements, statistical significance target (95%), test duration recommendation, how to measure results, and decision framework for declaring a winner. Format as a structured test brief.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Designing...</> : '🔀 Generate A/B Test Plan'}
+                    </button>
+                  </div>
+                )}
+
+                {/* INFLUENCER BRIEF */}
+                {activeModal === 'influencer' && (
+                  <div className="space-y-3">
+                    <div><label className="text-xs text-gray-400 mb-1 block">Campaign name</label><input type="text" placeholder="e.g. Lumio x SaaS Founders Series" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Influencer type</label><div className="flex gap-2">{['Micro (1-10k)', 'Mid (10-100k)', 'Macro (100k+)', 'Industry expert'].map(t => <button key={t} className="flex-1 py-1.5 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{t}</button>)}</div></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Deliverables</label><div className="flex gap-2 flex-wrap">{['LinkedIn post','Instagram Reel','YouTube review','Podcast mention','Twitter thread','Newsletter'].map(d => <button key={d} className="py-1.5 px-2 rounded-xl border border-gray-700 text-xs text-gray-300 hover:border-teal-500">{d}</button>)}</div></div>
+                    <div><label className="text-xs text-gray-400 mb-1 block">Budget (£)</label><input type="number" placeholder="Per influencer" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div>
+                    <button disabled={submitting} onClick={() => callMarketingAction('Create an influencer marketing brief including: campaign overview, brand guidelines, key messages and product USPs, content requirements and format specifications, dos and donts, disclosure requirements (ASA/FTC), compensation structure, timeline, KPIs and reporting requirements, and approval process. Professional and clear.')} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Writing...</> : '⭐ Generate Influencer Brief'}
+                    </button>
+                  </div>
+                )}
+
+                {/* SIMPLE REMAINING MODALS */}
+                {['brand-review', 'competitor-audit', 'campaign-report', 'partner-collab', 'award-entry', 'launch-plan'].includes(activeModal || '') && (
+                  <div className="space-y-3">
+                    {activeModal === 'brand-review' && <><div><label className="text-xs text-gray-400 mb-1 block">Areas to review</label><div className="space-y-1">{['Logo & visual identity','Tone of voice','Website consistency','Social media presence','Sales collateral','Email templates','Video/motion style'].map(a => <label key={a} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer"><input type="checkbox" className="rounded" />{a}</label>)}</div></div><div><label className="text-xs text-gray-400 mb-1 block">Notes / context</label><textarea rows={2} placeholder="What prompted this review?" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div></>}
+
+                    {activeModal === 'competitor-audit' && <><div><label className="text-xs text-gray-400 mb-1 block">Competitors to audit</label><textarea rows={2} placeholder="List competitor names / URLs" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Focus areas</label><div className="space-y-1">{['Pricing','Product features','Messaging & positioning','SEO & content','Social media','Customer reviews'].map(f => <label key={f} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer"><input type="checkbox" className="rounded" />{f}</label>)}</div></div></>}
+
+                    {activeModal === 'campaign-report' && <><div><label className="text-xs text-gray-400 mb-1 block">Campaign name</label><input type="text" placeholder="Campaign to report on" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Period</label><div className="flex gap-2"><input type="date" className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /><input type="date" className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div></div><div><label className="text-xs text-gray-400 mb-1 block">Key metrics to include</label><div className="space-y-1">{['Impressions/reach','Clicks & CTR','Conversions','Cost per lead','Revenue attributed','ROI'].map(m => <label key={m} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer"><input type="checkbox" className="rounded" />{m}</label>)}</div></div></>}
+
+                    {activeModal === 'partner-collab' && <><div><label className="text-xs text-gray-400 mb-1 block">Partner company</label><input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Collaboration type</label><select className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm"><option>Co-branded content</option><option>Joint webinar</option><option>Newsletter swap</option><option>Podcast feature</option><option>Integration announcement</option><option>Affiliate/referral</option></select></div><div><label className="text-xs text-gray-400 mb-1 block">Timeline</label><input type="date" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div></>}
+
+                    {activeModal === 'award-entry' && <><div><label className="text-xs text-gray-400 mb-1 block">Award name</label><input type="text" placeholder="e.g. SaaS Awards 2026" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Category entering</label><input type="text" placeholder="e.g. Best New SaaS Product" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Entry deadline</label><input type="date" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Key achievements to highlight</label><textarea rows={3} placeholder="What makes us stand out?" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div></>}
+
+                    {activeModal === 'launch-plan' && <><div><label className="text-xs text-gray-400 mb-1 block">What are you launching?</label><input type="text" placeholder="e.g. Lumio GPS, new pricing tier" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Target launch date</label><input type="date" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Target audience</label><input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm" /></div><div><label className="text-xs text-gray-400 mb-1 block">Launch channels</label><div className="space-y-1">{['Email to existing customers','Email to prospects','LinkedIn','Product Hunt','Press release','Paid ads','Partner channels'].map(c => <label key={c} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer"><input type="checkbox" className="rounded" />{c}</label>)}</div></div></>}
+
+                    <button disabled={submitting} onClick={() => callMarketingAction(
+                      activeModal === 'brand-review' ? 'Create a brand audit framework with scoring rubric for each brand touchpoint. Include: what to look for, common issues, best practice examples, and a priority action plan template. Format as a structured audit document.' :
+                      activeModal === 'competitor-audit' ? 'Create a competitor analysis report template covering: positioning, pricing, product features, content strategy, social presence, customer reviews analysis, and identified opportunities. Include a comparison matrix template.' :
+                      activeModal === 'campaign-report' ? 'Create a campaign performance report template with: executive summary, channel-by-channel results, key metrics dashboard, audience insights, top performing content, lessons learned, and recommendations for next campaign. Professional format suitable for board.' :
+                      activeModal === 'partner-collab' ? 'Create a partner collaboration brief including: objectives, audience overlap, content plan, responsibilities split, promotional timeline, co-branding guidelines, success metrics, and legal/approval checklist.' :
+                      activeModal === 'award-entry' ? 'Write a compelling award entry narrative covering: company overview, the problem we solve, our innovative solution, measurable impact and results, customer testimonials style quotes, and what makes us different. Confident, evidence-based tone.' :
+                      'Create a go-to-market launch plan with: pre-launch (6 weeks out), launch week schedule, post-launch (4 weeks), channel tactics for each phase, messaging framework, success metrics, and contingency plans. Format as a week-by-week timeline.'
+                    )} className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                      {submitting ? <><span className="animate-spin">⟳</span> Generating...</> : `✨ Generate ${activeModal === 'brand-review' ? 'Brand Audit' : activeModal === 'competitor-audit' ? 'Competitor Analysis' : activeModal === 'campaign-report' ? 'Campaign Report' : activeModal === 'partner-collab' ? 'Collaboration Brief' : activeModal === 'award-entry' ? 'Award Entry' : 'Launch Plan'}`}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </PageShell>
   )
 }

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   GraduationCap, FileText, Calendar, Target, Users, Shield, Plus, Save, X,
   RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, TrendingDown,
   DollarSign, Award, Eye, BookOpen, Heart, BarChart2, Loader2, Download,
-  Database, Upload,
+  Database, Upload, LayoutDashboard, Mail, BarChart3,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -13,6 +13,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   RadialBarChart, RadialBar,
 } from 'recharts'
+import { SchoolDashboardModal, OfstedPrepModal, SLTMeetingAgendaModal, WholeSchoolInsightsModal, GovernorReportModal, ImprovementPlanModal, StaffAppraisalModal, ExclusionSignOffModal, CalendarPlannerModal, SendAllStaffMessageModal } from '@/components/modals/SLTModals'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & THEME
@@ -165,9 +166,42 @@ const MAIN_TABS: { id: MainTab; label: string; icon: string }[] = [
   { id: 'governance', label: 'Governance', icon: '📅' },
 ]
 
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function SLTSuite() {
   const [tab, setTab] = useState<MainTab>('executive')
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [showOfsted, setShowOfsted] = useState(false)
+  const [showSLTAgenda, setShowSLTAgenda] = useState(false)
+  const [showInsightsModal, setShowInsightsModal] = useState(false)
+  const [showGovernorReport, setShowGovernorReport] = useState(false)
+  const [showImprovement, setShowImprovement] = useState(false)
+  const [showAppraisal, setShowAppraisal] = useState(false)
+  const [showExclusionSignOff, setShowExclusionSignOff] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showAllStaffMsg, setShowAllStaffMsg] = useState(false)
+
+  const sltFirstName = typeof window !== 'undefined' ? (localStorage.getItem('lumio_user_name') || '').split(' ')[0] || 'there' : 'there'
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   useEffect(() => {
     const check = () => {
@@ -236,7 +270,7 @@ export default function SLTSuite() {
       <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #0C1A2E 0%, #111827 50%, #0C1A2E 100%)', border: `1px solid ${BORDER}` }}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{greeting}, Gemma. Here&apos;s your school at a glance.</h1>
+            <h1 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{greeting}, {sltFirstName}. Here&apos;s your school at a glance.</h1>
             <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{dateStr}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -249,6 +283,20 @@ export default function SLTSuite() {
           </div>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <QuickActions actions={[
+        { label: 'School Dashboard', icon: <LayoutDashboard size={14} />, onClick: () => setShowDashboard(true) },
+        { label: 'Ofsted Prep', icon: <Shield size={14} />, onClick: () => setShowOfsted(true) },
+        { label: 'SLT Meeting Agenda', icon: <FileText size={14} />, onClick: () => setShowSLTAgenda(true) },
+        { label: 'Whole School Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsightsModal(true) },
+        { label: 'Governor Report', icon: <FileText size={14} />, onClick: () => setShowGovernorReport(true) },
+        { label: 'Improvement Plan', icon: <Target size={14} />, onClick: () => setShowImprovement(true) },
+        { label: 'Staff Appraisal', icon: <Users size={14} />, onClick: () => setShowAppraisal(true) },
+        { label: 'Exclusion Sign-off', icon: <AlertTriangle size={14} />, onClick: () => setShowExclusionSignOff(true) },
+        { label: 'Calendar Planner', icon: <Calendar size={14} />, onClick: () => setShowCalendar(true) },
+        { label: 'Send All-Staff Message', icon: <Mail size={14} />, onClick: () => setShowAllStaffMsg(true) },
+      ]} />
 
       {/* Tab bar */}
       <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
@@ -268,6 +316,17 @@ export default function SLTSuite() {
       {tab === 'finance' && <FinanceTab />}
       {tab === 'improvement' && <SchoolImprovementTab />}
       {tab === 'governance' && <GovernanceTab />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      {showDashboard && <SchoolDashboardModal onClose={() => setShowDashboard(false)} isDemoMode={isSchoolDemo} />}
+      {showOfsted && <OfstedPrepModal onClose={() => setShowOfsted(false)} isDemoMode={isSchoolDemo} />}
+      {showSLTAgenda && <SLTMeetingAgendaModal onClose={() => setShowSLTAgenda(false)} isDemoMode={isSchoolDemo} />}
+      {showInsightsModal && <WholeSchoolInsightsModal onClose={() => setShowInsightsModal(false)} isDemoMode={isSchoolDemo} />}
+      {showGovernorReport && <GovernorReportModal onClose={() => setShowGovernorReport(false)} isDemoMode={isSchoolDemo} />}
+      {showImprovement && <ImprovementPlanModal onClose={() => setShowImprovement(false)} isDemoMode={isSchoolDemo} />}
+      {showAppraisal && <StaffAppraisalModal onClose={() => setShowAppraisal(false)} isDemoMode={isSchoolDemo} />}
+      {showExclusionSignOff && <ExclusionSignOffModal onClose={() => setShowExclusionSignOff(false)} isDemoMode={isSchoolDemo} />}
+      {showCalendar && <CalendarPlannerModal onClose={() => setShowCalendar(false)} isDemoMode={isSchoolDemo} />}
+      {showAllStaffMsg && <SendAllStaffMessageModal onClose={() => setShowAllStaffMsg(false)} isDemoMode={isSchoolDemo} />}
     </div>
   )
 }
@@ -318,7 +377,7 @@ function ExecutiveSummary() {
         <div style={cs}>
           <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Today&apos;s Priority Actions</h3>
           {[
-            { dot: '#EF4444', action: 'Review open safeguarding concern', owner: 'Gemma Reddick', due: 'TODAY', detail: 'DSL sign-off required' },
+            { dot: '#EF4444', action: 'Review open safeguarding concern', owner: 'Dr Sarah Mitchell', due: 'TODAY', detail: 'DSL sign-off required' },
             { dot: '#F59E0B', action: 'Year 6 SATs prep meeting', owner: 'Academic lead', due: 'TODAY 10:00', detail: '' },
             { dot: '#F59E0B', action: 'M. Taylor DBS expired — chase renewal', owner: 'HR', due: 'OVERDUE', detail: '' },
             { dot: '#F97316', action: 'Year 4 trip permission — 12/28 outstanding', owner: 'Admin', due: 'Friday', detail: '' },
@@ -901,7 +960,7 @@ function StaffHR() {
           <table className="w-full text-xs">
             <thead><tr style={{ backgroundColor: '#0D0E14' }}>{['Name', 'Role', 'Contract', 'Absence Days YTD', 'DBS Status', 'Review Date'].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
             <tbody>{[
-              { name: 'Gemma Reddick', role: 'Headteacher', contract: 'Permanent', abs: 1, dbs: 'Current', review: 'Jul 2026' },
+              { name: 'Dr Sarah Mitchell', role: 'Headteacher', contract: 'Permanent', abs: 1, dbs: 'Current', review: 'Jul 2026' },
               { name: 'Mark Johnson', role: 'Deputy Head', contract: 'Permanent', abs: 0, dbs: 'Current', review: 'Jul 2026' },
               { name: 'Sarah Okafor', role: 'SENCO', contract: 'Permanent', abs: 4, dbs: 'Current', review: 'Mar 2026' },
               { name: 'Michael Taylor', role: 'Year 6 Teacher', contract: 'Permanent', abs: 2, dbs: 'EXPIRED', review: 'Jul 2026' },

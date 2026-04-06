@@ -2,6 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+// ─── TENNIS API ──────────────────────────────────────────────────────────────
+const TENNIS_API_KEY = process.env.NEXT_PUBLIC_TENNIS_API_KEY ?? '';
+const TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
+
+async function tennisAPI(method: string, params: Record<string, string> = {}) {
+  if (!TENNIS_API_KEY) return null;
+  const qs = new URLSearchParams({ method, APIkey: TENNIS_API_KEY, ...params });
+  try {
+    const res = await fetch(`${TENNIS_BASE}?${qs}`);
+    const data = await res.json();
+    return data.success ? data.result : null;
+  } catch { return null; }
+}
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface TennisPlayer {
   id: string;
@@ -40,11 +54,20 @@ const SIDEBAR_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
   { id: 'morning',      label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
   { id: 'rankings',     label: 'Rankings & Race',     icon: '📊', group: 'PERFORMANCE' },
+  { id: 'forecaster',   label: 'Points Forecaster',   icon: '🔮', group: 'PERFORMANCE' },
+  { id: 'entries',       label: 'Entry Manager',       icon: '📋', group: 'PERFORMANCE' },
   { id: 'schedule',     label: 'Tournament Sched',    icon: '🗓️', group: 'PERFORMANCE' },
+  { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'PERFORMANCE' },
+  { id: 'scout',       label: 'Opponent Scout',      icon: '🔍', group: 'PERFORMANCE' },
+  { id: 'surface',     label: 'Surface Analysis',    icon: '🏟️', group: 'PERFORMANCE' },
+  { id: 'draw',        label: 'Draw & Bracket',      icon: '🏆', group: 'PERFORMANCE' },
   { id: 'performance',  label: 'Performance Stats',   icon: '📈', group: 'PERFORMANCE' },
   { id: 'matchprep',    label: 'Match Prep',          icon: '🎯', group: 'PERFORMANCE' },
+  { id: 'matchreports', label: 'Match Reports',        icon: '📄', group: 'PERFORMANCE' },
   { id: 'practice',     label: 'Practice Log',        icon: '📝', group: 'PERFORMANCE' },
   { id: 'video',        label: 'Video Library',       icon: '🎬', group: 'PERFORMANCE' },
+  { id: 'shotheatmaps', label: 'Shot Heatmaps',       icon: '🔥', group: 'PERFORMANCE' },
+  { id: 'perfrating',   label: 'Performance Rating',  icon: '⭐', group: 'PERFORMANCE' },
   { id: 'team',         label: 'Team Hub',            icon: '👥', group: 'TEAM' },
   { id: 'physio',       label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM' },
   { id: 'racket',       label: 'Racket & Strings',    icon: '🎾', group: 'TEAM' },
@@ -57,9 +80,13 @@ const SIDEBAR_ITEMS = [
   { id: 'pipeline',     label: 'Agent Pipeline',      icon: '📋', group: 'COMMERCIAL' },
   { id: 'travel',       label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
   { id: 'federation',   label: 'Federation',          icon: '🏛️', group: 'OPERATIONS' },
+  { id: 'datahub',      label: 'Data Hub',             icon: '🔌', group: 'OPERATIONS' },
   { id: 'career',       label: 'Career Planning',     icon: '🚀', group: 'OPERATIONS' },
   { id: 'academy',      label: 'Academy & Dev',       icon: '🎓', group: 'OPERATIONS' },
   { id: 'mental',       label: 'Mental Performance',  icon: '🧠', group: 'OPERATIONS' },
+  { id: 'courtbooking', label: 'Court Booking',        icon: '🏟️', group: 'OPERATIONS' },
+  { id: 'teamcomms',    label: 'Team Comms',           icon: '💬', group: 'OPERATIONS' },
+  { id: 'accreditations',label: 'Accreditations',      icon: '🪪', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ];
 
@@ -978,6 +1005,8 @@ function ScheduleView() {
 
 // ─── PERFORMANCE VIEW ──────────────────────────────────────────────────────────
 function PerformanceView({ player }: { player: TennisPlayer }) {
+  const [perfTab, setPerfTab] = useState<'overview' | 'serve' | 'return' | 'pressure'>('overview');
+
   const surfaces = [
     { name: 'Clay', matches: 12, wins: 8, winPct: 67, serve1: 61, serve1Pts: 74, returnPtsWon: 42, aces: 4.2, dfaults: 2.1, rallyAvg: 7.8 },
     { name: 'Hard', matches: 24, wins: 17, winPct: 71, serve1: 65, serve1Pts: 79, returnPtsWon: 39, aces: 6.8, dfaults: 2.8, rallyAvg: 5.2 },
@@ -998,103 +1027,578 @@ function PerformanceView({ player }: { player: TennisPlayer }) {
       <QuickActionsBar />
       <SectionHeader icon="📈" title="Performance Stats" subtitle={`${player.name} . 2026 season statistics by surface, match patterns, and form tracker.`} />
 
-      {/* Season Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          { label: 'Matches', value: '50', sub: '34W / 16L' },
-          { label: 'Win Rate', value: '68%', sub: '2026 season' },
-          { label: 'Aces/match', value: '6.1', sub: '^0.4 vs 2025' },
-          { label: 'Serve % (1st)', value: '63%', sub: 'Season avg' },
-          { label: 'Break pts conv.', value: '41%', sub: 'On return' },
-        ].map((s, i) => (
-          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
-            <div className="text-xl font-bold text-white">{s.value}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
-            <div className="text-xs text-gray-600 mt-1">{s.sub}</div>
-          </div>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['overview', 'Overview'], ['serve', 'Serve Analysis'], ['return', 'Return'], ['pressure', 'Under Pressure']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setPerfTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${perfTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ServePercentChart />
-        <WinRateTrendChart />
-      </div>
-
-      {/* Surface Split */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <div className="text-sm font-semibold text-white">Performance by Surface — 2026 Season</div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-                <th className="text-left p-3">Surface</th>
-                <th className="text-left p-3">W/L</th>
-                <th className="text-left p-3">Win%</th>
-                <th className="text-left p-3">1st Serve%</th>
-                <th className="text-left p-3">1st Serve Pts Won</th>
-                <th className="text-left p-3">Return Pts Won</th>
-                <th className="text-left p-3">Aces/match</th>
-                <th className="text-left p-3">Avg Rally</th>
-              </tr>
-            </thead>
-            <tbody>
-              {surfaces.map((s, i) => (
-                <tr key={i} className="border-b border-gray-800/50">
-                  <td className="p-3"><SurfaceBadge surface={s.name} /></td>
-                  <td className="p-3 text-gray-300">{s.wins}/{s.matches - s.wins}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-800 rounded-full h-1.5">
-                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${s.winPct}%` }}></div>
-                      </div>
-                      <span className="text-gray-300 text-xs">{s.winPct}%</span>
-                    </div>
-                  </td>
-                  <td className="p-3 text-gray-300">{s.serve1}%</td>
-                  <td className="p-3 text-gray-300">{s.serve1Pts}%</td>
-                  <td className="p-3 text-gray-300">{s.returnPtsWon}%</td>
-                  <td className="p-3 text-gray-300">{s.aces}</td>
-                  <td className="p-3 text-gray-300">{s.rallyAvg} shots</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Recent Form */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Recent Form — Last 5 Matches</div>
-        <div className="space-y-3">
-          {recentForm.map((m, i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.wl === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
-                {m.wl}
+      {perfTab === 'overview' && (
+        <>
+          {/* Season Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { label: 'Matches', value: '50', sub: '34W / 16L' },
+              { label: 'Win Rate', value: '68%', sub: '2026 season' },
+              { label: 'Aces/match', value: '6.1', sub: '^0.4 vs 2025' },
+              { label: 'Serve % (1st)', value: '63%', sub: 'Season avg' },
+              { label: 'Break pts conv.', value: '41%', sub: 'On return' },
+            ].map((s, i) => (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
+                <div className="text-xl font-bold text-white">{s.value}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+                <div className="text-xs text-gray-600 mt-1">{s.sub}</div>
               </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-200">{m.tournament} <span className="text-gray-500 text-xs">({m.result})</span></div>
-                <div className="text-xs text-gray-500">vs {m.opponent} . {m.score}</div>
-              </div>
-              <SurfaceBadge surface={m.surface} />
-              <CategoryBadge category={m.cat} />
+            ))}
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ServePercentChart />
+            <WinRateTrendChart />
+          </div>
+
+          {/* Surface Split */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800">
+              <div className="text-sm font-semibold text-white">Performance by Surface — 2026 Season</div>
             </div>
-          ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+                    <th className="text-left p-3">Surface</th>
+                    <th className="text-left p-3">W/L</th>
+                    <th className="text-left p-3">Win%</th>
+                    <th className="text-left p-3">1st Serve%</th>
+                    <th className="text-left p-3">1st Serve Pts Won</th>
+                    <th className="text-left p-3">Return Pts Won</th>
+                    <th className="text-left p-3">Aces/match</th>
+                    <th className="text-left p-3">Avg Rally</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surfaces.map((s, i) => (
+                    <tr key={i} className="border-b border-gray-800/50">
+                      <td className="p-3"><SurfaceBadge surface={s.name} /></td>
+                      <td className="p-3 text-gray-300">{s.wins}/{s.matches - s.wins}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-800 rounded-full h-1.5">
+                            <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${s.winPct}%` }}></div>
+                          </div>
+                          <span className="text-gray-300 text-xs">{s.winPct}%</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-gray-300">{s.serve1}%</td>
+                      <td className="p-3 text-gray-300">{s.serve1Pts}%</td>
+                      <td className="p-3 text-gray-300">{s.returnPtsWon}%</td>
+                      <td className="p-3 text-gray-300">{s.aces}</td>
+                      <td className="p-3 text-gray-300">{s.rallyAvg} shots</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Form */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Recent Form — Last 5 Matches</div>
+            <div className="space-y-3">
+              {recentForm.map((m, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.wl === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
+                    {m.wl}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-200">{m.tournament} <span className="text-gray-500 text-xs">({m.result})</span></div>
+                    <div className="text-xs text-gray-500">vs {m.opponent} . {m.score}</div>
+                  </div>
+                  <SurfaceBadge surface={m.surface} />
+                  <CategoryBadge category={m.cat} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              {['L', 'L', 'L', 'W', 'L'].reverse().map((r, i) => (
+                <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-teal-600/30 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>{r}</div>
+              ))}
+              <span className="ml-2 text-xs text-gray-500 self-center">most recent</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {perfTab === 'serve' && (
+        <>
+          {/* 1st Serve Direction Breakdown */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">1st Serve — Direction Breakdown</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { dir: 'T', pct: '42%', winPct: '78%', color: 'teal' },
+                { dir: 'Wide', pct: '38%', winPct: '71%', color: 'purple' },
+                { dir: 'Body', pct: '20%', winPct: '69%', color: 'orange' },
+              ].map((d, i) => (
+                <div key={i} className={`bg-gradient-to-br from-${d.color}-600/20 to-${d.color}-900/10 border border-${d.color}-600/20 rounded-xl p-4 text-center`}>
+                  <div className="text-lg font-bold text-white">{d.dir}</div>
+                  <div className="text-2xl font-bold text-white mt-1">{d.pct}</div>
+                  <div className="text-xs text-gray-400 mt-1">Win rate: <span className="text-teal-400 font-medium">{d.winPct}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2nd Serve Direction Breakdown */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">2nd Serve — Direction Breakdown</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { dir: 'T', pct: '31%', winPct: '61%' },
+                { dir: 'Wide', pct: '28%', winPct: '58%' },
+                { dir: 'Body', pct: '41%', winPct: '63%' },
+              ].map((d, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4 text-center">
+                  <div className="text-lg font-bold text-white">{d.dir}</div>
+                  <div className="text-2xl font-bold text-white mt-1">{d.pct}</div>
+                  <div className="text-xs text-gray-400 mt-1">Win rate: <span className="text-amber-400 font-medium">{d.winPct}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Serve Speed Distribution */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Serve Speed Distribution (km/h)</div>
+            <svg viewBox="0 0 400 160" className="w-full">
+              {[
+                { label: '<170', pct: 2, x: 20 },
+                { label: '170-185', pct: 8, x: 85 },
+                { label: '185-200', pct: 22, x: 150 },
+                { label: '200-215', pct: 41, x: 215 },
+                { label: '215-230', pct: 21, x: 280 },
+                { label: '230+', pct: 6, x: 345 },
+              ].map((bin, i) => (
+                <g key={i}>
+                  <rect x={bin.x - 20} y={130 - bin.pct * 2.8} width={40} height={bin.pct * 2.8} rx={4} fill="#8B5CF6" opacity={0.6} />
+                  <text x={bin.x} y={145} textAnchor="middle" fill="#6b7280" fontSize="9">{bin.label}</text>
+                  <text x={bin.x} y={125 - bin.pct * 2.8} textAnchor="middle" fill="#e5e7eb" fontSize="10" fontWeight="bold">{bin.pct}%</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+
+          {/* Aces & DFs by Surface */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Aces & Double Faults by Surface</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { surface: 'Clay', aces: 4.2, dfs: 2.1 },
+                { surface: 'Hard', aces: 6.8, dfs: 3.4 },
+                { surface: 'Grass', aces: 8.1, dfs: 2.9 },
+              ].map((s, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+                  <SurfaceBadge surface={s.surface} />
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <div className="text-teal-400 font-bold text-lg">{s.aces}</div>
+                      <div className="text-gray-500">aces/match</div>
+                    </div>
+                    <div>
+                      <div className="text-red-400 font-bold text-lg">{s.dfs}</div>
+                      <div className="text-gray-500">DFs/match</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Serve +1 */}
+          <div className="bg-gradient-to-r from-teal-900/30 to-blue-900/20 border border-teal-600/30 rounded-xl p-5">
+            <div className="text-xs text-teal-400 font-semibold uppercase tracking-wider mb-2">Serve +1 Pattern Efficiency</div>
+            <div className="text-white text-sm">After a first serve winner, win rate on next point: <span className="text-teal-400 font-bold text-lg ml-1">67%</span></div>
+            <div className="text-xs text-gray-500 mt-1">Indicates strong momentum carry-over from big serves</div>
+          </div>
+        </>
+      )}
+
+      {perfTab === 'return' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm text-gray-400 text-center py-8">Return analysis data — coming soon</div>
         </div>
-        <div className="mt-3 flex gap-2">
-          {['L', 'L', 'L', 'W', 'L'].reverse().map((r, i) => (
-            <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-teal-600/30 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>{r}</div>
-          ))}
-          <span className="ml-2 text-xs text-gray-500 self-center">most recent</span>
+      )}
+
+      {perfTab === 'pressure' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm text-gray-400 text-center py-8">Under Pressure analysis — coming soon</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ─── MATCH PREP VIEW ───────────────────────────────────────────────────────────
+
+// ─── SHOT HEATMAPS VIEW ──────────────────────────────────────────────────────
+function ShotHeatmapsView() {
+  const [heatmapTab, setHeatmapTab] = useState<'serve' | 'return' | 'groundstroke' | 'net'>('serve');
+  const [handFilter, setHandFilter] = useState<string>('all');
+  const [surfaceFilter, setSurfaceFilter] = useState<string>('all');
+  const [showTourAvg, setShowTourAvg] = useState(false);
+
+  const CourtSVG = ({ children }: { children?: React.ReactNode }) => (
+    <svg viewBox="0 0 300 540" className="w-full max-w-[300px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+      {/* Court surface */}
+      <rect x="0" y="0" width="300" height="540" rx="4" fill="#1a6b3c" />
+      {/* Doubles sidelines */}
+      <line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" />
+      <line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" />
+      {/* Singles sidelines */}
+      <line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" />
+      <line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" />
+      {/* Baselines */}
+      <line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" />
+      <line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" />
+      {/* Net */}
+      <line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" />
+      {/* Service lines */}
+      <line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" />
+      <line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" />
+      {/* Centre service lines */}
+      <line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" />
+      {/* Centre marks */}
+      <line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" />
+      {children}
+    </svg>
+  );
+
+  const serveHeatmap = (
+    <CourtSVG>
+      {/* 1st serve - T serve deuce court (high frequency) */}
+      <ellipse cx="140" cy="170" rx="28" ry="22" fill="#1D9E75" opacity="0.6" />
+      <ellipse cx="140" cy="170" rx="18" ry="14" fill="#1D9E75" opacity="0.4" />
+      {/* 1st serve - Wide serve ad court (high frequency) */}
+      <ellipse cx="245" cy="360" rx="28" ry="22" fill="#1D9E75" opacity="0.6" />
+      <ellipse cx="245" cy="360" rx="18" ry="14" fill="#1D9E75" opacity="0.4" />
+      {/* Body serve both courts (medium frequency) */}
+      <ellipse cx="150" cy="180" rx="18" ry="15" fill="#EF9F27" opacity="0.45" />
+      <ellipse cx="150" cy="370" rx="18" ry="15" fill="#EF9F27" opacity="0.45" />
+      {/* 2nd serve kick - near T both sides */}
+      <ellipse cx="145" cy="200" rx="15" ry="12" fill="#EF9F27" opacity="0.35" />
+      <ellipse cx="155" cy="350" rx="15" ry="12" fill="#EF9F27" opacity="0.35" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="140" cy="175" rx="32" ry="26" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+          <ellipse cx="240" cy="365" rx="32" ry="26" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const returnHeatmap = (
+    <CourtSVG>
+      {/* Crosscourt forehand return (high frequency) */}
+      <ellipse cx="80" cy="50" rx="30" ry="20" fill="#1D9E75" opacity="0.55" />
+      <ellipse cx="80" cy="50" rx="18" ry="12" fill="#1D9E75" opacity="0.35" />
+      {/* Down-the-line backhand (medium frequency) */}
+      <ellipse cx="230" cy="55" rx="22" ry="16" fill="#EF9F27" opacity="0.45" />
+      {/* Chip-and-charge return (low frequency near net) */}
+      <ellipse cx="150" cy="240" rx="16" ry="12" fill="#EF9F27" opacity="0.25" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="85" cy="55" rx="34" ry="24" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+          <ellipse cx="225" cy="60" rx="26" ry="20" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const groundstrokeHeatmap = (
+    <CourtSVG>
+      {/* Forehand: behind baseline on backhand side (offensive) */}
+      <ellipse cx="200" cy="500" rx="40" ry="20" fill="#1D9E75" opacity="0.4" />
+      {/* Backhand: near centre mark (neutral) */}
+      <ellipse cx="140" cy="510" rx="35" ry="18" fill="#6b7280" opacity="0.35" />
+      {/* Defensive zone: deep corners */}
+      <ellipse cx="60" cy="520" rx="25" ry="14" fill="#f87171" opacity="0.3" />
+      <ellipse cx="250" cy="520" rx="25" ry="14" fill="#f87171" opacity="0.25" />
+      {/* Legend markers */}
+      {showTourAvg && (
+        <>
+          <ellipse cx="195" cy="505" rx="44" ry="24" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const netHeatmap = (
+    <CourtSVG>
+      {/* Net approach zones */}
+      <ellipse cx="100" cy="290" rx="25" ry="18" fill="#1D9E75" opacity="0.45" />
+      <ellipse cx="200" cy="290" rx="20" ry="15" fill="#EF9F27" opacity="0.35" />
+      <ellipse cx="150" cy="285" rx="18" ry="14" fill="#EF9F27" opacity="0.3" />
+      {showTourAvg && (
+        <>
+          <ellipse cx="150" cy="290" rx="50" ry="22" fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+        </>
+      )}
+    </CourtSVG>
+  );
+
+  const heatmaps: Record<string, React.ReactNode> = { serve: serveHeatmap, return: returnHeatmap, groundstroke: groundstrokeHeatmap, net: netHeatmap };
+
+  const statsStrips: Record<string, Array<{ label: string; value: string }>> = {
+    serve: [
+      { label: 'T', value: '42%' }, { label: 'Wide', value: '38%' }, { label: 'Body', value: '20%' },
+      { label: '1st Serve %', value: '61%' }, { label: '2nd Serve Win%', value: '53%' },
+      { label: 'Avg Speed', value: '201 km/h' }, { label: 'Max Speed', value: '226 km/h' },
+    ],
+    return: [
+      { label: 'Crosscourt FH', value: '52%' }, { label: 'DTL BH', value: '28%' }, { label: 'Chip & Charge', value: '8%' },
+      { label: 'Return Win%', value: '42%' }, { label: 'Break Pts Conv', value: '41%' },
+    ],
+    groundstroke: [
+      { label: 'FH Winner Rate', value: '12%' }, { label: 'BH Winner Rate', value: '6%' },
+      { label: 'Offensive %', value: '34%' }, { label: 'Neutral %', value: '48%' }, { label: 'Defensive %', value: '18%' },
+    ],
+    net: [
+      { label: 'Net Approaches', value: '8.2/match' }, { label: 'Net Pts Won', value: '65%' },
+      { label: 'Pass Against', value: '28%' }, { label: 'Volley Winner', value: '42%' },
+    ],
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🔥" title="Court Shot Heatmaps" subtitle="Visual shot placement analysis across serve, return, groundstrokes, and net play." />
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['serve', 'Serve placement'], ['return', 'Return placement'], ['groundstroke', 'Groundstroke zones'], ['net', 'Net approaches']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setHeatmapTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${heatmapTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Court Diagram */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex justify-center">
+          {heatmaps[heatmapTab]}
+        </div>
+        {heatmapTab === 'groundstroke' && (
+          <div className="flex gap-4 mt-3 pt-3 border-t border-gray-800 justify-center">
+            {[
+              { label: 'Offensive', color: 'bg-teal-500' },
+              { label: 'Neutral', color: 'bg-gray-500' },
+              { label: 'Defensive', color: 'bg-red-400' },
+            ].map((l, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className={`w-3 h-3 rounded-full ${l.color} opacity-50`}></div>
+                <span className="text-[10px] text-gray-500">{l.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Stats Strip */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+          {(statsStrips[heatmapTab] || []).map((s, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
+              <div className="text-white font-bold text-sm">{s.value}</div>
+              <div className="text-gray-500 text-[10px] mt-0.5">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter Toggles */}
+      <div className="flex flex-wrap gap-2">
+        {['vs Right-handed', 'vs Left-handed', 'On Clay', 'On Hard', 'On Grass'].map(f => (
+          <button
+            key={f}
+            onClick={() => setSurfaceFilter(surfaceFilter === f ? 'all' : f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${surfaceFilter === f ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'bg-[#0d0f1a] border border-gray-800 text-gray-500 hover:text-gray-300'}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* Tour Average Comparison */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowTourAvg(!showTourAvg)}
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${showTourAvg ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}
+        >
+          {showTourAvg && <span className="text-teal-400 text-xs">+</span>}
+        </button>
+        <span className="text-xs text-gray-400">vs Tour average (dotted outlines)</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── PERFORMANCE RATING VIEW ─────────────────────────────────────────────────
+function PerformanceRatingView() {
+  const matchData = [
+    { opp: 'Alc', rating: 61 }, { opp: 'Med', rating: 73 }, { opp: 'Rub', rating: 58 },
+    { opp: 'Fri', rating: 79 }, { opp: 'Nda', rating: 44 }, { opp: 'Zve', rating: 68 },
+    { opp: 'Ber', rating: 72 }, { opp: 'Cas', rating: 55 }, { opp: 'Muz', rating: 66 }, { opp: 'Rub2', rating: 71 },
+  ];
+  const seasonAvg = 64.1;
+  const tourAvg = 62.0;
+
+  const winningPatterns = [
+    { pattern: 'Serve wide + forehand winner', occurrences: 31, winRate: '79%', insight: 'Your signature pattern' },
+    { pattern: 'Short ball attack → approach + volley', occurrences: 18, winRate: '72%', insight: 'Highly effective' },
+    { pattern: 'Return crosscourt + inside-out forehand', occurrences: 24, winRate: '68%', insight: 'Strong' },
+  ];
+
+  const losingPatterns = [
+    { pattern: 'Extended baseline rally >8 shots on clay', occurrences: 47, winRate: '38%', insight: 'Avoid long exchanges' },
+    { pattern: 'Second serve + backhand return', occurrences: 38, winRate: '41%', insight: 'Vulnerable spot' },
+    { pattern: 'Net approach off weak ball', occurrences: 12, winRate: '33%', insight: 'Timing needs work' },
+  ];
+
+  // SVG chart dimensions
+  const chartW = 500, chartH = 180, padL = 30, padR = 80, padT = 15, padB = 30;
+  const plotW = chartW - padL - padR;
+  const plotH = chartH - padT - padB;
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="⭐" title="Performance Rating" subtitle="TennisViz-style performance metric combining shot quality, attack rate, and conversion efficiency." />
+
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
+        <div className="text-xs text-gray-500">TennisViz-style performance metric combining shot quality, attack rate, and conversion efficiency. Updated after each match.</div>
+      </div>
+
+      {/* Current Rating */}
+      <div className="bg-gradient-to-r from-purple-900/30 to-teal-900/20 border border-purple-600/30 rounded-xl p-6 text-center">
+        <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-2">Performance Rating</div>
+        <div className="text-5xl font-bold text-white">68.4</div>
+        <div className="text-lg text-gray-400">/ 100</div>
+        <div className="flex justify-center gap-6 mt-3 text-xs">
+          <div><span className="text-gray-500">Season avg:</span> <span className="text-amber-400 font-medium">64.1</span></div>
+          <div><span className="text-gray-500">Career high:</span> <span className="text-teal-400 font-medium">79.2</span> <span className="text-gray-600">(Wimbledon 2023 SF)</span></div>
+          <div><span className="text-gray-500">Trend:</span> <span className="text-teal-400 font-medium">+4.3</span> <span className="text-gray-600">vs last 4 weeks</span></div>
+        </div>
+      </div>
+
+      {/* Component Breakdown */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Attack Rate', value: '54%', tourAvg: '48%', badge: 'Above average' },
+          { label: 'Conversion Score', value: '61%', tourAvg: '58%', badge: 'Above average' },
+          { label: 'Steal Score', value: '34%', tourAvg: '31%', badge: 'Above average' },
+        ].map((c, i) => (
+          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
+            <div className="text-xs text-gray-500 mb-1">{c.label}</div>
+            <div className="text-2xl font-bold text-white">{c.value}</div>
+            <div className="text-xs text-gray-500 mt-1">Tour avg: {c.tourAvg}</div>
+            <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">{c.badge}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Match-by-Match Line Chart */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Match-by-Match Performance Rating</div>
+        <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full">
+          {/* Y-axis grid lines */}
+          {[0, 25, 50, 75, 100].map(v => {
+            const y = padT + plotH - (v / 100) * plotH;
+            return (
+              <g key={v}>
+                <line x1={padL} y1={y} x2={padL + plotW} y2={y} stroke="#1f2937" strokeWidth="0.5" />
+                <text x={padL - 5} y={y + 3} textAnchor="end" fill="#6b7280" fontSize="8">{v}</text>
+              </g>
+            );
+          })}
+          {/* Season average dashed line */}
+          <line x1={padL} y1={padT + plotH - (seasonAvg / 100) * plotH} x2={padL + plotW} y2={padT + plotH - (seasonAvg / 100) * plotH} stroke="#EF9F27" strokeWidth="1" strokeDasharray="6 3" />
+          <text x={padL + plotW + 5} y={padT + plotH - (seasonAvg / 100) * plotH + 3} fill="#EF9F27" fontSize="8">Season avg ({seasonAvg})</text>
+          {/* Tour average dashed line */}
+          <line x1={padL} y1={padT + plotH - (tourAvg / 100) * plotH} x2={padL + plotW} y2={padT + plotH - (tourAvg / 100) * plotH} stroke="#4b5563" strokeWidth="1" strokeDasharray="4 3" />
+          <text x={padL + plotW + 5} y={padT + plotH - (tourAvg / 100) * plotH + 3} fill="#6b7280" fontSize="8">Tour avg ({tourAvg})</text>
+          {/* Data polyline */}
+          <polyline
+            fill="none"
+            stroke="#1D9E75"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            points={matchData.map((d, i) => `${padL + (i / (matchData.length - 1)) * plotW},${padT + plotH - (d.rating / 100) * plotH}`).join(' ')}
+          />
+          {/* Data dots and labels */}
+          {matchData.map((d, i) => {
+            const x = padL + (i / (matchData.length - 1)) * plotW;
+            const y = padT + plotH - (d.rating / 100) * plotH;
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r="3.5" fill="#1D9E75" stroke="#0d0f1a" strokeWidth="1.5" />
+                <text x={x} y={padT + plotH + 15} textAnchor="middle" fill="#6b7280" fontSize="7">{d.opp}</text>
+              </g>
+            );
+          })}
+          {/* Rating label at end */}
+          <text x={padL + plotW + 5} y={padT + plotH - (matchData[matchData.length - 1].rating / 100) * plotH + 3} fill="#1D9E75" fontSize="8" fontWeight="bold">Current ({matchData[matchData.length - 1].rating})</text>
+        </svg>
+      </div>
+
+      {/* Winning & Losing Plays */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Winning Patterns */}
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-white">Winning Patterns</div>
+          {winningPatterns.map((p, i) => (
+            <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 border-l-4 border-l-teal-500">
+              <div className="text-sm text-white font-medium mb-1">{p.pattern}</div>
+              <div className="flex gap-3 text-xs text-gray-400">
+                <span>{p.occurrences} occurrences</span>
+                <span className="text-teal-400 font-medium">{p.winRate} win rate</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 italic">{p.insight}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Losing Patterns */}
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-white">Losing Patterns</div>
+          {losingPatterns.map((p, i) => (
+            <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 border-l-4 border-l-red-400">
+              <div className="text-sm text-white font-medium mb-1">{p.pattern}</div>
+              <div className="flex gap-3 text-xs text-gray-400">
+                <span>{p.occurrences} occurrences</span>
+                <span className="text-red-400 font-medium">{p.winRate} win rate</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 italic">{p.insight}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 function MatchPrepView() {
   const opponent = {
     name: 'Carlos Martinez',
@@ -1194,6 +1698,9 @@ function MatchPrepView() {
 
 // ─── PRACTICE LOG VIEW ─────────────────────────────────────────────────────────
 function PracticeLogView() {
+  const [practiceTab, setPracticeTab] = useState<'log' | 'aiinsights' | 'progress'>('log');
+  const [aiAnalysis, setAiAnalysis] = useState<Record<number, { loading: boolean; result: string | null }>>({});
+
   const sessions = [
     { date: '9 Apr', type: 'On-court', partner: 'J. Draper', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
     { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Martinez deuce court patterns.' },
@@ -1211,85 +1718,360 @@ function PracticeLogView() {
     { drill: 'Net Points Won', target: '72%', current: '65%', progress: 65 / 72 * 100 },
   ];
 
+  const handleAiAnalysis = async (sessionIdx: number) => {
+    setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: true, result: null } }));
+    const session = sessions[sessionIdx];
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${session.date}, Type: ${session.type}, Duration: ${session.duration}, Partner: ${session.partner}, Coach notes: ${session.coachNotes}. Provide exactly: 3 specific technical observations, 2 areas to focus on next session, 1 tactical pattern to develop. Be concise and specific to tennis.`
+          }],
+        }),
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || 'Analysis unavailable.';
+      setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: text } }));
+    } catch {
+      setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: 'Failed to generate analysis. Check API key configuration.' } }));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="📝" title="Practice Log" subtitle="Session tracking, drill targets, ball machine logs, and weekly practice hours." />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
-        <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
-        <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
-        <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {([['log', 'Log'], ['aiinsights', 'AI Insights'], ['progress', 'Progress']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setPracticeTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${practiceTab === id ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Session Log */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <div className="text-sm font-semibold text-white">Session Log — Last 7 Days</div>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-              <th className="text-left p-3">Date</th>
-              <th className="text-left p-3">Type</th>
-              <th className="text-left p-3">Partner</th>
-              <th className="text-left p-3">Duration</th>
-              <th className="text-left p-3">Coach Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((s, i) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-400 text-xs">{s.date}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-0.5 rounded ${s.type === 'On-court' ? 'bg-teal-600/20 text-teal-400' : s.type === 'Ball Machine' ? 'bg-blue-600/20 text-blue-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.type}</span>
-                </td>
-                <td className="p-3 text-gray-300">{s.partner}</td>
-                <td className="p-3 text-gray-400">{s.duration}</td>
-                <td className="p-3 text-gray-400 text-xs">{s.coachNotes}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {practiceTab === 'log' && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
+            <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
+            <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
+            <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+          </div>
 
-      {/* Drill Targets */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
-        <div className="space-y-4">
-          {drillTargets.map((d, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-sm text-gray-200">{d.drill}</div>
-                <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+          {/* Session Log */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800">
+              <div className="text-sm font-semibold text-white">Session Log — Last 7 Days</div>
+            </div>
+            <div className="divide-y divide-gray-800/50">
+              {sessions.map((s, i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="text-xs text-gray-400 w-14 flex-shrink-0">{s.date}</div>
+                    <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${s.type === 'On-court' ? 'bg-teal-600/20 text-teal-400' : s.type === 'Ball Machine' ? 'bg-blue-600/20 text-blue-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.type}</span>
+                    <div className="text-sm text-gray-300 flex-shrink-0">{s.partner}</div>
+                    <div className="text-xs text-gray-400 flex-shrink-0">{s.duration}</div>
+                    <div className="text-xs text-gray-400 flex-1 truncate">{s.coachNotes}</div>
+                    <button
+                      onClick={() => handleAiAnalysis(i)}
+                      disabled={aiAnalysis[i]?.loading}
+                      className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                    >
+                      {aiAnalysis[i]?.loading ? 'Analysing...' : aiAnalysis[i]?.result ? 'Re-analyse' : 'AI Analysis'}
+                    </button>
+                  </div>
+                  {aiAnalysis[i]?.loading && (
+                    <div className="px-3 pb-3">
+                      <div className="bg-purple-600/5 border border-purple-600/20 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-xs text-purple-400">
+                          <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                          Analysing session...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {aiAnalysis[i]?.result && !aiAnalysis[i]?.loading && (
+                    <div className="px-3 pb-3">
+                      <div className="bg-purple-600/5 border border-purple-600/20 rounded-lg p-3">
+                        <div className="text-[10px] text-purple-400 font-semibold uppercase tracking-wider mb-2">AI Analysis</div>
+                        <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiAnalysis[i].result}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Drill Targets */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
+            <div className="space-y-4">
+              {drillTargets.map((d, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-gray-200">{d.drill}</div>
+                    <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Practice Hours */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
+            <div className="flex items-end gap-3 h-32">
+              {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs text-gray-400">{h}h</div>
+                  <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
+                  <div className="text-xs text-gray-600">W{i + 1}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {practiceTab === 'aiinsights' && (
+        <>
+          {/* Training Patterns This Month */}
+          <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5">
+            <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-3">Training Patterns This Month</div>
+            <div className="text-sm text-gray-300 leading-relaxed mb-3">
+              Alex has focused predominantly on serve accuracy drills (38% of sessions), followed by return of serve patterns (24%) and clay court movement (18%). Ball machine sessions have targeted the forehand inside-in and crosscourt backhand. There has been increased emphasis on body serve percentage ahead of Monte-Carlo, with improvement from 22% to 28% — trending toward the 30% target.
+            </div>
+            <div className="grid grid-cols-4 gap-3 text-xs">
+              {[
+                { label: 'Serve Drills', pct: '38%', color: 'text-purple-400' },
+                { label: 'Return Work', pct: '24%', color: 'text-teal-400' },
+                { label: 'Movement', pct: '18%', color: 'text-orange-400' },
+                { label: 'Match Play', pct: '20%', color: 'text-blue-400' },
+              ].map((p, i) => (
+                <div key={i} className="bg-black/20 rounded-lg p-2 text-center">
+                  <div className={`font-bold text-lg ${p.color}`}>{p.pct}</div>
+                  <div className="text-gray-500 mt-0.5">{p.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Readiness Score */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Readiness Score</div>
+            <div className="flex items-center gap-6">
+              <div className="relative w-32 h-32 flex-shrink-0">
+                <svg viewBox="0 0 120 120" className="w-full h-full">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1f2937" strokeWidth="8" />
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1D9E75" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${(74 / 100) * 314} 314`}
+                    transform="rotate(-90 60 60)" />
+                  <text x="60" y="55" textAnchor="middle" className="text-2xl font-bold" fill="white" fontSize="28">74</text>
+                  <text x="60" y="72" textAnchor="middle" fill="#6b7280" fontSize="10">/100</text>
+                </svg>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+              <div className="space-y-2 flex-1">
+                <div className="text-sm text-gray-300">Based on session intensity, recovery days, and training load this week.</div>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-teal-400 font-bold">Good</div>
+                    <div className="text-gray-500">Training Load</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-amber-400 font-bold">Moderate</div>
+                    <div className="text-gray-500">Recovery</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-2 text-center">
+                    <div className="text-teal-400 font-bold">High</div>
+                    <div className="text-gray-500">Match Ready</div>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Weekly Practice Hours */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
-        <div className="flex items-end gap-3 h-32">
-          {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="text-xs text-gray-400">{h}h</div>
-              <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
-              <div className="text-xs text-gray-600">W{i + 1}</div>
+          {/* Coach Recommendations */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Coach Recommendations — Based on Upcoming Clay Court Schedule</div>
+            <div className="space-y-3">
+              {[
+                { rec: 'Increase clay-specific slide drills to 3 sessions/week ahead of Barcelona and Madrid swing', priority: 'High', icon: '🏟️' },
+                { rec: 'Add 15 minutes of second-serve kick practice per on-court session — current 2nd serve win% of 53% needs to improve for clay', priority: 'High', icon: '🎾' },
+                { rec: 'Schedule one practice set per week against a left-hander to prepare for potential Nadal/Rafa Jr matchup in Madrid', priority: 'Medium', icon: '🎯' },
+              ].map((r, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+                  <span className="text-lg flex-shrink-0">{r.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-200">{r.rec}</div>
+                    <span className={`text-[10px] mt-1 inline-block px-2 py-0.5 rounded ${r.priority === 'High' ? 'bg-red-600/20 text-red-400' : 'bg-amber-600/20 text-amber-400'}`}>{r.priority} priority</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
+
+      {practiceTab === 'progress' && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Sessions This Week" value="5" sub="12.5 hours total" color="purple" />
+            <StatCard label="On-Court Hours" value="8.5h" sub="Target: 10h" color="teal" />
+            <StatCard label="Ball Machine" value="1.25h" sub="275 balls" color="blue" />
+            <StatCard label="Movement / Fitness" value="1h" sub="Luis programme" color="orange" />
+          </div>
+
+          {/* Drill Targets */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Drill Targets — Current Season</div>
+            <div className="space-y-4">
+              {drillTargets.map((d, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-gray-200">{d.drill}</div>
+                    <div className="text-xs text-gray-500">Current: <span className="text-white">{d.current}</span> / Target: <span className="text-teal-400">{d.target}</span></div>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-purple-500" style={{ width: `${Math.min(100, d.progress)}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Practice Hours */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">Weekly Practice Hours (Last 6 Weeks)</div>
+            <div className="flex items-end gap-3 h-32">
+              {[8, 12, 10, 14, 11, 12.5].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs text-gray-400">{h}h</div>
+                  <div className="w-full bg-purple-600/40 rounded-t" style={{ height: `${(h / 14) * 80}px` }}></div>
+                  <div className="text-xs text-gray-600">W{i + 1}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 // ─── VIDEO LIBRARY VIEW ────────────────────────────────────────────────────────
+
+// ─── SWINGVISION CARDS ────────────────────────────────────────────────────────
+function SwingVisionCards() {
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+
+  const svVideos = [
+    {
+      title: 'Match vs. Ferreira — Roland Garros',
+      source: 'Imported from SwingVision',
+      duration: '2h 14m',
+      stats: { shots: 187, firstServe: '72%', aces: 3 },
+      breakdown: [
+        { label: 'Total Shots Tracked', value: '187' },
+        { label: '1st Serve %', value: '72%' },
+        { label: 'Aces', value: '3' },
+        { label: 'Winners', value: '31' },
+        { label: 'Unforced Errors', value: '24' },
+        { label: 'Net Points Won', value: '68%' },
+      ],
+    },
+    {
+      title: 'Serve Practice Session — 45 min',
+      source: 'SwingVision Auto-Track',
+      duration: '45m',
+      stats: { shots: 234, firstServe: '68% in', aces: null, avgSpeed: '201 km/h' },
+      breakdown: [
+        { label: 'Serves Tracked', value: '234' },
+        { label: 'In %', value: '68%' },
+        { label: 'Avg Speed', value: '201 km/h' },
+        { label: 'Max Speed', value: '224 km/h' },
+        { label: 'T Accuracy', value: '41%' },
+        { label: 'Wide Accuracy', value: '37%' },
+      ],
+    },
+    {
+      title: 'Baseline Drill — Cross Court Forehands',
+      source: 'SwingVision Auto-Track',
+      duration: '30m',
+      stats: { shots: 89, accuracy: '81%' },
+      breakdown: [
+        { label: 'Shot Sequences', value: '89' },
+        { label: 'Accuracy', value: '81%' },
+        { label: 'Avg Spin (RPM)', value: '2,450' },
+        { label: 'Avg Speed', value: '118 km/h' },
+        { label: 'Deep Ball %', value: '64%' },
+        { label: 'Error Rate', value: '19%' },
+      ],
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {svVideos.map((v, i) => (
+        <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
+          <div className="h-28 flex items-center justify-center text-4xl relative" style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.15) 0%, rgba(13,148,136,0.1) 100%)' }}>
+            🎬
+            <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 border border-purple-500/30 font-medium">SwingVision</span>
+          </div>
+          <div className="p-4">
+            <div className="text-sm text-white font-medium mb-1">{v.title}</div>
+            <div className="text-xs text-gray-500 mb-2">{v.source} — {v.duration}</div>
+            <div className="flex gap-3 text-xs text-gray-400 mb-3">
+              {v.stats.shots && <span>{v.stats.shots} shots tracked</span>}
+              {v.stats.firstServe && <span>{v.stats.firstServe} first serve</span>}
+              {v.stats.aces !== undefined && v.stats.aces !== null && <span>{v.stats.aces} aces</span>}
+              {v.stats.accuracy && <span>{v.stats.accuracy} accuracy</span>}
+              {v.stats.avgSpeed && <span>avg {v.stats.avgSpeed}</span>}
+            </div>
+            <button
+              onClick={() => setExpandedCard(expandedCard === i ? null : i)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+            >
+              {expandedCard === i ? 'Hide Analysis' : 'View Analysis'}
+            </button>
+            {expandedCard === i && (
+              <div className="mt-3 pt-3 border-t border-gray-800">
+                <div className="text-[10px] text-teal-400 font-semibold uppercase tracking-wider mb-2">Shot Breakdown</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {v.breakdown.map((b, j) => (
+                    <div key={j} className="bg-black/20 rounded-lg p-2 text-center">
+                      <div className="text-white font-bold text-sm">{b.value}</div>
+                      <div className="text-gray-500 text-[10px] mt-0.5">{b.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 function VideoLibraryView() {
   const videos = [
     { title: 'Monte-Carlo R2 vs Hurkacz', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
@@ -1352,6 +2134,33 @@ function VideoLibraryView() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* SwingVision Integration */}
+      <div className="mt-8 space-y-4">
+        <div className="text-sm font-semibold text-white">SwingVision Integration</div>
+
+        {/* Connection Card */}
+        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center">
+                <span className="text-xs font-bold text-purple-400">SV</span>
+              </div>
+              <div>
+                <div className="text-white font-bold">SwingVision</div>
+                <div className="text-xs text-gray-400">AI-powered shot tracking & analysis</div>
+                <div className="text-xs text-red-400 mt-0.5">Not connected</div>
+              </div>
+            </div>
+            <button className="px-4 py-2 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors">
+              Connect SwingVision
+            </button>
+          </div>
+        </div>
+
+        {/* SwingVision Video Cards */}
+        <SwingVisionCards />
       </div>
     </div>
   );
@@ -2818,6 +3627,218 @@ function MentalPerformanceView() {
 }
 
 // ─── SETTINGS VIEW ─────────────────────────────────────────────────────────────
+
+// ─── COURT BOOKING VIEW ───────────────────────────────────────────────────────
+function CourtBookingView() {
+  const [bookings, setBookings] = useState<Array<{id:string, date:string, time:string, court:string, type:string, partner:string, notes:string, status:'confirmed'|'pending'|'cancelled'}>>([
+    { id:'1', date:'2025-04-07', time:'09:00', court:'Court 3 (Clay)', type:'Practice', partner:'Marco Bianchi (Coach)', notes:'Serve practice + baseline drills', status:'confirmed' },
+    { id:'2', date:'2025-04-07', time:'14:00', court:'Court 1 (Hard)', type:'Match Play', partner:'Training Partner', notes:'Simulated match conditions', status:'confirmed' },
+    { id:'3', date:'2025-04-08', time:'10:30', court:'Court 2 (Clay)', type:'Fitness', partner:'Sarah Okafor (Physio)', notes:'Footwork + conditioning', status:'pending' },
+  ]);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [newBooking, setNewBooking] = useState({ date:'', time:'', court:'', type:'Practice', partner:'', notes:'' });
+
+  const typeColors: Record<string, string> = {
+    'Practice': 'bg-teal-600/20 text-teal-400 border-teal-600/30',
+    'Match Play': 'bg-purple-600/20 text-purple-400 border-purple-600/30',
+    'Fitness': 'bg-amber-600/20 text-amber-400 border-amber-600/30',
+    'Recovery': 'bg-gray-600/20 text-gray-400 border-gray-600/30',
+  };
+
+  const statusColors: Record<string, string> = {
+    'confirmed': 'bg-green-600/20 text-green-400 border-green-600/30',
+    'pending': 'bg-amber-600/20 text-amber-400 border-amber-600/30',
+    'cancelled': 'bg-red-600/20 text-red-400 border-red-600/30',
+  };
+
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekDates = ['07 Apr', '08 Apr', '09 Apr', '10 Apr', '11 Apr', '12 Apr', '13 Apr'];
+  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+
+  const calendarSlots: Array<{ day: number; timeIdx: number; type: string; label: string }> = [
+    { day: 0, timeIdx: 1, type: 'Practice', label: '09:00 Practice' },
+    { day: 0, timeIdx: 6, type: 'Match Play', label: '14:00 Match Play' },
+    { day: 1, timeIdx: 2, type: 'Fitness', label: '10:30 Fitness' },
+    { day: 2, timeIdx: 1, type: 'Practice', label: '09:00 Practice' },
+    { day: 3, timeIdx: 3, type: 'Recovery', label: '11:00 Recovery' },
+  ];
+
+  const calendarBlockColors: Record<string, string> = {
+    'Practice': 'bg-teal-600/30 border-teal-500/40 text-teal-300',
+    'Match Play': 'bg-purple-600/30 border-purple-500/40 text-purple-300',
+    'Fitness': 'bg-amber-600/30 border-amber-500/40 text-amber-300',
+    'Recovery': 'bg-gray-600/30 border-gray-500/40 text-gray-300',
+  };
+
+  const courts = [
+    { name: 'Court 1', surface: 'Hard', status: 'Available Now', statusColor: 'text-teal-400' },
+    { name: 'Court 2', surface: 'Clay', status: 'Booked Until 14:00', statusColor: 'text-amber-400' },
+    { name: 'Court 3', surface: 'Clay', status: 'Available Now', statusColor: 'text-teal-400' },
+    { name: 'Indoor Court', surface: 'Hard', status: 'Maintenance', statusColor: 'text-red-400' },
+  ];
+
+  const handleConfirmBooking = () => {
+    if (!newBooking.date || !newBooking.time || !newBooking.court) return;
+    setBookings(prev => [...prev, { id: String(Date.now()), ...newBooking, status: 'pending' }]);
+    setNewBooking({ date:'', time:'', court:'', type:'Practice', partner:'', notes:'' });
+    setShowBookingForm(false);
+  };
+
+  const handleCancelBooking = (id: string) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b));
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🏟️" title="Court Booking — Practice Facilities" subtitle="Book courts, manage sessions, and view facility availability." />
+
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard label="This Week" value="5 sessions" sub="Mon–Sun bookings" color="purple" />
+        <StatCard label="Hours Booked" value="12.5h" sub="Total court time" color="teal" />
+        <StatCard label="Next Session" value="Tomorrow 09:00" sub="Court 3 (Clay)" color="orange" />
+      </div>
+
+      {/* Weekly Calendar Grid */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Weekly Court Schedule</div>
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-8 gap-px min-w-[640px]">
+            <div className="text-xs text-gray-600 p-2"></div>
+            {weekDays.map((day, i) => (
+              <div key={day} className="text-xs text-gray-400 font-medium text-center p-2 border-b border-gray-800">
+                <div>{day}</div>
+                <div className="text-gray-600 text-[10px]">{weekDates[i]}</div>
+              </div>
+            ))}
+            {timeSlots.map((time, tIdx) => (
+              <div key={`row-${time}`} className="contents">
+                <div className="text-[10px] text-gray-600 p-2 text-right border-r border-gray-800/50">{time}</div>
+                {weekDays.map((_, dIdx) => {
+                  const slot = calendarSlots.find(s => s.day === dIdx && s.timeIdx === tIdx);
+                  return (
+                    <div key={`${dIdx}-${tIdx}`} className="h-8 border-b border-gray-800/30 relative">
+                      {slot && (
+                        <div className={`absolute inset-0.5 rounded border text-[9px] font-medium px-1 flex items-center truncate ${calendarBlockColors[slot.type] || ''}`}>
+                          {slot.label}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-4 mt-3 pt-3 border-t border-gray-800">
+          {Object.entries(calendarBlockColors).map(([type, cls]) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded border ${cls}`}></div>
+              <span className="text-[10px] text-gray-500">{type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bookings List */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">Bookings</div>
+          <button onClick={() => setShowBookingForm(!showBookingForm)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors">
+            {showBookingForm ? 'Close' : '+ Book Court'}
+          </button>
+        </div>
+
+        {showBookingForm && (
+          <div className="bg-[#0a0c14] border border-purple-600/30 rounded-xl p-4 mb-4 space-y-3">
+            <div className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2">New Court Booking</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Date</label>
+                <input type="date" value={newBooking.date} onChange={e => setNewBooking(prev => ({ ...prev, date: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Time</label>
+                <input type="time" value={newBooking.time} onChange={e => setNewBooking(prev => ({ ...prev, time: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Court</label>
+                <select value={newBooking.court} onChange={e => setNewBooking(prev => ({ ...prev, court: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none">
+                  <option value="">Select court...</option>
+                  <option value="Court 1 (Hard)">Court 1 — Hard</option>
+                  <option value="Court 2 (Clay)">Court 2 — Clay</option>
+                  <option value="Court 3 (Clay)">Court 3 — Clay</option>
+                  <option value="Indoor Court (Hard)">Indoor Court — Hard</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Session Type</label>
+                <select value={newBooking.type} onChange={e => setNewBooking(prev => ({ ...prev, type: e.target.value }))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none">
+                  <option value="Practice">Practice</option>
+                  <option value="Match Play">Match Play</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Recovery">Recovery</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Partner</label>
+                <input type="text" value={newBooking.partner} onChange={e => setNewBooking(prev => ({ ...prev, partner: e.target.value }))} placeholder="Partner name..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:border-purple-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Notes</label>
+                <input type="text" value={newBooking.notes} onChange={e => setNewBooking(prev => ({ ...prev, notes: e.target.value }))} placeholder="Session notes..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:border-purple-500 focus:outline-none" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleConfirmBooking} className="px-4 py-2 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors">Confirm Booking</button>
+              <button onClick={() => setShowBookingForm(false)} className="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {bookings.map(booking => (
+            <div key={booking.id} className={`p-4 rounded-lg border ${booking.status === 'cancelled' ? 'border-gray-800/50 bg-gray-900/20 opacity-50' : 'border-gray-800 bg-[#0a0c14]'}`}>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className={`text-sm font-medium ${booking.status === 'cancelled' ? 'text-gray-600 line-through' : 'text-white'}`}>{booking.date} — {booking.time}</div>
+                  <div className={`text-xs ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-400'}`}>{booking.court}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${typeColors[booking.type] || 'bg-gray-700 text-gray-400'}`}>{booking.type}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColors[booking.status]}`}>{booking.status}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  {booking.partner && <div className={`text-xs ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-300'}`}>Partner: {booking.partner}</div>}
+                  {booking.notes && <div className={`text-xs mt-1 ${booking.status === 'cancelled' ? 'text-gray-700 line-through' : 'text-gray-500'}`}>{booking.notes}</div>}
+                </div>
+                {booking.status !== 'cancelled' && (
+                  <button onClick={() => handleCancelBooking(booking.id)} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Cancel</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Academy Courts Available */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Academy Courts Available</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {courts.map((court, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-sm text-white font-medium mb-1">{court.name}</div>
+              <div className="text-xs text-gray-500 mb-2">{court.surface}</div>
+              <div className={`text-xs font-medium ${court.statusColor}`}>{court.status}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 function SettingsView({ player }: { player: TennisPlayer }) {
   return (
     <div className="space-y-6">
@@ -3037,24 +4058,1108 @@ function PlayerCard({ player }: { player: TennisPlayer }) {
   );
 }
 
+// ─── LIVE SCORES VIEW ──────────────────────────────────────────────────────────
+const LiveScoresView = ({ liveScores, fixtures }: { liveScores: any[]; fixtures: any[] }) => {
+  const DEMO_MATCHES = [
+    { p1: 'J. Sinner [1]', p2: 'C. Alcaraz [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
+    { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
+    { p1: 'A. Rivera [67]', p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
+    { p1: 'C. Ruud [7]', p2: 'S. Tsitsipas [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
+    { p1: 'T. Fritz [5]', p2: 'A. Rublev [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
+    { p1: 'H. Rune [12]', p2: 'A. De Minaur [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
+  ];
+  const matches = liveScores.length > 0 ? liveScores : DEMO_MATCHES;
+  const isDemo = liveScores.length === 0;
+  return (
+    <div>
+      <SectionHeader title="Live Scores — ATP Tour" subtitle={isDemo ? 'Demo data — add NEXT_PUBLIC_TENNIS_API_KEY for live scores' : `${matches.length} matches today`} icon="🔴" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {matches.map((m: any, i: number) => (
+          <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <SurfaceBadge surface={m.surface} />
+                <span className="text-xs text-gray-500">{m.tournament}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {m.status === 'Live' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
+                <span className={`text-xs font-semibold ${m.status === 'Live' ? 'text-green-400' : m.status === 'Finished' ? 'text-gray-500' : 'text-gray-400'}`}>{m.status}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{m.p1}</span>
+                {m.score && <span className="text-sm font-bold text-white">{m.score.split(' ')[0] || ''}</span>}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-300">{m.p2}</span>
+                {m.score && <span className="text-sm text-gray-400">{m.score.split(' ').slice(1).join(' ')}</span>}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-800">
+              <span className="text-xs text-gray-500">{m.round}</span>
+              {m.set && <span className="text-xs text-purple-400">{m.set}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {isDemo && <p className="text-xs text-gray-600 text-center">Powered by API-Tennis — add NEXT_PUBLIC_TENNIS_API_KEY to enable live data</p>}
+    </div>
+  );
+};
+
+// ─── OPPONENT SCOUT VIEW ────────────────────────────────────────────────────────
+const OpponentScoutView = ({ h2hData }: { h2hData: any[] }) => {
+  const opponent = { name: 'Carlos Ferreira', ranking: 54, flag: '🇧🇷', nationality: 'Brazilian', age: 26, height: "6'0\" / 183cm", plays: 'Left-handed', backhand: 'Two-handed', coach: 'Ricardo Souza' };
+  return (
+    <div>
+      <SectionHeader title="Opponent Intelligence" subtitle={`Next: ${opponent.name} (${opponent.flag} #${opponent.ranking})`} icon="🔍" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="H2H Record" value="3-1" sub="Alex leads" color="green" />
+        <StatCard label="Last Meeting" value="Alex W" sub="7-5 6-3 — Roland Garros 2024" color="purple" />
+        <StatCard label="Clay Win %" value="61%" sub="Ferreira on clay" color="orange" />
+        <StatCard label="1st Serve Speed" value="198 km/h" sub="Average" color="blue" />
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Surface Breakdown — Ferreira</h3>
+        <div className="grid grid-cols-4 gap-4 text-center text-sm">
+          <div className="text-gray-500 font-semibold text-left">Surface</div>
+          <div className="text-gray-500 font-semibold">Win %</div>
+          <div className="text-gray-500 font-semibold">Matches</div>
+          <div className="text-gray-500 font-semibold">Avg Duration</div>
+          {[
+            { s: 'Clay', w: '61%', m: '48', d: '1h 52m' },
+            { s: 'Hard', w: '54%', m: '62', d: '1h 41m' },
+            { s: 'Grass', w: '42%', m: '12', d: '1h 28m' },
+          ].map(r => (<>
+            <div key={r.s} className="text-left"><SurfaceBadge surface={r.s} /></div>
+            <div className="text-white font-semibold">{r.w}</div>
+            <div className="text-gray-400">{r.m}</div>
+            <div className="text-gray-400">{r.d}</div>
+          </>))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {[
+          { title: '2nd Serve Return', desc: 'Exploitable — only 54% win rate on 2nd serve return points. Attack wide on deuce side.', color: 'border-red-600/30' },
+          { title: 'Tiebreak Record', desc: 'Weak — 38% tiebreak win rate this season. Push sets to tiebreaks when possible.', color: 'border-amber-600/30' },
+          { title: 'Under Pressure', desc: 'Breaks down in deciding sets — 3-7 record in 3rd sets this year. Apply early pressure.', color: 'border-red-600/30' },
+        ].map(w => (
+          <div key={w.title} className={`bg-[#0d0f1a] border ${w.color} rounded-xl p-4`}>
+            <h4 className="text-sm font-bold text-white mb-2">⚠️ {w.title}</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">{w.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">🎯 Tactical Notes — Coach</h3>
+        <ul className="space-y-2">
+          {['Target Ferreira\'s backhand side early — his two-handed backhand under pressure has a 23% error rate in rallies over 8 shots.',
+            'Serve wide on the ad side — Ferreira moves poorly to his left. 68% of his return errors come from wide serves.',
+            'Stay aggressive in the 3rd set — historical data shows his level drops significantly. Win the first 3 games and the set is yours.',
+          ].map((tip, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+              <span className="text-purple-400 font-bold mt-0.5">{i + 1}.</span>
+              <span>{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+// ─── SURFACE ANALYSIS VIEW ──────────────────────────────────────────────────────
+const SurfaceAnalysisView = ({ player }: { player: TennisPlayer }) => {
+  const surfaces = [
+    { name: 'Clay', emoji: '🟤', win: 68, matches: 50, titles: 1, wl: '34-16', best: 'QF Roland Garros', color: 'orange' },
+    { name: 'Hard', emoji: '🔵', win: 61, matches: 72, titles: 1, wl: '44-28', best: 'R16 US Open', color: 'blue' },
+    { name: 'Grass', emoji: '🟢', win: 55, matches: 20, titles: 0, wl: '11-9', best: 'R32 Wimbledon', color: 'green' },
+  ];
+  const levels = [
+    { level: 'Grand Slams', played: 14, w: 22, l: 14, best: 'QF', pts: '2000' },
+    { level: 'Masters 1000', played: 18, w: 28, l: 18, best: 'SF', pts: '1000' },
+    { level: 'ATP 500', played: 12, w: 19, l: 8, best: 'W', pts: '500' },
+    { level: 'ATP 250', played: 16, w: 18, l: 7, best: 'W', pts: '250' },
+    { level: 'Challengers', played: 8, w: 14, l: 4, best: 'W', pts: '125' },
+  ];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthData = [3,4,2,5,3,4,2,3,0,0,0,0]; // wins per month
+  const monthLoss = [1,2,1,1,2,1,1,2,0,0,0,0];
+  return (
+    <div>
+      <SectionHeader title="Surface & Tournament Breakdown" subtitle={`${player.name} — 2026 Season`} icon="🏟️" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {surfaces.map(s => (
+          <div key={s.name} className={`bg-[#0d0f1a] border border-gray-800 rounded-xl p-5`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{s.emoji}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">{s.name}</h3>
+                  <p className="text-xs text-gray-500">{s.wl} · {s.titles} title{s.titles !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{s.win}%</div>
+                <p className="text-xs text-gray-500">win rate</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2 mb-2">
+              <div className="h-2 rounded-full" style={{ width: `${s.win}%`, background: s.color === 'orange' ? '#ea580c' : s.color === 'blue' ? '#3b82f6' : '#22c55e' }} />
+            </div>
+            <p className="text-xs text-gray-500">Best result: {s.best}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Tournament Level Breakdown</h3>
+        <div className="grid grid-cols-6 gap-2 text-xs text-center mb-2">
+          <div className="text-gray-500 font-semibold text-left">Level</div>
+          <div className="text-gray-500 font-semibold">Events</div>
+          <div className="text-gray-500 font-semibold">W</div>
+          <div className="text-gray-500 font-semibold">L</div>
+          <div className="text-gray-500 font-semibold">Best</div>
+          <div className="text-gray-500 font-semibold">Pts</div>
+        </div>
+        {levels.map(l => (
+          <div key={l.level} className="grid grid-cols-6 gap-2 text-sm text-center py-2 border-t border-gray-800">
+            <div className="text-left text-gray-300 text-xs">{l.level}</div>
+            <div className="text-white font-semibold">{l.played}</div>
+            <div className="text-green-400">{l.w}</div>
+            <div className="text-red-400">{l.l}</div>
+            <div className="text-purple-400">{l.best}</div>
+            <div className="text-gray-400">{l.pts}</div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">12-Month Form — Wins & Losses</h3>
+        <div className="flex items-end gap-1 h-24">
+          {months.map((m, i) => (
+            <div key={m} className="flex-1 flex flex-col items-center gap-0.5">
+              <div className="w-full flex flex-col items-center">
+                {monthData[i] > 0 && <div className="w-full rounded-t" style={{ height: monthData[i] * 12, background: '#22c55e', opacity: 0.8 }} />}
+                {monthLoss[i] > 0 && <div className="w-full rounded-b" style={{ height: monthLoss[i] * 12, background: '#ef4444', opacity: 0.5 }} />}
+              </div>
+              <span className="text-[10px] text-gray-600">{m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Break Pts Saved" value="67%" sub="148/221" color="green" />
+        <StatCard label="Tiebreaks Won" value="58%" sub="11/19" color="purple" />
+        <StatCard label="Deciding Sets" value="64%" sub="9/14" color="blue" />
+        <StatCard label="5-Set Record" value="3-1" sub="75% win rate" color="teal" />
+      </div>
+    </div>
+  );
+};
+
+// ─── DRAW & BRACKET VIEW ────────────────────────────────────────────────────────
+const DrawBracketView = () => {
+  const [drawTab, setDrawTab] = useState<'draw'|'schedule'|'prize'|'points'>('draw');
+  const rounds = ['R16', 'QF', 'SF', 'Final'];
+  const bracket = [
+    // R16 matchups (8 matches)
+    [
+      { p1: 'T. Nakashima [1]', p2: 'Qualifier', score: '6-3 6-4', winner: 1 },
+      { p1: 'L. Musetti [8]', p2: 'M. Cressy', score: '7-6 6-4', winner: 1 },
+      { p1: 'J. Draper [3]', p2: 'D. Shapovalov', score: '6-2 7-5', winner: 1 },
+      { p1: 'B. Shelton [5]', p2: 'F. Cerundolo', score: '4-6 6-3 7-6', winner: 1 },
+      { p1: 'A. Fils [4]', p2: 'L. Djere', score: '6-1 6-3', winner: 1 },
+      { p1: 'A. Rivera [6]', p2: 'R. Carballes', score: '6-4 6-2', winner: 1 },
+      { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1 },
+      { p1: 'U. Humbert [2]', p2: 'M. Arnaldi', score: '6-3 6-4', winner: 1 },
+    ],
+    // QF (4 matches)
+    [
+      { p1: 'T. Nakashima [1]', p2: 'L. Musetti [8]', score: '', winner: 0 },
+      { p1: 'J. Draper [3]', p2: 'B. Shelton [5]', score: '', winner: 0 },
+      { p1: 'A. Fils [4]', p2: 'A. Rivera [6]', score: '', winner: 0 },
+      { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0 },
+    ],
+    // SF
+    [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }, { p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
+    // Final
+    [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
+  ];
+  const prizes = [
+    { round: 'Winner', prize: '€81,310', points: 250 },
+    { round: 'Final', prize: '€46,390', points: 150 },
+    { round: 'SF', prize: '€26,440', points: 90 },
+    { round: 'QF', prize: '€15,200', points: 45 },
+    { round: 'R16', prize: '€9,435', points: 20 },
+    { round: 'R32', prize: '€5,900', points: 0 },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Tournament Draw — Brighton Open ATP 250" subtitle="Hard Court · Brighton, UK · 7-13 April 2026" icon="🏆" />
+      <div className="flex gap-2 mb-6">
+        {(['draw','schedule','prize','points'] as const).map(t => (
+          <button key={t} onClick={() => setDrawTab(t)} className={`px-4 py-2 rounded-lg text-xs font-semibold ${drawTab === t ? 'bg-purple-600 text-white' : 'bg-[#0d0f1a] border border-gray-800 text-gray-400 hover:text-white'}`}>
+            {t === 'draw' ? 'Draw' : t === 'schedule' ? 'Schedule' : t === 'prize' ? 'Prize Money' : 'Points'}
+          </button>
+        ))}
+      </div>
+      {drawTab === 'draw' && (
+        <div className="overflow-x-auto">
+          <div className="flex gap-6 min-w-[800px]">
+            {bracket.map((round, ri) => (
+              <div key={ri} className="flex-1">
+                <div className="text-xs font-semibold text-gray-500 mb-3 text-center">{rounds[ri]}</div>
+                <div className="space-y-3" style={{ marginTop: ri * 24 }}>
+                  {round.map((match: any, mi: number) => {
+                    const isAlex = match.p1.includes('Rivera') || match.p2.includes('Rivera');
+                    const isFerreira = match.p1.includes('Ferreira') || match.p2.includes('Ferreira');
+                    return (
+                      <div key={mi} className={`bg-[#0d0f1a] border rounded-lg p-2.5 text-xs ${isAlex ? 'border-purple-600/50' : isFerreira ? 'border-amber-600/30' : 'border-gray-800'}`}>
+                        <div className={`flex justify-between ${match.winner === 1 ? 'font-bold text-white' : 'text-gray-400'}`}>
+                          <span className="truncate">{match.p1}</span>
+                          {match.score && <span className="ml-2 text-gray-500 whitespace-nowrap">{match.score.split(' ')[0]}</span>}
+                        </div>
+                        <div className={`flex justify-between mt-1 ${match.winner === 2 ? 'font-bold text-white' : 'text-gray-400'}`}>
+                          <span className="truncate">{match.p2}</span>
+                          {match.score && <span className="ml-2 text-gray-500 whitespace-nowrap">{match.score.split(' ').slice(1).join(' ')}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {drawTab === 'prize' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="grid grid-cols-3 gap-2 text-xs text-center mb-2">
+            <div className="text-gray-500 font-semibold text-left">Round</div>
+            <div className="text-gray-500 font-semibold">Prize Money</div>
+            <div className="text-gray-500 font-semibold">Ranking Points</div>
+          </div>
+          {prizes.map(p => (
+            <div key={p.round} className="grid grid-cols-3 gap-2 text-sm text-center py-2.5 border-t border-gray-800">
+              <div className="text-left text-gray-300">{p.round}</div>
+              <div className="text-green-400 font-semibold">{p.prize}</div>
+              <div className="text-purple-400 font-semibold">{p.points}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {(drawTab === 'schedule' || drawTab === 'points') && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-8 text-center">
+          <p className="text-gray-500 text-sm">{drawTab === 'schedule' ? 'Order of Play — updated daily by tournament' : 'Points breakdown by round'}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── TEAM COMMS VIEW ────────────────────────────────────────────────────────────
+const TeamCommsView = () => {
+  const [recipient, setRecipient] = useState('All Team');
+  const [msgType, setMsgType] = useState('Update');
+  const [msgText, setMsgText] = useState('');
+  const RECIPIENTS = ['All Team', 'Coach', 'Physio', 'Agent', 'Stringer', 'Doubles Partner'];
+  const MSG_TYPES = ['Update', 'Urgent', 'Schedule Change', 'Match Report'];
+  const MESSAGES = [
+    { id: 1, from: 'Alex Rivera', role: 'Player', to: 'All Team', initial: 'AR', color: '#7c3aed', text: 'Match report from Brighton: Won 7-5 6-3. Serve felt strong, backhand needs work on clay. Full video review tomorrow.', time: '2h ago', read: true },
+    { id: 2, from: 'Alex Rivera', role: 'Player', to: 'Coach', initial: 'AR', color: '#7c3aed', text: 'Can we move Tuesday\'s session to 8am? Physio slot at 10.', time: '5h ago', read: true },
+    { id: 3, from: 'Alex Rivera', role: 'Player', to: 'Coach + Physio', initial: 'AR', color: '#7c3aed', text: 'Recovery score this morning: 84. Good to train full intensity today.', time: 'Yesterday', read: true },
+    { id: 4, from: 'James Whitfield', role: 'Agent', to: 'Alex Rivera', initial: 'JW', color: '#0d9488', text: 'IMG confirmed exhibition slot in Dubai, Dec 12–15. Check diary.', time: 'Yesterday', read: false },
+    { id: 5, from: 'Tom Bradley', role: 'Stringer', to: 'Alex Rivera', initial: 'TB', color: '#3b82f6', text: 'String tension adjusted to 54lbs for clay swing. Let me know if you want further tweaks.', time: '2d ago', read: true },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Team Communications" subtitle="Messages between you and your support team" icon="💬" />
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">Recipient</label>
+            <select value={recipient} onChange={e => setRecipient(e.target.value)} className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+              {RECIPIENTS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">Type</label>
+            <select value={msgType} onChange={e => setMsgType(e.target.value)} className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+              {MSG_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <textarea value={msgText} onChange={e => setMsgText(e.target.value)} rows={3} placeholder="Write a message to your team..." className="w-full bg-[#07080F] border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 mb-3" />
+        <button className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-semibold">Send Message</button>
+      </div>
+      <div className="space-y-3">
+        {MESSAGES.map(m => (
+          <div key={m.id} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: m.color }}>{m.initial}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-sm font-semibold text-white">{m.from}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">{m.role}</span>
+                <span className="text-xs text-gray-600">→ {m.to}</span>
+              </div>
+              <p className="text-sm text-gray-300 leading-relaxed">{m.text}</p>
+            </div>
+            <div className="flex flex-col items-end shrink-0 gap-1">
+              <span className="text-xs text-gray-600">{m.time}</span>
+              {m.read && <span className="text-xs text-blue-400">✓✓</span>}
+              {!m.read && <span className="w-2 h-2 rounded-full bg-purple-500" />}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── ACCREDITATIONS VIEW ────────────────────────────────────────────────────────
+const AccreditationsView = () => {
+  const accreditations = [
+    { name: 'ATP Tour Card', status: 'Active', org: 'ATP', expires: 'Dec 2026', daysLeft: 270 },
+    { name: 'ITF Registration', status: 'Active', org: 'ITF', expires: 'Dec 2026', daysLeft: 270 },
+    { name: 'LTA Licence', status: 'Active', org: 'LTA (British)', expires: 'Mar 2027', daysLeft: 360 },
+    { name: 'Wimbledon Accreditation', status: 'Seasonal', org: 'AELTC', expires: 'Jun 2026', daysLeft: 87 },
+    { name: 'US Open Accreditation', status: 'Applied', org: 'USTA', expires: 'Aug 2026', daysLeft: 148 },
+    { name: 'Roland Garros', status: 'Active', org: 'FFT', expires: 'May 2026', daysLeft: 56 },
+    { name: 'Australian Open', status: 'Active', org: 'Tennis Australia', expires: 'Jan 2027', daysLeft: 300 },
+  ];
+  const documents = [
+    { name: 'Passport Copy', uploaded: '12 Jan 2026', type: 'ID' },
+    { name: 'Medical Certificate', uploaded: '3 Mar 2026', type: 'Medical' },
+    { name: 'Anti-Doping Registration', uploaded: '1 Jan 2026', type: 'WADA' },
+    { name: 'ATP Player Agreement', uploaded: '15 Nov 2025', type: 'Contract' },
+    { name: 'ITF Code of Conduct', uploaded: '1 Jan 2026', type: 'Compliance' },
+  ];
+  const contacts = [
+    { org: 'ATP Player Services', name: 'Michael Torres', email: 'players@atptour.com', phone: '+1 561 330 5000' },
+    { org: 'LTA Player Services', name: 'Rebecca Clarke', email: 'players@lta.org.uk', phone: '+44 20 8487 7000' },
+    { org: 'ITF', name: 'Player Support', email: 'players@itftennis.com', phone: '+44 20 8878 6464' },
+  ];
+  const statusColor = (s: string) => s === 'Active' ? 'bg-green-600/20 text-green-400 border-green-600/30' : s === 'Applied' || s === 'Seasonal' ? 'bg-amber-600/20 text-amber-400 border-amber-600/30' : 'bg-red-600/20 text-red-400 border-red-600/30';
+  return (
+    <div>
+      <SectionHeader title="Accreditations & Licences" subtitle="Tour cards, federation licences and tournament access" icon="🪪" />
+      {/* Player ID Card */}
+      <div className="bg-gradient-to-br from-purple-900/30 to-purple-600/10 border border-purple-600/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center gap-5">
+          <div className="w-20 h-24 bg-gray-800 rounded-lg flex items-center justify-center text-3xl">🎾</div>
+          <div>
+            <div className="text-xs text-purple-400 font-semibold mb-1">ATP TOUR MEMBER</div>
+            <div className="text-xl font-bold text-white">Alex Rivera</div>
+            <div className="text-sm text-gray-400">🇬🇧 British · Right-handed · #67</div>
+            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+              <span>Member ID: ATP-2018-0847</span>
+              <span>ITF Reg: ITF-UK-29814</span>
+              <span>Expires: Dec 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Renewal alert */}
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6 bg-amber-600/10 border border-amber-600/30">
+        <span className="text-amber-400 text-sm">⚠️</span>
+        <span className="text-sm text-amber-300">Roland Garros accreditation expires in 56 days — renew before April deadline</span>
+      </div>
+      {/* Accreditations table */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">All Accreditations</h3>
+        <div className="grid grid-cols-5 gap-2 text-xs text-center mb-2">
+          <div className="text-gray-500 font-semibold text-left">Accreditation</div>
+          <div className="text-gray-500 font-semibold">Organisation</div>
+          <div className="text-gray-500 font-semibold">Status</div>
+          <div className="text-gray-500 font-semibold">Expires</div>
+          <div className="text-gray-500 font-semibold">Days Left</div>
+        </div>
+        {accreditations.map(a => (
+          <div key={a.name} className="grid grid-cols-5 gap-2 text-sm text-center py-2.5 border-t border-gray-800 items-center">
+            <div className="text-left text-gray-300 text-xs">{a.name}</div>
+            <div className="text-gray-400 text-xs">{a.org}</div>
+            <div><span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColor(a.status)}`}>{a.status}</span></div>
+            <div className="text-gray-400 text-xs">{a.expires}</div>
+            <div className={`text-xs font-semibold ${a.daysLeft < 90 ? 'text-amber-400' : 'text-gray-400'}`}>{a.daysLeft}d</div>
+          </div>
+        ))}
+      </div>
+      {/* Documents */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Documents</h3>
+        {documents.map(d => (
+          <div key={d.name} className="flex items-center justify-between py-2.5 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white">{d.name}</div>
+              <div className="text-xs text-gray-500">{d.type} · Uploaded {d.uploaded}</div>
+            </div>
+            <button className="text-xs text-purple-400 hover:text-purple-300 font-semibold">View →</button>
+          </div>
+        ))}
+      </div>
+      {/* Federation contacts */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-4">Federation Contacts</h3>
+        {contacts.map(c => (
+          <div key={c.org} className="flex items-center justify-between py-2.5 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white">{c.org}</div>
+              <div className="text-xs text-gray-500">{c.name} · {c.email} · {c.phone}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── POINTS FORECASTER VIEW ──────────────────────────────────────────────────
+const PointsForecasterView = ({ player }: { player: TennisPlayer }) => {
+  const [selectedRound, setSelectedRound] = useState(1);
+  const scenarios = [
+    { round: 'R32', points: 10, rankingImpact: -80 },
+    { round: 'R16', points: 45, rankingImpact: -45 },
+    { round: 'QF', points: 180, rankingImpact: -12 },
+    { round: 'SF', points: 360, rankingImpact: +8 },
+    { round: 'Final', points: 600, rankingImpact: +19 },
+    { round: 'Winner', points: 1000, rankingImpact: +34 },
+  ];
+  const defending = [
+    { month: 'Apr', pts: 90, label: 'Madrid QF' },
+    { month: 'May', pts: 0, label: '' },
+    { month: 'Jun', pts: 45, label: "Queen's R2" },
+    { month: 'Jul', pts: 180, label: 'Wimbledon R16' },
+    { month: 'Aug', pts: 0, label: '' },
+    { month: 'Sep', pts: 45, label: 'US Open R2' },
+    { month: 'Oct', pts: 250, label: 'Tokyo F' },
+    { month: 'Nov', pts: 0, label: '' },
+    { month: 'Dec', pts: 0, label: '' },
+    { month: 'Jan', pts: 0, label: '' },
+    { month: 'Feb', pts: 90, label: 'Marseille SF' },
+    { month: 'Mar', pts: 45, label: 'Indian Wells R2' },
+  ];
+  const s = scenarios[selectedRound];
+  const projectedRank = player.ranking - s.rankingImpact;
+  const racePoints = 1420;
+  const raceTarget = 3000;
+  return (
+    <div>
+      <SectionHeader title="Ranking Points Forecaster" subtitle="Madrid Open — Masters 1000 · Clay" icon="🔮" />
+      {/* Current position strip */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatCard label="Current Ranking" value={`#${player.ranking}`} sub={`${player.ranking_points} pts`} color="purple" />
+        <StatCard label="Race to Turin" value="#18" sub="1,420 pts" color="teal" />
+        <StatCard label="Defending (Madrid)" value="90 pts" sub="QF last year — expires Apr" color="orange" />
+      </div>
+      {/* Round selector */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">If Alex reaches…</h3>
+        <div className="flex gap-2 mb-5">
+          {scenarios.map((sc, i) => (
+            <button key={sc.round} onClick={() => setSelectedRound(i)}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${selectedRound === i ? 'bg-purple-600 text-white' : 'bg-[#07080F] border border-gray-700 text-gray-400 hover:text-white'}`}>
+              {sc.round}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-green-400">{s.points}</div>
+            <div className="text-xs text-gray-500 mt-1">Points earned</div>
+          </div>
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-white">#{projectedRank > 0 ? projectedRank : 1}</div>
+            <div className="text-xs text-gray-500 mt-1">Projected ranking</div>
+            <div className={`text-xs mt-1 font-semibold ${s.rankingImpact > 0 ? 'text-green-400' : 'text-red-400'}`}>{s.rankingImpact > 0 ? '↑' : '↓'} {Math.abs(s.rankingImpact)} places</div>
+          </div>
+          <div className="bg-[#07080F] border border-gray-700 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-amber-400">90</div>
+            <div className="text-xs text-gray-500 mt-1">Points expiring</div>
+            <div className="text-xs text-gray-600 mt-1">Net: {s.points > 90 ? '+' : ''}{s.points - 90}</div>
+          </div>
+        </div>
+      </div>
+      {/* Points to defend calendar */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Points to Defend — Next 12 Months</h3>
+        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+          {defending.map(d => (
+            <div key={d.month} className={`rounded-lg p-3 text-center border ${d.pts > 100 ? 'bg-red-600/10 border-red-600/30' : d.pts >= 45 ? 'bg-amber-600/10 border-amber-600/30' : 'bg-gray-800/50 border-gray-800'}`}>
+              <div className="text-xs font-semibold text-gray-400">{d.month}</div>
+              <div className={`text-lg font-bold ${d.pts > 100 ? 'text-red-400' : d.pts >= 45 ? 'text-amber-400' : 'text-gray-600'}`}>{d.pts}</div>
+              {d.label && <div className="text-[10px] text-gray-500 mt-0.5">{d.label}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Race to Turin */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">ATP Race to Turin — Top 8 Qualification</h3>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-sm text-gray-400">18th</span>
+          <div className="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+            <div className="h-3 rounded-full bg-gradient-to-r from-purple-600 to-teal-500" style={{ width: `${(racePoints / raceTarget) * 100}%` }} />
+          </div>
+          <span className="text-sm text-gray-400">Top 8</span>
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{racePoints.toLocaleString()} pts</span>
+          <span>Need +{(raceTarget - racePoints).toLocaleString()} pts for qualification ({raceTarget.toLocaleString()} threshold)</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── ENTRY MANAGER VIEW ─────────────────────────────────────────────────────────
+const EntryManagerView = () => {
+  const entries = [
+    { tournament: 'Madrid Open', level: 'Masters 1000', surface: 'Clay', date: '28 Apr', deadline: 'CLOSED', signin: '26 Apr', status: 'Entered', daysLeft: 0 },
+    { tournament: 'Rome Masters', level: 'Masters 1000', surface: 'Clay', date: '12 May', deadline: '14 Apr', signin: '10 May', status: 'Entered', daysLeft: 9 },
+    { tournament: 'Geneva Open', level: 'ATP 250', surface: 'Clay', date: '19 May', deadline: '21 Apr', signin: '17 May', status: 'Enter now', daysLeft: 6 },
+    { tournament: 'Lyon Open', level: 'ATP 250', surface: 'Clay', date: '19 May', deadline: '21 Apr', signin: '17 May', status: 'Decide', daysLeft: 6 },
+    { tournament: 'Roland Garros', level: 'Grand Slam', surface: 'Clay', date: '26 May', deadline: '28 Apr', signin: '25 May', status: 'Entered', daysLeft: 23 },
+    { tournament: 'Halle Open', level: 'ATP 500', surface: 'Grass', date: '16 Jun', deadline: '19 May', signin: '14 Jun', status: 'Not yet open', daysLeft: 44 },
+    { tournament: 'Wimbledon', level: 'Grand Slam', surface: 'Grass', date: '30 Jun', deadline: '3 Jun', signin: '27 Jun', status: 'Not yet open', daysLeft: 59 },
+    { tournament: 'Bastad', level: 'ATP 250', surface: 'Clay', date: '14 Jul', deadline: '16 Jun', signin: '12 Jul', status: 'Not yet open', daysLeft: 72 },
+  ];
+  const statusColor = (s: string) => s === 'Entered' ? 'bg-green-600/20 text-green-400 border-green-600/30' : s === 'Enter now' ? 'bg-red-600/20 text-red-400 border-red-600/30' : s === 'Decide' ? 'bg-amber-600/20 text-amber-400 border-amber-600/30' : 'bg-gray-700/30 text-gray-500 border-gray-700';
+  const withdrawals = [
+    { tournament: 'Rome Masters', deadline: '9 May', note: '1 day before sign-in. Late withdrawal fine: $1,500' },
+    { tournament: 'Geneva Open', deadline: '16 Apr', note: 'No fine if withdrawn before deadline' },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Tournament Entry Manager" subtitle="Manage entries, deadlines and withdrawals" icon="📋" />
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6 bg-red-600/10 border border-red-600/30">
+        <span className="text-red-400 text-sm">⚠️</span>
+        <span className="text-sm text-red-300">3 entry deadlines in the next 14 days</span>
+      </div>
+      {/* Entry table */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6 overflow-x-auto">
+        <h3 className="text-sm font-bold text-white mb-4">Upcoming Entry Deadlines</h3>
+        <div className="grid grid-cols-7 gap-2 text-xs text-center mb-2 min-w-[700px]">
+          <div className="text-gray-500 font-semibold text-left">Tournament</div>
+          <div className="text-gray-500 font-semibold">Level</div>
+          <div className="text-gray-500 font-semibold">Surface</div>
+          <div className="text-gray-500 font-semibold">Date</div>
+          <div className="text-gray-500 font-semibold">Entry Deadline</div>
+          <div className="text-gray-500 font-semibold">Sign-in</div>
+          <div className="text-gray-500 font-semibold">Status</div>
+        </div>
+        {entries.map(e => (
+          <div key={e.tournament} className="grid grid-cols-7 gap-2 text-sm text-center py-2.5 border-t border-gray-800 items-center min-w-[700px]">
+            <div className="text-left text-white text-xs font-semibold">{e.tournament}</div>
+            <div><CategoryBadge category={e.level} /></div>
+            <div><SurfaceBadge surface={e.surface} /></div>
+            <div className="text-gray-400 text-xs">{e.date}</div>
+            <div className="text-xs">
+              <span className={e.daysLeft > 0 && e.daysLeft <= 7 ? 'text-red-400 font-semibold' : 'text-gray-400'}>{e.deadline}</span>
+              {e.daysLeft > 0 && e.daysLeft <= 7 && <span className="text-red-400 text-[10px] ml-1">← {e.daysLeft}d</span>}
+            </div>
+            <div className="text-gray-400 text-xs">{e.signin}</div>
+            <div><span className={`px-2 py-0.5 rounded text-xs font-medium border ${statusColor(e.status)}`}>{e.status}</span></div>
+          </div>
+        ))}
+      </div>
+      {/* Withdrawal tracker */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Withdrawal Windows</h3>
+        {withdrawals.map(w => (
+          <div key={w.tournament} className="flex items-center justify-between py-3 border-t border-gray-800">
+            <div>
+              <div className="text-sm text-white font-semibold">{w.tournament}</div>
+              <div className="text-xs text-gray-500">Withdrawal deadline: {w.deadline}</div>
+            </div>
+            <div className="text-xs text-gray-400 max-w-xs text-right">{w.note}</div>
+          </div>
+        ))}
+      </div>
+      {/* Season summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <StatCard label="Entered" value="18" sub="tournaments" color="purple" />
+        <StatCard label="Completed" value="7" sub="this season" color="green" />
+        <StatCard label="Upcoming" value="11" sub="remaining" color="blue" />
+        <StatCard label="Wildcards" value="1" sub="used" color="orange" />
+        <StatCard label="Protected Ranking" value="0" sub="entries used" color="teal" />
+      </div>
+    </div>
+  );
+};
+
+// ─── MATCH REPORTS VIEW ──────────────────────────────────────────────────────
+const MatchReportsView = () => {
+  const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportContent, setReportContent] = useState<Record<string, string>>({});
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const matches = [
+    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'QF', score: '4-6 6-3 7-6(5)', surface: 'Clay', result: 'W', date: '14 Apr' },
+    { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'R16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr' },
+    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
+    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo Masters', round: 'SF', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr' },
+    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
+    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'R32', score: '6-7(4) 4-6', surface: 'Clay', result: 'L', date: '22 Mar' },
+  ];
+
+  async function generateReport(m: typeof matches[0]) {
+    setGeneratingReport(m.id);
+    const won = m.result === 'W';
+    try {
+      const res = await fetch('/api/ai/football-search', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'player', query: `You are a professional tennis analyst writing a concise post-match report. Write in a professional coach/analyst voice. Be specific and tactical.\n\nWrite a post-match analysis report for Alex Rivera (ATP #67) who ${won ? 'won' : 'lost'} against ${m.opponent} (#${m.oppRank}) at ${m.tournament} ${m.round}, score ${m.score} on ${m.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead.` }),
+      });
+      const data = await res.json();
+      const text = typeof data.result === 'string' ? data.result : data.result?.summary || 'Report generated.';
+      setReportContent(prev => ({ ...prev, [m.id]: text }));
+      setActiveReport(m.id);
+    } catch {
+      const fallback = won
+        ? `Match Summary: Alex Rivera secured a ${m.score} victory over ${m.opponent} at the ${m.tournament} ${m.round}. A composed performance on clay showed growing confidence at the highest level.\n\nKey Tactical Moments:\n• Break of serve in the opening game of the deciding set shifted momentum decisively\n• Successfully targeted the opponent's backhand wing, forcing 14 unforced errors\n• Clutch serving at 5-4 in the third set — 3 aces in the final game\n\nWhat Worked Well:\n• First serve percentage above 68% throughout — consistent weapon\n• Net approaches converted at 75% — aggressive play rewarded\n\nAreas to Improve:\n• Second serve return needs work — won only 38% of return points on second serve\n• Court positioning on clay could be deeper to give more time on the baseline\n\nLooking ahead: Confidence is building — carry this form into the next round.`
+        : `Match Summary: Alex Rivera fell ${m.score} to ${m.opponent} at the ${m.tournament} ${m.round}. Despite moments of quality, the opponent's consistency proved decisive.\n\nKey Tactical Moments:\n• Lost serve at 4-4 in the first set after a long rally — critical moment\n• Failed to convert 3 break point opportunities in the second set\n• Opponent's forehand down the line was a constant threat\n\nWhat Worked Well:\n• Serve held firm through the middle sets — 5 aces total\n• Backhand cross-court rally length improved from previous matches\n\nAreas to Improve:\n• Break point conversion at 0/3 is a pattern — needs mental work\n• Fitness in the third set — movement slowed visibly\n\nLooking ahead: Key learnings to apply in practice this week.`;
+      setReportContent(prev => ({ ...prev, [m.id]: fallback }));
+      setActiveReport(m.id);
+    }
+    setGeneratingReport(null);
+  }
+
+  return (
+    <div>
+      <SectionHeader title="Match Reports & AI Summaries" subtitle="Recent match log with AI-generated analysis" icon="📄" />
+      <div className="space-y-3">
+        {matches.map(m => (
+          <div key={m.id}>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${m.result === 'W' ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-red-600/20 text-red-400 border border-red-600/30'}`}>{m.result}</span>
+                  <span className="text-sm font-semibold text-white">vs. {m.opponent}</span>
+                  <span className="text-xs text-gray-500">#{m.oppRank}</span>
+                </div>
+                <span className="text-xs text-gray-500">{m.date}</span>
+              </div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm font-bold text-white">{m.score}</span>
+                <SurfaceBadge surface={m.surface} />
+                <span className="text-xs text-gray-500">{m.tournament} · {m.round}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {reportContent[m.id] ? (
+                  <button onClick={() => setActiveReport(activeReport === m.id ? null : m.id)} className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{activeReport === m.id ? 'Hide report ↑' : 'View report ↓'}</button>
+                ) : (
+                  <button onClick={() => generateReport(m)} disabled={!!generatingReport} className="text-xs text-purple-400 hover:text-purple-300 font-semibold disabled:opacity-50">
+                    {generatingReport === m.id ? 'Generating...' : '✨ Generate AI summary'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {generatingReport === m.id && (
+              <div className="bg-[#0d0f1a] border border-purple-600/30 rounded-xl p-4 mt-1" style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
+                <p className="text-sm text-purple-300">Generating match analysis...</p>
+              </div>
+            )}
+            {activeReport === m.id && reportContent[m.id] && (
+              <div className="bg-[#0d0f1a] border border-purple-600/20 rounded-xl p-5 mt-1">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">AI Match Analysis</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">Generated by Claude</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => navigator.clipboard.writeText(reportContent[m.id])} className="text-xs text-gray-400 hover:text-white">Copy report</button>
+                    <button onClick={() => {}} className="text-xs text-teal-400 hover:text-teal-300">Share with team</button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{reportContent[m.id]}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── DATA HUB VIEW ──────────────────────────────────────────────────────────────
+const DataHubView = () => {
+  const hasApiKey = !!TENNIS_API_KEY;
+  const [toastMsg, setToastMsg] = useState('');
+  const sources = [
+    { name: 'ATP Tennis IQ', status: 'External — visit to access', statusColor: 'bg-blue-600/20 text-blue-400 border-blue-600/30', desc: 'Official ATP analytics. Shot quality, live in-match data, wearables. Free for ATP members.', features: ['Shot Quality AI', 'In Attack score', 'Live coaching data', 'Wearables sync'], badge: 'Free for ATP members', badgeColor: 'bg-green-600/20 text-green-400', button: 'Open ATP Tennis IQ →', url: 'https://www.atptour.com', connected: true },
+    { name: 'TennisRatio', status: 'Connected — public data', statusColor: 'bg-green-600/20 text-green-400 border-green-600/30', desc: 'Public analytics dashboard. H2H records, surface splits, pressure point data for all ATP/WTA players.', features: ['H2H heatmaps', 'Surface win%', 'Pressure stats', 'Dominance ratios'], badge: 'Free', badgeColor: 'bg-green-600/20 text-green-400', button: 'Browse TennisRatio →', url: 'https://tennisratio.com', connected: true },
+    { name: 'Tennis ComStat', status: 'Not connected', statusColor: 'bg-gray-700/30 text-gray-500 border-gray-700', desc: 'Professional video + stats analysis. Upload match footage and receive shot maps, serve heatmaps, and rally analysis within 24 hours.', features: ['Video-synced stats', 'Shot maps', 'Serve/return heatmaps', 'Opponent patterns'], badge: 'Per-match pricing', badgeColor: 'bg-amber-600/20 text-amber-400', button: 'Connect ComStat ↗', url: '', connected: false },
+    { name: 'API-Tennis', status: hasApiKey ? 'Connected — live data active' : 'Not connected', statusColor: hasApiKey ? 'bg-green-600/20 text-green-400 border-green-600/30' : 'bg-gray-700/30 text-gray-500 border-gray-700', desc: 'Real-time ATP/WTA fixtures, live scores, rankings, H2H records, and odds.', features: ['Live scores', 'Fixtures', 'H2H', 'Rankings', 'Odds'], badge: 'From $40/mo', badgeColor: 'bg-purple-600/20 text-purple-400', button: hasApiKey ? 'Live data active' : 'Add API key in .env.local', url: '', connected: hasApiKey },
+  ];
+  const dataSources = [
+    { section: 'Live Scores', source: 'API-Tennis (live)' },
+    { section: 'Rankings & Race', source: 'API-Tennis + hardcoded' },
+    { section: 'Surface Analysis', source: 'API-Tennis + Lumio' },
+    { section: 'H2H / Opponent Scout', source: 'API-Tennis' },
+    { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
+    { section: 'Performance Rating', source: 'Lumio analytics engine' },
+    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
+  ];
+  return (
+    <div>
+      <SectionHeader title="Data & Analytics Hub" subtitle="Your connected analytics ecosystem — Lumio pulls from these sources to power your portal." icon="🔌" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {sources.map(s => (
+          <div key={s.name} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-white">{s.name}</h3>
+              <span className={`text-[10px] px-2 py-0.5 rounded border ${s.statusColor}`}>{s.status}</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed mb-3">{s.desc}</p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {s.features.map(f => (
+                <span key={f} className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">{f}</span>
+              ))}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] px-2 py-0.5 rounded ${s.badgeColor}`}>{s.badge}</span>
+              {s.url ? (
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{s.button}</a>
+              ) : s.connected ? (
+                <span className="text-xs text-green-400 font-semibold">{s.button}</span>
+              ) : (
+                <button onClick={() => { setToastMsg('Request sent — they\'ll email you within 24h'); setTimeout(() => setToastMsg(''), 3000) }} className="text-xs text-purple-400 hover:text-purple-300 font-semibold">{s.button}</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-4">Data Sources Powering Your Portal</h3>
+        <div className="space-y-2">
+          {dataSources.map(d => (
+            <div key={d.section} className="flex items-center justify-between py-2 border-t border-gray-800">
+              <span className="text-sm text-gray-300">{d.section}</span>
+              <span className="text-xs text-gray-500">{d.source}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl text-sm font-medium" style={{ backgroundColor: '#1A1D27', border: '1px solid #374151', color: '#F9FAFB' }}>
+          {toastMsg}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function TennisTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const player = DEMO_PLAYER;
+  const [liveScores, setLiveScores] = useState<any[]>([]);
+  const [h2hData, setH2hData] = useState<any[]>([]);
+  const [fixtures, setFixtures] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeSection === 'livescores') {
+      tennisAPI('get_livescore').then(d => { if (d) setLiveScores(d); });
+    }
+    if (activeSection === 'scout') {
+      const today = new Date().toISOString().split('T')[0];
+      const next = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+      tennisAPI('get_fixtures', { date_start: today, date_stop: next }).then(d => { if (d) setFixtures(d); });
+    }
+  }, [activeSection]);
 
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
+
+
+// ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
+function MatchReportsView() {
+  const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportContent, setReportContent] = useState<Record<string, string>>({});
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+
+  const matches = [
+    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'Quarter-Final', score: '4-6 6-3 7-6', surface: 'Clay', result: 'W', date: '14 Apr 2025' },
+    { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'Round of 16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr 2025' },
+    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
+    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo', round: 'Semi-Final', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr 2025' },
+    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
+    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'Round of 32', score: '6-7 4-6', surface: 'Clay', result: 'L', date: '22 Mar 2025' },
+  ];
+
+  const handleGenerateReport = async (match: typeof matches[0]) => {
+    setGeneratingReport(match.id);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Write a post-match analysis report for Alex Rivera (ATP #67) who ${match.result === 'W' ? 'won' : 'lost'} against ${match.opponent} (ranked ${match.oppRank}) at the ${match.tournament} ${match.round}, score ${match.score} on ${match.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead. Write in a professional coach/analyst voice.`
+          }]
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text ?? 'No response';
+      setReportContent(prev => ({ ...prev, [match.id]: text }));
+      setActiveReport(match.id);
+    } catch {
+      setReportContent(prev => ({ ...prev, [match.id]: 'Error generating report. Please try again.' }));
+      setActiveReport(match.id);
+    }
+    setGeneratingReport(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📄" title="Match Reports & AI Summaries" subtitle="Post-match analysis, AI-generated reports, and team sharing." />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Recent Matches" value={String(matches.length)} sub="Last 4 weeks" color="purple" />
+        <StatCard label="Win Rate" value={`${Math.round((matches.filter(m => m.result === 'W').length / matches.length) * 100)}%`} sub={`${matches.filter(m => m.result === 'W').length}W / ${matches.filter(m => m.result === 'L').length}L`} color="teal" />
+        <StatCard label="Reports Generated" value={String(Object.keys(reportContent).length)} sub="AI summaries" color="blue" />
+        <StatCard label="Clay Season" value="Active" sub="Spring clay swing" color="orange" />
+      </div>
+
+      <div className="space-y-3">
+        {matches.map(match => (
+          <div key={match.id}>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${match.result === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>
+                    {match.result}
+                  </div>
+                  <div>
+                    <div className="text-sm text-white font-medium">
+                      vs {match.opponent} <span className="text-gray-500 text-xs">#{match.oppRank}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {match.tournament} — {match.round}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-300 font-medium">{match.score}</span>
+                      <SurfaceBadge surface={match.surface} />
+                      <span className="text-xs text-gray-600">{match.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {reportContent[match.id] && (
+                    <button
+                      onClick={() => setActiveReport(activeReport === match.id ? null : match.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+                    >
+                      {activeReport === match.id ? 'Hide report' : 'View report'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleGenerateReport(match)}
+                    disabled={generatingReport === match.id}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                  >
+                    {generatingReport === match.id ? 'Generating...' : reportContent[match.id] ? 'Regenerate' : 'Generate AI summary'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {generatingReport === match.id && (
+              <div className="mt-2 bg-purple-600/5 border border-purple-600/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-xs text-purple-400" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+                  <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                  Generating match analysis...
+                </div>
+              </div>
+            )}
+
+            {activeReport === match.id && reportContent[match.id] && !generatingReport && (
+              <div className="mt-2 bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-white">AI Match Analysis</div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Generated by Claude</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(reportContent[match.id])}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => alert('Sent to coach & physio ✓')}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+                    >
+                      Share with team
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{reportContent[match.id]}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── DATA HUB VIEW ��───────────────────────────────────────────────────────────
+function DataHubView() {
+  const [showComStatConfirm, setShowComStatConfirm] = useState(false);
+
+  const hasApiKey = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_TENNIS_API_KEY;
+
+  const dataSources = [
+    { section: 'Live Scores', source: 'API-Tennis (live)' },
+    { section: 'Rankings & Race', source: 'API-Tennis + Lumio' },
+    { section: 'Opponent Scout', source: 'API-Tennis' },
+    { section: 'Surface Analysis', source: 'API-Tennis + Lumio' },
+    { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
+    { section: 'Performance Rating', source: 'Lumio analytics engine' },
+    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🗄️" title="Data & Analytics Hub" subtitle="Your connected analytics ecosystem — Lumio pulls from these sources to power your portal." />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ATP Tennis IQ */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">ATP Tennis IQ</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30">Free for ATP members</span>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">External — visit to access</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Official ATP analytics platform. Shot quality AI, live in-match data, wearables insights. Built with TennisViz.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Shot Quality AI', 'In Attack Score', 'Live Coaching', 'Wearables'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => window.open('https://www.atptour.com', '_blank')}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+          >
+            Open ATP Tennis IQ →
+          </button>
+        </div>
+
+        {/* TennisRatio */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">TennisRatio</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30">Free</span>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">Connected — public data</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Public analytics dashboard. H2H records, surface splits, pressure point data updated after every match.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['H2H Heatmaps', 'Surface Win%', 'Pressure Stats', 'Dominance Ratios'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => window.open('https://www.tennisratio.com', '_blank')}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+          >
+            Browse TennisRatio →
+          </button>
+        </div>
+
+        {/* Tennis ComStat */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">Tennis ComStat</div>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not connected</span>
+          <div className="text-xs text-gray-400 mt-3 mb-3">Professional video + stats analysis. Upload match footage and receive shot maps, heatmaps, and rally analysis within 24 hours.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Video-Synced Stats', 'Shot Maps', 'Serve Heatmaps', 'Opponent Patterns'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          {showComStatConfirm ? (
+            <div className="text-xs text-teal-400 font-medium">Request sent ��� check your email within 24h ✓</div>
+          ) : (
+            <button
+              onClick={() => setShowComStatConfirm(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+            >
+              Request Access ↗
+            </button>
+          )}
+        </div>
+
+        {/* API-Tennis */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-sm text-white font-semibold">API-Tennis</div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">From $40/mo</span>
+          </div>
+          {hasApiKey ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600/20 text-teal-400 border border-teal-600/30">Connected</span>
+          ) : (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not connected</span>
+          )}
+          <div className="text-xs text-gray-400 mt-3 mb-3">Real-time ATP/WTA fixtures, live scores, rankings, H2H records, and tournament data.</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['Live Scores', 'Fixtures', 'H2H', 'Rankings'].map(tag => (
+              <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{tag}</span>
+            ))}
+          </div>
+          <button
+            disabled
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed"
+          >
+            {hasApiKey ? 'Live data active' : 'Add API key to .env.local'}
+          </button>
+        </div>
+      </div>
+
+      {/* Data Sources Mapping */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Data Sources</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {dataSources.map((ds, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <div className="text-xs text-gray-500">{ds.section}</div>
+              <div className="text-xs text-purple-400 font-medium">{ds.source}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
   const renderView = () => {
     switch (activeSection) {
       case 'dashboard':    return <DashboardView player={player} />;
       case 'morning':      return <MorningBriefingView player={player} />;
       case 'rankings':     return <RankingsView player={player} />;
+      case 'forecaster':   return <PointsForecasterView player={player} />;
+      case 'entries':      return <EntryManagerView />;
       case 'schedule':     return <ScheduleView />;
       case 'performance':  return <PerformanceView player={player} />;
       case 'matchprep':    return <MatchPrepView />;
+      case 'matchreports': return <MatchReportsView />;
       case 'practice':     return <PracticeLogView />;
       case 'video':        return <VideoLibraryView />;
+      case 'shotheatmaps': return <ShotHeatmapsView />;
+      case 'perfrating':   return <PerformanceRatingView />;
       case 'team':         return <TeamHubView player={player} />;
       case 'physio':       return <PhysioView />;
       case 'racket':       return <RacketView />;
@@ -3067,10 +5172,18 @@ export default function TennisTourPage() {
       case 'pipeline':     return <AgentPipelineView />;
       case 'travel':       return <TravelView />;
       case 'federation':   return <FederationView />;
+      case 'datahub':      return <DataHubView />;
       case 'career':       return <CareerView player={player} />;
       case 'academy':      return <AcademyView />;
       case 'mental':       return <MentalPerformanceView />;
+      case 'courtbooking': return <CourtBookingView />;
+      case 'teamcomms':    return <TeamCommsView />;
+      case 'accreditations': return <AccreditationsView />;
       case 'settings':     return <SettingsView player={player} />;
+      case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
+      case 'scout':       return <OpponentScoutView h2hData={h2hData} />;
+      case 'surface':     return <SurfaceAnalysisView player={player} />;
+      case 'draw':        return <DrawBracketView />;
       default:             return <DashboardView player={player} />;
     }
   };

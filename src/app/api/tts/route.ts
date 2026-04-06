@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Default ElevenLabs voice — "Dallin" (positive, inspiring & clear)
-const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
+const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'
 const MODEL_ID = 'eleven_turbo_v2_5'
 const TRIAL_DAILY_LIMIT = 5
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { text, voice, voice_id } = await req.json()
+    const { text, voice, voice_id, preview } = await req.json()
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 })
@@ -30,11 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Text too long — max 500 characters' }, { status: 400 })
     }
 
-    // Check if caller is trial — enforce daily limit
+    // Skip rate limit for voice previews
+    const isPreview = preview === true || req.headers.get('x-preview') === 'true'
+
+    // Check if caller is trial — enforce daily limit (skip for previews)
     const demoToken = req.headers.get('x-demo-token')
     const workspaceToken = req.headers.get('x-workspace-token')
 
-    if (demoToken && !workspaceToken) {
+    if (demoToken && !workspaceToken && !isPreview) {
       // Trial user — check daily usage
       const supabase = getSupabase()
       const { data: session } = await supabase

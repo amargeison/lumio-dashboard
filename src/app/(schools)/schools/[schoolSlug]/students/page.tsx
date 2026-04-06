@@ -1,8 +1,9 @@
 'use client'
 import React, { useState, useEffect, useMemo } from 'react'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
-import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3, Sparkles } from 'lucide-react'
-import { AddStudentModal, StudentNoteModal, BehaviourLogModal } from '@/components/modals/SchoolModals'
+import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3, Sparkles, UserPlus, AlertCircle, Calendar } from 'lucide-react'
+import { AddStudentModal, StudentNoteModal, BehaviourLogModal, SafeguardingConcernModal, NewAdmissionModal, ParentContactModal, AddSENDRecordModal } from '@/components/modals/SchoolModals'
+import { ProgressNoteModal, ExclusionRequestModal, PastoralMeetingModal, CAFReferralModal } from '@/components/modals/StudentsExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -290,6 +291,7 @@ function PupilProfile({ pupil, onClose, view }: { pupil: Pupil; onClose: () => v
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}>
           <div className="flex items-center gap-3">
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', borderRadius: 8, color: '#94a3b8', padding: '6px 12px', cursor: 'pointer', fontSize: 13, marginRight: 12, flexShrink: 0 }}>← Back</button>
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
               style={{ backgroundColor: '#1F2937', color: '#0D9488' }}>
               {pupil.name.split(' ')[0][0]}
@@ -688,6 +690,24 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function StudentsPage() {
   const [hasData, setHasData] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
@@ -698,8 +718,16 @@ export default function StudentsPage() {
   const [showAddStudent, setShowAddStudent] = useState(false)
   const [showStudentNote, setShowStudentNote] = useState(false)
   const [showBehaviourLog, setShowBehaviourLog] = useState(false)
+  const [showSafeguarding, setShowSafeguarding] = useState(false)
+  const [showNewAdmission, setShowNewAdmission] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
+  const [showSENDRecord, setShowSENDRecord] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showProgressNote, setShowProgressNote] = useState(false)
+  const [showExclusion, setShowExclusion] = useState(false)
+  const [showPastoralMeeting, setShowPastoralMeeting] = useState(false)
+  const [showCAF, setShowCAF] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -761,18 +789,18 @@ export default function StudentsPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>All pupils · Profiles, SEND, safeguarding, attendance and contacts</p>
       </div>
 
-      {/* AI Summary + Highlights side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <DeptAISummary dept="students" portal="schools" />
-        <AIHighlights items={STUDENTS_HIGHLIGHTS} />
-      </div>
-
-      <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-        style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
-        <BarChart3 size={14} />Dept Insights
-      </button>
+      <QuickActions actions={[
+        { label: 'Safeguarding Referral', icon: <Shield size={14} />, onClick: () => setShowSafeguarding(true), urgent: true },
+        { label: 'New Admission', icon: <UserPlus size={14} />, onClick: () => setShowNewAdmission(true) },
+        { label: 'Log Behaviour', icon: <AlertTriangle size={14} />, onClick: () => setShowBehaviourLog(true) },
+        { label: 'Parent Contact', icon: <Phone size={14} />, onClick: () => setShowParentContact(true) },
+        { label: 'Refer to SENCO', icon: <BookOpen size={14} />, onClick: () => setShowSENDRecord(true) },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
+        { label: 'Progress Note', icon: <FileText size={14} />, onClick: () => setShowProgressNote(true) },
+        { label: 'Exclusion Request', icon: <AlertCircle size={14} />, onClick: () => setShowExclusion(true) },
+        { label: 'Pastoral Meeting', icon: <Calendar size={14} />, onClick: () => setShowPastoralMeeting(true) },
+        { label: 'CAF Referral', icon: <FileText size={14} />, onClick: () => setShowCAF(true) },
+      ]} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -978,8 +1006,26 @@ export default function StudentsPage() {
       {showAddStudent && <AddStudentModal onClose={() => setShowAddStudent(false)} onToast={showToast} />}
       {showStudentNote && <StudentNoteModal onClose={() => setShowStudentNote(false)} onToast={showToast} />}
       {showBehaviourLog && <BehaviourLogModal onClose={() => setShowBehaviourLog(false)} onToast={showToast} />}
+      {showSafeguarding && <SafeguardingConcernModal onClose={() => setShowSafeguarding(false)} onToast={showToast} />}
+      {showNewAdmission && <NewAdmissionModal onClose={() => setShowNewAdmission(false)} onToast={showToast} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showSENDRecord && <AddSENDRecordModal onClose={() => setShowSENDRecord(false)} onToast={showToast} />}
+      {showProgressNote && <ProgressNoteModal onClose={() => setShowProgressNote(false)} />}
+      {showExclusion && <ExclusionRequestModal onClose={() => setShowExclusion(false)} />}
+      {showPastoralMeeting && <PastoralMeetingModal onClose={() => setShowPastoralMeeting(false)} />}
+      {showCAF && <CAFReferralModal onClose={() => setShowCAF(false)} />}
       {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
       <AIInsightsReport dept="students" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="students" portal="schools" />
+          <AIHighlights items={STUDENTS_HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

@@ -178,7 +178,7 @@ export default function SchoolsProductPage() {
           Built for primary, secondary, and MAT leadership. From 200 to 2,000 pupils.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Link href="/schools/register"
+          <Link href="/signup?portal=schools"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold"
             style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}>
             Start Free Trial <ArrowRight size={16} />
@@ -308,7 +308,7 @@ export default function SchoolsProductPage() {
               </ul>
             </div>
 
-            <Link href="/schools/register"
+            <Link href="/signup?portal=schools"
               className="flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold"
               style={{ backgroundColor: mod.color, color: '#F9FAFB' }}>
               Start your free trial <ArrowRight size={16} />
@@ -651,7 +651,7 @@ export default function SchoolsProductPage() {
             30-minute demo. We&apos;ll walk you through the platform with workflows relevant to your school.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/schools/register"
+            <Link href="/signup?portal=schools"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold"
               style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#F9FAFB' }}>
               Start Free Trial <ArrowRight size={16} />

@@ -442,7 +442,7 @@ export default function OfstedModePage() {
               <div key={s.time} className="flex items-center gap-3 py-2.5" style={{ opacity: s.status === 'done' ? 0.4 : 1 }}>
                 <span className="text-xs font-bold w-12 shrink-0" style={{ color: '#6B7280' }}>{s.time}</span>
                 <span className="text-sm" style={{ color: s.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: s.status === 'done' ? 'line-through' : 'none', fontWeight: s.status === 'now' ? 700 : 400 }}>{s.event}</span>
-                {s.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />}
+                {s.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
               </div>
             ))}
           </div>

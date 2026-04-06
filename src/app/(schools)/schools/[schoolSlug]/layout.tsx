@@ -1,3 +1,6 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/schools/[slug]  →  THIS FILE (layout + page.tsx)
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -6,11 +9,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Sparkles, Building2, Users, BookOpen, Heart,
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
-  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, DoorOpen, Clock, Camera,
+  Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, DoorOpen, Clock,
 } from 'lucide-react'
-import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
+import { SCHOOL_ROLES, type SchoolRole } from '@/lib/schoolRoles'
+import { SchoolRoleContext } from '@/lib/SchoolRoleContext'
 
 const COLLAPSED_W = 72
 const EXPANDED_W = 200
@@ -31,13 +35,72 @@ const NAV = [
   { section: null,          path: 'admissions',    label: 'Admissions & Marketing', icon: UserPlus,        badge: null },
   { section: null,          path: 'safeguarding',  label: 'Safeguarding',           icon: Shield,          badge: 1    },
   { section: null,          path: 'wraparound',    label: 'Pre & After School',     icon: Sunrise,         badge: null },
+  { section: null,          path: 'reports',       label: 'Reports',                icon: FileText,        badge: null },
   { section: 'Tools',       path: 'trust',         label: 'Trust Overview',         icon: Network,         badge: null },
   { section: null,          path: 'ofsted',        label: 'Ofsted Mode',            icon: Shield,          badge: 'NEW' },
   { section: null,          path: 'workflows',     label: 'Workflows',              icon: GitBranch,       badge: null },
-  { section: null,          path: 'reports',       label: 'Reports',                icon: FileText,        badge: null },
   { section: null,          path: '/parent',       label: 'Parent Portal',          icon: Users,           badge: null },
   { section: null,          path: 'settings',      label: 'Settings',               icon: Settings,        badge: null },
 ]
+
+// ─── School notifications (demo) ─────────────────────────────────────────────
+const SCHOOL_NOTIFICATIONS = [
+  { id: 'sn1', dept: 'safeguarding', icon: '🛡️', title: 'Safeguarding concern logged', body: 'Year 9 pupil — DSL review required before 3pm today.', time: '12 mins ago', read: false },
+  { id: 'sn2', dept: 'hr-staff', icon: '📋', title: 'DBS renewal overdue', body: 'M. Taylor DBS expired 10 March — renewal action needed.', time: '45 mins ago', read: false },
+  { id: 'sn3', dept: 'students', icon: '🫥', title: '3 unexplained absences', body: 'Reception, Year 4, Year 6 — parents not yet contacted.', time: '1 hour ago', read: false },
+  { id: 'sn4', dept: 'send-dsl', icon: '🧠', title: 'SENCO review at 11:30', body: '4 pupils on agenda — meeting papers circulated to staff.', time: '2 hours ago', read: true },
+  { id: 'sn5', dept: 'finance', icon: '💰', title: 'Expense claim awaiting approval', body: '£42.50 travel claim from Mrs Collins — 3 days overdue.', time: '3 hours ago', read: true },
+  { id: 'sn6', dept: 'facilities', icon: '🔧', title: 'Maintenance request', body: 'Year 2 classroom heater not working — logged by site team.', time: 'Yesterday', read: true },
+  { id: 'sn7', dept: 'school-office', icon: '📞', title: 'Parent callback requested', body: 'Mrs Morris (Year 4) — regarding Thursday school trip.', time: 'Yesterday', read: true },
+  { id: 'sn8', dept: 'all', icon: '⚡', title: 'Workflow completed', body: 'Daily Absence Alert ran successfully at 7:32am.', time: 'Today 7:32am', read: true },
+  { id: 'sn9', dept: 'all', icon: '🤖', title: 'Lumio AI insight', body: 'Attendance dropped below 93% for Year 6 this week.', time: 'Yesterday', read: true },
+  { id: 'sn10', dept: 'all', icon: '📅', title: 'Staff meeting tomorrow', body: 'Whole-school CPD session — 3:30pm in the Main Hall.', time: '2 days ago', read: true },
+]
+
+function SchoolNotificationsPanel({ onClose, depts }: { onClose: () => void; depts: string[] }) {
+  const filtered = SCHOOL_NOTIFICATIONS.filter(n => depts.includes('all') || depts.includes(n.dept) || n.dept === 'all')
+  const [items, setItems] = useState(filtered)
+  const unreadCount = items.filter(n => !n.read).length
+  return (
+    <>
+      <div className="fixed inset-0 z-[79]" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full z-[80] flex flex-col" style={{ width: 380, backgroundColor: '#111318', borderLeft: '1px solid #1F2937', boxShadow: '-8px 0 32px rgba(0,0,0,0.4)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Notifications</h2>
+            {unreadCount > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>{unreadCount}</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && <button onClick={() => setItems(prev => prev.map(n => ({ ...n, read: true })))} className="text-xs font-medium" style={{ color: '#0D9488' }}>Mark all read</button>}
+            <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <span className="text-3xl mb-3">🔔</span>
+              <p className="text-sm font-semibold" style={{ color: '#6B7280' }}>No notifications for your role</p>
+            </div>
+          ) : items.map(n => (
+            <div key={n.id} className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937', borderLeft: n.read ? 'none' : '3px solid #0D9488', backgroundColor: n.read ? 'transparent' : 'rgba(13,148,136,0.04)' }}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base" style={{ backgroundColor: '#1F2937' }}>{n.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold truncate" style={{ color: n.read ? '#9CA3AF' : '#F9FAFB' }}>{n.title}</p>
+                    {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#0D9488' }} />}
+                  </div>
+                  <p className="text-xs mb-1 leading-relaxed" style={{ color: '#6B7280' }}>{n.body}</p>
+                  <p className="text-xs" style={{ color: '#4B5563' }}>{n.time}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
 
 interface Props { children: React.ReactNode; params: Promise<{ schoolSlug: string }> }
 
@@ -55,6 +118,8 @@ export default function SchoolLayout({ children }: Props) {
   const base = `/schools/${slug}`
 
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
+  const [activeRole, setActiveRole] = useState<SchoolRole>('slt_admin')
+  const roleConfig = SCHOOL_ROLES[activeRole]
   useEffect(() => {
     const check = () => setIsSchoolDemo(localStorage.getItem('lumio_schools_demo_loaded') === 'true')
     check()
@@ -69,8 +134,6 @@ export default function SchoolLayout({ children }: Props) {
   const [userEmail, setUserEmail] = useState('')
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
-  const [logoHover, setLogoHover] = useState(false)
-  const logoFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const storedLogo = localStorage.getItem(`lumio_school_logo_${slug}`)
@@ -95,6 +158,17 @@ export default function SchoolLayout({ children }: Props) {
       }
       URL.revokeObjectURL(blobUrl)
     } catch { /* ignore */ }
+  }
+
+  async function handleLogoRemove() {
+    setSchoolLogo(null)
+    localStorage.removeItem(`lumio_school_logo_${slug}`)
+    const token = localStorage.getItem('workspace_session_token')
+    if (token) {
+      try {
+        await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
+      } catch { /* ignore */ }
+    }
   }
 
   useEffect(() => {
@@ -165,12 +239,10 @@ export default function SchoolLayout({ children }: Props) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <div className="flex shrink-0 items-center gap-2.5 px-2.5 py-4" style={{ borderBottom: '1px solid #1F2937', minHeight: 56 }}>
-          <button onClick={() => logoFileRef.current?.click()} onMouseEnter={() => setLogoHover(true)} onMouseLeave={() => setLogoHover(false)} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937' }} title="Upload school logo">
-            {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 7 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            {logoHover && <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 7 }}><Camera size={16} color="#fff" /></div>}
-          </button>
+        <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 10px' : '12px 4px', gap: expanded ? 10 : 0 }}>
+          <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
+            {schoolLogo ? <img key={schoolLogo} src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -192,7 +264,12 @@ export default function SchoolLayout({ children }: Props) {
               const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }
               return r.role_level <= 1 || r.isOwner
             }
-            return true
+            // Role-based nav filtering
+            const navPerms = roleConfig.permissions.nav
+            if (navPerms.includes('all')) return true
+            const itemPath = item.path || 'overview'
+            if (itemPath === 'settings') return true // always show settings
+            return navPerms.includes(itemPath)
           }).map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
@@ -236,10 +313,10 @@ export default function SchoolLayout({ children }: Props) {
       {/* Mobile sidebar */}
       {mobileOpen && (
         <aside className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden" style={{ width: EXPANDED_W, backgroundColor: '#07080F', borderRight: '1px solid #1F2937' }}>
-          <div className="flex shrink-0 items-center gap-2.5 px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <button onClick={() => logoFileRef.current?.click()} className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937' }}>
-              {schoolLogo ? <img src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 7 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </button>
+          <div className="flex shrink-0 items-center justify-center" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: '12px 10px', gap: 10 }}>
+            <div className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: schoolLogo ? 'transparent' : '#0D9488', color: '#F9FAFB', border: '1px solid #1F2937' }}>
+              {schoolLogo ? <img key={schoolLogo} src={schoolLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setSchoolLogo(null)} /> : schoolName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{schoolName}</p>
               <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{planLabel}</p>
@@ -249,7 +326,11 @@ export default function SchoolLayout({ children }: Props) {
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
             {NAV.filter(item => {
               if ((item as any).sltOnly) { const r = typeof window !== 'undefined' ? getSchoolClientRole() : { role_level: 4 as const, isOwner: false }; return r.role_level <= 1 || r.isOwner }
-              return true
+              const navPerms = roleConfig.permissions.nav
+              if (navPerms.includes('all')) return true
+              const itemPath = item.path || 'overview'
+              if (itemPath === 'settings') return true
+              return navPerms.includes(itemPath)
             }).map((item, i) => {
               const prev = NAV[i - 1]
               const showSection = item.section && item.section !== prev?.section
@@ -287,15 +368,21 @@ export default function SchoolLayout({ children }: Props) {
       <div className="flex flex-1 flex-col overflow-hidden transition-[padding] duration-200" style={{ paddingLeft: sidebarW }}>
         {/* Top-right: bell + avatar */}
         <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
-          <button onClick={() => setNotificationsOpen(o => !o)}
-            className="relative flex items-center justify-center rounded-full"
-            style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', cursor: 'pointer' }}>
-            <Bell size={16} strokeWidth={1.75} />
-            <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>3</span>
-          </button>
+          {(() => {
+            const depts = roleConfig.permissions.notificationDepts
+            const bellCount = depts.length === 0 ? 0 : SCHOOL_NOTIFICATIONS.filter(n => !n.read && (depts.includes('all') || depts.includes(n.dept) || n.dept === 'all')).length
+            return (
+              <button onClick={() => { if (depts.length > 0) setNotificationsOpen(o => !o) }}
+                className="relative flex items-center justify-center rounded-full"
+                style={{ width: 36, height: 36, backgroundColor: '#111318', border: '1px solid #1F2937', color: depts.length === 0 ? '#374151' : '#9CA3AF', cursor: depts.length === 0 ? 'not-allowed' : 'pointer', opacity: depts.length === 0 ? 0.5 : 1 }}>
+                <Bell size={16} strokeWidth={1.75} />
+                {bellCount > 0 && <span className="absolute flex items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 10, height: 10, backgroundColor: '#EF4444', fontSize: 6, color: '#fff', fontWeight: 700 }}>{bellCount}</span>}
+              </button>
+            )
+          })()}
           <AvatarDropdown initials={initials} logoutRedirect="/schools/login" logoutClearKeys={['lumio_school_']} settingsHref={`${base}/settings`} />
         </div>
-        {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+        {notificationsOpen && <SchoolNotificationsPanel onClose={() => setNotificationsOpen(false)} depts={roleConfig.permissions.notificationDepts} />}
 
         {/* Mobile menu bar */}
         <div className="md:hidden flex items-center px-4 py-2 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -304,19 +391,33 @@ export default function SchoolLayout({ children }: Props) {
         </div>
 
         {isSchoolDemo && (
-          <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
+          <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
             <div className="flex items-center gap-2 text-xs font-medium">
-              <span>Demo workspace — exploring with sample data</span>
-              <span style={{ opacity: 0.7 }}>· Connect your real tools to see live insights</span>
+              <span>Demo workspace · sample data</span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span style={{ opacity: 0.7 }}>Preview as:</span>
+              <select value={activeRole} onChange={e => setActiveRole(e.target.value as SchoolRole)} title="This shows how Lumio looks for different staff roles. In a live school, roles are set automatically from your MIS." className="text-xs font-semibold rounded-lg outline-none cursor-pointer" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '2px 6px' }}>
+                {(Object.entries(SCHOOL_ROLES) as [SchoolRole, typeof SCHOOL_ROLES[SchoolRole]][]).map(([key, r]) => (
+                  <option key={key} value={key} style={{ backgroundColor: '#111318', color: '#F9FAFB' }}>{r.icon} {r.label}</option>
+                ))}
+              </select>
             </div>
             <button onClick={() => { const savedPhoto = localStorage.getItem('lumio_user_photo'); const savedName = localStorage.getItem('lumio_user_name'); localStorage.removeItem('lumio_schools_demo_loaded'); Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_schools_demo') || k.includes('_hasData')).forEach(k => localStorage.removeItem(k)); if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto); if (savedName) localStorage.setItem('lumio_user_name', savedName); window.location.href = `/schools/${slug}` }}
-              className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>
+              className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>
               Clear Demo Data
             </button>
           </div>
         )}
+        {activeRole === 'governor' && isSchoolDemo && (
+          <div className="flex items-center gap-2 px-6 shrink-0" style={{ height: 36, minHeight: 36, background: 'linear-gradient(90deg, #1E293B, #111827)', color: '#9CA3AF', borderBottom: '1px solid #1F2937' }}>
+            <span style={{ fontSize: 14 }}>🏛️</span>
+            <span className="text-xs font-medium">Governor view — read-only dashboard and reports. No quick actions or editing capabilities.</span>
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
+          <SchoolRoleContext.Provider value={activeRole}>
+            {children}
+          </SchoolRoleContext.Provider>
         </main>
       </div>
     </div>

@@ -975,6 +975,44 @@ export default function CompetitorWatchPage() {
           </div>
         )}
       </div>
+
+      {/* AI Intelligence Row */}
+      <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-800">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u2728'}</span>
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Summary</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Strategy</span>
+          </div>
+          <div className="space-y-1.5 text-xs" style={{ color: '#D1D5DB' }}>
+            <p>Q2 OKRs tracking at 73% &mdash; on course for strong quarter close.</p>
+            <p>HubSpot pricing increase creates a 90-day competitive window for SMB migration.</p>
+            <p>monday.com ML hiring signals natural language workflow builder in 9-15 months.</p>
+            <p>Pipedrive entering email marketing &mdash; position Lumio&apos;s 150 cross-dept workflows as differentiator.</p>
+          </div>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(13,148,136,0.3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span>{'\u26A1'}</span>
+            <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+            <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Strategy</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              { n: 1, text: 'HubSpot Pro tier up 18% \u2014 strongest competitive window in 12 months', color: '#EF4444' },
+              { n: 2, text: 'Zapier "too expensive" reviews surging \u2014 migration landing page opportunity', color: '#F59E0B' },
+              { n: 3, text: 'monday.com CRM growing fast \u2014 3 ML engineers hired, AI workflow builder incoming', color: '#F59E0B' },
+              { n: 4, text: 'Pipedrive VP Partnerships hired \u2014 accelerate Lumio partner program', color: '#0D9488' },
+              { n: 5, text: 'Feature matrix: Lumio leads on 6/8 categories vs all competitors', color: '#0D9488' },
+            ].map((h, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="text-xs font-bold w-4 flex-shrink-0 mt-0.5" style={{ color: h.color }}>{h.n}</span>
+                <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

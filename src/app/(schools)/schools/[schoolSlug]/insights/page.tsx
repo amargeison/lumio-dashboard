@@ -24,7 +24,7 @@ type Role =
 
 // ─── Mock data ───────────────────────────────────────────────────────────────
 
-const SCHOOL_NAME = 'Oakridge Primary School'
+const SCHOOL_NAME = 'Margy High School'
 
 const mockData = {
   attendance: {

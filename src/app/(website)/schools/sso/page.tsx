@@ -53,7 +53,7 @@ export default function SSOPage() {
             Lumio connects directly to Google Workspace, Microsoft 365, Arbor, SIMS and Bromcom. Staff sign in with one click. Pupil data syncs automatically. No middleware. No extra cost.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mb-10">
-            <Link href="/schools/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
               Start Free Trial <ArrowRight size={16} />
             </Link>
             <a href="#how-it-works" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>
@@ -255,7 +255,7 @@ export default function SSOPage() {
           <p className="text-base mb-10 mx-auto" style={{ color: '#9CA3AF', maxWidth: 520, lineHeight: 1.7 }}>
             Join schools across the UK who&apos;ve switched to Lumio and reclaimed their budget — and their time.
           </p>
-          <Link href="/schools/register" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-all hover:opacity-90" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+          <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-all hover:opacity-90" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
             Start Your Free 14-Day Trial <ArrowRight size={18} />
           </Link>
           <p className="text-xs mt-6" style={{ color: '#4B5563' }}>No credit card. No middleware fees. No faff.</p>

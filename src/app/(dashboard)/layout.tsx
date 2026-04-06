@@ -47,13 +47,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {/* Demo banner — first element, zero gap */}
         {demoActive && !demoDismissed && (
-          <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
+          <div style={{ height: 40, minHeight: 40, flexShrink: 0, background: '#0D9488', display: 'flex', alignItems: 'center', padding: '0 140px 0 16px', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, fontSize: 13, color: 'white' }}>
               <span style={{ fontWeight: 600 }}>Demo workspace — exploring with sample data</span>
               <span style={{ opacity: 0.8 }}>· Connect your real tools to see live insights</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'false'); setDemoActive(false); const slug = pathname?.split('/').filter(Boolean)[0]; router.push(slug ? `/${slug}` : '/') }} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>Clear Demo Data</button>
+              <button onClick={() => { localStorage.setItem('lumio_demo_active', 'false'); setDemoActive(false); const slug = pathname?.split('/').filter(Boolean)[0]; router.push(slug ? `/${slug}` : '/') }} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', fontWeight: 600, marginRight: 120 }}>Clear Demo Data</button>
               <button onClick={() => setDemoDismissed(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>✕</button>
             </div>
           </div>

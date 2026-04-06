@@ -197,7 +197,7 @@ function OverviewTab({ onAction }: { onAction: (s: string) => void }) {
       {/* Live status banner */}
       <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(6,182,212,0.1))', border: '1px solid rgba(13,148,136,0.3)' }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#22C55E' }} />
+          <div className="w-2 h-2 rounded-full " style={{ backgroundColor: '#22C55E' }} />
           <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Live — Tuesday 24 Mar 2026</p>
           <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>After School Club in session · 15:30</span>
         </div>

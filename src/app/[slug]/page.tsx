@@ -1,3 +1,8 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING: dev.lumiocms.com/lumio-dev  →  THIS FILE
+// DO NOT edit (demo-workspace)/demo/[slug]/page.tsx for changes visible at /lumio-dev
+// The demo-workspace file serves /demo/lumio-dev (trial provisioning URL) — separate route.
+// ═══════════════════════════════════════════════════════════════════════════════
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
@@ -14,10 +19,13 @@ import {
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
   Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban, Crown,
+  Laptop, ClipboardCheck, GraduationCap, ShoppingCart, Key, Timer,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
+import { useDraggableList } from '@/hooks/useDraggableList'
 import { useWakeWord } from '@/hooks/useWakeWord'
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel'
+import OverviewActionModal from '@/components/demo/OverviewActionModal'
 // ClearDemoBar replaced by inline banner in the right column
 import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
@@ -27,6 +35,7 @@ import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
 import Insights from '@/app/(dashboard)/overview/components/Insights'
 import NotToMiss from '@/app/(dashboard)/overview/components/NotToMiss'
 import TeamPanel from '@/app/(dashboard)/overview/components/TeamPanel'
+import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import TabGuide from '@/components/onboarding/TabGuide'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
@@ -130,6 +139,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [logoUrl, setLogoUrl] = useState(initialLogo || null)
+  const [logoKey, setLogoKey] = useState(Date.now())
   const [iconHover, setIconHover] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -141,15 +151,17 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     if (initialLogo) setLogoUrl(initialLogo)
   }, [initialLogo])
 
-  // Read from localStorage as instant cache, then always refresh from Supabase
+  // Read from localStorage as instant cache, then refresh from Supabase only if not cleared
   useEffect(() => {
-    if (!logoUrl) {
-      const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
-      if (stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
-        setLogoUrl(stored)
-      }
+    const stored = localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo') || null
+    if (!stored) {
+      setLogoUrl(null) // don't fetch from DB if localStorage was explicitly cleared
+      return
     }
-    // Always fetch from Supabase in background to confirm/update logo
+    if (!logoUrl && stored && (stored.startsWith('http') || stored.startsWith('blob') || stored.startsWith('/'))) {
+      setLogoUrl(stored)
+    }
+    // Fetch from Supabase in background to confirm/update logo
     const token = localStorage.getItem('workspace_session_token')
     if (token) {
       fetch('/api/workspace/status', { headers: { 'x-workspace-token': token } })
@@ -163,10 +175,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
         })
         .catch(() => {})
     }
-    // Listen for same-tab logo updates (e.g. from Settings page upload)
+    // Listen for same-tab logo updates (e.g. from Settings page upload or remove)
     function onLogoUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
-      if (url) setLogoUrl(url)
+      const d = (e as CustomEvent).detail
+      const url = typeof d === 'object' && d !== null ? d.logo : d
+      setLogoUrl(url || null)
+      setLogoKey(Date.now())
     }
     window.addEventListener('lumio-logo-updated', onLogoUpdated)
     return () => window.removeEventListener('lumio-logo-updated', onLogoUpdated)
@@ -176,7 +190,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
     const handler = () => forceUpdate(n => n + 1)
     window.addEventListener('lumio-settings-changed', handler)
-    return () => window.removeEventListener('lumio-settings-changed', handler)
+    window.addEventListener('lumio-role-changed', handler)
+    return () => { window.removeEventListener('lumio-settings-changed', handler); window.removeEventListener('lumio-role-changed', handler) }
   }, [])
 
   function togglePin() {
@@ -191,6 +206,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
     // Optimistic update — show local blob URL immediately
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
+    setLogoKey(Date.now())
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     const fd = new FormData()
@@ -199,10 +215,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
       const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
       const data = await res.json()
       if (data.logo_url) {
-        setLogoUrl(data.logo_url)
-        localStorage.setItem('lumio_company_logo', data.logo_url)
-        localStorage.setItem('workspace_company_logo', data.logo_url)
-        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: data.logo_url }))
+        const cacheBustedUrl = `${data.logo_url}?t=${Date.now()}`
+        setLogoUrl(cacheBustedUrl)
+        setLogoKey(Date.now())
+        localStorage.setItem('lumio_company_logo', cacheBustedUrl)
+        localStorage.setItem('workspace_company_logo', cacheBustedUrl)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: cacheBustedUrl } }))
       }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
@@ -213,31 +231,21 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
       {/* Desktop — collapsible */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 48, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-        <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 52 }}>
-          <button
-            onClick={() => fileRef.current?.click()}
-            onMouseEnter={() => setIconHover(true)}
-            onMouseLeave={() => setIconHover(false)}
-            className="relative flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
-            style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}
-            title="Upload company logo"
+        <div className="flex items-center justify-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 10px' : '12px 4px', gap: expanded ? 10 : 0 }}>
+          <div
+            className="relative flex items-center justify-center shrink-0 overflow-hidden"
+            style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: logoUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-contain" onError={() => setLogoUrl(null)} />
+              <img key={logoKey} src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setLogoUrl(null)} />
             ) : (
               companyInitials
             )}
-            {iconHover && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-              </div>
-            )}
-          </button>
+          </div>
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
@@ -251,7 +259,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           )}
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto">
-          {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
+          {SIDEBAR_ITEMS.filter(item => {
+            if (item.id === 'overview' || item.id === 'settings') return true
+            if (item.id === 'directors') { const r = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'director' : 'director'; if (!['admin', 'director'].includes(r)) return false }
+            return typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true
+          }).map(item => {
             const active = activeDept === item.id
             return (
               <button key={item.id}
@@ -293,7 +305,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
               <button onClick={onClose} style={{ color: '#6B7280' }}><ChevronLeft size={16} /></button>
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 p-3 overflow-y-auto">
-              {SIDEBAR_ITEMS.filter(item => item.id === 'overview' || item.id === 'settings' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true)).map(item => {
+              {SIDEBAR_ITEMS.filter(item => {
+                if (item.id === 'overview' || item.id === 'settings') return true
+                if (item.id === 'directors') { const r = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') || 'director' : 'director'; if (!['admin', 'director'].includes(r)) return false }
+                return typeof window !== 'undefined' ? localStorage.getItem(`lumio_nav_${item.id}_visible`) !== 'false' : true
+              }).map(item => {
                 const active = activeDept === item.id
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
@@ -1004,8 +1020,8 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
       setTimeout(() => setPendingAction({ type: 'AWAITING_SLACK_CHANNEL', data: { message: payload?.message || '' } }), 2000)
     } else if (action === 'EXECUTE_SLACK_SEND') {
       if (onVoiceCommand) onVoiceCommand(lastCommand)
-    } else if (action === 'BOOK_MEETING') {
-      if (onVoiceCommand) onVoiceCommand({ ...lastCommand, action: 'OPEN_MODAL', payload: { modal: 'ScheduleDemo' } })
+    } else if (['BOOK_MEETING','SEND_EMAIL','SEND_SLACK','PHONE_CALL','REPORT_SICK','BOOK_HOLIDAY','CLAIM_EXPENSE','NEW_JOINER','TEAM_EVENT','CHASE_INVOICE'].includes(action)) {
+      if (onVoiceCommand) onVoiceCommand(lastCommand)
     } else if (action === 'ADD_TASK') {
       const taskName = payload?.taskName || lastCommand.data?.taskName || 'New task'
       try {
@@ -1068,7 +1084,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
               {voiceCommandsEnabled && (
@@ -1081,7 +1097,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
                   backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
                   border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
                   color: isListening ? '#EF4444' : '#F9FAFB',
-                  animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                  
                 }}>
                 <Mic size={14} strokeWidth={1.75} />
               </button>
@@ -1100,7 +1116,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
               <div key={item.label} onClick={() => onScrollTo?.(item.widget)} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px] cursor-pointer transition-transform hover:scale-105`}>
                 <span className="text-base">{item.icon}</span>
                 {liveCounts.meetings === null && !demoDataActive ? (
-                  <div className="w-6 h-5 rounded animate-pulse my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                  <div className="w-6 h-5 rounded my-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
                 ) : (
                   <span className="text-lg font-black text-white">{item.value}</span>
                 )}
@@ -1128,7 +1144,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
         borderRadius: 999, padding: '8px 20px', zIndex: 50,
         display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
       }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: postBriefingListening ? '#A78BFA' : '#EF4444', animation: 'pulse 1s infinite' }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: postBriefingListening ? '#A78BFA' : '#EF4444' }} />
         {postBriefingListening ? 'Listening... what can I help with?' : 'Listening... say a command'}
       </div>
     )}
@@ -1194,22 +1210,13 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const pos = photoPositions[currentIdx] || { x: 50, y: 50 }
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 240 }}>
-      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-        <div className="flex items-center gap-2"><span className="text-base">🖼️</span><span className="font-bold text-sm" style={{ color: '#F9FAFB' }}>Photo Frame</span></div>
-        <div className="flex items-center gap-2">
-          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸ Pause' : '▶ Play'}</button>}
-          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕ Remove</button>}
-          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
-        </div>
-      </div>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       {photos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 mx-4 mb-4 rounded-xl cursor-pointer" style={{ border: '2px dashed #374151' }} onClick={() => fileInputRef.current?.click()}>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #374151', height: 220 }} onClick={() => fileInputRef.current?.click()}>
           <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
         </div>
       ) : (
-      <div className="flex-1 relative mx-4 mb-2 rounded-xl overflow-hidden" style={{ minHeight: 150, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+      <div className="relative" style={{ height: 220, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
         onMouseEnter={() => setHoveringFrame(true)} onMouseLeave={() => { setHoveringFrame(false); onDragEnd() }}
         onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY) }}
         onMouseMove={e => onDragMove(e.clientX, e.clientY, e.currentTarget)}
@@ -1225,20 +1232,28 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
         <div className="absolute top-2 left-2 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#D1D5DB' }}>{currentIdx + 1} / {photos.length}</div>
         {(pos.x !== 50 || pos.y !== 50) && hoveringFrame && <button onClick={e => { e.stopPropagation(); resetPosition() }} className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded transition-opacity" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}>Reset</button>}
         {!hasEverDragged && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', whiteSpace: 'nowrap' }}>✥ Drag to reposition</div>}
+        {/* Import buttons — compact icon-only overlay bottom-right */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          <button onClick={e => { e.stopPropagation(); setShowCloudModal('google') }} title="Import from Google Photos" style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
+          </button>
+          <button onClick={e => { e.stopPropagation(); setShowCloudModal('icloud') }} title="Import from iCloud" style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <svg width="12" height="8" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
+          </button>
+        </div>
       </div>
       )}
-      {photos.length > 1 && <div className="px-4 pb-3 flex items-center gap-2"><span className="text-xs" style={{ color: '#6B7280' }}>Speed:</span>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.05)', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</div>}
-      <div style={{ padding: '8px 12px', borderTop: '1px solid #1F2937', background: '#0A0B10', borderRadius: '0 0 16px 16px' }}>
-        <p style={{ fontSize: 10, color: '#6B7280', margin: '0 0 6px', textAlign: 'center' }}>Import from</p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setShowCloudModal('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7c-2.76 0-5 2.24-5 5h5V7z" fill="#EA4335"/><path d="M7 12c0 2.76 2.24 5 5 5v-5H7z" fill="#FBBC04"/><path d="M12 17c2.76 0 5-2.24 5-5h-5v5z" fill="#34A853"/><path d="M17 12c0-2.76-2.24-5-5-5v5h5z" fill="#4285F4"/></svg>
-            Google Photos ✦
-          </button>
-          <button onClick={() => setShowCloudModal('icloud')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 8, border: '1px solid #1F2937', background: '#111318', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#F9FAFB' }} onMouseLeave={e => { e.currentTarget.style.background = '#111318'; e.currentTarget.style.color = '#9CA3AF' }}>
-            <svg width="14" height="10" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg>
-            iCloud ✦
-          </button>
+      {/* Compact controls bar */}
+      <div className="flex items-center justify-between px-3 py-2 flex-shrink-0" style={{ borderTop: photos.length > 0 ? '1px solid #1F2937' : 'none' }}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs">🖼️</span>
+          {photos.length > 1 && <>{[3,5,10,30].map(s => <button key={s} onClick={() => setIntervalSecs(s)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: intervalSecs === s ? 'rgba(13,148,136,0.15)' : 'transparent', color: intervalSecs === s ? '#0D9488' : '#6B7280' }}>{s}s</button>)}</>}
+          {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'transparent', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸' : '▶'}</button>}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
       {showCloudModal && (
@@ -1287,7 +1302,7 @@ const ROUNDUP_ITEMS = [
     messages: [
       { id: 'e1', from: 'Tom Wright', avatar: 'TW', subject: 'Invoice overdue — INV-2026-041', preview: 'Hi, just chasing the invoice from last month — can you confirm when this will be settled?', time: '8:14am', urgent: true, read: false },
       { id: 'e2', from: 'Apex Consulting', avatar: 'AC', subject: 'Renewal discussion — contract ends Apr 30', preview: 'We\u2019d like to discuss the terms for our renewal. Can we schedule a call this week?', time: '7:52am', urgent: true, read: false },
-      { id: 'e3', from: 'Stripe', avatar: 'ST', subject: 'Payment confirmed — \u00A34,800 from Oakridge', preview: 'Your payment of \u00A34,800.00 from Oakridge Schools Ltd has been processed successfully.', time: '7:31am', urgent: false, read: false },
+      { id: 'e3', from: 'Payments', avatar: 'PA', subject: 'Payment confirmed — \u00A34,800 from Oakridge', preview: 'Your payment of \u00A34,800.00 from Oakridge Schools Ltd has been processed successfully.', time: '7:31am', urgent: false, read: false },
       { id: 'e4', from: 'Helen Park', avatar: 'HP', subject: 'Re: Lumio Pro demo — follow-up questions', preview: 'Thanks for the demo yesterday. We have a few questions about the safeguarding module...', time: 'Yesterday', urgent: false, read: true },
       { id: 'e5', from: 'Dan Marsh', avatar: 'DM', subject: 'Q2 board pack — action needed', preview: 'Please review the attached slides before Friday\u2019s board meeting and send your comments.', time: 'Yesterday', urgent: false, read: true },
     ]
@@ -1413,7 +1428,8 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loaded, setLoaded] = useState(false)
   const [unreadFilter, setUnreadFilter] = useState<Record<string, boolean>>({})
-  const items = demoDataActive ? ROUNDUP_ITEMS : []
+  const { items: orderedItems, dragProps, reset } = useDraggableList(ROUNDUP_ITEMS, 'lumio_business_overview_order')
+  const items = demoDataActive ? orderedItems : []
 
   function handleToggleRead(sourceKey: string, msgId: string, newIsRead: boolean) {
     setLiveMessages(prev => ({
@@ -1457,6 +1473,29 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoDataActive])
 
+  // 5-minute background refresh for live data only
+  useEffect(() => {
+    if (demoDataActive || !anyConnected) return
+    const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') || '' : ''
+    if (!token) return
+    const interval = setInterval(() => {
+      Promise.all(connectedSources.map(async (src) => {
+        try {
+          const r = await fetch(src.route, { headers: { 'x-workspace-token': token } })
+          if (!r.ok) return { key: src.key, messages: [] as RoundupMessage[] }
+          const d = await r.json()
+          return { key: src.key, messages: src.parse(d) }
+        } catch { return { key: src.key, messages: [] as RoundupMessage[] } }
+      })).then(results => {
+        const msgs: Record<string, RoundupMessage[]> = {}
+        for (const r of results) msgs[r.key] = r.messages
+        setLiveMessages(msgs)
+      })
+    }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoDataActive, anyConnected])
+
   function handleReply(msgId: string) {
     if (replyText[msgId]?.trim()) {
       setReplied(r => [...r, msgId])
@@ -1487,7 +1526,10 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
           <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>🌅 Morning Roundup</h3>
           {totalUnread > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>{totalUnread} unread</span>}
         </div>
-        <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        <div className="flex items-center gap-2">
+          {demoDataActive && <button onClick={reset} style={{ fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset order</button>}
+          <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+        </div>
       </div>
 
       {/* Errors */}
@@ -1638,13 +1680,15 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
         {!anyConnected && !demoDataActive && items.length === 0 && (
           <p className="text-xs text-center py-6" style={{ color: '#6B7280' }}>Connect your tools in Settings to see messages here.</p>
         )}
-        {items.map(item => {
+        {items.map((item, index) => {
           const isOpen = expanded === item.id
+          const dp = demoDataActive ? dragProps(index) : null
           return (
-            <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+            <div key={item.id} {...(dp || {})} className="rounded-xl overflow-hidden" style={{ ...(dp?.style || {}), backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
               {/* Header row */}
               <button onClick={() => setExpanded(isOpen ? null : item.id)} className="w-full flex items-center justify-between p-3 text-left">
                 <div className="flex items-center gap-2.5">
+                  {demoDataActive && <span style={{ color: '#334155', marginRight: 4, fontSize: 14, cursor: 'grab', opacity: 0.4 }}>⠿</span>}
                   <span className="text-base">{item.icon}</span>
                   <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
                   {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
@@ -1658,20 +1702,6 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
               {/* Messages */}
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2">
-                  {demoDataActive && item.id === 'whatsapp' && (
-                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}>
-                      <span className="text-xs" style={{ color: '#25D366' }}>💬 Showing demo data — connect WhatsApp Business to see real messages</span>
-                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)' }}
-                        onClick={() => window.location.href = '/settings'}>Connect →</button>
-                    </div>
-                  )}
-                  {demoDataActive && item.id === 'sms' && (
-                    <div className="mx-0 mb-1 px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                      <span className="text-xs" style={{ color: '#3B82F6' }}>📱 Showing demo data — connect Twilio SMS to see real messages</span>
-                      <button className="text-xs px-2 py-1 rounded-lg ml-2 flex-shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
-                        onClick={() => window.location.href = '/settings'}>Connect →</button>
-                    </div>
-                  )}
                   {item.messages.map(msg => (
                     <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', opacity: msg.read ? 0.7 : 1 }}>
                       {/* Message header */}
@@ -1770,7 +1800,7 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
   const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
   return (
-    <div className="border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+    <div className="sticky top-0 z-50 border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
         {visibleTabs.map(t => (
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
@@ -1870,7 +1900,7 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                         {evt.location ? ` · ${evt.location}` : ''}
                       </p>
                     </div>
-                    {isNow && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />}
+                    {isNow && <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
                   </div>
                   {!isPast && (
                     <div className="px-3 pb-1">
@@ -1916,9 +1946,11 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
               <div key={m.id}>
                 {live && (
                   <div className="mb-3 rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                     <div className="flex-1"><p className="text-sm font-bold" style={{ color: '#4ADE80' }}>{m.title}</p><p className="text-xs" style={{ color: 'rgba(74,222,128,0.6)' }}>Happening now · {m.duration}</p></div>
-                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join →</a>}
+                    <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                    <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                    {m.link && <a href={m.link} className="px-3 py-1.5 text-white text-xs font-bold rounded-lg" style={{ backgroundColor: '#16A34A' }}>Join &rarr;</a>}
                   </div>
                 )}
                 {!live && (
@@ -1926,7 +1958,11 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
                     <div className="text-center flex-shrink-0 w-12"><div className="text-sm font-bold" style={{ color: '#E5E7EB' }}>{m.time}</div><div className="text-xs" style={{ color: '#6B7280' }}>{m.duration}</div></div>
                     <span className="text-base flex-shrink-0">{{ call: '📞', video: '📹', internal: '💬' }[m.type]}</span>
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: m.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: m.status === 'done' ? 'line-through' : 'none' }}>{m.title}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{m.attendees.join(', ')} · {m.location}</p></div>
-                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join</a>}
+                    {m.status !== 'done' && <>
+                      <button onClick={() => setMeetingToast(`Forwarded: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-all flex-shrink-0">Forward</button>
+                      <button onClick={() => setMeetingToast(`Declined: ${m.title}`)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/30 transition-all flex-shrink-0">Decline</button>
+                    </>}
+                    {m.link && m.status !== 'done' && <a href={m.link} className="px-2 py-1 text-xs rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>Join &rarr;</a>}
                   </div>
                 )}
               </div>
@@ -1948,13 +1984,26 @@ function MeetingsToday({ demoDataActive = false }: { demoDataActive?: boolean })
 // ─── Quick Actions Bar ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: ['gmail', 'outlook'], integrationLabel: 'Gmail or Outlook' },
-  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: ['slack'], integrationLabel: 'Slack' },
+  { label: 'Send Email', tooltip: 'Open the email composer', icon: Mail, integrations: null, integrationLabel: '' },
+  { label: 'Send Slack', tooltip: 'Send a message on Slack', icon: MessageSquare, integrations: null, integrationLabel: '' },
   { label: 'Phone Call', tooltip: 'Log a phone call', icon: Phone, integrations: null, integrationLabel: '' },
-  { label: 'Book Meeting', tooltip: 'Schedule a meeting or team event', icon: Calendar, integrations: ['gcal', 'outlook_cal'], integrationLabel: 'Google Calendar or Outlook Calendar' },
-  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: ['xero', 'quickbooks'], integrationLabel: 'Xero or QuickBooks' },
-  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
-  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: ['bamboohr', 'sage_hr'], integrationLabel: 'BambooHR or Sage HR' },
+  { label: 'Book Meeting', tooltip: 'Schedule a meeting or team event', icon: Calendar, integrations: null, integrationLabel: '' },
+  { label: 'Claim Expenses', tooltip: 'Submit an expense claim', icon: Receipt, integrations: null, integrationLabel: '' },
+  { label: 'Book Holiday', tooltip: 'Request annual leave', icon: Calendar, integrations: null, integrationLabel: '' },
+  { label: 'Report Sickness', tooltip: 'Report an absence', icon: AlertCircle, integrations: null, integrationLabel: '' },
+  { label: 'Submit Timesheet', tooltip: 'Log your weekly hours', icon: FileText, integrations: null, integrationLabel: '' },
+  { label: 'Log Remote Day', tooltip: 'Log a remote working day', icon: Home, integrations: null, integrationLabel: '' },
+  { label: 'IT Support', tooltip: 'Raise an IT support ticket', icon: Laptop, integrations: null, integrationLabel: '' },
+  { label: 'Request Sign-off', tooltip: 'Request document sign-off', icon: ClipboardCheck, integrations: null, integrationLabel: '' },
+  { label: 'Book Training', tooltip: 'Request a training course', icon: GraduationCap, integrations: null, integrationLabel: '' },
+  { label: 'Request 1-1', tooltip: 'Request a 1-1 meeting', icon: Handshake, integrations: null, integrationLabel: '' },
+  { label: 'Raise Issue', tooltip: 'Raise an issue or concern', icon: AlertCircle, integrations: null, integrationLabel: '' },
+  { label: 'Post Announcement', tooltip: 'Post a company announcement', icon: Megaphone, integrations: null, integrationLabel: '' },
+  { label: 'Onboard Starter', tooltip: 'Start new joiner onboarding', icon: UserPlus, integrations: null, integrationLabel: '' },
+  { label: 'Purchase Request', tooltip: 'Submit a purchase request', icon: ShoppingCart, integrations: null, integrationLabel: '' },
+  { label: 'Request Access', tooltip: 'Request system access', icon: Key, integrations: null, integrationLabel: '' },
+  { label: 'Log Overtime', tooltip: 'Log overtime hours', icon: Timer, integrations: null, integrationLabel: '' },
+  { label: 'Run Report', tooltip: 'Generate a report', icon: BarChart3, integrations: null, integrationLabel: '' },
 ]
 
 function isIntegrationConnected(keys: string[] | null): boolean {
@@ -1985,37 +2034,26 @@ function QuickActionsBar({ onAction, onGoSettings }: { onAction: (label: string)
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-        <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-        {visibleActions.map(a => {
-          const connected = isIntegrationConnected(a.integrations)
-          return (
-            <div key={a.label} className="relative group shrink-0">
-              <button onClick={() => handleClick(a)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-                <a.icon size={12} />{a.label}
-              </button>
-              <div className="pointer-events-none absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ bottom: '100%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 9999 }}>
-                <div className="px-2.5 py-1.5 rounded-lg text-xs w-52 text-center" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>
-                  {connected ? a.tooltip : 'Connect your tools in Settings to use this feature'}
+      <div className="sticky top-[44px] z-40 px-4 py-2.5" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="text-xs font-semibold mb-1.5" style={{ color: '#4B5563' }}>Quick actions</span>
+          {Array.from({ length: Math.ceil(visibleActions.length / 10) }, (_, ri) => (
+            <div key={ri} style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, marginBottom: ri < Math.ceil(visibleActions.length / 10) - 1 ? 6 : 0, overflowX: 'auto' }} className="scrollbar-hide">
+              {visibleActions.slice(ri * 10, ri * 10 + 10).map(a => (
+                <div key={a.label} className="relative group shrink-0">
+                  <button onClick={() => handleClick(a)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90 whitespace-nowrap" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                    <a.icon size={11} />{a.label}
+                  </button>
+                  <div className="pointer-events-none absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ bottom: '100%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 9999 }}>
+                    <div className="px-2.5 py-1.5 rounded-lg text-xs w-52 text-center" style={{ backgroundColor: '#1A1D27', color: '#D1D5DB', border: '1px solid #374151' }}>{a.tooltip}</div>
+                    <div style={{ width: 0, height: 0, margin: '0 auto', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #374151' }} />
+                  </div>
                 </div>
-                <div style={{ width: 0, height: 0, margin: '0 auto', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #374151' }} />
-              </div>
+              ))}
             </div>
-          )
-        })}
-      </div>
-      {/* Integration toast */}
-      {toast && (
-        <div className="fixed z-[100] flex items-center gap-3 shadow-2xl" style={{ bottom: 32, left: '50%', transform: 'translateX(-50%)', backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 12, minWidth: 340, maxWidth: 480, padding: '14px 20px' }}>
-          <p style={{ color: '#9CA3AF', fontSize: 14 }}>
-            Connect <span style={{ color: '#F9FAFB', fontWeight: 700 }}>{toast.integration}</span> in Settings to use {toast.label}
-          </p>
-          <button onClick={() => { setToast(null); onGoSettings() }} className="shrink-0 whitespace-nowrap" style={{ fontSize: 14, fontWeight: 700, color: '#A78BFA', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-            Go to Settings
-          </button>
-          <button onClick={() => setToast(null)} style={{ color: '#4B5563', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
+          ))}
         </div>
-      )}
+      </div>
     </>
   )
 }
@@ -2202,17 +2240,26 @@ function BriefingSettings() {
 // ─── Voice Selector ─────────────────────────────────────────────────────────
 
 const VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', desc: 'Warm & clear — your daily motivator', sample: 'Good morning. Let\'s make today count.' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', desc: 'Calm & deep — reassuring and steady', sample: 'Good morning. Everything is under control.' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', desc: 'Bright & energetic — upbeat and clear', sample: 'Good morning. Your enemies won\'t know what\'s coming.' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Mature & reassuring \u2014 confident and clear', sample: 'Good morning. Let\'s make today count.', gender: 'Female', accent: 'American' },
+  { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Bella', desc: 'Professional & warm \u2014 bright and engaging', sample: 'Good morning. Your day is looking great.', gender: 'Female', accent: 'American' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', desc: 'Dominant & firm \u2014 authoritative and commanding', sample: 'Good morning. Here\'s what matters today.', gender: 'Male', accent: 'American' },
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', desc: 'Deep & comforting \u2014 resonant and steady', sample: 'Good morning. Everything is under control.', gender: 'Male', accent: 'American' },
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'British & captivating \u2014 warm storyteller', sample: 'Good morning. Let me walk you through your day.', gender: 'Male', accent: 'British' },
+  { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice', desc: 'Clear & engaging \u2014 British educator', sample: 'Good morning. Here\'s your briefing for today.', gender: 'Female', accent: 'British' },
+  { id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda', desc: 'Knowledgeable & professional \u2014 polished and precise', sample: 'Good morning. Your priorities are ready.', gender: 'Female', accent: 'American' },
+  { id: 'cjVigY5qzO86Huf0OWal', name: 'Eric', desc: 'Smooth & trustworthy \u2014 calm and reliable', sample: 'Good morning. Here\'s your morning roundup.', gender: 'Male', accent: 'American' },
+  { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', desc: 'Steady broadcaster \u2014 British and professional', sample: 'Good morning. The headlines from your dashboard.', gender: 'Male', accent: 'British' },
+  { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', desc: 'Playful & bright \u2014 warm and approachable', sample: 'Good morning. Let\'s see what today brings.', gender: 'Female', accent: 'American' },
 ]
 
 function VoiceSelector() {
-  const [activeVoice, setActiveVoice] = useState('21m00Tcm4TlvDq8ikWAM')
+  const [activeVoice, setActiveVoice] = useState('EXAVITQu4vr4xnSDxMaL')
   const [previewing, setPreviewing] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [ttsOn, setTtsOn] = useState(true)
   const [vcOn, setVcOn] = useState(true)
+  const [voiceFilter, setVoiceFilter] = useState('all')
 
   useEffect(() => {
     const v = localStorage.getItem('lumio_tts_voice'); if (v) setActiveVoice(v)
@@ -2226,40 +2273,36 @@ function VoiceSelector() {
   }
 
   async function preview(voice: typeof VOICES[0]) {
-    // Stop any current preview
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
-    if (previewing === voice.id) { setPreviewing(null); return }
+    if (previewing === voice.id) { setPreviewing(null); setPreviewLoading(null); return }
 
     setPreviewing(voice.id)
+    setPreviewLoading(voice.id)
     try {
-      console.log('[TTS Preview] calling with voice_id:', voice.id, 'text:', voice.sample)
-      const wsToken = localStorage.getItem('workspace_session_token') || ''
-      const demoToken = localStorage.getItem('demo_session_token') || ''
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (wsToken) headers['x-workspace-token'] = wsToken
-      if (demoToken) headers['x-demo-token'] = demoToken
-
       const res = await fetch('/api/tts', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ text: voice.sample, voice_id: voice.id }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: voice.sample, voice_id: voice.id, preview: true }),
       })
-      console.log('[TTS Preview] response status:', res.status)
-      if (!res.ok) throw new Error('TTS failed')
+      if (!res.ok) { const err = await res.text(); console.error(`[Voice Preview] Failed for ${voice.name}:`, res.status, err); throw new Error(`TTS failed: ${res.status}`) }
 
       const buf = await res.arrayBuffer()
       const blob = new Blob([buf], { type: 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => { setPreviewing(null); audioRef.current = null; URL.revokeObjectURL(url) }
-      audio.onerror = (e) => { console.error('[TTS Preview] audio error:', e); setPreviewing(null); URL.revokeObjectURL(url) }
+      audio.onended = () => { setPreviewing(null); setPreviewLoading(null); audioRef.current = null; URL.revokeObjectURL(url) }
+      audio.onerror = (e) => { console.error('[Voice Preview] audio error:', e); setPreviewing(null); setPreviewLoading(null); URL.revokeObjectURL(url) }
+      setPreviewLoading(null)
       await audio.play()
     } catch (err) {
-      console.error('[TTS Preview] error:', err)
+      console.error('[Voice Preview] error:', err)
       setPreviewing(null)
+      setPreviewLoading(null)
     }
   }
+
+  const filteredVoices = voiceFilter === 'all' ? VOICES : VOICES.filter(v => v.gender === voiceFilter || v.accent === voiceFilter)
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -2296,49 +2339,35 @@ function VoiceSelector() {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
-        {VOICES.map(voice => {
+      {/* Voice filter chips */}
+      <div className="flex gap-2 px-5 pt-4 flex-wrap">
+        {['all', 'Male', 'Female', 'British', 'American'].map(f => (
+          <button key={f} onClick={() => setVoiceFilter(f)} className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${voiceFilter === f ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+            {f === 'all' ? `All (${VOICES.length})` : f}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
+        {filteredVoices.map(voice => {
           const isActive = activeVoice === voice.id
           const isPreviewing = previewing === voice.id
+          const isLoading = previewLoading === voice.id
           return (
-            <div
-              key={voice.id}
-              className="rounded-xl p-4 transition-colors"
-              style={{
-                backgroundColor: '#0A0B10',
-                border: isActive ? '1px solid #0D9488' : '1px solid #1F2937',
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
+            <div key={voice.id} className="rounded-xl p-4 transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #0D9488' : '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-1">
                 <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
-                {isActive && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>
-                    ✓ Active
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.gender}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{voice.accent}</span>
+                  {isActive && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{'\u2713'}</span>}
+                </div>
               </div>
-              <p className="text-xs mb-4 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
+              <p className="text-xs mb-3 leading-relaxed" style={{ color: '#6B7280' }}>{voice.desc}</p>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => preview(voice)}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors"
-                  style={{
-                    backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)',
-                    color: isPreviewing ? '#A78BFA' : '#9CA3AF',
-                    border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937',
-                  }}
-                >
-                  {isPreviewing ? '■ Stop' : '▶ Preview'}
+                <button onClick={() => preview(voice)} disabled={isLoading} className="flex-1 py-2 rounded-lg text-xs font-semibold transition-colors" style={{ backgroundColor: isPreviewing ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', color: isPreviewing ? '#A78BFA' : '#9CA3AF', border: isPreviewing ? '1px solid rgba(124,58,237,0.3)' : '1px solid #1F2937', opacity: isLoading ? 0.5 : 1 }}>
+                  {isLoading ? '\u21BB Loading...' : isPreviewing ? '\u25A0 Stop' : '\u25B6 Preview'}
                 </button>
-                {!isActive && (
-                  <button
-                    onClick={() => selectVoice(voice.id)}
-                    className="flex-1 py-2 rounded-lg text-xs font-semibold"
-                    style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
-                  >
-                    Select
-                  </button>
-                )}
+                {!isActive && <button onClick={() => selectVoice(voice.id)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>Select</button>}
               </div>
             </div>
           )
@@ -2497,6 +2526,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
   const [companyNameDraft, setCompanyNameDraft] = useState(company)
   const [savingName, setSavingName] = useState(false)
   const [logoUrl, setLogoUrl] = useState('')
+  const [logoKey, setLogoKey] = useState(Date.now())
 
   // Team invite
   const [inviteEmail, setInviteEmail] = useState('')
@@ -2595,6 +2625,10 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_staff_profiles')
     localStorage.removeItem('lumio_demo_active')
     localStorage.removeItem('lumio-photo-frame')
+    // Clear task/win/don't-miss persistence
+    ;['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','lumio_dismissed_notifs'].forEach(k => localStorage.removeItem(k))
+    // Clear all lumio_tasks_done_* keys
+    Object.keys(localStorage).filter(k => k.startsWith('lumio_tasks_done')).forEach(k => localStorage.removeItem(k))
     // Restore identity fields
     if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
     if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
@@ -2610,12 +2644,16 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     Object.keys(localStorage)
       .filter(k => k.startsWith('lumio_crm_'))
       .forEach(k => localStorage.removeItem(k))
+    // Clear QW wins cache
+    localStorage.removeItem('qw_wins_cache')
     try { sessionStorage.removeItem('lumio_crm_cache') } catch { /* ignore */ }
     // Prevent onboarding/welcome overlays from re-triggering after demo clear
     localStorage.setItem('lumio_onboarding_shown', 'true')
     localStorage.setItem(`lumio_onboarding_done_${localStorage.getItem('lumio_workspace_slug') || ''}`, 'true')
     onDemoToggle(false)
     setClearing(false)
+    // Reload after brief delay so all state resets from clean localStorage
+    setTimeout(() => window.location.reload(), 300)
   }
 
   async function handleLoadDemo() {
@@ -2624,7 +2662,8 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     const savedLogo = localStorage.getItem('lumio_company_logo')
     const savedWsLogo = localStorage.getItem('workspace_company_logo')
     const savedPhoto = localStorage.getItem('lumio_user_photo')
-    await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+    const demoRes = await fetch('/api/onboarding/load-demo', { method: 'POST', headers: sessionToken ? { 'x-workspace-token': sessionToken } : {} }).catch(() => null)
+    if (!demoRes?.ok) { setLoading(false); return }
     localStorage.setItem('lumio_demo_active', 'true')
     localStorage.setItem('lumio-photo-frame', JSON.stringify([
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
@@ -2782,6 +2821,9 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     if (!file) return
     const blobUrl = URL.createObjectURL(file)
     setLogoUrl(blobUrl)
+    setLogoKey(Date.now())
+    // Sync sidebar + parent immediately via event
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: blobUrl } }))
     const token = localStorage.getItem('workspace_session_token')
     if (!token) return
     const fd = new FormData()
@@ -2790,12 +2832,30 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
       const res = await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
       const data = await res.json()
       if (data.logo_url) {
-        setLogoUrl(data.logo_url)
-        localStorage.setItem('workspace_company_logo', data.logo_url)
-        localStorage.setItem('lumio_company_logo', data.logo_url)
+        const cacheBustedUrl = `${data.logo_url}?t=${Date.now()}`
+        setLogoUrl(cacheBustedUrl)
+        setLogoKey(Date.now())
+        localStorage.setItem('workspace_company_logo', cacheBustedUrl)
+        localStorage.setItem('lumio_company_logo', cacheBustedUrl)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: cacheBustedUrl } }))
       }
       URL.revokeObjectURL(blobUrl)
     } catch (err) { console.error('Logo upload failed:', err) }
+  }
+
+  async function handleLogoRemove() {
+    setLogoUrl('')
+    setLogoKey(Date.now())
+    localStorage.removeItem('workspace_company_logo')
+    localStorage.removeItem('lumio_company_logo')
+    // Sync sidebar + parent immediately
+    window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: '' } }))
+    window.dispatchEvent(new CustomEvent('lumio-logo-cleared'))
+    const token = localStorage.getItem('workspace_session_token')
+    if (!token) return
+    try {
+      await fetch('/api/workspace/logo', { method: 'DELETE', headers: { 'x-workspace-token': token } })
+    } catch (err) { console.error('Logo remove failed:', err) }
   }
 
   async function handleInvite() {
@@ -2931,14 +2991,29 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
             )}
           </div>
           {/* Company logo */}
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Company logo</span>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div>
+              <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Company logo</div>
+              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Change it here.</div>
+            </div>
             <div className="flex items-center gap-3">
-              {logoUrl && <img src={logoUrl} alt="" className="rounded-lg" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
-              <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-              <button onClick={() => logoFileRef.current?.click()} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(108,63,197,0.15)', color: '#A78BFA', border: '1px solid rgba(108,63,197,0.3)' }}>
-                {logoUrl ? 'Change' : 'Upload'}
-              </button>
+              {logoUrl ? (
+                <>
+                  <img key={logoKey} src={logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151' }} />
+                  <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
+                    Change
+                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  </label>
+                  <button onClick={handleLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#7C3AED', color: '#fff' }}>
+                  Upload logo
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+              )}
             </div>
           </div>
           {/* Read-only fields */}
@@ -2975,18 +3050,163 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
           </div>
           <div className="px-5 py-4">
             <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE TEAM MEMBER</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} onKeyDown={e => e.key === 'Enter' && handleInvite()} />
-              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="staff">Staff</option>
-              </select>
-              <button onClick={handleInvite} disabled={inviteSending || !inviteEmail} className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: inviteSent ? '#22C55E' : '#0D9488', color: '#fff', opacity: !inviteEmail ? 0.5 : 1 }}>
-                {inviteSending ? 'Sending...' : inviteSent ? 'Sent!' : 'Send Invite'}
-              </button>
+            <div className="mb-3">
+              <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} onKeyDown={e => e.key === 'Enter' && handleInvite()} />
             </div>
+            <div className="space-y-2 mb-4">
+              {[
+                { value: 'director', label: 'Director / SLT', description: 'All departments including Finance, HR sensitive data, Directors Suite', color: '#8B5CF6' },
+                { value: 'admin', label: 'Admin', description: 'Full access including user management and all financial data', color: '#EF4444' },
+                { value: 'manager', label: 'Manager', description: 'All departments except Finance figures and Directors Suite', color: '#3B82F6' },
+                { value: 'staff', label: 'Standard User', description: 'Assigned department only, no sensitive financial or HR data', color: '#10B981' },
+              ].map(role => (
+                <div key={role.value}
+                  onClick={() => setInviteRole(role.value)}
+                  className="cursor-pointer transition-all"
+                  style={{ padding: '10px 12px', borderRadius: 12, border: inviteRole === role.value ? '1px solid #7C3AED' : '1px solid #1F2937', backgroundColor: inviteRole === role.value ? 'rgba(124,58,237,0.1)' : 'transparent' }}>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: role.color }} />
+                    <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{role.label}</span>
+                    {inviteRole === role.value && <span className="text-[10px] ml-auto" style={{ color: '#A78BFA' }}>Selected ✓</span>}
+                  </div>
+                  <p className="text-xs ml-4" style={{ color: '#6B7280' }}>{role.description}</p>
+                </div>
+              ))}
+            </div>
+            {/* Permission matrix summary */}
+            <div className="mb-4" style={{ backgroundColor: '#07080F', borderRadius: 12, padding: 12 }}>
+              <div className="text-xs mb-2 font-medium" style={{ color: '#6B7280' }}>What this role can see:</div>
+              <div className="space-y-1">
+                {[
+                  { label: 'All standard departments', roles: ['director','admin','manager','staff'] },
+                  { label: 'Sales & CRM pipeline data', roles: ['director','admin','manager'] },
+                  { label: 'Financial figures (Accounts)', roles: ['director','admin'] },
+                  { label: 'HR sensitive data (salary, disciplinary)', roles: ['director','admin'] },
+                  { label: 'Directors Suite', roles: ['director'] },
+                  { label: 'User management (Settings)', roles: ['director','admin'] },
+                ].map(perm => (
+                  <div key={perm.label} className="flex items-center justify-between text-xs">
+                    <span style={{ color: '#9CA3AF' }}>{perm.label}</span>
+                    <span style={{ color: perm.roles.includes(inviteRole) ? '#0D9488' : '#374151' }}>
+                      {perm.roles.includes(inviteRole) ? '✅' : '🔒'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={handleInvite} disabled={inviteSending || !inviteEmail} className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: inviteSent ? '#22C55E' : '#0D9488', color: '#fff', opacity: !inviteEmail ? 0.5 : 1 }}>
+              {inviteSending ? 'Sending...' : inviteSent ? 'Sent!' : 'Send Invite'}
+            </button>
           </div>
+        </div>
+      </div>
+
+      {/* ── Voice & Speech Settings ────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice & Speech</p>
+        </div>
+        <div className="px-5 py-4">
+          <VoiceSettings commands={[
+            { phrase: 'Show my meetings today', description: 'Lists all meetings scheduled for today' },
+            { phrase: "What's urgent", description: 'Pulls up all urgent items across departments' },
+            { phrase: 'Pipeline summary', description: 'Current sales pipeline value and stage breakdown' },
+            { phrase: 'Team availability', description: 'Shows team status and who is available' },
+            { phrase: 'How many leads this week', description: 'New leads generated this week' },
+            { phrase: 'Show overdue tasks', description: 'Lists all tasks past their due date' },
+            { phrase: 'Revenue this month', description: 'Current month revenue vs target' },
+            { phrase: 'Who is off today', description: 'Staff on leave or absent today' },
+            { phrase: 'Show my emails', description: 'Opens email inbox summary' },
+            { phrase: 'Any urgent emails', description: 'Filters urgent flagged emails' },
+            { phrase: 'What tasks are due today', description: 'Tasks with today as deadline' },
+            { phrase: 'Show the sales board', description: 'Opens CRM pipeline board view' },
+            { phrase: 'Latest customer feedback', description: 'Most recent NPS or feedback entries' },
+            { phrase: 'How is the team performing', description: 'Team KPI and performance summary' },
+            { phrase: 'Show open support tickets', description: 'Lists unresolved support tickets' },
+            { phrase: 'Who is my top performer', description: 'Highest rated team member this month' },
+            { phrase: 'Upcoming contract renewals', description: 'Contracts due for renewal in 30 days' },
+            { phrase: 'Show cashflow forecast', description: 'Rolling 90-day cashflow projection' },
+            { phrase: 'Any compliance alerts', description: 'Outstanding compliance or regulatory items' },
+            { phrase: 'Show the org chart', description: 'Opens company org chart view' },
+            { phrase: 'What deals closed this week', description: 'Won deals in the current week' },
+            { phrase: 'Show marketing performance', description: 'Campaign metrics and conversion rates' },
+            { phrase: 'How many open deals', description: 'Total count of active pipeline deals' },
+            { phrase: 'Show HR updates', description: 'Latest HR alerts and staff updates' },
+            { phrase: 'Any new leads today', description: 'Leads added in the last 24 hours' },
+            { phrase: 'Show customer churn rate', description: 'Current monthly churn percentage' },
+            { phrase: 'What is our MRR', description: 'Current monthly recurring revenue figure' },
+            { phrase: 'Show payroll summary', description: 'Current payroll cost breakdown' },
+            { phrase: 'Any staff on probation', description: 'Staff currently in probation period' },
+            { phrase: 'Show IT tickets', description: 'Open IT support and infrastructure tickets' },
+            { phrase: 'What projects are at risk', description: 'Projects flagged as behind or at risk' },
+            { phrase: 'Show competitor activity', description: 'Latest market intel and competitor news' },
+            { phrase: 'Any invoices overdue', description: 'Outstanding invoices past payment date' },
+            { phrase: 'Show my Slack messages', description: 'Unread Slack messages summary' },
+            { phrase: 'What is our win rate', description: 'Sales win rate for current quarter' },
+            { phrase: 'Show onboarding status', description: 'New starter onboarding progress' },
+            { phrase: 'Any website alerts', description: 'Website uptime and performance alerts' },
+            { phrase: 'Show social media summary', description: 'Latest social engagement metrics' },
+            { phrase: 'What is our NPS score', description: 'Current net promoter score' },
+            { phrase: 'Show expense claims', description: 'Pending expense claims awaiting approval' },
+            { phrase: 'Any legal updates', description: 'Outstanding legal or contract items' },
+            { phrase: 'Show board reports', description: 'Latest board pack and reports' },
+            { phrase: 'What deals are stalling', description: 'Deals with no activity in 14 days' },
+            { phrase: 'Show recruitment pipeline', description: 'Active job roles and candidate pipeline' },
+            { phrase: 'Any training due', description: 'Staff training overdue or coming up' },
+            { phrase: 'Show customer health scores', description: 'Account health ratings across customer base' },
+            { phrase: 'What is our burn rate', description: 'Current monthly spend rate' },
+            { phrase: 'Show the roadmap', description: 'Product or project roadmap overview' },
+            { phrase: 'Any SLA breaches', description: 'Support tickets that have breached SLA' },
+            { phrase: 'Show partnership updates', description: 'Latest partner activity and news' },
+            { phrase: 'What is our conversion rate', description: 'Lead to customer conversion percentage' },
+            { phrase: 'Show accounts receivable', description: 'Outstanding payments owed to us' },
+            { phrase: 'Any security alerts', description: 'IT security flags or incidents' },
+            { phrase: 'Show team workload', description: 'Task distribution across team members' },
+            { phrase: 'What meetings do I have tomorrow', description: "Tomorrow's calendar summary" },
+            { phrase: 'Show customer success updates', description: 'Latest CS touchpoints and health checks' },
+            { phrase: 'Any product feedback', description: 'Recent product feedback and feature requests' },
+            { phrase: 'Show weekly report', description: "This week's performance summary report" },
+            { phrase: 'What is our headcount', description: 'Current total employee count' },
+            { phrase: 'Show the budget tracker', description: 'Current spend vs budget by department' },
+            { phrase: 'Any approval requests', description: 'Items waiting for your approval' },
+            { phrase: 'Show supplier updates', description: 'Latest supplier and vendor communications' },
+            { phrase: 'What campaigns are live', description: 'Currently active marketing campaigns' },
+            { phrase: 'Show email open rates', description: 'Latest email marketing performance stats' },
+            { phrase: 'Any customer escalations', description: 'Escalated support or account issues' },
+            { phrase: 'Show the P&L', description: 'Profit and loss summary for current period' },
+            { phrase: 'What are my priorities today', description: 'AI-suggested top priorities for today' },
+            { phrase: 'Show team sentiment', description: 'Staff morale and engagement indicators' },
+            { phrase: 'Any overdue invoices from us', description: 'Invoices we owe that are past due' },
+            { phrase: 'Show growth metrics', description: 'Month on month growth across key metrics' },
+            { phrase: 'What is our CAC', description: 'Current customer acquisition cost' },
+            { phrase: 'Show the leaderboard', description: 'Top performing staff or departments' },
+            { phrase: 'Any warranty claims', description: 'Outstanding warranty or returns claims' },
+            { phrase: 'Show strategic goals', description: 'Progress against company OKRs and goals' },
+            { phrase: 'What integrations are connected', description: 'Active tool integrations and status' },
+            { phrase: 'Show my calendar this week', description: 'Full week calendar overview' },
+            { phrase: 'Any deals closing this month', description: 'Deals with close date in current month' },
+            { phrase: 'Show department updates', description: 'Latest activity across all departments' },
+            { phrase: 'What is our ARR', description: 'Annual recurring revenue figure' },
+            { phrase: 'Show the risk register', description: 'Business risks and mitigation status' },
+            { phrase: 'Any media mentions', description: 'Recent press and media coverage' },
+            { phrase: 'Show investor updates', description: 'Latest investor communications and deck' },
+            { phrase: 'What is our LTV', description: 'Average customer lifetime value' },
+            { phrase: 'Show the staff directory', description: 'Full team contact directory' },
+            { phrase: 'Any contracts expiring', description: 'Supplier or customer contracts ending soon' },
+            { phrase: 'Show product usage stats', description: 'Feature adoption and usage metrics' },
+            { phrase: 'What is our gross margin', description: 'Current gross margin percentage' },
+            { phrase: 'Show referral activity', description: 'Referral programme performance' },
+            { phrase: 'Any outstanding quotes', description: 'Quotes sent but not yet accepted' },
+            { phrase: 'Show the audit log', description: 'Recent system activity and changes' },
+            { phrase: 'What is our average deal size', description: 'Mean deal value for current period' },
+            { phrase: 'Show office utilisation', description: 'Current office space usage stats' },
+            { phrase: 'Any incidents today', description: 'Operational incidents or outages' },
+            { phrase: 'Show the satisfaction scores', description: 'Latest CSAT across support and sales' },
+            { phrase: 'What is our sales velocity', description: 'Current deal progression speed' },
+            { phrase: 'Show pending approvals', description: 'All items awaiting sign-off' },
+            { phrase: 'Any new reviews', description: 'Latest online reviews and ratings' },
+            { phrase: 'Show the forecast', description: 'Revenue forecast for current quarter' },
+          ]} />
         </div>
       </div>
 
@@ -3502,13 +3722,14 @@ function SnapshotWidgets() {
 
 // ─── Overview View ───────────────────────────────────────────────────────────
 
-function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
+function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp, dismissedWins = new Set(), onDismissWin }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string; dismissedWins?: Set<string>; onDismissWin?: (id: string) => void }) {
   const [showExpense, setShowExpense] = useState(false)
   const [showHoliday, setShowHoliday] = useState(false)
   const [showSickness, setShowSickness] = useState(false)
   const [showPhoneCall, setShowPhoneCall] = useState(false)
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [showMeetingBook, setShowMeetingBook] = useState(false)
+  const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [callVia, setCallVia] = useState('Phone')
   const [, forceUpdate] = useState(0)
@@ -3531,13 +3752,42 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     'Claim Expenses': () => setShowExpense(true),
     'Book Holiday': () => setShowHoliday(true),
     'Report Sickness': () => setShowSickness(true),
+    'Submit Timesheet': () => setActiveQuickAction('Submit Timesheet'),
+    'Log Remote Day': () => setActiveQuickAction('Log Remote Day'),
+    'IT Support': () => setActiveQuickAction('IT Support'),
+    'Request Sign-off': () => setActiveQuickAction('Request Sign-off'),
+    'Book Training': () => setActiveQuickAction('Book Training'),
+    'Request 1-1': () => setActiveQuickAction('Request 1-1'),
+    'Raise Issue': () => setActiveQuickAction('Raise Issue'),
+    'Post Announcement': () => setActiveQuickAction('Post Announcement'),
+    'Onboard Starter': () => setActiveQuickAction('Onboard Starter'),
+    'Purchase Request': () => setActiveQuickAction('Purchase Request'),
+    'Request Access': () => setActiveQuickAction('Request Access'),
+    'Log Overtime': () => setActiveQuickAction('Log Overtime'),
+    'Run Report': () => setActiveQuickAction('Run Report'),
+    'Send Slack': () => setActiveQuickAction('Send Slack'),
   }
 
+  // Voice action → quick action modal mapping
+  const VOICE_TO_MODAL: Record<string, string> = {
+    BOOK_MEETING: 'Book Meeting', SEND_EMAIL: 'Send Email', SEND_SLACK: 'Send Slack',
+    PHONE_CALL: 'Phone Call', CLAIM_EXPENSE: 'Claim Expenses', BOOK_HOLIDAY: 'Book Holiday',
+    REPORT_SICK: 'Report Sickness', NEW_JOINER: 'Onboard Starter',
+    CHASE_INVOICE: 'Claim Expenses', TEAM_EVENT: 'Team Events',
+  }
   function handleVoiceCommand(cmd: VoiceCommandResult) {
+    // Map voice actions directly to quick action modals
+    const modalLabel = VOICE_TO_MODAL[cmd.action]
+    if (modalLabel && quickActionModals[modalLabel]) { quickActionModals[modalLabel](); return }
     if (cmd.action === 'SWITCH_TAB' && cmd.payload?.tab) setTab(cmd.payload.tab)
-    else if (cmd.action === 'OPEN_MODAL') onAction(`Opening ${cmd.payload?.modal || 'form'}...`)
+    else if (cmd.action === 'OPEN_MODAL') {
+      const modalMap: Record<string, string> = { deal: 'New Deal', call: 'Phone Call', proposal: 'Send Proposal', demo: 'Book Meeting', invoice: 'Claim Expenses', client: 'Onboard Starter', campaign: 'Post Announcement', project: 'Run Report' }
+      const label = modalMap[cmd.payload?.modal || '']
+      if (label && quickActionModals[label]) { quickActionModals[label](); return }
+      onAction(`Opening ${cmd.payload?.modal || 'form'}...`)
+    }
     else if (cmd.action === 'EXPAND_ROUNDUP') onAction(`Opening ${cmd.payload?.section || 'section'}...`)
-    else if (cmd.action === 'EMAIL_TEAM') onAction('Opening team email...')
+    else if (cmd.action === 'EMAIL_TEAM') { if (quickActionModals['Send Email']) quickActionModals['Send Email'](); else onAction('Opening team email...') }
     else if (cmd.action === 'EXECUTE_SLACK_SEND') onAction(`Slack message sent to #${cmd.payload?.channel || 'general'} \u2713`)
   }
 
@@ -3625,6 +3875,29 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
             <div className="lg:col-span-1 flex flex-col gap-4">
               <PhotoFrame demoDataActive={demoDataActive} />
               <MorningAIPanel demoDataActive={demoDataActive} />
+              {demoDataActive && (
+                <div className="rounded-xl p-4" style={{ backgroundColor: '#0d0f1a', border: '1px solid rgba(108,63,197,0.3)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span>{'\u2728'}</span>
+                    <span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { n: 1, text: 'Pipeline up 12% \u2014 strongest quarter since Q4 last year', color: '#0D9488' },
+                      { n: 2, text: 'Greenfield Group proposal due today \u2014 highest value deal in pipeline', color: '#EF4444' },
+                      { n: 3, text: '3 trials expiring this week \u2014 \u00A38,400 combined value at risk', color: '#F59E0B' },
+                      { n: 4, text: 'Win rate 23% \u2014 below industry average of 27%, needs attention', color: '#F59E0B' },
+                      { n: 5, text: 'Apex Learning partnership performing above target \u2014 68% win rate', color: '#0D9488' },
+                    ].map((h, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-xs font-bold w-4 flex-shrink-0 mt-0.5" style={{ color: h.color }}>{h.n}</span>
+                        <span className="text-xs" style={{ color: '#D1D5DB' }}>{h.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -3713,7 +3986,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
           ) : null}
         </div>
       ) : tab === 'quick-wins' ? (
-        <QuickWins />
+        <QuickWins dismissedWins={dismissedWins} onDismiss={onDismissWin} />
       ) : tab === 'tasks' ? (
         <DailyTasks />
       ) : tab === 'insights' ? (
@@ -3726,6 +3999,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         <TabPlaceholder tab={tab} />
       )}
 
+      {activeQuickAction && <OverviewActionModal action={activeQuickAction} onClose={() => setActiveQuickAction(null)} onToast={(msg) => { setActiveQuickAction(null); onAction(msg) }} />}
       {showExpense && <ClaimExpenseModal onClose={() => setShowExpense(false)} onToast={onAction} />}
       {showHoliday && <BookHolidayModal onClose={() => setShowHoliday(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
       {showSickness && <ReportSicknessModal onClose={() => setShowSickness(false)} onToast={onAction} userName={currentUserStaff ? staffFullName(currentUserStaff) : undefined} userDept={currentUserStaff?.department} userTitle={currentUserStaff?.job_title} />}
@@ -3798,11 +4072,92 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
+  const [demoRole, setDemoRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
+  const [showRoleTooltip, setShowRoleTooltip] = useState(false)
+  const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
+  const DEMO_ROLES = [{ id: 'admin', label: 'Admin', color: '#EF4444', desc: 'Full access' }, { id: 'director', label: 'Director', color: '#8B5CF6', desc: 'Finance + Directors Suite' }, { id: 'manager', label: 'Manager', color: '#3B82F6', desc: 'No finance figures' }, { id: 'standard', label: 'Standard', color: '#6B7280', desc: 'Own dept only' }]
+  const switchRole = (role: string) => { setDemoRole(role); try { localStorage.setItem('lumio_user_role', role); const levelMap: Record<string, string> = { admin: '2', director: '1', manager: '3', standard: '4', user: '4' }; localStorage.setItem('lumio_user_role_level', levelMap[role] || '4'); window.dispatchEvent(new CustomEvent('lumio-role-changed', { detail: { role } })) } catch {} }
+  const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
+    try {
+      if (typeof window === 'undefined') return new Set()
+      const today = new Date().toDateString()
+      const savedDate = localStorage.getItem('qw_date')
+      if (savedDate !== today) { localStorage.removeItem('qw_dismissed'); localStorage.setItem('qw_date', today); return new Set() }
+      const saved = localStorage.getItem('qw_dismissed')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+  useEffect(() => { try { localStorage.setItem('qw_dismissed', JSON.stringify([...dismissedWins])) } catch {} }, [dismissedWins])
+  const handleDismissWin = (id: string) => { setDismissedWins(prev => { const next = new Set(prev); next.add(id); return next }) }
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [businessId, setBusinessId] = useState('')
   const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
   const [staffRefreshKey, setStaffRefreshKey] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifTab, setNotifTab] = useState('all')
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => { try { return new Set(JSON.parse(localStorage.getItem('lumio_dismissed_notifs') || '[]')) } catch { return new Set() } })
+  const dismissNotif = (id: string) => { setDismissedNotifs(prev => { const n = new Set(prev); n.add(id); try { localStorage.setItem('lumio_dismissed_notifs', JSON.stringify([...n])) } catch {}; return n }) }
+  useEffect(() => { if (!notificationsOpen) return; const h = (e: MouseEvent) => { const el = document.getElementById('notif-bell'); if (el && !el.contains(e.target as Node)) setNotificationsOpen(false) }; document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h) }, [notificationsOpen])
+  // ── Live notification state ─────────────────────────────────────────────────
+  const [liveNotifs, setLiveNotifs] = useState<Array<{ id: string; priority: string; icon: string; title: string; body: string; time: string; dept: string; deptLabel: string | null; deptRoute: string | null; roles: string[]; category: string; source: string }>>([])
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const fetchLiveNotificationsRef = useRef<(() => Promise<void>) | null>(null)
+  fetchLiveNotificationsRef.current = async () => {
+    if (demoDataActive) return
+    setNotifLoading(true)
+    try {
+      const role = localStorage.getItem('lumio_user_role') || 'director'
+      const currentSlug = localStorage.getItem('lumio_workspace_slug') || ''
+      const hasCalendar = !!localStorage.getItem('lumio_gcal_connected')
+      const hasGmail = !!localStorage.getItem('lumio_gmail_connected')
+      const { fetchLiveNotifications } = await import('@/lib/notifications')
+      const results = await fetchLiveNotifications(role, currentSlug, hasCalendar, hasGmail)
+      setLiveNotifs(results)
+      setLastFetched(new Date())
+    } catch (e) {
+      console.error('Live notification fetch error:', e)
+    }
+    setNotifLoading(false)
+  }
+  // Fetch live notifications on mount (non-demo) and poll every 5 minutes
+  useEffect(() => {
+    if (demoDataActive) return
+    fetchLiveNotificationsRef.current?.()
+    const interval = setInterval(() => fetchLiveNotificationsRef.current?.(), 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoDataActive])
+  const DEMO_NOTIFS = [
+    { id:'n-01',priority:'high',icon:'\u{1F4B0}',title:'3 invoices overdue',body:'Bramblewood (\u00A34,200), Northgate (\u00A32,800), FitCore (\u00A31,400)',time:'Overdue',dept:'accounts',deptLabel:'Accounts',deptRoute:'/accounts',roles:['admin','director'],category:'finance' },
+    { id:'n-02',priority:'high',icon:'\u{1F464}',title:'3 probation reviews overdue',body:'Sarah Mitchell (Mktg), Tom Chen (Eng), Priya Patel (CS)',time:'This week',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director'],category:'hr' },
+    { id:'n-03',priority:'high',icon:'\u{1F3AF}',title:'Greenfield Group proposal due today',body:'\u00A385,000 deal \u2014 highest value in pipeline',time:'Due today',dept:'sales',deptLabel:'Sales',deptRoute:'/sales',roles:['admin','director','manager'],category:'sales' },
+    { id:'n-04',priority:'high',icon:'\u23F0',title:'3 trials expiring this week',body:'Bramblewood (Fri), Northgate (Thu), FitCore (Wed) \u2014 \u00A38,400',time:'This week',dept:'trials',deptLabel:'Trials',deptRoute:'/trials',roles:['admin','director','manager'],category:'trials' },
+    { id:'n-05',priority:'high',icon:'\u{1F534}',title:'10 customers in critical health',body:'Whitestone (34), Meridian Ventures (41), FitCore Leeds (38)',time:'Action needed',dept:'success',deptLabel:'CS',deptRoute:'/success',roles:['admin','director','manager'],category:'customers' },
+    { id:'n-06',priority:'high',icon:'\u{1F3AB}',title:'5 support tickets unassigned',body:'Oldest: Bramblewood \u2014 4hrs. SLA at risk.',time:'4 hrs',dept:'support',deptLabel:'Support',deptRoute:'/support',roles:['admin','director','manager'],category:'support' },
+    { id:'n-07',priority:'medium',icon:'\u{1F4C5}',title:'New Customer Demo \u2014 happening now',body:'Greenfield Group \u00B7 Google Meet \u00B7 45 min remaining',time:'Now',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'meetings' },
+    { id:'n-08',priority:'medium',icon:'\u2705',title:'Daily tasks: 0 of 6 complete',body:'Q2 invoice batch, Greenfield proposal, board report',time:'Today',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'tasks' },
+    { id:'n-09',priority:'medium',icon:'\u26A1',title:'Quick wins: 4 available',body:'Chase Bramble Hill \u00B7 Whitestone check-in \u00B7 3 LinkedIn messages',time:'Today',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'tasks' },
+    { id:'n-10',priority:'medium',icon:'\u{1F4CA}',title:'MRR up 12% this month',body:'\u00A341,999 MRR \u2014 Q2 target achievable if 2 deals close',time:'This month',dept:'accounts',deptLabel:'Accounts',deptRoute:'/accounts',roles:['admin','director'],category:'finance' },
+    { id:'n-11',priority:'medium',icon:'\u{1F504}',title:'Apex Learning renewal \u2014 Aug 2026',body:'\u00A324,000 ARR \u00B7 68% win rate \u00B7 QBR not booked',time:'Aug 2026',dept:'success',deptLabel:'CS',deptRoute:'/success',roles:['admin','director','manager'],category:'customers' },
+    { id:'n-12',priority:'medium',icon:'\u{1F4C8}',title:'Pipeline up 12% vs last month',body:'\u00A32.4M total \u00B7 34 open deals \u00B7 2 closing this week',time:'This month',dept:'sales',deptLabel:'Sales',deptRoute:'/sales',roles:['admin','director','manager'],category:'sales' },
+    { id:'n-13',priority:'medium',icon:'\u{1F41B}',title:'3 workflows failing intermittently',body:'Payment processing category \u2014 investigate',time:'Today',dept:'workflows',deptLabel:'Workflows',deptRoute:'/workflows',roles:['admin','director','manager'],category:'operations' },
+    { id:'n-14',priority:'low',icon:'\u{1F4E2}',title:'SEO traffic up 41% this month',body:'3 articles in top 10 results',time:'This month',dept:'marketing',deptLabel:'Marketing',deptRoute:'/marketing',roles:['admin','director','manager'],category:'marketing' },
+    { id:'n-15',priority:'low',icon:'\u{1F91D}',title:'Vertex Analytics \u2014 first deal Q3',body:'New partner onboarded. Pipeline building.',time:'Q3 2026',dept:'partners',deptLabel:'Partners',deptRoute:'/partners',roles:['admin','director','manager'],category:'partners' },
+    { id:'n-16',priority:'low',icon:'\u{1F6E1}\uFE0F',title:'IT security score: 94/100',body:'7 open tickets \u00B7 All critical patches current',time:'Today',dept:'it',deptLabel:'IT',deptRoute:'/it',roles:['admin','director'],category:'it' },
+    { id:'n-17',priority:'low',icon:'\u2699\uFE0F',title:'44 workflows active \u00B7 1,844 runs',body:'Automation saved 47 hours this month',time:'This month',dept:'workflows',deptLabel:'Workflows',deptRoute:'/workflows',roles:['admin','director','manager'],category:'operations' },
+    { id:'n-18',priority:'low',icon:'\u{1F49A}',title:'Staff wellbeing: 7.4/10',body:'Highest this quarter \u2014 2 flagged for workload review',time:'This quarter',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director'],category:'hr' },
+    { id:'n-19',priority:'low',icon:'\u{1F393}',title:'Training completion at 84%',body:'3 staff have overdue training',time:'This month',dept:'hr',deptLabel:'HR',deptRoute:'/hr',roles:['admin','director','manager'],category:'hr' },
+    { id:'n-20',priority:'medium',icon:'\u{1F4C5}',title:'Meeting with Andrew',body:'Tuesday 7 April \u00B7 11:00\u201312:00 \u00B7 Google Meet',time:'Tue 11:00',dept:'all',deptLabel:null,deptRoute:null,roles:['admin','director','manager','standard'],category:'meetings' },
+  ]
+  // Use demo notifications in demo mode, live notifications otherwise
+  const allNotifs = demoDataActive
+    ? DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id))
+    : (liveNotifs.length > 0 ? liveNotifs.filter(n => !dismissedNotifs.has(n.id)) : DEMO_NOTIFS.filter(n => n.roles.includes(demoRole) && !dismissedNotifs.has(n.id)))
+  const visibleNotifs = allNotifs
+  const urgentCount = visibleNotifs.filter(n => n.priority === 'high').length
+  const filteredNotifs = notifTab === 'all' ? visibleNotifs : notifTab === 'urgent' ? visibleNotifs.filter(n => n.priority === 'high') : notifTab === 'meetings' ? visibleNotifs.filter(n => n.category === 'meetings') : notifTab === 'tasks' ? visibleNotifs.filter(n => n.category === 'tasks') : visibleNotifs.filter(n => n.category === notifTab)
+  const isLiveMode = !demoDataActive && liveNotifs.length > 0
   const [ttsEnabled, setTtsEnabled] = useState(true)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
@@ -3813,6 +4168,23 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
+
+  // Listen for logo removal from Settings
+  useEffect(() => {
+    const handler = () => {
+      setCompanyLogo('')
+      localStorage.removeItem('workspace_company_logo')
+      localStorage.removeItem('lumio_company_logo')
+    }
+    const logoHandler = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      const url = typeof d === 'object' && d !== null ? d.logo : d
+      setCompanyLogo(url || '')
+    }
+    window.addEventListener('lumio-logo-cleared', handler)
+    window.addEventListener('lumio-logo-updated', logoHandler)
+    return () => { window.removeEventListener('lumio-logo-cleared', handler); window.removeEventListener('lumio-logo-updated', logoHandler) }
+  }, [])
 
   useEffect(() => {
     // Read cached values from localStorage — check admin impersonation first
@@ -4026,6 +4398,20 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             .catch(() => router.replace('/login?redirectTo=/' + slug))
         }).catch(() => router.replace('/login?redirectTo=/' + slug))
       }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
+    } else {
+      // No session token — check if this slug belongs to a demo tenant
+      fetch(`/api/demo/check-slug?slug=${encodeURIComponent(slug)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.exists) {
+            const redirectUrl = data.tenant_type === 'schools'
+              ? `/demo/schools/${slug}`
+              : `/demo/${slug}`
+            router.replace(redirectUrl)
+          }
+          // If not a demo tenant either, page renders with demo data / empty state
+        })
+        .catch(() => {}) // Non-blocking — don't redirect on failure
     }
   }, [slug, router])
 
@@ -4090,10 +4476,56 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       {/* Bell + Avatar — fixed top-right */}
       <div className="hidden md:flex" style={{ position: 'fixed', top: 12, right: 20, zIndex: 9999, alignItems: 'center', gap: 8 }}>
-        <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-          <Bell size={16} strokeWidth={1.75} />
-          <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
-        </button>
+        <div className="relative" id="notif-bell">
+          <button onClick={() => setNotificationsOpen(o => !o)} title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: '1px solid #1F2937', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={16} strokeWidth={1.75} />
+            {urgentCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center ">{urgentCount}</span>}
+          </button>
+          {notificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 rounded-2xl shadow-2xl overflow-hidden" style={{ width: 380, backgroundColor: '#0d0f1a', border: '1px solid #374151', zIndex: 9999 }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2"><span className="text-white font-semibold text-sm">Notifications</span>{urgentCount > 0 && <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">{urgentCount} urgent</span>}</div>
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-600 capitalize">{demoRole} view</span><button onClick={() => setNotificationsOpen(false)} className="text-gray-500 hover:text-white text-lg">&times;</button></div>
+              </div>
+              <div className="flex overflow-x-auto scrollbar-hide" style={{ borderBottom: '1px solid #1F2937' }}>
+                {[{ id:'all',label:'All',ct:visibleNotifs.length },{ id:'urgent',label:'\u{1F534} Urgent',ct:visibleNotifs.filter(n=>n.priority==='high').length },{ id:'meetings',label:'\u{1F4C5} Meetings',ct:visibleNotifs.filter(n=>n.category==='meetings').length },{ id:'tasks',label:'\u2705 Tasks',ct:visibleNotifs.filter(n=>n.category==='tasks').length },{ id:'finance',label:'\u{1F4B0} Finance',ct:visibleNotifs.filter(n=>n.category==='finance').length }].map(t=>(
+                  <button key={t.id} onClick={()=>setNotifTab(t.id)} className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all whitespace-nowrap ${notifTab===t.id?'text-teal-400 border-b-2 border-teal-400':'text-gray-500 hover:text-gray-300'}`}>{t.label}{t.ct>0&&<span className="ml-1 text-[10px] text-gray-600">({t.ct})</span>}</button>
+                ))}
+              </div>
+              <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                {notifLoading && liveNotifs.length === 0 && !demoDataActive ? <div className="text-center py-10 text-gray-600"><div className="text-2xl mb-2 animate-spin">⟳</div><div className="text-xs">Fetching live notifications…</div></div> : filteredNotifs.length === 0 ? <div className="text-center py-10 text-gray-600"><div className="text-3xl mb-2">{'\u2705'}</div><div className="text-sm">All clear</div></div> : filteredNotifs.map(n=>(
+                  <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-all group" style={{ borderBottom: '1px solid rgba(31,41,55,0.4)', borderLeft: `2px solid ${n.priority==='high'?'#EF4444':n.priority==='medium'?'#F59E0B':'#374151'}` }}>
+                    <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>{ setNotificationsOpen(false); if(n.deptRoute){ window.location.href=`/${slug}${n.deptRoute}` } }}>
+                      <div className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-white leading-snug">{n.title}</span><span className="text-[10px] text-gray-600 flex-shrink-0 mt-0.5">{n.time}</span></div>
+                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{n.body}</p>
+                      {n.deptLabel&&<span className="text-[10px] text-teal-600 mt-1 inline-block">&rarr; {n.deptLabel}</span>}
+                    </div>
+                    <button onClick={()=>dismissNotif(n.id)} className="text-gray-700 hover:text-gray-400 text-sm opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 mt-0.5" title="Dismiss">&times;</button>
+                  </div>
+                ))}
+              </div>
+              {/* Connect prompt — live mode, no integrations, no results */}
+              {!demoDataActive && liveNotifs.length === 0 && !notifLoading && visibleNotifs.length > 0 && (
+                <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(13,148,136,0.03)' }}>
+                  <div className="text-[10px] text-gray-500 mb-1.5">🔌 Connect Google Calendar & Gmail to see live notifications</div>
+                  <button onClick={() => { setNotificationsOpen(false); const s = localStorage.getItem('lumio_workspace_slug'); if (s) window.location.href = `/${s}/settings` }} className="text-[10px] text-teal-500 hover:text-teal-400 border border-teal-800/40 px-2.5 py-1 rounded-lg">Go to Integrations →</button>
+                </div>
+              )}
+              <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(17,19,24,0.5)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px]">{isLiveMode ? <span style={{ color: '#0D9488' }}>🔴 Live · {lastFetched?.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) || 'fetching'}</span> : <span style={{ color: '#D97706' }}>📋 Demo data</span>}</span>
+                  <span className="text-[10px] text-gray-700">·</span>
+                  <span className="text-[10px] text-gray-600 capitalize">{demoRole} view</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {!demoDataActive && <button onClick={() => fetchLiveNotificationsRef.current?.()} className="text-[10px] text-gray-600 hover:text-teal-400" title="Refresh">{notifLoading ? <span className="inline-block animate-spin">⟳</span> : '⟳'} Refresh</button>}
+                  <button onClick={()=>{ const allIds = [...DEMO_NOTIFS.map(n=>n.id), ...liveNotifs.map(n=>n.id)]; setDismissedNotifs(new Set(allIds)); try{localStorage.setItem('lumio_dismissed_notifs',JSON.stringify(allIds))}catch{} }} className="text-[10px] text-gray-600 hover:text-gray-400">Dismiss all</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <AvatarDropdown initials={userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={`/${slug}/settings`} />
       </div>
 
@@ -4130,7 +4562,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         e.target.value = ''
       }} />
 
-      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+      {/* NotificationsPanel replaced by inline demo notifications above */}
 
       {/* SSO Welcome Modal */}
       {ssoWelcome && (
@@ -4249,12 +4681,47 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Demo banner — in flow, first child of right column */}
           {demoDataActive && (
-            <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB' }}>
-              <span className="text-xs font-medium">Demo workspace — exploring with sample data · Connect your real tools to see live insights</span>
-              <div className="flex items-center gap-2">
-                <button onClick={() => { setDemoDataActive(false); localStorage.setItem('lumio_demo_active', 'false') }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: '#fff' }}>Clear Demo Data</button>
+            <>
+              <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
+                <span className="text-xs font-medium">Demo workspace &middot; sample data</span>
+                <div className="flex items-center gap-2">
+                  {/* Role Switcher */}
+                  <div className="relative" onMouseEnter={() => setShowRoleTooltip(true)} onMouseLeave={() => setShowRoleTooltip(false)}>
+                    <div className="flex items-center gap-1.5 bg-black/20 rounded-xl px-2 py-1">
+                      <span className="text-xs text-teal-200 font-medium mr-1 hidden lg:block">{'\u{1F464}'} Viewing as:</span>
+                      {DEMO_ROLES.map(role => (
+                        <button key={role.id} onClick={() => switchRole(role.id)} title={role.desc}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${demoRole === role.id ? 'text-white shadow-sm' : 'text-teal-200/60 hover:text-teal-100'}`}
+                          style={{ backgroundColor: demoRole === role.id ? role.color : 'transparent' }}>
+                          {role.label}
+                        </button>
+                      ))}
+                    </div>
+                    {showRoleTooltip && (
+                      <div className="absolute top-full right-0 mt-2 rounded-xl p-3 z-50 shadow-xl min-w-[220px]" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>
+                        <div className="text-xs font-semibold text-white mb-2">{DEMO_ROLES.find(r => r.id === demoRole)?.label} &mdash; can see:</div>
+                        <div className="space-y-1.5">
+                          {([['All standard departments', ['admin','director','manager','standard']],['Finance figures (Accounts)', ['admin','director']],['HR salary & sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['Trials & conversion data', ['admin','director','manager']]] as [string, string[]][]).map(([label, roles]) => (
+                            <div key={label} className="flex items-center justify-between gap-3">
+                              <span className="text-[11px] text-gray-400">{label}</span>
+                              <span className="text-[11px]">{roles.includes(demoRole) ? '\u2705' : '\u{1F512}'}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role updates all gated content instantly</div>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
+                </div>
               </div>
-            </div>
+              {showRoleTip && (
+                <div className="hidden md:flex items-center justify-between px-4 py-2 text-xs" style={{ backgroundColor: 'rgba(124,58,237,0.15)', borderBottom: '1px solid rgba(124,58,237,0.3)', color: '#C4B5FD' }}>
+                  <span>{'\u{1F446}'} <strong>Try the role switcher</strong> &mdash; switch between Admin, Director, Manager, and Standard to see how permissions work</span>
+                  <button onClick={() => { setShowRoleTip(false); try { localStorage.setItem('lumio_role_tip_seen', '1') } catch {} }} className="ml-4 text-purple-400 hover:text-white flex-shrink-0">Got it {'\u2715'}</button>
+                </div>
+              )}
+            </>
           )}
           {/* Scrollable page content */}
           <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
@@ -4264,7 +4731,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} />}
+            {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} dismissedWins={dismissedWins} onDismissWin={handleDismissWin} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
@@ -4274,3 +4741,5 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   )
 }
 
+// Quick actions: 20 buttons, integration gate allows null integrations through (always enabled)
+// New buttons use OverviewActionModal via activeQuickAction state

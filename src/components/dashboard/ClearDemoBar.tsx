@@ -37,7 +37,7 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
 
   return (
     <>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 40, zIndex: 9999, backgroundColor: '#0D9488', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 13 }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 40, zIndex: 9999, backgroundColor: '#0D9488', color: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 140px 0 16px', fontSize: 13 }}>
         <div className="flex items-center gap-2">
           <Clock size={13} />
           <span className="font-medium">Demo workspace — exploring with sample data</span>
@@ -47,7 +47,7 @@ export default function ClearDemoBar({ variant = 'business' }: { variant?: 'busi
           <button onClick={() => setShowModal(true)} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
             Connect Tools
           </button>
-          <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+          <button onClick={clearDemo} className="hidden sm:inline font-semibold text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.15)', marginRight: 120 }}>
             Clear Demo Data
           </button>
           <button onClick={() => setDismissed(true)} className="opacity-70 hover:opacity-100">✕</button>

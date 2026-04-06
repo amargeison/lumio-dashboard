@@ -1,5 +1,6 @@
 'use client'
 
+import { DEMO_STATS } from '@/lib/demoStats'
 import { useState } from 'react'
 import {
   TrendingUp, Users, Activity, Zap, Star, Shield, Target,
@@ -90,7 +91,7 @@ function ExecutiveTab() {
         <Stat label="Company Health" value="87/100" color="#22C55E" trend="+3" sub="vs last quarter" />
         <Stat label="MRR" value="£42,800" color="#0D9488" trend="+18%" sub="vs last month" />
         <Stat label="ARR" value="£513.6k" color="#3B82F6" trend="+18% YoY" />
-        <Stat label="Headcount" value="187" color="#8B5CF6" trend="+3" sub="this month" />
+        <Stat label="Headcount" value={String(DEMO_STATS.totalEmployees)} color="#8B5CF6" trend="+3" sub="this month" />
         <Stat label="NPS Score" value="54" color="#22C55E" trend="+6" sub="vs last quarter" />
         <Stat label="Churn Rate" value="2.1%" color="#22C55E" trend="-0.4%" sub="vs last Q" />
       </div>
@@ -130,7 +131,7 @@ function PeopleTab() {
   const wb = [{ m: 'Oct', s: 6.8 }, { m: 'Nov', s: 7.0 }, { m: 'Dec', s: 6.9 }, { m: 'Jan', s: 7.1 }, { m: 'Feb', s: 7.2 }, { m: 'Mar', s: 7.4 }]
   const hc = [{ dept: 'Engineering', count: 42 }, { dept: 'Sales', count: 28 }, { dept: 'Support', count: 24 }, { dept: 'Marketing', count: 18 }, { dept: 'HR', count: 12 }, { dept: 'Finance', count: 8 }, { dept: 'Other', count: 55 }]
   return (<div className="space-y-4">
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3"><Stat label="Headcount" value={187} color="#0D9488" trend="+3" /><Stat label="Open Roles" value={2} color="#F59E0B" /><Stat label="Wellbeing" value="7.4/10" color="#22C55E" trend="↑" /><Stat label="Absence Rate" value="3.2%" color="#22C55E" /><Stat label="Retention (12mo)" value="87%" color="#3B82F6" /><Stat label="Avg Tenure" value="2.4 yrs" color="#8B5CF6" /></div>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3"><Stat label="Headcount" value={DEMO_STATS.totalEmployees} color="#0D9488" trend="+3" /><Stat label="Open Roles" value={2} color="#F59E0B" /><Stat label="Wellbeing" value="7.4/10" color="#22C55E" trend="↑" /><Stat label="Absence Rate" value="3.2%" color="#22C55E" /><Stat label="Retention (12mo)" value="87%" color="#3B82F6" /><Stat label="Avg Tenure" value="2.4 yrs" color="#8B5CF6" /></div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div style={CS}><h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Staff Wellbeing Trend</h4><ResponsiveContainer width="100%" height={200}><LineChart data={wb} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="#1F2937" /><XAxis dataKey="m" tick={{ fill: '#9CA3AF', fontSize: 10 }} /><YAxis domain={[5, 10]} tick={{ fill: '#9CA3AF', fontSize: 10 }} /><Tooltip contentStyle={TIP} /><ReferenceLine y={7} stroke="#F59E0B80" strokeDasharray="5 5" /><Line type="monotone" dataKey="s" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} /></LineChart></ResponsiveContainer></div>
       <div style={CS}><h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Headcount by Dept</h4><ResponsiveContainer width="100%" height={200}><BarChart data={hc} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="#1F2937" /><XAxis dataKey="dept" tick={{ fill: '#9CA3AF', fontSize: 9 }} /><YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} /><Tooltip contentStyle={TIP} /><Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>

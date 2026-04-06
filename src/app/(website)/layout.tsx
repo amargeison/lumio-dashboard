@@ -9,15 +9,16 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',      href: '/product'  },
-  { label: 'Workflows',    href: '/product#workflows' },
-  { label: 'Schools',      href: '/schools' },
-  { label: 'Football',     href: '/football' },
-  { label: 'CRM',          href: '/lumio-crm' },
-  { label: 'Integrations', href: '/product#integrations' },
-  { label: 'Pricing',      href: '/pricing'  },
-  { label: 'About',        href: '/about'    },
-  { label: 'Blog',         href: '/blog'     },
+  { label: 'Product',  href: '/product' },
+  { label: 'Football', href: '/football' },
+  { label: 'Tennis',   href: '/tennis' },
+  { label: 'Golf',     href: '/golf' },
+  { label: 'Darts',    href: '/darts' },
+  { label: 'Rugby',    href: '/rugby' },
+  { label: 'Cricket',  href: '/cricket' },
+  { label: 'Boxing',   href: '/boxing' },
+  { label: 'About',    href: '/about' },
+  { label: 'Blog',     href: '/blog' },
 ]
 
 const SCHOOLS_EXTRA_LINKS = [
@@ -54,7 +55,7 @@ function Nav() {
     : NAV_LINKS
   const navLinks = baseLinks
     .filter(l => {
-      if (isSchools && (l.label === 'CRM' || l.label === 'Football')) return false
+      if (isSchools && (l.label === 'CRM' || l.label === 'Sports')) return false
       if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
       return true
     })
@@ -92,15 +93,15 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/lumio-transparent-new.png" alt="Lumio" width={360} height={180}
-            style={{ width: 180, height: 'auto', objectFit: 'contain' }} priority />
+          <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={140} height={40}
+            style={{ width: 140, height: 'auto', objectFit: 'contain' }} priority />
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-0">
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
               style={{ color: '#9CA3AF' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
@@ -233,8 +234,6 @@ function Nav() {
     {showTypeModal && (
       <TrialTypeModal
         onClose={() => setShowTypeModal(false)}
-        onBusiness={() => { setShowTypeModal(false); setShowTrial(true) }}
-        onSchool={() => { setShowTypeModal(false); window.location.href = '/demo/schools/oakridge-primary' }}
       />
     )}
   </>
@@ -248,7 +247,7 @@ function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Image src="/lumio-transparent-new.png" alt="Lumio" width={200} height={100}
+            <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={200} height={100}
               style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.

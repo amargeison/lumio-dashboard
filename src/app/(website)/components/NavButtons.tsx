@@ -18,7 +18,7 @@ export default function NavButtons() {
         Sign in
       </Link>
       <Link
-        href={isSchools ? '/demo/schools/oakridge-primary' : '/demo'}
+        href={isSchools ? '/signup?portal=schools' : '/signup'}
         className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
         style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
         onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}

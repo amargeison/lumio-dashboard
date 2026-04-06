@@ -75,3 +75,17 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, logo_url: logoUrl })
 }
+
+export async function DELETE(req: NextRequest) {
+  const supabase = getSupabase()
+  const session = await getWorkspaceSession(req)
+  if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+  const { business_id } = session
+
+  await supabase
+    .from('businesses')
+    .update({ logo_url: null })
+    .eq('id', business_id)
+
+  return NextResponse.json({ success: true })
+}
