@@ -118,7 +118,7 @@ function Nav() {
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+            style={{ height: '36px', width: 'auto', objectFit: 'contain', display: 'block' }} />
         </Link>
 
         {/* Desktop nav */}
@@ -274,7 +274,7 @@ function Footer() {
           <div className="md:col-span-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-              style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
+              style={{ width: '100px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
             </p>
