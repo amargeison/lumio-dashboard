@@ -93,15 +93,15 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={360} height={180}
-            style={{ width: 180, height: 'auto', objectFit: 'contain' }} priority />
+          <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={140} height={40}
+            style={{ width: 140, height: 'auto', objectFit: 'contain' }} priority />
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-0">
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
               style={{ color: '#9CA3AF' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
