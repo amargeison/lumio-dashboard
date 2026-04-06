@@ -18,6 +18,7 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: "Women's FC", href: '/womens-football' },
   { label: 'Rugby',    href: '/rugby' },
   { label: 'Cricket',  href: '/cricket' },
+  { label: 'Pricing',  href: '/pricing-sports' },
   { label: 'About',    href: '/about' },
   { label: 'Blog',     href: '/blog' },
 ]
@@ -115,8 +116,9 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'} width={isSports ? 140 : 360} height={isSports ? 40 : 180}
-            style={{ width: isSports ? 140 : 180, height: 'auto', objectFit: 'contain' }} priority />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+            style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
         </Link>
 
         {/* Desktop nav */}
@@ -270,7 +272,8 @@ function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Image src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'} width={200} height={100}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
               style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.

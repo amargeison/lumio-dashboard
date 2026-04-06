@@ -12,17 +12,19 @@ interface PostCard {
   gradient: string
 }
 
-const CATEGORIES = ['All', 'Schools', 'Business', 'Product']
+const BUSINESS_CATEGORIES = ['All', 'Schools', 'Business', 'Product']
+const SPORTS_CATEGORIES = ['All', 'Football', 'Rugby', 'Tennis', 'Golf', 'Darts', 'Boxing', 'Cricket', "Women's Football"]
 
-export default function BlogFilter({ posts }: { posts: PostCard[] }) {
+export default function BlogFilter({ posts, isSports = false }: { posts: PostCard[]; isSports?: boolean }) {
   const [active, setActive] = useState('All')
-  const filtered = active === 'All' ? posts : posts.filter(p => p.category === active)
+  const categories = isSports ? SPORTS_CATEGORIES : BUSINESS_CATEGORIES
+  const filtered = active === 'All' ? posts : posts.filter((p: PostCard) => p.category === active || p.category.includes(active))
 
   return (
     <>
       {/* Filter tabs */}
       <div className="flex gap-2 mb-10 flex-wrap">
-        {CATEGORIES.map(cat => (
+        {categories.map((cat: string) => (
           <button
             key={cat}
             onClick={() => setActive(cat)}
