@@ -80,8 +80,8 @@ export default function ContactsPage() {
 
   useEffect(() => {
     // Count contacts that have potential duplicates (demo: contacts with similar domains)
-    const domains = contacts.map((c: CRMContact) => c.email.split('@')[1])
-    const dupes = domains.filter((d: string, i: number) => domains.indexOf(d) !== i)
+    const domains = contacts.map((c: CRMContact) => c.email?.split('@')[1] ?? '')
+    const dupes = domains.filter((d: string, i: number) => d && domains.indexOf(d) !== i)
     setDupeCount(dupes.length > 0 ? Math.min(dupes.length + 1, 4) : 0)
   }, [contacts])
 
