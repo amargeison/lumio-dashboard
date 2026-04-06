@@ -12,7 +12,7 @@ const BORDER = '#1F2937'
 const STATS = [
   { value: '15+', label: 'Departments' },
   { value: '45+', label: 'Quick Actions' },
-  { value: 'GPS', label: 'Catapult & STATSports' },
+  { value: 'GPS', label: 'Powered by PlayerData' },
   { value: 'RBAC', label: 'Role-Based Access' },
   { value: 'AI', label: 'Powered Insights' },
   { value: 'LIVE', label: 'Data Feeds' },
@@ -21,7 +21,7 @@ const STATS = [
 const FEATURES = [
   { icon: '📡', title: 'GPS & Wearables', badge: 'Industry First', badgeColor: RED,
     headline: 'Live Player Load Data on Your Dashboard',
-    bullets: ['Direct integration with Catapult and STATSports', 'Session load, high-speed distance, sprint count', 'Player readiness scores updated after every session', 'Red flag alerts for overload or injury risk', 'Historical trends and load management charts'],
+    bullets: ['Powered by PlayerData — FIFA Quality Certified GPS tracking', 'Session load, high-speed distance, sprint count', 'Player readiness scores updated after every session', 'Red flag alerts for overload or injury risk', 'Historical trends and load management charts'],
   },
   { icon: '🏛️', title: 'Board Suite', badge: 'Board Level Intelligence', badgeColor: GOLD,
     headline: 'Run Your Club Like a Business',
@@ -61,7 +61,7 @@ const FEATURES = [
   },
   { icon: '🔌', title: 'Integrations', badge: null, badgeColor: '',
     headline: 'Connects With Your Existing Tools',
-    bullets: ['Catapult & STATSports GPS wearables', 'Microsoft Outlook & Gmail', 'Microsoft Teams & Slack', 'Google Calendar & Outlook Calendar', 'Xero, QuickBooks and accounting platforms'],
+    bullets: ['PlayerData EDGE GPS wearables', 'Microsoft Outlook & Gmail', 'Microsoft Teams & Slack', 'Google Calendar & Outlook Calendar', 'Xero, QuickBooks and accounting platforms'],
   },
   { icon: '🏛️', title: 'Board Suite', badge: 'Executive', badgeColor: GOLD,
     headline: '5-Tab Executive Dashboard',
@@ -101,7 +101,7 @@ const TESTIMONIALS = [
 
 const PRICING = [
   { tier: 'Academy', desc: 'Youth development and academy tracking', features: ['Academy player profiles', 'Development pathways', 'U18/U21 squad management', 'Basic reporting'] },
-  { tier: 'First Team', desc: 'Complete first team operations', features: ['Everything in Academy', 'Squad management & GPS', 'Tactics viewer & match day', 'Transfer hub', 'Media & PR tools', 'Live data feeds'], highlight: true },
+  { tier: 'First Team', desc: 'Complete first team operations', features: ['Everything in Academy', 'Squad management & GPS (PlayerData)', 'Tactics viewer & match day', 'Transfer hub', 'Media & PR tools', 'Live data feeds'], highlight: true },
   { tier: 'Full Club', desc: 'Enterprise platform for the entire club', features: ['Everything in First Team', 'Board Suite with PSR/FFP', 'Financial integration', 'Multi-department access', 'Dedicated account manager'] },
 ]
 
@@ -130,7 +130,7 @@ const ROLES = [
   },
   { id: 'medical', emoji: '🏥', label: 'Medical',
     features: [
-      { name: 'Injury Tracker', points: ['Current injuries with expected return dates', 'GPS ACWR scores — flag overload before injury', 'Return-to-play protocol steps', 'Treatment log per player', 'Integration with Catapult & STATSports', 'Alert when player exceeds safe load threshold'], outcome: 'Reduce injuries. Manage return-to-play with confidence. GPS data built in.' },
+      { name: 'Injury Tracker', points: ['Current injuries with expected return dates', 'GPS ACWR scores — flag overload before injury', 'Return-to-play protocol steps', 'Treatment log per player', 'Integration with PlayerData EDGE GPS', 'Alert when player exceeds safe load threshold'], outcome: 'Reduce injuries. Manage return-to-play with confidence. GPS data built in.' },
       { name: 'Return-to-Play Planner', points: ['Step-by-step rehab protocol', 'Daily progress tracking', 'Medical sign-off required at each stage', 'GPS metrics integrated for clearance', 'Notification when player passes threshold', 'Automatic squad status update'], outcome: 'Every return-to-play managed safely. No player rushed back.' },
       { name: 'GPS Load Monitor', points: ['Live session load data', 'Weekly load trends per player', 'ACWR calculation automated', 'Red/amber/green thresholds', 'Comparison to squad average', 'Historical load charts'], outcome: 'Prevent injuries before they happen. GPS data at your fingertips.' },
       { name: 'Medical Notes', points: ['Confidential player medical records', 'Treatment history', 'Medication tracking', 'Scan results storage', 'Referral management', 'GDPR compliant'], outcome: 'Every medical note secure. Every treatment logged.' },
@@ -638,8 +638,8 @@ export default function FootballPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ backgroundColor: `${GOLD}15`, border: `1px solid ${GOLD}40` }}>
                 <span className="text-xs font-black tracking-wider" style={{ color: GOLD }}>INDUSTRY FIRST</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black mb-3 leading-tight">Game-Changing GPS Integration</h2>
-              <p className="text-lg mb-8" style={{ color: '#9CA3AF' }}>Connect Catapult &amp; STATSports directly into your club dashboard</p>
+              <h2 className="text-3xl md:text-4xl font-black mb-3 leading-tight">GPS Performance Tracking — Powered by PlayerData</h2>
+              <p className="text-lg mb-8" style={{ color: '#9CA3AF' }}>Connect your PlayerData account to sync EDGE GPS data directly into your club dashboard</p>
 
               <div className="space-y-4">
                 {[
@@ -647,7 +647,7 @@ export default function FootballPage() {
                   { icon: '\u{2764}\u{FE0F}', label: 'Injury risk prediction', desc: 'ACWR scoring flags players at risk before injuries happen' },
                   { icon: '\u{1F4CA}', label: 'Squad readiness dashboard', desc: "Instant traffic light view of who\u2019s ready to play" },
                   { icon: '\u{26BD}', label: 'Match vs training comparison', desc: 'See how players perform when it matters most' },
-                  { icon: '\u{1F517}', label: 'Direct API connection', desc: 'Catapult OpenField and STATSports Sonra connect in one click' },
+                  { icon: '\u{1F517}', label: 'Direct API connection', desc: 'PlayerData EDGE syncs automatically via API — legacy Catapult and STATSports supported via CSV' },
                   { icon: '\u{1F4C1}', label: 'CSV upload fallback', desc: 'Manually export from your GPS platform and upload directly' },
                 ].map(item => (
                   <div key={item.label} className="flex items-start gap-3">
