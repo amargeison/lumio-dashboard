@@ -38,6 +38,15 @@ export async function GET(req: NextRequest) {
     if (staffRow?.profile_photo_url) {
       user_avatar_url = staffRow.profile_photo_url
     }
+
+    if (!user_avatar_url) {
+      const { data: { users } } = await supabase.auth.admin.listUsers()
+      const authUser = users.find(u => u.email === business.owner_email)
+      const fallbackAvatar = (authUser?.user_metadata?.avatar_url as string | undefined) ?? null
+      if (fallbackAvatar) {
+        user_avatar_url = fallbackAvatar
+      }
+    }
   }
 
   // Count workspace_staff rows for this business

@@ -100,15 +100,6 @@ export default function DemoLandingPage() {
           </button>
         </div>
 
-        {/* Social proof */}
-        <div className="flex items-center justify-center gap-1.5 mt-8">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={14} fill="#F59E0B" style={{ color: '#F59E0B' }} />
-          ))}
-          <span className="text-sm ml-1.5" style={{ color: '#9CA3AF' }}>
-            Trusted by 200+ UK businesses
-          </span>
-        </div>
       </section>
 
       {/* What's included */}
@@ -189,28 +180,6 @@ export default function DemoLandingPage() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-4xl px-6 py-16">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {[
-              { quote: 'We\'d been building the same Zapier workflows over and over for three years. Lumio replaced all of them in a single afternoon.', role: 'Head of Operations, UK Publishing Group' },
-              { quote: 'The invoice chasing alone has saved us four hours a week. And it doesn\'t feel robotic — customers have actually said our follow-ups sound more personal than before.', role: 'Finance Director, SaaS Platform' },
-            ].map(t => (
-              <div key={t.role} className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={12} fill="#F59E0B" style={{ color: '#F59E0B' }} />
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{ color: '#D1D5DB' }}>&ldquo;{t.quote}&rdquo;</p>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{t.role}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
