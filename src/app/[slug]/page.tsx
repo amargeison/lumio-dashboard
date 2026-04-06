@@ -352,7 +352,7 @@ function fakeCompany(co: string, i: number) { return ['Greenfield Academy','Hops
 type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 type ChartMode = 'number' | 'bar' | 'pie'
 interface ChartDatum { label: string; value: number; color: string }
-type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team' | 'getting-started'
+type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
 
 // ─── Charts ──────────────────────────────────────────────────────────────────
 
@@ -1793,11 +1793,10 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
   { id: 'today', label: 'Today', icon: '🏠' }, { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
   { id: 'tasks', label: 'Daily Tasks', icon: '✅' }, { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'not-to-miss', label: "Don't Miss", icon: '🔴' }, { id: 'team', label: 'Team', icon: '👥' },
-  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
 ]
 
-function TabBar({ tab, onChange, gettingStartedRemaining }: { tab: OverviewTab; onChange: (t: OverviewTab) => void; gettingStartedRemaining?: number }) {
-  const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || t.id === 'getting-started' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
+function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
+  const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
   return (
     <div className="sticky top-0 z-50 border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
@@ -1805,11 +1804,6 @@ function TabBar({ tab, onChange, gettingStartedRemaining }: { tab: OverviewTab; 
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             style={{ borderBottomColor: tab === t.id ? '#7C3AED' : 'transparent', color: tab === t.id ? '#A78BFA' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
             <span className="text-base">{t.icon}</span>{t.label}
-            {t.id === 'getting-started' && gettingStartedRemaining !== undefined && (
-              gettingStartedRemaining > 0
-                ? <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.2)', color: '#A78BFA' }}>{gettingStartedRemaining}</span>
-                : <span className="ml-1 text-xs" style={{ color: '#4ADE80' }}>✓</span>
-            )}
           </button>
         ))}
       </div>
@@ -2140,7 +2134,6 @@ function TabPlaceholder({ tab }: { tab: OverviewTab }) {
     'insights': { title: 'Insights', icon: '📊', desc: 'Key metrics and AI-generated observations across your business.' },
     'not-to-miss': { title: "Don't Miss", icon: '🔴', desc: 'Critical items that need your attention today.' },
     'team': { title: 'Team', icon: '👥', desc: 'See what your team is working on and who needs support.' },
-    'getting-started': { title: 'Getting Started', icon: '🚀', desc: 'Finish setting up your workspace.' },
   }
   const { title, icon, desc } = labels[tab]
   return (
@@ -3791,175 +3784,6 @@ function writeSetupState(slug: string, state: Record<string, boolean>) {
   try { localStorage.setItem(`lumio_setup_${slug}`, JSON.stringify(state)) } catch {}
 }
 
-function computeGettingStartedRemaining(slug: string): number {
-  if (typeof window === 'undefined') return GETTING_STARTED_STEP_IDS.length
-  const state = readSetupState(slug)
-  // Auto-detected completions
-  const demoDone = localStorage.getItem('lumio_demo_active') === 'true'
-  const logoDone = !!(localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo'))
-  let done = 0
-  GETTING_STARTED_STEP_IDS.forEach(id => {
-    if (state[id]) done++
-    else if (id === 'load-demo' && demoDone) done++
-    else if (id === 'logo' && logoDone) done++
-  })
-  return GETTING_STARTED_STEP_IDS.length - done
-}
-
-function GettingStartedView({ slug, onGoSettings, onNavigateTab }: { slug: string; onGoSettings?: () => void; onNavigateTab?: (t: OverviewTab) => void }) {
-  const [state, setState] = useState<Record<string, boolean>>({})
-  const [, forceTick] = useState(0)
-
-  useEffect(() => { setState(readSetupState(slug)) }, [slug])
-
-  // Auto-complete derived steps based on workspace state
-  const demoDone = typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true'
-  const logoDone = typeof window !== 'undefined' && !!(localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo'))
-
-  function isComplete(id: string): boolean {
-    if (state[id]) return true
-    if (id === 'load-demo' && demoDone) return true
-    if (id === 'logo' && logoDone) return true
-    return false
-  }
-
-  function toggleStep(id: string) {
-    const current = isComplete(id)
-    const next = { ...state, [id]: !current }
-    setState(next)
-    writeSetupState(slug, next)
-    forceTick(n => n + 1)
-    // Let the tab badge refresh
-    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-setup-updated'))
-  }
-
-  const sections: SetupSection[] = [
-    {
-      title: 'Your Workspace',
-      steps: [
-        { id: 'logo', label: 'Add your company logo', onClick: () => { onGoSettings?.() } },
-        { id: 'invite', label: 'Invite your first team member', href: `/${slug}/team` },
-        { id: 'company-details', label: 'Set your company name and details', onClick: () => { onGoSettings?.() } },
-        { id: 'load-demo', label: 'Load demo data to explore', onClick: () => {
-          if (typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') !== 'true') {
-            localStorage.setItem('lumio_demo_active', 'true')
-            window.location.reload()
-          }
-        } },
-      ],
-    },
-    {
-      title: 'Daily Operations',
-      steps: [
-        { id: 'first-task', label: 'Create your first task', onClick: () => onNavigateTab?.('tasks') },
-        { id: 'schedule-meeting', label: 'Schedule a meeting', onClick: () => onNavigateTab?.('today') },
-        { id: 'team-announcement', label: 'Send a team announcement' },
-        { id: 'quick-action', label: 'Try a Quick Action from the dashboard', onClick: () => onNavigateTab?.('today') },
-      ],
-    },
-    {
-      title: 'Insights & Reporting',
-      steps: [
-        { id: 'view-insights', label: 'View your Insights dashboard', onClick: () => onNavigateTab?.('insights') },
-        { id: 'check-dont-miss', label: "Check the Don't Miss alerts", onClick: () => onNavigateTab?.('not-to-miss') },
-        { id: 'review-team', label: 'Review team performance on the Team tab', onClick: () => onNavigateTab?.('team') },
-      ],
-    },
-    {
-      title: 'Integrations',
-      steps: [
-        { id: 'connect-microsoft', label: 'Connect Microsoft 365 (Outlook + Calendar)', onClick: () => { onGoSettings?.() } },
-        { id: 'first-automation', label: 'Set up your first automation', href: `/${slug}/workflows` },
-      ],
-    },
-  ]
-
-  const totalSteps = sections.reduce((sum, s) => sum + s.steps.length, 0)
-  const completedSteps = sections.reduce((sum, s) => sum + s.steps.filter(step => isComplete(step.id)).length, 0)
-  const pct = Math.round((completedSteps / totalSteps) * 100)
-
-  return (
-    <div className="space-y-5">
-      {/* Progress header */}
-      <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base font-bold" style={{ color: '#F9FAFB' }}>🚀 Getting Started</h3>
-          <span className="text-xs font-semibold" style={{ color: '#A78BFA' }}>{completedSteps} of {totalSteps} steps complete</span>
-        </div>
-        <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Your workspace is {pct}% set up</p>
-        <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
-          <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#7C3AED' }} />
-        </div>
-      </div>
-
-      {/* Sections */}
-      {sections.map(section => {
-        const sectionDone = section.steps.every(step => isComplete(step.id))
-        return (
-          <div key={section.title} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{section.title}</h4>
-              {sectionDone && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ADE80' }}>✓ Complete</span>
-              )}
-            </div>
-            <div className="space-y-1">
-              {section.steps.map(step => {
-                const complete = isComplete(step.id)
-                return (
-                  <div
-                    key={step.id}
-                    onClick={() => toggleStep(step.id)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                    style={{ backgroundColor: complete ? 'rgba(74,222,128,0.05)' : 'transparent' }}
-                    onMouseEnter={e => { if (!complete) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(124,58,237,0.05)' }}
-                    onMouseLeave={e => { if (!complete) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent' }}
-                  >
-                    <div
-                      className="flex items-center justify-center flex-shrink-0 rounded"
-                      style={{
-                        width: 18, height: 18,
-                        backgroundColor: complete ? '#4ADE80' : 'transparent',
-                        border: `1.5px solid ${complete ? '#4ADE80' : '#4B5563'}`,
-                        color: '#0A0B10',
-                        fontSize: 12, fontWeight: 900,
-                      }}
-                    >
-                      {complete && '✓'}
-                    </div>
-                    <span
-                      className="flex-1 text-sm"
-                      style={{
-                        color: complete ? '#6B7280' : '#E5E7EB',
-                        textDecoration: complete ? 'line-through' : 'none',
-                      }}
-                    >
-                      {step.label}
-                    </span>
-                    {(step.href || step.onClick) && !complete && (
-                      <button
-                        onClick={e => {
-                          e.stopPropagation()
-                          if (step.href) { window.location.href = step.href }
-                          else if (step.onClick) { step.onClick() }
-                        }}
-                        className="text-xs font-semibold px-2 py-1 rounded transition-colors"
-                        style={{ color: '#A78BFA' }}
-                      >
-                        →
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ─── Overview View ───────────────────────────────────────────────────────────
 
 function OverviewView({ slug, company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp, dismissedWins = new Set(), onDismissWin }: { slug: string; company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string; dismissedWins?: Set<string>; onDismissWin?: (id: string) => void }) {
@@ -4087,19 +3911,10 @@ function OverviewView({ slug, company, firstName, onAction, ttsEnabled = true, v
     status: wfStatuses[i], ts: ['Just now','3 min ago','8 min ago','15 min ago','24 min ago','1 hr ago','2 hr ago','3 hr ago'][i],
   }))
 
-  const [gsRemaining, setGsRemaining] = useState<number>(() => computeGettingStartedRemaining(slug))
-  useEffect(() => {
-    const refresh = () => setGsRemaining(computeGettingStartedRemaining(slug))
-    refresh()
-    window.addEventListener('lumio-setup-updated', refresh)
-    window.addEventListener('storage', refresh)
-    return () => { window.removeEventListener('lumio-setup-updated', refresh); window.removeEventListener('storage', refresh) }
-  }, [slug, tab])
-
   return (
     <div className="space-y-4">
       <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} roleSwitcher={roleSwitcher} settingsHref={settingsHref} userNameProp={userNameProp} />
-      <TabBar tab={tab} onChange={setTab} gettingStartedRemaining={gsRemaining} />
+      <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
         <div className="space-y-4">
@@ -4244,8 +4059,6 @@ function OverviewView({ slug, company, firstName, onAction, ttsEnabled = true, v
         <NotToMiss />
       ) : tab === 'team' ? (
         demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
-      ) : tab === 'getting-started' ? (
-        <GettingStartedView slug={slug} onGoSettings={onGoSettings} onNavigateTab={setTab} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
@@ -4475,7 +4288,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     }
     // Listen for same-tab avatar updates (e.g. from dropdown upload)
     function onAvatarUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
+      const detail = (e as CustomEvent).detail
+      const url = (detail && typeof detail === 'object' && 'url' in detail) ? (detail as { url?: string }).url : detail
       setUserPhoto(url || null)
     }
     window.addEventListener('storage', onPhotoUpdate)

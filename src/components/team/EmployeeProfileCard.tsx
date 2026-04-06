@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { X, MessageSquare, User, Calendar, Hash, Star, Sparkles, Upload } from 'lucide-react'
+import { getDemoAvatar } from '@/components/team/avatars'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -194,12 +195,24 @@ export function getGridCols(teamSize: number): string {
 
 // ─── Avatar component (photo or initials) ────────────────────────────────────
 
-function Avatar({ email, initials, size, deptColor }: { email?: string; initials: string; size: number; deptColor: string }) {
+function Avatar({ email, initials, size, deptColor, name, isCurrentUser }: { email?: string; initials: string; size: number; deptColor: string; name?: string; isCurrentUser?: boolean }) {
   const photo = getPhoto(email)
   if (photo) {
     return (
       <img src={photo} alt="" className="rounded-full object-cover" style={{ width: size, height: size, border: `3px solid ${deptColor}50` }} />
     )
+  }
+  // Demo staff get illustrated SVG avatars (the current user / "You" card always
+  // falls through to the existing photo-or-initials logic).
+  if (!isCurrentUser) {
+    const DemoSvg = getDemoAvatar(name)
+    if (DemoSvg) {
+      return (
+        <div className="rounded-full overflow-hidden" style={{ width: size, height: size, border: `3px solid ${deptColor}50`, boxShadow: `0 0 20px ${deptColor}30` }}>
+          <DemoSvg size={size} />
+        </div>
+      )
+    }
   }
   const textClass = size >= 140 ? 'text-5xl' : size >= 110 ? 'text-4xl' : size >= 85 ? 'text-3xl' : 'text-2xl'
   return (

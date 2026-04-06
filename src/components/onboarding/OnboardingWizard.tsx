@@ -101,7 +101,7 @@ const SCHOOL_TEMPLATES: TemplateCard[] = [
 ]
 
 const ROLES = ['Admin', 'Manager', 'Staff']
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 4
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -114,18 +114,12 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
   const [subdomains, setSubdomains] = useState<Record<string, string>>({})
   const [connecting, setConnecting] = useState<Record<string, boolean>>({})
 
-  // Step 2 — uploads
-  const [templates, setTemplates] = useState<TemplateCard[]>(
-    type === 'business' ? [...BUSINESS_TEMPLATES] : [...SCHOOL_TEMPLATES],
-  )
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
-
-  // Step 3 — invites
+  // Step 2 — invites
   const [invites, setInvites] = useState<InviteRow[]>([{ email: '', role: 'Staff' }])
   const [sendingInvites, setSendingInvites] = useState(false)
   const [invitesSent, setInvitesSent] = useState(false)
 
-  // Step 4 — your card (photo upload)
+  // Step 3 — your card (photo upload)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -152,8 +146,8 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
   // ── Navigation ───────────────────────────────────────────────────────────
 
   async function advance() {
-    // Step 4 → upload the photo (if selected) before moving on
-    if (step === 4 && photoFile && !uploadingPhoto) {
+    // Step 3 (Your Card) → upload the photo (if selected) before moving on
+    if (step === 3 && photoFile && !uploadingPhoto) {
       setUploadingPhoto(true)
       try {
         const email = localStorage.getItem('lumio_user_email')
@@ -168,9 +162,12 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
         })
         if (res.ok) {
           const data = await res.json().catch(() => ({}))
-          if (data?.url) {
-            localStorage.setItem('lumio_user_photo', data.url)
-            if (email) localStorage.setItem(`lumio_staff_photo_${email}`, data.url)
+          const publicUrl = data?.url
+          if (publicUrl) {
+            localStorage.setItem('lumio_user_photo', publicUrl)
+            if (email) localStorage.setItem(`lumio_staff_photo_${email}`, publicUrl)
+            localStorage.setItem('lumio_avatar_url', publicUrl)
+            window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: publicUrl } }))
           }
         }
       } catch { /* continue — local dataURL is already stored */ }
@@ -262,21 +259,7 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
     setConnecting(prev => ({ ...prev, [integration.id]: false }))
   }
 
-  // ── Step 2: File upload ──────────────────────────────────────────────────
-
-  const handleFileUpload = useCallback(async (templateId: string, file: File) => {
-    setTemplates(prev => prev.map(t => t.id === templateId ? { ...t, uploadStatus: 'uploading' as UploadStatus } : t))
-    try {
-      await supabase().from('onboarding_uploads').insert({
-        tenant_id: tenantId, tenant_type: type, file_type: templateId, filename: file.name, status: 'pending',
-      })
-      setTemplates(prev => prev.map(t => t.id === templateId ? { ...t, uploadStatus: 'success' as UploadStatus } : t))
-    } catch {
-      setTemplates(prev => prev.map(t => t.id === templateId ? { ...t, uploadStatus: 'error' as UploadStatus } : t))
-    }
-  }, [tenantId, type])
-
-  // ── Step 3: Invites ──────────────────────────────────────────────────────
+  // ── Invites ──────────────────────────────────────────────────────────────
 
   function addInviteRow() { setInvites(prev => [...prev, { email: '', role: 'Staff' }]) }
   function updateInvite(index: number, field: keyof InviteRow, value: string) {
@@ -324,10 +307,9 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
       <div style={{ flex: 1, overflowY: 'auto', padding: '40px 32px 120px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           {step === 1 && <StepConnect integrations={integrations} connected={connected} apiKeys={apiKeys} subdomains={subdomains} connecting={connecting} onOAuth={connectOAuth} onApiKey={connectApiKey} onSupport={raiseSupport} onApiKeyChange={(id, v) => setApiKeys(p => ({ ...p, [id]: v }))} onSubdomainChange={(id, v) => setSubdomains(p => ({ ...p, [id]: v }))} />}
-          {step === 2 && <StepUpload templates={templates} fileRefs={fileRefs} onUpload={handleFileUpload} />}
-          {step === 3 && <StepInvite invites={invites} sending={sendingInvites} sent={invitesSent} onAdd={addInviteRow} onUpdate={updateInvite} onRemove={removeInvite} onSend={sendInvites} />}
-          {step === 4 && <StepYourCard photoDataUrl={photoDataUrl} onPhotoChange={handlePhotoChange} />}
-          {step === 5 && <StepBookCall onExploreWithDemo={finish} />}
+          {step === 2 && <StepInvite invites={invites} sending={sendingInvites} sent={invitesSent} onAdd={addInviteRow} onUpdate={updateInvite} onRemove={removeInvite} onSend={sendInvites} />}
+          {step === 3 && <StepYourCard photoDataUrl={photoDataUrl} onPhotoChange={handlePhotoChange} />}
+          {step === 4 && <StepBookCall onExploreWithDemo={finish} />}
         </div>
       </div>
 
@@ -427,70 +409,7 @@ function StepConnect({ integrations, connected, apiKeys, subdomains, connecting,
   )
 }
 
-// ─── Step 2: Upload Your Data ────────────────────────────────────────────────
-
-function StepUpload({ templates, fileRefs, onUpload }: {
-  templates: TemplateCard[]; fileRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>; onUpload: (templateId: string, file: File) => void
-}) {
-  const [dragOver, setDragOver] = useState<string | null>(null)
-
-  function handleDrop(templateId: string, e: React.DragEvent) {
-    e.preventDefault(); setDragOver(null)
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.name.endsWith('.csv')) onUpload(templateId, file)
-  }
-
-  return (
-    <div>
-      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>Import your data</h1>
-      <p style={{ fontSize: 15, color: T.muted, marginBottom: 32 }}>Download our templates, fill them in, and upload to populate your workspace.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-        {templates.map(t => (
-          <div key={t.id} style={{ backgroundColor: T.card, borderRadius: 16, border: `1px solid ${T.border}`, padding: 24 }}>
-            <div style={{ fontWeight: 600, fontSize: 16, color: T.text, marginBottom: 16 }}>{t.label}</div>
-            <a href={t.file} download style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.purple, fontSize: 14, fontWeight: 600, textDecoration: 'none', marginBottom: 16 }}>
-              <Download size={16} /> Download Template
-            </a>
-            {t.uploadStatus === 'success' ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.green, fontSize: 14, fontWeight: 600, padding: '16px 0' }}>
-                <Check size={18} /> Uploaded — we&apos;ll process this shortly
-              </div>
-            ) : (
-              <div
-                onDragOver={e => { e.preventDefault(); setDragOver(t.id) }}
-                onDragLeave={() => setDragOver(null)}
-                onDrop={e => handleDrop(t.id, e)}
-                onClick={() => fileRefs.current[t.id]?.click()}
-                style={{
-                  border: `2px dashed ${dragOver === t.id ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.4)'}`,
-                  borderRadius: 12, padding: '24px 16px', textAlign: 'center', cursor: 'pointer',
-                  transition: 'border-color 0.15s, background 0.15s',
-                  backgroundColor: dragOver === t.id ? T.purpleFaint : 'transparent',
-                }}>
-                <input ref={el => { fileRefs.current[t.id] = el }} type="file" accept=".csv" style={{ display: 'none' }}
-                  onChange={e => { const file = e.target.files?.[0]; if (file) onUpload(t.id, file) }} />
-                {t.uploadStatus === 'uploading' ? (
-                  <Loader2 size={24} className="animate-spin" style={{ color: T.purple, margin: '0 auto' }} />
-                ) : t.uploadStatus === 'error' ? (
-                  <div style={{ color: T.red, fontSize: 13 }}>Upload failed — click to retry</div>
-                ) : (
-                  <>
-                    <Upload size={20} style={{ color: T.muted, margin: '0 auto 8px' }} />
-                    <div style={{ fontSize: 13, color: T.muted }}>
-                      Drag & drop your <strong style={{ color: T.text }}>.csv</strong> here, or <span style={{ color: T.purple, fontWeight: 600 }}>browse</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Step 3: Invite Your Team ────────────────────────────────────────────────
+// ─── Step 2: Invite Your Team ────────────────────────────────────────────────
 
 function StepInvite({ invites, sending, sent, onAdd, onUpdate, onRemove, onSend }: {
   invites: InviteRow[]; sending: boolean; sent: boolean
