@@ -18,6 +18,14 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   Business: 'linear-gradient(135deg, #6C3FC5 0%, #0D9488 100%)',
   Schools: 'linear-gradient(135deg, #0D9488 0%, #22D3EE 100%)',
   Product: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+  Football: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+  Rugby: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+  Tennis: 'linear-gradient(135deg, #A3E635 0%, #65A30D 100%)',
+  Golf: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)',
+  Darts: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+  Boxing: 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)',
+  Cricket: 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)',
+  "Women's Football": 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
   General: 'linear-gradient(135deg, #1F2937 0%, #374151 100%)',
 }
 
