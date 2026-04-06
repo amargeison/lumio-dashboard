@@ -32,9 +32,12 @@ const BUSINESS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Blog',         href: '/blog' },
 ]
 
-function getNavLinks() {
-  if (typeof window === 'undefined') return SPORTS_NAV
-  return window.location.hostname.includes('lumiosports') ? SPORTS_NAV : BUSINESS_NAV
+function useIsSports() {
+  const [isSports, setIsSports] = useState(false)
+  useEffect(() => {
+    setIsSports(window.location.hostname.includes('lumiosports'))
+  }, [])
+  return isSports
 }
 
 const SCHOOLS_EXTRA_LINKS = [
@@ -65,8 +68,9 @@ function Nav() {
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
   const isFootball = pathname?.startsWith('/football') ?? false
+  const isSports = useIsSports()
 
-  const NAV_LINKS = getNavLinks()
+  const NAV_LINKS = isSports ? SPORTS_NAV : BUSINESS_NAV
   const baseLinks = isSchools && NAV_LINKS.some(l => l.label === 'Schools')
     ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
     : NAV_LINKS
@@ -110,8 +114,8 @@ function Nav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2" style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={140} height={40}
-            style={{ width: 140, height: 'auto', objectFit: 'contain' }} priority />
+          <Image src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'} width={isSports ? 140 : 360} height={isSports ? 40 : 180}
+            style={{ width: isSports ? 140 : 180, height: 'auto', objectFit: 'contain' }} priority />
         </Link>
 
         {/* Desktop nav */}
@@ -258,13 +262,14 @@ function Nav() {
 }
 
 function Footer() {
+  const isSports = useIsSports()
   return (
     <footer style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937' }}>
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Image src="/Sports/Lumio_Sports_logo.png" alt="Lumio Sports" width={200} height={100}
+            <Image src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'} width={200} height={100}
               style={{ width: 100, height: 'auto', objectFit: 'contain', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
