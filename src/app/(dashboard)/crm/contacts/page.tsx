@@ -5,6 +5,7 @@ import { useCRMWorkspaceId } from '@/hooks/useCRMWorkspaceId'
 import ContactGrid from '@/components/crm/ContactGrid'
 import ContactDrawer from '@/components/crm/ContactDrawer'
 import AddContactModal from '@/components/crm/AddContactModal'
+import DedupeBanner from '@/components/crm/DedupeBanner'
 import type { CRMContact } from '@/lib/crm/types'
 
 const DEMO_CONTACTS: CRMContact[] = [
@@ -29,6 +30,8 @@ export default function ContactsPage() {
   const [selectedContact, setSelectedContact] = useState<CRMContact | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [loading, setLoading] = useState(!isDemoActive)
+  const [activeTab, setActiveTab] = useState<'all' | 'duplicates'>('all')
+  const [dupeCount, setDupeCount] = useState(0)
 
   useEffect(() => {
     if (!workspaceId) { if (isDemoActive) { setContacts(DEMO_CONTACTS); setLoading(false) }; return }
@@ -74,6 +77,13 @@ export default function ContactsPage() {
     }
     load()
   }, [workspaceId])
+
+  useEffect(() => {
+    // Count contacts that have potential duplicates (demo: contacts with similar domains)
+    const domains = contacts.map((c: CRMContact) => c.email.split('@')[1])
+    const dupes = domains.filter((d: string, i: number) => domains.indexOf(d) !== i)
+    setDupeCount(dupes.length > 0 ? Math.min(dupes.length + 1, 4) : 0)
+  }, [contacts])
 
   async function handleSaveContact(contactData: Partial<CRMContact>) {
     if (!workspaceId) return
@@ -179,11 +189,28 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      <ContactGrid
-        contacts={contacts}
-        onContactClick={setSelectedContact}
-        onAddClick={() => setShowAddModal(true)}
-      />
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setActiveTab('all')} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: activeTab === 'all' ? '#6C3FC5' : '#111318', color: activeTab === 'all' ? '#fff' : '#6B7280', border: activeTab === 'all' ? 'none' : '1px solid #1F2937' }}>
+          All ({contacts.length})
+        </button>
+        <button onClick={() => setActiveTab('duplicates')} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: activeTab === 'duplicates' ? '#F59E0B' : '#111318', color: activeTab === 'duplicates' ? '#fff' : '#6B7280', border: activeTab === 'duplicates' ? 'none' : '1px solid #1F2937' }}>
+          Duplicates {dupeCount > 0 ? `(${dupeCount})` : ''}
+        </button>
+      </div>
+
+      {activeTab === 'duplicates' ? (
+        <div className="space-y-3">
+          {contacts.map((c: CRMContact) => (
+            <DedupeBanner key={c.id} recordId={c.id} recordType="contact" recordData={c as Record<string, unknown>} />
+          ))}
+        </div>
+      ) : (
+        <ContactGrid
+          contacts={contacts}
+          onContactClick={setSelectedContact}
+          onAddClick={() => setShowAddModal(true)}
+        />
+      )}
 
       <ContactDrawer
         contact={selectedContact}
