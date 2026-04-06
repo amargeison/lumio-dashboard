@@ -1154,6 +1154,243 @@ const GPSPlayerDataView = () => {
 }
 
 // ─── PLACEHOLDER VIEW ─────────────────────────────────────────────────────────
+
+// ─── SPONSORSHIP PIPELINE VIEW ─────────────────────────────────────────────────
+const SponsorshipPipelineView = ({ club }: { club: WomensClub }) => {
+  const fmt = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
+  const deals: Array<{partner:string;type:string;value:number;attribution:string;end:string;status:string;flag:string}> = [
+    {partner:'Kestrel Finance',type:'Kit',value:85000,attribution:'Standalone (100%)',end:'30 Apr 2025',status:'RENEWAL DUE',flag:''},
+    {partner:'NovaTech UK',type:'Sleeve',value:40000,attribution:'Standalone (100%)',end:'30 Apr 2025',status:'RENEWAL DUE',flag:''},
+    {partner:'Meridian Insurance',type:'Back of shirt',value:95000,attribution:'Bundled (64%)',end:'Dec 2025',status:'Active',flag:'FSR REVIEW'},
+    {partner:'Lumio Tech',type:'Training kit',value:18000,attribution:'Standalone',end:'Mar 2026',status:'Active',flag:''},
+  ]
+  return (
+    <div>
+      <SectionHeader title="Sponsorship Pipeline — Standalone Commercial" subtitle="FSR-aware commercial CRM with bundled deal attribution" icon="🤝" />
+      {!club.kitSponsor && <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-6 text-xs text-amber-400">⚠ No kit sponsor active — flagged in FSR revenue dashboard.</div>}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Active Deals" value="4" color="pink" />
+        <StatCard label="Annual Value" value={fmt(238000)} color="teal" />
+        <StatCard label="In Negotiation" value="2" color="amber" />
+        <StatCard label="Renewals (30d)" value="2" sub="Kestrel + NovaTech" color="red" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Partner</th><th className="text-left p-3">Type</th><th className="text-left p-3">Value</th><th className="text-left p-3">FSR Attribution</th><th className="text-left p-3">End</th><th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {deals.map((d: typeof deals[0], i: number) => (
+              <tr key={i} className={`border-b border-gray-800/50 ${d.flag === 'FSR REVIEW' ? 'bg-red-600/5' : ''}`}>
+                <td className="p-3 text-gray-200 font-medium">{d.partner}</td>
+                <td className="p-3 text-gray-400 text-xs">{d.type}</td>
+                <td className="p-3 text-gray-300">{fmt(d.value)}</td>
+                <td className="p-3 text-xs">{d.attribution.includes('Bundled') ? <span className="text-red-400 font-medium">{d.attribution}</span> : <span className="text-green-400">{d.attribution}</span>}</td>
+                <td className="p-3 text-gray-400 text-xs">{d.end}</td>
+                <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${d.status === 'RENEWAL DUE' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'}`}>{d.status}</span>{d.flag && <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400 ml-1">{d.flag}</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-red-600/5 border border-red-600/30 rounded-xl p-4 mb-6">
+        <div className="text-xs text-red-400 font-medium mb-1">⚠ Bundled Attribution Review Required</div>
+        <div className="text-xs text-gray-400">Meridian Insurance — bundled attribution 64% of £450k group deal. Women&apos;s share: £95k. Review recommended.</div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Brand Values Alignment</h3>
+        <div className="space-y-2">
+          {deals.map((d: typeof deals[0], i: number) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-xs text-gray-300">{d.partner}</span>
+              <div className="flex gap-3 text-xs text-gray-400">
+                <span>Empowerment {'★'.repeat(4)}{'☆'.repeat(1)}</span>
+                <span>Equality {'★'.repeat(i < 2 ? 5 : 3)}{'☆'.repeat(i < 2 ? 0 : 2)}</span>
+                <span>Community {'★'.repeat(i < 3 ? 4 : 3)}{'☆'.repeat(i < 3 ? 1 : 2)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Prospect Pipeline</h3>
+        <div className="space-y-2">
+          {['Aurora Fitness (sleeve — est. £30k)','West Country Energy (stand naming — £15k)','Hartfield Building Society (community — £12k)','TechNow Digital (back of shirt — £45k)','GreenLeaf Nutrition (training kit — £20k)'].map((p: string, i: number) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{p}</span><span className="text-gray-600">Prospect</span></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── STANDALONE TRACKER VIEW ──────────────────────────────────────────────────
+const StandaloneTrackerView = ({ club }: { club: WomensClub }) => (
+  <div>
+    <SectionHeader title="Standalone Identity Tracker" subtitle="Building standalone commercial identity — FSR incentivised" icon="🏗️" />
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <p className="text-xs text-gray-400 mb-4">Revenue attributed directly to women&apos;s football increases your permitted salary cap under FSR.</p>
+      <div className="flex items-center gap-6">
+        <svg viewBox="0 0 120 120" className="w-28 h-28 flex-shrink-0">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1f2937" strokeWidth="10" />
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#EC4899" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${0.68 * 314} 314`} transform="rotate(-90 60 60)" />
+          <text x="60" y="55" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">68%</text>
+          <text x="60" y="72" textAnchor="middle" fill="#6b7280" fontSize="9">Standalone</text>
+        </svg>
+        <div className="text-xs text-gray-400 space-y-1">
+          <div><span className="text-pink-400 font-medium">68%</span> standalone revenue</div>
+          <div><span className="text-gray-500">32%</span> affiliated/bundled</div>
+        </div>
+      </div>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Demerger Readiness Checklist</h3>
+      <div className="space-y-2">
+        {[{item:'Separate legal entity registered',done:true},{item:'Brand assets independently owned',done:true},{item:'Stadium/facility agreement',done:false,note:'In progress'},{item:'TUPE staff transfers',done:false,note:'Not started'},{item:'Bank account separation',done:true},{item:'Independent commercial deals',done:false,note:'2 bundled'}].map((c: {item:string;done:boolean;note?:string}, i: number) => (
+          <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-800/50 text-sm">
+            <span className={c.done ? 'text-green-400' : 'text-red-400'}>{c.done ? '✓' : '✗'}</span>
+            <span className={c.done ? 'text-gray-400' : 'text-gray-300'}>{c.item}</span>
+            {c.note && <span className="text-xs text-amber-400 ml-auto">{c.note}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="grid grid-cols-3 gap-4 mb-6">
+      <StatCard label="Indicative Valuation" value={new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(club.relevantRevenue * 2.5)} sub="Revenue × 2.5x" color="pink" />
+      <StatCard label="Dependency Score" value="32%" sub="Lower is better ↓" color="amber" />
+      <StatCard label="Standalone Readiness" value="58%" sub="Target: 85%" color="blue" />
+    </div>
+    <div className="w-full bg-gray-800 rounded-full h-3"><div className="h-3 rounded-full" style={{width:'58%',backgroundColor:'#EC4899'}} /></div>
+    <div className="text-xs text-gray-500 mt-1">Standalone readiness: 58%</div>
+  </div>
+)
+
+// ─── BOARD SUITE VIEW ─────────────────────────────────────────────────────────
+const BoardSuiteView = ({ club }: { club: WomensClub }) => (
+  <div>
+    <SectionHeader title={`Board Suite — ${club.name}`} subtitle="Executive dashboard for board and investors" icon="🏛️" />
+    <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+      <div><div className="text-sm text-pink-300 font-medium">Next board meeting: 15 Apr 2025</div><div className="text-xs text-gray-400">Pack due in 11 days</div></div>
+      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Generate Pack — Phase 2</button>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <StatCard label="FSR Status" value={`Safe (${club.salarySpend ?? 0}%)`} color="green" />
+      <StatCard label="Headroom" value={club.fsrHeadroom ? `£${(club.fsrHeadroom/1000).toFixed(0)}k` : 'N/A'} color="teal" />
+      <StatCard label="Revenue vs Budget" value="87%" color="blue" />
+      <StatCard label="Pipeline" value="£238k" color="pink" />
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <StatCard label="Squad" value="20" color="purple" />
+      <StatCard label="Welfare Flags" value="2" color="amber" />
+      <StatCard label="Attendance" value="2,847" color="blue" />
+      <StatCard label="Points" value="34" color="green" />
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Commercial Growth (Season-on-Season)</h3>
+      <svg viewBox="0 0 400 140" className="w-full">
+        {[{year:'22-23',md:180,com:120,bc:80},{year:'23-24',md:220,com:180,bc:120},{year:'24-25',md:280,com:240,bc:160},{year:'25-26',md:320,com:310,bc:200}].map((y: {year:string;md:number;com:number;bc:number}, i: number) => {
+          const x = 40 + i * 90; const scale = 100 / 350;
+          return (<g key={i}><rect x={x} y={120 - y.md * scale} width={20} height={y.md * scale} rx={2} fill="#EC4899" opacity={0.7} /><rect x={x + 22} y={120 - y.com * scale} width={20} height={y.com * scale} rx={2} fill="#8B5CF6" opacity={0.7} /><rect x={x + 44} y={120 - y.bc * scale} width={20} height={y.bc * scale} rx={2} fill="#38BDF8" opacity={0.7} /><text x={x + 32} y={135} textAnchor="middle" fill="#6b7280" fontSize="9">{y.year}</text></g>)
+        })}
+      </svg>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+      <h3 className="text-sm font-bold text-white mb-3">WSL Compliance</h3>
+      <div className="space-y-2">
+        {[{item:'FSR salary cap',ok:true},{item:'Age-band minimums',ok:false,note:'1 player'},{item:'Welfare standards',ok:true},{item:'Registration',ok:true},{item:'Dual reg records',ok:true}].map((c: {item:string;ok:boolean;note?:string}, i: number) => (
+          <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-gray-800/50"><span className={c.ok ? 'text-green-400' : 'text-red-400'}>{c.ok ? '✓' : '✗'}</span><span className="text-gray-300">{c.item}</span>{c.note && <span className="text-amber-400 ml-auto">{c.note}</span>}</div>
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
+// ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
+const FinancialPlanningView = ({ club }: { club: WomensClub }) => {
+  const [planTab, setPlanTab] = useState<'1yr'|'3yr'|'5yr'|'10yr'>('1yr')
+  const fmtC = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
+  const permitted = club.relevantRevenue * 0.8
+  const headroom = club.fsrHeadroom ?? 0
+  return (
+    <div>
+      <SectionHeader title="Club Planner — FSR-Constrained" subtitle="Multi-horizon planning with FSR compliance modelling" icon="💷" />
+      <div className="flex gap-1 bg-[#0D1117] border border-gray-800 rounded-lg p-1 w-fit mb-6">
+        {(['1yr','3yr','5yr','10yr'] as const).map((t: typeof planTab) => (
+          <button key={t} onClick={() => setPlanTab(t)} className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${planTab === t ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'text-gray-500 hover:text-gray-300'}`}>{t === '1yr' ? '1 Year' : t === '3yr' ? '3 Year' : t === '5yr' ? '5 Year' : '10 Year'}</button>
+        ))}
+      </div>
+      {planTab === '1yr' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Revenue" value={fmtC(club.relevantRevenue)} color="pink" />
+            <StatCard label="Permitted (80%)" value={fmtC(permitted)} color="teal" />
+            <StatCard label="Current Spend" value={fmtC(permitted - headroom)} color="blue" />
+            <StatCard label="Headroom" value={fmtC(headroom)} color="green" />
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Matchday Target</h3><div className="text-xs text-gray-400">2,847 avg × 22 games × £18 ticket = <span className="text-pink-400 font-bold">£1.13M</span></div></div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Transfer Budget</h3><div className="text-xs text-gray-400">{fmtC(headroom)} FSR headroom for signings</div></div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Cash Funding</h3><div className="text-xs text-gray-400">Owner contribution max: <span className="text-pink-400 font-bold">£500k</span>/season</div></div>
+        </div>
+      )}
+      {planTab === '3yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['+12% attendance growth/yr','2 new commercial deals/yr','Broadcast renegotiation 2027','Revenue target Y3: £3.2M → spend £2.56M','WSL 14-club expansion: extra broadcast'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
+      {planTab === '5yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['Stadium: 6,500 → 9,000 by Y4','Eliminate bundled deals by Y3','Full portfolio: kit + title + 6 partners','Self-sustaining model'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
+      {planTab === '10yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['Full commercial independence','UWCL revenue modelling','Academy ROI over decade','Decade P&L with FSR at each milestone'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
+    </div>
+  )
+}
+
+// ─── STAFF DIRECTORY VIEW ─────────────────────────────────────────────────────
+const StaffDirectoryView = () => (
+  <div>
+    <SectionHeader title="Staff Directory" subtitle="Club personnel and contacts" icon="📋" />
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+          <th className="text-left p-3">Name</th><th className="text-left p-3">Role</th><th className="text-left p-3">Dept</th><th className="text-left p-3">Email</th><th className="text-left p-3">Start</th>
+        </tr></thead>
+        <tbody>
+          {[{n:'Sarah Frost',r:'Head Coach',d:'Football',e:'s.frost@oakridge.com',s:'Aug 2022'},{n:'Kate Brennan',r:'Club Director',d:'Executive',e:'k.brennan@oakridge.com',s:'Jan 2020'},{n:'Dr Anna Reid',r:'Psychologist',d:'Welfare',e:'a.reid@oakridge.com',s:'Sep 2023'},{n:'Mel Hooper',r:'Head Physio',d:'Medical',e:'m.hooper@oakridge.com',s:'Mar 2021'},{n:'Jordan Clarke',r:'Commercial Dir',d:'Commercial',e:'j.clarke@oakridge.com',s:'Jun 2023'},{n:'Nina Walsh',r:'Welfare Coord',d:'Welfare',e:'n.walsh@oakridge.com',s:'Jan 2024'},{n:'Tom Reed',r:'Analyst',d:'Football',e:'t.reed@oakridge.com',s:'Aug 2024'}].map((s: {n:string;r:string;d:string;e:string;s:string}, i: number) => (
+            <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{s.n}</td><td className="p-3 text-gray-400 text-xs">{s.r}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400">{s.d}</span></td><td className="p-3 text-gray-500 text-xs">{s.e}</td><td className="p-3 text-gray-500 text-xs">{s.s}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)
+
+// ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
+const SettingsViewFull = ({ club }: { club: WomensClub }) => (
+  <div>
+    <SectionHeader title="Settings" subtitle="Club profile, notifications, integrations" icon="⚙️" />
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Club Profile</h3>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        {[{l:'Club',v:club.name},{l:'League',v:club.league},{l:'Stadium',v:club.stadium},{l:'Accent',v:club.accent},{l:'Founded',v:String(club.founded)},{l:'Director',v:club.director}].map((f: {l:string;v:string}, i: number) => (
+          <div key={i} className="py-2 border-b border-gray-800/50"><div className="text-gray-500 text-[10px] uppercase">{f.l}</div><div className="text-gray-200 mt-0.5">{f.v}</div></div>
+        ))}
+      </div>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Notifications</h3>
+      <div className="space-y-3">
+        {['FSR compliance alerts','Welfare flags','Sponsorship renewals','Dual reg expiries','Board meetings'].map((n: string, i: number) => (
+          <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{n}</span><div className="w-10 h-5 bg-pink-600/30 rounded-full relative"><div className="w-4 h-4 bg-pink-400 rounded-full absolute top-0.5 right-0.5" /></div></div>
+        ))}
+      </div>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Integrations</h3>
+      {['Kitman Labs','FA Registration System'].map((ig: string, i: number) => (
+        <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{ig}</span><button className="px-3 py-1 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Connect</button></div>
+      ))}
+    </div>
+    <div className="flex gap-3">
+      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Roles & Permissions — Demo</button>
+      <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Export Data (GDPR)</button>
+    </div>
+  </div>
+)
+
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   <div>
     <SectionHeader title={title} icon={icon} />
@@ -1186,14 +1423,14 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
       case 'dualreg':     return <DualRegistrationView />
       case 'tactics':     return <TacticsSetPiecesView />
       case 'match':       return <MatchPreparationView />
-      case 'sponsorship': return <PlaceholderView title="Sponsorship Pipeline" icon="🤝" />
-      case 'standalone':  return <PlaceholderView title="Standalone Tracker" icon="🏗️" />
-      case 'board':       return <PlaceholderView title="Board Suite" icon="🏛️" />
-      case 'financial':   return <PlaceholderView title="Financial Planning" icon="💷" />
-      case 'team':        return <PlaceholderView title="Staff Directory" icon="📋" />
+      case 'sponsorship': return <SponsorshipPipelineView club={club} />
+      case 'standalone':  return <StandaloneTrackerView club={club} />
+      case 'board':       return <BoardSuiteView club={club} />
+      case 'financial':   return <FinancialPlanningView club={club} />
+      case 'team':        return <StaffDirectoryView />
       case 'gps':         return <GPSPlayerDataView />
       case 'medical':     return <MedicalRecordsView />
-      case 'settings':    return <PlaceholderView title="Settings" icon="⚙️" />
+      case 'settings':    return <SettingsViewFull club={club} />
       default:            return <DashboardView club={club} />
     }
   }
