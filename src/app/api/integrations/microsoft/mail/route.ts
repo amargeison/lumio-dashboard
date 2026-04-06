@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   // Get a fresh token (auto-refreshes if near expiry)
   const tokenResult = await ensureFreshMicrosoftToken(businessId, PROVIDERS)
   if (!tokenResult) {
-    return NextResponse.json({ error: 'Outlook not connected or token refresh failed', code: 'NOT_CONNECTED', auth_required: true }, { status: 404 })
+    return NextResponse.json({ connected: false, emails: [] })
   }
 
   const { access_token } = tokenResult

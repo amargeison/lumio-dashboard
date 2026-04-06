@@ -66,14 +66,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Flip the flag regardless of partial failures
-  await supabase
+  const { error: updateError } = await supabase
     .from('businesses')
     .update({ demo_data_active: true })
     .eq('id', bid)
+
+  if (updateError) console.error('demo_data_active update failed:', updateError)
 
   if (errors.length > 0) {
     console.error('[load-demo] Partial success. Errors:', errors)
   }
 
-  return NextResponse.json({ success: true, tablesWritten, errors: errors.length > 0 ? errors : undefined })
+  return NextResponse.json({
+    success: true,
+    tablesWritten,
+    errors: errors.length > 0 ? errors : undefined,
+    flagError: updateError?.message ?? null,
+  })
 }
