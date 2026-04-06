@@ -41,6 +41,11 @@ const PORTALS = [
     cta: 'Explore Lumio Fight', href: '/boxing',
   },
   {
+    icon: '⚽', title: "Women's Football", subtitle: "Lumio Women's Football", color: '#EC4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.25)',
+    desc: "The first operating system built specifically for professional women's football clubs. FSR compliance tracking, player welfare management (maternity, ACL, mental health), standalone sponsorship pipeline, board suite and AI Club Director morning briefing — built for the women's game, not the men's.",
+    cta: "Explore Women's Football", href: '/womens-football',
+  },
+  {
     icon: '🏉', title: 'Rugby', subtitle: 'Lumio Tour (Rugby)', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)',
     desc: 'Contract & career management, performance analytics, injury & recovery tracking, GPS load data (PlayerData), match prep & opposition analysis, sponsorship manager and AI morning briefing. Built for Premiership, Top 14 and international players.',
     cta: 'Join the waitlist', href: '/rugby', badge: 'Coming soon',
@@ -83,7 +88,7 @@ export default function SportsPage() {
         <div className="max-w-6xl mx-auto px-6 text-center relative">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
             <span className="text-sm">🏆</span>
-            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Nine portals. One platform.</span>
+            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Ten portals. One platform.</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
             The operating system for<br />
@@ -155,7 +160,7 @@ export default function SportsPage() {
 
       {/* One platform section */}
       <section className="max-w-4xl mx-auto px-6 pb-20 text-center">
-        <h2 className="text-2xl md:text-3xl font-black mb-4">One platform. Nine portals. Every career stage.</h2>
+        <h2 className="text-2xl md:text-3xl font-black mb-4">One platform. Ten portals. Every career stage.</h2>
         <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
           Lumio Tour, Lumio Pro Club and Lumio Fight share the same AI infrastructure, the same morning briefing system, the same team hub architecture — just adapted for each sport&apos;s unique needs. Whether you&apos;re a club owner managing a 25-man squad, a touring tennis professional tracking rankings, a golfer optimising strokes gained, a darts player on the PDC circuit, or a boxer preparing for a world title shot — the platform speaks your language, uses your metrics, and fits your workflow.
         </p>
