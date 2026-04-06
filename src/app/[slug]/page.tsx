@@ -4342,6 +4342,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const handleDismissWin = (id: string) => { setDismissedWins(prev => { const next = new Set(prev); next.add(id); return next }) }
   const [showLiveOnboarding, setShowLiveOnboarding] = useState(false)
   const [businessId, setBusinessId] = useState('')
+  const [statusRefetchKey, setStatusRefetchKey] = useState(0)
   const [supabaseStaff, setSupabaseStaff] = useState<StaffMember[]>([])
   const [staffRefreshKey, setStaffRefreshKey] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -4582,14 +4583,16 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             if (data.owner_email) localStorage.setItem(`lumio_staff_photo_${data.owner_email}`, data.user_avatar_url)
           }
           if (data.id) setBusinessId(data.id)
-          if (data.demo_data_active) {
+          // Demo data flag — treat EITHER localStorage or DB as authoritative.
+          // The DB flag can lag behind (race between load-demo insert and businesses.update),
+          // so we only clear local state when BOTH sources say false.
+          const localDemoActive = localStorage.getItem('lumio_demo_active') === 'true'
+          if (data.demo_data_active || localDemoActive) {
             setDemoDataActive(true)
             localStorage.setItem('lumio_demo_active', 'true')
           } else {
-            // Force-clear stale demo flags for real businesses
             setDemoDataActive(false)
-            localStorage.setItem('lumio_demo_active', 'false')
-            Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
+            localStorage.removeItem('lumio_demo_active')
           }
           // Staff is now fetched from Supabase only — no localStorage sync needed
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
@@ -4598,7 +4601,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           if (alreadyOnboarded || dismissed) {
             localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
-          } else if (!data.demo_data_active) {
+          } else if (!data.demo_data_active && !localDemoActive) {
             // Only show if created less than 10 minutes ago AND no local flags set
             const createdAt = data.created_at ? new Date(data.created_at).getTime() : 0
             const isNewTenant = createdAt > 0 && (Date.now() - createdAt) < 10 * 60 * 1000
@@ -4633,13 +4636,18 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               if (data.business?.logo_url) { setCompanyLogo(data.business.logo_url); localStorage.setItem('workspace_company_logo', data.business.logo_url); localStorage.setItem('lumio_company_logo', data.business.logo_url) }
               if (data.business?.user_avatar_url) { setUserPhoto(data.business.user_avatar_url); localStorage.setItem('lumio_user_photo', data.business.user_avatar_url); if (data.business.owner_email) localStorage.setItem(`lumio_staff_photo_${data.business.owner_email}`, data.business.user_avatar_url) }
               if (data.business?.id) setBusinessId(data.business.id)
-              if (data.business?.demo_data_active) { setDemoDataActive(true); localStorage.setItem('lumio_demo_active', 'true') }
+              // Demo flag — either source wins (see comment in primary status fetch above)
+              const bizLocalDemoActive = localStorage.getItem('lumio_demo_active') === 'true'
+              if (data.business?.demo_data_active || bizLocalDemoActive) {
+                setDemoDataActive(true)
+                localStorage.setItem('lumio_demo_active', 'true')
+              }
               const bizOnboarded = data.business?.onboarding_completed || data.business?.onboarded || data.business?.onboarding_complete
               const bizDismissed = localStorage.getItem(`onboarding-dismissed-${slug}`)
               if (bizOnboarded || bizDismissed) {
                 localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
                 localStorage.setItem('lumio_onboarding_shown', 'true')
-              } else if (!data.business?.demo_data_active) {
+              } else if (!data.business?.demo_data_active && !bizLocalDemoActive) {
                 const bizCreated = data.business?.created_at ? new Date(data.business.created_at).getTime() : 0
                 const bizIsNew = bizCreated > 0 && (Date.now() - bizCreated) < 10 * 60 * 1000
                 if (bizIsNew && !localStorage.getItem(`lumio_onboarding_done_${slug}`) && !localStorage.getItem('lumio_onboarding_shown') && !localStorage.getItem('lumio_tour_completed')) {
@@ -4665,7 +4673,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         })
         .catch(() => {}) // Non-blocking — don't redirect on failure
     }
-  }, [slug, router])
+  }, [slug, router, statusRefetchKey])
 
   // Clear stale localStorage staff data — Supabase is now the only source
   useEffect(() => {
@@ -4704,6 +4712,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     // Mark onboarding as done so it never reappears
     localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
     localStorage.setItem('lumio_onboarding_shown', 'true')
+    // Force a fresh workspace status fetch so demo_data_active is re-read from DB
+    // before the empty-state vs populated-dashboard decision is re-evaluated
+    setStatusRefetchKey(n => n + 1)
     setShowTabGuide(true)
   }
 
@@ -4848,6 +4859,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
             localStorage.setItem('lumio_onboarding_shown', 'true')
             localStorage.setItem(`onboarding-dismissed-${slug}`, 'true')
+            // Re-read workspace status so demo_data_active (just set by finish())
+            // is reflected in the dashboard empty-state decision
+            setStatusRefetchKey(n => n + 1)
           }}
         />
       )}
