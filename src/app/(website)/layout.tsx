@@ -18,6 +18,7 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: "Women's FC", href: '/womens-football' },
   { label: 'Rugby',    href: '/rugby' },
   { label: 'Cricket',  href: '/cricket' },
+  { label: 'Pricing',  href: '/pricing-sports' },
   { label: 'About',    href: '/about' },
   { label: 'Blog',     href: '/blog' },
 ]
