@@ -31,12 +31,6 @@ const FEATURES = [
   { icon: '🎙️', title: 'AI Morning Briefing',               desc: 'Voice-powered morning roundup for headteachers — 60 seconds flat.' },
 ]
 
-const PLANS = [
-  { name: 'Primary',   price: '£299',  per: '/mo', desc: 'Everything included. No per-pupil charge.' },
-  { name: 'Secondary', price: '£499',  per: '/mo', desc: 'Everything included. No per-pupil charge.', featured: true },
-  { name: 'MAT',       price: 'Call us', per: '',  desc: 'Multi-academy trusts — tailored to your size.' },
-]
-
 export default function SchoolsAboutPage() {
   return (
     <div style={{ backgroundColor: '#07080F' }}>
@@ -117,41 +111,17 @@ export default function SchoolsAboutPage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing CTA banner */}
       <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-5xl px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black mb-3" style={{ color: '#F9FAFB' }}>Flat fee. No surprises. No per-pupil charges.</h2>
-            <p className="text-base" style={{ color: '#9CA3AF' }}>One price. Every feature. No upsells.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map(plan => (
-              <div
-                key={plan.name}
-                className="rounded-2xl p-8"
-                style={{
-                  backgroundColor: '#111318',
-                  border: plan.featured ? '1px solid rgba(108,63,197,0.6)' : '1px solid #1F2937',
-                  position: 'relative',
-                }}
-              >
-                {plan.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}>
-                    Most popular
-                  </div>
-                )}
-                <h3 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: plan.featured ? '#A78BFA' : '#9CA3AF' }}>{plan.name}</h3>
-                <div className="mb-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-black" style={{ color: '#F9FAFB' }}>{plan.price}</span>
-                  {plan.per && <span className="text-sm" style={{ color: '#9CA3AF' }}>{plan.per}</span>}
-                </div>
-                <p className="text-sm" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>{plan.desc}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-sm mt-10 font-semibold" style={{ color: '#0D9488' }}>
-            Cancel anytime. No 3-year lock-in. No exit fees.
-          </p>
+        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+          <h2 className="text-2xl md:text-3xl font-black mb-6" style={{ color: '#F9FAFB' }}>Want to see our pricing?</h2>
+          <Link
+            href="/schools/pricing"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-colors"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
+          >
+            View Schools Pricing <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 
