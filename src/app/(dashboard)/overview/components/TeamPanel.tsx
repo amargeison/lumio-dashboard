@@ -3,6 +3,35 @@
 import { useState, useEffect } from 'react'
 import { X, Mail, Calendar, ExternalLink, Search } from 'lucide-react'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
+import { getDemoAvatar } from '@/components/team/avatars'
+
+// Renders an illustrated SVG for known demo staff names, or falls back to
+// the original initials circle. Used for the small list / org-chart avatars.
+// The "You" card (id '0') always falls back to the initials version so we
+// don't override the real user's identity.
+function MemberAvatar({ member, size, fontSize, deptColor }: {
+  member: TeamMember
+  size: number
+  fontSize: string
+  deptColor: string
+}) {
+  const SvgComp = member.id === '0' ? null : getDemoAvatar(member.name)
+  if (SvgComp) {
+    return (
+      <div className="rounded-full overflow-hidden" style={{ width: size, height: size }}>
+        <SvgComp size={size} />
+      </div>
+    )
+  }
+  return (
+    <div
+      className={`rounded-full flex items-center justify-center font-bold ${fontSize}`}
+      style={{ width: size, height: size, backgroundColor: `${deptColor}20`, color: deptColor }}
+    >
+      {member.avatar}
+    </div>
+  )
+}
 
 interface TeamMember {
   id: string; name: string; role: string; department: string; avatar: string
@@ -125,7 +154,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
                     <div key={m.id} className="rounded-2xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                       <div className="flex items-start gap-3">
                         <div className="relative shrink-0">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                          <MemberAvatar member={m} size={40} fontSize="text-sm" deptColor={DEPT_COLORS[m.department] || '#6B7280'} />
                           <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: sc.dot, borderColor: '#111318' }} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -189,7 +218,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
               <div key={m.id} onClick={() => setSelectedMember(m)} className="rounded-2xl p-4 cursor-pointer transition-all hover:border-[#374151]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}20`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                    <MemberAvatar member={m} size={40} fontSize="text-sm" deptColor={DEPT_COLORS[m.department] || '#6B7280'} />
                     <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2" style={{ backgroundColor: sc.dot, borderColor: '#111318' }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -227,7 +256,9 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
               <div key={m.id} className="flex flex-col items-center">
                 <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
                 <div onClick={() => setSelectedMember(m)} className="rounded-xl p-3 text-center cursor-pointer w-full" style={{ backgroundColor: '#111318', border: `1px solid ${DEPT_COLORS[m.department] || '#1F2937'}` }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}20`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                  <div className="mx-auto mb-1" style={{ width: 40, height: 40 }}>
+                    <MemberAvatar member={m} size={40} fontSize="text-xs" deptColor={DEPT_COLORS[m.department] || '#6B7280'} />
+                  </div>
                   <p className="text-xs font-bold truncate" style={{ color: '#F9FAFB' }}>{m.name}</p>
                   <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.role}</p>
                   <span className="text-[10px]" style={{ color: SC[m.status].color }}>{SC[m.status].label}</span>
@@ -241,7 +272,9 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
               const manager = TEAM.find(t => t.id === m.managerId)
               return (
                 <div key={m.id} onClick={() => setSelectedMember(m)} className="rounded-xl p-3 text-center cursor-pointer" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${DEPT_COLORS[m.department] || '#6B7280'}15`, color: DEPT_COLORS[m.department] || '#6B7280' }}>{m.avatar}</div>
+                  <div className="mx-auto mb-1" style={{ width: 32, height: 32 }}>
+                    <MemberAvatar member={m} size={32} fontSize="text-[10px]" deptColor={DEPT_COLORS[m.department] || '#6B7280'} />
+                  </div>
                   <p className="text-xs font-medium truncate" style={{ color: '#D1D5DB' }}>{m.name}</p>
                   <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.role}</p>
                   {manager && <p className="text-[10px]" style={{ color: '#374151' }}>→ {manager.name.split(' ')[0]}</p>}
@@ -326,7 +359,7 @@ export default function TeamPanel({ selectedDepts }: { selectedDepts?: string[] 
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: `${DEPT_COLORS[selectedMember.department] || '#6B7280'}20`, color: DEPT_COLORS[selectedMember.department] || '#6B7280' }}>{selectedMember.avatar}</div>
+                <MemberAvatar member={selectedMember} size={48} fontSize="text-base" deptColor={DEPT_COLORS[selectedMember.department] || '#6B7280'} />
                 <div><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{selectedMember.name}</p><p className="text-xs" style={{ color: '#6B7280' }}>{selectedMember.role} · {selectedMember.department}</p></div>
               </div>
               <button onClick={() => setSelectedMember(null)} style={{ color: '#6B7280' }}><X size={18} /></button>
