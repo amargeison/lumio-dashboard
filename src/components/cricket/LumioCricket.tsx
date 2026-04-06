@@ -129,8 +129,8 @@ const NAV=[
   {id:'staff',label:'Staff & HR',icon:'👤'},
 ];
 
-const fmt=n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
-const pct=(a,b)=>Math.round((a/b)*100);
+const fmt=(n:number)=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
+const pct=(a:number,b:number)=>Math.round((a/b)*100);
 
 export default function LumioCricket(){
   const[page,setPage]=useState('briefing');
