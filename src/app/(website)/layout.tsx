@@ -67,6 +67,7 @@ function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showTrial, setShowTrial] = useState(false)
   const [showTypeModal, setShowTypeModal] = useState(false)
+  const [showEarlyAccess, setShowEarlyAccess] = useState(false)
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
   const isFootball = pathname?.startsWith('/football') ?? false
@@ -114,16 +115,19 @@ function Nav() {
         borderBottom: scrolled ? '1px solid rgba(31,41,55,0.6)' : '1px solid transparent',
       }}
     >
-      <div className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : 'px-8 py-4'}`} style={{ minHeight: 100 }}>
+      <div
+        className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
+        style={{ minHeight: 100, ...(isSports ? {} : { padding: '12px 48px' }) }}
+      >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0" style={{ flexShrink: 0, ...(isSports ? {} : { marginRight: 40 }) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '36px' : '56px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block' }} />
+            style={{ height: isSports ? '36px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
         </Link>
 
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : 'gap-6'}`}>
+        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : { gap: 24 }}>
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
               className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : 'px-2 py-2 text-base font-medium'}`}
@@ -139,6 +143,28 @@ function Nav() {
               )}
             </Link>
           ))}
+          {!isSports && (
+            <button
+              type="button"
+              onClick={() => setShowEarlyAccess(true)}
+              style={{
+                color: '#0D9488',
+                border: '1px solid #0D9488',
+                borderRadius: 20,
+                padding: '4px 14px',
+                fontSize: 14,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.1)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
+            >
+              Early Access
+            </button>
+          )}
         </nav>
 
         {/* Desktop CTAs */}
@@ -261,7 +287,225 @@ function Nav() {
         onClose={() => setShowTypeModal(false)}
       />
     )}
+    {showEarlyAccess && (
+      <EarlyAccessModal isSchools={isSchools} onClose={() => setShowEarlyAccess(false)} />
+    )}
   </>
+  )
+}
+
+function EarlyAccessModal({ isSchools, onClose }: { isSchools: boolean; onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const TEAL = '#0D9488'
+  const TEAL_FAINT = 'rgba(13,148,136,0.08)'
+  const TEAL_BORDER = 'rgba(13,148,136,0.35)'
+
+  const copy = isSchools
+    ? {
+        h2: '6 months free for your school.',
+        paragraphs: [
+          "Lumio for Schools is new. We know it. And we'd rather be honest about that than pretend we have 500 schools already using it.",
+          "We're looking for a small number of schools — primary, secondary, or MAT — who are fed up with overpriced, over-promised edtech and want to try something different.",
+          "Sign up and get 6 months completely free. No commitment. No contract. No sales team breathing down your neck. At the end, all we ask is an honest case study and the chance to keep working with you — so we can build exactly what your school actually needs.",
+        ],
+        pills: [
+          '6 months free — no card required',
+          "We fix things that week, not 'on the roadmap'",
+          'No lock-in, no exit fees',
+        ],
+        fine: 'Only 5 school spots remaining · No credit card · Cancel anytime',
+        signupHref: '/signup?portal=schools',
+        subject: 'Early Access Application — Schools',
+      }
+    : {
+        h2: '6 months free. No catch.',
+        paragraphs: [
+          "Lumio is new. We're not going to pretend otherwise. We're looking for a small number of forward-thinking businesses who want to be part of shaping it — not just using it.",
+          'Sign up and get 6 months completely free. No commitment. No contract. No pushy sales calls. At the end, all we ask is an honest case study and the chance to keep working with you to make Lumio exactly what your business needs.',
+          "If something doesn't work — we'll fix it. If you want a feature — we'll build it. That's the deal.",
+        ],
+        pills: [
+          '6 months free — no card required',
+          'We build what you ask for',
+          'Cancel anytime, no questions',
+        ],
+        fine: 'Only 10 spots remaining · No credit card · Cancel anytime',
+        signupHref: '/signup',
+        subject: 'Early Access Application',
+      }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const mailto = `mailto:hello@lumiocms.com?subject=${encodeURIComponent(copy.subject)}&body=${encodeURIComponent(
+      `I'd like to apply for the Lumio early access programme.\n\nEmail: ${email}\n`
+    )}`
+    window.location.href = mailto
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: 520,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          backgroundColor: '#0D1117',
+          border: `1px solid ${TEAL_BORDER}`,
+          borderRadius: 18,
+          padding: 32,
+          position: 'relative',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(13,148,136,0.15)',
+        }}
+      >
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'none',
+            border: 'none',
+            color: '#6B7280',
+            cursor: 'pointer',
+            padding: 6,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#6B7280' }}
+        >
+          <X size={20} />
+        </button>
+
+        {/* Eyebrow */}
+        <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', color: TEAL, marginBottom: 12, textTransform: 'uppercase' }}>
+          Early Access Programme
+        </p>
+
+        {/* H2 */}
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB', marginBottom: 16, lineHeight: 1.15 }}>
+          {copy.h2}
+        </h2>
+
+        {/* Body */}
+        <div style={{ marginBottom: 20 }}>
+          {copy.paragraphs.map((p, i) => (
+            <p key={i} style={{ fontSize: 14, color: '#9CA3AF', lineHeight: 1.65, marginBottom: i === copy.paragraphs.length - 1 ? 0 : 12 }}>
+              {p}
+            </p>
+          ))}
+        </div>
+
+        {/* Pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+          {copy.pills.map(p => (
+            <span
+              key={p}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                color: TEAL,
+                backgroundColor: TEAL_FAINT,
+                border: `1px solid ${TEAL_BORDER}`,
+              }}
+            >
+              {p}
+            </span>
+          ))}
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input
+            type="email"
+            required
+            placeholder="Enter your work email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              borderRadius: 10,
+              border: '1px solid #1F2937',
+              backgroundColor: '#0A0B10',
+              color: '#F9FAFB',
+              fontSize: 14,
+              outline: 'none',
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = TEAL }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#1F2937' }}
+          />
+          <button
+            type="submit"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              width: '100%',
+              padding: '13px 20px',
+              backgroundColor: TEAL,
+              color: '#F9FAFB',
+              border: 'none',
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = TEAL }}
+          >
+            Apply for early access
+          </button>
+          <Link
+            href={copy.signupHref}
+            onClick={onClose}
+            style={{
+              textAlign: 'center',
+              fontSize: 13,
+              color: '#9CA3AF',
+              textDecoration: 'underline',
+              padding: '4px 0',
+            }}
+          >
+            Or sign up directly →
+          </Link>
+        </form>
+
+        {/* Fine print */}
+        <p style={{ fontSize: 11, color: '#6B7280', marginTop: 16, textAlign: 'center' }}>
+          {copy.fine}
+        </p>
+      </div>
+    </div>
   )
 }
 
