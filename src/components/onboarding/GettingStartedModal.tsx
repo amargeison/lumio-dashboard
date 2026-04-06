@@ -88,12 +88,21 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
         localStorage.setItem('lumio_selected_tools', JSON.stringify(selectedTools))
         const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']
         ALL.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
-        localStorage.setItem('lumio_demo_active', 'true')
         localStorage.setItem('lumio-photo-frame', JSON.stringify([
           'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
           'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
         ]))
-        await fetch('/api/onboarding/load-demo', { method: 'POST', headers: { 'x-workspace-token': sessionToken } }).catch(() => {})
+        const demoRes = await fetch('/api/onboarding/load-demo', {
+          method: 'POST',
+          headers: { 'x-workspace-token': sessionToken }
+        }).catch(() => null)
+        if (demoRes?.ok) {
+          const demoData = await demoRes.json().catch(() => ({}))
+          if (demoData.flagError) {
+            console.warn('[onboarding] demo_data_active flag failed:', demoData.flagError)
+          }
+          localStorage.setItem('lumio_demo_active', 'true')
+        }
       } catch { /* continue */ }
     }
     await new Promise(r => setTimeout(r, 800))

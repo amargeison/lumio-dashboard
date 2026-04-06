@@ -172,6 +172,25 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
       localStorage.setItem(`onboarding-dismissed-${slug}`, 'true')
       localStorage.setItem(`lumio_onboarding_done_${slug}`, 'true')
     }
+    // Auto-load demo data for all new workspaces
+    const sessionToken = localStorage.getItem('workspace_session_token')
+      || localStorage.getItem('lumio_session_token')
+    if (sessionToken) {
+      try {
+        await fetch('/api/onboarding/load-demo', {
+          method: 'POST',
+          headers: { 'x-workspace-token': sessionToken },
+        })
+        localStorage.setItem('lumio_demo_active', 'true')
+        const ALL = ['overview','crm','sales','marketing','projects',
+          'hr','partners','finance','insights','workflows','strategy',
+          'reports','settings','accounts','support','success','trials',
+          'operations','it']
+        ALL.forEach(k => localStorage.setItem(
+          `lumio_dashboard_${k}_hasData`, 'true'
+        ))
+      } catch { /* continue */ }
+    }
     onComplete()
   }
 
@@ -272,7 +291,7 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
           {step === 1 && <StepConnect integrations={integrations} connected={connected} apiKeys={apiKeys} subdomains={subdomains} connecting={connecting} onOAuth={connectOAuth} onApiKey={connectApiKey} onSupport={raiseSupport} onApiKeyChange={(id, v) => setApiKeys(p => ({ ...p, [id]: v }))} onSubdomainChange={(id, v) => setSubdomains(p => ({ ...p, [id]: v }))} />}
           {step === 2 && <StepUpload templates={templates} fileRefs={fileRefs} onUpload={handleFileUpload} />}
           {step === 3 && <StepInvite invites={invites} sending={sendingInvites} sent={invitesSent} onAdd={addInviteRow} onUpdate={updateInvite} onRemove={removeInvite} onSend={sendInvites} />}
-          {step === 4 && <StepBookCall />}
+          {step === 4 && <StepBookCall onExploreWithDemo={finish} />}
         </div>
       </div>
 
@@ -488,25 +507,31 @@ function StepInvite({ invites, sending, sent, onAdd, onUpdate, onRemove, onSend 
 
 // ─── Step 4: Book Your Onboarding Call ───────────────────────────────────────
 
-function StepBookCall() {
+function StepBookCall({ onExploreWithDemo }: { onExploreWithDemo?: () => void }) {
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>Book your onboarding call</h1>
-      <p style={{ fontSize: 15, color: T.muted, marginBottom: 32 }}>Let us walk you through everything and get you fully set up.</p>
+      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>Want to see Lumio with your own data?</h1>
+      <p style={{ fontSize: 15, color: T.muted, marginBottom: 32 }}>Book a free 30-minute setup call and we&apos;ll load your real staff, workflows and data into a 2-week trial — so you can see exactly how Lumio works for your business.</p>
 
       <div style={{ backgroundColor: T.card, borderRadius: 16, border: `1px solid ${T.border}`, padding: 40, textAlign: 'center', maxWidth: 520, margin: '0 auto' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: T.purpleFaint, border: `1px solid ${T.borderHover}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Calendar size={28} style={{ color: T.purple }} />
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: T.text, marginBottom: 8 }}>30-minute onboarding call with the Lumio team</div>
-        <p style={{ fontSize: 14, color: T.muted, marginBottom: 28, lineHeight: 1.6 }}>We&apos;ll help you connect your data, configure your settings, and answer any questions.</p>
+        <div style={{ fontSize: 20, fontWeight: 700, color: T.text, marginBottom: 8 }}>Free 2-week trial with your real data</div>
+        <p style={{ fontSize: 14, color: T.muted, marginBottom: 28, lineHeight: 1.6 }}>We&apos;ll walk you through setup, load your data, and answer any questions on a 30-minute call.</p>
         <a href="https://calendly.com/lumio" target="_blank" rel="noopener noreferrer"
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, backgroundColor: T.purple, color: '#FFF', border: 'none', borderRadius: 10, padding: '14px 36px', fontSize: 16, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
-          <Calendar size={18} /> Book a Call
+          <Calendar size={18} /> Book My Setup Call
         </a>
         <div style={{ marginTop: 24, fontSize: 14, color: T.muted }}>
-          Or email us at{' '}
-          <a href="mailto:hello@lumiocms.com" style={{ color: T.purple, textDecoration: 'none', fontWeight: 600 }}>hello@lumiocms.com</a>
+          Or{' '}
+          <button
+            type="button"
+            onClick={() => onExploreWithDemo?.()}
+            style={{ background: 'none', border: 'none', color: T.purple, fontWeight: 600, cursor: 'pointer', padding: 0, font: 'inherit', textDecoration: 'underline' }}
+          >
+            explore with demo data while you decide
+          </button>
         </div>
       </div>
     </div>

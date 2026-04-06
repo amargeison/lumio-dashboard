@@ -93,6 +93,7 @@ function Nav() {
         if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
         if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
         if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
+        if (l.label === 'About')        return { ...l, href: '/schools/about' }
       }
       return l
     })
@@ -113,12 +114,12 @@ function Nav() {
         borderBottom: scrolled ? '1px solid rgba(31,41,55,0.6)' : '1px solid transparent',
       }}
     >
-      <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 ${isSports ? 'py-2' : 'py-4'}`} style={{ minHeight: 100 }}>
+      <div className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : 'px-8 py-4'}`} style={{ minHeight: 100 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '36px' : '48px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block' }} />
+            style={{ height: isSports ? '36px' : '96px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block' }} />
         </Link>
 
         {/* Desktop nav */}
