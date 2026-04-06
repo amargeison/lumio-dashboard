@@ -22,36 +22,26 @@ const VALUES = [
 ]
 
 const PORTALS = [
-  {
-    emoji: '⚽',
-    title: 'Football',
-    desc: 'Pro Club, Non-League and Grassroots portals — squad management, GPS performance (PlayerData), PSR/FSR compliance, transfer intelligence, match day revenue and AI manager briefing.',
-  },
-  {
-    emoji: '⚽',
-    title: "Women's Football",
-    desc: 'The first operating system built for professional women\'s football. FSR compliance tracking, player welfare (maternity, ACL, mental health), standalone sponsorship pipeline and board suite.',
-  },
-  {
-    emoji: '🏉',
-    title: 'Rugby',
-    desc: 'Champ Rugby and Premiership operating system. Salary cap manager (ceiling + floor), franchise readiness tracker, concussion & HIA compliance, club-to-country data interface.',
-  },
-  {
-    emoji: '🎾',
-    title: 'Tennis & Golf',
-    desc: 'Career OS for touring professionals. ATP/WTA rankings, OWGR and Race to Dubai, strokes gained analytics, caddie workflow, sponsorship manager and AI morning briefing for the full team.',
-  },
-  {
-    emoji: '🎯',
-    title: 'Darts & Boxing',
-    desc: 'The first dedicated career platforms for professional darts players and boxers. PDC Order of Merit, purse simulator, sanctioning body rankings, fight camp planner and multi-jurisdiction tax tracker.',
-  },
-  {
-    emoji: '🏏',
-    title: 'Cricket',
-    desc: 'Contract and central contract tracker, batting and bowling analytics, tour and franchise schedule, injury management and AI morning briefing for county, international and franchise players.',
-  },
+  { emoji: '⚽', title: 'Football Pro Club', accent: '#10B981', href: '/football',
+    desc: 'Pro Club portal for National League System clubs. Squad management, GPS performance (PlayerData), PSR compliance, FIFA-style pitch view, set pieces library and AI manager briefing.' },
+  { emoji: '⚽', title: 'Non-League Football', accent: '#F59E0B', href: '/football',
+    desc: 'Steps 3–7 of the English football pyramid. FA Ground Grading compliance, player contracts, wage bill tracker, sponsor pipeline, match day revenue and board portal.' },
+  { emoji: '⚽', title: 'Grassroots Football', accent: '#F97316', href: '/football',
+    desc: 'AI voice briefing, player welfare, safeguarding compliance, subs collection via Stripe, AI team selection and parent portal. Built for the 45,000 clubs running on WhatsApp.' },
+  { emoji: '⚽', title: "Women's Football", accent: '#EC4899', href: '/contact',
+    desc: 'The first operating system built specifically for professional women\'s football. FSR compliance, player welfare (maternity, ACL, mental health), standalone sponsorship pipeline and board suite.' },
+  { emoji: '🏉', title: 'Rugby', accent: '#8B5CF6', href: '/rugby',
+    desc: 'Champ Rugby and Premiership operating system. Salary cap manager (ceiling + floor), franchise readiness tracker, concussion & HIA compliance and club-to-country data interface.' },
+  { emoji: '🎾', title: 'Tennis', accent: '#A3E635', href: '/tennis',
+    desc: 'Career OS for ATP and WTA touring professionals. Ranking tracker, points expiry calendar, surface win rates, sponsorship manager, physio dashboard and AI morning briefing for the full team.' },
+  { emoji: '⛳', title: 'Golf', accent: '#38BDF8', href: '/golf',
+    desc: 'OWGR tracker, Race to Dubai, strokes gained deep-dive, course fit AI scoring, caddie workflow dashboard and multi-jurisdiction prize money and tax modelling.' },
+  { emoji: '🎯', title: 'Darts', accent: '#EF4444', href: '/darts',
+    desc: 'PDC Order of Merit tracker, three-dart average dashboard, exhibition manager, opponent intel, tour card security indicator and Q-School preparation timeline.' },
+  { emoji: '🥊', title: 'Boxing', accent: '#DC2626', href: '/boxing',
+    desc: 'Purse simulator, world rankings across all five sanctioning bodies, fight camp planner, weight tracker, multi-jurisdiction tax modelling and contract intelligence.' },
+  { emoji: '🏏', title: 'Cricket', accent: '#FBBF24', href: '/cricket',
+    desc: 'Contract and central contract tracker, batting and bowling analytics, franchise schedule (IPL, The Hundred, BBL), injury management and AI morning briefing.' },
 ]
 
 const TIMELINE = [
@@ -189,11 +179,12 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold">Ten portals. One platform.</h2>
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {PORTALS.map((p: { emoji: string; title: string; desc: string }) => (
-            <div key={p.title} className="rounded-xl p-7" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
+          {PORTALS.map((p: { emoji: string; title: string; accent: string; href: string; desc: string }) => (
+            <div key={p.title} className="rounded-xl p-7 flex flex-col" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937', borderTop: `4px solid ${p.accent}` }}>
               <div className="text-3xl mb-4">{p.emoji}</div>
               <h3 className="text-base font-semibold mb-3" style={{ color: '#F9FAFB' }}>{p.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{p.desc}</p>
+              <p className="text-sm leading-relaxed flex-1" style={{ color: '#6B7280' }}>{p.desc}</p>
+              <Link href={p.href} className="text-sm font-medium mt-4 inline-block" style={{ color: p.accent }}>Explore →</Link>
             </div>
           ))}
         </div>
