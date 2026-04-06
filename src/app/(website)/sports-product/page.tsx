@@ -6,7 +6,14 @@ import { ArrowRight, Check, ChevronRight, Target, Activity, Trophy, Users, Dolla
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const PORTALS = [
+interface Portal {
+  id: string; icon: string; label: string; color: string; desc: string;
+  modules: Array<{ name: string; detail: string }>;
+  integrations: string[]; checks: string[];
+  cta: string; href: string; comingSoon?: boolean;
+}
+
+const PORTALS: Portal[] = [
   {
     id: 'football', icon: '⚽', label: 'Football Pro', color: '#10B981',
     desc: 'From League Two to the Premier League — squad management, GPS performance tracking (PlayerData), PSR compliance, scouting pipeline, transfer tracking, board reporting and AI match intelligence.',
@@ -276,7 +283,7 @@ export default function SportsProductPage() {
                 <h3 className="text-lg font-bold">{portal.label}</h3>
                 <p className="text-xs" style={{ color: portal.color }}>
                   {portal.modules.length} modules included
-                  {(portal as { comingSoon?: boolean }).comingSoon && (
+                  {portal.comingSoon && (
                     <span className="ml-2 font-semibold" style={{ color: '#A78BFA' }}>· Coming soon</span>
                   )}
                 </p>
