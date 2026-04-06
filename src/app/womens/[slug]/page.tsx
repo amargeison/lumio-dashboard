@@ -598,6 +598,561 @@ const MedicalRecordsView = () => (
   </div>
 )
 
+// ─── SALARY COMPLIANCE VIEW ──────────────────────────────────────────────────
+const SalaryComplianceView = () => {
+  const [newSalary, setNewSalary] = useState(0)
+  const players: Array<{name:string;pos:string;salary:number;flag:boolean}> = [
+    {name:'Emma Clarke',pos:'CB',salary:62000,flag:false},
+    {name:'Priya Nair',pos:'CM',salary:58000,flag:false},
+    {name:'Jade Osei',pos:'ST',salary:71000,flag:false},
+    {name:'Abbi Walsh',pos:'RW',salary:54000,flag:false},
+    {name:'Charlotte Reed',pos:'GK',salary:48000,flag:false},
+    {name:'Sophie Turner',pos:'LB',salary:45000,flag:false},
+    {name:'Fatima Al-Said',pos:'AM',salary:67000,flag:false},
+    {name:'Megan Hughes',pos:'DM',salary:52000,flag:false},
+    {name:'Sophie Lawson',pos:'RB',salary:46000,flag:false},
+    {name:'Tilly Brooks',pos:'LW',salary:35000,flag:true},
+  ]
+  const totalSalary = players.reduce((sum: number, p: typeof players[0]) => sum + p.salary, 0)
+  const cap = 2560000
+  const headroom = cap - totalSalary - newSalary
+  const fmt = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
+
+  return (
+    <div>
+      <SectionHeader title="Salary Compliance" subtitle="FSR salary cap monitoring — 80% of Relevant Revenue" icon="💰" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Total Salary Spend" value={fmt(totalSalary)} sub="10 registered players" color="pink" />
+        <StatCard label="FSR Cap (80%)" value={fmt(cap)} sub="Of £3.2M relevant revenue" color="blue" />
+        <StatCard label="Headroom" value={fmt(headroom)} sub={newSalary > 0 ? 'After modelled signing' : 'Before new signings'} color={headroom > 100000 ? 'green' : headroom > 0 ? 'amber' : 'red'} />
+        <StatCard label="Flags" value="1" sub="Tilly Brooks below £40k min" color="red" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Position</th><th className="text-right p-3">Annual Salary</th><th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {players.map((p: typeof players[0], i: number) => (
+              <tr key={i} className={`border-b border-gray-800/50 ${p.flag ? 'bg-red-600/5' : ''}`}>
+                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                <td className="p-3 text-gray-400">{p.pos}</td>
+                <td className="p-3 text-right text-gray-200">{fmt(p.salary)}</td>
+                <td className="p-3">
+                  {p.flag
+                    ? <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400">Below £40k minimum</span>
+                    : <span className="text-xs px-2 py-0.5 rounded bg-green-600/20 text-green-400">Compliant</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">New Signing Salary Modeller</h3>
+        <p className="text-xs text-gray-400 mb-3">Enter a proposed salary to see the impact on FSR headroom.</p>
+        <div className="flex items-center gap-4 mb-3">
+          <input
+            type="number"
+            value={newSalary || ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSalary(Number(e.target.value))}
+            placeholder="e.g. 55000"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"
+          />
+          <span className="text-xs text-gray-400">Annual salary (£)</span>
+        </div>
+        {newSalary > 0 && (
+          <div className={`rounded-lg p-3 border ${headroom > 0 ? 'border-green-600/30 bg-green-600/5' : 'border-red-600/30 bg-red-600/5'}`}>
+            <div className="text-sm font-semibold text-white mb-1">Updated headroom: {fmt(headroom)}</div>
+            <div className={`text-xs ${headroom > 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {headroom > 0 ? 'Signing is within FSR cap.' : 'WARNING: This signing would breach the FSR salary cap.'}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
+        ⚠ Tilly Brooks (£35,000) is below the recommended £40,000 WSL minimum salary. Review required.
+      </div>
+    </div>
+  )
+}
+
+// ─── REVENUE ATTRIBUTION VIEW ────────────────────────────────────────────────
+const RevenueAttributionView = () => {
+  const categories: Array<{name:string;value:number;pct:number;color:string}> = [
+    {name:'Matchday Revenue',value:420000,pct:18,color:'#EC4899'},
+    {name:'Commercial (Women-attributed)',value:680000,pct:30,color:'#8B5CF6'},
+    {name:'Broadcast (WSL Allocation)',value:520000,pct:23,color:'#3B82F6'},
+    {name:'Prize Money & FA Distributions',value:280000,pct:12,color:'#22C55E'},
+    {name:'Sponsorship (Standalone)',value:310000,pct:13,color:'#F59E0B'},
+    {name:'Other Income',value:90000,pct:4,color:'#6B7280'},
+  ]
+  const totalRevenue = 2300000
+  const fmt = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
+
+  return (
+    <div>
+      <SectionHeader title="Revenue Attribution" subtitle="Women-only Relevant Revenue for FSR compliance" icon="📈" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Total Relevant Revenue" value="£2.3M" sub="6 categories" color="pink" />
+        <StatCard label="YoY Growth" value="+12%" sub="vs 2024/25 season" color="green" />
+        <StatCard label="Permitted Spend (80%)" value="£1.84M" sub="FSR salary cap" color="blue" />
+        <StatCard label="Bundled Flags" value="1" sub="Meridian Insurance" color="amber" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-4">Revenue Breakdown</h3>
+        <div className="space-y-3">
+          {categories.map((c: typeof categories[0]) => (
+            <div key={c.name}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400">{c.name}</span>
+                <span className="text-sm font-semibold text-white">{fmt(c.value)}</span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1.5">
+                <div className="h-1.5 rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+          <span className="text-sm font-bold text-white">Total</span>
+          <span className="text-sm font-bold text-pink-400">{fmt(totalRevenue)}</span>
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Bundled Deal Attribution</h3>
+        <p className="text-xs text-gray-400 mb-3">Sponsors shared with men&apos;s parent club must show women&apos;s share separately.</p>
+        <div className="space-y-2">
+          {[
+            {sponsor:'Kestrel Finance (Kit)',total:'£420k',womens:'£420k',pct:'100%',flag:false},
+            {sponsor:'Meridian Insurance (Shared)',total:'£800k',womens:'£95k',pct:'11.9%',flag:true},
+            {sponsor:'NovaTech UK (Sleeve)',total:'£40k',womens:'£40k',pct:'100%',flag:false},
+          ].map((s: {sponsor:string;total:string;womens:string;pct:string;flag:boolean}) => (
+            <div key={s.sponsor} className={`flex items-center justify-between py-2 border-b border-gray-800 ${s.flag ? 'bg-amber-600/5 rounded px-2' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-300">{s.sponsor}</span>
+                {s.flag && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-600/20 text-amber-400">Review</span>}
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-gray-500">Total: {s.total}</span>
+                <span className="text-xs text-pink-400 font-semibold">Women&apos;s: {s.womens} ({s.pct})</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Season Comparison</h3>
+        <div className="space-y-3">
+          {[
+            {season:'2024/25',value:2050000,bar:89},
+            {season:'2025/26',value:2300000,bar:100},
+          ].map((s: {season:string;value:number;bar:number}) => (
+            <div key={s.season}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400">{s.season}</span>
+                <span className="text-sm font-semibold text-white">{fmt(s.value)}</span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-2">
+                <div className="h-2 rounded-full bg-pink-500" style={{ width: `${s.bar}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Permitted Spend Calculation</h3>
+        <div className="space-y-2">
+          {[
+            {label:'Total Relevant Revenue',value:'£2,300,000'},
+            {label:'FSR Cap (80%)',value:'£1,840,000'},
+            {label:'Current Salary Spend',value:'£1,538,000'},
+            {label:'Remaining Headroom',value:'£302,000'},
+          ].map((r: {label:string;value:string}) => (
+            <div key={r.label} className="flex items-center justify-between py-1.5 border-b border-gray-800">
+              <span className="text-xs text-gray-400">{r.label}</span>
+              <span className="text-sm font-semibold text-white">{r.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SQUAD MANAGEMENT VIEW ───────────────────────────────────────────────────
+const SquadManagementView = () => {
+  const [filter, setFilter] = useState<string>('all')
+  const players: Array<{name:string;pos:string;age:number;contract:string;status:string;statusType:string}> = [
+    {name:'Emma Clarke',pos:'CB',age:27,contract:'Jun 2027',status:'Dual-reg (Harfield)',statusType:'info'},
+    {name:'Priya Nair',pos:'CM',age:24,contract:'Jun 2026',status:'Available',statusType:'ok'},
+    {name:'Jade Osei',pos:'ST',age:22,contract:'Jun 2028',status:'Available',statusType:'ok'},
+    {name:'Abbi Walsh',pos:'RW',age:25,contract:'Jun 2026',status:'Available',statusType:'ok'},
+    {name:'Charlotte Reed',pos:'GK',age:29,contract:'Jun 2027',status:'Available',statusType:'ok'},
+    {name:'Sophie Turner',pos:'LB',age:23,contract:'Jun 2027',status:'RTP Phase 3',statusType:'warn'},
+    {name:'Fatima Al-Said',pos:'AM',age:21,contract:'Jun 2028',status:'ITC Pending',statusType:'warn'},
+    {name:'Megan Hughes',pos:'DM',age:26,contract:'Jun 2026',status:'Available',statusType:'ok'},
+    {name:'Sophie Lawson',pos:'RB',age:28,contract:'Jun 2027',status:'Maternity Leave',statusType:'info'},
+    {name:'Tilly Brooks',pos:'LW',age:20,contract:'Jun 2028',status:'Part-time contract',statusType:'warn'},
+  ]
+
+  const filtered = filter === 'all' ? players
+    : filter === 'available' ? players.filter((p: typeof players[0]) => p.statusType === 'ok')
+    : filter === 'flagged' ? players.filter((p: typeof players[0]) => p.statusType !== 'ok')
+    : players
+
+  return (
+    <div>
+      <SectionHeader title="Squad Management" subtitle="WSL registered squad — 2025/26 season" icon="👥" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Squad Size" value={players.length} sub="Registered players" color="pink" />
+        <StatCard label="Available" value={players.filter((p: typeof players[0]) => p.statusType === 'ok').length} sub="Match ready" color="green" />
+        <StatCard label="Flags" value={players.filter((p: typeof players[0]) => p.statusType !== 'ok').length} sub="Require attention" color="amber" />
+        <StatCard label="Avg Age" value="24.5" sub="Squad average" color="blue" />
+      </div>
+      <div className="flex items-center gap-2 mb-4">
+        {['all','available','flagged'].map((f: string) => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'bg-gray-800/50 text-gray-400 border border-gray-800 hover:text-white'}`}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Position</th><th className="text-left p-3">Age</th><th className="text-left p-3">Contract</th><th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {filtered.map((p: typeof players[0], i: number) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                <td className="p-3 text-gray-400">{p.pos}</td>
+                <td className="p-3 text-gray-400">{p.age}</td>
+                <td className="p-3 text-gray-400 text-xs">{p.contract}</td>
+                <td className="p-3">
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    p.statusType === 'ok' ? 'bg-green-600/20 text-green-400'
+                    : p.statusType === 'warn' ? 'bg-amber-600/20 text-amber-400'
+                    : 'bg-blue-600/20 text-blue-400'
+                  }`}>{p.status}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
+        ⚠ Fatima Al-Said — ITC (International Transfer Certificate) pending. Cannot be registered until clearance received from FIFA TMS.
+      </div>
+    </div>
+  )
+}
+
+// ─── DUAL REGISTRATION VIEW ─────────────────────────────────────────────────
+const DualRegistrationView = () => {
+  const registrations: Array<{player:string;pos:string;parentClub:string;loanClub:string;start:string;end:string;daysLeft:number}> = [
+    {player:'Emma Clarke',pos:'CB',parentClub:'Oakridge Women',loanClub:'Harfield FC Women',start:'1 Jan 2026',end:'8 Apr 2026',daysLeft:4},
+    {player:'Lucy Whitmore',pos:'LW',parentClub:'Oakridge Women',loanClub:'Bristol City Women',start:'1 Feb 2026',end:'30 Apr 2026',daysLeft:26},
+  ]
+
+  return (
+    <div>
+      <SectionHeader title="Dual Registration Tracker" subtitle="FA Women's dual registration agreements" icon="🔄" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Active Dual-Regs" value="2" sub="Players currently loaned" color="pink" />
+        <StatCard label="Expiring Soon" value="1" sub="Emma Clarke — 4 days" color="red" />
+        <StatCard label="Window Status" value="Open" sub="Closes 30 Apr 2026" color="green" />
+        <StatCard label="Max Permitted" value="4" sub="WSL dual-reg limit" color="blue" />
+      </div>
+      {registrations.map((r: typeof registrations[0]) => (
+        <div key={r.player} className={`bg-[#0D1117] border rounded-xl p-5 mb-4 ${r.daysLeft <= 7 ? 'border-red-600/30' : 'border-gray-800'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-white">{r.player}</span>
+              <span className="text-xs text-gray-500">{r.pos}</span>
+            </div>
+            {r.daysLeft <= 7 && <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400 font-semibold animate-pulse">Expires in {r.daysLeft} days</span>}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div><div className="text-[10px] text-gray-500 uppercase">Parent Club</div><div className="text-xs text-gray-300">{r.parentClub}</div></div>
+            <div><div className="text-[10px] text-gray-500 uppercase">Loan Club</div><div className="text-xs text-gray-300">{r.loanClub}</div></div>
+            <div><div className="text-[10px] text-gray-500 uppercase">Start Date</div><div className="text-xs text-gray-300">{r.start}</div></div>
+            <div><div className="text-[10px] text-gray-500 uppercase">End Date</div><div className="text-xs text-gray-300">{r.end}</div></div>
+          </div>
+          {r.daysLeft <= 7 && (
+            <div className="mt-3 bg-red-600/10 border border-red-600/20 rounded-lg p-2 text-xs text-red-400">
+              Action required: Decide whether to extend, recall, or let this agreement expire by {r.end}.
+            </div>
+          )}
+        </div>
+      ))}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Registration Window Calendar</h3>
+        <div className="space-y-2">
+          {[
+            {event:'WSL Winter Window Opened',date:'1 Jan 2026',status:'past'},
+            {event:'Emma Clarke dual-reg expires',date:'8 Apr 2026',status:'urgent'},
+            {event:'Lucy Whitmore dual-reg expires',date:'30 Apr 2026',status:'upcoming'},
+            {event:'WSL Registration Window Closes',date:'30 Apr 2026',status:'upcoming'},
+            {event:'Summer Window Opens',date:'1 Jun 2026',status:'future'},
+          ].map((e: {event:string;date:string;status:string}) => (
+            <div key={e.event} className="flex items-center justify-between py-1.5 border-b border-gray-800">
+              <span className={`text-xs ${e.status === 'urgent' ? 'text-red-400 font-semibold' : e.status === 'past' ? 'text-gray-600' : 'text-gray-300'}`}>{e.event}</span>
+              <span className={`text-xs ${e.status === 'urgent' ? 'text-red-400' : 'text-gray-500'}`}>{e.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── TACTICS & SET PIECES VIEW ───────────────────────────────────────────────
+const TacticsSetPiecesView = () => (
+  <div>
+    <SectionHeader title="Tactics & Set Pieces" subtitle="Match preparation — tactical overview" icon="🎯" />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <StatCard label="Formation" value="4-3-3" sub="Primary system" color="pink" />
+      <StatCard label="Set Pieces" value="4" sub="Trained routines" color="blue" />
+      <StatCard label="Possession %" value="58%" sub="Season average" color="teal" />
+      <StatCard label="Goals from Set Pieces" value="7" sub="28% of total goals" color="green" />
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-4">Formation — 4-3-3</h3>
+      <div className="flex flex-col items-center gap-3 py-4">
+        <div className="flex gap-8">
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">LW</div><div className="text-[10px] text-gray-500 mt-1">Brooks</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">ST</div><div className="text-[10px] text-gray-500 mt-1">Osei</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">RW</div><div className="text-[10px] text-gray-500 mt-1">Walsh</div></div>
+        </div>
+        <div className="flex gap-6">
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CM</div><div className="text-[10px] text-gray-500 mt-1">Nair</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">DM</div><div className="text-[10px] text-gray-500 mt-1">Hughes</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">AM</div><div className="text-[10px] text-gray-500 mt-1">Al-Said</div></div>
+        </div>
+        <div className="flex gap-4">
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">LB</div><div className="text-[10px] text-gray-500 mt-1">Turner</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Clarke</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">TBC</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">RB</div><div className="text-[10px] text-gray-500 mt-1">Lawson</div></div>
+        </div>
+        <div className="text-center"><div className="w-8 h-8 rounded-full bg-green-600/30 border border-green-500/50 flex items-center justify-center text-[10px] text-white font-bold">GK</div><div className="text-[10px] text-gray-500 mt-1">Reed</div></div>
+      </div>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-bold text-white mb-3">Set Piece Routines</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[
+          {name:'Corner — Near Post Flick',type:'Attacking',success:'42%',description:'Short corner to Nair, flick-on by Osei at near post. Clarke/Hughes as secondary targets.'},
+          {name:'Free Kick — Direct Strike',type:'Attacking',success:'18%',description:'Direct attempt from Walsh when within 25 yards. Decoy run from Brooks.'},
+          {name:'Corner — Defensive Zonal',type:'Defensive',success:'78% clearance',description:'Zonal marking at 6-yard box. Hughes marks zone 1, Clarke zone 2. Reed commands box.'},
+          {name:'Throw-in — Long to Target',type:'Attacking',success:'35%',description:'Long throw from Turner to Osei in channel. Second ball runners: Walsh, Brooks.'},
+        ].map((r: {name:string;type:string;success:string;description:string}) => (
+          <div key={r.name} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-white">{r.name}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.type === 'Attacking' ? 'bg-pink-600/20 text-pink-400' : 'bg-blue-600/20 text-blue-400'}`}>{r.type}</span>
+            </div>
+            <p className="text-[11px] text-gray-400 mb-1">{r.description}</p>
+            <span className="text-[10px] text-gray-500">Success rate: {r.success}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+      <h3 className="text-sm font-bold text-white mb-3">Team Talk — Coach Notes</h3>
+      <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
+        <p className="text-sm text-gray-300 italic">&ldquo;We press high from the front three. Nair dictates tempo. Full-backs push up — we want width. Set pieces are our edge — we&apos;ve drilled them all week. Trust the system, trust each other.&rdquo;</p>
+        <p className="text-xs text-gray-500 mt-2">— Sarah Frost, Head Coach</p>
+      </div>
+    </div>
+  </div>
+)
+
+// ─── MATCH PREPARATION VIEW ─────────────────────────────────────────────────
+const MatchPreparationView = () => {
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({
+    teamSheet: false,
+    kitConfirmed: false,
+    travelBooked: false,
+    medicalBag: false,
+    gpsDevices: false,
+    matchBalls: false,
+  })
+
+  const toggleItem = (key: string): void => {
+    setChecklist((prev: Record<string, boolean>) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  return (
+    <div>
+      <SectionHeader title="Match Preparation" subtitle="Next fixture planning and readiness" icon="⚽" />
+      <div className="bg-gradient-to-br from-pink-600/20 to-purple-900/10 border border-pink-600/20 rounded-xl p-5 mb-6">
+        <div className="text-xs text-pink-400 font-semibold uppercase tracking-wider mb-2">Next Match</div>
+        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Brighton Women</div>
+        <div className="flex items-center gap-4 text-sm text-gray-400">
+          <span>Saturday 12 April 2026</span>
+          <span>KO 14:00</span>
+          <span>Oakridge Stadium (H)</span>
+          <span className="text-xs px-2 py-0.5 rounded bg-blue-600/20 text-blue-400">WSL</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Available" value="8" sub="Of 10 squad players" color="green" />
+        <StatCard label="Injured" value="1" sub="Sophie Turner (RTP)" color="red" />
+        <StatCard label="Unavailable" value="1" sub="Sophie Lawson (maternity)" color="amber" />
+        <StatCard label="Days Until Match" value="8" sub="Saturday 12 Apr" color="blue" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Availability Summary</h3>
+          <div className="space-y-2">
+            {[
+              {player:'Emma Clarke',status:'Available',note:'Dual-reg recalled for this match'},
+              {player:'Priya Nair',status:'Available',note:''},
+              {player:'Jade Osei',status:'Available',note:''},
+              {player:'Abbi Walsh',status:'Available',note:''},
+              {player:'Charlotte Reed',status:'Available',note:''},
+              {player:'Sophie Turner',status:'Injured',note:'RTP Phase 3 — no match clearance'},
+              {player:'Fatima Al-Said',status:'Available',note:'ITC cleared — eligible'},
+              {player:'Megan Hughes',status:'Available',note:''},
+              {player:'Sophie Lawson',status:'Unavailable',note:'Maternity leave'},
+              {player:'Tilly Brooks',status:'Available',note:'Part-time — confirmed available'},
+            ].map((p: {player:string;status:string;note:string}) => (
+              <div key={p.player} className="flex items-center justify-between py-1.5 border-b border-gray-800">
+                <span className="text-xs text-gray-300">{p.player}</span>
+                <div className="flex items-center gap-2">
+                  {p.note && <span className="text-[10px] text-gray-500">{p.note}</span>}
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    p.status === 'Available' ? 'bg-green-600/20 text-green-400'
+                    : p.status === 'Injured' ? 'bg-red-600/20 text-red-400'
+                    : 'bg-amber-600/20 text-amber-400'
+                  }`}>{p.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Brighton Women</h3>
+          <div className="space-y-3">
+            {[
+              {label:'Formation',value:'3-5-2'},
+              {label:'Style',value:'High press, quick transitions'},
+              {label:'Danger Player',value:'#9 Katie Robinson — 8 goals this season'},
+              {label:'Weakness',value:'Vulnerable to wide overloads on left side'},
+              {label:'Last Meeting',value:'1-1 draw (Nov 2025)'},
+              {label:'League Position',value:'5th (W42 D8 L6)'},
+            ].map((n: {label:string;value:string}) => (
+              <div key={n.label}>
+                <div className="text-[10px] text-gray-500 uppercase">{n.label}</div>
+                <div className="text-xs text-gray-300">{n.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Pre-Match Checklist</h3>
+        <div className="space-y-2">
+          {[
+            {key:'teamSheet',label:'Team sheet submitted to FA'},
+            {key:'kitConfirmed',label:'Kit confirmed (home pink)'},
+            {key:'travelBooked',label:'Travel arrangements confirmed'},
+            {key:'medicalBag',label:'Medical bag packed and checked'},
+            {key:'gpsDevices',label:'GPS devices charged and allocated'},
+            {key:'matchBalls',label:'Match balls and equipment ready'},
+          ].map((item: {key:string;label:string}) => (
+            <button key={item.key} onClick={() => toggleItem(item.key)}
+              className="flex items-center gap-2 text-xs w-full text-left py-1.5">
+              <span className={checklist[item.key] ? 'text-green-400' : 'text-gray-600'}>{checklist[item.key] ? '✓' : '○'}</span>
+              <span className={checklist[item.key] ? 'text-gray-400 line-through' : 'text-gray-300'}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── GPS & PLAYER DATA VIEW ─────────────────────────────────────────────────
+const GPSPlayerDataView = () => {
+  const players: Array<{name:string;pos:string;distance:number;topSpeed:number;sprints:number;hsr:number;load:string;loadColor:string}> = [
+    {name:'Emma Clarke',pos:'CB',distance:9.2,topSpeed:28.1,sprints:14,hsr:620,load:'Optimal',loadColor:'green'},
+    {name:'Priya Nair',pos:'CM',distance:11.4,topSpeed:29.3,sprints:22,hsr:890,load:'Optimal',loadColor:'green'},
+    {name:'Jade Osei',pos:'ST',distance:10.1,topSpeed:31.2,sprints:26,hsr:780,load:'Optimal',loadColor:'green'},
+    {name:'Abbi Walsh',pos:'RW',distance:10.8,topSpeed:30.5,sprints:28,hsr:850,load:'High',loadColor:'amber'},
+    {name:'Charlotte Reed',pos:'GK',distance:5.4,topSpeed:18.2,sprints:4,hsr:120,load:'Optimal',loadColor:'green'},
+    {name:'Sophie Turner',pos:'LB',distance:7.1,topSpeed:24.0,sprints:8,hsr:340,load:'Restricted',loadColor:'red'},
+    {name:'Fatima Al-Said',pos:'AM',distance:10.6,topSpeed:29.8,sprints:20,hsr:810,load:'Optimal',loadColor:'green'},
+    {name:'Megan Hughes',pos:'DM',distance:10.9,topSpeed:27.6,sprints:18,hsr:720,load:'Optimal',loadColor:'green'},
+    {name:'Sophie Lawson',pos:'RB',distance:0,topSpeed:0,sprints:0,hsr:0,load:'On Leave',loadColor:'blue'},
+    {name:'Tilly Brooks',pos:'LW',distance:9.8,topSpeed:30.1,sprints:24,hsr:760,load:'High',loadColor:'amber'},
+  ]
+
+  return (
+    <div>
+      <SectionHeader title="GPS & Player Data" subtitle="Training and match load monitoring" icon="📡" />
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-3 mb-6 text-xs text-blue-400">
+        📡 GPS data synced via Catapult integration — last sync: today 09:14. 9 of 10 devices active.
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Avg Distance" value="9.5 km" sub="Per session (outfield)" color="pink" />
+        <StatCard label="Avg Top Speed" value="28.9 km/h" sub="Squad outfield avg" color="blue" />
+        <StatCard label="High Load" value="2" sub="Walsh, Brooks" color="amber" />
+        <StatCard label="Restricted" value="1" sub="Turner (RTP)" color="red" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-right p-3">Distance (km)</th><th className="text-right p-3">Top Speed (km/h)</th><th className="text-right p-3">Sprints</th><th className="text-right p-3">HSR (m)</th><th className="text-left p-3">Load Status</th>
+          </tr></thead>
+          <tbody>
+            {players.map((p: typeof players[0], i: number) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                <td className="p-3 text-gray-400">{p.pos}</td>
+                <td className="p-3 text-right text-gray-300">{p.distance > 0 ? p.distance.toFixed(1) : '—'}</td>
+                <td className="p-3 text-right text-gray-300">{p.topSpeed > 0 ? p.topSpeed.toFixed(1) : '—'}</td>
+                <td className="p-3 text-right text-gray-300">{p.sprints > 0 ? p.sprints : '—'}</td>
+                <td className="p-3 text-right text-gray-300">{p.hsr > 0 ? p.hsr : '—'}</td>
+                <td className="p-3">
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    p.loadColor === 'green' ? 'bg-green-600/20 text-green-400'
+                    : p.loadColor === 'amber' ? 'bg-amber-600/20 text-amber-400'
+                    : p.loadColor === 'red' ? 'bg-red-600/20 text-red-400'
+                    : 'bg-blue-600/20 text-blue-400'
+                  }`}>{p.load}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Integration Status</h3>
+        <div className="space-y-2">
+          {[
+            {system:'Catapult GPS',status:'Connected',detail:'10 devices allocated, 9 active'},
+            {system:'Kitman Labs',status:'Connected',detail:'ACL risk model synced'},
+            {system:'Second Spectrum',status:'Pending',detail:'Video analysis integration — Phase 2'},
+            {system:'FA Player Registration',status:'Connected',detail:'Squad list synced daily'},
+          ].map((s: {system:string;status:string;detail:string}) => (
+            <div key={s.system} className="flex items-center justify-between py-1.5 border-b border-gray-800">
+              <div>
+                <span className="text-xs text-gray-300">{s.system}</span>
+                <span className="text-[10px] text-gray-500 ml-2">{s.detail}</span>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded ${s.status === 'Connected' ? 'bg-green-600/20 text-green-400' : 'bg-amber-600/20 text-amber-400'}`}>{s.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── PLACEHOLDER VIEW ─────────────────────────────────────────────────────────
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   <div>
@@ -622,21 +1177,21 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
       case 'fsr':         return <FSRDashboardView club={club} />
       case 'welfare':     return <WelfareView />
       case 'briefing':    return <MorningBriefingView club={club} />
-      case 'salary':      return <PlaceholderView title="Salary Compliance" icon="💰" />
-      case 'revenue':     return <PlaceholderView title="Revenue Attribution" icon="📈" />
+      case 'salary':      return <SalaryComplianceView />
+      case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
       case 'maternity':   return <MaternityTrackerView />
       case 'mental':      return <MentalHealthView />
-      case 'squad':       return <PlaceholderView title="Squad Management" icon="👥" />
-      case 'dualreg':     return <PlaceholderView title="Dual Registration" icon="🔄" />
-      case 'tactics':     return <PlaceholderView title="Tactics & Set Pieces" icon="🎯" />
-      case 'match':       return <PlaceholderView title="Match Preparation" icon="⚽" />
+      case 'squad':       return <SquadManagementView />
+      case 'dualreg':     return <DualRegistrationView />
+      case 'tactics':     return <TacticsSetPiecesView />
+      case 'match':       return <MatchPreparationView />
       case 'sponsorship': return <PlaceholderView title="Sponsorship Pipeline" icon="🤝" />
       case 'standalone':  return <PlaceholderView title="Standalone Tracker" icon="🏗️" />
       case 'board':       return <PlaceholderView title="Board Suite" icon="🏛️" />
       case 'financial':   return <PlaceholderView title="Financial Planning" icon="💷" />
       case 'team':        return <PlaceholderView title="Staff Directory" icon="📋" />
-      case 'gps':         return <PlaceholderView title="GPS & PlayerData" icon="📡" />
+      case 'gps':         return <GPSPlayerDataView />
       case 'medical':     return <MedicalRecordsView />
       case 'settings':    return <PlaceholderView title="Settings" icon="⚙️" />
       default:            return <DashboardView club={club} />
