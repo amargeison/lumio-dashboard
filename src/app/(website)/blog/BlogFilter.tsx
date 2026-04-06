@@ -13,7 +13,7 @@ interface PostCard {
 }
 
 const BUSINESS_CATEGORIES = ['All', 'Schools', 'Business', 'Product']
-const SPORTS_CATEGORIES = ['All', 'Football', 'Rugby', 'Tennis', 'Golf', 'Darts', 'Boxing', 'Cricket', "Women's Football"]
+const SPORTS_CATEGORIES = ['All', 'Football', "Women's Football", 'Rugby', 'Tennis', 'Golf', 'Darts', 'Boxing', 'Cricket']
 
 export default function BlogFilter({ posts, isSports = false }: { posts: PostCard[]; isSports?: boolean }) {
   const [active, setActive] = useState('All')

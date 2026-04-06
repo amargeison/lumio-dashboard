@@ -57,6 +57,20 @@ const PORTALS: Portal[] = [
     cta: 'See Grassroots live in a demo', href: '/football/grassroots/sunday-rovers-fc',
   },
   {
+    id: 'womensfootball', icon: '⚽', label: "Women's FC", color: '#EC4899',
+    desc: "FSR compliance tracking, player welfare management (maternity, ACL, mental health), standalone sponsorship pipeline with FSR revenue attribution, board suite, dual registration management and AI Club Director morning briefing — built specifically for the women's game.",
+    modules: [
+      { name: 'FSR Compliance Dashboard', detail: 'Real-time salary spend vs. 80% Relevant Revenue cap. Bundled sponsorship attribution. Age-band salary compliance.' },
+      { name: 'Player Welfare Hub', detail: 'ACL risk monitor, maternity tracker, mental health log, PFA referral workflow. Karen Carney Review compliant.' },
+      { name: 'Standalone Sponsorship Pipeline', detail: 'FSR-aware commercial CRM with bundled deal attribution for parent club shared sponsors.' },
+      { name: 'Board Suite & Demerger Tracker', detail: 'FSR-constrained Club Planner, investor tools, standalone valuation model, Demerger Readiness Tracker.' },
+      { name: 'Squad, Pitch & Set Pieces', detail: 'FIFA-style pitch view, dual registration management, set pieces library, team talks builder.' },
+    ],
+    integrations: ['Kitman Labs', 'WSL Football', 'FA Whole Game System', 'PFA', 'Stripe', 'Xero'],
+    checks: ['FSR headroom tracked in real time', 'Maternity and ACL welfare log — Karen Carney compliant', 'Bundled sponsorship attribution for FSR revenue', 'Dual registration expiry alerts', 'AI morning briefing — FSR, welfare, commercial, squad'],
+    cta: "Book a Women's Football demo", href: '/contact',
+  },
+  {
     id: 'tennis', icon: '🎾', label: 'Tennis', color: '#A3E635',
     desc: 'ATP/WTA ranking tracker, tournament schedule planner, match prep tools, sponsorship manager, physio & recovery dashboard, agent financial pipeline and AI morning briefing.',
     modules: [
@@ -111,20 +125,6 @@ const PORTALS: Portal[] = [
     integrations: ['BoxRec', 'WHOOP', 'Garmin', 'Dartfish'],
     checks: ['Purse simulator shows real take-home before you sign', 'Saudi Arabia, USA and UK tax modes — know the difference', 'Weight trajectory projected from day 1 of camp', 'Zuffa Boxing fifth column — understand the new landscape', 'First financial transparency tool ever built for boxing'],
     cta: 'See Lumio Fight live in a demo', href: '/boxing/lumio-demo',
-  },
-  {
-    id: 'womensfootball', icon: '⚽', label: "Women's FC", color: '#EC4899',
-    desc: "FSR compliance tracking, player welfare management (maternity, ACL, mental health), standalone sponsorship pipeline with FSR revenue attribution, board suite, dual registration management and AI Club Director morning briefing — built specifically for the women's game.",
-    modules: [
-      { name: 'FSR Compliance Dashboard', detail: 'Real-time salary spend vs. 80% Relevant Revenue cap. Bundled sponsorship attribution. Age-band salary compliance.' },
-      { name: 'Player Welfare Hub', detail: 'ACL risk monitor, maternity tracker, mental health log, PFA referral workflow. Karen Carney Review compliant.' },
-      { name: 'Standalone Sponsorship Pipeline', detail: 'FSR-aware commercial CRM with bundled deal attribution for parent club shared sponsors.' },
-      { name: 'Board Suite & Demerger Tracker', detail: 'FSR-constrained Club Planner, investor tools, standalone valuation model, Demerger Readiness Tracker.' },
-      { name: 'Squad, Pitch & Set Pieces', detail: 'FIFA-style pitch view, dual registration management, set pieces library, team talks builder.' },
-    ],
-    integrations: ['Kitman Labs', 'WSL Football', 'FA Whole Game System', 'PFA', 'Stripe', 'Xero'],
-    checks: ['FSR headroom tracked in real time', 'Maternity and ACL welfare log — Karen Carney compliant', 'Bundled sponsorship attribution for FSR revenue', 'Dual registration expiry alerts', 'AI morning briefing — FSR, welfare, commercial, squad'],
-    cta: "Book a Women's Football demo", href: '/contact',
   },
   {
     id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6',
