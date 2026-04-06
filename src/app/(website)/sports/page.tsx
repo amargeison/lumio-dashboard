@@ -48,12 +48,12 @@ const PORTALS = [
   {
     icon: '🏉', title: 'Rugby', subtitle: 'Lumio Tour (Rugby)', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)',
     desc: 'Contract & career management, performance analytics, injury & recovery tracking, GPS load data (PlayerData), match prep & opposition analysis, sponsorship manager and AI morning briefing. Built for Premiership, Top 14 and international players.',
-    cta: 'Join the waitlist', href: '/rugby', badge: 'Coming soon',
+    cta: 'See Lumio Rugby →', href: '/rugby',
   },
   {
     icon: '🏏', title: 'Cricket', subtitle: 'Lumio Tour (Cricket)', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)',
     desc: 'Contract & central contract tracker, batting & bowling analytics, tour & franchise schedule planner (IPL, The Hundred, BBL), injury & fitness management, sponsorship & commercial pipeline and AI morning briefing. Built for county, international and franchise players.',
-    cta: 'Join the waitlist', href: '/cricket', badge: 'Coming soon',
+    cta: 'See Lumio Cricket →', href: '/cricket',
   },
 ]
 
