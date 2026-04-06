@@ -404,44 +404,92 @@ const MorningBriefingView = ({ club }: { club: WomensClub }) => {
 
 // ─── ACL RISK MONITOR VIEW ────────────────────────────────────────────────────
 const ACLRiskMonitorView = () => {
-  const aclPlayers: Array<{name:string;pos:string;history:string;lastScreening:string;nextDue:string;risk:'High'|'Medium'|'Low'}> = [
-    {name:'Emma Clarke',pos:'CB',history:'Previous ACL (right, 2022)',lastScreening:'Oct 2024',nextDue:'OVERDUE',risk:'High'},
-    {name:'Priya Nair',pos:'CM',history:'None',lastScreening:'Jan 2025',nextDue:'Apr 2025',risk:'Medium'},
-    {name:'Jade Osei',pos:'ST',history:'None',lastScreening:'Feb 2025',nextDue:'May 2025',risk:'Medium'},
-    {name:'Abbi Walsh',pos:'RW',history:'Previous ACL (left, 2021)',lastScreening:'Nov 2024',nextDue:'Feb 2025',risk:'High'},
+  const aclPlayers: Array<{name:string;pos:string;history:string;lastScreening:string;nextDue:string;overdue:boolean;risk:'High'|'Medium'|'Low'}> = [
+    {name:'Emma Clarke',     pos:'CB',history:'Previous ACL (right, 2022)',lastScreening:'Oct 2024',nextDue:'Jan 2025',overdue:true, risk:'High'},
+    {name:'Priya Nair',      pos:'CM',history:'None',                       lastScreening:'Jan 2025',nextDue:'Apr 2025',overdue:true, risk:'Medium'},
+    {name:'Jade Osei',       pos:'ST',history:'None',                       lastScreening:'Feb 2025',nextDue:'May 2025',overdue:true, risk:'Medium'},
+    {name:'Abbi Walsh',      pos:'RW',history:'Previous ACL (left, 2021)',  lastScreening:'Nov 2024',nextDue:'Feb 2025',overdue:true, risk:'High'},
+    {name:'Charlotte Reed',  pos:'GK',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Sophie Turner',   pos:'LB',history:'ACL reconstruction Dec 2024',lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Fatima Al-Said',  pos:'AM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Megan Hughes',    pos:'DM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Sophie Lawson',   pos:'RB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Tilly Brooks',    pos:'LW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+  ]
+  const overdueCount = aclPlayers.filter(p => p.overdue).length
+  // Demo screening scheduler — next 6 weeks
+  const scheduler: Array<{date:string;day:string;player:string;type:string}> = [
+    {date:'10 Apr',day:'Wed',player:'Emma Clarke',  type:'Catch-up screening'},
+    {date:'11 Apr',day:'Thu',player:'Abbi Walsh',   type:'Catch-up screening'},
+    {date:'14 Apr',day:'Mon',player:'Priya Nair',   type:'Catch-up screening'},
+    {date:'17 Apr',day:'Thu',player:'Jade Osei',    type:'Catch-up screening'},
+    {date:'24 Apr',day:'Thu',player:'Sophie Turner',type:'RTP follow-up'},
+    {date:'02 May',day:'Fri',player:'Charlotte Reed',type:'Routine'},
   ]
   return (
     <div>
-      <SectionHeader title="ACL Risk Monitor" subtitle="Women players face ACL injury rates 3–6× higher than men. Active monitoring is mandated under Karen Carney Review standards." icon="🦵" />
-      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-3 mb-6 text-xs text-red-400 font-medium">⚠ 4 players have overdue ACL screenings — welfare lead notified</div>
+      <SectionHeader title="ACL Risk Monitor" subtitle="Women face ACL injury rates 3–6× higher than men. Active monitoring is mandated under Karen Carney Review standards." icon="🦵" />
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-3 mb-6 text-xs text-red-400 font-medium">⚠ {overdueCount} players have overdue ACL screenings — welfare lead notified</div>
+
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
             <th className="text-left p-3">Player</th><th className="text-left p-3">Position</th><th className="text-left p-3">ACL History</th><th className="text-left p-3">Last Screening</th><th className="text-left p-3">Next Due</th><th className="text-left p-3">Risk</th>
           </tr></thead>
           <tbody>
-            {aclPlayers.map((p: typeof aclPlayers[0], i: number) => (
+            {aclPlayers.map((p, i) => (
               <tr key={i} className="border-b border-gray-800/50">
                 <td className="p-3 text-gray-200 font-medium">{p.name}</td>
                 <td className="p-3 text-gray-400">{p.pos}</td>
                 <td className="p-3 text-gray-400 text-xs">{p.history}</td>
                 <td className="p-3 text-gray-400 text-xs">{p.lastScreening}</td>
-                <td className={`p-3 text-xs font-medium ${p.nextDue === 'OVERDUE' ? 'text-red-400' : 'text-gray-400'}`}>{p.nextDue}</td>
+                <td className="p-3 text-xs">
+                  <div className={p.overdue ? 'text-gray-400' : 'text-gray-400'}>{p.nextDue}</div>
+                  {p.overdue && <div className="text-[10px] font-bold text-red-400 mt-0.5">OVERDUE</div>}
+                </td>
                 <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${p.risk === 'High' ? 'bg-red-600/20 text-red-400' : p.risk === 'Medium' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'}`}>{p.risk}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">Return-to-Play Tracker</h3>
         <div className="space-y-2">
-          {[{phase:'1. Rest',done:true},{phase:'2. Rehab',done:true},{phase:'3. Non-contact',done:true},{phase:'4. Contact',done:false},{phase:'5. Match cleared',done:false}].map((s: {phase:string;done:boolean}, i: number) => (
+          {[{phase:'1. Rest',done:true},{phase:'2. Rehab',done:true},{phase:'3. Non-contact',done:true},{phase:'4. Contact',done:false},{phase:'5. Match cleared',done:false}].map((s, i) => (
             <div key={i} className="flex items-center gap-2 text-xs"><span className={s.done ? 'text-green-400' : 'text-gray-600'}>{s.done ? '✓' : '○'}</span><span className={s.done ? 'text-gray-400 line-through' : 'text-gray-300'}>{s.phase}</span></div>
           ))}
         </div>
         <div className="text-xs text-gray-500 mt-2">Sophie Turner — ACL reconstruction Dec 2024 — Phase 3 (non-contact)</div>
       </div>
+
+      {/* Screening scheduler — next 6 weeks */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white">📅 Screening Scheduler — Next 6 weeks</h3>
+          <span className="text-[10px] text-gray-500">{scheduler.length} appointments</span>
+        </div>
+        <div className="space-y-2">
+          {scheduler.map((s, i) => {
+            const isCatchup = s.type === 'Catch-up screening'
+            return (
+              <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-[#0a0c14] border border-gray-800/50">
+                <div className="text-center w-12 flex-shrink-0">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">{s.day}</div>
+                  <div className={`text-sm font-bold ${isCatchup ? 'text-red-400' : 'text-gray-200'}`}>{s.date}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-gray-200">{s.player}</div>
+                  <div className="text-[10px] text-gray-500">{s.type}</div>
+                </div>
+                {isCatchup && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">CATCH-UP</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="text-xs text-gray-500">→ Link to Medical Records for full player history</div>
     </div>
   )
@@ -543,6 +591,56 @@ const MentalHealthView = () => (
         ))}
       </div>
     </div>
+    {/* Seasonal workload vs wellbeing chart */}
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold text-white">Seasonal Workload vs Wellbeing</h3>
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#EC4899' }} /><span className="text-gray-400">Workload</span></span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#0D9488' }} /><span className="text-gray-400">Wellbeing</span></span>
+        </div>
+      </div>
+      {(() => {
+        const months = ['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May']
+        const workload = [40, 55, 65, 70, 60, 50, 65, 78, 85, 75]
+        const wellbeing = [8.4, 8.1, 7.8, 7.5, 7.9, 8.2, 7.6, 7.0, 6.6, 6.9]
+        const W = 600, H = 180, padL = 32, padR = 12, padT = 16, padB = 28
+        const innerW = W - padL - padR
+        const innerH = H - padT - padB
+        const stepX = innerW / (months.length - 1)
+        // Workload axis 0..100, Wellbeing axis 0..10
+        const wlPath = workload.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / 100) * innerH}`).join(' ')
+        const wbPath = wellbeing.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / 10) * innerH}`).join(' ')
+        return (
+          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Seasonal workload vs wellbeing line chart">
+            {/* Y gridlines (4 lines) */}
+            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+              <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+            ))}
+            {/* Y axis labels — workload (left, pink) */}
+            {[0, 25, 50, 75, 100].map((v, i) => (
+              <text key={i} x={padL - 6} y={padT + innerH - (v / 100) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>
+            ))}
+            {/* X axis labels */}
+            {months.map((m, i) => (
+              <text key={m} x={padL + i * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">{m}</text>
+            ))}
+            {/* Workload line + dots */}
+            <path d={wlPath} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {workload.map((v, i) => (
+              <circle key={`w${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / 100) * innerH} r="2.5" fill="#EC4899" />
+            ))}
+            {/* Wellbeing line + dots */}
+            <path d={wbPath} fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {wellbeing.map((v, i) => (
+              <circle key={`b${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / 10) * innerH} r="2.5" fill="#0D9488" />
+            ))}
+          </svg>
+        )
+      })()}
+      <p className="text-[11px] text-gray-500 mt-2">Inverse correlation noted in Mar–Apr — workload spike of 78–85 hrs/wk coincides with average wellbeing dropping from 7.6 to 6.6. Welfare lead reviewed at last staff meeting.</p>
+    </div>
+
     <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-4 text-xs text-amber-400">🔒 Mental health records are strictly confidential — role-based access only.</div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
       <h3 className="text-sm font-bold text-white mb-3">WSL Minimum Standards (Karen Carney Review)</h3>
@@ -593,6 +691,37 @@ const MedicalRecordsView = () => (
         </tbody>
       </table>
     </div>
+    {/* Current injury list */}
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+        <h3 className="text-sm font-bold text-white">Current Injury List</h3>
+        <span className="text-[10px] text-gray-500">3 active</span>
+      </div>
+      <table className="w-full text-sm">
+        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+          <th className="text-left p-3">Player</th><th className="text-left p-3">Injury</th><th className="text-left p-3">Severity</th><th className="text-left p-3">Date Sustained</th><th className="text-left p-3">Expected Return</th>
+        </tr></thead>
+        <tbody>
+          {[
+            {player:'Sophie Turner',injury:'ACL reconstruction (right knee)',severity:'Severe', sustained:'12 Dec 2024',ret:'Aug 2026'},
+            {player:'Megan Hughes', injury:'Grade 2 hamstring strain',         severity:'Moderate',sustained:'24 Mar 2026',ret:'May 2026'},
+            {player:'Tilly Brooks', injury:'Mild concussion',                   severity:'Minor',   sustained:'30 Mar 2026',ret:'14 Apr 2026'},
+          ].map((r, i) => {
+            const sevColor = r.severity === 'Severe' ? 'bg-red-600/20 text-red-400' : r.severity === 'Moderate' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'
+            return (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{r.player}</td>
+                <td className="p-3 text-gray-300 text-xs">{r.injury}</td>
+                <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${sevColor}`}>{r.severity}</span></td>
+                <td className="p-3 text-gray-400 text-xs">{r.sustained}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.ret}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+
     <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-4 text-xs text-amber-400">🔒 GDPR: Medical records are strictly role-gated. Access restricted to Club Doctor, Welfare Lead, and Club Director.</div>
     <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Export for WSL Football & Insurance — Phase 2</button>
   </div>
@@ -851,9 +980,9 @@ const SquadManagementView = () => {
 
 // ─── DUAL REGISTRATION VIEW ─────────────────────────────────────────────────
 const DualRegistrationView = () => {
-  const registrations: Array<{player:string;pos:string;parentClub:string;loanClub:string;start:string;end:string;daysLeft:number}> = [
-    {player:'Emma Clarke',pos:'CB',parentClub:'Oakridge Women',loanClub:'Harfield FC Women',start:'1 Jan 2026',end:'8 Apr 2026',daysLeft:4},
-    {player:'Lucy Whitmore',pos:'LW',parentClub:'Oakridge Women',loanClub:'Bristol City Women',start:'1 Feb 2026',end:'30 Apr 2026',daysLeft:26},
+  const registrations: Array<{player:string;pos:string;parentClub:string;loanClub:string;type:'Temporary'|'Permanent';start:string;end:string;window:string;daysLeft:number}> = [
+    {player:'Emma Clarke', pos:'CB',parentClub:'Oakridge Women',loanClub:'Harfield FC Women',type:'Temporary',start:'15 Jan 2026',end:'30 May 2026',window:'Winter',daysLeft:4},
+    {player:'Chloe Tanner',pos:'CM',parentClub:'Oakridge Women',loanClub:'Sunday Rovers Women',type:'Permanent',start:'12 Aug 2025',end:'31 Jul 2026',window:'Summer 2025',daysLeft:115},
   ]
 
   return (
@@ -946,8 +1075,8 @@ const TacticsSetPiecesView = () => (
         {[
           {name:'Corner — Near Post Flick',type:'Attacking',success:'42%',description:'Short corner to Nair, flick-on by Osei at near post. Clarke/Hughes as secondary targets.'},
           {name:'Free Kick — Direct Strike',type:'Attacking',success:'18%',description:'Direct attempt from Walsh when within 25 yards. Decoy run from Brooks.'},
-          {name:'Corner — Defensive Zonal',type:'Defensive',success:'78% clearance',description:'Zonal marking at 6-yard box. Hughes marks zone 1, Clarke zone 2. Reed commands box.'},
           {name:'Throw-in — Long to Target',type:'Attacking',success:'35%',description:'Long throw from Turner to Osei in channel. Second ball runners: Walsh, Brooks.'},
+          {name:'Goal Kick — Build Out',type:'Defensive',success:'72% retention',description:'Reed plays short to Clarke or Hughes. Triangle build through Nair, full-backs push wide. Long option to Osei if pressed.'},
         ].map((r: {name:string;type:string;success:string;description:string}) => (
           <div key={r.name} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
@@ -990,7 +1119,7 @@ const MatchPreparationView = () => {
       <SectionHeader title="Match Preparation" subtitle="Next fixture planning and readiness" icon="⚽" />
       <div className="bg-gradient-to-br from-pink-600/20 to-purple-900/10 border border-pink-600/20 rounded-xl p-5 mb-6">
         <div className="text-xs text-pink-400 font-semibold uppercase tracking-wider mb-2">Next Match</div>
-        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Brighton Women</div>
+        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Manchester City Women</div>
         <div className="flex items-center gap-4 text-sm text-gray-400">
           <span>Saturday 12 April 2026</span>
           <span>KO 14:00</span>
@@ -1035,15 +1164,15 @@ const MatchPreparationView = () => {
           </div>
         </div>
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Brighton Women</h3>
+          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Manchester City Women</h3>
           <div className="space-y-3">
             {[
-              {label:'Formation',value:'3-5-2'},
-              {label:'Style',value:'High press, quick transitions'},
-              {label:'Danger Player',value:'#9 Katie Robinson — 8 goals this season'},
-              {label:'Weakness',value:'Vulnerable to wide overloads on left side'},
-              {label:'Last Meeting',value:'1-1 draw (Nov 2025)'},
-              {label:'League Position',value:'5th (W42 D8 L6)'},
+              {label:'Formation',value:'4-3-3 (high line)'},
+              {label:'Style',value:'High press, possession-dominant, quick transitions'},
+              {label:'Danger Player',value:'#9 Khadija Shaw — 14 goals this season'},
+              {label:'Weakness',value:'Vulnerable to direct balls in behind the high line'},
+              {label:'Last Meeting',value:'2-2 draw (Nov 2025)'},
+              {label:'League Position',value:'2nd (W14 D5 L1)'},
             ].map((n: {label:string;value:string}) => (
               <div key={n.label}>
                 <div className="text-[10px] text-gray-500 uppercase">{n.label}</div>
@@ -1053,7 +1182,7 @@ const MatchPreparationView = () => {
           </div>
         </div>
       </div>
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">Pre-Match Checklist</h3>
         <div className="space-y-2">
           {[
@@ -1070,6 +1199,71 @@ const MatchPreparationView = () => {
               <span className={checklist[item.key] ? 'text-gray-400 line-through' : 'text-gray-300'}>{item.label}</span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Team sheet builder — static demo */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-white">📋 Team Sheet Builder</h3>
+          <span className="text-[10px] text-gray-500">Submitted to FA · 11 starters · 7 subs</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-pink-400 font-bold mb-2">Starting XI</div>
+            <div className="space-y-1">
+              {[
+                {n:1, name:'Charlotte Reed',  pos:'GK'},
+                {n:2, name:'Sophie Lawson',   pos:'RB', greyed:true,  note:'Maternity'},
+                {n:4, name:'Emma Clarke',     pos:'CB'},
+                {n:5, name:'TBC',             pos:'CB', tbc:true},
+                {n:3, name:'Sophie Turner',   pos:'LB', greyed:true, note:'RTP'},
+                {n:6, name:'Megan Hughes',    pos:'DM'},
+                {n:8, name:'Priya Nair',      pos:'CM'},
+                {n:10,name:'Fatima Al-Said',  pos:'AM'},
+                {n:7, name:'Abbi Walsh',      pos:'RW'},
+                {n:9, name:'Jade Osei',       pos:'ST'},
+                {n:11,name:'Tilly Brooks',    pos:'LW'},
+              ].map(p => (
+                <div key={p.n} className={`flex items-center gap-2 py-1 px-2 rounded ${p.greyed ? 'opacity-40' : ''}`}>
+                  <span className="text-[10px] font-bold w-5 text-gray-500">#{p.n}</span>
+                  <span className={`text-xs flex-1 ${p.tbc ? 'text-amber-400 italic' : 'text-gray-200'}`}>{p.name}</span>
+                  <span className="text-[10px] text-gray-500">{p.pos}</span>
+                  {p.note && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-600/20 text-amber-400">{p.note}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-blue-400 font-bold mb-2">Substitutes</div>
+            <div className="space-y-1">
+              {[
+                {n:12,name:'Ellie Markham',  pos:'GK'},
+                {n:14,name:'Hannah Pettit',  pos:'CB'},
+                {n:15,name:'Maya Donaldson', pos:'FB'},
+                {n:16,name:'Sara Whittle',   pos:'CM'},
+                {n:17,name:'Lara Vaughan',   pos:'WG'},
+                {n:18,name:'Bea Sutherland', pos:'ST'},
+                {n:19,name:'Imogen Ross',    pos:'AM'},
+              ].map(p => (
+                <div key={p.n} className="flex items-center gap-2 py-1 px-2 rounded">
+                  <span className="text-[10px] font-bold w-5 text-gray-500">#{p.n}</span>
+                  <span className="text-xs flex-1 text-gray-300">{p.name}</span>
+                  <span className="text-[10px] text-gray-500">{p.pos}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-2">Captains</div>
+              <div className="text-xs text-gray-300">Captain: <span className="text-pink-400 font-semibold">Priya Nair (#8)</span></div>
+              <div className="text-xs text-gray-300">Vice: <span className="text-pink-400 font-semibold">Charlotte Reed (#1)</span></div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Edit team sheet</button>
+          <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Resubmit to FA</button>
+          <span className="text-[10px] text-gray-500">Locks 1 hour before kick-off</span>
         </div>
       </div>
     </div>
@@ -1130,7 +1324,59 @@ const GPSPlayerDataView = () => {
           </tbody>
         </table>
       </div>
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+      {/* 8-week load trend — 3 players */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-white">8-Week Load Trend</h3>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#EC4899' }} /><span className="text-gray-400">Walsh</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#0D9488' }} /><span className="text-gray-400">Nair</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#A78BFA' }} /><span className="text-gray-400">Osei</span></span>
+          </div>
+        </div>
+        {(() => {
+          const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8']
+          // Acute:chronic load (au) — typical range 400–1100
+          const walsh = [620, 680, 740, 810, 880, 940, 1020, 1080]
+          const nair  = [650, 700, 720, 760, 780, 820, 860, 890]
+          const osei  = [580, 620, 680, 700, 730, 760, 770, 790]
+          const W = 600, H = 180, padL = 36, padR = 12, padT = 16, padB = 28
+          const innerW = W - padL - padR
+          const innerH = H - padT - padB
+          const stepX = innerW / (weeks.length - 1)
+          const yMax = 1200
+          const buildPath = (data: number[]) => data.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / yMax) * innerH}`).join(' ')
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="8-week training load trend for three players">
+              {/* gridlines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+                <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              ))}
+              {/* y axis labels (au) */}
+              {[0, 300, 600, 900, 1200].map((v, i) => (
+                <text key={i} x={padL - 6} y={padT + innerH - (v / yMax) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>
+              ))}
+              {/* high-load threshold ~1000 au */}
+              <line x1={padL} x2={W - padR} y1={padT + innerH - (1000 / yMax) * innerH} y2={padT + innerH - (1000 / yMax) * innerH} stroke="rgba(245,158,11,0.4)" strokeWidth="1" strokeDasharray="3 3" />
+              <text x={W - padR - 4} y={padT + innerH - (1000 / yMax) * innerH - 4} fontSize="9" fill="#F59E0B" textAnchor="end">High-load threshold</text>
+              {/* x axis labels */}
+              {weeks.map((w, i) => (
+                <text key={w} x={padL + i * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">{w}</text>
+              ))}
+              {/* lines + dots */}
+              <path d={buildPath(walsh)} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {walsh.map((v, i) => <circle key={`wa${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#EC4899" />)}
+              <path d={buildPath(nair)} fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {nair.map((v, i) => <circle key={`na${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#0D9488" />)}
+              <path d={buildPath(osei)} fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {osei.map((v, i) => <circle key={`os${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#A78BFA" />)}
+            </svg>
+          )
+        })()}
+        <p className="text-[11px] text-gray-500 mt-2">Walsh trending into the high-load band over the last 3 weeks — review with strength &amp; conditioning before Sat&apos;s fixture.</p>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">Integration Status</h3>
         <div className="space-y-2">
           {[
@@ -1148,6 +1394,12 @@ const GPSPlayerDataView = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Connect Kitman Labs</button>
+        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">⌨ Manual data entry</button>
+        <span className="text-[10px] text-gray-500">Available in live portal</span>
       </div>
     </div>
   )
