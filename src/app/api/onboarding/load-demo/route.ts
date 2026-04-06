@@ -28,31 +28,52 @@ export async function POST(req: NextRequest) {
   // Build fresh demo data
   const d = buildDemoData(bid)
 
-  // Insert all records in parallel
-  const results = await Promise.all([
-    supabase.from('business_employees').insert(d.employees),
-    supabase.from('business_meetings').insert(d.meetings),
-    supabase.from('business_finance_monthly').insert(d.financeMonthly),
-    supabase.from('business_invoices').insert(d.invoices),
-    supabase.from('business_tasks').insert(d.tasks),
-    supabase.from('business_compliance_logs').insert(d.complianceLogs),
-    supabase.from('hr_onboardings').insert(d.onboardings),
-    supabase.from('hr_leave_requests').insert(d.leaveRequests),
-    supabase.from('hr_performance_reviews').insert(d.performanceReviews),
-    supabase.from('crm_deals').insert(d.deals),
-  ])
+  // Insert each table individually — one failure doesn't abort the rest
+  const tableInserts: Array<{ table: string; data: unknown[] }> = [
+    { table: 'business_employees', data: d.employees },
+    { table: 'business_meetings', data: d.meetings },
+    { table: 'business_finance_monthly', data: d.financeMonthly },
+    { table: 'business_invoices', data: d.invoices },
+    { table: 'business_tasks', data: d.tasks },
+    { table: 'business_compliance_logs', data: d.complianceLogs },
+    { table: 'hr_onboardings', data: d.onboardings },
+    { table: 'hr_leave_requests', data: d.leaveRequests },
+    { table: 'hr_performance_reviews', data: d.performanceReviews },
+    { table: 'crm_deals', data: d.deals },
+  ]
 
-  const errors = results.filter(r => r.error).map(r => r.error!.message)
-  if (errors.length > 0) {
-    console.error('[load-demo] Insert errors:', errors)
-    return NextResponse.json({ error: 'Some inserts failed', details: errors }, { status: 500 })
+  const tablesWritten: string[] = []
+  const errors: string[] = []
+
+  for (const { table, data } of tableInserts) {
+    try {
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        tablesWritten.push(table)
+        continue
+      }
+      const { error } = await supabase.from(table).insert(data)
+      if (error) {
+        console.error(`[load-demo] ${table} failed:`, error.message)
+        errors.push(`${table}: ${error.message}`)
+      } else {
+        tablesWritten.push(table)
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`[load-demo] ${table} exception:`, msg)
+      errors.push(`${table}: ${msg}`)
+    }
   }
 
-  // Flip the flag
+  // Flip the flag regardless of partial failures
   await supabase
     .from('businesses')
     .update({ demo_data_active: true })
     .eq('id', bid)
 
-  return NextResponse.json({ success: true })
+  if (errors.length > 0) {
+    console.error('[load-demo] Partial success. Errors:', errors)
+  }
+
+  return NextResponse.json({ success: true, tablesWritten, errors: errors.length > 0 ? errors : undefined })
 }

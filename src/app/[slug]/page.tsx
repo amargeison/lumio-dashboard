@@ -2658,23 +2658,67 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
 
   async function handleLoadDemo() {
     setLoading(true)
-    // Preserve identity fields before loading demo
+
+    // Nuclear logo protection: read logo_url directly from DB before demo load
+    const slug = localStorage.getItem('lumio_workspace_slug') || ''
+    let savedLogoUrl: string | null = null
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const { data: wsData } = await supabase.from('businesses').select('logo_url').eq('slug', slug).single()
+      savedLogoUrl = wsData?.logo_url || null
+    } catch { /* continue without logo backup */ }
+
+    // Preserve localStorage identity fields as secondary backup
     const savedLogo = localStorage.getItem('lumio_company_logo')
     const savedWsLogo = localStorage.getItem('workspace_company_logo')
     const savedPhoto = localStorage.getItem('lumio_user_photo')
-    const demoRes = await fetch('/api/onboarding/load-demo', { method: 'POST', headers: sessionToken ? { 'x-workspace-token': sessionToken } : {} }).catch(() => null)
-    if (!demoRes?.ok) { setLoading(false); return }
+
+    // Call demo load API
+    let result: { success?: boolean; error?: string; errors?: string[]; tablesWritten?: string[] } | null = null
+    try {
+      const demoRes = await fetch('/api/onboarding/load-demo', { method: 'POST', headers: sessionToken ? { 'x-workspace-token': sessionToken } : {} })
+      result = await demoRes.json()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Network error'
+      onToast(`Demo load failed: ${msg}`)
+      setLoading(false)
+      return
+    }
+
+    if (!result?.success) {
+      onToast(`Demo load failed: ${result?.error || 'Unknown error'}`)
+      setLoading(false)
+      return
+    }
+
+    // Report partial failures if any
+    if (result.errors && result.errors.length > 0) {
+      onToast(`Demo loaded with ${result.errors.length} warning(s). ${result.tablesWritten?.length || 0} tables written.`)
+    }
+
     localStorage.setItem('lumio_demo_active', 'true')
     localStorage.setItem('lumio-photo-frame', JSON.stringify([
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
       'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
     ]))
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
-    allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
-    // Restore identity fields
+    allPages.forEach((k: string) => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
+
+    // Restore localStorage identity fields
     if (savedLogo) localStorage.setItem('lumio_company_logo', savedLogo)
     if (savedWsLogo) localStorage.setItem('workspace_company_logo', savedWsLogo)
     if (savedPhoto) localStorage.setItem('lumio_user_photo', savedPhoto)
+
+    // Nuclear logo restore: write saved logo_url back to DB after demo load
+    if (savedLogoUrl && slug) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+        await supabase.from('businesses').update({ logo_url: savedLogoUrl }).eq('slug', slug)
+      } catch { /* logo restore failed silently */ }
+    }
+
     onDemoToggle(true)
     setLoading(false)
   }
