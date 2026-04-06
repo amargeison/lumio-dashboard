@@ -276,7 +276,7 @@ export default function SportsProductPage() {
                 <h3 className="text-lg font-bold">{portal.label}</h3>
                 <p className="text-xs" style={{ color: portal.color }}>
                   {portal.modules.length} modules included
-                  {'comingSoon' in portal && portal.comingSoon && (
+                  {(portal as { comingSoon?: boolean }).comingSoon && (
                     <span className="ml-2 font-semibold" style={{ color: '#A78BFA' }}>· Coming soon</span>
                   )}
                 </p>
