@@ -117,17 +117,17 @@ function Nav() {
     >
       <div
         className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
-        style={{ minHeight: 100, ...(isSports ? {} : { padding: '12px 48px' }) }}
+        style={isSports ? { minHeight: 100 } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 64px', width: '100%', minHeight: 80 }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0" style={{ flexShrink: 0, ...(isSports ? {} : { marginRight: 40 }) }}>
+        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0 } : { flexShrink: 0, marginRight: 48 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '36px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+            style={{ height: isSports ? '36px' : '120px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
         </Link>
 
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : { gap: 24 }}>
+        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : { display: 'flex', alignItems: 'center', gap: 32, flexShrink: 0 }}>
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
               className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : 'px-2 py-2 text-base font-medium'}`}
@@ -143,6 +143,10 @@ function Nav() {
               )}
             </Link>
           ))}
+        </nav>
+
+        {/* Desktop CTAs */}
+        <div className="hidden md:flex items-center" style={isSports ? { gap: 8, flexShrink: 0 } : { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 32 }}>
           {!isSports && (
             <button
               type="button"
@@ -151,13 +155,14 @@ function Nav() {
                 color: '#0D9488',
                 border: '1px solid #0D9488',
                 borderRadius: 20,
-                padding: '4px 14px',
+                padding: '6px 16px',
                 fontSize: 14,
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
                 backgroundColor: 'transparent',
                 cursor: 'pointer',
                 transition: 'background-color 0.15s',
+                marginRight: 4,
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.1)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
@@ -165,10 +170,6 @@ function Nav() {
               Early Access
             </button>
           )}
-        </nav>
-
-        {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
           {isFootball ? (
             <Link href="/book-demo"
               className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap`}
