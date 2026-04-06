@@ -1,224 +1,286 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check } from 'lucide-react'
 
-const PORTALS = [
-  {
-    icon: '⚽', title: 'Football', subtitle: 'Lumio Pro Club', color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.25)',
-    desc: 'From League Two to the Premier League — squad management, GPS performance (PlayerData), PSR compliance, scouting pipeline, transfer tracking, board reporting, and AI match intelligence. Built for Directors of Football, managers, and club owners.',
-    cta: 'Explore Pro Club', href: '/football/lumio-dev',
-  },
-  {
-    icon: '🎾', title: 'Tennis', subtitle: 'Lumio Tour (Tennis)', color: '#7c3aed', bg: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.25)',
-    desc: 'ATP/WTA ranking tracker, tournament schedule planner, match prep tools, sponsorship manager, physio & recovery dashboard, agent pipeline, financial dashboard, and AI morning briefing. Built for touring professionals and their teams.',
-    cta: 'Explore Tennis Tour', href: '/tennis/tennis-demo',
-  },
-  {
-    icon: '⛳', title: 'Golf', subtitle: 'Lumio Tour (Golf)', color: '#16a34a', bg: 'rgba(22,163,74,0.08)', border: 'rgba(22,163,74,0.25)',
-    desc: "OWGR & Race to Dubai tracker, strokes gained analysis, caddie workflow, course fit scoring, sponsorship manager, prize money ledger, multi-jurisdiction tax tracker, and AI morning briefing for player and full team. Built for DP World Tour and PGA Tour professionals.",
-    cta: 'Explore Golf Tour', href: '/golf/golf-demo',
-  },
-  {
-    icon: '🟡', title: 'Grassroots', subtitle: 'Lumio Grassroots', color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.25)',
-    desc: 'Availability tracking, squad management, pitch booking, subs collection, DBS monitoring, weather alerts, training schedules, match results, and an AI morning briefing for your manager — all in one place. Built for Sunday league, veterans, youth clubs, and amateur football at every level.',
-    cta: 'Explore Grassroots', href: '/football/grassroots/sunday-rovers-fc',
-  },
-  {
-    icon: '🏟️', title: 'Non-League', subtitle: 'Lumio Non-League', color: '#475569', bg: 'rgba(71,85,105,0.08)', border: 'rgba(71,85,105,0.25)',
-    desc: 'Squad management, injury tracking, loan player administration, ground grading compliance, sponsorship management, match fees, training planning, and live league tables. Built for National League, Northern Premier League, Southern League, and Isthmian League clubs.',
-    cta: 'Explore Non-League', href: '/football/nonleague/harfield-fc',
-  },
-  {
-    icon: '🎯', title: 'Darts', subtitle: 'Lumio Tour (Darts)', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)',
-    desc: 'PDC Order of Merit tracker, exhibition manager, checkout analysis, opponent intel, three-dart average dashboard, tour card & Q-School tracker, sponsorship manager and AI morning briefing. Built for PDC tour card holders and Challenge Tour players.',
-    cta: 'Explore Darts Tour', href: '/darts',
-  },
-  {
-    icon: '🥊', title: 'Boxing', subtitle: 'Lumio Fight', color: '#B91C1C', bg: 'rgba(185,28,28,0.08)', border: 'rgba(185,28,28,0.25)',
-    desc: 'Fight camp planner, weight & cut tracker, world rankings across all four sanctioning bodies, purse breakdown simulator, multi-jurisdiction tax tracker, promoter pipeline and AI morning briefing. Built for world title contenders and British champions.',
-    cta: 'Explore Lumio Fight', href: '/boxing',
-  },
-  {
-    icon: '⚽', title: "Women's Football", subtitle: "Lumio Women's Football", color: '#EC4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.25)',
-    desc: "The first operating system built specifically for professional women's football clubs. FSR compliance tracking, player welfare management (maternity, ACL, mental health), standalone sponsorship pipeline, board suite and AI Club Director morning briefing — built for the women's game, not the men's.",
-    cta: "Explore Women's Football", href: '/womens-football',
-  },
-  {
-    icon: '🏉', title: 'Rugby', subtitle: 'Lumio Tour (Rugby)', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)',
-    desc: 'Contract & career management, performance analytics, injury & recovery tracking, GPS load data (PlayerData), match prep & opposition analysis, sponsorship manager and AI morning briefing. Built for Premiership, Top 14 and international players.',
-    cta: 'See Lumio Rugby →', href: '/rugby',
-  },
-  {
-    icon: '🏏', title: 'Cricket', subtitle: 'Lumio Tour (Cricket)', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)',
-    desc: 'Contract & central contract tracker, batting & bowling analytics, tour & franchise schedule planner (IPL, The Hundred, BBL), injury & fitness management, sponsorship & commercial pipeline and AI morning briefing. Built for county, international and franchise players.',
-    cta: 'See Lumio Cricket →', href: '/cricket',
-  },
+// ─── Portal Data ──────────────────────────────────────────────────────────────
+const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string}> = [
+  {emoji:'⚽',name:'Football Pro Club',pill:'Pro · National League System',accent:'#10B981',
+    features:['Squad management with GPS load data — PlayerData EDGE integrated','PSR financial compliance — live headroom tracking to the pound','FIFA-style pitch view — starting XI, bench, click-to-swap','Set pieces library — 90+ routines across all categories','Transfer pipeline, agent contacts, scouting reports','AI Manager Briefing — GPS readiness, compliance, selection in one view'],
+    hook:'The first platform where the manager\'s morning briefing includes GPS readiness scores, transfer headroom and compliance status — before the first training session of the day.',
+    url:'lumiosports.com/football/lumio-dev',href:'/football/lumio-dev'},
+  {emoji:'⚽',name:'Non-League Football',pill:'Steps 3–7 · National League System',accent:'#F59E0B',
+    features:['FA Ground Grading compliance tracker — every inspection criterion','Player contracts and wage bill — live vs budget, to the pound','Sponsorship pipeline — 8–20 active deals managed properly','Match day revenue per fixture — gate, bar, programme, hospitality','FA Whole Game System registration management and deadlines','Board portal — chairman, treasurer, secretary, commercial views'],
+    hook:'1,800+ clubs across Steps 3–7 of the English football pyramid. Zero dedicated platforms existed for them before this one.',
+    url:'lumiosports.com/football/nonleague/harfield-fc',href:'/football/nonleague/harfield-fc'},
+  {emoji:'⚽',name:'Grassroots Football',pill:'45,000 UK clubs · AI-native',accent:'#F97316',
+    features:['AI voice briefing — training tonight, subs outstanding, safeguarding','Player welfare dashboard — injury log, DBS tracker, medical conditions','Subs collection via Stripe direct debit — automated reminders','AI team selection — suggests XI based on availability and form','Safeguarding compliance log — DBS expiry, concern reporting','Parent portal — notifications, consent forms, match day updates'],
+    hook:'89% of UK grassroots clubs currently use no software at all. The voice briefing alone — "Training tonight, 3 players unavailable, subs outstanding for 6" — changes how Sunday football is run.',
+    url:'lumiosports.com/football/grassroots/sunday-rovers-fc',href:'/football/grassroots/sunday-rovers-fc'},
+  {emoji:'⚽',name:"Women's Football",pill:'WSL · WSL2 · Standalone clubs',accent:'#EC4899',
+    features:['FSR Compliance Dashboard — real-time 80% salary cap vs Relevant Revenue','Player Welfare Hub — maternity tracker, ACL risk monitor, mental health','Standalone sponsorship pipeline with FSR revenue attribution','Dual registration management — expiry alerts, window tracking','Demerger Readiness Tracker — for clubs going standalone','AI Club Director morning briefing — FSR, welfare, commercial, squad'],
+    hook:'The first operating system built specifically for professional women\'s football. FSR compliance, maternity welfare, standalone commercial — none of it existed in any platform before this.',
+    url:'lumiosports.com/womens-football',href:'/contact'},
+  {emoji:'🏉',name:'Rugby',pill:'Champ Rugby · Premiership · NL1',accent:'#8B5CF6',
+    features:['Salary Cap Manager — ceiling AND floor, live to the pound','Franchise Readiness Tracker — all 6 RFU criteria, RAG status','Concussion & HIA Compliance — 21-day protocol, legal audit trail','Club-to-Country interface — MPGP-aligned data handoff','Women\'s rugby integration — PWR compliance tracking','AI Director of Rugby briefing — 4 role variants (DoR, coach, CEO, medical)'],
+    hook:'On 27 February 2026, promotion and relegation ended. The franchise readiness race started. Lumio Rugby is the only platform built for the new landscape.',
+    url:'lumiosports.com/rugby/rugby-demo',href:'/rugby/rugby-demo'},
+  {emoji:'🎾',name:'Tennis',pill:'ATP · WTA · Touring professionals',accent:'#A3E635',
+    features:['ATP/WTA ranking tracker with points expiry calendar','Race to Turin/Fort Worth standings — live and projected','Surface win percentage breakdown — clay, grass, hard, indoor','Sponsorship manager — deals, obligations, renewal alerts','Physio & recovery — H2H records, opponent scouting','AI briefing for player, coach, agent and physio — different content each'],
+    hook:'H2H records, points expiry, surface win rates, and opponent tactical notes — everything for match week delivered in one morning briefing to four different people on the player\'s team.',
+    url:'lumiosports.com/tennis/tennis-demo',href:'/tennis/tennis-demo'},
+  {emoji:'⛳',name:'Golf',pill:'DP World Tour · PGA Tour · OWGR',accent:'#38BDF8',
+    features:['OWGR tracker with ranking points expiry forecaster','Race to Dubai and FedExCup standings — live','Strokes Gained deep-dive — OTT, Approach, ATG, Putting','Course fit AI scoring — historical data across 47+ venues','Caddie workflow — yardage, weather adjustment, club recommendations','Multi-jurisdiction prize money and tax modeller'],
+    hook:'Strokes Gained alerts when a category needs attention. Course fit score before you decide whether to enter. AI caddie briefing before the first tee. Golf finally has a platform that thinks like a touring professional.',
+    url:'lumiosports.com/golf/golf-demo',href:'/golf/golf-demo'},
+  {emoji:'🎯',name:'Darts',pill:'PDC Tour · Challenge Tour · Q-School',accent:'#EF4444',
+    features:['PDC Order of Merit — rolling 2-year prize money tracker','Three-dart average dashboard — 180s, checkout %, first-9 average','Exhibition manager — book, track, and manage your income calendar','Opponent intel — preferred doubles, scoring patterns, H2H','Tour card security indicator — how safe is your card right now','Q-School preparation timeline and target prize money tracker'],
+    hook:'The PDC Order of Merit determines your tour card. Your checkout percentage on D16 determines your biggest stages. Your exhibition calendar determines your income. Now all three are tracked in one place — the first time ever.',
+    url:'lumiosports.com/darts/darts-demo',href:'/darts/darts-demo'},
+  {emoji:'🥊',name:'Boxing',pill:'Professional boxing · All sanctioning bodies',accent:'#DC2626',
+    features:['Purse Simulator — exact take-home before you sign, every deduction','World Rankings — WBC, WBA, WBO, IBF and Zuffa Boxing in one view','Fight Camp Planner — 8–12 week structure, weight trajectory, readiness','Multi-jurisdiction tax — UK, USA, Saudi Arabia, UAE, Germany','Contract Intelligence — Zuffa one-fight vs Matchroom multi-fight modeller','Weight & cut tracker — daily weigh-in log, cut projection to fight night'],
+    hook:'Saudi Arabia mode: the same £5M purse pays dramatically more than the UK equivalent after all deductions and tax. Know the real number before you sign. No fighter should ever be surprised by their own pay cheque.',
+    url:'lumiosports.com/boxing/lumio-demo',href:'/boxing/lumio-demo'},
+  {emoji:'🏏',name:'Cricket',pill:'County · International · IPL · The Hundred',accent:'#FBBF24',
+    features:['Contract and central contract tracker across all formats','Batting and bowling analytics — trends, career vs recent form','Franchise schedule — IPL, The Hundred, BBL, SA20 in one calendar','Injury and fitness management with return-to-play protocols','Sponsorship and commercial pipeline — appearances, endorsements','AI morning briefing — county, international and franchise format'],
+    hook:'Three formats. Four franchise competitions. Central contracts, county deals, IPL retentions and The Hundred drafts. One career. Lumio Cricket puts it all in a single view for the first time.',
+    url:'lumiosports.com/cricket/cricket-demo',href:'/cricket/cricket-demo'},
 ]
 
-const FEATURES = [
-  { icon: '🤖', title: 'AI Morning Briefing', desc: 'Personalised daily intelligence delivered to player, manager, coaching staff, and agents before the day begins.' },
-  { icon: '📊', title: 'Performance Analytics', desc: 'Strokes gained, GPS load (PlayerData), match ratings, xG, OWGR — every sport\'s key metrics in one dashboard.' },
-  { icon: '💰', title: 'Commercial Manager', desc: 'Sponsorship tracking, deal renewals, financial dashboard, multi-jurisdiction tax, prize money ledger.' },
-  { icon: '👥', title: 'Team Hub', desc: 'Coach, caddie, physio, agent, DoF — all working from the same data in role-specific views.' },
-  { icon: '🎯', title: 'Career Planning', desc: '1, 3, 5 and 10-year goal setting with financial targets and milestone tracking.' },
-  { icon: '📡', title: 'Live Data Integrations', desc: 'Arccos, PlayerData, DataGolf, TrackMan, Wyscout, API-Football — all connected.' },
+const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string}> = [
+  {accent:'#EF4444',category:'THE ATHLETE',emoji:'🥊',
+    quote:'A world title contender signs a fight contract without knowing what they\'ll take home after manager fees, trainer cut, sanction fees, camp costs and tax across three jurisdictions.',
+    fact:'Most professional fighters have never seen a full purse breakdown before signing a major contract.',
+    statNum:'£0',statLabel:'Financial transparency tools built for athletes'},
+  {accent:'#8B5CF6',category:'THE CLUB',emoji:'🏉',
+    quote:'A Champ Rugby club tracks salary cap headroom in Excel — one formula error from a breach that cost Saracens their league title, 35 points and relegation.',
+    fact:'56 pages of Premiership salary cap regulations. Zero dedicated tools to track compliance in real time.',
+    statNum:'3',statLabel:'Clubs collapsed in 3 years: Wasps, Worcester, London Irish'},
+  {accent:'#EC4899',category:'THE WOMEN\'S GAME',emoji:'⚽',
+    quote:'A WSL club\'s finance director tracks FSR compliance in a spreadsheet — regulations introduced this season, with points deduction penalties for breach.',
+    fact:'75% of women\'s football clubs globally still don\'t have a kit sponsor. The commercial infrastructure of women\'s sport is being built right now.',
+    statNum:'0',statLabel:'Purpose-built women\'s football platforms anywhere in the world'},
 ]
 
-const PRICING = [
-  { name: 'Lumio Tour Pro', price: '£199', period: '/mo', features: ['Individual player dashboard', 'Performance analytics', 'Ranking tracker', 'Sponsorship manager', 'AI morning briefing'], color: '#7c3aed', popular: false },
-  { name: 'Lumio Tour Pro+', price: '£349', period: '/mo', features: ['Full team access', 'Caddie/coach/agent views', 'Video library', 'Voice briefing', 'Financial dashboard', 'Tax tracker'], color: '#0D9488', popular: true },
-  { name: 'Lumio Pro Club', price: 'From £500', period: '/mo', features: ['Full club OS', 'Squad management', 'Board suite', 'PSR compliance', 'Scouting pipeline', 'Transfer tracking'], color: '#dc2626', popular: false },
+const HERO_CARDS: Array<{border:string;label:string;value:string;pill:string;pillColor:string}> = [
+  {border:'#8B5CF6',label:'Cap Headroom',value:'£460,000',pill:'COMPLIANT',pillColor:'#10B981'},
+  {border:'#EC4899',label:'FSR Status',value:'74%',pill:'REVIEW',pillColor:'#F59E0B'},
+  {border:'#A3E635',label:'ATP Ranking',value:'#67',pill:'+3 this week',pillColor:'#6B7280'},
+  {border:'#EF4444',label:'Fight Camp',value:'Day 14/56',pill:'Weight on track',pillColor:'#10B981'},
+  {border:'#38BDF8',label:'OWGR',value:'#87',pill:'Race to Dubai: 12th',pillColor:'#6B7280'},
 ]
 
-export default function SportsPage() {
-  // Redirect lumiocms.com/sports to lumiosports.com
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.host.includes('lumiocms.com')) {
-      window.location.replace('https://www.lumiosports.com')
-    }
-  }, [])
+const PILLARS: Array<{icon:string;accent:string;heading:string;body:string;extra?:string;tags?:string[]}> = [
+  {icon:'⚡',accent:'linear-gradient(135deg, #8B5CF6, #06B6D4)',heading:'The briefing that changes how professionals start their day',
+    body:'Delivered at the time you set. Voice or text. Every relevant metric, every compliance deadline, every commercial obligation, every selection decision — synthesised before the first training session, meeting or call of the day. Different content for each role on the same team.',
+    tags:['Football','Rugby','Tennis','Boxing','Golf','Darts','Cricket',"Women's FC"]},
+  {icon:'📡',accent:'#06B6D4',heading:'FIFA Quality Certified. World Rugby Approved.',
+    body:'PlayerData EDGE GPS units sync session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags directly into your portal — automatically, after every session. No export. No copy-paste. No manual entry.',
+    extra:'Partnership with PlayerData — 50,000+ athletes on the platform'},
+  {icon:'💰',accent:'#10B981',heading:'Every pound. Every contract. Every clause.',
+    body:'The purse simulator that shows a boxer their exact take-home. The FSR dashboard that shows a women\'s club where they stand. The salary cap meter that tracks a rugby club to the pound. Financial transparency is not a feature. It is the foundation every portal is built on.'},
+  {icon:'👥',accent:'#8B5CF6',heading:'Every role sees exactly what they need.',
+    body:'The Director of Rugby sees cap headroom and franchise readiness. The Head Coach sees squad readiness and opposition analysis. The CEO sees financial sustainability. The agent sees earnings and contract timelines. Same platform. Same data. Completely different views — role-gated, permission-controlled, purpose-built.'},
+]
+
+const QUOTES: Array<{border:string;text:string;label:string}> = [
+  {border:'#8B5CF6',text:'The salary cap manager is the only tool in rugby that tracks both the ceiling and the new £5.4M salary floor introduced from 2026/27 — the compliant zone narrows to just £1 million. One formula error in Excel costs you points. Lumio tracks it to the pound.',label:'Lumio Rugby · Champ Rugby tier'},
+  {border:'#EC4899',text:'The FSR Compliance Dashboard is the first platform to make Financial Sustainability Regulation compliance real-time for WSL and WSL2 clubs. Relevant Revenue, bundled sponsorship attribution, age-band salary minimums — all tracked in one view, updated as contracts change.',label:'Lumio Women\'s Football · WSL tier'},
+  {border:'#DC2626',text:'The Purse Simulator models UK, USA, Saudi Arabia, Germany and UAE tax and deduction implications on any fight purse. Same £5M headline. Dramatically different take-home depending on where you fight. Know before you sign.',label:'Lumio Boxing · Professional tier'},
+]
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function SportsLandingPage() {
+  const portalRef = useRef<HTMLDivElement>(null)
+  const scrollToPortals = () => portalRef.current?.scrollIntoView({behavior:'smooth'})
 
   return (
-    <div style={{ backgroundColor: '#07080F', color: '#F9FAFB' }}>
-      {/* Hero */}
-      <section className="relative overflow-hidden" style={{ paddingTop: 120, paddingBottom: 80 }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 20%, rgba(13,148,136,0.08) 0%, transparent 70%)' }} />
-        <div className="max-w-6xl mx-auto px-6 text-center relative">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
-            <span className="text-sm">🏆</span>
-            <span className="text-xs font-semibold" style={{ color: '#2DD4BF' }}>Ten portals. One platform.</span>
+    <div style={{background:'#07080F',color:'#F9FAFB'}}>
+      <style>{`
+        @keyframes pulse-orb{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.25;transform:scale(1.1)}}
+        @keyframes fade-up{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
+
+      {/* ═══ SECTION 1: HERO ═══ */}
+      <section className="relative overflow-hidden pt-32 pb-20 px-6">
+        <div className="absolute top-[-100px] left-[-100px] w-[600px] h-[600px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
+        <div className="absolute bottom-[-80px] right-[-80px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
+
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-sm font-medium" style={{border:'1px solid rgba(139,92,246,0.3)',background:'rgba(139,92,246,0.08)',color:'#D1D5DB'}}>
+            🏆 Ten portals. One platform. Built for sport.
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-            The operating system for<br />
-            <span style={{ background: 'linear-gradient(135deg, #0D9488, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>professional sport</span>
+
+          {/* Headline */}
+          <h1 className="font-black leading-[1.05] mb-6" style={{fontSize:'clamp(3rem, 8vw, 7rem)'}}>
+            The operating system<br/>
+            <span style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+              professional sport
+            </span><br/>
+            has been waiting for.
           </h1>
-          <p className="text-lg max-w-2xl mx-auto mb-10" style={{ color: '#9CA3AF' }}>
-            AI-powered career intelligence for football clubs, tennis players, golfers, darts players, boxers and more. Every metric, every deal, every decision — in one place.
+
+          {/* Subheadline */}
+          <p className="text-lg leading-relaxed mb-10 mx-auto" style={{color:'#94A3B8',maxWidth:680}}>
+            From the Champ Rugby salary cap to the PDC Order of Merit. From WSL FSR compliance to ATP ranking points expiry. From Premiership transfer deadlines to OWGR exemptions. Every sport. Every regulation. Every decision — one platform.
+          </p>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-8 mb-10">
+            {[
+              {n:'10',l:'Portals live'},{n:'0',l:'Dedicated sport OS platforms that existed before this'},{n:'£500m',l:"Women's football global revenue with zero dedicated software"},{n:'56',l:'Pages of Premiership salary cap regulations tracked in Excel'},
+            ].map((s:{n:string;l:string},i:number)=>(
+              <div key={i} className="text-center">
+                <div className="font-black text-3xl md:text-4xl" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{s.n}</div>
+                <div className="text-xs mt-1 max-w-[160px]" style={{color:'#64748B'}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap justify-center gap-4 mb-14">
+            <button onClick={scrollToPortals} className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',color:'white'}}>
+              Explore all portals →
+            </button>
+            <Link href="/contact" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white'}}>
+              Book a walkthrough
+            </Link>
+          </div>
+
+          {/* Dashboard Strip */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {HERO_CARDS.map((c:{border:string;label:string;value:string;pill:string;pillColor:string},i:number)=>(
+              <div key={i} className="rounded-xl p-4 text-left" style={{background:'#0D1117',border:`1px solid ${c.border}33`,minWidth:170,animation:`fade-up 0.6s ease-out ${i*0.15}s both`}}>
+                <div className="text-[10px] uppercase tracking-wider mb-1" style={{color:'#64748B'}}>{c.label}</div>
+                <div className="text-lg font-bold text-white mb-1">{c.value}</div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{background:`${c.pillColor}20`,color:c.pillColor}}>{c.pill}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 2: THE PROBLEM ═══ */}
+      <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PROBLEM</p>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-14">Professional sport is run on WhatsApp and spreadsheets.</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {PROBLEMS.map((p:{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string},i:number)=>(
+              <div key={i} className="rounded-2xl p-8 flex flex-col" style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${p.accent}`,minHeight:380}}>
+                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start" style={{background:`${p.accent}15`,color:p.accent}}>{p.category}</span>
+                <p className="text-base leading-relaxed italic mb-4 flex-1" style={{color:'#E2E8F0'}}>&ldquo;{p.quote}&rdquo;</p>
+                <p className="text-xs leading-relaxed mb-4" style={{color:'#F59E0B'}}>{p.fact}</p>
+                <div><span className="text-3xl font-black" style={{color:'#8B5CF6'}}>{p.statNum}</span><span className="text-xs ml-2" style={{color:'#64748B'}}>{p.statLabel}</span></div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-2xl md:text-3xl font-black text-center leading-snug">
+            Lumio Sports was built to fix this.<br/>
+            <span style={{color:'#94A3B8'}}>For every sport. For every level. Starting now.</span>
           </p>
         </div>
       </section>
 
-      {/* Portal cards — top 3 in 3-col, next 4 in 2-col, last 2 in 2-col */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PORTALS.slice(0, 3).map((p: any) => (
-            <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">{p.icon}</span>
-                <div>
-                  <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{p.title}</h3>
-                  <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
-                </div>
-              </div>
-              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
-              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
-              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
-                {p.cta} <ArrowRight size={14} />
-              </Link>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {PORTALS.slice(3, 7).map((p: any) => (
-            <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">{p.icon}</span>
-                <div>
-                  <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{p.title}</h3>
-                  <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
-                </div>
-              </div>
-              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
-              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
-              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
-                {p.cta} <ArrowRight size={14} />
-              </Link>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {PORTALS.slice(7).map((p: any) => (
-            <div key={p.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: p.bg, border: `1px solid ${p.border}` }}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">{p.icon}</span>
-                <div>
-                  <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{p.title}</h3>
-                  <p className="text-xs font-semibold" style={{ color: p.color }}>{p.subtitle}</p>
-                </div>
-              </div>
-              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{p.desc}</p>
-              {p.badge && <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#FBBF24', border: '1px solid rgba(245,158,11,0.3)' }}>{p.badge}</span>}
-              <Link href={p.href} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold justify-center mt-auto" style={{ backgroundColor: p.color, color: '#fff', textDecoration: 'none' }}>
-                {p.cta} <ArrowRight size={14} />
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ═══ SECTION 3: PORTAL GRID ═══ */}
+      <section ref={portalRef} className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PORTALS</p>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Ten portals. Every sport covered.</h2>
+          <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each portal is a complete operating system for that sport — not a generic admin tool with a sports logo.</p>
 
-      {/* One platform section */}
-      <section className="max-w-4xl mx-auto px-6 pb-20 text-center">
-        <h2 className="text-2xl md:text-3xl font-black mb-4">One platform. Ten portals. Every career stage.</h2>
-        <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
-          Lumio Tour, Lumio Pro Club and Lumio Fight share the same AI infrastructure, the same morning briefing system, the same team hub architecture — just adapted for each sport&apos;s unique needs. Whether you&apos;re a club owner managing a 25-man squad, a touring tennis professional tracking rankings, a golfer optimising strokes gained, a darts player on the PDC circuit, or a boxer preparing for a world title shot — the platform speaks your language, uses your metrics, and fits your workflow.
-        </p>
-      </section>
-
-      {/* Features grid */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <h2 className="text-2xl font-black mb-8 text-center">Built for every role in professional sport</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map(f => (
-            <div key={f.title} className="rounded-xl p-5" style={{ backgroundColor: '#0D1017', border: '1px solid #1F2937' }}>
-              <span className="text-2xl block mb-3">{f.icon}</span>
-              <h3 className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="max-w-5xl mx-auto px-6 pb-20">
-        <h2 className="text-2xl font-black mb-8 text-center">Simple, transparent pricing</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PRICING.map(p => (
-            <div key={p.name} className="rounded-2xl p-6 relative flex flex-col" style={{ backgroundColor: '#0D1017', border: `1px solid ${p.popular ? p.color : '#1F2937'}` }}>
-              {p.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: p.color, color: '#fff' }}>Most Popular</div>
-              )}
-              <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{p.name}</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-3xl font-black" style={{ color: '#F9FAFB' }}>{p.price}</span>
-                <span className="text-sm" style={{ color: '#6B7280' }}>{p.period}</span>
-              </div>
-              <div className="space-y-2 flex-1 mb-6">
-                {p.features.map(f => (
-                  <div key={f} className="flex items-center gap-2">
-                    <Check size={14} style={{ color: p.color }} />
-                    <span className="text-xs" style={{ color: '#9CA3AF' }}>{f}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {PORTALS.map((p:{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string},i:number)=>(
+              <div key={i} className="rounded-2xl p-8 flex flex-col" style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${p.accent}`,minHeight:380}}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{p.emoji}</span>
+                    <span className="text-2xl font-bold text-white">{p.name}</span>
                   </div>
-                ))}
+                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style={{background:`${p.accent}15`,color:p.accent}}>{p.pill}</span>
+                </div>
+                <div className="my-4" style={{height:1,background:'#1E293B'}}/>
+                <div className="space-y-2 mb-4 flex-1">
+                  {p.features.map((f:string,j:number)=>(
+                    <div key={j} className="flex items-start gap-2 text-sm" style={{color:'#CBD5E1'}}>
+                      <span className="flex-shrink-0 mt-0.5" style={{color:p.accent}}>✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm italic pl-4 mb-6" style={{color:p.accent,borderLeft:`2px solid ${p.accent}`}}>{p.hook}</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px]" style={{color:'#475569'}}>{p.url}</span>
+                  <Link href={p.href} className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90" style={{background:p.accent,color:p.accent==='#A3E635'||p.accent==='#FBBF24'||p.accent==='#F59E0B'||p.accent==='#F97316'?'#0A0B10':'#FFFFFF'}}>Explore →</Link>
+                </div>
               </div>
-              <button className="w-full py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: p.popular ? p.color : 'rgba(255,255,255,0.05)', color: p.popular ? '#fff' : '#9CA3AF', border: p.popular ? 'none' : '1px solid #1F2937' }}>
-                Get Started
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="max-w-4xl mx-auto px-6 pb-20">
-        <div className="rounded-2xl p-10 text-center" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.1), rgba(124,58,237,0.1))', border: '1px solid rgba(13,148,136,0.25)' }}>
-          <h2 className="text-2xl md:text-3xl font-black mb-3">Ready to run your career like a business?</h2>
-          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Join the athletes, clubs, and teams already using Lumio to make better decisions, faster.</p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/contact" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', textDecoration: 'none' }}>Book a Demo</Link>
-            <Link href="/pricing" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #1F2937', textDecoration: 'none' }}>Start Free Trial</Link>
+      {/* ═══ SECTION 4: PLATFORM PILLARS ═══ */}
+      <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PLATFORM</p>
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-3">Built on one intelligence layer. Shared across every sport.</h2>
+          <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:520}}>Every portal runs on the same AI infrastructure, data architecture and performance backbone.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {PILLARS.map((b:{icon:string;accent:string;heading:string;body:string;extra?:string;tags?:string[]},i:number)=>(
+              <div key={i} className="rounded-2xl p-8" style={{background:'#0D1117',border:'1px solid #1E293B',minHeight:280}}>
+                <div className="text-4xl mb-4">{b.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-3">{b.heading}</h3>
+                <p className="text-sm leading-relaxed mb-4" style={{color:'#94A3B8'}}>{b.body}</p>
+                {b.tags&&<div className="flex flex-wrap gap-1.5">{b.tags.map((t:string,j:number)=><span key={j} className="text-[10px] px-2 py-0.5 rounded-full" style={{background:'rgba(139,92,246,0.1)',color:'#A78BFA',border:'1px solid rgba(139,92,246,0.2)'}}>{t}</span>)}</div>}
+                {b.extra&&<p className="text-xs mt-3" style={{color:'#F59E0B'}}>{b.extra}</p>}
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 5: CREDIBILITY ═══ */}
+      <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-10" style={{color:'#64748B'}}>BUILT ON REAL INTELLIGENCE</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {QUOTES.map((q:{border:string;text:string;label:string},i:number)=>(
+              <div key={i} className="rounded-xl p-6" style={{background:'#0D1117',borderLeft:`4px solid ${q.border}`}}>
+                <span className="text-6xl font-serif leading-none block mb-2" style={{color:q.border,opacity:0.3}}>&ldquo;</span>
+                <p className="text-sm leading-relaxed mb-4" style={{color:'#CBD5E1'}}>{q.text}</p>
+                <p className="text-[10px]" style={{color:'#64748B'}}>{q.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 6: FINAL CTA ═══ */}
+      <section className="relative overflow-hidden px-6 py-32" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
+        <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          <h2 className="font-black leading-tight mb-4" style={{fontSize:'clamp(2.5rem, 6vw, 5rem)'}}>
+            Ten portals.<br/>One platform.
+          </h2>
+          <p className="text-2xl md:text-3xl font-bold mb-6" style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+            Professional sport finally has infrastructure.
+          </p>
+          <p className="text-sm leading-relaxed mb-10 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>
+            Every demo is live. Every portal has real data seeded in. No sales call required to see it working — just click any portal above and explore.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 mb-6">
+            <button onClick={scrollToPortals} className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',color:'white'}}>
+              Explore all portals ↑
+            </button>
+            <Link href="/contact" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white'}}>
+              Book a walkthrough →
+            </Link>
+          </div>
+          <p className="text-xs" style={{color:'#475569'}}>lumiosports.com · Built by Lumio Ltd · UK · Data hosted in EU</p>
         </div>
       </section>
     </div>
