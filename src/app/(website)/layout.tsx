@@ -8,18 +8,34 @@ import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
-const NAV_LINKS: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',  href: '/product' },
+const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
+  { label: 'Product',  href: '/sports-product' },
   { label: 'Football', href: '/football' },
   { label: 'Tennis',   href: '/tennis' },
   { label: 'Golf',     href: '/golf' },
   { label: 'Darts',    href: '/darts' },
+  { label: 'Boxing',   href: '/boxing' },
   { label: 'Rugby',    href: '/rugby' },
   { label: 'Cricket',  href: '/cricket' },
-  { label: 'Boxing',   href: '/boxing' },
   { label: 'About',    href: '/about' },
   { label: 'Blog',     href: '/blog' },
 ]
+
+const BUSINESS_NAV: { label: string; href: string; badge?: string }[] = [
+  { label: 'Product',      href: '/product' },
+  { label: 'Workflows',    href: '/product#workflows' },
+  { label: 'Schools',      href: '/schools' },
+  { label: 'CRM',          href: '/lumio-crm' },
+  { label: 'Integrations', href: '/product#integrations' },
+  { label: 'Pricing',      href: '/pricing' },
+  { label: 'About',        href: '/about' },
+  { label: 'Blog',         href: '/blog' },
+]
+
+function getNavLinks() {
+  if (typeof window === 'undefined') return SPORTS_NAV
+  return window.location.hostname.includes('lumiosports') ? SPORTS_NAV : BUSINESS_NAV
+}
 
 const SCHOOLS_EXTRA_LINKS = [
   { label: 'Features', href: '/schools/features' },
@@ -50,7 +66,8 @@ function Nav() {
   const isSchools = pathname?.startsWith('/schools') ?? false
   const isFootball = pathname?.startsWith('/football') ?? false
 
-  const baseLinks = isSchools
+  const NAV_LINKS = getNavLinks()
+  const baseLinks = isSchools && NAV_LINKS.some(l => l.label === 'Schools')
     ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
     : NAV_LINKS
   const navLinks = baseLinks
