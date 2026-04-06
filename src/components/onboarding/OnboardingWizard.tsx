@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import {
   ArrowLeft, ArrowRight, Check, Upload, Loader2, X,
-  Download, Mail, Plus, Calendar, ExternalLink,
+  Download, Mail, Plus, Calendar, ExternalLink, Camera,
 } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 
@@ -101,7 +101,7 @@ const SCHOOL_TEMPLATES: TemplateCard[] = [
 ]
 
 const ROLES = ['Admin', 'Manager', 'Staff']
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -125,6 +125,17 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
   const [sendingInvites, setSendingInvites] = useState(false)
   const [invitesSent, setInvitesSent] = useState(false)
 
+  // Step 4 — your card (photo upload)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+  function handlePhotoChange(file: File, dataUrl: string) {
+    setPhotoFile(file)
+    setPhotoDataUrl(dataUrl)
+    try { localStorage.setItem('lumio_user_photo', dataUrl) } catch {}
+  }
+
   const integrations = type === 'business' ? BUSINESS_INTEGRATIONS : SCHOOL_INTEGRATIONS
 
   // ── Persist step to DB ───────────────────────────────────────────────────
@@ -140,7 +151,31 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  function advance() {
+  async function advance() {
+    // Step 4 → upload the photo (if selected) before moving on
+    if (step === 4 && photoFile && !uploadingPhoto) {
+      setUploadingPhoto(true)
+      try {
+        const email = localStorage.getItem('lumio_user_email')
+          || localStorage.getItem('workspace_user_email')
+          || ''
+        const fd = new FormData()
+        fd.append('file', photoFile)
+        if (email) fd.append('email', email)
+        const res = await fetch('/api/workspace/upload-profile-photo', {
+          method: 'POST',
+          body: fd,
+        })
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}))
+          if (data?.url) {
+            localStorage.setItem('lumio_user_photo', data.url)
+            if (email) localStorage.setItem(`lumio_staff_photo_${email}`, data.url)
+          }
+        }
+      } catch { /* continue — local dataURL is already stored */ }
+      setUploadingPhoto(false)
+    }
     if (step < TOTAL_STEPS) {
       const next = step + 1
       setStep(next)
@@ -291,7 +326,8 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
           {step === 1 && <StepConnect integrations={integrations} connected={connected} apiKeys={apiKeys} subdomains={subdomains} connecting={connecting} onOAuth={connectOAuth} onApiKey={connectApiKey} onSupport={raiseSupport} onApiKeyChange={(id, v) => setApiKeys(p => ({ ...p, [id]: v }))} onSubdomainChange={(id, v) => setSubdomains(p => ({ ...p, [id]: v }))} />}
           {step === 2 && <StepUpload templates={templates} fileRefs={fileRefs} onUpload={handleFileUpload} />}
           {step === 3 && <StepInvite invites={invites} sending={sendingInvites} sent={invitesSent} onAdd={addInviteRow} onUpdate={updateInvite} onRemove={removeInvite} onSend={sendInvites} />}
-          {step === 4 && <StepBookCall onExploreWithDemo={finish} />}
+          {step === 4 && <StepYourCard photoDataUrl={photoDataUrl} onPhotoChange={handlePhotoChange} />}
+          {step === 5 && <StepBookCall onExploreWithDemo={finish} />}
         </div>
       </div>
 
@@ -305,10 +341,13 @@ export default function OnboardingWizard({ type, tenantId, onComplete }: Props) 
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <button onClick={advance} style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: T.purple, color: '#FFFFFF', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background-color 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = T.purpleHover }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = T.purple }}>
-            {step === TOTAL_STEPS ? 'Finish Setup' : 'Continue'} <ArrowRight size={16} />
+          <button onClick={advance} disabled={uploadingPhoto} style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: T.purple, color: '#FFFFFF', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 600, cursor: uploadingPhoto ? 'wait' : 'pointer', opacity: uploadingPhoto ? 0.7 : 1, transition: 'background-color 0.15s' }}
+            onMouseEnter={e => { if (!uploadingPhoto) e.currentTarget.style.backgroundColor = T.purpleHover }}
+            onMouseLeave={e => { if (!uploadingPhoto) e.currentTarget.style.backgroundColor = T.purple }}>
+            {uploadingPhoto
+              ? <><Loader2 size={16} className="animate-spin" /> Uploading...</>
+              : <>{step === TOTAL_STEPS ? 'Finish Setup' : 'Continue'} <ArrowRight size={16} /></>
+            }
           </button>
           <button onClick={advance} style={{ background: 'none', border: 'none', color: T.muted, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>
             Skip this step &rarr;
@@ -505,7 +544,249 @@ function StepInvite({ invites, sending, sent, onAdd, onUpdate, onRemove, onSend 
   )
 }
 
-// ─── Step 4: Book Your Onboarding Call ───────────────────────────────────────
+// ─── Step 4: Your Card ───────────────────────────────────────────────────────
+
+function StepYourCard({
+  photoDataUrl,
+  onPhotoChange,
+}: {
+  photoDataUrl: string | null
+  onPhotoChange: (file: File, dataUrl: string) => void
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [userName, setUserName] = useState('Your Name')
+  const [userRole, setUserRole] = useState('Founder')
+
+  useEffect(() => {
+    const name =
+      localStorage.getItem('lumio_user_name')
+      || localStorage.getItem('workspace_user_name')
+      || ''
+    if (name) setUserName(name)
+    const role = localStorage.getItem('lumio_user_role') || ''
+    if (role && role.toLowerCase() !== 'director') setUserRole(role)
+  }, [])
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '')
+      if (dataUrl) onPhotoChange(file, dataUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const initials =
+    userName
+      .split(' ')
+      .map(p => p[0])
+      .filter(Boolean)
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'YU'
+
+  const STATS: Array<[string, number]> = [
+    ['PAC', 87], ['DRI', 76],
+    ['SHO', 79], ['DEF', 71],
+    ['PAS', 84], ['PHY', 83],
+  ]
+
+  return (
+    <div>
+      {/* Keyframe for card reveal */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes lumio-card-reveal {
+          0%   { opacity: 0; transform: scale(0.92) translateY(8px); }
+          100% { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+        @keyframes lumio-avatar-pop {
+          0%   { opacity: 0.6; transform: scale(0.9); }
+          100% { opacity: 1;   transform: scale(1);   }
+        }
+      ` }} />
+
+      <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, marginBottom: 8 }}>
+        Add your photo — see how you look in Lumio
+      </h1>
+      <p style={{ fontSize: 15, color: T.muted, marginBottom: 36 }}>
+        Your photo appears on your team card and across your workspace.
+      </p>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 48,
+          alignItems: 'center',
+          maxWidth: 680,
+          margin: '0 auto',
+        }}
+      >
+        {/* ── Upload zone ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            style={{
+              width: 200,
+              height: 200,
+              borderRadius: '50%',
+              backgroundColor: photoDataUrl ? 'transparent' : T.card,
+              border: `2px dashed ${photoDataUrl ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.5)'}`,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              padding: 0,
+              backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transition: 'border-color 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.9)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = photoDataUrl ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.5)' }}
+          >
+            {!photoDataUrl && <Camera size={40} color={T.muted} />}
+          </button>
+          <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: T.muted }}>
+            {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
+          </p>
+        </div>
+
+        {/* ── FIFA-style card ── */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div
+            key={photoDataUrl || 'placeholder'}
+            style={{
+              width: 260,
+              height: 388,
+              borderRadius: 18,
+              background: 'linear-gradient(155deg, #8B5CF6 0%, #6C3FC5 35%, #3B1D6B 70%, #1A0D3D 100%)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 24px 70px rgba(108,63,197,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
+              padding: 20,
+              position: 'relative',
+              color: '#FFFFFF',
+              animation: 'lumio-card-reveal 420ms ease-out',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Subtle shine overlay */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(circle at 30% 0%, rgba(255,255,255,0.12), transparent 60%)',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Top row: rating + position + badges */}
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em' }}>92</div>
+                <div style={{ fontSize: 11, fontWeight: 800, marginTop: 4, letterSpacing: '0.1em' }}>EXECUTIVE</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
+                  YOU
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.35)', letterSpacing: '0.05em' }}>
+                  LUM-001
+                </div>
+              </div>
+            </div>
+
+            {/* Avatar */}
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '14px 0 10px' }}>
+              <div
+                key={photoDataUrl || 'avatar-placeholder'}
+                style={{
+                  width: 126,
+                  height: 126,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  border: '3px solid rgba(255,255,255,0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  fontSize: 38,
+                  fontWeight: 900,
+                  color: '#FFFFFF',
+                  animation: 'lumio-avatar-pop 360ms ease-out',
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+                }}
+              >
+                {!photoDataUrl && initials}
+              </div>
+            </div>
+
+            {/* Name + role */}
+            <div
+              style={{
+                position: 'relative',
+                textAlign: 'center',
+                fontSize: 17,
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 2,
+              }}
+            >
+              {userName}
+            </div>
+            <div
+              style={{
+                position: 'relative',
+                textAlign: 'center',
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.75)',
+                marginBottom: 14,
+                textTransform: 'capitalize',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {userRole}
+            </div>
+
+            {/* Divider */}
+            <div style={{ position: 'relative', height: 1, backgroundColor: 'rgba(255,255,255,0.18)', margin: '0 -4px 12px' }} />
+
+            {/* Stats grid */}
+            <div
+              style={{
+                position: 'relative',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                rowGap: 5,
+                columnGap: 24,
+                fontSize: 12,
+                padding: '0 6px',
+              }}
+            >
+              {STATS.map(([label, value]) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 900, minWidth: 20 }}>{value}</span>
+                  <span style={{ fontWeight: 700, opacity: 0.85, letterSpacing: '0.05em' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 5: Book Your Onboarding Call ───────────────────────────────────────
 
 function StepBookCall({ onExploreWithDemo }: { onExploreWithDemo?: () => void }) {
   return (

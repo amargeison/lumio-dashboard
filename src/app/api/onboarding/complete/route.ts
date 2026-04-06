@@ -27,5 +27,39 @@ export async function POST(req: NextRequest) {
     .update({ onboarding_complete: true })
     .eq('id', session.business_id)
 
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('id, owner_email, owner_name')
+    .eq('id', session.business_id)
+    .maybeSingle()
+
+  if (business?.owner_email) {
+    const ownerEmail = business.owner_email
+    const ownerName = (business.owner_name || '').trim()
+    const firstName = ownerName.split(' ')[0] || 'Owner'
+    const lastName = ownerName.split(' ').slice(1).join(' ') || ''
+
+    const { data: existingStaff } = await supabase
+      .from('workspace_staff')
+      .select('id')
+      .eq('business_id', business.id)
+      .eq('email', ownerEmail)
+      .maybeSingle()
+
+    if (!existingStaff) {
+      await supabase.from('workspace_staff').insert({
+        business_id: business.id,
+        email: ownerEmail,
+        first_name: firstName,
+        last_name: lastName,
+        job_title: 'Founder',
+        department: 'Leadership',
+        role: 'Admin',
+        role_level: 5,
+        created_at: new Date().toISOString(),
+      })
+    }
+  }
+
   return NextResponse.json({ success: true })
 }
