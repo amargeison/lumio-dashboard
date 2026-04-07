@@ -1864,10 +1864,10 @@ function MorningRoundup({ demoDataActive = false }: { demoDataActive?: boolean }
 // ─── Tab Bar ─────────────────────────────────────────────────────────────────
 
 const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
   { id: 'today', label: 'Today', icon: '🏠' }, { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
   { id: 'tasks', label: 'Daily Tasks', icon: '✅' }, { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'not-to-miss', label: "Don't Miss", icon: '🔴' }, { id: 'team', label: 'Team', icon: '👥' },
-  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
 ]
 
 function TabBar({ tab, onChange, gettingStartedRemaining }: { tab: OverviewTab; onChange: (t: OverviewTab) => void; gettingStartedRemaining?: number }) {
@@ -4519,7 +4519,12 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     if (quickActionModals[label]) { quickActionModals[label](); return }
     onAction(quickActionToasts[label] || label)
   }
-  const [tab, setTab] = useState<OverviewTab>('today')
+  const defaultTab: OverviewTab = (() => {
+    if (typeof window === 'undefined') return 'getting-started'
+    const s = localStorage.getItem('lumio_workspace_slug') || ''
+    return localStorage.getItem(`demo_tour_complete_${s}`) ? 'today' : 'getting-started'
+  })()
+  const [tab, setTab] = useState<OverviewTab>(defaultTab)
   const [gsRemaining, setGsRemaining] = useState<number>(() => computeDemoGSRemaining())
   useEffect(() => {
     const recompute = () => setGsRemaining(computeDemoGSRemaining())
