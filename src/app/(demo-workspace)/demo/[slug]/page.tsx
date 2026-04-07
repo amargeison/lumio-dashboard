@@ -41,6 +41,7 @@ const SupportPage = dynamic(() => import('@/app/(dashboard)/support/page'), { ss
 const TrialsPage = dynamic(() => import('@/app/(dashboard)/trials/page'), { ssr: false })
 const WorkflowsPage = dynamic(() => import('@/app/(dashboard)/workflows/page'), { ssr: false })
 const CRMPage = dynamic(() => import('@/app/(dashboard)/crm/page'), { ssr: false })
+const CRMLayout = dynamic(() => import('@/app/(dashboard)/crm/layout'), { ssr: false })
 const PartnersPage = dynamic(() => import('@/app/(dashboard)/partners/page'), { ssr: false })
 const StrategyPage = dynamic(() => import('@/app/(dashboard)/strategy/competitor-watch/page'), { ssr: false })
 const ProjectsPage = dynamic(() => import('@/app/(dashboard)/projects/page'), { ssr: false })
@@ -5526,7 +5527,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             {activeDept === 'support' && <SupportPage />}
             {activeDept === 'trials' && <TrialsPage />}
             {activeDept === 'workflows' && <WorkflowsPage />}
-            {activeDept === 'crm' && <CRMPage />}
+            {activeDept === 'crm' && (
+              <CRMLayout>
+                <CRMPage />
+              </CRMLayout>
+            )}
             {activeDept === 'partners' && <PartnersPage />}
             {activeDept === 'strategy' && <StrategyPage />}
             {activeDept === 'projects' && <ProjectsPage />}
