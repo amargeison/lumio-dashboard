@@ -910,67 +910,135 @@ const RevenueAttributionView = () => {
 }
 
 // ─── SQUAD MANAGEMENT VIEW ───────────────────────────────────────────────────
-const SquadManagementView = () => {
-  const [filter, setFilter] = useState<string>('all')
-  const players: Array<{name:string;pos:string;age:number;contract:string;status:string;statusType:string}> = [
-    {name:'Emma Clarke',pos:'CB',age:27,contract:'Jun 2027',status:'Dual-reg (Harfield)',statusType:'info'},
-    {name:'Priya Nair',pos:'CM',age:24,contract:'Jun 2026',status:'Available',statusType:'ok'},
-    {name:'Jade Osei',pos:'ST',age:22,contract:'Jun 2028',status:'Available',statusType:'ok'},
-    {name:'Abbi Walsh',pos:'RW',age:25,contract:'Jun 2026',status:'Available',statusType:'ok'},
-    {name:'Charlotte Reed',pos:'GK',age:29,contract:'Jun 2027',status:'Available',statusType:'ok'},
-    {name:'Sophie Turner',pos:'LB',age:23,contract:'Jun 2027',status:'RTP Phase 3',statusType:'warn'},
-    {name:'Fatima Al-Said',pos:'AM',age:21,contract:'Jun 2028',status:'ITC Pending',statusType:'warn'},
-    {name:'Megan Hughes',pos:'DM',age:26,contract:'Jun 2026',status:'Available',statusType:'ok'},
-    {name:'Sophie Lawson',pos:'RB',age:28,contract:'Jun 2027',status:'Maternity Leave',statusType:'info'},
-    {name:'Tilly Brooks',pos:'LW',age:20,contract:'Jun 2028',status:'Part-time contract',statusType:'warn'},
+const SquadManagementView = ({ club }: { club: WomensClub }) => {
+  type Employment = 'Full-time' | 'Part-time'
+  type DualReg = 'None' | 'On loan' | 'Hosting'
+  type Welfare = 'Available' | 'Maternity' | 'RTP' | 'ITC Pending'
+  const players: Array<{
+    name: string; pos: string; employment: Employment; dualReg: DualReg; dualRegNote?: string;
+    ageBand: string; nationality: string; international: boolean; contract: string; welfare: Welfare;
+  }> = [
+    {name:'Emma Clarke',    pos:'CB',employment:'Full-time',dualReg:'On loan',dualRegNote:'Harfield Women',ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Priya Nair',     pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Jade Osei',      pos:'ST',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Abbi Walsh',     pos:'RW',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Charlotte Reed', pos:'GK',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Sophie Turner',  pos:'LB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland',international:false,contract:'Jun 2027',welfare:'RTP'},
+    {name:'Fatima Al-Said', pos:'AM',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇪🇬 Egypt',  international:true, contract:'Jun 2028',welfare:'ITC Pending'},
+    {name:'Megan Hughes',   pos:'DM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Sophie Lawson',  pos:'RB',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Maternity'},
+    {name:'Tilly Brooks',   pos:'LW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇮🇪 Ireland',international:true, contract:'Jun 2028',welfare:'Available'},
   ]
 
-  const filtered = filter === 'all' ? players
-    : filter === 'available' ? players.filter((p: typeof players[0]) => p.statusType === 'ok')
-    : filter === 'flagged' ? players.filter((p: typeof players[0]) => p.statusType !== 'ok')
-    : players
+  const [filter, setFilter] = useState<'all' | 'fulltime' | 'parttime' | 'dualreg' | 'leave' | 'international'>('all')
+  const filtered = players.filter(p => {
+    if (filter === 'all') return true
+    if (filter === 'fulltime') return p.employment === 'Full-time'
+    if (filter === 'parttime') return p.employment === 'Part-time'
+    if (filter === 'dualreg') return p.dualReg !== 'None'
+    if (filter === 'leave') return p.welfare === 'Maternity' || p.welfare === 'RTP'
+    if (filter === 'international') return p.international
+    return true
+  })
+
+  const totalCount = players.length
+  const fullTimeCount = players.filter(p => p.employment === 'Full-time').length
+  const partTimeCount = players.filter(p => p.employment === 'Part-time').length
+  const dualRegCount = players.filter(p => p.dualReg !== 'None').length
+  const onLeaveCount = players.filter(p => p.welfare === 'Maternity' || p.welfare === 'RTP').length
+
+  const welfareBadge = (w: Welfare): { label: string; cls: string } => {
+    if (w === 'Available') return { label: 'Available', cls: 'bg-green-600/20 text-green-400' }
+    if (w === 'Maternity') return { label: 'Maternity', cls: 'bg-pink-600/20 text-pink-400' }
+    if (w === 'RTP')       return { label: 'RTP',       cls: 'bg-amber-600/20 text-amber-400' }
+    return { label: 'ITC Pending', cls: 'bg-amber-600/20 text-amber-400' }
+  }
+
+  const filters: Array<{ id: typeof filter; label: string }> = [
+    { id: 'all',           label: 'All' },
+    { id: 'fulltime',      label: 'Full-time' },
+    { id: 'parttime',      label: 'Part-time' },
+    { id: 'dualreg',       label: 'Dual Reg' },
+    { id: 'leave',         label: 'On Leave' },
+    { id: 'international', label: 'International' },
+  ]
 
   return (
     <div>
-      <SectionHeader title="Squad Management" subtitle="WSL registered squad — 2025/26 season" icon="👥" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Squad Size" value={players.length} sub="Registered players" color="pink" />
-        <StatCard label="Available" value={players.filter((p: typeof players[0]) => p.statusType === 'ok').length} sub="Match ready" color="green" />
-        <StatCard label="Flags" value={players.filter((p: typeof players[0]) => p.statusType !== 'ok').length} sub="Require attention" color="amber" />
-        <StatCard label="Avg Age" value="24.5" sub="Squad average" color="blue" />
+      <SectionHeader title={`Squad Management — ${club.name}`} subtitle="WSL registered squad — 2025/26 season" icon="👥" />
+
+      {/* 5-card stat strip */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <StatCard label="Total"           value={totalCount}    sub="Registered players"  color="pink" />
+        <StatCard label="Full-Time"       value={fullTimeCount} sub="Full contracts"      color="teal" />
+        <StatCard label="Part-Time"       value={partTimeCount} sub="Part-time contracts" color="blue" />
+        <StatCard label="Dual Registered" value={dualRegCount}  sub="On loan / hosting"   color="purple" />
+        <StatCard label="On Leave"        value={onLeaveCount}  sub="Maternity / RTP"     color="amber" />
       </div>
-      <div className="flex items-center gap-2 mb-4">
-        {['all','available','flagged'].map((f: string) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'bg-gray-800/50 text-gray-400 border border-gray-800 hover:text-white'}`}>
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
+
+      {/* Filter bar + Add/Export buttons */}
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {filters.map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f.id ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'bg-gray-800/50 text-gray-400 border border-gray-800 hover:text-white'}`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Add Player</button>
+          <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">⬇ Export</button>
+        </div>
       </div>
+
+      {/* Player table — 8 columns */}
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-            <th className="text-left p-3">Player</th><th className="text-left p-3">Position</th><th className="text-left p-3">Age</th><th className="text-left p-3">Contract</th><th className="text-left p-3">Status</th>
+            <th className="text-left p-3">Player</th>
+            <th className="text-left p-3">Position</th>
+            <th className="text-left p-3">Employment</th>
+            <th className="text-left p-3">Dual Reg</th>
+            <th className="text-left p-3">Age Band</th>
+            <th className="text-left p-3">Nationality</th>
+            <th className="text-left p-3">Contract End</th>
+            <th className="text-left p-3">Welfare</th>
           </tr></thead>
           <tbody>
-            {filtered.map((p: typeof players[0], i: number) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
-                <td className="p-3 text-gray-400">{p.pos}</td>
-                <td className="p-3 text-gray-400">{p.age}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.contract}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    p.statusType === 'ok' ? 'bg-green-600/20 text-green-400'
-                    : p.statusType === 'warn' ? 'bg-amber-600/20 text-amber-400'
-                    : 'bg-blue-600/20 text-blue-400'
-                  }`}>{p.status}</span>
-                </td>
-              </tr>
-            ))}
+            {filtered.map(p => {
+              const wb = welfareBadge(p.welfare)
+              return (
+                <tr key={p.name} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                  <td className="p-3 text-gray-400">{p.pos}</td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-0.5 rounded ${p.employment === 'Full-time' ? 'bg-teal-600/20 text-teal-400' : 'bg-blue-600/20 text-blue-400'}`}>{p.employment}</span>
+                  </td>
+                  <td className="p-3 text-xs">
+                    {p.dualReg === 'None'
+                      ? <span className="text-gray-600">—</span>
+                      : (
+                        <div className="flex flex-col">
+                          <span className="text-purple-400 font-semibold">{p.dualReg}</span>
+                          {p.dualRegNote && <span className="text-[10px] text-gray-500">{p.dualRegNote}</span>}
+                        </div>
+                      )
+                    }
+                  </td>
+                  <td className="p-3 text-gray-400 text-xs">{p.ageBand}</td>
+                  <td className="p-3 text-gray-300 text-xs">{p.nationality}</td>
+                  <td className="p-3 text-gray-400 text-xs">{p.contract}</td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-0.5 rounded ${wb.cls}`}>{wb.label}</span>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
+
       <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
         ⚠ Fatima Al-Said — ITC (International Transfer Certificate) pending. Cannot be registered until clearance received from FIFA TMS.
       </div>
@@ -994,35 +1062,78 @@ const DualRegistrationView = () => {
         <StatCard label="Window Status" value="Open" sub="Closes 30 Apr 2026" color="green" />
         <StatCard label="Max Permitted" value="4" sub="WSL dual-reg limit" color="blue" />
       </div>
-      {registrations.map((r: typeof registrations[0]) => (
-        <div key={r.player} className={`bg-[#0D1117] border rounded-xl p-5 mb-4 ${r.daysLeft <= 7 ? 'border-red-600/30' : 'border-gray-800'}`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white">{r.player}</span>
-              <span className="text-xs text-gray-500">{r.pos}</span>
-            </div>
-            {r.daysLeft <= 7 && <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400 font-semibold animate-pulse">Expires in {r.daysLeft} days</span>}
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div><div className="text-[10px] text-gray-500 uppercase">Parent Club</div><div className="text-xs text-gray-300">{r.parentClub}</div></div>
-            <div><div className="text-[10px] text-gray-500 uppercase">Loan Club</div><div className="text-xs text-gray-300">{r.loanClub}</div></div>
-            <div><div className="text-[10px] text-gray-500 uppercase">Start Date</div><div className="text-xs text-gray-300">{r.start}</div></div>
-            <div><div className="text-[10px] text-gray-500 uppercase">End Date</div><div className="text-xs text-gray-300">{r.end}</div></div>
-          </div>
-          {r.daysLeft <= 7 && (
-            <div className="mt-3 bg-red-600/10 border border-red-600/20 rounded-lg p-2 text-xs text-red-400">
-              Action required: Decide whether to extend, recall, or let this agreement expire by {r.end}.
-            </div>
-          )}
+      {/* Current registrations table */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Home Club</th><th className="text-left p-3">Host Club</th><th className="text-left p-3">Type</th><th className="text-left p-3">Start</th><th className="text-left p-3">End</th><th className="text-left p-3">Window</th><th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {registrations.map(r => {
+              const expiringSoon = r.daysLeft <= 7
+              return (
+                <tr key={r.player} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-200 font-medium">{r.player} <span className="text-[10px] text-gray-500">({r.pos})</span></td>
+                  <td className="p-3 text-gray-400 text-xs">{r.parentClub}</td>
+                  <td className="p-3 text-gray-400 text-xs">{r.loanClub}</td>
+                  <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.type === 'Permanent' ? 'bg-blue-600/20 text-blue-400' : 'bg-purple-600/20 text-purple-400'}`}>{r.type}</span></td>
+                  <td className="p-3 text-gray-400 text-xs">{r.start}</td>
+                  <td className="p-3 text-gray-400 text-xs">{r.end}</td>
+                  <td className="p-3 text-gray-400 text-xs">{r.window}</td>
+                  <td className="p-3">
+                    {expiringSoon
+                      ? <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400 font-semibold">EXPIRES FRIDAY</span>
+                      : <span className="text-xs px-2 py-0.5 rounded bg-green-600/20 text-green-400">Active</span>
+                    }
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Expiry alert */}
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-3 mb-6 text-xs text-red-400 font-medium">⚠ Emma Clarke&apos;s dual registration expires in 4 days — decide extend, recall, or let lapse before 8 Apr 2026.</div>
+
+      {/* Age-band salary check */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-1">Age-Band Salary Check (per FA Women&apos;s rules)</h3>
+        <p className="text-[11px] text-gray-500 mb-4">Dual-registered players must remain inside their age-band salary cap at the host club. Auto-checked on each registration submission.</p>
+        <div className="space-y-3">
+          {[
+            {player:'Emma Clarke',  age:27, band:'Senior (24+)',  cap:75000, salary:62000, ok:true},
+            {player:'Chloe Tanner', age:19, band:'U21',           cap:42000, salary:38000, ok:true},
+          ].map(c => {
+            const pct = Math.round((c.salary / c.cap) * 100)
+            return (
+              <div key={c.player} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-xs font-semibold text-gray-200">{c.player}</span>
+                    <span className="text-[10px] text-gray-500 ml-2">Age {c.age} · {c.band}</span>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${c.ok ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>{c.ok ? '✓ Within cap' : '✗ Over cap'}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-gray-400 mb-1">
+                  <span>£{c.salary.toLocaleString()} / £{c.cap.toLocaleString()}</span>
+                  <span>{pct}%</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                  <div className="h-full" style={{ width: `${pct}%`, backgroundColor: c.ok ? '#0D9488' : '#EF4444' }} />
+                </div>
+              </div>
+            )
+          })}
         </div>
-      ))}
+      </div>
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">Registration Window Calendar</h3>
         <div className="space-y-2">
           {[
             {event:'WSL Winter Window Opened',date:'1 Jan 2026',status:'past'},
             {event:'Emma Clarke dual-reg expires',date:'8 Apr 2026',status:'urgent'},
-            {event:'Lucy Whitmore dual-reg expires',date:'30 Apr 2026',status:'upcoming'},
+            {event:'Chloe Tanner dual-reg expires',date:'31 Jul 2026',status:'future'},
             {event:'WSL Registration Window Closes',date:'30 Apr 2026',status:'upcoming'},
             {event:'Summer Window Opens',date:'1 Jun 2026',status:'future'},
           ].map((e: {event:string;date:string;status:string}) => (
@@ -1677,7 +1788,7 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
       case 'acl':         return <ACLRiskMonitorView />
       case 'maternity':   return <MaternityTrackerView />
       case 'mental':      return <MentalHealthView />
-      case 'squad':       return <SquadManagementView />
+      case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
       case 'tactics':     return <TacticsSetPiecesView />
       case 'match':       return <MatchPreparationView />
