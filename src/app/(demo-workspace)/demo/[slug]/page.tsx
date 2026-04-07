@@ -5106,6 +5106,19 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             setDemoDataActive(false)
             localStorage.setItem('lumio_demo_active', 'false')
             Object.keys(localStorage).filter(k => k.startsWith('lumio_dashboard_') && k.endsWith('_hasData')).forEach(k => localStorage.removeItem(k))
+            // Auto-load demo data for new signups with a demo session
+            const demoToken = localStorage.getItem('demo_session_token')
+            if (demoToken) {
+              fetch('/api/onboarding/load-demo', {
+                method: 'POST',
+                headers: { 'x-workspace-token': demoToken },
+              }).then(r => r.json()).then(result => {
+                if (result.success || (result.tablesWritten?.length ?? 0) > 0) {
+                  setDemoDataActive(true)
+                  localStorage.setItem('lumio_demo_active', 'true')
+                }
+              }).catch(() => {})
+            }
           }
           // Staff is now fetched from Supabase only — no localStorage sync needed
           // Live tenant onboarding wizard — only show if NEVER completed AND recently created
@@ -5307,7 +5320,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             setUserPhoto(data.url)
             localStorage.setItem('lumio_user_photo', data.url)
             localStorage.setItem(`lumio_staff_photo_${userEmail}`, data.url)
-            window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: data.url }))
+            window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: data.url } }))
             fireToast('Photo updated')
           }
           URL.revokeObjectURL(blobUrl)
