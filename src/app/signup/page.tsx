@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Check, X, ArrowRight } from 'lucide-react'
+import { Check, X, ArrowRight, Upload } from 'lucide-react'
 
 // ─── Form internals ────────────────────────────────────────────────────────
 
@@ -24,6 +24,9 @@ function SignupForm() {
   const [email, setEmail] = useState('')
   const [company, setCompany] = useState('')
   const [gdpr, setGdpr] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement | null>(null)
 
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [resendCountdown, setResendCountdown] = useState(0)
@@ -109,6 +112,26 @@ function SignupForm() {
       localStorage.setItem('demo_user_email', data.user.email)
       localStorage.setItem('demo_user_name', data.user.name)
       if (portalType) localStorage.setItem('lumio_signup_portal', portalType)
+
+      // Upload logo if provided — silent failure (logo is optional)
+      if (logoFile && data.session_token) {
+        try {
+          const fd = new FormData()
+          fd.append('logo', logoFile)
+          const logoRes = await fetch('/api/workspace/logo', {
+            method: 'POST',
+            headers: { 'x-workspace-token': data.session_token },
+            body: fd,
+          })
+          if (logoRes.ok) {
+            const logoData = await logoRes.json()
+            if (logoData.logo_url) {
+              localStorage.setItem('lumio_company_logo', logoData.logo_url)
+              localStorage.setItem('workspace_company_logo', logoData.logo_url)
+            }
+          }
+        } catch { /* silent — logo is optional */ }
+      }
 
       const dest = data.redirect_to
         ? data.redirect_to
@@ -211,6 +234,61 @@ function SignupForm() {
                         )
                       })}
                     </div>
+                  </div>
+
+                  {/* Logo upload */}
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>Company logo (optional)</label>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        if (file.size > 2 * 1024 * 1024) { setError('Logo must be under 2MB'); return }
+                        setLogoFile(file)
+                        const reader = new FileReader()
+                        reader.onload = (ev: ProgressEvent<FileReader>) => setLogoPreview(typeof ev.target?.result === 'string' ? ev.target.result : null)
+                        reader.readAsDataURL(file)
+                      }}
+                    />
+                    {!logoFile ? (
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        className="w-full rounded-lg flex flex-col items-center justify-center transition-colors"
+                        style={{ height: 120, backgroundColor: '#07080F', border: '2px dashed #0D9488', cursor: 'pointer' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.05)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#07080F' }}
+                      >
+                        <Upload size={24} style={{ color: '#0D9488', marginBottom: 8 }} />
+                        <div className="text-sm" style={{ color: '#9CA3AF' }}>Upload your logo</div>
+                        <div className="text-xs mt-1" style={{ color: '#6B7280' }}>PNG, JPG up to 2MB</div>
+                      </button>
+                    ) : (
+                      <div className="w-full rounded-lg flex items-center gap-3 p-3" style={{ backgroundColor: '#07080F', border: '2px dashed #0D9488', minHeight: 120 }}>
+                        {logoPreview && (
+                          <img src={logoPreview} alt="Logo preview" style={{ maxHeight: 80, maxWidth: 100, objectFit: 'contain', flexShrink: 0 }} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm truncate" style={{ color: '#F9FAFB' }}>{logoFile.name}</div>
+                          <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{(logoFile.size / 1024).toFixed(0)} KB</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setLogoFile(null); setLogoPreview(null); if (logoInputRef.current) logoInputRef.current.value = '' }}
+                          className="flex items-center justify-center rounded-lg transition-colors"
+                          style={{ width: 32, height: 32, backgroundColor: '#1F2937', color: '#9CA3AF', flexShrink: 0 }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#374151'; (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1F2937'; (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
+                          aria-label="Remove logo"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Name */}
