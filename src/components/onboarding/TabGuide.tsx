@@ -7,7 +7,6 @@ const STEPS = [
   { title: 'Welcome', body: 'This is your Lumio portal. Everything your business needs, in one place.', target: '' },
   { title: 'Navigation', body: 'Use the sidebar to navigate between departments.', target: 'aside:not(.md\\:hidden)' },
   { title: 'Morning Briefing', body: 'Every morning, Lumio gives you a personalised briefing.', target: 'main' },
-  { title: 'Voice Commands', body: "Say 'Hey Lumio' to control the portal hands-free.", target: '' },
   { title: 'Departments', body: 'Each department has its own workspace — HR, Finance, Operations and more.', target: 'aside:not(.md\\:hidden) nav' },
   { title: 'Settings', body: 'Manage your team, data, and integrations in Settings.', target: '' },
   { title: 'Get Started!', body: "You're all set. Let's go!", target: '' },
