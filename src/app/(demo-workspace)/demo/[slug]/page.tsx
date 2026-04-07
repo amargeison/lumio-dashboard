@@ -3800,9 +3800,9 @@ function SnapshotWidgets() {
   )
 }
 
-// ─── Getting Started (Demo) — 8-step guided product tour ───────────────────
+// ─── Getting Started (Demo) — 10-step guided product tour ──────────────────
 
-const TOUR_TOTAL_STEPS = 8
+const TOUR_TOTAL_STEPS = 10
 
 function getTourSlug(): string {
   if (typeof window === 'undefined') return ''
@@ -3850,12 +3850,15 @@ type TourCtx = {
   finish: () => void
   onTabChange: (t: OverviewTab) => void
 }
-type TourStep = {
+type TourStepDef = {
   num: number
   icon: string
+  iconColor: string
   title: string
   body: string
   visual?: React.ReactNode
+  highlight?: string
+  primaryAction?: { label: string; run: (ctx: TourCtx) => void }
   primary?: { label: string; run: (ctx: TourCtx) => void }
   secondary?: { label: string; run: (ctx: TourCtx) => void }
 }
@@ -3864,6 +3867,7 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
   const [slug, setSlug] = useState('')
   const [step, setStep] = useState(1)
   const [completed, setCompleted] = useState(false)
+  const [activeRole, setActiveRole] = useState<string>('director')
 
   useEffect(() => {
     const s = getTourSlug()
@@ -3874,6 +3878,8 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
     } else {
       setStep(readTourStep(s))
     }
+    const stored = (typeof window !== 'undefined' && localStorage.getItem('lumio_user_role')) || 'director'
+    setActiveRole(stored)
   }, [])
 
   function goToStep(n: number) {
@@ -3899,39 +3905,64 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-tour-updated'))
   }
 
+  // Live role switcher (mirrors the parent's switchRole helper)
+  function pickRole(role: string) {
+    setActiveRole(role)
+    try {
+      localStorage.setItem('lumio_user_role', role)
+      const levelMap: Record<string, string> = { admin: '2', director: '1', manager: '3', standard: '4' }
+      localStorage.setItem('lumio_user_role_level', levelMap[role] || '4')
+      window.dispatchEvent(new CustomEvent('lumio-role-changed', { detail: { role } }))
+    } catch {}
+  }
+
   const ctx: TourCtx = { next, finish, onTabChange }
 
-  const STEPS: TourStep[] = [
+  // ── 10 step definitions ──────────────────────────────────────────────────
+  const STEPS: TourStepDef[] = [
     {
       num: 1,
       icon: '🏠',
-      title: 'Your command centre',
-      body: 'Everything your business needs, in one place. No more switching between 6 different tools. Lumio connects your people, your data, and your day.',
+      iconColor: '#7C3AED',
+      title: 'Your business, fully connected',
+      body: "You're looking at Lumio — one dashboard that replaces the 6 tools your business probably runs on right now. HR, Sales, Finance, Support, Marketing, IT — all here, all connected, all talking to each other.",
       visual: (
-        <div style={{
-          background: 'linear-gradient(135deg, #1A0D3D 0%, #6C3FC5 60%, #8B5CF6 100%)',
-          borderRadius: 12, padding: 20, color: '#FFFFFF',
-          boxShadow: '0 16px 40px rgba(108,63,197,0.35)',
-        }}>
-          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 1, marginBottom: 6 }}>GOOD MORNING</div>
-          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Welcome back 👋</div>
-          <div style={{ fontSize: 12, opacity: 0.85 }}>3 meetings · 7 unread · 2 urgent items</div>
+        <div style={{ background: 'linear-gradient(135deg, #1A0D3D 0%, #6C3FC5 60%, #8B5CF6 100%)', borderRadius: 12, padding: 18, color: '#FFFFFF' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 1 }}>GOOD MORNING</div>
+              <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2 }}>Welcome back 👋</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, fontFamily: 'monospace' }}>
+              <div style={{ fontSize: 11, opacity: 0.85 }}>09:24<br/><span style={{ opacity: 0.65 }}>LON</span></div>
+              <div style={{ fontSize: 11, opacity: 0.85 }}>04:24<br/><span style={{ opacity: 0.65 }}>NYC</span></div>
+              <div style={{ fontSize: 11, opacity: 0.85 }}>17:24<br/><span style={{ opacity: 0.65 }}>SYD</span></div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 8, fontSize: 11 }}>📅 4 meetings</div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 8, fontSize: 11 }}>✅ 7 tasks</div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 8, fontSize: 11 }}>🔔 2 alerts</div>
+          </div>
         </div>
       ),
-      primary: { label: "Let's explore →", run: c => c.next() },
+      primary: { label: "Let's take a tour →", run: c => c.next() },
     },
     {
       num: 2,
       icon: '☀️',
-      title: 'Start every day informed',
-      body: 'Your Morning Roundup pulls together emails, Slack messages, Teams notifications, and SMS — all before your first coffee. No more tab switching just to find out what happened overnight.',
+      iconColor: '#F59E0B',
+      title: 'Start every day knowing everything',
+      body: 'Every morning, Lumio pulls together your emails, Slack, Teams, WhatsApp, SMS and LinkedIn messages into one feed. No tab switching. No missed messages. Everything that happened since you were last here, in one scroll.',
       visual: (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
           {[
-            { icon: '📧', label: 'Email', count: 12, color: '#3B82F6' },
-            { icon: '💬', label: 'Slack', count: 7,  color: '#22C55E' },
-            { icon: '👥', label: 'Teams', count: 4,  color: '#A78BFA' },
-            { icon: '📱', label: 'SMS',   count: 2,  color: '#F59E0B' },
+            { icon: '📱', label: 'SMS',      count: 3, color: '#3B82F6' },
+            { icon: '📧', label: 'Email',    count: 12,color: '#EF4444' },
+            { icon: '💬', label: 'Slack',    count: 7, color: '#22C55E' },
+            { icon: '👥', label: 'Teams',    count: 3, color: '#A78BFA' },
+            { icon: '💚', label: 'WhatsApp', count: 4, color: '#10B981' },
+            { icon: '💼', label: 'LinkedIn', count: 2, color: '#0A66C2' },
           ].map(s => (
             <div key={s.label} style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#D1D5DB' }}><span style={{ marginRight: 6 }}>{s.icon}</span>{s.label}</span>
@@ -3940,140 +3971,271 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
           ))}
         </div>
       ),
-      primary: { label: 'See how it works →', run: c => { c.onTabChange('today'); c.next() } },
+      primaryAction: { label: 'See it on Today tab →', run: c => { c.onTabChange('today') } },
+      primary: { label: 'Next →', run: c => c.next() },
     },
     {
       num: 3,
       icon: '⚡',
-      title: 'Your most-used actions, one click away',
-      body: 'Book a meeting, claim expenses, request sign-off, onboard a new starter — all from the quick action bar. No forms, no hunting through menus.',
+      iconColor: '#A78BFA',
+      title: 'Everything you do, one click away',
+      body: 'Book a meeting, claim expenses, request sign-off, onboard a new starter, raise an IT ticket — all from the quick action bar. No menus, no forms, no hunting.',
       visual: (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {['📧 Email','📅 Meeting','📞 Call','💸 Expense','🏖 Holiday','🤒 Sick','📝 Sign-off','👤 Onboard'].map(label => (
-            <span key={label} style={{ fontSize: 12, fontWeight: 600, color: '#A78BFA', backgroundColor: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', padding: '6px 12px', borderRadius: 999 }}>
-              {label}
-            </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {[
+            { icon: '📧', label: 'Send Email' },
+            { icon: '📅', label: 'Book Meeting' },
+            { icon: '💸', label: 'Claim Expenses' },
+            { icon: '🏖', label: 'Book Holiday' },
+            { icon: '📝', label: 'Request Sign-off' },
+            { icon: '🛟', label: 'Raise Issue' },
+          ].map(b => (
+            <div key={b.label} style={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 10, padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>{b.icon}</span>
+              <span style={{ fontSize: 12, color: '#E5E7EB', fontWeight: 600 }}>{b.label}</span>
+            </div>
           ))}
         </div>
       ),
-      primary: { label: 'Try clicking one →', run: c => c.next() },
+      primary: { label: 'Next →', run: c => c.next() },
     },
     {
       num: 4,
-      icon: '🏢',
-      title: 'Every department. One sidebar.',
-      body: 'HR, Sales, Finance, Marketing, Support, IT — each department has its own workspace. Click any department in the sidebar to explore it.',
+      icon: '👤',
+      iconColor: '#EC4899',
+      title: 'See what your team sees',
+      body: "Lumio shows different views depending on your role. A Director sees financial data and board reports. A Manager sees their team's tasks and approvals. Standard staff see their own dashboard. Try switching roles — it's eye-opening.",
       visual: (
-        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, padding: 8, backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 10 }}>
+          {[
+            { id: 'admin',    label: 'Admin',    color: '#EF4444' },
+            { id: 'director', label: 'Director', color: '#8B5CF6' },
+            { id: 'manager',  label: 'Manager',  color: '#3B82F6' },
+            { id: 'standard', label: 'Standard', color: '#6B7280' },
+          ].map(r => {
+            const isActive = activeRole === r.id
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => pickRole(r.id)}
+                style={{
+                  flex: 1,
+                  padding: '10px 8px',
+                  borderRadius: 8,
+                  border: `1px solid ${isActive ? r.color : '#1F2937'}`,
+                  backgroundColor: isActive ? `${r.color}22` : 'transparent',
+                  color: isActive ? r.color : '#9CA3AF',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {r.label}
+              </button>
+            )
+          })}
+        </div>
+      ),
+      highlight: '⭐ This is one of our most popular features',
+      primary: { label: 'Try switching roles, then Next →', run: c => c.next() },
+    },
+    {
+      num: 5,
+      icon: '🏢',
+      iconColor: '#0D9488',
+      title: 'Every department. One sidebar.',
+      body: "Click any department in the sidebar — HR, Sales, Finance, Marketing, Support, IT. Each one has its own full workspace, pre-loaded with your team's data. No setup required.",
+      visual: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
             {[
-              { icon: '👥', label: 'HR' },
-              { icon: '💰', label: 'Sales' },
-              { icon: '📊', label: 'Finance' },
-              { icon: '📣', label: 'Marketing' },
-              { icon: '🎧', label: 'Support' },
-              { icon: '💻', label: 'IT' },
+              { icon: '👥', label: 'HR',        color: '#22C55E' },
+              { icon: '💰', label: 'Sales',     color: '#A78BFA' },
+              { icon: '📊', label: 'Finance',   color: '#3B82F6' },
+              { icon: '📣', label: 'Marketing', color: '#F59E0B' },
+              { icon: '🎧', label: 'Support',   color: '#EC4899' },
+              { icon: '💻', label: 'IT',        color: '#0D9488' },
             ].map(d => (
-              <div key={d.label} style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 14 }}>{d.icon}</span>
-                <span style={{ fontSize: 11, color: '#D1D5DB', fontWeight: 600 }}>{d.label}</span>
+              <div key={d.label} style={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 4px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16 }}>{d.icon}</div>
+                <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 600, marginTop: 2 }}>{d.label}</div>
+                <div style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: d.color, margin: '4px auto 0' }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {[
+              { title: 'HR & People', body: '3 pending leave · 1 new starter', color: '#22C55E' },
+              { title: 'Sales',       body: '£285k pipeline · 2 proposals due', color: '#A78BFA' },
+              { title: 'Finance',     body: '3 invoices overdue · Q2 ready',   color: '#3B82F6' },
+            ].map(c => (
+              <div key={c.title} style={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: c.color, marginBottom: 4 }}>{c.title}</div>
+                <div style={{ fontSize: 10, color: '#9CA3AF', lineHeight: 1.4 }}>{c.body}</div>
               </div>
             ))}
           </div>
         </div>
       ),
-      primary: { label: 'Explore a department →', run: c => c.next() },
-    },
-    {
-      num: 5,
-      icon: '👥',
-      title: 'Your people, front and centre',
-      body: "See your whole team at a glance. FIFA-style cards show who's who, their role, and their stats. Add your photo to personalise your card.",
-      visual: (
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          {[
-            { rating: 92, name: 'YOU',         pos: 'EXEC', color: '#8B5CF6' },
-            { rating: 88, name: 'PRIYA NAIR',  pos: 'MKT',  color: '#0D9488' },
-            { rating: 85, name: 'MARCUS WEBB', pos: 'SALES',color: '#F59E0B' },
-          ].map(c => (
-            <div key={c.name} style={{
-              width: 90, height: 130, borderRadius: 10,
-              background: `linear-gradient(155deg, ${c.color} 0%, #3B1D6B 70%, #1A0D3D 100%)`,
-              border: '1px solid rgba(255,255,255,0.18)',
-              padding: 8, color: '#FFFFFF',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            }}>
-              <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{c.rating}</div>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 800, textAlign: 'center' }}>{c.name}</div>
-                <div style={{ fontSize: 8, opacity: 0.7, textAlign: 'center' }}>{c.pos}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ),
-      primary: { label: 'Meet your team →', run: c => { c.onTabChange('team'); c.next() } },
+      primaryAction: { label: 'Explore HR & People →', run: () => { try { localStorage.setItem('lumio_active_dept', 'hr') } catch {}; window.location.hash = '#hr' } },
+      primary: { label: 'Next →', run: c => c.next() },
     },
     {
       num: 6,
-      icon: '📊',
-      title: 'Data that actually makes sense',
-      body: "No more spreadsheets. Lumio's Insights tab shows your key metrics — revenue, team performance, customer health — in one clear dashboard.",
+      icon: '👥',
+      iconColor: '#8B5CF6',
+      title: 'Your people, front and centre',
+      body: "The Team tab shows everyone in your organisation as FIFA-style cards. Rating, department, role, stats. Add your own photo and you'll appear on your card too.",
       visual: (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           {[
-            { label: 'Revenue', value: '£86k', trend: '+12%', color: '#22C55E' },
-            { label: 'Pipeline', value: '£238k', trend: '+8%',  color: '#A78BFA' },
-            { label: 'Health',   value: '94%',   trend: '+2%',  color: '#0D9488' },
-          ].map(s => (
-            <div key={s.label} style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 10, padding: 12, textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#F9FAFB' }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: '#6B7280' }}>{s.label}</div>
-              <div style={{ fontSize: 10, color: s.color, fontWeight: 700, marginTop: 4 }}>{s.trend}</div>
+            { rating: 92, name: 'JAMES HARTLEY', pos: 'CEO',   color: '#8B5CF6' },
+            { rating: 88, name: 'SOPHIE BRENNAN',pos: 'HR',    color: '#22C55E' },
+            { rating: 85, name: 'MARCUS WEBB',   pos: 'SALES', color: '#A78BFA' },
+          ].map(c => (
+            <div key={c.name} style={{
+              width: 100, height: 144, borderRadius: 12,
+              background: `linear-gradient(155deg, ${c.color} 0%, #3B1D6B 60%, #1A0D3D 100%)`,
+              border: '1px solid rgba(255,255,255,0.18)',
+              padding: 10, color: '#FFFFFF',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              boxShadow: '0 8px 24px rgba(108,63,197,0.3)',
+            }}>
+              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{c.rating}</div>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 800, textAlign: 'center' }}>{c.name}</div>
+                <div style={{ fontSize: 8, opacity: 0.7, textAlign: 'center', marginTop: 2 }}>{c.pos}</div>
+              </div>
             </div>
           ))}
         </div>
       ),
-      primary: { label: 'Check your insights →', run: c => { c.onTabChange('insights'); c.next() } },
+      primaryAction: { label: 'See full team →', run: c => { c.onTabChange('team') } },
+      primary: { label: 'Next →', run: c => c.next() },
     },
     {
       num: 7,
-      icon: '🔴',
-      title: 'Nothing falls through the cracks',
-      body: "The Don't Miss tab surfaces the things that need your attention right now — overdue invoices, unsigned contracts, pending approvals. Critical things, not noise.",
+      icon: '📊',
+      iconColor: '#3B82F6',
+      title: 'Data that actually makes sense',
+      body: 'The Insights tab gives you a real-time view of your business — revenue, team performance, customer health, department activity. No spreadsheets. No waiting for someone to run a report.',
       visual: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
           {[
-            { icon: '💸', label: '3 invoices overdue',     sub: '£12,400 total',                     color: '#EF4444' },
-            { icon: '📝', label: '2 contracts unsigned',   sub: 'Awaiting Bramblewood, Northgate',   color: '#F59E0B' },
-            { icon: '✅', label: '1 approval pending',      sub: 'Tilly Brooks — holiday request',   color: '#A78BFA' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 12px' }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: '#F9FAFB', fontWeight: 600 }}>{item.label}</div>
-                <div style={{ fontSize: 10, color: '#6B7280' }}>{item.sub}</div>
-              </div>
-              <div style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: item.color }} />
+            { label: 'Revenue',   value: '£285k', color: '#22C55E' },
+            { label: 'Pipeline',  value: '£940k', color: '#A78BFA' },
+            { label: 'Team size', value: '11',    color: '#3B82F6' },
+            { label: 'Tasks done',value: '94%',   color: '#0D9488' },
+          ].map(s => (
+            <div key={s.label} style={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: '#6B7280', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
             </div>
           ))}
         </div>
       ),
-      primary: { label: 'See what needs attention →', run: c => { c.onTabChange('not-to-miss'); c.next() } },
+      primaryAction: { label: 'Open Insights →', run: c => { c.onTabChange('insights') } },
+      primary: { label: 'Next →', run: c => c.next() },
     },
     {
       num: 8,
+      icon: '🔴',
+      iconColor: '#EF4444',
+      title: 'Nothing falls through the cracks',
+      body: "The Don't Miss tab surfaces critical items that need your attention right now. Unsigned contracts, overdue invoices, pending approvals, probation reviews. Lumio watches everything so you don't have to.",
+      visual: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { dot: '🔴', label: 'NDA outstanding — Bramble Hill',   sub: 'Critical',                color: '#EF4444' },
+            { dot: '🔴', label: 'Payment terms not set',             sub: '3 contracts',             color: '#EF4444' },
+            { dot: '🟡', label: 'Probation reviews overdue',          sub: '2 people',                color: '#F59E0B' },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 8, padding: '10px 14px' }}>
+              <span style={{ fontSize: 14 }}>{item.dot}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: '#F9FAFB', fontWeight: 600 }}>{item.label}</div>
+                <div style={{ fontSize: 10, color: item.color, fontWeight: 700, marginTop: 2 }}>{item.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+      primaryAction: { label: 'See what needs attention →', run: c => { c.onTabChange('not-to-miss') } },
+      primary: { label: 'Next →', run: c => c.next() },
+    },
+    {
+      num: 9,
+      icon: '🤖',
+      iconColor: '#F59E0B',
+      title: 'Your AI chief of staff',
+      body: "Every morning, Lumio's AI reads your emails, calendar, tasks and team data — then briefs you in plain English. Press play on the banner to hear it. It knows what's urgent, what can wait, and what you might have missed.",
+      visual: (
+        <div style={{ background: 'linear-gradient(135deg, #1A0D3D 0%, #6C3FC5 70%, #8B5CF6 100%)', borderRadius: 12, padding: 18, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 999,
+              backgroundColor: '#F59E0B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22,
+              fontWeight: 900,
+              color: '#0A0B10',
+              boxShadow: '0 0 0 6px rgba(245,158,11,0.18), 0 0 0 12px rgba(245,158,11,0.08)',
+              flexShrink: 0,
+            }}
+          >
+            ▶
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 1, marginBottom: 4 }}>MORNING BRIEFING</div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>3 priorities · 4 meetings · 2 things to watch</div>
+            <div style={{ fontSize: 10, opacity: 0.7, marginTop: 6 }}>~90 seconds · Plays through your speakers</div>
+          </div>
+        </div>
+      ),
+      highlight: '✨ Powered by Claude AI',
+      primaryAction: {
+        label: '▶ Play your briefing',
+        run: () => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-play-briefing')) },
+      },
+      primary: { label: 'Next →', run: c => c.next() },
+    },
+    {
+      num: 10,
       icon: '🚀',
-      title: "You're ready! 🚀",
-      body: "That's the tour. Lumio has a lot more to explore — every department, every tool, every integration. Dive in and have a play.\n\nAnd if you want to see Lumio with YOUR real data — book a free setup call and we'll load everything in for a 2-week trial.",
-      primary: { label: 'Start exploring →', run: c => c.finish() },
-      secondary: { label: 'Apply for 6 months free', run: () => { window.location.href = 'mailto:hello@lumiocms.com?subject=Early%20Access%20Application' } },
+      iconColor: '#0D9488',
+      title: "You've seen enough to know this is different",
+      body: "That's Lumio. One platform that connects your whole business — people, data, workflows and AI — in one place.\n\nMost businesses are still running on 6 disconnected tools and a WhatsApp group. You don't have to be.",
+      visual: (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {[
+            { value: '150+',     label: 'Pre-built workflows',    color: '#A78BFA' },
+            { value: '14',       label: 'Departments covered',    color: '#0D9488' },
+            { value: '6 months', label: 'Free for early access',  color: '#F59E0B' },
+          ].map(s => (
+            <div key={s.label} style={{ backgroundColor: '#111827', border: '1px solid #1F2937', borderRadius: 12, padding: '20px 12px', textAlign: 'center' }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      ),
+      primary: {
+        label: 'Apply for 6 months free →',
+        run: () => { window.location.href = 'mailto:hello@lumiocms.com?subject=Early%20Access%20Application' },
+      },
+      secondary: { label: 'Keep exploring the demo', run: c => c.finish() },
     },
   ]
 
   const current = STEPS[step - 1]
   const pct = Math.round((step / TOUR_TOTAL_STEPS) * 100)
 
+  // ── Tour-complete view ───────────────────────────────────────────────────
   if (completed) {
     return (
       <div className="mx-auto" style={{ maxWidth: 720, padding: '40px 20px', textAlign: 'center' }}>
@@ -4101,9 +4263,11 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
     )
   }
 
+  // ── Active tour view ─────────────────────────────────────────────────────
   return (
-    <div className="mx-auto" style={{ maxWidth: 960, minHeight: 500 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+    <div className="mx-auto" style={{ maxWidth: 1080, minHeight: 560 }}>
+      {/* Top progress strip */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           Step {step} of {TOUR_TOTAL_STEPS}
         </div>
@@ -4117,16 +4281,17 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
           Skip tour →
         </button>
       </div>
-      <div style={{ width: '100%', height: 4, borderRadius: 999, backgroundColor: '#1F2937', marginBottom: 24, overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: 4, borderRadius: 999, backgroundColor: '#1F2937', marginBottom: 20, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, backgroundColor: '#7C3AED', transition: 'width 0.3s ease' }} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20 }}>
-        <div style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937', borderRadius: 14, padding: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20 }}>
+        {/* Left: numbered station list */}
+        <div style={{ backgroundColor: '#0A0B0F', border: '1px solid #1F2937', borderRadius: 14, padding: 10 }}>
           {STEPS.map(s => {
             const isActive = s.num === step
             const isDone = s.num < step
-            const dotColor = isActive ? '#7C3AED' : isDone ? '#22C55E' : '#1F2937'
+            const dotBg = isActive ? '#7C3AED' : isDone ? '#10B981' : '#374151'
             const labelColor = isActive ? '#F9FAFB' : isDone ? '#9CA3AF' : '#6B7280'
             return (
               <button
@@ -4136,10 +4301,11 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: 12,
                   width: '100%',
                   textAlign: 'left',
-                  padding: '10px 12px',
+                  height: 44,
+                  padding: '0 12px',
                   borderRadius: 10,
                   backgroundColor: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
                   border: 'none',
@@ -4149,9 +4315,9 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
               >
                 <span
                   style={{
-                    width: 24, height: 24,
+                    width: 26, height: 26,
                     borderRadius: 999,
-                    backgroundColor: dotColor,
+                    backgroundColor: dotBg,
                     color: '#FFFFFF',
                     fontSize: 11,
                     fontWeight: 800,
@@ -4163,7 +4329,7 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
                 >
                   {isDone ? '✓' : s.num}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 600, color: labelColor, lineHeight: 1.3 }}>
+                <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 600, color: labelColor, lineHeight: 1.3, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {s.title}
                 </span>
               </button>
@@ -4171,20 +4337,68 @@ function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEa
           })}
         </div>
 
-        <div style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 14, padding: 32, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 48, marginBottom: 14 }}>{current.icon}</div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#F9FAFB', marginBottom: 12, lineHeight: 1.2 }}>
+        {/* Right: current step content */}
+        <div style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937', borderRadius: 14, padding: 32, display: 'flex', flexDirection: 'column' }}>
+          {/* Icon circle */}
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 999,
+              backgroundColor: `${current.iconColor}22`,
+              border: `1px solid ${current.iconColor}66`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 28,
+              marginBottom: 16,
+            }}
+          >
+            {current.icon}
+          </div>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#F9FAFB', marginBottom: 12, lineHeight: 1.2 }}>
             {current.title}
           </h2>
-          <p style={{ fontSize: 16, color: '#9CA3AF', lineHeight: 1.65, marginBottom: 24, whiteSpace: 'pre-line' }}>
+          <p style={{ fontSize: 15, color: '#9CA3AF', lineHeight: 1.7, marginBottom: 22, whiteSpace: 'pre-line' }}>
             {current.body}
           </p>
           {current.visual && (
-            <div style={{ marginBottom: 24 }}>{current.visual}</div>
+            <div
+              style={{
+                marginBottom: 20,
+                padding: 16,
+                borderRadius: 10,
+                backgroundColor: '#111827',
+                border: '1px solid #1F2937',
+                minHeight: 180,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ width: '100%' }}>{current.visual}</div>
+            </div>
+          )}
+          {current.highlight && (
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', marginBottom: 16 }}>
+              {current.highlight}
+            </div>
+          )}
+          {current.primaryAction && (
+            <div style={{ marginBottom: 18 }}>
+              <button
+                type="button"
+                onClick={() => current.primaryAction!.run(ctx)}
+                style={{ padding: '10px 18px', borderRadius: 10, backgroundColor: 'transparent', color: '#0D9488', border: '1px solid #0D9488', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                {current.primaryAction.label}
+              </button>
+            </div>
           )}
 
           <div style={{ flex: 1 }} />
 
+          {/* Footer nav */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1F2937', paddingTop: 20, gap: 12, flexWrap: 'wrap' }}>
             <button
               type="button"
