@@ -11,6 +11,7 @@ import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
@@ -1162,6 +1163,97 @@ function OnboardingModal({
   )
 }
 
+// ─── Getting Started checklist ───────────────────────────────────────────────
+
+const SCHOOL_GS_STEPS: { icon: string; title: string; body: string }[] = [
+  { icon: '🏠', title: 'Your school, fully connected', body: 'Welcome to Lumio for Schools. Explore the demo to see everything pre-loaded.' },
+  { icon: '🏷️', title: 'Add your school logo', body: 'Upload your crest so every page feels like yours.' },
+  { icon: '👥', title: 'Invite your staff', body: 'Add teachers, admin, and SLT. Everyone gets their own magic link.' },
+  { icon: '📋', title: 'Set up attendance', body: 'Configure year groups and enable the daily register.' },
+  { icon: '🎒', title: 'Add your first pupil', body: 'Import your MIS data or add pupils manually.' },
+  { icon: '🛡️', title: 'Configure safeguarding', body: 'Set your DSL, enable concern logging and the safeguarding chronology.' },
+  { icon: '🧠', title: 'Set up your SEND register', body: 'Add EHCP pupils and configure the 20-week deadline tracker.' },
+  { icon: '✉️', title: 'Enable parent communications', body: 'Connect email and SMS for letters, alerts and consultation bookings.' },
+  { icon: '📊', title: 'Run your first report', body: 'Generate an Ofsted-ready attendance or safeguarding summary.' },
+  { icon: '🚀', title: 'Go live', body: "You're ready. Switch off demo data and connect your real school tools." },
+]
+
+const SCHOOL_GS_KEY = 'lumio_school_getting_started_steps'
+
+function SchoolGettingStartedView() {
+  const [completed, setCompleted] = useState<number[]>([])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SCHOOL_GS_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) setCompleted(parsed.filter((n: unknown) => typeof n === 'number'))
+      }
+    } catch {}
+  }, [])
+
+  function toggle(index: number) {
+    setCompleted(prev => {
+      const next = prev.includes(index) ? prev.filter(n => n !== index) : [...prev, index]
+      try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
+  const done = completed.length
+  const total = SCHOOL_GS_STEPS.length
+  const pct = Math.round((done / total) * 100)
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🚀 Getting Started</h2>
+            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Finish setting up your school workspace.</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-black" style={{ color: '#2DD4BF' }}>{done}/{total}</div>
+            <div className="text-[10px]" style={{ color: '#6B7280' }}>complete</div>
+          </div>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+          <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#0D9488' }} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {SCHOOL_GS_STEPS.map((step, i) => {
+          const isDone = completed.includes(i)
+          return (
+            <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.75 : 1 }}>
+              <div className="flex items-center justify-center rounded-lg text-xl shrink-0" style={{ width: 40, height: 40, backgroundColor: isDone ? 'rgba(13,148,136,0.15)' : 'rgba(124,58,237,0.1)' }}>
+                {isDone ? '✓' : step.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold" style={{ color: '#6B7280' }}>STEP {i + 1} OF {total}</span>
+                </div>
+                <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB', textDecoration: isDone ? 'line-through' : 'none' }}>{step.title}</h3>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.body}</p>
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: isDone ? 'transparent' : '#0D9488', color: isDone ? '#9CA3AF' : '#F9FAFB', border: isDone ? '1px solid #1F2937' : 'none' }}
+                >
+                  {isDone ? 'Mark incomplete' : 'Mark complete'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SchoolDashboard({ params }: { params: Promise<{ schoolSlug: string }> }) {
@@ -1282,6 +1374,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
 
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
+  const [showSchoolGSModal, setShowSchoolGSModal] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (localStorage.getItem('lumio_school_onboarding_done') !== 'true') {
+      setShowSchoolGSModal(true)
+    }
+  }, [])
   const [dismissedDM, setDismissedDM] = useState<Set<string>>(new Set())
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
   useEffect(() => {
@@ -1291,6 +1390,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     return () => clearInterval(interval)
   }, [])
   const TABS = [
+    { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
     { id: 'today', label: 'Today', icon: '📅' },
     { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
     { id: 'tasks', label: 'Daily Tasks', icon: '✅' },
@@ -1395,6 +1495,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
           <button onClick={() => setShowSafeguardingReview(true)} className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: '#EF4444', color: '#F9FAFB' }}>Review now</button>
         </div>
       )}
+
+      {/* TAB: Getting Started */}
+      {activeTab === 'getting-started' && <SchoolGettingStartedView />}
 
       {/* TAB: Today */}
       {activeTab === 'today' && (
@@ -2056,6 +2159,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* ── Onboarding modal ────────────────────────────────────── */}
       {showOnboarding && schoolData && (
         <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />
+      )}
+
+      {/* ── Getting Started modal (first visit) ──────────────────── */}
+      {showSchoolGSModal && (
+        <GettingStartedModal
+          companyName={schoolName || 'Your school'}
+          ownerEmail={userEmail}
+          sessionToken={typeof window !== 'undefined' ? (localStorage.getItem('workspace_session_token') || '') : ''}
+          onComplete={() => {
+            try { localStorage.setItem('lumio_school_onboarding_done', 'true') } catch {}
+            setShowSchoolGSModal(false)
+          }}
+        />
       )}
 
       {/* Lockdown drill banner */}
