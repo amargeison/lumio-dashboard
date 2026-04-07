@@ -266,7 +266,7 @@ function Nav() {
               Book a Demo
             </Link>
           ) : isSchools ? (
-            <Link href="/demo/schools/oakridge-primary"
+            <Link href="/signup?portal=schools"
               className="px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
@@ -330,7 +330,7 @@ function Nav() {
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
                 onClick={() => setMobileOpen(false)}>Book a Demo</Link>
             ) : isSchools ? (
-              <Link href="/demo/schools/oakridge-primary"
+              <Link href="/signup?portal=schools"
                 className="text-sm font-semibold py-2 text-center rounded-lg"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
                 onClick={() => setMobileOpen(false)}>Free School Trial</Link>
