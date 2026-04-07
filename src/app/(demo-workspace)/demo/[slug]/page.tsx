@@ -2151,6 +2151,7 @@ function DeptRedirect({ dept, slug }: { dept: DeptId; slug: string }) {
   useEffect(() => {
     const route = DEPT_ROUTES[dept]
     if (route) {
+      try { localStorage.setItem('lumio_demo_active', 'true') } catch {}
       router.push(slug ? `/${slug}${route}` : route)
     }
   }, [dept, slug, router])
@@ -4823,7 +4824,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       setShowDemoWelcome(true)
     }
   }, [slug])
-  const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
+  const [demoDataActive, setDemoDataActive] = useState(() => {
+    if (typeof window === 'undefined') return false
+    // On any /demo/* route, force demo data on by default — no button click required.
+    if (window.location.pathname.startsWith('/demo/')) {
+      try { localStorage.setItem('lumio_demo_active', 'true') } catch {}
+      return true
+    }
+    return localStorage.getItem('lumio_demo_active') === 'true'
+  })
   const [demoRole, setDemoRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
   const [showRoleTooltip, setShowRoleTooltip] = useState(false)
   const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
