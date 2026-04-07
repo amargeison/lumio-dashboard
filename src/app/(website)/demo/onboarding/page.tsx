@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { Check, Upload, X, ArrowRight, Loader2, ChevronRight, Camera } from 'lucide-react'
+import { Check, ArrowRight, Loader2, ChevronRight } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -53,7 +52,7 @@ const BUILD_STEPS = [
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 function Steps({ current }: { current: number }) {
-  const labels = ['Your company', 'Departments', 'Your tools', 'Invite team']
+  const labels = ['Departments', 'Your tools', 'Invite team']
   return (
     <div className="flex items-center gap-0 justify-center mb-10">
       {labels.map((label, i) => {
@@ -91,20 +90,16 @@ export default function OnboardingPage() {
   const [companyId, setCompanyId]       = useState('')
   const [step, setStep]                 = useState(0)
 
-  // Step 0 — company details
+  // Company name (pre-loaded from signup, used in API call and invite placeholders)
   const [companyName, setCompanyName]   = useState('')
-  const [logoFile, setLogoFile]         = useState<File | null>(null)
-  const [logoPreview, setLogoPreview]   = useState('')
-  const [nameError, setNameError]       = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
 
-  // Step 1 — departments
+  // Step 0 — departments
   const [depts, setDepts]               = useState<string[]>([])
 
-  // Step 2 — integrations
+  // Step 1 — integrations
   const [integrations, setIntegrations] = useState<string[]>([])
 
-  // Step 3 — team invites
+  // Step 2 — team invites
   const [invites, setInvites]           = useState(['', '', '', '', ''])
 
   // Building state
@@ -126,13 +121,6 @@ export default function OnboardingPage() {
 
   // ── handlers ─────────────────────────────────────────────────────────────────
 
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setLogoFile(file)
-    setLogoPreview(URL.createObjectURL(file))
-  }
-
   function toggleDept(id: string) {
     setDepts(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id])
   }
@@ -149,19 +137,7 @@ export default function OnboardingPage() {
     setBuilding(true)
     setBuildLog([])
 
-    // Upload logo if provided
-    let logoUrl = ''
-    if (logoFile) {
-      const fd = new FormData()
-      fd.append('logo', logoFile)
-      fd.append('company_id', companyId)
-      try {
-        const r = await fetch('/api/demo/upload-logo', { method: 'POST', body: fd })
-        if (r.ok) { const d = await r.json(); logoUrl = d.url || '' }
-      } catch { /* silent */ }
-    }
-
-    // Provision workspace
+    // Provision workspace (logo was already uploaded during signup)
     let newSlug = ''
     try {
       const r = await fetch('/api/demo/provision', {
@@ -172,7 +148,6 @@ export default function OnboardingPage() {
           company_name: companyName,
           departments: depts,
           integrations,
-          logo_url: logoUrl,
           invites: invites.filter(Boolean),
         }),
       })
@@ -180,7 +155,6 @@ export default function OnboardingPage() {
         const d = await r.json()
         newSlug = d.slug || ''
         if (newSlug) localStorage.setItem('demo_company_slug', newSlug)
-        if (logoUrl) localStorage.setItem('demo_company_logo', logoUrl)
       }
     } catch { /* graceful */ }
 
@@ -192,26 +166,12 @@ export default function OnboardingPage() {
       setBuildLog(prev => [...prev, log])
     }
 
-    // Persist company + logo for the workspace to pick up
+    // Persist company name for the workspace to pick up (logo was set during signup)
     try {
       localStorage.setItem('demo_company_name', companyName)
       localStorage.setItem('lumio_company_name', companyName)
       localStorage.setItem('workspace_company_name', companyName)
-      if (logoPreview) {
-        localStorage.setItem('lumio_company_logo', logoPreview)
-        localStorage.setItem('workspace_company_logo', logoPreview)
-      }
     } catch { /* ignore quota */ }
-
-    // Post logo to workspace endpoint once build is complete
-    if (logoFile) {
-      try {
-        const fd2 = new FormData()
-        fd2.append('logo', logoFile)
-        fd2.append('company_id', companyId)
-        await fetch('/api/workspace/logo', { method: 'POST', body: fd2 })
-      } catch { /* silent */ }
-    }
 
     setBuilding(false)
     setBuildDone(true)
@@ -307,10 +267,9 @@ export default function OnboardingPage() {
               })}
             </div>
 
-            <div className="flex justify-between">
-              <button onClick={() => setStep(0)} className="text-sm" style={{ color: '#9CA3AF' }}>← Back</button>
+            <div className="flex justify-end">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => setStep(1)}
                 disabled={depts.length < 3}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
@@ -320,8 +279,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ── Step 2: Integrations ─────────────────────────────────────────── */}
-        {step === 2 && (
+        {/* ── Step 1: Integrations ─────────────────────────────────────────── */}
+        {step === 1 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold">What tools do you use today?</h1>
@@ -351,8 +310,8 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex justify-between">
-              <button onClick={() => setStep(1)} className="text-sm" style={{ color: '#9CA3AF' }}>← Back</button>
-              <button onClick={() => setStep(3)}
+              <button onClick={() => setStep(0)} className="text-sm" style={{ color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => setStep(2)}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
                 Next <ChevronRight size={16} />
@@ -361,8 +320,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ── Step 3: Invite team ──────────────────────────────────────────── */}
-        {step === 3 && (
+        {/* ── Step 2: Invite team ──────────────────────────────────────────── */}
+        {step === 2 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold">Invite your team</h1>
@@ -395,7 +354,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex justify-between">
-              <button onClick={() => setStep(2)} className="text-sm" style={{ color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => setStep(1)} className="text-sm" style={{ color: '#9CA3AF' }}>← Back</button>
               <button onClick={startBuild}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
