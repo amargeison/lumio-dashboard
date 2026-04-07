@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const isCRM = pathname?.includes('/crm')
+  const isCRM = pathname ? pathname.includes('/crm') : true
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [demoActive, setDemoActive] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_demo_active') === 'true')

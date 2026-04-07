@@ -2201,6 +2201,7 @@ function DeptRedirect({ dept, slug }: { dept: DeptId; slug: string }) {
   useEffect(() => {
     const route = DEPT_ROUTES[dept]
     if (route) {
+      try { localStorage.setItem('lumio_active_dept', dept) } catch {}
       router.push(slug ? `/${slug}${route}` : route)
     }
   }, [dept, slug, router])
