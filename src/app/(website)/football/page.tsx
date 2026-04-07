@@ -342,25 +342,184 @@ export default function FootballLanding() {
           </div>
         }
         mockup={
-          <BrowserFrame height={320}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <BrowserFrame height={520}>
+            {/* Club header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: TEXT }}>Near Post Flick-On</div>
-                <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Attacking corner · Right side</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: TEXT }}>AFC Wimbledon</div>
+                <div style={{ fontSize: 11, color: MUTED, marginTop: 2, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Tactics</div>
               </div>
-              <span style={{ padding: '4px 10px', background: 'rgba(16,185,129,0.15)', border: `1px solid ${ACCENT}`, borderRadius: 999, fontSize: 10, fontWeight: 800, color: ACCENT, letterSpacing: '0.08em' }}>
+            </div>
+            {/* Tab nav */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {['Formation Builder', 'Opposition Report', 'Set Piece Planner', 'Video Analysis', 'Dept Insights'].map((t, i) => (
+                <span key={t} style={{ padding: '5px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: i === 4 ? 'rgba(16,185,129,0.18)' : '#0F172A', border: `1px solid ${i === 4 ? ACCENT : MOCK_BORDER}`, color: i === 4 ? ACCENT : MUTED }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+            {/* KPI strip */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+              {[['Formation', '4-2-3-1'], ['Win Rate', '62%'], ['Goals Scored', '48'], ['Clean Sheets', '11']].map(([label, val]) => (
+                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 8, padding: 10 }}>
+                  <div style={{ color: MUTED, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+                  <div style={{ color: TEXT, fontSize: 16, fontWeight: 800, marginTop: 4 }}>{val}</div>
+                </div>
+              ))}
+            </div>
+            {/* Recent Formations table */}
+            <div style={{ border: `1px solid ${MOCK_BORDER}`, borderRadius: 8, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ padding: '8px 12px', background: '#0B1220', fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: `1px solid ${MOCK_BORDER}` }}>
+                Recent Formations Used
+              </div>
+              {[
+                ['4-2-3-1', '14 matches', 9, 3, 2],
+                ['4-3-3', '8 matches', 4, 2, 2],
+                ['3-5-2', '4 matches', 3, 0, 1],
+                ['4-4-2', '2 matches', 1, 1, 0],
+              ].map(([form, matches, w, d, l], i) => (
+                <div key={form as string} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: i % 2 === 0 ? '#0B1220' : '#0E1626', fontSize: 11 }}>
+                  <span style={{ color: TEXT, fontWeight: 700 }}>{form}</span>
+                  <span style={{ color: MUTED }}>{matches}</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(16,185,129,0.18)', color: ACCENT, fontSize: 10, fontWeight: 800 }}>W{w as number}</span>
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(245,158,11,0.18)', color: '#F59E0B', fontSize: 10, fontWeight: 800 }}>D{d as number}</span>
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(239,68,68,0.18)', color: '#EF4444', fontSize: 10, fontWeight: 800 }}>L{l as number}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Set piece pitch */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>Near Post Flick-On</div>
+              <span style={{ padding: '3px 9px', background: 'rgba(16,185,129,0.15)', border: `1px solid ${ACCENT}`, borderRadius: 999, fontSize: 9, fontWeight: 800, color: ACCENT, letterSpacing: '0.08em' }}>
                 INSWINGER
               </span>
             </div>
-            <div style={{ position: 'relative', height: 220, borderRadius: 10, background: 'linear-gradient(180deg, #0F4C2F 0%, #0B3A23 100%)', border: '2px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', height: 150, borderRadius: 10, background: 'linear-gradient(180deg, #0F4C2F 0%, #0B3A23 100%)', border: '2px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, background: 'rgba(255,255,255,0.25)' }} />
-              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '52%', height: 60, border: '2px solid rgba(255,255,255,0.3)', borderTop: 'none' }} />
-              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '24%', height: 28, border: '2px solid rgba(255,255,255,0.35)', borderTop: 'none' }} />
+              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '52%', height: 50, border: '2px solid rgba(255,255,255,0.3)', borderTop: 'none' }} />
+              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '24%', height: 22, border: '2px solid rgba(255,255,255,0.35)', borderTop: 'none' }} />
               {[['10%', '60%', '7'], ['38%', '40%', '9'], ['48%', '30%', '10'], ['58%', '50%', '5'], ['68%', '35%', '4'], ['78%', '60%', '11']].map(([left, top, num]) => (
-                <div key={num} style={{ position: 'absolute', left, top, width: 24, height: 24, borderRadius: '50%', background: ACCENT, color: '#04140C', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.7)', transform: 'translate(-50%, -50%)' }}>
+                <div key={num} style={{ position: 'absolute', left, top, width: 20, height: 20, borderRadius: '50%', background: ACCENT, color: '#04140C', fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.7)', transform: 'translate(-50%, -50%)' }}>
                   {num}
                 </div>
               ))}
+            </div>
+          </BrowserFrame>
+        }
+      />
+
+      {/* ── SPOTLIGHT 4 — Tactics AI Department Intelligence ── */}
+      <SpotlightSection
+        background={BG}
+        flip
+        text={
+          <div>
+            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
+              Department Intelligence
+            </div>
+            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              AI that thinks like <span style={{ color: ACCENT }}>a football person.</span>
+            </h2>
+            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
+              Every department in Lumio has its own AI intelligence layer. The Tactics module reads your formation data, opposition reports and set piece stats — then surfaces the insights that matter, before you even ask.
+            </p>
+            <BulletList items={['AI Summary per department, generated fresh daily', 'Formation performance analysis', 'Opposition vulnerability detection', 'Watch-out flags and coaching recommendations']} />
+          </div>
+        }
+        mockup={
+          <BrowserFrame height={620}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 18 }}>📊</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>Tactics — Insights Report</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>AI-generated department analysis</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <span style={{ padding: '4px 10px', borderRadius: 6, background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, color: MUTED, fontSize: 10, fontWeight: 700 }}>Export PDF</span>
+                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(16,185,129,0.15)', border: `1px solid ${ACCENT}`, color: ACCENT, fontSize: 10, fontWeight: 700 }}>Share</span>
+              </div>
+            </div>
+            {/* Time tabs */}
+            <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
+              {['Today', 'This Week', 'This Month', 'This Quarter', 'This Year'].map((t, i) => (
+                <span key={t} style={{ padding: '4px 9px', borderRadius: 5, fontSize: 9, fontWeight: 700, background: i === 2 ? 'rgba(16,185,129,0.18)' : '#0B1220', border: `1px solid ${i === 2 ? ACCENT : MOCK_BORDER}`, color: i === 2 ? ACCENT : MUTED }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+            {/* Executive Summary */}
+            <div style={{ borderLeft: '3px solid #F59E0B', background: '#0B1220', padding: '10px 12px', borderRadius: 6, marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Executive Summary</div>
+              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
+                The tactics department has delivered strong performance this month with the 4-2-3-1 formation achieving a 68% win rate. Set piece conversion remains a weakness at 14%…
+              </div>
+            </div>
+            {/* Key metrics grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
+              {[
+                ['Headcount', '192'],
+                ['Attrition Rate', '4.2%'],
+                ['Time to Hire', '23 days'],
+                ['Training', '87%'],
+                ['eNPS Score', '42'],
+                ['Leave Util.', '62%'],
+              ].map(([label, val]) => (
+                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 8 }}>
+                  <div style={{ color: MUTED, fontSize: 9 }}>{label}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 2 }}>
+                    <span style={{ color: TEXT, fontSize: 13, fontWeight: 800 }}>{val}</span>
+                    <span style={{ color: ACCENT, fontSize: 9, fontWeight: 700 }}>↑</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Top achievements */}
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Top Achievements</div>
+              {[
+                '4-2-3-1 formation delivering 68% win rate',
+                'Identified Riverside vulnerability — 34% turnover',
+                'Tactical consistency maintained across squad',
+              ].map(a => (
+                <div key={a} style={{ fontSize: 10, color: TEXT, marginTop: 4, display: 'flex', gap: 6 }}>
+                  <span style={{ color: ACCENT }}>✅</span>
+                  <span>{a}</span>
+                </div>
+              ))}
+            </div>
+            {/* AI Summary + Highlights */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>🤖 AI Summary</div>
+                {[
+                  '4-2-3-1 outperforming alternatives',
+                  'Set piece conversion below par',
+                  'High press effective vs back-three',
+                  'Opposition weak on right channel',
+                ].map(s => (
+                  <div key={s} style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>• {s}</div>
+                ))}
+                <div style={{ marginTop: 6, padding: '4px 8px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 4, fontSize: 9, color: '#F59E0B', fontWeight: 700 }}>
+                  ⚠ Don&apos;t abandon 4-2-3-1 structure
+                </div>
+              </div>
+              <div style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>✨ Key Highlights</div>
+                {[
+                  'Win rate up 12% vs last month',
+                  'Clean sheets doubled vs Q3',
+                  'Set piece routines: 90+ live',
+                  'Opposition reports auto-tagged',
+                  'Squad rotation balanced',
+                ].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{i + 1}. {h}</div>
+                ))}
+              </div>
             </div>
           </BrowserFrame>
         }
