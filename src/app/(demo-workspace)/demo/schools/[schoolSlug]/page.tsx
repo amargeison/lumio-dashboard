@@ -12,6 +12,7 @@ import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
+import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import { SCHOOL_DEMO } from '@/lib/schoolDemoData'
@@ -1206,40 +1207,86 @@ function OnboardingModal({
 
 // ─── Getting Started checklist ───────────────────────────────────────────────
 
+type SchoolGSAction =
+  | 'complete'
+  | 'lockdown'
+  | 'safeguarding'
+  | 'attendance'
+  | 'insights'
+  | 'trips'
+  | 'send'
+  | 'logo'
+  | 'photo'
+  | 'invite'
+
 interface SchoolGSStep {
+  id: string
   icon: string
   title: string
-  body: string
-  actionLabel: string
-  onAction: (markComplete: () => void) => void
+  subtitle: string
+  buttonLabel: string
+  buttonAction: SchoolGSAction
 }
+
+const SCHOOL_GS_STEPS: SchoolGSStep[] = [
+  { id: 'welcome', icon: '🏫', title: 'Welcome to Lumio for Schools',
+    subtitle: 'Your demo is fully loaded with real sample data — 1,147 pupils, 89 staff, live alerts. No setup needed. Just explore.',
+    buttonLabel: 'Start exploring', buttonAction: 'complete' },
+  { id: 'lockdown', icon: '🔴', title: 'Try School Lockdown',
+    subtitle: 'One button alerts every staff member instantly and locks down the building. Try it now — demo mode, nothing real happens.',
+    buttonLabel: 'Trigger lockdown', buttonAction: 'lockdown' },
+  { id: 'safeguarding', icon: '🛡️', title: 'Review a safeguarding concern',
+    subtitle: "There's 1 open concern in your demo. See how DSL review, chronology logging and escalation to external agencies works.",
+    buttonLabel: 'Review concern', buttonAction: 'safeguarding' },
+  { id: 'attendance', icon: '📋', title: "Check today's attendance",
+    subtitle: '96.2% whole-school attendance today. Year 6 is below target. See registers by year group and flag unexplained absences.',
+    buttonLabel: 'View attendance', buttonAction: 'attendance' },
+  { id: 'insights', icon: '📊', title: 'Explore Insights by role',
+    subtitle: 'Switch between Headteacher, SENCO, and Governor views. Every role sees a completely different — and relevant — dashboard.',
+    buttonLabel: 'Open Insights', buttonAction: 'insights' },
+  { id: 'trips', icon: '✈️', title: 'Plan a school trip',
+    subtitle: 'Risk assessments, consent forms, payment tracking and staff:pupil ratios — all built in. Ofsted-ready in minutes.',
+    buttonLabel: 'Open Trip Planner', buttonAction: 'trips' },
+  { id: 'send', icon: '🎓', title: 'See the SEND register',
+    subtitle: 'EHCP pupils with 20-week deadline tracking, provision mapping, and the 2026 SEND White Paper readiness checker.',
+    buttonLabel: 'View SEND', buttonAction: 'send' },
+  { id: 'logo', icon: '🏷️', title: 'Add your school logo',
+    subtitle: 'Upload your crest and it appears across every page — in the banner, sidebar, and on exported reports.',
+    buttonLabel: 'Upload logo', buttonAction: 'logo' },
+  { id: 'photo', icon: '📷', title: 'Add your profile photo',
+    subtitle: 'Your photo appears in the top corner and on your staff card. Personalise your view in seconds.',
+    buttonLabel: 'Add photo', buttonAction: 'photo' },
+  { id: 'invite', icon: '👥', title: 'Invite your team',
+    subtitle: 'Add your headteacher, SENCO, office manager or governors. Everyone gets their own magic link and sees their role-based view.',
+    buttonLabel: 'Invite staff', buttonAction: 'invite' },
+]
 
 const SCHOOL_GS_KEY = 'lumio_school_getting_started_steps'
 
-function SchoolGettingStartedView({ steps }: { steps: SchoolGSStep[] }) {
-  const [completed, setCompleted] = useState<number[]>([])
+function SchoolGettingStartedView({ onAction }: { onAction: (action: SchoolGSAction, markDone: () => void) => void }) {
+  const [completed, setCompleted] = useState<string[]>([])
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SCHOOL_GS_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) setCompleted(parsed.filter((n: unknown) => typeof n === 'number'))
+        if (Array.isArray(parsed)) setCompleted(parsed.filter((x: unknown) => typeof x === 'string'))
       }
     } catch {}
   }, [])
 
-  function markComplete(index: number) {
+  function markComplete(id: string) {
     setCompleted(prev => {
-      if (prev.includes(index)) return prev
-      const next = [...prev, index]
+      if (prev.includes(id)) return prev
+      const next = [...prev, id]
       try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
       return next
     })
   }
 
+  const total = SCHOOL_GS_STEPS.length
   const done = completed.length
-  const total = steps.length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
 
   return (
@@ -1261,10 +1308,10 @@ function SchoolGettingStartedView({ steps }: { steps: SchoolGSStep[] }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {steps.map((step, i) => {
-          const isDone = completed.includes(i)
+        {SCHOOL_GS_STEPS.map((step, i) => {
+          const isDone = completed.includes(step.id)
           return (
-            <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.8 : 1 }}>
+            <div key={step.id} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.8 : 1 }}>
               <div className="flex items-center justify-center rounded-lg text-xl shrink-0" style={{ width: 40, height: 40, backgroundColor: isDone ? 'rgba(13,148,136,0.15)' : 'rgba(124,58,237,0.1)' }}>
                 {isDone ? '✓' : step.icon}
               </div>
@@ -1273,14 +1320,14 @@ function SchoolGettingStartedView({ steps }: { steps: SchoolGSStep[] }) {
                   <span className="text-[10px] font-bold" style={{ color: '#6B7280' }}>STEP {i + 1} OF {total}</span>
                 </div>
                 <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB', textDecoration: isDone ? 'line-through' : 'none' }}>{step.title}</h3>
-                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.body}</p>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.subtitle}</p>
                 <button
                   type="button"
-                  onClick={() => step.onAction(() => markComplete(i))}
+                  onClick={() => onAction(step.buttonAction, () => markComplete(step.id))}
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg"
                   style={{ backgroundColor: isDone ? 'transparent' : '#0D9488', color: isDone ? '#9CA3AF' : '#F9FAFB', border: isDone ? '1px solid #1F2937' : 'none' }}
                 >
-                  {isDone ? '✓ Done' : step.actionLabel}
+                  {isDone ? '✓ Done' : step.buttonLabel}
                 </button>
               </div>
             </div>
@@ -1414,10 +1461,80 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const [showSchoolGSModal, setShowSchoolGSModal] = useState(false)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (localStorage.getItem('lumio_school_onboarding_done') !== 'true') {
+    const key = `lumio_school_onboarding_done_${_slug}`
+    const demoLoaded = localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    if (demoLoaded && localStorage.getItem(key) !== 'true') {
       setShowSchoolGSModal(true)
     }
+  }, [_slug])
+  function handleSchoolGSModalComplete() {
+    try { localStorage.setItem(`lumio_school_onboarding_done_${_slug}`, 'true') } catch {}
+    setShowSchoolGSModal(false)
+  }
+
+  // User photo (top-right avatar) — mirrors business demo
+  const [userPhoto, setUserPhoto] = useState<string | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = localStorage.getItem('lumio_user_photo')
+    if (stored) setUserPhoto(stored)
+    function onAvatarUpdated(e: Event) {
+      const ce = e as CustomEvent
+      const detail = ce.detail
+      const url = typeof detail === 'string' ? detail : detail?.url
+      if (typeof url === 'string' && (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:'))) {
+        setUserPhoto(url)
+        try { localStorage.setItem('lumio_user_photo', url) } catch {}
+      }
+    }
+    window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
+    return () => window.removeEventListener('lumio-avatar-updated', onAvatarUpdated)
   }, [])
+  const userPhotoInputRef = useRef<HTMLInputElement>(null)
+  async function handleUserPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) return
+    const blobUrl = URL.createObjectURL(file)
+    setUserPhoto(blobUrl)
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('workspace_session_token') || '') : ''
+      const userEmailLocal = typeof window !== 'undefined' ? (localStorage.getItem('lumio_user_email') || '') : ''
+      if (token && userEmailLocal) {
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('email', userEmailLocal)
+        const res = await fetch('/api/workspace/upload-profile-photo', { method: 'POST', headers: { 'x-workspace-token': token }, body: fd })
+        const data = await res.json().catch(() => null)
+        if (data?.url) {
+          setUserPhoto(data.url)
+          try { localStorage.setItem('lumio_user_photo', data.url) } catch {}
+          try { window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: data.url } })) } catch {}
+          URL.revokeObjectURL(blobUrl)
+        }
+      }
+    } catch { /* silent — blob preview still works */ }
+  }
+
+  // School logo upload (triggered by "Upload logo" step button)
+  const schoolLogoInputRef = useRef<HTMLInputElement>(null)
+  async function handleSchoolLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string
+      if (!src) return
+      try {
+        localStorage.setItem('lumio_school_logo', src)
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: src } }))
+      } catch { /* silent */ }
+    }
+    reader.readAsDataURL(file)
+  }
   const [dismissedDM, setDismissedDM] = useState<Set<string>>(new Set())
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
   useEffect(() => {
@@ -1536,28 +1653,30 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* TAB: Getting Started */}
       {activeTab === 'getting-started' && (
         <SchoolGettingStartedView
-          steps={[
-            { icon: '🏫', title: 'Welcome to Lumio for Schools', body: 'Your school demo is fully loaded. Explore every feature with real sample data — no setup needed.', actionLabel: 'Start exploring →',
-              onAction: (done) => { done() } },
-            { icon: '🔴', title: 'Try School Lockdown', body: 'One button puts your whole school into lockdown — staff are alerted instantly. Try it now (demo mode, nothing real happens).', actionLabel: 'Trigger lockdown',
-              onAction: (done) => { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance'); done() } },
-            { icon: '🛡️', title: 'Review a safeguarding concern', body: "There's 1 open concern in your demo. See how DSL review, chronology and escalation works.", actionLabel: 'Review now',
-              onAction: (done) => { setShowSafeguardingReview(true); done() } },
-            { icon: '📋', title: "Check today's attendance", body: 'See live attendance by year group, flag absences, and mark the register — all in one place.', actionLabel: 'View attendance',
-              onAction: (done) => { setShowMarkRegister(true); done() } },
-            { icon: '📊', title: 'Explore Insights by role', body: 'Switch between Headteacher, SENCO, and Governor views. Every role sees exactly what they need.', actionLabel: 'Open Insights',
-              onAction: (done) => { setActiveTab('insights'); done() } },
-            { icon: '✈️', title: 'Plan a school trip', body: 'Risk assessments, consent forms, payment tracking and staff:pupil ratios — all in the Trip Planner.', actionLabel: 'Open Trip Planner',
-              onAction: (done) => { setShowRiskAssessment(true); done() } },
-            { icon: '🎓', title: 'See the SEND register', body: 'EHCP pupils, 20-week deadline tracker, provision mapping and the new SEND White Paper readiness check.', actionLabel: 'View SEND',
-              onAction: (done) => { setShowReferSenco(true); done() } },
-            { icon: '🏷️', title: 'Add your school logo', body: 'Make the portal feel like yours — upload your crest and it appears across every page.', actionLabel: 'Upload logo',
-              onAction: (done) => { setShowLiveOnboarding(true); done() } },
-            { icon: '📷', title: 'Add your photo', body: 'Add a personal touch — your photo appears in the top corner and on your staff card.', actionLabel: 'Add photo',
-              onAction: (done) => { setShowSchoolGSModal(true); done() } },
-            { icon: '👥', title: 'Invite your team', body: 'Add your headteacher, SENCO, office manager or governors. Everyone gets their own magic link and role-based view.', actionLabel: 'Invite staff',
-              onAction: (done) => { setShowSchoolGSModal(true); done() } },
-          ]}
+          onAction={(action, markDone) => {
+            switch (action) {
+              case 'complete':
+                markDone(); break
+              case 'lockdown':
+                setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance'); markDone(); break
+              case 'safeguarding':
+                setShowSafeguardingReview(true); markDone(); break
+              case 'attendance':
+                setShowMarkRegister(true); markDone(); break
+              case 'insights':
+                setActiveTab('insights'); markDone(); break
+              case 'trips':
+                setShowRiskAssessment(true); markDone(); break
+              case 'send':
+                setShowReferSenco(true); markDone(); break
+              case 'logo':
+                schoolLogoInputRef.current?.click(); markDone(); break
+              case 'photo':
+                userPhotoInputRef.current?.click(); markDone(); break
+              case 'invite':
+                setShowSchoolGSModal(true); markDone(); break
+            }
+          }}
         />
       )}
 
@@ -2223,18 +2342,28 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />
       )}
 
-      {/* ── Getting Started modal (first visit) ──────────────────── */}
+      {/* ── Getting Started modal (first visit / invite team) ───── */}
       {showSchoolGSModal && (
         <GettingStartedModal
           companyName={schoolName || 'Your school'}
           ownerEmail={userEmail}
           sessionToken={typeof window !== 'undefined' ? (localStorage.getItem('workspace_session_token') || '') : ''}
-          onComplete={() => {
-            try { localStorage.setItem('lumio_school_onboarding_done', 'true') } catch {}
-            setShowSchoolGSModal(false)
-          }}
+          onComplete={handleSchoolGSModalComplete}
         />
       )}
+
+      {/* ── Hidden file inputs for Getting Started button actions ─ */}
+      <input ref={userPhotoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUserPhotoUpload} />
+      <input ref={schoolLogoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleSchoolLogoUpload} />
+
+      {/* ── Top-right avatar ─────────────────────────────────────── */}
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 60 }}>
+        <AvatarDropdown
+          initials={(firstName || userName || userEmail || 'U').slice(0, 2).toUpperCase()}
+          settingsHref={`/demo/schools/${_slug}`}
+          photoUrl={userPhoto}
+        />
+      </div>
 
       {/* Lockdown drill banner */}
       {lockdownBanner && (
