@@ -117,22 +117,22 @@ function Nav() {
       }}
     >
       <div
-        className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
-        style={isSports ? { minHeight: 100 } : isSchools ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', width: '100%', minHeight: 80, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 32px', width: '100%', minHeight: 80, overflow: 'hidden' }}
+        className={`w-full mx-auto flex max-w-7xl items-center ${isSports ? 'px-6 py-2 justify-between' : ''}`}
+        style={isSports ? { minHeight: 100 } : { display: 'flex', alignItems: 'center', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 80 }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginLeft: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
+        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '36px' : '120px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+            style={{ height: isSports ? '36px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
         </Link>
 
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 } : { display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 1, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 1, overflow: 'hidden' }}>
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
-              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 text-base font-medium'}`}
-              style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : {}) }}
+              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
+              style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
               {l.label}
@@ -147,7 +147,7 @@ function Nav() {
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center" style={isSports ? { gap: 8, flexShrink: 0 } : isSchools ? { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 } : { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 32 }}>
+        <div className="hidden md:flex items-center" style={isSports ? { gap: 8, flexShrink: 0 } : { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto' }}>
           {!isSports && (
             <button
               type="button"
@@ -204,15 +204,15 @@ function Nav() {
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
               Request Access
             </Link>
-          ) : (
-            <Link href={isSchools ? '/schools/checkout' : '/buy'}
-              className={isSchools ? 'px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors' : 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors'}
+          ) : isSchools ? (
+            <Link href="/schools/checkout"
+              className="px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors"
               style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
               Buy Now
             </Link>
-          )}
+          ) : null}
           <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
             className={isSchools ? 'px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors' : 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors'}
             style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
