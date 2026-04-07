@@ -30,6 +30,17 @@ import OverviewActionModal from '@/components/demo/OverviewActionModal'
 import { ClaimExpenseModal, BookHolidayModal, ReportSicknessModal } from '@/components/modals/StaffModals'
 import { useVoiceCommands, type VoiceCommandResult } from '@/hooks/useVoiceCommands'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
+import dynamic from 'next/dynamic'
+const HRPage = dynamic(() => import('@/app/(dashboard)/hr/page'), { ssr: false })
+const AccountsPage = dynamic(() => import('@/app/(dashboard)/accounts/page'), { ssr: false })
+const InsightsPage = dynamic(() => import('@/app/(dashboard)/insights/page'), { ssr: false })
+const SalesPage = dynamic(() => import('@/app/(dashboard)/sales/page'), { ssr: false })
+const OperationsPage = dynamic(() => import('@/app/(dashboard)/operations/page'), { ssr: false })
+const MarketingPage = dynamic(() => import('@/app/(dashboard)/marketing/page'), { ssr: false })
+const SupportPage = dynamic(() => import('@/app/(dashboard)/support/page'), { ssr: false })
+const TrialsPage = dynamic(() => import('@/app/(dashboard)/trials/page'), { ssr: false })
+const WorkflowsPage = dynamic(() => import('@/app/(dashboard)/workflows/page'), { ssr: false })
+const CRMPage = dynamic(() => import('@/app/(dashboard)/crm/dashboard/page'), { ssr: false })
 import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
 import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
 import Insights from '@/app/(dashboard)/overview/components/Insights'
@@ -5500,7 +5511,17 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} dismissedWins={dismissedWins} onDismissWin={handleDismissWin} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && (
+            {activeDept === 'hr' && <HRPage />}
+            {activeDept === 'accounts' && <AccountsPage />}
+            {activeDept === 'insights' && <InsightsPage />}
+            {activeDept === 'sales' && <SalesPage />}
+            {activeDept === 'operations' && <OperationsPage />}
+            {activeDept === 'marketing' && <MarketingPage />}
+            {activeDept === 'support' && <SupportPage />}
+            {activeDept === 'trials' && <TrialsPage />}
+            {activeDept === 'workflows' && <WorkflowsPage />}
+            {activeDept === 'crm' && <CRMPage />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'insights' && activeDept !== 'sales' && activeDept !== 'operations' && activeDept !== 'marketing' && activeDept !== 'support' && activeDept !== 'trials' && activeDept !== 'workflows' && activeDept !== 'crm' && (
               <ComingSoonView dept={activeDept} />
             )}
           </main>
