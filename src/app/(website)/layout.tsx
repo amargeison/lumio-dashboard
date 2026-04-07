@@ -120,6 +120,12 @@ function Nav() {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
+  useEffect(() => {
+    const openHandler = () => setShowEarlyAccess(true)
+    window.addEventListener('lumio-open-early-access', openHandler)
+    return () => window.removeEventListener('lumio-open-early-access', openHandler)
+  }, [])
+
   return (
     <>
     {showBetaBanner && (

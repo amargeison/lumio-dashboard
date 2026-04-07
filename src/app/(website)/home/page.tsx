@@ -614,12 +614,12 @@ export default function HomePage() {
         </div>
         {/* CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <button onClick={() => setShowTellMore(true)}
-            className="px-7 py-3.5 rounded-lg text-sm font-medium"
-            style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#F9FAFB'; el.style.borderColor = '#374151' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#9CA3AF'; el.style.borderColor = '#1F2937' }}>
-            Tell me more
+          <button onClick={() => window.dispatchEvent(new CustomEvent('lumio-open-early-access'))}
+            className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+            style={{ border: '1px solid #0D9488', color: '#0D9488', backgroundColor: 'transparent' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.1)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}>
+            Early Access <ArrowRight size={16} />
           </button>
           <button onClick={() => setShowDemoModal(true)}
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
