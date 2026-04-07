@@ -3823,135 +3823,432 @@ function SnapshotWidgets() {
   )
 }
 
-// ─── Getting Started (Demo) ──────────────────────────────────────────────────
+// ─── Getting Started (Demo) — 8-step guided product tour ───────────────────
 
-const DEMO_GS_STEP_IDS = [
-  'logo', 'company-name', 'photo', 'demo-data',
-  'quick-action', 'morning-roundup', 'meetings-today', 'role-switcher',
-  'visit-crm', 'view-insights', 'view-team', 'check-dont-miss',
-  'apply-early-access', 'book-call',
-] as const
+const TOUR_TOTAL_STEPS = 8
 
-type DemoGSStepId = typeof DEMO_GS_STEP_IDS[number]
-
-function readDemoGSState(): Record<string, boolean> {
-  if (typeof window === 'undefined') return {}
-  try { return JSON.parse(localStorage.getItem('lumio_demo_gs_state') || '{}') } catch { return {} }
+function getTourSlug(): string {
+  if (typeof window === 'undefined') return ''
+  return localStorage.getItem('lumio_workspace_slug')
+    || (window.location.pathname.split('/').filter(Boolean)[1] || '')
 }
 
-function writeDemoGSState(state: Record<string, boolean>) {
+function readTourStep(slug: string): number {
+  if (typeof window === 'undefined') return 1
+  try {
+    const raw = localStorage.getItem(`demo_tour_step_${slug}`)
+    const n = raw ? parseInt(raw, 10) : 1
+    return Number.isFinite(n) && n >= 1 && n <= TOUR_TOTAL_STEPS ? n : 1
+  } catch { return 1 }
+}
+
+function writeTourStep(slug: string, n: number) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem('lumio_demo_gs_state', JSON.stringify(state)) } catch {}
+  try { localStorage.setItem(`demo_tour_step_${slug}`, String(n)) } catch {}
 }
 
-function isDemoGSStepComplete(id: DemoGSStepId, state: Record<string, boolean>): boolean {
-  if (state[id]) return true
+function isTourComplete(slug: string): boolean {
   if (typeof window === 'undefined') return false
-  if (id === 'logo') return !!(localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo'))
-  if (id === 'photo') return !!localStorage.getItem('lumio_user_photo')
-  if (id === 'demo-data') return true // demo workspace always has data
-  return false
+  return localStorage.getItem(`demo_tour_complete_${slug}`) === 'true'
+}
+
+function markTourComplete(slug: string) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(`demo_tour_complete_${slug}`, 'true')
+    window.dispatchEvent(new CustomEvent('lumio-tour-updated'))
+  } catch {}
 }
 
 function computeDemoGSRemaining(): number {
-  if (typeof window === 'undefined') return DEMO_GS_STEP_IDS.length
-  const state = readDemoGSState()
-  let done = 0
-  DEMO_GS_STEP_IDS.forEach((id: DemoGSStepId) => { if (isDemoGSStepComplete(id, state)) done++ })
-  return DEMO_GS_STEP_IDS.length - done
+  if (typeof window === 'undefined') return TOUR_TOTAL_STEPS
+  const slug = getTourSlug()
+  if (isTourComplete(slug)) return 0
+  const step = readTourStep(slug)
+  return Math.max(0, TOUR_TOTAL_STEPS - step + 1)
 }
 
-function GettingStartedView({ onTabChange, onGoSettings, onShowEarlyAccess }: { onTabChange: (t: OverviewTab) => void; onGoSettings?: () => void; onShowEarlyAccess?: () => void }) {
-  const [, forceTick] = useState(0)
-  const state = readDemoGSState()
+type TourCtx = {
+  next: () => void
+  finish: () => void
+  onTabChange: (t: OverviewTab) => void
+}
+type TourStep = {
+  num: number
+  icon: string
+  title: string
+  body: string
+  visual?: React.ReactNode
+  primary?: { label: string; run: (ctx: TourCtx) => void }
+  secondary?: { label: string; run: (ctx: TourCtx) => void }
+}
 
-  const markComplete = (id: DemoGSStepId) => {
-    const next = { ...readDemoGSState(), [id]: true }
-    writeDemoGSState(next)
-    forceTick(n => n + 1)
+function GettingStartedView({ onTabChange, onGoSettings: _onGoSettings, onShowEarlyAccess: _onShowEarlyAccess }: { onTabChange: (t: OverviewTab) => void; onGoSettings?: () => void; onShowEarlyAccess?: () => void }) {
+  const [slug, setSlug] = useState('')
+  const [step, setStep] = useState(1)
+  const [completed, setCompleted] = useState(false)
+
+  useEffect(() => {
+    const s = getTourSlug()
+    setSlug(s)
+    if (isTourComplete(s)) {
+      setCompleted(true)
+      setStep(TOUR_TOTAL_STEPS)
+    } else {
+      setStep(readTourStep(s))
+    }
+  }, [])
+
+  function goToStep(n: number) {
+    const clamped = Math.max(1, Math.min(TOUR_TOTAL_STEPS, n))
+    setStep(clamped)
+    if (slug) writeTourStep(slug, clamped)
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-tour-updated'))
+  }
+  const next = () => goToStep(step + 1)
+  const back = () => goToStep(step - 1)
+  const finish = () => {
+    if (slug) markTourComplete(slug)
+    setCompleted(true)
+  }
+  const skipTour = () => finish()
+  const restartTour = () => {
+    if (slug) {
+      try { localStorage.removeItem(`demo_tour_complete_${slug}`) } catch {}
+      writeTourStep(slug, 1)
+    }
+    setCompleted(false)
+    setStep(1)
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-tour-updated'))
   }
 
-  const sections: Array<{ title: string; steps: Array<{ id: DemoGSStepId; label: string; action?: () => void }> }> = [
+  const ctx: TourCtx = { next, finish, onTabChange }
+
+  const STEPS: TourStep[] = [
     {
-      title: 'Your Workspace',
-      steps: [
-        { id: 'logo', label: 'Add your company logo', action: () => { markComplete('logo'); if (onGoSettings) onGoSettings() } },
-        { id: 'company-name', label: 'Set your company name', action: () => { markComplete('company-name'); if (onGoSettings) onGoSettings() } },
-        { id: 'photo', label: 'Add your photo', action: () => { markComplete('photo'); window.dispatchEvent(new CustomEvent('lumio-open-photo-step')) } },
-        { id: 'demo-data', label: 'Explore demo data' },
-      ],
+      num: 1,
+      icon: '🏠',
+      title: 'Your command centre',
+      body: 'Everything your business needs, in one place. No more switching between 6 different tools. Lumio connects your people, your data, and your day.',
+      visual: (
+        <div style={{
+          background: 'linear-gradient(135deg, #1A0D3D 0%, #6C3FC5 60%, #8B5CF6 100%)',
+          borderRadius: 12, padding: 20, color: '#FFFFFF',
+          boxShadow: '0 16px 40px rgba(108,63,197,0.35)',
+        }}>
+          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 1, marginBottom: 6 }}>GOOD MORNING</div>
+          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Welcome back 👋</div>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>3 meetings · 7 unread · 2 urgent items</div>
+        </div>
+      ),
+      primary: { label: "Let's explore →", run: c => c.next() },
     },
     {
-      title: 'Daily Operations',
-      steps: [
-        { id: 'quick-action', label: 'Try a Quick Action button', action: () => markComplete('quick-action') },
-        { id: 'morning-roundup', label: 'Check your Morning Roundup', action: () => { markComplete('morning-roundup'); onTabChange('today') } },
-        { id: 'meetings-today', label: 'View Meetings Today', action: () => { markComplete('meetings-today'); onTabChange('today') } },
-        { id: 'role-switcher', label: 'Try the role switcher (Admin/Director/Manager/Standard)', action: () => markComplete('role-switcher') },
-      ],
+      num: 2,
+      icon: '☀️',
+      title: 'Start every day informed',
+      body: 'Your Morning Roundup pulls together emails, Slack messages, Teams notifications, and SMS — all before your first coffee. No more tab switching just to find out what happened overnight.',
+      visual: (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+          {[
+            { icon: '📧', label: 'Email', count: 12, color: '#3B82F6' },
+            { icon: '💬', label: 'Slack', count: 7,  color: '#22C55E' },
+            { icon: '👥', label: 'Teams', count: 4,  color: '#A78BFA' },
+            { icon: '📱', label: 'SMS',   count: 2,  color: '#F59E0B' },
+          ].map(s => (
+            <div key={s.label} style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: '#D1D5DB' }}><span style={{ marginRight: 6 }}>{s.icon}</span>{s.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: s.color }}>{s.count}</span>
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'See how it works →', run: c => { c.onTabChange('today'); c.next() } },
     },
     {
-      title: 'Explore the Platform',
-      steps: [
-        { id: 'visit-crm', label: 'Visit the CRM', action: () => markComplete('visit-crm') },
-        { id: 'view-insights', label: 'Check the Insights dashboard', action: () => { markComplete('view-insights'); onTabChange('insights') } },
-        { id: 'view-team', label: 'View Team Info and employee cards', action: () => { markComplete('view-team'); onTabChange('team') } },
-        { id: 'check-dont-miss', label: "Try the Don't Miss alerts", action: () => { markComplete('check-dont-miss'); onTabChange('not-to-miss') } },
-      ],
+      num: 3,
+      icon: '⚡',
+      title: 'Your most-used actions, one click away',
+      body: 'Book a meeting, claim expenses, request sign-off, onboard a new starter — all from the quick action bar. No forms, no hunting through menus.',
+      visual: (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {['📧 Email','📅 Meeting','📞 Call','💸 Expense','🏖 Holiday','🤒 Sick','📝 Sign-off','👤 Onboard'].map(label => (
+            <span key={label} style={{ fontSize: 12, fontWeight: 600, color: '#A78BFA', backgroundColor: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', padding: '6px 12px', borderRadius: 999 }}>
+              {label}
+            </span>
+          ))}
+        </div>
+      ),
+      primary: { label: 'Try clicking one →', run: c => c.next() },
     },
     {
-      title: 'Ready for the real thing?',
-      steps: [
-        { id: 'apply-early-access', label: 'Apply for early access', action: () => { markComplete('apply-early-access'); window.location.href = 'mailto:hello@lumiocms.com' } },
-        { id: 'book-call', label: 'Book a setup call', action: () => { markComplete('book-call'); if (onShowEarlyAccess) onShowEarlyAccess() } },
-      ],
+      num: 4,
+      icon: '🏢',
+      title: 'Every department. One sidebar.',
+      body: 'HR, Sales, Finance, Marketing, Support, IT — each department has its own workspace. Click any department in the sidebar to explore it.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {[
+              { icon: '👥', label: 'HR' },
+              { icon: '💰', label: 'Sales' },
+              { icon: '📊', label: 'Finance' },
+              { icon: '📣', label: 'Marketing' },
+              { icon: '🎧', label: 'Support' },
+              { icon: '💻', label: 'IT' },
+            ].map(d => (
+              <div key={d.label} style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14 }}>{d.icon}</span>
+                <span style={{ fontSize: 11, color: '#D1D5DB', fontWeight: 600 }}>{d.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+      primary: { label: 'Explore a department →', run: c => c.next() },
+    },
+    {
+      num: 5,
+      icon: '👥',
+      title: 'Your people, front and centre',
+      body: "See your whole team at a glance. FIFA-style cards show who's who, their role, and their stats. Add your photo to personalise your card.",
+      visual: (
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          {[
+            { rating: 92, name: 'YOU',         pos: 'EXEC', color: '#8B5CF6' },
+            { rating: 88, name: 'PRIYA NAIR',  pos: 'MKT',  color: '#0D9488' },
+            { rating: 85, name: 'MARCUS WEBB', pos: 'SALES',color: '#F59E0B' },
+          ].map(c => (
+            <div key={c.name} style={{
+              width: 90, height: 130, borderRadius: 10,
+              background: `linear-gradient(155deg, ${c.color} 0%, #3B1D6B 70%, #1A0D3D 100%)`,
+              border: '1px solid rgba(255,255,255,0.18)',
+              padding: 8, color: '#FFFFFF',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{c.rating}</div>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 800, textAlign: 'center' }}>{c.name}</div>
+                <div style={{ fontSize: 8, opacity: 0.7, textAlign: 'center' }}>{c.pos}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'Meet your team →', run: c => { c.onTabChange('team'); c.next() } },
+    },
+    {
+      num: 6,
+      icon: '📊',
+      title: 'Data that actually makes sense',
+      body: "No more spreadsheets. Lumio's Insights tab shows your key metrics — revenue, team performance, customer health — in one clear dashboard.",
+      visual: (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {[
+            { label: 'Revenue', value: '£86k', trend: '+12%', color: '#22C55E' },
+            { label: 'Pipeline', value: '£238k', trend: '+8%',  color: '#A78BFA' },
+            { label: 'Health',   value: '94%',   trend: '+2%',  color: '#0D9488' },
+          ].map(s => (
+            <div key={s.label} style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#F9FAFB' }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: '#6B7280' }}>{s.label}</div>
+              <div style={{ fontSize: 10, color: s.color, fontWeight: 700, marginTop: 4 }}>{s.trend}</div>
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'Check your insights →', run: c => { c.onTabChange('insights'); c.next() } },
+    },
+    {
+      num: 7,
+      icon: '🔴',
+      title: 'Nothing falls through the cracks',
+      body: "The Don't Miss tab surfaces the things that need your attention right now — overdue invoices, unsigned contracts, pending approvals. Critical things, not noise.",
+      visual: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { icon: '💸', label: '3 invoices overdue',     sub: '£12,400 total',                     color: '#EF4444' },
+            { icon: '📝', label: '2 contracts unsigned',   sub: 'Awaiting Bramblewood, Northgate',   color: '#F59E0B' },
+            { icon: '✅', label: '1 approval pending',      sub: 'Tilly Brooks — holiday request',   color: '#A78BFA' },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 12px' }}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: '#F9FAFB', fontWeight: 600 }}>{item.label}</div>
+                <div style={{ fontSize: 10, color: '#6B7280' }}>{item.sub}</div>
+              </div>
+              <div style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: item.color }} />
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'See what needs attention →', run: c => { c.onTabChange('not-to-miss'); c.next() } },
+    },
+    {
+      num: 8,
+      icon: '🚀',
+      title: "You're ready! 🚀",
+      body: "That's the tour. Lumio has a lot more to explore — every department, every tool, every integration. Dive in and have a play.\n\nAnd if you want to see Lumio with YOUR real data — book a free setup call and we'll load everything in for a 2-week trial.",
+      primary: { label: 'Start exploring →', run: c => c.finish() },
+      secondary: { label: 'Apply for 6 months free', run: () => { window.location.href = 'mailto:hello@lumiocms.com?subject=Early%20Access%20Application' } },
     },
   ]
 
-  const totalSteps = DEMO_GS_STEP_IDS.length
-  const completedSteps = DEMO_GS_STEP_IDS.filter((id: DemoGSStepId) => isDemoGSStepComplete(id, state)).length
-  const pct = Math.round((completedSteps / totalSteps) * 100)
+  const current = STEPS[step - 1]
+  const pct = Math.round((step / TOUR_TOTAL_STEPS) * 100)
 
-  return (
-    <div className="space-y-6">
-      {/* Header card */}
-      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '1px solid rgba(124,58,237,0.3)' }}>
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-3xl">🚀</span>
-          <div>
-            <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Getting Started</h2>
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>Finish setting up your demo workspace — {completedSteps} of {totalSteps} complete</p>
-          </div>
-        </div>
-        <div className="w-full bg-gray-800 rounded-full h-2 mt-4">
-          <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#7C3AED' }} />
+  if (completed) {
+    return (
+      <div className="mx-auto" style={{ maxWidth: 720, padding: '40px 20px', textAlign: 'center' }}>
+        <div style={{ fontSize: 56, marginBottom: 12 }}>🚀</div>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: '#F9FAFB', marginBottom: 12 }}>Tour complete</h2>
+        <p style={{ fontSize: 15, color: '#9CA3AF', lineHeight: 1.6, marginBottom: 28, maxWidth: 520, margin: '0 auto 28px' }}>
+          You&apos;ve seen the tour. Lumio has a lot more under the hood — explore every department, tool and integration. And whenever you&apos;re ready for your real data, we&apos;re here.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <a
+            href="mailto:hello@lumiocms.com?subject=Early%20Access%20Application"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 22px', borderRadius: 10, backgroundColor: '#0D9488', color: '#FFFFFF', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
+          >
+            Apply for 6 months free
+          </a>
+          <button
+            type="button"
+            onClick={restartTour}
+            style={{ padding: '12px 22px', borderRadius: 10, backgroundColor: 'transparent', color: '#9CA3AF', border: '1px solid #1F2937', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Restart tour
+          </button>
         </div>
       </div>
+    )
+  }
 
-      {/* Sections */}
-      {sections.map((section: typeof sections[0]) => (
-        <div key={section.title} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#A78BFA' }}>{section.title}</h3>
-          <div className="space-y-2">
-            {section.steps.map((step: { id: DemoGSStepId; label: string; action?: () => void }) => {
-              const done = isDemoGSStepComplete(step.id, state)
-              return (
+  return (
+    <div className="mx-auto" style={{ maxWidth: 960, minHeight: 500 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Step {step} of {TOUR_TOTAL_STEPS}
+        </div>
+        <button
+          type="button"
+          onClick={skipTour}
+          style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 12, cursor: 'pointer', padding: 0 }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#F9FAFB' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
+        >
+          Skip tour →
+        </button>
+      </div>
+      <div style={{ width: '100%', height: 4, borderRadius: 999, backgroundColor: '#1F2937', marginBottom: 24, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: '#7C3AED', transition: 'width 0.3s ease' }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20 }}>
+        <div style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937', borderRadius: 14, padding: 12 }}>
+          {STEPS.map(s => {
+            const isActive = s.num === step
+            const isDone = s.num < step
+            const dotColor = isActive ? '#7C3AED' : isDone ? '#22C55E' : '#1F2937'
+            const labelColor = isActive ? '#F9FAFB' : isDone ? '#9CA3AF' : '#6B7280'
+            return (
+              <button
+                key={s.num}
+                type="button"
+                onClick={() => goToStep(s.num)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  backgroundColor: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginBottom: 2,
+                }}
+              >
+                <span
+                  style={{
+                    width: 24, height: 24,
+                    borderRadius: 999,
+                    backgroundColor: dotColor,
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {isDone ? '✓' : s.num}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 600, color: labelColor, lineHeight: 1.3 }}>
+                  {s.title}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 14, padding: 32, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>{current.icon}</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#F9FAFB', marginBottom: 12, lineHeight: 1.2 }}>
+            {current.title}
+          </h2>
+          <p style={{ fontSize: 16, color: '#9CA3AF', lineHeight: 1.65, marginBottom: 24, whiteSpace: 'pre-line' }}>
+            {current.body}
+          </p>
+          {current.visual && (
+            <div style={{ marginBottom: 24 }}>{current.visual}</div>
+          )}
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1F2937', paddingTop: 20, gap: 12, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={back}
+              disabled={step === 1}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 10,
+                backgroundColor: 'transparent',
+                color: step === 1 ? '#374151' : '#9CA3AF',
+                border: '1px solid #1F2937',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: step === 1 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              ← Back
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {current.secondary && (
                 <button
-                  key={step.id}
-                  onClick={step.action}
-                  disabled={done && !step.action}
-                  className="w-full flex items-center gap-3 text-left rounded-lg px-3 py-2.5 transition-colors"
-                  style={{ backgroundColor: done ? 'rgba(74,222,128,0.05)' : 'transparent', cursor: step.action ? 'pointer' : 'default' }}
-                  onMouseEnter={e => { if (!done && step.action) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(124,58,237,0.05)' }}
-                  onMouseLeave={e => { if (!done && step.action) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}>
-                  <span className="text-lg flex-shrink-0" style={{ color: done ? '#4ADE80' : '#4B5563' }}>{done ? '✓' : '○'}</span>
-                  <span className="text-sm" style={{ color: done ? '#9CA3AF' : '#E5E7EB', textDecoration: done ? 'line-through' : 'none' }}>{step.label}</span>
+                  type="button"
+                  onClick={() => current.secondary!.run(ctx)}
+                  style={{ padding: '10px 18px', borderRadius: 10, backgroundColor: 'transparent', color: '#0D9488', border: '1px solid #0D9488', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {current.secondary.label}
                 </button>
-              )
-            })}
+              )}
+              {current.primary && (
+                <button
+                  type="button"
+                  onClick={() => current.primary!.run(ctx)}
+                  style={{ padding: '10px 22px', borderRadius: 10, backgroundColor: '#7C3AED', color: '#FFFFFF', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {current.primary.label}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      ))}
+      </div>
     </div>
   )
 }
