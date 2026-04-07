@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, AlertTriangle, Wrench, BarChart3, Phone, Check, ClipboardList, UserCheck, Heart, FileText, Database, Pill, Bell, Shield, Bus, Hammer } from 'lucide-react'
 import { LogAbsenceModal, ParentContactModal, SchoolReportModal, NewAdmissionModal, BookCoverModal, RegisterSessionModal } from '@/components/modals/SchoolModals'
@@ -126,6 +127,10 @@ export default function SchoolOfficePage() {
   const [showNewAdmission, setShowNewAdmission] = useState(false)
   const [showBookCover, setShowBookCover] = useState(false)
   const [showTrips, setShowTrips] = useState(false)
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams?.get('openTrip') === '1') setShowTrips(true)
+  }, [searchParams])
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [showIncident, setShowIncident] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
