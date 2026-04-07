@@ -139,3 +139,12 @@ body {
   [style*="color: #9CA3AF"],
   [style*="color:#9CA3AF"] { color: #555 !important; }
 }
+
+
+/* Hide sticky tab bar when onboarding modal is open */
+body.lumio-onboarding-open .sticky.top-0.z-50 {
+  visibility: hidden !important;
+}
+body.lumio-onboarding-open [class*="sticky"][class*="top-0"] {
+  visibility: hidden !important;
+}

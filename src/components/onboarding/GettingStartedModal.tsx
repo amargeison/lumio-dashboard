@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowRight, X, Mail } from 'lucide-react'
 
 const S: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '10px 14px', fontSize: 14, outline: 'none', width: '100%' }
@@ -19,6 +19,17 @@ export default function GettingStartedModal({ ownerEmail, sessionToken, onComple
   const [finishing, setFinishing] = useState(false)
   const domain = ownerEmail?.split('@')[1] || 'company.com'
 
+  // Lock body scroll and mark body as having onboarding open so other UI can hide
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.body.classList.add('lumio-onboarding-open')
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.body.classList.remove('lumio-onboarding-open')
+    }
+  }, [])
+
   async function handleFinish() {
     if (finishing) return
     setFinishing(true)
@@ -36,8 +47,8 @@ export default function GettingStartedModal({ ownerEmail, sessionToken, onComple
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
-      <div className="w-full rounded-2xl flex flex-col" style={{ maxWidth: 640, maxHeight: '92vh', backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="w-full rounded-2xl flex flex-col" style={{ position: 'relative', zIndex: 100000, maxWidth: 640, maxHeight: '92vh', backgroundColor: '#111318', border: '1px solid #1F2937' }}>
 
         <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
           <div>
@@ -74,6 +85,9 @@ export default function GettingStartedModal({ ownerEmail, sessionToken, onComple
                 Each invited person gets an email with a magic link to access the workspace instantly.
               </p>
             </div>
+            <p style={{ fontSize: 13, color: '#6B7280', marginTop: 12, textAlign: 'center' }}>
+              📷 You&apos;ll also find a personal photo frame on your dashboard — add your favourite photos once you&apos;re in.
+            </p>
           </div>
         </div>
 
