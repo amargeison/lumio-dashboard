@@ -326,17 +326,16 @@ function HeroSection() {
               >
                 Start Free 14-Day Trial <ArrowRight size={15} />
               </Link>
-              <a
-                href="https://calendly.com/lumiocms/lumio-schools"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('lumio-open-early-access'))}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-colors"
-                style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}
+                style={{ border: '1px solid #0D9488', color: '#0D9488', backgroundColor: 'transparent', cursor: 'pointer' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(13,148,136,0.1)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
               >
-                Book a Demo
-              </a>
+                Early Access <ArrowRight size={15} />
+              </button>
             </div>
 
             <p className="text-sm mb-2" style={{ color: '#6B7280' }}>
