@@ -9,7 +9,7 @@ function DevLoginContent() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('from') || '/lumio-dev'
 
-  const [digits, setDigits] = useState(['', '', '', ''])
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [shake, setShake] = useState(false)
@@ -92,7 +92,7 @@ function DevLoginContent() {
         </div>
 
         <h1 style={{ color: '#F9FAFB', fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Dev Preview</h1>
-        <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 32 }}>Enter the 4-digit PIN to access the dev environment</p>
+        <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 32 }}>Enter the 6-digit PIN to access the dev environment</p>
 
         <div
           style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24, animation: shake ? 'devShake 0.4s ease-in-out' : undefined }}
@@ -126,7 +126,7 @@ function DevLoginContent() {
         )}
 
         <button
-          onClick={() => { const pin = digits.join(''); if (pin.length === 4) submitPin(pin) }}
+          onClick={() => { const pin = digits.join(''); if (pin.length === 6) submitPin(pin) }}
           disabled={loading || digits.some(d => !d)}
           style={{
             width: '100%', padding: '14px 24px', borderRadius: 12,
