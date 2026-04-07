@@ -112,6 +112,9 @@ function SignupForm() {
       localStorage.setItem('demo_user_email', data.user.email)
       localStorage.setItem('demo_user_name', data.user.name)
       if (portalType) localStorage.setItem('lumio_signup_portal', portalType)
+      if (portalType === 'schools' || data.is_school_demo) {
+        localStorage.setItem('lumio_schools_demo_loaded', 'true')
+      }
 
       // Upload logo if provided — silent failure (logo is optional)
       if (logoFile && data.session_token) {
