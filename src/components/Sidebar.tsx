@@ -280,7 +280,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Link
                 key={href}
                 href={href}
-                onClick={onClose}
+                onClick={() => { if (path === '') { try { localStorage.removeItem('lumio_active_dept') } catch {} } onClose() }}
                 className="flex items-center gap-3 rounded-lg py-2 text-sm transition-colors"
                 style={{
                   backgroundColor: isActive ? activeColor : 'transparent',
@@ -362,7 +362,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               const deptKey = (path || '').replace('/', '')
               const hasDeptStaff = activeDepts.size > 0 && activeDepts.has(deptKey)
               return (
-                <Link key={href} href={href} onClick={onClose}
+                <Link key={href} href={href} onClick={() => { if (path === '') { try { localStorage.removeItem('lumio_active_dept') } catch {} } onClose() }}
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
                   style={{ backgroundColor: isActive ? (accent ?? '#0D9488') : 'transparent', color: isActive ? '#F9FAFB' : hasDeptStaff ? '#F9FAFB' : '#9CA3AF', fontWeight: isActive || hasDeptStaff ? 600 : 400 }}>
                   {hasDeptStaff && !isActive && <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: '#22C55E' }} />}
