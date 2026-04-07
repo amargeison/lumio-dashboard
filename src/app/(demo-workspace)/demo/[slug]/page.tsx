@@ -19,7 +19,7 @@ import {
   Settings, Hash, Menu, ChevronLeft,
   Calendar, FileText, Target, DollarSign, Volume2, Mic, Handshake, Bell,
   Database, RotateCcw, Upload, Mail, MessageSquare, Phone, FolderKanban, Crown,
-  Laptop, ClipboardCheck, GraduationCap, ShoppingCart, Key, Timer,
+  Laptop, ClipboardCheck, GraduationCap, ShoppingCart, Key, Timer, Camera,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useDraggableList } from '@/hooks/useDraggableList'
@@ -354,7 +354,7 @@ function fakeCompany(co: string, i: number) { return ['Greenfield Academy','Hops
 type WFStatus = 'COMPLETE' | 'RUNNING' | 'ACTION'
 type ChartMode = 'number' | 'bar' | 'pie'
 interface ChartDatum { label: string; value: number; color: string }
-type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team'
+type OverviewTab = 'today' | 'quick-wins' | 'tasks' | 'insights' | 'not-to-miss' | 'team' | 'getting-started'
 
 // ─── Charts ──────────────────────────────────────────────────────────────────
 
@@ -1795,10 +1795,11 @@ const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
   { id: 'today', label: 'Today', icon: '🏠' }, { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
   { id: 'tasks', label: 'Daily Tasks', icon: '✅' }, { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'not-to-miss', label: "Don't Miss", icon: '🔴' }, { id: 'team', label: 'Team', icon: '👥' },
+  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
 ]
 
-function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
-  const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
+function TabBar({ tab, onChange, gettingStartedRemaining }: { tab: OverviewTab; onChange: (t: OverviewTab) => void; gettingStartedRemaining?: number }) {
+  const visibleTabs = OVERVIEW_TABS.filter(t => t.id === 'today' || t.id === 'getting-started' || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_tab_${t.id}_visible`) !== 'false' : true))
   return (
     <div className="sticky top-0 z-50 border-b overflow-x-auto scrollbar-none -mx-4 sm:-mx-5" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
       <div className="flex items-center gap-0 min-w-max px-2">
@@ -1806,6 +1807,11 @@ function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab
           <button key={t.id} onClick={() => onChange(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             style={{ borderBottomColor: tab === t.id ? '#7C3AED' : 'transparent', color: tab === t.id ? '#A78BFA' : '#6B7280', backgroundColor: tab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
             <span className="text-base">{t.icon}</span>{t.label}
+            {t.id === 'getting-started' && gettingStartedRemaining !== undefined && (
+              gettingStartedRemaining > 0
+                ? <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.2)', color: '#A78BFA' }}>{gettingStartedRemaining}</span>
+                : <span className="ml-1 text-xs" style={{ color: '#4ADE80' }}>✓</span>
+            )}
           </button>
         ))}
       </div>
@@ -2136,6 +2142,7 @@ function TabPlaceholder({ tab }: { tab: OverviewTab }) {
     'insights': { title: 'Insights', icon: '📊', desc: 'Key metrics and AI-generated observations across your business.' },
     'not-to-miss': { title: "Don't Miss", icon: '🔴', desc: 'Critical items that need your attention today.' },
     'team': { title: 'Team', icon: '👥', desc: 'See what your team is working on and who needs support.' },
+    'getting-started': { title: 'Getting Started', icon: '🚀', desc: 'Finish setting up your workspace.' },
   }
   const { title, icon, desc } = labels[tab]
   return (
@@ -3720,6 +3727,139 @@ function SnapshotWidgets() {
   )
 }
 
+// ─── Getting Started (Demo) ──────────────────────────────────────────────────
+
+const DEMO_GS_STEP_IDS = [
+  'logo', 'company-name', 'photo', 'demo-data',
+  'quick-action', 'morning-roundup', 'meetings-today', 'role-switcher',
+  'visit-crm', 'view-insights', 'view-team', 'check-dont-miss',
+  'apply-early-access', 'book-call',
+] as const
+
+type DemoGSStepId = typeof DEMO_GS_STEP_IDS[number]
+
+function readDemoGSState(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem('lumio_demo_gs_state') || '{}') } catch { return {} }
+}
+
+function writeDemoGSState(state: Record<string, boolean>) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem('lumio_demo_gs_state', JSON.stringify(state)) } catch {}
+}
+
+function isDemoGSStepComplete(id: DemoGSStepId, state: Record<string, boolean>): boolean {
+  if (state[id]) return true
+  if (typeof window === 'undefined') return false
+  if (id === 'logo') return !!(localStorage.getItem('lumio_company_logo') || localStorage.getItem('workspace_company_logo'))
+  if (id === 'photo') return !!localStorage.getItem('lumio_user_photo')
+  if (id === 'demo-data') return true // demo workspace always has data
+  return false
+}
+
+function computeDemoGSRemaining(): number {
+  if (typeof window === 'undefined') return DEMO_GS_STEP_IDS.length
+  const state = readDemoGSState()
+  let done = 0
+  DEMO_GS_STEP_IDS.forEach((id: DemoGSStepId) => { if (isDemoGSStepComplete(id, state)) done++ })
+  return DEMO_GS_STEP_IDS.length - done
+}
+
+function GettingStartedView({ onTabChange, onGoSettings, onShowEarlyAccess }: { onTabChange: (t: OverviewTab) => void; onGoSettings?: () => void; onShowEarlyAccess?: () => void }) {
+  const [, forceTick] = useState(0)
+  const state = readDemoGSState()
+
+  const markComplete = (id: DemoGSStepId) => {
+    const next = { ...readDemoGSState(), [id]: true }
+    writeDemoGSState(next)
+    forceTick(n => n + 1)
+  }
+
+  const sections: Array<{ title: string; steps: Array<{ id: DemoGSStepId; label: string; action?: () => void }> }> = [
+    {
+      title: 'Your Workspace',
+      steps: [
+        { id: 'logo', label: 'Add your company logo', action: () => { markComplete('logo'); if (onGoSettings) onGoSettings() } },
+        { id: 'company-name', label: 'Set your company name', action: () => { markComplete('company-name'); if (onGoSettings) onGoSettings() } },
+        { id: 'photo', label: 'Add your photo', action: () => { markComplete('photo'); window.dispatchEvent(new CustomEvent('lumio-open-photo-step')) } },
+        { id: 'demo-data', label: 'Explore demo data' },
+      ],
+    },
+    {
+      title: 'Daily Operations',
+      steps: [
+        { id: 'quick-action', label: 'Try a Quick Action button', action: () => markComplete('quick-action') },
+        { id: 'morning-roundup', label: 'Check your Morning Roundup', action: () => { markComplete('morning-roundup'); onTabChange('today') } },
+        { id: 'meetings-today', label: 'View Meetings Today', action: () => { markComplete('meetings-today'); onTabChange('today') } },
+        { id: 'role-switcher', label: 'Try the role switcher (Admin/Director/Manager/Standard)', action: () => markComplete('role-switcher') },
+      ],
+    },
+    {
+      title: 'Explore the Platform',
+      steps: [
+        { id: 'visit-crm', label: 'Visit the CRM', action: () => markComplete('visit-crm') },
+        { id: 'view-insights', label: 'Check the Insights dashboard', action: () => { markComplete('view-insights'); onTabChange('insights') } },
+        { id: 'view-team', label: 'View Team Info and employee cards', action: () => { markComplete('view-team'); onTabChange('team') } },
+        { id: 'check-dont-miss', label: "Try the Don't Miss alerts", action: () => { markComplete('check-dont-miss'); onTabChange('not-to-miss') } },
+      ],
+    },
+    {
+      title: 'Ready for the real thing?',
+      steps: [
+        { id: 'apply-early-access', label: 'Apply for early access', action: () => { markComplete('apply-early-access'); window.location.href = 'mailto:hello@lumiocms.com' } },
+        { id: 'book-call', label: 'Book a setup call', action: () => { markComplete('book-call'); if (onShowEarlyAccess) onShowEarlyAccess() } },
+      ],
+    },
+  ]
+
+  const totalSteps = DEMO_GS_STEP_IDS.length
+  const completedSteps = DEMO_GS_STEP_IDS.filter((id: DemoGSStepId) => isDemoGSStepComplete(id, state)).length
+  const pct = Math.round((completedSteps / totalSteps) * 100)
+
+  return (
+    <div className="space-y-6">
+      {/* Header card */}
+      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '1px solid rgba(124,58,237,0.3)' }}>
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-3xl">🚀</span>
+          <div>
+            <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Getting Started</h2>
+            <p className="text-sm" style={{ color: '#9CA3AF' }}>Finish setting up your demo workspace — {completedSteps} of {totalSteps} complete</p>
+          </div>
+        </div>
+        <div className="w-full bg-gray-800 rounded-full h-2 mt-4">
+          <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#7C3AED' }} />
+        </div>
+      </div>
+
+      {/* Sections */}
+      {sections.map((section: typeof sections[0]) => (
+        <div key={section.title} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#A78BFA' }}>{section.title}</h3>
+          <div className="space-y-2">
+            {section.steps.map((step: { id: DemoGSStepId; label: string; action?: () => void }) => {
+              const done = isDemoGSStepComplete(step.id, state)
+              return (
+                <button
+                  key={step.id}
+                  onClick={step.action}
+                  disabled={done && !step.action}
+                  className="w-full flex items-center gap-3 text-left rounded-lg px-3 py-2.5 transition-colors"
+                  style={{ backgroundColor: done ? 'rgba(74,222,128,0.05)' : 'transparent', cursor: step.action ? 'pointer' : 'default' }}
+                  onMouseEnter={e => { if (!done && step.action) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(124,58,237,0.05)' }}
+                  onMouseLeave={e => { if (!done && step.action) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}>
+                  <span className="text-lg flex-shrink-0" style={{ color: done ? '#4ADE80' : '#4B5563' }}>{done ? '✓' : '○'}</span>
+                  <span className="text-sm" style={{ color: done ? '#9CA3AF' : '#E5E7EB', textDecoration: done ? 'line-through' : 'none' }}>{step.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── Overview View ───────────────────────────────────────────────────────────
 
 function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onGoSettings, supabaseStaff = [], onBellClick, roleSwitcher, settingsHref, userNameProp, dismissedWins = new Set(), onDismissWin }: { company: string; firstName?: string; onAction: (msg: string) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onGoSettings?: () => void; supabaseStaff?: StaffMember[]; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string; dismissedWins?: Set<string>; onDismissWin?: (id: string) => void }) {
@@ -3796,6 +3936,21 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
     onAction(quickActionToasts[label] || label)
   }
   const [tab, setTab] = useState<OverviewTab>('today')
+  const [gsRemaining, setGsRemaining] = useState<number>(() => computeDemoGSRemaining())
+  useEffect(() => {
+    const recompute = () => setGsRemaining(computeDemoGSRemaining())
+    recompute()
+    window.addEventListener('storage', recompute)
+    window.addEventListener('lumio-settings-changed', recompute)
+    window.addEventListener('lumio-logo-updated', recompute)
+    window.addEventListener('lumio-avatar-updated', recompute)
+    return () => {
+      window.removeEventListener('storage', recompute)
+      window.removeEventListener('lumio-settings-changed', recompute)
+      window.removeEventListener('lumio-logo-updated', recompute)
+      window.removeEventListener('lumio-avatar-updated', recompute)
+    }
+  }, [tab])
 
   // Staff data + director detection — from Supabase via prop
   const allStaff = supabaseStaff
@@ -3850,7 +4005,7 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
   return (
     <div className="space-y-4">
       <PersonalBanner company={company} firstName={firstName} onVoiceCommand={handleVoiceCommand} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onBellClick={onBellClick} roleSwitcher={roleSwitcher} settingsHref={settingsHref} userNameProp={userNameProp} />
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={tab} onChange={setTab} gettingStartedRemaining={gsRemaining} />
 
       {tab === 'today' ? (
         <div className="space-y-4">
@@ -3995,6 +4150,8 @@ function OverviewView({ company, firstName, onAction, ttsEnabled = true, voiceCo
         <NotToMiss />
       ) : tab === 'team' ? (
         demoDataActive ? <TeamPanel selectedDepts={typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('lumio_selected_departments') || '[]') : []} /> : <AITeam ctx={aiCtx} onAction={onAction} staffFromSupabase={allStaff} />
+      ) : tab === 'getting-started' ? (
+        <GettingStartedView onTabChange={setTab} onGoSettings={onGoSettings} />
       ) : (
         <TabPlaceholder tab={tab} />
       )}
@@ -4071,6 +4228,13 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
+  const [showDemoWelcome, setShowDemoWelcome] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!localStorage.getItem(`demo_welcome_shown_${slug}`)) {
+      setShowDemoWelcome(true)
+    }
+  }, [slug])
   const [demoDataActive, setDemoDataActive] = useState(() => { if (typeof window === 'undefined') return false; return localStorage.getItem('lumio_demo_active') === 'true' })
   const [demoRole, setDemoRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
   const [showRoleTooltip, setShowRoleTooltip] = useState(false)
@@ -4731,6 +4895,393 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
           </main>
         </div>
+      </div>
+      {showDemoWelcome && (
+        <DemoWelcomePopup
+          slug={slug}
+          onClose={() => {
+            try { localStorage.setItem(`demo_welcome_shown_${slug}`, 'true') } catch {}
+            setShowDemoWelcome(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Demo Welcome Popup (one-time per slug) ─────────────────────────────────
+// Two-screen modal shown the first time a user lands on a demo workspace:
+//   1. FIFA-style profile photo upload
+//   2. Early Access offer
+// Mirrors OnboardingWizard's StepYourCard + StepBookCall content but is fully
+// self-contained so the demo route doesn't depend on the wizard's internals.
+
+function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () => void }) {
+  const [screen, setScreen] = useState<1 | 2>(1)
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [userName, setUserName] = useState('Your Name')
+  const [userRole, setUserRole] = useState('Founder')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const name =
+      localStorage.getItem('lumio_user_name')
+      || localStorage.getItem('workspace_user_name')
+      || ''
+    if (name) setUserName(name)
+    const role = localStorage.getItem('lumio_user_role') || ''
+    if (role && role.toLowerCase() !== 'director') setUserRole(role)
+    // If a photo was already uploaded in another flow, show it as the starting state
+    const existing = localStorage.getItem('lumio_user_photo')
+    if (existing) setPhotoDataUrl(existing)
+  }, [])
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '')
+      if (!dataUrl) return
+      setPhotoDataUrl(dataUrl)
+      try { localStorage.setItem('lumio_user_photo', dataUrl) } catch {}
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const initials =
+    userName
+      .split(' ')
+      .map(p => p[0])
+      .filter(Boolean)
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'YU'
+
+  const STATS: Array<[string, number]> = [
+    ['PAC', 87], ['DRI', 76],
+    ['SHO', 79], ['DEF', 71],
+    ['PAS', 84], ['PHY', 83],
+  ]
+  const benefits = [
+    '6 months completely free',
+    'We build features you ask for',
+    'No commitment or lock-in',
+    'Honest feedback shapes the product',
+  ]
+  const TEAL = '#0D9488'
+  const TEAL_FAINT = 'rgba(13,148,136,0.1)'
+  const TEAL_BORDER = 'rgba(13,148,136,0.35)'
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: 16,
+      }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes lumio-card-reveal {
+          0%   { opacity: 0; transform: scale(0.92) translateY(8px); }
+          100% { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+      ` }} />
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 760,
+          maxHeight: '92vh',
+          overflowY: 'auto',
+          backgroundColor: '#0A0B10',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          padding: 32,
+          position: 'relative',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.7)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Step indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', color: '#A78BFA', textTransform: 'uppercase' }}>
+            Step {screen} of 2
+          </span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: '#7C3AED' }} />
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen === 2 ? '#7C3AED' : '#1F2937' }} />
+          </div>
+        </div>
+
+        {/* ── SCREEN 1 — FIFA card photo step ── */}
+        {screen === 1 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Add your photo — see how you look in Lumio
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 36 }}>
+              Your photo appears on your team card and across your workspace.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', marginBottom: 32 }}>
+              {/* Upload zone */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: '50%',
+                    backgroundColor: photoDataUrl ? 'transparent' : '#111318',
+                    border: `2px dashed ${photoDataUrl ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.5)'}`,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    padding: 0,
+                    backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  {!photoDataUrl && <Camera size={40} color="#9CA3AF" />}
+                </button>
+                <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
+                  {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
+                </p>
+              </div>
+
+              {/* FIFA card */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div
+                  key={photoDataUrl || 'placeholder'}
+                  style={{
+                    width: 240,
+                    height: 360,
+                    borderRadius: 18,
+                    background: 'linear-gradient(155deg, #8B5CF6 0%, #6C3FC5 35%, #3B1D6B 70%, #1A0D3D 100%)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    boxShadow: '0 24px 70px rgba(108,63,197,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    padding: 18,
+                    position: 'relative',
+                    color: '#FFFFFF',
+                    animation: 'lumio-card-reveal 420ms ease-out',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'radial-gradient(circle at 30% 0%, rgba(255,255,255,0.12), transparent 60%)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em' }}>92</div>
+                      <div style={{ fontSize: 10, fontWeight: 800, marginTop: 4, letterSpacing: '0.1em' }}>EXECUTIVE</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
+                        YOU
+                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.35)', letterSpacing: '0.05em' }}>
+                        LUM-001
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '12px 0 8px' }}>
+                    <div
+                      style={{
+                        width: 116,
+                        height: 116,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.1)',
+                        border: '3px solid rgba(255,255,255,0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        fontSize: 36,
+                        fontWeight: 900,
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+                      }}
+                    >
+                      {!photoDataUrl && initials}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      position: 'relative',
+                      textAlign: 'center',
+                      fontSize: 16,
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {userName}
+                  </div>
+                  <div
+                    style={{
+                      position: 'relative',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.75)',
+                      marginBottom: 12,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {userRole}
+                  </div>
+                  <div style={{ position: 'relative', height: 1, backgroundColor: 'rgba(255,255,255,0.18)', margin: '0 -4px 10px' }} />
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      rowGap: 5,
+                      columnGap: 24,
+                      fontSize: 11,
+                      padding: '0 6px',
+                    }}
+                  >
+                    {STATS.map(([label, value]) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 900, minWidth: 20 }}>{value}</span>
+                        <span style={{ fontWeight: 700, opacity: 0.85, letterSpacing: '0.05em' }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
+              <button
+                type="button"
+                onClick={() => setScreen(2)}
+                style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: 14, cursor: 'pointer', padding: '8px 12px' }}
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen(2)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  backgroundColor: '#7C3AED',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '12px 28px',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Continue <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SCREEN 2 — Early Access offer ── */}
+        {screen === 2 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Want 6 months free with your own data?
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 20, lineHeight: 1.6 }}>
+              We&apos;re looking for a small number of businesses to help us shape Lumio. Sign up for our early access programme and get 6 months completely free — no commitment, no contract, no pushy sales.
+            </p>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 28, lineHeight: 1.6 }}>
+              All we ask at the end is an honest case study and the chance to keep working with you.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+              {benefits.map(b => (
+                <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: '50%',
+                      backgroundColor: TEAL_FAINT,
+                      border: `1px solid ${TEAL_BORDER}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      color: TEAL,
+                    }}
+                  >
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                  <span style={{ fontSize: 15, color: '#F9FAFB' }}>{b}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a
+                href="mailto:hello@lumiocms.com?subject=Early%20Access%20Application"
+                onClick={() => onClose()}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  backgroundColor: TEAL,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '14px 28px',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                }}
+              >
+                <Mail size={16} /> Apply for Early Access
+              </a>
+              <button
+                type="button"
+                onClick={() => onClose()}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#9CA3AF',
+                  borderRadius: 10,
+                  padding: '12px 28px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Continue to my dashboard &rarr;
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

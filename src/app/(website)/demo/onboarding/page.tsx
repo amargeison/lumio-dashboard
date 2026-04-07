@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Check, Upload, X, ArrowRight, Loader2, ChevronRight } from 'lucide-react'
+import { Check, Upload, X, ArrowRight, Loader2, ChevronRight, Camera } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -95,6 +95,7 @@ export default function OnboardingPage() {
   const [companyName, setCompanyName]   = useState('')
   const [logoFile, setLogoFile]         = useState<File | null>(null)
   const [logoPreview, setLogoPreview]   = useState('')
+  const [nameError, setNameError]       = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Step 1 — departments
@@ -191,6 +192,27 @@ export default function OnboardingPage() {
       setBuildLog(prev => [...prev, log])
     }
 
+    // Persist company + logo for the workspace to pick up
+    try {
+      localStorage.setItem('demo_company_name', companyName)
+      localStorage.setItem('lumio_company_name', companyName)
+      localStorage.setItem('workspace_company_name', companyName)
+      if (logoPreview) {
+        localStorage.setItem('lumio_company_logo', logoPreview)
+        localStorage.setItem('workspace_company_logo', logoPreview)
+      }
+    } catch { /* ignore quota */ }
+
+    // Post logo to workspace endpoint once build is complete
+    if (logoFile) {
+      try {
+        const fd2 = new FormData()
+        fd2.append('logo', logoFile)
+        fd2.append('company_id', companyId)
+        await fetch('/api/workspace/logo', { method: 'POST', body: fd2 })
+      } catch { /* silent */ }
+    }
+
     setBuilding(false)
     setBuildDone(true)
 
@@ -266,6 +288,42 @@ export default function OnboardingPage() {
 
             <div className="rounded-xl p-6 space-y-5"
               style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              {/* Logo upload — circular 120px */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="relative rounded-full flex items-center justify-center overflow-hidden transition-colors"
+                  style={{
+                    width: 120,
+                    height: 120,
+                    backgroundColor: '#07080F',
+                    border: `1px dashed ${logoPreview ? '#0D9488' : '#374151'}`,
+                    cursor: 'pointer',
+                  }}>
+                  {logoPreview ? (
+                    <>
+                      <Image src={logoPreview} alt="Logo preview" fill className="object-cover" />
+                      <div
+                        onClick={e => { e.stopPropagation(); setLogoFile(null); setLogoPreview('') }}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: '#EF4444' }}>
+                        <X size={10} style={{ color: '#fff' }} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1" style={{ color: '#6B7280' }}>
+                      <Camera size={28} />
+                      <span className="text-[10px]">Upload</span>
+                    </div>
+                  )}
+                </button>
+                <span className="text-xs" style={{ color: '#9CA3AF' }}>
+                  Upload your logo <span style={{ color: '#6B7280' }}>(optional)</span>
+                </span>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </div>
+
               {/* Company name */}
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>
@@ -274,55 +332,27 @@ export default function OnboardingPage() {
                 <input
                   type="text"
                   value={companyName}
-                  onChange={e => setCompanyName(e.target.value)}
+                  onChange={e => { setCompanyName(e.target.value); if (nameError) setNameError(false) }}
                   placeholder="Acme Corp"
                   className="w-full rounded-lg px-3 py-2.5 text-sm"
-                  style={{ backgroundColor: '#07080F', border: '1px solid #1F2937', color: '#F9FAFB' }}
-                  onFocus={e => (e.currentTarget.style.borderColor = '#0D9488')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#1F2937')}
+                  style={{ backgroundColor: '#07080F', border: `1px solid ${nameError ? '#EF4444' : '#1F2937'}`, color: '#F9FAFB' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = nameError ? '#EF4444' : '#0D9488')}
+                  onBlur={e => (e.currentTarget.style.borderColor = nameError ? '#EF4444' : '#1F2937')}
                 />
-              </div>
-
-              {/* Logo upload */}
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>
-                  Logo <span style={{ color: '#6B7280' }}>(optional)</span>
-                </label>
-                <div className="flex items-center gap-4">
-                  {logoPreview ? (
-                    <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"
-                      style={{ border: '1px solid #1F2937' }}>
-                      <Image src={logoPreview} alt="Logo preview" fill className="object-contain p-1" />
-                      <button
-                        onClick={() => { setLogoFile(null); setLogoPreview('') }}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: '#EF4444' }}>
-                        <X size={8} style={{ color: '#fff' }} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: '#07080F', border: '1px dashed #374151' }}>
-                      <span className="text-2xl">{companyName?.[0]?.toUpperCase() || '?'}</span>
-                    </div>
-                  )}
-                  <button onClick={() => fileRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors"
-                    style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#F9FAFB')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}>
-                    <Upload size={14} /> Upload logo
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                </div>
+                {nameError && (
+                  <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>Please enter your company name</p>
+                )}
               </div>
             </div>
 
             <div className="flex justify-end">
               <button
-                onClick={() => setStep(1)}
-                disabled={!companyName.trim()}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                onClick={() => {
+                  if (!companyName.trim()) { setNameError(true); return }
+                  setNameError(false)
+                  setStep(1)
+                }}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-opacity"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
                 Next <ChevronRight size={16} />
               </button>
