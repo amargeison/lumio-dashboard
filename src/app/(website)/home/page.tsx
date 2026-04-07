@@ -621,13 +621,13 @@ export default function HomePage() {
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}>
             Early Access <ArrowRight size={16} />
           </button>
-          <button onClick={() => setShowDemoModal(true)}
+          <Link href="/signup"
             className="px-7 py-3.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0F766E' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
-            Book a Demo <ArrowRight size={16} />
-          </button>
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0F766E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = '#0D9488' }}>
+            Free 14 day trial <ArrowRight size={16} />
+          </Link>
           <Link href="/product"
             className="px-7 py-3.5 rounded-lg text-sm font-medium"
             style={{ border: '1px solid #1F2937', color: '#9CA3AF' }}
