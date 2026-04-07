@@ -20,8 +20,8 @@ function DevLoginContent() {
     const next = [...digits]
     next[index] = char
     setDigits(next)
-    if (char && index < 3) inputRefs.current[index + 1]?.focus()
-    if (next.every(d => d) && next.join('').length === 4) {
+    if (char && index < 5) inputRefs.current[index + 1]?.focus()
+    if (next.every(d => d) && next.join('').length === 6) {
       submitPin(next.join(''))
     }
   }
@@ -33,10 +33,10 @@ function DevLoginContent() {
   }
 
   function handlePaste(e: React.ClipboardEvent) {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4)
-    if (pasted.length === 4) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 6) {
       setDigits(pasted.split(''))
-      inputRefs.current[3]?.focus()
+      inputRefs.current[5]?.focus()
       submitPin(pasted)
     }
   }
@@ -72,7 +72,7 @@ function DevLoginContent() {
       } else {
         setError(true)
         setShake(true)
-        setDigits(['', '', '', ''])
+        setDigits(['', '', '', '', '', ''])
         setTimeout(() => { setShake(false); inputRefs.current[0]?.focus() }, 500)
       }
     } catch {
