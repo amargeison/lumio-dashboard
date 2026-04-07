@@ -84,7 +84,7 @@ const DEPT_MATCH: Record<string, RegExp> = {
   it:         /\b(it|tech|technology|systems|engineering)\b/i,
   success:    /\b(success|customer success)\b/i,
   support:    /\b(support|helpdesk|service desk)\b/i,
-  strategy:   /\b(strategy|leadership)\b/i,
+  strategy:   /\b(strategy|leadership|executive)\b/i,
   crm:        /\b(crm|customer relationship)\b/i,
   trials:     /\b(trials|growth)\b/i,
   partners:   /\b(partner|partnerships)\b/i,
@@ -249,7 +249,22 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
-                {companyName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>}
+                {companyName && (
+                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>
+                    {companyName}
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      color: '#0D9488',
+                      border: '1px solid #0D9488',
+                      borderRadius: 4,
+                      padding: '1px 4px',
+                      marginLeft: 6,
+                      verticalAlign: 'middle',
+                    }}>BETA</span>
+                  </p>
+                )}
                 <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Live workspace</p>
               </div>
               <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} title={pinned ? 'Unpin' : 'Pin open'}>
@@ -1108,10 +1123,10 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             {[
-              { label: 'Meetings', value: demoDataActive ? 4 : (liveCounts.meetings ?? 0), color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅', widget: 'meetings' },
-              { label: 'Tasks', value: demoDataActive ? 7 : (liveCounts.tasks ?? 0), color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅', widget: 'tasks' },
-              { label: 'Urgent', value: demoDataActive ? 2 : (liveCounts.urgent ?? 0), color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴', widget: 'urgent' },
-              { label: 'Emails', value: demoDataActive ? 12 : (liveCounts.emails ?? 0), color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧', widget: 'emails' },
+              { label: 'Meetings', value: demoDataActive ? 4 : (liveCounts.meetings ?? 0), color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: '📅', widget: 'meetings', sublabel: '' },
+              { label: 'Tasks', value: demoDataActive ? 7 : (liveCounts.tasks ?? 0), color: 'bg-purple-500/20 text-purple-300 border-purple-500/30', icon: '✅', widget: 'tasks', sublabel: '' },
+              { label: 'Urgent', value: demoDataActive ? 2 : (liveCounts.urgent ?? 0), color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: '🔴', widget: 'urgent', sublabel: '(critical)' },
+              { label: 'Emails', value: demoDataActive ? 12 : (liveCounts.emails ?? 0), color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: '📧', widget: 'emails', sublabel: '' },
             ].map(item => (
               <div key={item.label} onClick={() => onScrollTo?.(item.widget)} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px] cursor-pointer transition-transform hover:scale-105`}>
                 <span className="text-base">{item.icon}</span>
@@ -1121,6 +1136,7 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
                   <span className="text-lg font-black text-white">{item.value}</span>
                 )}
                 <span className="text-xs opacity-70">{item.label}</span>
+                {item.sublabel && <span className="text-[9px] opacity-50 -mt-0.5">{item.sublabel}</span>}
               </div>
             ))}
           </div>

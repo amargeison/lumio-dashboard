@@ -51,7 +51,7 @@ const SC = {
 const DEPT_COLORS: Record<string, string> = { Executive: '#0D9488', Sales: '#8B5CF6', Marketing: '#F59E0B', Finance: '#3B82F6', HR: '#22C55E', IT: '#EF4444' }
 
 const TEAM: TeamMember[] = [
-  { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Executive', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
+  { id: '0', name: 'James Hartley', role: 'CEO & Founder', department: 'Leadership', avatar: 'JH', status: 'active', todayFocus: 'Board prep, investor call at 2pm', openTasks: 4, alerts: 0, recentActivity: 'Reviewed Q1 financials', relationship: 'You', email: 'james@lumiodemo.com', level: 1 },
   { id: '1', name: 'Sophie Brennan', role: 'Head of HR', department: 'HR', avatar: 'SB', status: 'active', todayFocus: 'New joiner onboarding × 2', openTasks: 3, alerts: 0, recentActivity: 'HR-01 ran 9 min ago', relationship: 'Direct report', email: 'sophie@company.com', managerId: '0', level: 2 },
   { id: '2', name: 'Marcus Webb', role: 'Head of Sales', department: 'Sales', avatar: 'MW', status: 'active', todayFocus: 'Demo calls × 2', openTasks: 5, alerts: 1, recentActivity: 'SA-02 scored 4 leads', relationship: 'Direct report', email: 'marcus@company.com', managerId: '0', level: 2 },
   { id: '3', name: 'Tom Fielding', role: 'Head of Finance', department: 'Finance', avatar: 'TF', status: 'active', todayFocus: 'Invoice review + payroll', openTasks: 6, alerts: 2, recentActivity: 'AC-03 chased 3 invoices', relationship: 'Direct report', email: 'tom@company.com', managerId: '0', level: 2 },
@@ -61,6 +61,11 @@ const TEAM: TeamMember[] = [
   { id: '7', name: 'Leah Thornton', role: 'Head of Marketing', department: 'Marketing', avatar: 'LT', status: 'holiday', openTasks: 0, alerts: 0, recentActivity: 'Back Thursday', relationship: 'Other department', email: 'leah@company.com', managerId: '0', level: 2 },
   { id: '8', name: 'Nate Crawford', role: 'Content Lead', department: 'Marketing', avatar: 'NC', status: 'active', todayFocus: 'Blog post + social calendar', openTasks: 2, alerts: 0, recentActivity: 'Published blog post', relationship: 'Other department', email: 'nate@company.com', managerId: '7', level: 3 },
   { id: '9', name: 'Anya Kapoor', role: 'HR Coordinator', department: 'HR', avatar: 'AK', status: 'active', todayFocus: 'Contract templates', openTasks: 1, alerts: 0, recentActivity: 'Updated handbook', relationship: 'Same department', email: 'anya@company.com', managerId: '1', level: 3 },
+  { id: '10', name: 'Emma Harrison', role: 'HR Manager', department: 'HR', avatar: 'EH', status: 'active', todayFocus: 'Probation reviews', openTasks: 2, alerts: 0, recentActivity: 'Scheduled 3 reviews', relationship: 'Same department', email: 'emma@company.com', managerId: '1', level: 3 },
+  { id: '11', name: 'David Park', role: 'Finance Director', department: 'Finance', avatar: 'DP', status: 'active', todayFocus: 'Q4 forecast', openTasks: 4, alerts: 1, recentActivity: 'Updated cashflow model', relationship: 'Direct report', email: 'david@company.com', managerId: '0', level: 2 },
+  { id: '12', name: 'Priya Mehta', role: 'Customer Success Lead', department: 'Success', avatar: 'PM', status: 'active', todayFocus: 'Renewal calls × 3', openTasks: 5, alerts: 0, recentActivity: 'Health scores updated', relationship: 'Direct report', email: 'priya@company.com', managerId: '0', level: 2 },
+  { id: '13', name: 'Alex Turner', role: 'CRM Manager', department: 'CRM', avatar: 'AT', status: 'active', todayFocus: 'Pipeline hygiene', openTasks: 3, alerts: 0, recentActivity: 'Cleaned 40 stale deals', relationship: 'Same department', email: 'alex@company.com', managerId: '2', level: 3 },
+  { id: '14', name: 'Laura Simmons', role: 'Partnerships Manager', department: 'Partners', avatar: 'LS', status: 'active', todayFocus: 'Vertex Analytics call', openTasks: 2, alerts: 0, recentActivity: 'Signed new partner MOU', relationship: 'Direct report', email: 'laura@company.com', managerId: '0', level: 2 },
 ]
 
 const POLICIES = [
@@ -78,14 +83,17 @@ const BIRTHDAYS = [
   { name: 'Nate Crawford', event: 'Birthday', date: '18 Apr', emoji: '🎂' },
 ]
 
-const DEMO_STAFF: StaffRecord[] = [
-  { first_name: 'James', last_name: 'Hartley', job_title: 'CEO & Founder', department: 'Executive', email: 'james@lumiodemo.com' },
-  { first_name: 'Sophie', last_name: 'Brennan', job_title: 'Marketing Director', department: 'Marketing', email: 'sophie@lumiodemo.com' },
-  { first_name: 'Marcus', last_name: 'Webb', job_title: 'Sales Director', department: 'Sales', email: 'marcus@lumiodemo.com' },
-  { first_name: 'Rachel', last_name: 'Osei', job_title: 'Operations Manager', department: 'Operations', email: 'rachel@lumiodemo.com' },
-  { first_name: 'Tom', last_name: 'Fielding', job_title: 'Support Lead', department: 'Support', email: 'tom@lumiodemo.com' },
-  { first_name: 'Claire', last_name: 'Donovan', job_title: 'IT Director', department: 'IT', email: 'claire@lumiodemo.com' },
-]
+// DEMO_STAFF is derived from TEAM — single source of truth for demo employees.
+const DEMO_STAFF: StaffRecord[] = TEAM.map(m => {
+  const [first, ...rest] = m.name.split(' ')
+  return {
+    first_name: first,
+    last_name: rest.join(' '),
+    job_title: m.role,
+    department: m.department,
+    email: m.email,
+  }
+})
 
 type SubTab = 'today' | 'orgchart' | 'company' | 'cards'
 

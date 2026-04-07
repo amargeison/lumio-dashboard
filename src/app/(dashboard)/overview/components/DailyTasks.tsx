@@ -31,6 +31,8 @@ const MOCK_TASKS: Task[] = [
   { id: '3', title: 'Approve 2 holiday requests', description: 'Both staff flagged as awaiting manager approval for over 48hrs.', due: '14:00', priority: 'medium', category: 'HR', source: 'workflow', linkedWorkflow: 'HR-07', done: false, overdue: false },
   { id: '4', title: 'Review campaign performance report', description: 'October campaign ended. Results ready to review and share with board.', due: '16:00', priority: 'medium', category: 'Marketing', source: 'lumio', done: false, overdue: false },
   { id: '5', title: '5 support tickets unassigned', description: 'Sitting in queue over 4 hours. SLA breach risk.', due: '11:00', priority: 'high', category: 'Support', source: 'lumio', done: false, overdue: true },
+  { id: '6', title: 'Prepare board deck slides', description: 'Thursday board meeting — strategy, financials and product roadmap sections still outstanding.', due: '15:00', priority: 'high', category: 'Leadership', source: 'lumio', done: false, overdue: false },
+  { id: '7', title: 'Chase outstanding invoice — Greenfield', description: 'Invoice #2041 overdue by 18 days. £6,200 — second reminder already sent.', due: '13:00', priority: 'high', category: 'Finance', source: 'lumio', done: false, overdue: false },
 ]
 
 type Filter = 'all' | 'critical' | 'high' | 'medium' | 'low'

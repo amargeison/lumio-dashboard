@@ -69,10 +69,24 @@ function Nav() {
   const [showTrial, setShowTrial] = useState(false)
   const [showTypeModal, setShowTypeModal] = useState(false)
   const [showEarlyAccess, setShowEarlyAccess] = useState(false)
+  const [betaBannerVisible, setBetaBannerVisible] = useState(false)
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
   const isFootball = pathname?.startsWith('/football') ?? false
   const isSports = useIsSports()
+  const showBetaBanner = !isSports && betaBannerVisible
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!localStorage.getItem('lumio_beta_banner_dismissed')) {
+      setBetaBannerVisible(true)
+    }
+  }, [])
+
+  function dismissBetaBanner() {
+    try { localStorage.setItem('lumio_beta_banner_dismissed', 'true') } catch {}
+    setBetaBannerVisible(false)
+  }
 
   const NAV_LINKS = isSports ? SPORTS_NAV : BUSINESS_NAV
   const baseLinks = isSchools && NAV_LINKS.some(l => l.label === 'Schools')
@@ -108,9 +122,60 @@ function Nav() {
 
   return (
     <>
+    {showBetaBanner && (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 40,
+          backgroundColor: '#0D9488',
+          color: '#FFFFFF',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          padding: '0 16px',
+          zIndex: 51,
+          fontSize: 13,
+        }}
+      >
+        <span>🚀 Lumio is in early access — your feedback shapes the product.</span>
+        <a
+          href="mailto:hello@lumiocms.com?subject=Lumio%20Feedback"
+          style={{ color: '#FFFFFF', textDecoration: 'underline', fontWeight: 600, whiteSpace: 'nowrap' }}
+        >
+          Share feedback &rarr;
+        </a>
+        <button
+          type="button"
+          onClick={dismissBetaBanner}
+          aria-label="Dismiss beta banner"
+          style={{
+            position: 'absolute',
+            right: 12,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'none',
+            border: 'none',
+            color: '#FFFFFF',
+            cursor: 'pointer',
+            padding: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.85,
+          }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+    )}
     <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      className="fixed left-0 right-0 z-50 transition-all duration-300"
       style={{
+        top: showBetaBanner ? 40 : 0,
         backgroundColor: scrolled ? 'rgba(7,8,15,0.85)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
         borderBottom: scrolled ? '1px solid rgba(31,41,55,0.6)' : '1px solid transparent',
@@ -125,6 +190,21 @@ function Nav() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isSports ? '/Sports/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
             style={{ height: isSports ? '36px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+          {!isSports && !isSchools && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: '#0D9488',
+              border: '1px solid #0D9488',
+              borderRadius: 4,
+              padding: '1px 5px',
+              marginLeft: 6,
+              verticalAlign: 'middle',
+            }}>
+              BETA
+            </span>
+          )}
         </Link>
 
         {/* Desktop nav */}
