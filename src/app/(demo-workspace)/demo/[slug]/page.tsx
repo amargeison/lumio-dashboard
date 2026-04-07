@@ -1171,9 +1171,31 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-  'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
+  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+  'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=80',
 ]
+
+function readStoredFramePhotos(): string[] | null {
+  if (typeof window === 'undefined') return null
+  // Prefer new underscore key; migrate from legacy dash key if present.
+  const fresh = localStorage.getItem('lumio_photo_frame')
+  if (fresh) {
+    try { const p = JSON.parse(fresh); if (Array.isArray(p)) return p } catch { /* ignore */ }
+  }
+  const legacy = localStorage.getItem('lumio-photo-frame')
+  if (legacy) {
+    try {
+      const p = JSON.parse(legacy)
+      if (Array.isArray(p)) {
+        localStorage.setItem('lumio_photo_frame', legacy)
+        localStorage.removeItem('lumio-photo-frame')
+        return p
+      }
+    } catch { /* ignore */ }
+  }
+  return null
+}
 
 function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const photoImpCtx = getImpersonationContext()
@@ -1191,11 +1213,27 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posStartRef = useRef({ x: 50, y: 50 })
 
-  // Sync photos to demoDataActive state
+  // Track whether the current photos are the demo seed (for the label above the frame)
+  const [isShowingDemoPhotos, setIsShowingDemoPhotos] = useState(false)
+
+  // Sync photos to demoDataActive state — only seed DEMO_PHOTOS if the user has no stored photos.
   useEffect(() => {
     if (photoImpCtx.isImpersonating) return
-    setPhotos(demoDataActive ? DEMO_PHOTOS : [])
-    if (!demoDataActive) localStorage.removeItem('lumio-photo-frame')
+    const stored = readStoredFramePhotos()
+    if (stored && stored.length > 0) {
+      setPhotos(stored)
+      setIsShowingDemoPhotos(false)
+      return
+    }
+    if (demoDataActive) {
+      setPhotos(DEMO_PHOTOS)
+      setIsShowingDemoPhotos(true)
+    } else {
+      setPhotos([])
+      setIsShowingDemoPhotos(false)
+      localStorage.removeItem('lumio_photo_frame')
+      localStorage.removeItem('lumio-photo-frame')
+    }
   }, [demoDataActive])
 
   useEffect(() => {
@@ -1204,10 +1242,33 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
   const photosInitRef = useRef(false)
-  useEffect(() => { if (!photosInitRef.current) { photosInitRef.current = true; return }; localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { if (!photosInitRef.current) { photosInitRef.current = true; return }; localStorage.setItem('lumio_photo_frame', JSON.stringify(photos)) }, [photos])
   useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
-  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
-  function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || photos.length >= 3) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string
+      // If we're currently showing the demo seed photos, adding a real user photo replaces the seed.
+      if (isShowingDemoPhotos) {
+        setPhotos([src])
+        setCurrentIdx(0)
+        setIsShowingDemoPhotos(false)
+      } else {
+        setPhotos(prev => [...prev, src])
+        setCurrentIdx(photos.length)
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+  function handleRemovePhoto() {
+    if (photos.length === 0) return
+    setPhotos(prev => prev.filter((_, i) => i !== currentIdx))
+    setCurrentIdx(prev => Math.max(0, prev - 1))
+    setIsShowingDemoPhotos(false)
+  }
 
   function onDragStart(cx: number, cy: number) {
     isDragging.current = true; dragStartRef.current = { x: cx, y: cy }
@@ -1227,9 +1288,16 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
 
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      {isShowingDemoPhotos && photos.length > 0 && (
+        <div className="px-4 pt-3 text-[11px]" style={{ color: '#6B7280' }}>
+          📷 Example photos — tap + Add to use your own
+        </div>
+      )}
       {photos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #374151', height: 220 }} onClick={() => fileInputRef.current?.click()}>
-          <div className="text-3xl">📷</div><div className="text-xs" style={{ color: '#9CA3AF' }}>Add your photos</div>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer m-4" style={{ border: '2px dashed #0D9488', height: 220 }} onClick={() => fileInputRef.current?.click()}>
+          <div className="text-3xl">📷</div>
+          <div className="text-xs font-semibold" style={{ color: '#0D9488' }}>Add up to 3 photos</div>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       ) : (
       <div className="relative" style={{ height: 220, cursor: isDragging.current ? 'grabbing' : 'grab', userSelect: 'none' }}
@@ -1267,8 +1335,8 @@ function PhotoFrame({ demoDataActive = false }: { demoDataActive?: boolean }) {
           {photos.length > 1 && <button onClick={() => setIsPlaying(p => !p)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: isPlaying ? 'rgba(13,148,136,0.15)' : 'transparent', color: isPlaying ? '#0D9488' : '#6B7280' }}>{isPlaying ? '⏸' : '▶'}</button>}
         </div>
         <div className="flex items-center gap-1.5">
-          {photos.length > 1 && <button onClick={handleRemovePhoto} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕</button>}
-          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 5} title={photos.length >= 5 ? 'Maximum 5 photos' : 'Add a photo'} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 5 ? '#6B7280' : '#0D9488', cursor: photos.length >= 5 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
+          {photos.length > 0 && <button onClick={handleRemovePhoto} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }} title="Remove this photo">✕</button>}
+          <button onClick={() => fileInputRef.current?.click()} disabled={photos.length >= 3} title={photos.length >= 3 ? 'Maximum 3 photos' : 'Add a photo'} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 5, border: '1px solid #1F2937', background: 'transparent', color: photos.length >= 3 ? '#6B7280' : '#0D9488', cursor: photos.length >= 3 ? 'not-allowed' : 'pointer', fontWeight: 600 }}>+ Add</button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
         </div>
       </div>
@@ -2647,6 +2715,7 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     localStorage.removeItem('lumio_staff_ids')
     localStorage.removeItem('lumio_staff_profiles')
     localStorage.removeItem('lumio_demo_active')
+    localStorage.removeItem('lumio_photo_frame')
     localStorage.removeItem('lumio-photo-frame')
     // Clear task/win/don't-miss persistence
     ;['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','lumio_dismissed_notifs'].forEach(k => localStorage.removeItem(k))
@@ -2688,10 +2757,21 @@ function SettingsView({ company, demoDataActive, sessionToken, onDemoToggle, onT
     const demoRes = await fetch('/api/onboarding/load-demo', { method: 'POST', headers: sessionToken ? { 'x-workspace-token': sessionToken } : {} }).catch(() => null)
     if (!demoRes?.ok) { setLoading(false); return }
     localStorage.setItem('lumio_demo_active', 'true')
-    localStorage.setItem('lumio-photo-frame', JSON.stringify([
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
-      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80',
-    ]))
+    // Only seed demo photos if user has none (dual-key aware to catch legacy state).
+    const existingFresh = localStorage.getItem('lumio_photo_frame')
+    const existingLegacy = localStorage.getItem('lumio-photo-frame')
+    const hasExisting = [existingFresh, existingLegacy].some(v => {
+      if (!v) return false
+      try { const p = JSON.parse(v); return Array.isArray(p) && p.length > 0 } catch { return false }
+    })
+    if (!hasExisting) {
+      localStorage.setItem('lumio_photo_frame', JSON.stringify([
+        'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+        'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=80',
+      ]))
+    }
+    localStorage.removeItem('lumio-photo-frame')
     const allPages = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','inbox','calendar','analytics','accounts','support','success','trials','operations','it']
     allPages.forEach(k => localStorage.setItem(`lumio_dashboard_${k}_hasData`, 'true'))
     // Restore identity fields
@@ -4411,9 +4491,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         setUserPhoto(photo)
       }
     }
-    // Listen for same-tab avatar updates (e.g. from dropdown upload)
+    // Listen for same-tab avatar updates (e.g. from dropdown upload or demo welcome modal).
+    // Accept either a raw string detail or `{ url }` for forward compatibility.
     function onAvatarUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
+      const detail = (e as CustomEvent).detail
+      const url = typeof detail === 'string' ? detail : detail?.url
       setUserPhoto(url || null)
     }
     window.addEventListener('storage', onPhotoUpdate)
@@ -4887,7 +4969,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                       </div>
                     )}
                   </div>
-                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
+                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio_photo_frame','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
                 </div>
               </div>
               {showRoleTip && (
@@ -4932,6 +5014,15 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 // Mirrors OnboardingWizard's StepYourCard + StepBookCall content but is fully
 // self-contained so the demo route doesn't depend on the wizard's internals.
 
+function detectGender(name: string): 'male' | 'female' | 'unknown' {
+  const firstName = name.trim().split(' ')[0].toLowerCase()
+  const femaleNames = ['sarah','emma','sophie','claire','rachel','priya','jade','abbi','chloe','fatima','niamh','tilly','laura','leah','emily','jessica','hannah','amy','lucy','kate','helen','anna','lisa','maria','natalie','victoria','charlotte','alice','grace','ella','mia','olivia','ava','isabella','amelia','lily','zoe','eve','molly','ruby','daisy','poppy','ellie','freya','imogen','jasmine','katie','lauren','megan','nicola','paula','rebecca','samantha','stephanie','tanya','wendy','yvonne','zara']
+  const maleNames = ['james','marcus','tom','ben','alex','david','arron','aaron','michael','john','robert','william','richard','charles','george','edward','henry','peter','paul','mark','andrew','stephen','kevin','brian','gary','jason','ryan','daniel','matthew','christopher','joseph','thomas','joshua','samuel','oliver','harry','jack','charlie','jake','luke','adam','nathan','liam','noah','ethan','mason','logan','aiden','lucas','jayden','caleb']
+  if (femaleNames.includes(firstName)) return 'female'
+  if (maleNames.includes(firstName)) return 'male'
+  return 'unknown'
+}
+
 function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () => void }) {
   const [screen, setScreen] = useState<1 | 2>(1)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
@@ -4961,9 +5052,19 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
       if (!dataUrl) return
       setPhotoDataUrl(dataUrl)
       try { localStorage.setItem('lumio_user_photo', dataUrl) } catch {}
+      // Broadcast so the header avatar updates instantly without a reload.
+      try {
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: dataUrl } }))
+      } catch { /* ignore */ }
     }
     reader.readAsDataURL(file)
   }
+
+  const gender = detectGender(userName)
+  const genderAvatarSrc =
+    gender === 'female' ? '/business_woman_avatar.png'
+    : gender === 'male' ? '/business_man_avatar.png'
+    : null
 
   const initials =
     userName
@@ -5070,7 +5171,15 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                     backgroundPosition: 'center',
                   }}
                 >
-                  {!photoDataUrl && <Camera size={40} color="#9CA3AF" />}
+                  {!photoDataUrl && genderAvatarSrc && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={genderAvatarSrc}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    />
+                  )}
+                  {!photoDataUrl && !genderAvatarSrc && <Camera size={40} color="#9CA3AF" />}
                 </button>
                 <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
                   {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
@@ -5137,7 +5246,15 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                         boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
                       }}
                     >
-                      {!photoDataUrl && initials}
+                      {!photoDataUrl && genderAvatarSrc && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={genderAvatarSrc}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      )}
+                      {!photoDataUrl && !genderAvatarSrc && initials}
                     </div>
                   </div>
                   <div
