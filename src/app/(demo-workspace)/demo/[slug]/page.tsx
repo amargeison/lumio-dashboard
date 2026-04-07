@@ -171,6 +171,9 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             setLogoUrl(data.logo_url)
             localStorage.setItem('lumio_company_logo', data.logo_url)
             localStorage.setItem('workspace_company_logo', data.logo_url)
+            // Notify parent (and any other listeners) so the parent's
+            // companyLogo state stays in sync — handled by lumio-logo-updated.
+            window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: data.logo_url } }))
           }
         })
         .catch(() => {})
@@ -1102,21 +1105,6 @@ function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true,
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
               </button>
-              {voiceCommandsEnabled && (
-              <button
-                onClick={() => isListening ? stopListening() : startListening()}
-                title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
-                className="flex items-center justify-center rounded-lg transition-all"
-                style={{
-                  width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
-                  backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                  border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                  color: isListening ? '#EF4444' : '#F9FAFB',
-                  
-                }}>
-                <Mic size={14} strokeWidth={1.75} />
-              </button>
-              )}
             </div>
             <p className="text-purple-300 text-sm mb-2">{date}</p>
             <p style={{ color: '#FBBF24' }} className="text-sm italic">&ldquo;{quote.text}&rdquo; — {quote.author}</p>
@@ -2416,17 +2404,6 @@ function VoiceSelector() {
           <button onClick={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} className="flex-shrink-0"
             style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: ttsOn ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
             <span style={{ position: 'absolute', top: 3, left: ttsOn ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
-          </button>
-        </div>
-        {/* Voice Commands Toggle */}
-        <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-          <div>
-            <div className="font-semibold text-sm" style={{ color: '#F9FAFB' }}>🎙️ Voice Commands</div>
-            <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Say &ldquo;Hi Lumio&rdquo; to activate voice control — navigate, open forms, get briefings</div>
-          </div>
-          <button onClick={() => { const v = !vcOn; setVcOn(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} className="flex-shrink-0"
-            style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: vcOn ? '#0D9488' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
-            <span style={{ position: 'absolute', top: 3, left: vcOn ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
           </button>
         </div>
       </div>
@@ -4715,7 +4692,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const filteredNotifs = notifTab === 'all' ? visibleNotifs : notifTab === 'urgent' ? visibleNotifs.filter(n => n.priority === 'high') : notifTab === 'meetings' ? visibleNotifs.filter(n => n.category === 'meetings') : notifTab === 'tasks' ? visibleNotifs.filter(n => n.category === 'tasks') : visibleNotifs.filter(n => n.category === notifTab)
   const isLiveMode = !demoDataActive && liveNotifs.length > 0
   const [ttsEnabled, setTtsEnabled] = useState(true)
-  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(false)
   const [ssoWelcome, setSsoWelcome] = useState<{ name: string; department: string | null; pending: boolean } | null>(null)
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const avatarFileRef = useRef<HTMLInputElement>(null)
@@ -5195,47 +5172,70 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Demo banner — in flow, first child of right column */}
           {demoDataActive && (
-            <>
-              <div className="hidden md:flex items-center justify-between px-4 shrink-0" style={{ height: 40, minHeight: 40, background: '#0D9488', color: '#F9FAFB', paddingRight: 140 }}>
-                <span className="text-xs font-medium">Demo workspace &middot; sample data</span>
-                <div className="flex items-center gap-2">
-                  {/* Role Switcher */}
-                  <div className="relative" onMouseEnter={() => setShowRoleTooltip(true)} onMouseLeave={() => setShowRoleTooltip(false)}>
-                    <div className="flex items-center gap-1.5 bg-black/20 rounded-xl px-2 py-1">
-                      <span className="text-xs text-teal-200 font-medium mr-1 hidden lg:block">{'\u{1F464}'} Viewing as:</span>
-                      {DEMO_ROLES.map(role => (
-                        <button key={role.id} onClick={() => switchRole(role.id)} title={role.desc}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${demoRole === role.id ? 'text-white shadow-sm' : 'text-teal-200/60 hover:text-teal-100'}`}
-                          style={{ backgroundColor: demoRole === role.id ? role.color : 'transparent' }}>
-                          {role.label}
-                        </button>
+            <div
+              className="hidden md:flex shrink-0"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 20px',
+                paddingRight: 140,
+                height: 44,
+                backgroundColor: '#0D9488',
+                flexShrink: 0,
+              }}
+            >
+              {/* Left: label */}
+              <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>
+                Demo workspace &middot; sample data
+              </span>
+
+              {/* Center/Right: role switcher */}
+              <div
+                className="relative flex items-center"
+                style={{ gap: 8 }}
+                onMouseEnter={() => setShowRoleTooltip(true)}
+                onMouseLeave={() => setShowRoleTooltip(false)}
+              >
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 500 }}>
+                  Viewing as:
+                </span>
+                <div className="flex items-center" style={{ gap: 4 }}>
+                  {DEMO_ROLES.map(role => {
+                    const active = demoRole === role.id
+                    return (
+                      <button
+                        key={role.id}
+                        onClick={() => switchRole(role.id)}
+                        title={role.desc}
+                        className="px-3 py-1 rounded-full text-xs transition-all"
+                        style={
+                          active
+                            ? { backgroundColor: '#FFFFFF', color: '#0D9488', fontWeight: 600, border: '1px solid #FFFFFF' }
+                            : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.4)' }
+                        }
+                      >
+                        {role.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                {showRoleTooltip && (
+                  <div className="absolute top-full right-0 mt-2 rounded-xl p-3 z-50 shadow-xl min-w-[220px]" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>
+                    <div className="text-xs font-semibold text-white mb-2">{DEMO_ROLES.find(r => r.id === demoRole)?.label} &mdash; can see:</div>
+                    <div className="space-y-1.5">
+                      {([['All standard departments', ['admin','director','manager','standard']],['Finance figures (Accounts)', ['admin','director']],['HR salary & sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['Trials & conversion data', ['admin','director','manager']]] as [string, string[]][]).map(([label, roles]) => (
+                        <div key={label} className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-gray-400">{label}</span>
+                          <span className="text-[11px]">{roles.includes(demoRole) ? '\u2705' : '\u{1F512}'}</span>
+                        </div>
                       ))}
                     </div>
-                    {showRoleTooltip && (
-                      <div className="absolute top-full right-0 mt-2 rounded-xl p-3 z-50 shadow-xl min-w-[220px]" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>
-                        <div className="text-xs font-semibold text-white mb-2">{DEMO_ROLES.find(r => r.id === demoRole)?.label} &mdash; can see:</div>
-                        <div className="space-y-1.5">
-                          {([['All standard departments', ['admin','director','manager','standard']],['Finance figures (Accounts)', ['admin','director']],['HR salary & sensitive data', ['admin','director']],['Directors Suite', ['admin','director']],['Sales pipeline values', ['admin','director','manager']],['Trials & conversion data', ['admin','director','manager']]] as [string, string[]][]).map(([label, roles]) => (
-                            <div key={label} className="flex items-center justify-between gap-3">
-                              <span className="text-[11px] text-gray-400">{label}</span>
-                              <span className="text-[11px]">{roles.includes(demoRole) ? '\u2705' : '\u{1F512}'}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role updates all gated content instantly</div>
-                      </div>
-                    )}
+                    <div className="text-[10px] text-gray-600 mt-2 pt-2" style={{ borderTop: '1px solid #1F2937' }}>Switching role updates all gated content instantly</div>
                   </div>
-                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_demo_') || k.startsWith('lumio_dashboard_') || k.startsWith('lumio_tasks_done') || k.startsWith('lumio_crm_') || k.startsWith('lumio_ai_')).forEach(k => localStorage.removeItem(k)); ['demo_completed_tasks','demo_tasks_date','demo_dismissed_wins','demo_wins_date','qw_dismissed','qw_date','business_tasks_checked','demo_dont_miss_dismissed','qw_wins_cache','lumio_demo_active','lumio_photo_frame','lumio-photo-frame'].forEach(k => localStorage.removeItem(k)); setDemoDataActive(false); setTimeout(() => window.location.reload(), 300) }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
-                </div>
+                )}
               </div>
-              {showRoleTip && (
-                <div className="hidden md:flex items-center justify-between px-4 py-2 text-xs" style={{ backgroundColor: 'rgba(124,58,237,0.15)', borderBottom: '1px solid rgba(124,58,237,0.3)', color: '#C4B5FD' }}>
-                  <span>{'\u{1F446}'} <strong>Try the role switcher</strong> &mdash; switch between Admin, Director, Manager, and Standard to see how permissions work</span>
-                  <button onClick={() => { setShowRoleTip(false); try { localStorage.setItem('lumio_role_tip_seen', '1') } catch {} }} className="ml-4 text-purple-400 hover:text-white flex-shrink-0">Got it {'\u2715'}</button>
-                </div>
-              )}
-            </>
+            </div>
           )}
           {/* Scrollable page content */}
           <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
