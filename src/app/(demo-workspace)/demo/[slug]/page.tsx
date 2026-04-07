@@ -2146,20 +2146,11 @@ const DEPT_ROUTES: Record<string, string> = {
   directors: '/directors',
 }
 
-function DeptRedirect({ dept, slug }: { dept: DeptId; slug: string }) {
-  const router = useRouter()
+function DeptRedirect({ dept }: { dept: DeptId }) {
   useEffect(() => {
-    const route = DEPT_ROUTES[dept]
-    if (route) {
-      try { localStorage.setItem('lumio_demo_active', 'true') } catch {}
-      router.push(slug ? `/${slug}${route}` : route)
-    }
-  }, [dept, slug, router])
-  return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 size={24} className="animate-spin" style={{ color: '#0D9488' }} />
-    </div>
-  )
+    // intentionally empty — navigation handled by parent setActiveDept
+  }, [dept])
+  return null
 }
 
 // ─── AI Morning Summary Panel ────────────────────────────────────────────────
@@ -4833,6 +4824,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     }
     return localStorage.getItem('lumio_demo_active') === 'true'
   })
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo/')) {
+      localStorage.setItem('lumio_demo_active', 'true')
+      setDemoDataActive(true)
+    }
+  }, [])
   const [demoRole, setDemoRole] = useState(() => { try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : null) || 'director' } catch { return 'director' } })
   const [showRoleTooltip, setShowRoleTooltip] = useState(false)
   const [showRoleTip, setShowRoleTip] = useState(() => { try { return typeof window !== 'undefined' && !localStorage.getItem('lumio_role_tip_seen') } catch { return true } })
@@ -5504,7 +5501,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} dismissedWins={dismissedWins} onDismissWin={handleDismissWin} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && (
-              <DeptRedirect dept={activeDept} slug={slug} />
+              <ComingSoonView dept={activeDept} />
             )}
           </main>
         </div>
