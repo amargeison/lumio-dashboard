@@ -1,11 +1,9 @@
 'use client'
-import React, { useState, useMemo } from 'react'
-import { usePathname } from 'next/navigation'
-import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3 } from 'lucide-react'
-import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
-import { useHasSchoolData } from '@/components/dashboard/EmptyState'
-import LanguageScreenApp from '@/components/LanguageScreenApp'
-import PupilOverview from '@/components/PupilOverview'
+import React, { useState, useEffect, useMemo } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { Search, Filter, ChevronRight, X, AlertTriangle, User, BookOpen, Shield, Activity, Phone, Heart, Users, FileText, Star, BarChart3, Sparkles, UserPlus, AlertCircle, Calendar } from 'lucide-react'
+import { AddStudentModal, StudentNoteModal, BehaviourLogModal, SafeguardingConcernModal, NewAdmissionModal, ParentContactModal, AddSENDRecordModal } from '@/components/modals/SchoolModals'
+import { ProgressNoteModal, ExclusionRequestModal, PastoralMeetingModal, CAFReferralModal } from '@/components/modals/StudentsExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -293,6 +291,7 @@ function PupilProfile({ pupil, onClose, view }: { pupil: Pupil; onClose: () => v
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}>
           <div className="flex items-center gap-3">
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', borderRadius: 8, color: '#94a3b8', padding: '6px 12px', cursor: 'pointer', fontSize: 13, marginRight: 12, flexShrink: 0 }}>← Back</button>
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
               style={{ backgroundColor: '#1F2937', color: '#0D9488' }}>
               {pupil.name.split(' ')[0][0]}
@@ -319,7 +318,45 @@ function PupilProfile({ pupil, onClose, view }: { pupil: Pupil; onClose: () => v
         <div className="flex-1 overflow-y-auto p-5">
 
           {/* OVERVIEW */}
-          {tab === 'overview' && <PupilOverview pupil={pupil} />}
+          {tab === 'overview' && (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Attendance</p>
+                  <p className="text-2xl font-black mt-1" style={{ color: attendanceColor }}>{pupil.attendancePct}%</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>This academic year</p>
+                </div>
+                <div className="rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Attainment</p>
+                  <p className="text-2xl font-black mt-1" style={{ color: pupil.attainment === 'Above' ? '#22C55E' : pupil.attainment === 'Below' ? '#EF4444' : '#0D9488' }}>{pupil.attainment}</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Overall expectation</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-0">
+                <InfoRow label="Date of Birth" value={pupil.dob} />
+                <InfoRow label="Gender" value={pupil.gender === 'M' ? 'Male' : 'Female'} />
+                <InfoRow label="Ethnicity" value={pupil.ethnicity} />
+                <InfoRow label="Class" value={`${pupil.class} — ${pupil.classTeacher}`} />
+                <InfoRow label="FSM Eligible" value={pupil.fsm ? 'Yes' : 'No'} />
+                <InfoRow label="Pupil Premium" value={pupil.pp ? 'Yes' : 'No'} />
+                <InfoRow label="EAL" value={pupil.eal ? 'Yes' : 'No'} />
+                <InfoRow label="LAC" value={pupil.lac ? 'Yes — see safeguarding tab' : 'No'} />
+                <InfoRow label="Young Carer" value={pupil.youngCarer ? 'Yes — handle sensitively' : 'No'} />
+              </div>
+              {pupil.safeguardingFlag && (
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: '#FCA5A5' }}>⚠️ Safeguarding Flag Active</p>
+                  <p className="text-xs" style={{ color: '#9CA3AF' }}>{pupil.cpStatus} — see Safeguarding tab. Contact DSL for details.</p>
+                </div>
+              )}
+              {pupil.medicalNotes && pupil.medicalNotes !== 'None' && (
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: '#FCD34D' }}>⚕️ Medical Note</p>
+                  <p className="text-xs" style={{ color: '#D1D5DB' }}>{pupil.medicalNotes}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* PUPIL PASSPORT */}
           {tab === 'passport' && (
@@ -624,20 +661,76 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: string }[] = [
 
 const YEARS = ['All Years', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6']
 
+const STUDENTS_HIGHLIGHTS = [
+  '3 students attendance below 90% — requires pastoral follow-up',
+  '2 new admissions this week — induction packs sent',
+  '1 exclusion pending review — governor meeting Thursday',
+  '4 pastoral concerns flagged by class teachers',
+  '6 achievement awards to present at assembly',
+]
+
+function AIHighlights({ items }: { items: string[] }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+        <Sparkles size={14} style={{ color: '#0D9488' }} />
+        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+        <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Updated just now</span>
+      </div>
+      <div className="flex flex-col gap-3 p-4" style={{ backgroundColor: '#07080F' }}>
+        {items.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>{i + 1}</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
+  return (
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function StudentsPage() {
-  const hasData = useHasSchoolData('students')
-  const pathname = usePathname()
-  const schoolSlug = pathname.match(/\/schools\/([^/]+)/)?.[1] ?? ''
-  const schoolName = schoolSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const [hasData, setHasData] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
   const [view, setView] = useState<ViewMode>('all')
   const [yearFilter, setYearFilter] = useState('All Years')
   const [flagFilter, setFlagFilter] = useState<FilterKey>('all')
   const [selectedPupil, setSelectedPupil] = useState<Pupil | null>(null)
-  const [assessing, setAssessing] = useState<Pupil | null>(null)
-  const [assessPickerPupil, setAssessPickerPupil] = useState<Pupil | null>(null)
-  const [toast, setToast] = useState('')
-  const [showInsights, setShowInsights] = useState(false)
+  const [showAddStudent, setShowAddStudent] = useState(false)
+  const [showStudentNote, setShowStudentNote] = useState(false)
+  const [showBehaviourLog, setShowBehaviourLog] = useState(false)
+  const [showSafeguarding, setShowSafeguarding] = useState(false)
+  const [showNewAdmission, setShowNewAdmission] = useState(false)
+  const [showParentContact, setShowParentContact] = useState(false)
+  const [showSENDRecord, setShowSENDRecord] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showProgressNote, setShowProgressNote] = useState(false)
+  const [showExclusion, setShowExclusion] = useState(false)
+  const [showPastoralMeeting, setShowPastoralMeeting] = useState(false)
+  const [showCAF, setShowCAF] = useState(false)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
   const filtered = useMemo(() => {
     return PUPILS.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -655,8 +748,31 @@ export default function StudentsPage() {
       return matchSearch && matchYear && matchFlag
     })
   }, [search, yearFilter, flagFilter])
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_students_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   if (hasData === null) return null
-  if (!hasData) return <SchoolEmptyState pageKey="students" title="No student data yet" description="Upload your student roll, attendance and assessment data to activate Students." uploads={[{ key: 'students', label: 'Upload Student Data (CSV)' }]} />
+  if (!hasData) return (
+    <EmptyState
+      pageName="students"
+      title="No pupil records yet"
+      description="Upload your pupil data, SEND register and medical information to activate the Students module."
+      uploads={[
+        { key: 'pupils', label: 'Upload Pupil Data (CSV)' },
+        { key: 'send', label: 'Upload SEND Register (CSV)' },
+        { key: 'medical', label: 'Upload Medical Data (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
 
   // Stats
   const totalSend = PUPILS.filter(p => p.sendStatus !== 'None').length
@@ -673,7 +789,18 @@ export default function StudentsPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>All pupils · Profiles, SEND, safeguarding, attendance and contacts</p>
       </div>
 
-      <DeptAISummary dept="students" portal="schools" />
+      <QuickActions actions={[
+        { label: 'Safeguarding Referral', icon: <Shield size={14} />, onClick: () => setShowSafeguarding(true), urgent: true },
+        { label: 'New Admission', icon: <UserPlus size={14} />, onClick: () => setShowNewAdmission(true) },
+        { label: 'Log Behaviour', icon: <AlertTriangle size={14} />, onClick: () => setShowBehaviourLog(true) },
+        { label: 'Parent Contact', icon: <Phone size={14} />, onClick: () => setShowParentContact(true) },
+        { label: 'Refer to SENCO', icon: <BookOpen size={14} />, onClick: () => setShowSENDRecord(true) },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
+        { label: 'Progress Note', icon: <FileText size={14} />, onClick: () => setShowProgressNote(true) },
+        { label: 'Exclusion Request', icon: <AlertCircle size={14} />, onClick: () => setShowExclusion(true) },
+        { label: 'Pastoral Meeting', icon: <Calendar size={14} />, onClick: () => setShowPastoralMeeting(true) },
+        { label: 'CAF Referral', icon: <FileText size={14} />, onClick: () => setShowCAF(true) },
+      ]} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -689,17 +816,6 @@ export default function StudentsPage() {
             <p className="text-2xl font-black mt-1" style={{ color: s.color }}>{s.value}</p>
           </div>
         ))}
-      </div>
-
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setShowInsights(true)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          <BarChart3 size={14} />Dept Insights
-        </button>
       </div>
 
       {/* View mode selector */}
@@ -852,12 +968,6 @@ export default function StudentsPage() {
                   </>
                 )}
 
-                <button
-                  onClick={e => { e.stopPropagation(); setAssessPickerPupil(pupil) }}
-                  className="px-2 py-1 rounded-lg text-xs font-semibold"
-                  style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-                  Assess
-                </button>
                 <ChevronRight size={14} style={{ color: '#4B5563' }} />
               </div>
             )
@@ -893,74 +1003,29 @@ export default function StudentsPage() {
         />
       )}
 
-      {/* Assessment picker modal */}
-      {assessPickerPupil && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setAssessPickerPupil(null)}>
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative z-[51]" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Assess {assessPickerPupil.name}</p>
-              <button onClick={() => setAssessPickerPupil(null)} style={{ color: '#6B7280' }}><X size={16} /></button>
-            </div>
-            <div className="py-2">
-              {[
-                { label: 'LanguageScreen', desc: 'NELI oral language assessment', live: true },
-                { label: 'EYFS Profile Update', desc: 'Early years foundation stage profile', live: false },
-                { label: 'Leuven Wellbeing Scale', desc: 'Wellbeing and involvement observation', live: false },
-                { label: 'Phonics Readiness Screen', desc: 'Phase readiness and phoneme awareness', live: false },
-                { label: 'DfE SEND Assessment', desc: 'Graduated approach needs analysis', live: false },
-                { label: 'Teacher Observation Note', desc: 'Free-form observation record', live: false },
-              ].map(item => (
-                <button
-                  key={item.label}
-                  className="flex items-start gap-3 w-full px-5 py-3 text-left transition-all"
-                  style={{ borderBottom: '1px solid #1A1D27' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(13,148,136,0.06)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
-                  onClick={() => {
-                    if (item.live) {
-                      setAssessPickerPupil(null)
-                      setAssessing(assessPickerPupil)
-                    } else {
-                      setAssessPickerPupil(null)
-                      setToast('Coming soon')
-                      setTimeout(() => setToast(''), 3000)
-                    }
-                  }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{item.label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{item.desc}</p>
-                  </div>
-                  {item.live
-                    ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full self-center" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488' }}>Launch</span>
-                    : <span className="text-xs px-2 py-0.5 rounded-full self-center" style={{ backgroundColor: 'rgba(107,114,128,0.1)', color: '#4B5563' }}>Soon</span>
-                  }
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {showAddStudent && <AddStudentModal onClose={() => setShowAddStudent(false)} onToast={showToast} />}
+      {showStudentNote && <StudentNoteModal onClose={() => setShowStudentNote(false)} onToast={showToast} />}
+      {showBehaviourLog && <BehaviourLogModal onClose={() => setShowBehaviourLog(false)} onToast={showToast} />}
+      {showSafeguarding && <SafeguardingConcernModal onClose={() => setShowSafeguarding(false)} onToast={showToast} />}
+      {showNewAdmission && <NewAdmissionModal onClose={() => setShowNewAdmission(false)} onToast={showToast} />}
+      {showParentContact && <ParentContactModal onClose={() => setShowParentContact(false)} onToast={showToast} />}
+      {showSENDRecord && <AddSENDRecordModal onClose={() => setShowSENDRecord(false)} onToast={showToast} />}
+      {showProgressNote && <ProgressNoteModal onClose={() => setShowProgressNote(false)} />}
+      {showExclusion && <ExclusionRequestModal onClose={() => setShowExclusion(false)} />}
+      {showPastoralMeeting && <PastoralMeetingModal onClose={() => setShowPastoralMeeting(false)} />}
+      {showCAF && <CAFReferralModal onClose={() => setShowCAF(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="students" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
 
-      {assessing && (
-        <LanguageScreenApp
-          studentName={assessing.name}
-          studentDob={assessing.dob}
-          schoolName={schoolName}
-          assessorName=""
-          onClose={() => setAssessing(null)}
-          onComplete={() => { setAssessing(null) }}
-        />
-      )}
-
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl text-sm font-medium shadow-xl" style={{ backgroundColor: '#1A1D27', border: '1px solid #374151', color: '#F9FAFB' }}>
-          {toast}
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="students" portal="schools" />
+          <AIHighlights items={STUDENTS_HIGHLIGHTS} />
         </div>
-      )}
-      <AIInsightsReport dept="students" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+  
+      </div>
+
     </div>
   )
 }

@@ -1,21 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
-import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles, BarChart3 } from 'lucide-react'
-import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
-import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { MessageSquare, Calendar, Mail, Users, Share2, Sparkles, BarChart3, FileText, ClipboardList, UserPlus, Eye } from 'lucide-react'
+import { NewEnquiryModal, OpenDayModal, SocialMediaPostModal } from '@/components/modals/SchoolModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
-
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg"
-      style={{ backgroundColor: '#0D9488', color: '#F9FAFB', maxWidth: 320 }}>
-      <span className="text-sm font-medium flex-1">{message}</span>
-      <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1 }}>×</button>
-    </div>
-  )
-}
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -48,19 +38,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions, onAction }: { actions: { label: string; icon: React.ReactNode }[]; onAction?: (label: string) => void }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label}
-          onClick={() => onAction?.(a.label)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -106,28 +97,54 @@ const commsHistory = [
   { subject: 'Waiting list update', recipient: '9 families', date: '20 Mar', count: 'Sent' },
 ]
 
-export default function DemoAdmissionsPage() {
-  const hasData = useHasSchoolData('admissions')
-  const [toast, setToast] = useState('')
-  const [showInsights, setShowInsights] = useState(false)
-  if (hasData === null) return null
-  if (!hasData) return <SchoolEmptyState pageKey="admissions" title="No admissions data yet" description="Upload your admissions register and enquiry data to activate Admissions." uploads={[{ key: 'admissions', label: 'Upload Admissions Data (CSV)' }]} />
+export default function AdmissionsPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showEnquiry, setShowEnquiry] = useState(false)
+  const [showOpenDay, setShowOpenDay] = useState(false)
+  const [showSocialMedia, setShowSocialMedia] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
-  function fireToast(action: string) {
-    if (action === 'Dept Insights') { setShowInsights(true); return }
-    setToast(`${action} — demo data only, no changes saved`)
-    setTimeout(() => setToast(''), 3000)
-  }
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_admissions_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="admissions" title="No admissions data yet" description="Upload your applications, waiting list and marketing data to activate Admissions & Marketing." uploads={[
+    { key: 'applications', label: 'Upload Applications (CSV)' },
+    { key: 'waitinglist', label: 'Upload Waiting List (CSV)' },
+    { key: 'mis', label: 'Connect MIS' },
+  ]} />
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#07080F' }}>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black" style={{ color: '#F9FAFB' }}>Admissions</h1>
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Applications pipeline, open days, waiting list and parent communications</p>
       </div>
 
-      <DeptAISummary dept="admissions" portal="schools" />
+      {/* Quick Actions */}
+      <QuickActions actions={[
+        { label: 'New Enquiry', icon: <MessageSquare size={14} />, onClick: () => setShowEnquiry(true) },
+        { label: 'Open Day', icon: <Users size={14} />, onClick: () => setShowOpenDay(true) },
+        { label: 'Application Review', icon: <ClipboardList size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Offer Letter', icon: <FileText size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Waiting List', icon: <Eye size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Tour Booking', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Send Newsletter', icon: <Mail size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Social Post', icon: <Share2 size={14} />, onClick: () => setShowSocialMedia(true) },
+        { label: 'Open Day Schedule', icon: <Calendar size={14} />, onClick: () => showToast('Feature coming soon') },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) },
+      ]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,22 +153,6 @@ export default function DemoAdmissionsPage() {
         <StatCard label="Waiting List" value="9" sub="Remaining" />
         <StatCard label="Open Day Registrations" value="34" sub="Next Sat 29 Mar" />
       </div>
-
-      {/* Quick Actions */}
-      <QuickActions
-        onAction={fireToast}
-        actions={[
-          { label: 'New Enquiry', icon: <MessageSquare size={14} /> },
-          { label: 'Book School Trip', icon: <Calendar size={14} /> },
-          { label: 'Send Newsletter', icon: <Mail size={14} /> },
-          { label: 'Open Day', icon: <Users size={14} /> },
-          { label: 'Social Post', icon: <Share2 size={14} /> },
-          { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
-        ]}
-      />
-
-      {/* AI Highlights */}
-      <AIHighlights items={aiHighlights} />
 
       {/* Pipeline Summary */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -319,8 +320,21 @@ export default function DemoAdmissionsPage() {
         </div>
       </div>
 
-      {toast && <Toast message={toast} onClose={() => setToast('')} />}
-      <AIInsightsReport dept="admissions" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+      {showEnquiry && <NewEnquiryModal onClose={() => setShowEnquiry(false)} onToast={showToast} />}
+      {showOpenDay && <OpenDayModal onClose={() => setShowOpenDay(false)} onToast={showToast} />}
+      {showSocialMedia && <SocialMediaPostModal onClose={() => setShowSocialMedia(false)} onToast={showToast} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="admissions" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="admissions" portal="schools" />
+          <AIHighlights items={aiHighlights} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }

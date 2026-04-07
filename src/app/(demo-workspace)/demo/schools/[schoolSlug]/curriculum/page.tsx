@@ -1,25 +1,29 @@
 'use client'
-import React, { useState } from 'react'
-import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3 } from 'lucide-react'
-import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
-import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { Sparkles, BookOpen, FileText, Users, ClipboardList, PenLine, BarChart3, Calendar, ClipboardCheck, Package } from 'lucide-react'
+import { LessonPlanModal, CoverWorkModal, ParentsEveningModal, AssessmentTrackerModal, ReportWriterModal } from '@/components/modals/CurriculumModals'
+import { SchemeOfWorkReviewModal, PlanAssessmentCalendarModal, ModerationRequestModal, OrderResourcesModal } from '@/components/modals/CurriculumExtraModals'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
 const HIGHLIGHTS = [
   'Parents evening 67% booked — 139 families still to respond, deadline is Friday',
-  "Year 2 phonics assessments overdue — Mrs Brown's class, 2 weeks behind schedule",
+  'Year 2 phonics assessments overdue — Mrs Brown\'s class, 2 weeks behind schedule',
   'SATs prep resources updated for Year 6 — 28 pupils enrolled in intervention group',
   'Book scrutiny scheduled next Tuesday — Year 3 and 4 teachers to prepare marked books',
 ]
 
-const ACTIONS = [
+const ACTIONS_BASE = [
   { label: 'Generate Lesson Plan', icon: <BookOpen size={14} /> },
   { label: 'Cover Work', icon: <FileText size={14} /> },
   { label: 'Parents Evening', icon: <Users size={14} /> },
-  { label: 'Assessment Tracker', icon: <ClipboardList size={14} /> },
-  { label: 'Report Writer', icon: <PenLine size={14} /> },
-  { label: 'Dept Insights', icon: <BarChart3 size={14} /> },
+  { label: 'Assessment Tracker', icon: <BarChart3 size={14} /> },
+  { label: 'Report Writer', icon: <FileText size={14} /> },
+  { label: 'Scheme of Work Review', icon: <BookOpen size={14} /> },
+  { label: 'Plan Assessment Calendar', icon: <Calendar size={14} /> },
+  { label: 'Moderation Request', icon: <ClipboardCheck size={14} /> },
+  { label: 'Order Resources', icon: <Package size={14} /> },
 ]
 
 const STATS = [
@@ -64,16 +68,6 @@ const EVENTS = [
   { id: 4, event: 'Parents Evening', date: 'Tue/Wed 1–2 Apr', scope: 'All year groups', who: 'All teachers' },
 ]
 
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg"
-      style={{ backgroundColor: '#0D9488', color: '#F9FAFB', maxWidth: 320 }}>
-      <span className="text-sm font-medium flex-1">{message}</span>
-      <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1 }}>×</button>
-    </div>
-  )
-}
-
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
     <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -105,19 +99,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions, onAction }: { actions: { label: string; icon: React.ReactNode }[]; onAction?: (label: string) => void }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label}
-          onClick={() => onAction?.(a.label)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -128,17 +123,46 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
   )
 }
 
-export default function DemoCurriculumPage() {
-  const hasData = useHasSchoolData('curriculum')
-  const [toast, setToast] = useState('')
-  const [showInsights, setShowInsights] = useState(false)
+export default function CurriculumPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showLessonPlan, setShowLessonPlan] = useState(false)
+  const [showCoverWork, setShowCoverWork] = useState(false)
+  const [showParentsEvening, setShowParentsEvening] = useState(false)
+  const [showAssessment, setShowAssessment] = useState(false)
+  const [showReportWriter, setShowReportWriter] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [showSchemeReview, setShowSchemeReview] = useState(false)
+  const [showAssessmentCal, setShowAssessmentCal] = useState(false)
+  const [showModeration, setShowModeration] = useState(false)
+  const [showOrderRes, setShowOrderRes] = useState(false)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_curriculum_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   if (hasData === null) return null
-  if (!hasData) return <SchoolEmptyState pageKey="curriculum" title="No curriculum data yet" description="Upload your curriculum plans and assessment data to activate Curriculum." uploads={[{ key: 'curriculum', label: 'Upload Curriculum Data (CSV)' }]} />
-  function fireToast(action: string) {
-    if (action === 'Dept Insights') { setShowInsights(true); return }
-    setToast(`${action} — demo data only, no changes saved`)
-    setTimeout(() => setToast(''), 3000)
-  }
+  if (!hasData) return (
+    <EmptyState
+      pageName="curriculum"
+      title="No curriculum data yet"
+      description="Upload your assessment data, subject plans and timetable to activate Curriculum."
+      uploads={[
+        { key: 'assessment', label: 'Upload Assessment Data (CSV)' },
+        { key: 'timetable', label: 'Upload Timetable (CSV)' },
+        { key: 'mis', label: 'Connect MIS' },
+      ]}
+    />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page title */}
@@ -147,13 +171,20 @@ export default function DemoCurriculumPage() {
         <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Lesson plans, assessments, parents evening and curriculum events</p>
       </div>
 
-      <DeptAISummary dept="curriculum" portal="schools" />
-
-      {/* AI Highlights */}
-      <AIHighlights items={HIGHLIGHTS} />
-
       {/* Quick actions */}
-      <QuickActions actions={ACTIONS} onAction={fireToast} />
+      <QuickActions actions={[...ACTIONS_BASE.map(a => ({
+        ...a,
+        onClick: a.label === 'Generate Lesson Plan' ? () => setShowLessonPlan(true)
+          : a.label === 'Cover Work' ? () => setShowCoverWork(true)
+          : a.label === 'Parents Evening' ? () => setShowParentsEvening(true)
+          : a.label === 'Assessment Tracker' ? () => setShowAssessment(true)
+          : a.label === 'Report Writer' ? () => setShowReportWriter(true)
+          : a.label === 'Scheme of Work Review' ? () => setShowSchemeReview(true)
+          : a.label === 'Plan Assessment Calendar' ? () => setShowAssessmentCal(true)
+          : a.label === 'Moderation Request' ? () => setShowModeration(true)
+          : a.label === 'Order Resources' ? () => setShowOrderRes(true)
+          : () => showToast('Feature coming soon'),
+      })), { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowAIInsights(true) }]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -267,8 +298,27 @@ export default function DemoCurriculumPage() {
         </div>
       </div>
 
-      {toast && <Toast message={toast} onClose={() => setToast('')} />}
-      <AIInsightsReport dept="curriculum" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+      {showLessonPlan && <LessonPlanModal onClose={() => setShowLessonPlan(false)} />}
+      {showCoverWork && <CoverWorkModal onClose={() => setShowCoverWork(false)} />}
+      {showParentsEvening && <ParentsEveningModal onClose={() => setShowParentsEvening(false)} />}
+      {showAssessment && <AssessmentTrackerModal onClose={() => setShowAssessment(false)} />}
+      {showReportWriter && <ReportWriterModal onClose={() => setShowReportWriter(false)} />}
+      {showSchemeReview && <SchemeOfWorkReviewModal onClose={() => setShowSchemeReview(false)} />}
+      {showAssessmentCal && <PlanAssessmentCalendarModal onClose={() => setShowAssessmentCal(false)} />}
+      {showModeration && <ModerationRequestModal onClose={() => setShowModeration(false)} />}
+      {showOrderRes && <OrderResourcesModal onClose={() => setShowOrderRes(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="curriculum" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="curriculum" portal="schools" />
+          <AIHighlights items={HIGHLIGHTS} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }
