@@ -194,7 +194,7 @@ function Nav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={isSports ? '/Lumio_Sports_Logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+          <img src={isSports ? '/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
             style={{ height: isSports ? '56px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {!isSports && !isSchools && (
             <span style={{
@@ -593,7 +593,7 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={isSports ? '/Lumio_Sports_Logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+            <img src={isSports ? '/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
               style={{ width: '100px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
