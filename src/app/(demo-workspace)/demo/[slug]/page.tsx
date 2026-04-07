@@ -5495,12 +5495,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} dismissedWins={dismissedWins} onDismissWin={handleDismissWin} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="text-5xl mb-4">🚧</div>
-                <h2 className="text-lg font-bold text-white mb-2">{deptLabel} preview coming soon</h2>
-                <p className="text-sm text-gray-500 max-w-sm mb-6">This department is part of the full workspace. Explore the Overview to see how Lumio brings everything together.</p>
-                <button onClick={() => setActiveDept('overview')} className="px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>← Back to Overview</button>
-              </div>
+              <DeptRedirect dept={activeDept} slug={slug} />
             )}
           </main>
         </div>
