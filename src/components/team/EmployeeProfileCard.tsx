@@ -255,11 +255,6 @@ export function EmployeeProfileCard({
         <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ height: 4, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
           <div className="flex items-center justify-center gap-1.5 pt-2 px-2">
-            {isCurrentUser && (
-              <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
-                <Star size={6} /> You
-              </span>
-            )}
             <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${deptColor}20`, color: deptColor, border: `1px solid ${deptColor}40` }}>
               {staff.department || 'Team'}
             </span>
@@ -305,11 +300,6 @@ export function EmployeeProfileCard({
               <span className={`${compact ? 'text-[8px]' : 'text-[9px]'} font-bold tracking-widest mt-0.5`} style={{ color: deptColor }}>{posAbbr}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              {isCurrentUser && (
-                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
-                  <Star size={7} /> You
-                </span>
-              )}
               <span className={`${compact ? 'text-[7px]' : 'text-[8px]'} font-semibold px-1.5 py-0.5 rounded-full`} style={{ backgroundColor: `${deptColor}25`, color: deptColor, border: `1px solid ${deptColor}40` }}>
                 {staff.department || 'Team'}
               </span>
@@ -458,11 +448,6 @@ export function ProfileModal({
               <div className="flex-1 min-w-0 pt-2">
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>{name}</h2>
-                  {isCurrentUser && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
-                      <Star size={8} /> You
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm" style={{ color: '#9CA3AF' }}>{staff.job_title || 'Team Member'}</p>
                 <div className="flex flex-wrap gap-3 mt-3 text-xs" style={{ color: '#6B7280' }}>

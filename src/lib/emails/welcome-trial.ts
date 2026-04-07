@@ -18,7 +18,7 @@ export function welcomeTrialEmail({ name, slug, expiresDate }: { name: string; s
   </td></tr>
   <tr><td style="padding:12px 0;border-bottom:1px solid #1f2937;">
     <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:#0d9488;color:#fff;text-align:center;line-height:28px;font-size:13px;font-weight:700;margin-right:12px;vertical-align:middle;">2</span>
-    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Connect your tools</strong> &mdash; link your email, CRM, and calendar in Integrations</span>
+    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Personalise your workspace</strong> &mdash; add your name, company name and logo, and your employee FIFA-style card to get a feel for what the real system looks like</span>
   </td></tr>
   <tr><td style="padding:12px 0;border-bottom:1px solid #1f2937;">
     <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:#0d9488;color:#fff;text-align:center;line-height:28px;font-size:13px;font-weight:700;margin-right:12px;vertical-align:middle;">3</span>
@@ -26,7 +26,7 @@ export function welcomeTrialEmail({ name, slug, expiresDate }: { name: string; s
   </td></tr>
   <tr><td style="padding:12px 0;">
     <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:#0d9488;color:#fff;text-align:center;line-height:28px;font-size:13px;font-weight:700;margin-right:12px;vertical-align:middle;">4</span>
-    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Book a 15-minute walkthrough</strong> &mdash; <a href="https://lumiocms.com/book-demo" style="color:#0d9488;text-decoration:underline;">Book a call</a></span>
+    <span style="font-size:14px;color:#f9fafb;vertical-align:middle;"><strong>Join our Early Pilot</strong> &mdash; sign up now and get 6 months completely free as a founding member</span>
   </td></tr>
 </table>
 
