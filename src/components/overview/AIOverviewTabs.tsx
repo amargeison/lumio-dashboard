@@ -729,7 +729,7 @@ function OrgChart({ items, ctx, importedStaff }: { items: TeamMember[]; ctx: AIC
       </div>
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 mt-6 pt-4" style={{ borderTop: '1px solid #1F2937' }}>
-        {([['You', 'rgba(108,63,197,0.3)'], ['C-Suite', LEVEL_COLORS.csuite.border], ['Directors', LEVEL_COLORS.director.border], ['Managers', LEVEL_COLORS.manager.border], ['Staff', LEVEL_COLORS.staff.border]] as const).map(([label, color]) => (
+        {([['C-Suite', LEVEL_COLORS.csuite.border], ['Directors', LEVEL_COLORS.director.border], ['Managers', LEVEL_COLORS.manager.border], ['Staff', LEVEL_COLORS.staff.border]] as const).map(([label, color]) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className="rounded" style={{ width: 10, height: 10, backgroundColor: color }} />
             <span className="text-xs" style={{ color: '#6B7280' }}>{label}</span>
