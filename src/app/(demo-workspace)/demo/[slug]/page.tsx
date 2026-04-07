@@ -5001,7 +5001,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     const onAvatarUpdated = (e: Event) => {
       const ce = e as CustomEvent
       const url = ce.detail?.url ?? ce.detail
-      if (typeof url === 'string' && url.startsWith('http')) {
+      if (typeof url === 'string' && (url.startsWith('http') || url.startsWith('data:'))) {
         setUserPhoto(url)
         try { localStorage.setItem('lumio_user_photo', url) } catch {}
       }
