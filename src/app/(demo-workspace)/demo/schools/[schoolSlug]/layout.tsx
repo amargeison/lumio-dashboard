@@ -113,9 +113,13 @@ export default function SchoolLayout({ children }: Props) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+  // Match /schools/[slug] or /demo/schools/[slug] — this layout file is under
+  // /demo/schools/[slug] so nav links must keep the /demo/ prefix to avoid
+  // punting users into the live (auth-gated) schools portal.
+  const slugMatch = pathname.match(/(?:^|\/)demo\/schools\/([^/]+)/) || pathname.match(/\/schools\/([^/]+)/)
   const slug = slugMatch?.[1] ?? ''
-  const base = `/schools/${slug}`
+  const isDemoRoute = pathname.startsWith('/demo/schools/')
+  const base = isDemoRoute ? `/demo/schools/${slug}` : `/schools/${slug}`
 
   const [isSchoolDemo, setIsSchoolDemo] = useState(false)
   const [activeRole, setActiveRole] = useState<SchoolRole>('slt_admin')
@@ -284,8 +288,16 @@ export default function SchoolLayout({ children }: Props) {
           }).map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
-            const href = item.path === '' ? base : item.path.startsWith('/') ? `${item.path}/${slug}` : `${base}/${item.path}`
-            const isActive = item.path === '' ? pathname === base || pathname === `${base}/` : item.path.startsWith('/') ? pathname.startsWith(item.path) : pathname.startsWith(`${base}/${item.path}`)
+            const absolutePrefixed = item.path.startsWith('/')
+              ? (isDemoRoute ? `/demo${item.path}/${slug}` : `${item.path}/${slug}`)
+              : `${base}/${item.path}`
+            const href = item.path === '' ? base : absolutePrefixed
+            const absoluteActiveRoot = item.path.startsWith('/') ? (isDemoRoute ? `/demo${item.path}` : item.path) : ''
+            const isActive = item.path === ''
+              ? pathname === base || pathname === `${base}/`
+              : item.path.startsWith('/')
+                ? pathname.startsWith(absoluteActiveRoot)
+                : pathname.startsWith(`${base}/${item.path}`)
             const Icon = item.icon
             return (
               <div key={item.path || 'overview'}>
