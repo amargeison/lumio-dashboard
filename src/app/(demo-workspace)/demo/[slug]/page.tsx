@@ -4934,6 +4934,19 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   }, [])
 
   useEffect(() => {
+    // Clear stale workspace data when slug changes
+    const cachedSlug = localStorage.getItem('lumio_active_slug')
+    if (cachedSlug && cachedSlug !== slug) {
+      localStorage.removeItem('workspace_company_name')
+      localStorage.removeItem('lumio_company_name')
+      localStorage.removeItem('workspace_company_logo')
+      localStorage.removeItem('lumio_company_logo')
+      localStorage.removeItem('lumio_user_photo')
+      localStorage.removeItem('lumio_avatar_url')
+    }
+    localStorage.setItem('lumio_active_slug', slug)
+    localStorage.setItem('lumio_tenant_slug', slug)
+
     // Read cached values from localStorage — check admin impersonation first
     const name = localStorage.getItem('workspace_company_name') || ''
     const isAdminImpersonating = localStorage.getItem('lumio_impersonated_from_admin') === 'true'

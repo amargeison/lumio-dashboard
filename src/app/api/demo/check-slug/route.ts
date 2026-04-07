@@ -32,6 +32,23 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // Fallback: check the live businesses table for non-demo tenants
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('slug, company_name, logo_url, owner_name')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (business) {
+    return NextResponse.json({
+      exists: true,
+      tenant_type: 'business',
+      company_name: business.company_name || null,
+      owner_name: business.owner_name || null,
+      logo_url: business.logo_url || null,
+    })
+  }
+
   // Check schools table
   const { data: school } = await supabase
     .from('schools')
