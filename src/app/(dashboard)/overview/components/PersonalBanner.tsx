@@ -327,7 +327,7 @@ function LiveClock() {
 // ─── Banner ───────────────────────────────────────────────────────────────────
 
 const INITIAL_DATA: BriefingData = {
-  userName: 'Arron',
+  userName: 'there',
   greeting: '',
   date: '',
   weather: { temp: '--', condition: 'Loading...', icon: '🌤️', location: 'Milton Keynes' },
@@ -335,13 +335,27 @@ const INITIAL_DATA: BriefingData = {
   motivationalLine: 'Ready to automate everything.',
 }
 
+function getStoredUserName(): string {
+  if (typeof window === 'undefined') return 'there'
+  return (
+    localStorage.getItem('lumio_user_name')
+    || localStorage.getItem('workspace_user_name')
+    || localStorage.getItem('demo_user_name')
+    || 'there'
+  )
+}
+
 export default function PersonalBanner() {
   const router = useRouter()
-  const [data, setData] = useState<BriefingData>(() => ({
-    ...INITIAL_DATA,
-    greeting: getGreeting('Arron'),
-    date: formatDate(),
-  }))
+  const [data, setData] = useState<BriefingData>(() => {
+    const storedName = getStoredUserName()
+    return {
+      ...INITIAL_DATA,
+      userName: storedName,
+      greeting: getGreeting(storedName),
+      date: formatDate(),
+    }
+  })
   const [actioned, setActioned] = useState<ActionedItem[]>([])
   const [bgGradient] = useState(() => BG_GRADIENTS[new Date().getDay()])
   const { speak, stop, isPlaying } = useSpeech()
