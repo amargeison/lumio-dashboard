@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Users, Shield, Calendar, FileText, Phone, UserPlus,
   AlertTriangle, CheckCircle2, Clock, Loader2, Sparkles,
@@ -649,7 +650,7 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
   const { speak, stop, isPlaying } = useElevenLabsTTS()
   const bannerRole = useSchoolRole()
   const bannerPerms = SCHOOL_ROLES[bannerRole]?.permissions
-  const { isListening, lastCommand, startListening, stopListening } = useSchoolVoiceCommands()
+  const { lastCommand } = useSchoolVoiceCommands()
   const [quote, setQuote] = useState(SCHOOL_QUOTES[0])
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
@@ -691,24 +692,11 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              {schoolLogo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={schoolLogo}
-                  alt={schoolName || 'School logo'}
-                  style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}
-                />
-              )}
+            <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
                 <Volume2 size={15} strokeWidth={1.75} />
-              </button>
-              <button onClick={() => isListening ? stopListening() : startListening()} title={isListening ? 'Listening...' : "Voice Commands — say 'Hi Lumio' or tap the mic"}
-                className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, cursor: 'pointer', backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)', border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isListening ? '#EF4444' : '#F9FAFB' }}>
-                <Mic size={14} strokeWidth={1.75} />
               </button>
             </div>
             <p className="text-teal-300 text-sm mb-2">{date}</p>
@@ -1456,6 +1444,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const firstName = ownerName ? ownerName.split(' ')[0] : userName ? userName.split(' ')[0] : userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1) : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
   const [showSchoolGSModal, setShowSchoolGSModal] = useState(false)
@@ -1510,6 +1499,10 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         if (data?.url) {
           setUserPhoto(data.url)
           try { localStorage.setItem('lumio_user_photo', data.url) } catch {}
+          // Mirror onto the demo Headteacher card (SCHOOL_DEMO_STAFF[0].email)
+          // so the FIFA-style staff card picks up the photo via EmployeeProfileCard's
+          // lumio_staff_photo_<email> lookup.
+          try { localStorage.setItem('lumio_staff_photo_headteacher@oakridge.edu', data.url) } catch {}
           try { window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: data.url } })) } catch {}
           URL.revokeObjectURL(blobUrl)
         }
@@ -1530,6 +1523,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       if (!src) return
       try {
         localStorage.setItem('lumio_school_logo', src)
+        // Layout's sidebar reads a slug-scoped key — mirror it so the sidebar
+        // logo (top-left) updates from "D" initial to the uploaded crest.
+        localStorage.setItem(`lumio_school_logo_${_slug}`, src)
         window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: src } }))
       } catch { /* silent */ }
     }
@@ -1666,9 +1662,9 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               case 'insights':
                 setActiveTab('insights'); markDone(); break
               case 'trips':
-                setShowRiskAssessment(true); markDone(); break
+                router.push(`/demo/schools/${_slug}/school-office`); markDone(); break
               case 'send':
-                setShowReferSenco(true); markDone(); break
+                router.push(`/demo/schools/${_slug}/send-dsl`); markDone(); break
               case 'logo':
                 schoolLogoInputRef.current?.click(); markDone(); break
               case 'photo':
