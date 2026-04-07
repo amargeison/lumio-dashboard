@@ -169,6 +169,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
             setLogoUrl(data.logo_url)
             localStorage.setItem('lumio_company_logo', data.logo_url)
             localStorage.setItem('workspace_company_logo', data.logo_url)
+            window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: data.logo_url } }))
           }
         })
         .catch(() => {})
