@@ -5300,7 +5300,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             </div>
           )}
         </div>
-        <AvatarDropdown initials={userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={`/${slug}/settings`} />
+        <AvatarDropdown initials={userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AM'} settingsHref={`/${slug}/settings`} photoUrl={userPhoto} />
       </div>
 
       <ImpersonationBanner />
@@ -5509,6 +5509,11 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         <DemoWelcomePopup
           slug={slug}
           ownerName={userName}
+          onPhotoSaved={(url) => {
+            setUserPhoto(url)
+            try { localStorage.setItem('lumio_user_photo', url) } catch {}
+            try { window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url } })) } catch {}
+          }}
           onClose={() => {
             try { localStorage.setItem(`demo_welcome_shown_${slug}`, 'true') } catch {}
             setShowDemoWelcome(false)
@@ -5532,7 +5537,7 @@ function detectGender(name: string): 'male' | 'female' {
   return female.includes(first) ? 'female' : 'male'
 }
 
-function DemoWelcomePopup({ slug, ownerName, onClose }: { slug: string; ownerName?: string; onClose: () => void }) {
+function DemoWelcomePopup({ slug, ownerName, onClose, onPhotoSaved }: { slug: string; ownerName?: string; onClose: () => void; onPhotoSaved?: (url: string) => void }) {
   const [screen, setScreen] = useState<1 | 2 | 3>(1)
   const [copied, setCopied] = useState(false)
   const [inviteEmails, setInviteEmails] = useState<string[]>(['', '', '', '', ''])
@@ -5585,18 +5590,37 @@ function DemoWelcomePopup({ slug, ownerName, onClose }: { slug: string; ownerNam
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    // Local preview inside the modal — instant data URL.
     const reader = new FileReader()
     reader.onload = () => {
-      const uploadedUrl = String(reader.result || '')
-      if (!uploadedUrl) return
-      setPhotoDataUrl(uploadedUrl)
-      try { localStorage.setItem('lumio_user_photo', uploadedUrl) } catch {}
-      // Broadcast so the header avatar updates instantly without a reload.
-      try {
-        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: uploadedUrl } }))
-      } catch { /* ignore */ }
+      const dataUrl = String(reader.result || '')
+      if (dataUrl) {
+        setPhotoDataUrl(dataUrl)
+        // Instant header update before the server upload completes.
+        onPhotoSaved?.(dataUrl)
+      }
     }
     reader.readAsDataURL(file)
+    // Upload to the server so we get a real http URL we can hand to the header.
+    ;(async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('workspace_session_token') : null
+        const userEmail = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_email') : null
+        if (!token || !userEmail) return
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('email', userEmail)
+        const res = await fetch('/api/workspace/upload-profile-photo', {
+          method: 'POST',
+          headers: { 'x-workspace-token': token },
+          body: fd,
+        })
+        const data = await res.json().catch(() => null)
+        if (data?.url && typeof data.url === 'string') {
+          onPhotoSaved?.(data.url)
+        }
+      } catch { /* ignore */ }
+    })()
   }
 
   // Resolve the default avatar synchronously from the raw stored name so the first
