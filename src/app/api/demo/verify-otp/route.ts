@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
         let redirect_to: string | undefined
         if (tenant.business_id) {
           const { data: biz } = await supabase.from('businesses').select('slug').eq('id', tenant.business_id).single()
-          if (biz) redirect_to = `/${biz.slug}`
+          // Always send to demo workspace — live workspace requires workspace_session_token which isn't set here
+          if (biz) redirect_to = `/demo/${biz.slug}`
         }
         return NextResponse.json({ session_token: sessionToken, company: { id: tenant.id, name: tenant.company_name, slug: tenant.slug }, user: { email: email.toLowerCase(), name: tenant.owner_name }, is_new_user: isNewUser, redirect_to })
       }
@@ -141,7 +142,8 @@ export async function POST(req: NextRequest) {
         .select('slug')
         .eq('id', tenant.business_id)
         .single()
-      if (biz) redirect_to = `/${biz.slug}`
+      // Always send to demo workspace — live workspace requires workspace_session_token which isn't set here
+      if (biz) redirect_to = `/demo/${biz.slug}`
     }
 
     return NextResponse.json({
