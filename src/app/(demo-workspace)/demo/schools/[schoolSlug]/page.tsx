@@ -1479,6 +1479,12 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
 
   const router = useRouter()
+  // Schools demo defaults to Daniel (British male broadcaster) unless the user
+  // has already picked a different voice. Set synchronously before the TTS
+  // hook reads its snapshot so the first playback uses Daniel.
+  if (typeof window !== 'undefined' && !localStorage.getItem('lumio_tts_voice')) {
+    try { localStorage.setItem('lumio_tts_voice', 'onwK4e9ZLuTAKqWW03F9') } catch {}
+  }
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
   const [showSchoolGSModal, setShowSchoolGSModal] = useState(false)
@@ -1486,6 +1492,19 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     if (typeof window === 'undefined') return
     const key = `lumio_school_onboarding_done_${_slug}`
     const demoLoaded = localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    const lastSlug = localStorage.getItem('lumio_school_last_slug')
+    // New school account — clear any leftover onboarding-done / logo / photo from a previous session
+    if (demoLoaded && lastSlug && lastSlug !== _slug) {
+      try {
+        localStorage.removeItem(key)
+        localStorage.removeItem('lumio_school_logo')
+        localStorage.removeItem(`lumio_school_logo_${lastSlug}`)
+        localStorage.removeItem('lumio_user_photo')
+        window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: null } }))
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: null } }))
+      } catch { /* ignore */ }
+    }
+    try { localStorage.setItem('lumio_school_last_slug', _slug) } catch {}
     const isFirstLoad = localStorage.getItem(key) !== 'true'
     if (demoLoaded && isFirstLoad) {
       setShowSchoolGSModal(true)
