@@ -132,6 +132,9 @@ function SignupForm() {
             if (logoData.logo_url) {
               localStorage.setItem('lumio_company_logo', logoData.logo_url)
               localStorage.setItem('workspace_company_logo', logoData.logo_url)
+              if (portalType === 'schools' || data.is_school_demo) {
+                localStorage.setItem('lumio_school_logo', logoData.logo_url)
+              }
             }
           }
         } catch { /* silent — logo is optional */ }

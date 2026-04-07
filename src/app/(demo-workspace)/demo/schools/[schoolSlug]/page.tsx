@@ -579,6 +579,30 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const [bg] = useState(() => SCHOOL_BG_GRADIENTS[new Date().getDay()])
+  // School logo — mirrors business demo persistence (signup writes these keys).
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_school_logo')
+      || localStorage.getItem('lumio_company_logo')
+      || localStorage.getItem('workspace_company_logo')
+      || null
+  })
+  useEffect(() => {
+    function sync() {
+      setSchoolLogo(
+        localStorage.getItem('lumio_school_logo')
+        || localStorage.getItem('lumio_company_logo')
+        || localStorage.getItem('workspace_company_logo')
+        || null,
+      )
+    }
+    window.addEventListener('storage', sync)
+    window.addEventListener('lumio-logo-updated', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('lumio-logo-updated', sync)
+    }
+  }, [])
   const { speak, stop, isPlaying } = useElevenLabsTTS()
   const bannerRole = useSchoolRole()
   const bannerPerms = SCHOOL_ROLES[bannerRole]?.permissions
@@ -624,7 +648,15 @@ function SchoolGreetingBanner({ schoolName, firstName, pupils, staff, demoActive
       <div className="relative z-10 px-6 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-3 mb-1">
+              {schoolLogo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={schoolLogo}
+                  alt={schoolName || 'School logo'}
+                  style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}
+                />
+              )}
               <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName || 'there'} 👋</h1>
               <button onClick={handleBriefing} title="Text-to-Speech — Lumio will read your morning headlines, meetings today and urgent items aloud" className="flex items-center justify-center rounded-lg transition-all"
                 style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(13,148,136,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#2DD4BF' : '#9CA3AF' }}>
