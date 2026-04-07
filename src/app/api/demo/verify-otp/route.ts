@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/emails/send'
 import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
+import { welcomeTrialSchoolEmail } from '@/lib/emails/welcome-trial-schools'
 import { logEmail } from '@/lib/emails/log'
 
 function getSupabase() {
@@ -109,12 +110,17 @@ export async function POST(req: NextRequest) {
       // Send welcome email and mark as sent
       const firstName = (tenant.owner_name || '').split(' ')[0] || 'there'
       const expiresDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      const isSchool = tenant.tenant_type === 'schools'
       try {
         const { error: emailErr } = await sendEmail({
           from: 'Lumio <hello@lumiocms.com>',
           to: [email],
-          subject: 'Welcome to Lumio — your 14-day trial starts now 🚀',
-          html: welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
+          subject: isSchool
+            ? 'Welcome to Lumio for Schools — your free trial starts now 🏫'
+            : 'Welcome to Lumio — your 14-day trial starts now 🚀',
+          html: isSchool
+            ? welcomeTrialSchoolEmail({ name: firstName, slug: tenant.slug, expiresDate })
+            : welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
         })
         if (emailErr) {
           console.error('[demo/verify-otp] Welcome email failed:', emailErr)
