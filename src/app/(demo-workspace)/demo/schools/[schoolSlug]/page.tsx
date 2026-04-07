@@ -1273,6 +1273,15 @@ function SchoolGettingStartedView({ onAction }: { onAction: (action: SchoolGSAct
     })
   }
 
+  function undoComplete(id: string) {
+    setCompleted(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
   const total = SCHOOL_GS_STEPS.length
   const done = completed.length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
@@ -1309,14 +1318,33 @@ function SchoolGettingStartedView({ onAction }: { onAction: (action: SchoolGSAct
                 </div>
                 <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB', textDecoration: isDone ? 'line-through' : 'none' }}>{step.title}</h3>
                 <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.subtitle}</p>
-                <button
-                  type="button"
-                  onClick={() => onAction(step.buttonAction, () => markComplete(step.id))}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                  style={{ backgroundColor: isDone ? 'transparent' : '#0D9488', color: isDone ? '#9CA3AF' : '#F9FAFB', border: isDone ? '1px solid #1F2937' : 'none' }}
-                >
-                  {isDone ? '✓ Done' : step.buttonLabel}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => !isDone && onAction(step.buttonAction, () => markComplete(step.id))}
+                    disabled={isDone}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    style={{
+                      backgroundColor: isDone ? 'transparent' : '#0D9488',
+                      color: isDone ? '#9CA3AF' : '#F9FAFB',
+                      border: isDone ? '1px solid #1F2937' : 'none',
+                      cursor: isDone ? 'default' : 'pointer',
+                    }}
+                  >
+                    {isDone ? '✓ Done' : step.buttonLabel}
+                  </button>
+                  {isDone && (
+                    <button
+                      type="button"
+                      onClick={() => undoComplete(step.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937', cursor: 'pointer' }}
+                      title="Mark this step as not done"
+                    >
+                      ↩ Undo
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )
@@ -1439,7 +1467,13 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const ownerName = isAdminImpersonating
     ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
     : (localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
-  const userEmail = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_email') || '' : ''
+  const userEmail = typeof window !== 'undefined'
+    ? (localStorage.getItem('lumio_user_email')
+        || localStorage.getItem('demo_user_email')
+        || localStorage.getItem('workspace_user_email')
+        || localStorage.getItem('lumio_owner_email')
+        || '')
+    : ''
   const userName = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_name') || '' : ''
   const firstName = ownerName ? ownerName.split(' ')[0] : userName ? userName.split(' ')[0] : userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1) : undefined
   const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
@@ -1452,8 +1486,15 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     if (typeof window === 'undefined') return
     const key = `lumio_school_onboarding_done_${_slug}`
     const demoLoaded = localStorage.getItem('lumio_schools_demo_loaded') === 'true'
-    if (demoLoaded && localStorage.getItem(key) !== 'true') {
+    const isFirstLoad = localStorage.getItem(key) !== 'true'
+    if (demoLoaded && isFirstLoad) {
       setShowSchoolGSModal(true)
+      // Clear any stale user photo bleeding through from a previous
+      // business demo / different portal session on first load.
+      try {
+        localStorage.removeItem('lumio_user_photo')
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: null } }))
+      } catch { /* ignore */ }
     }
   }, [_slug])
   function handleSchoolGSModalComplete() {

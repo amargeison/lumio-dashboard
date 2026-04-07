@@ -117,6 +117,8 @@ function SignupForm() {
         localStorage.setItem('lumio_schools_demo_loaded', 'true')
         if (data.logo_url) {
           localStorage.setItem('lumio_school_logo', data.logo_url)
+          const s = data.company?.slug
+          if (s) localStorage.setItem(`lumio_school_logo_${s}`, data.logo_url)
         }
       }
 
@@ -137,6 +139,9 @@ function SignupForm() {
               localStorage.setItem('workspace_company_logo', logoData.logo_url)
               if (portalType === 'schools' || data.is_school_demo) {
                 localStorage.setItem('lumio_school_logo', logoData.logo_url)
+                const s = data.company?.slug
+                if (s) localStorage.setItem(`lumio_school_logo_${s}`, logoData.logo_url)
+                try { window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: logoData.logo_url } })) } catch {}
               }
             }
           }
