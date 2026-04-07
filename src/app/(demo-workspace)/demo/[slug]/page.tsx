@@ -5549,17 +5549,36 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   }
 
   async function handleCartoonify() {
-    if (!photoFile) return
     setCartoonLoading(true)
     try {
+      let fileToSend: File | null = photoFile
+
+      // If we don't have a fresh File from the picker but we DO have a
+      // photoDataUrl (e.g. after a previous cartoonify, or hydrated from the
+      // default avatar / DB), fetch it as a blob and reconstruct a File so
+      // /api/cartoon has something to send.
+      if (!fileToSend && photoDataUrl) {
+        try {
+          const imgRes = await fetch(photoDataUrl)
+          const blob = await imgRes.blob()
+          fileToSend = new File([blob], 'avatar.jpg', { type: blob.type || 'image/jpeg' })
+        } catch (fetchErr) {
+          console.error('Cartoon: failed to fetch existing photo URL', fetchErr)
+        }
+      }
+
+      if (!fileToSend) return
+
       const fd = new FormData()
-      fd.append('image', photoFile)
+      fd.append('image', fileToSend)
       const res = await fetch('/api/cartoon', { method: 'POST', body: fd })
       const data = await res.json()
       if (data.success && data.cartoon_url) {
         setCartoonUrl(data.cartoon_url)
         // Show cartoon on the FIFA card immediately
         setPhotoDataUrl(data.cartoon_url)
+      } else {
+        console.error('Cartoon API error:', data)
       }
     } catch (e) {
       console.error('Cartoon failed:', e)
