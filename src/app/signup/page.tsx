@@ -115,6 +115,9 @@ function SignupForm() {
       if (portalType === 'schools' || data.is_school_demo) {
         localStorage.setItem('lumio_school_demo_active', 'true')
         localStorage.setItem('lumio_schools_demo_loaded', 'true')
+        if (data.logo_url) {
+          localStorage.setItem('lumio_school_logo', data.logo_url)
+        }
       }
 
       // Upload logo if provided — silent failure (logo is optional)

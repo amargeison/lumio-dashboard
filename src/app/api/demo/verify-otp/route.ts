@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
           // Always send to demo workspace — live workspace requires workspace_session_token which isn't set here
           if (biz) redirect_to = `/demo/${biz.slug}`
         }
-        return NextResponse.json({ session_token: sessionToken, company: { id: tenant.id, name: tenant.company_name, slug: tenant.slug }, user: { email: email.toLowerCase(), name: tenant.owner_name }, is_new_user: isNewUser, is_school_demo: tenant.tenant_type === 'schools', redirect_to })
+        return NextResponse.json({ session_token: sessionToken, company: { id: tenant.id, name: tenant.company_name, slug: tenant.slug }, user: { email: email.toLowerCase(), name: tenant.owner_name }, is_new_user: isNewUser, is_school_demo: tenant.tenant_type === 'schools', logo_url: tenant.logo_url || null, redirect_to })
       }
     }
 
@@ -199,6 +199,7 @@ export async function POST(req: NextRequest) {
       },
       is_new_user: isNewUser,
       is_school_demo: tenant.tenant_type === 'schools',
+      logo_url: tenant.logo_url || null,
       redirect_to,
     })
   } catch (err) {
