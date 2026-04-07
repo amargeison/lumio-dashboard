@@ -4618,7 +4618,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast]           = useState<string | null>(null)
   const [ownerEmail, setOwnerEmail] = useState('')
-  const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTabGuide, setShowTabGuide] = useState(false)
   const [showDemoWelcome, setShowDemoWelcome] = useState(false)
@@ -4853,11 +4852,8 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                 localStorage.removeItem('lumio_company_active')
                 return
               }
-              if (!localStorage.getItem(`lumio_welcomed_${slug}`)) {
-                setShowWelcome(true)
-              } else {
-                setShowOnboarding(true)
-              }
+              localStorage.setItem(`lumio_welcomed_${slug}`, 'true')
+              setShowOnboarding(true)
               return
             }
             router.replace(`/login?redirectTo=/${slug}&message=${encodeURIComponent('Your session has expired. Please sign in again.')}`)
@@ -5154,42 +5150,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
         />
       )}
 
-      {/* Welcome overlay — first visit */}
-      {showWelcome && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', maxWidth: 520, padding: '2rem', width: '100%' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
-            <h1 style={{ color: 'white', fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to Lumio</h1>
-            <p style={{ color: '#aaa', marginBottom: '2.5rem', fontSize: '1rem' }}>Let&apos;s get your workspace set up in 2 minutes</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting Started with Lumio</div>
-                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min intro</div>
-              </div>
-              <div style={{ background: '#1a1a2e', borderRadius: 12, padding: '2rem 1.5rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem' }}>▶</div>
-                <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>Getting the Most Out of Lumio</div>
-                <div style={{ color: '#F59E0B', fontSize: '0.8rem' }}>2 min tips & tricks</div>
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid #2a2a3e', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
-              <p style={{ color: '#555', fontSize: '0.9rem' }}>Ready to set up your workspace?</p>
-            </div>
-            <button onClick={() => {
-              localStorage.setItem(`lumio_welcomed_${slug}`, 'true')
-              setShowWelcome(false)
-              setShowOnboarding(true)
-            }}
-              style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '1rem 2rem', borderRadius: 10, fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em' }}>
-              Get Started →
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Onboarding */}
       {showOnboarding && (
         <GettingStartedModal
@@ -5311,33 +5271,31 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 // Mirrors OnboardingWizard's StepYourCard + StepBookCall content but is fully
 // self-contained so the demo route doesn't depend on the wizard's internals.
 
-function detectGender(name: string): 'male' | 'female' | 'unknown' {
-  const firstName = name.trim().split(' ')[0].toLowerCase()
-  const femaleNames = ['sarah','emma','sophie','claire','rachel','priya','jade','abbi','chloe','fatima','niamh','tilly','laura','leah','emily','jessica','hannah','amy','lucy','kate','helen','anna','lisa','maria','natalie','victoria','charlotte','alice','grace','ella','mia','olivia','ava','isabella','amelia','lily','zoe','eve','molly','ruby','daisy','poppy','ellie','freya','imogen','jasmine','katie','lauren','megan','nicola','paula','rebecca','samantha','stephanie','tanya','wendy','yvonne','zara']
-  const maleNames = ['james','marcus','tom','ben','alex','david','arron','aaron','michael','john','robert','william','richard','charles','george','edward','henry','peter','paul','mark','andrew','stephen','kevin','brian','gary','jason','ryan','daniel','matthew','christopher','joseph','thomas','joshua','samuel','oliver','harry','jack','charlie','jake','luke','adam','nathan','liam','noah','ethan','mason','logan','aiden','lucas','jayden','caleb']
-  if (femaleNames.includes(firstName)) return 'female'
-  if (maleNames.includes(firstName)) return 'male'
-  return 'unknown'
+function detectGender(name: string): 'male' | 'female' {
+  const first = (name || '').trim().split(' ')[0].toLowerCase()
+  const female = ['sarah','emma','sophie','claire','rachel','priya','jade','abbi','chloe','fatima','niamh','tilly','laura','leah','emily','jessica','hannah','amy','lucy','kate','helen','anna','lisa','maria','natalie','victoria','charlotte','alice','grace','ella','mia','olivia','ava','isabella','amelia','lily','zoe','eve','molly','ruby','daisy','poppy','ellie','freya','imogen','jasmine','katie','lauren','megan','nicola','paula','rebecca','samantha','jennifer','michelle','karen','susan','patricia','linda','barbara','sandra','donna','carol','ruth','sharon','andrea','diane','julie','amber','danielle','cheryl','melissa','stephanie','tanya','wendy','yvonne','zara']
+  return female.includes(first) ? 'female' : 'male'
 }
 
 function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () => void }) {
   const [screen, setScreen] = useState<1 | 2>(1)
+  // Hardcoded null — this modal is intentionally isolated from the DB/localStorage
+  // user photo. Only the user's uploaded File in *this modal session* fills this in.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [userName, setUserName] = useState('Your Name')
   const [userRole, setUserRole] = useState('Founder')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    // Name/role only — never touch photo storage here.
     const name =
       localStorage.getItem('lumio_user_name')
       || localStorage.getItem('workspace_user_name')
+      || localStorage.getItem('demo_user_name')
       || ''
     if (name) setUserName(name)
     const role = localStorage.getItem('lumio_user_role') || ''
     if (role && role.toLowerCase() !== 'director') setUserRole(role)
-    // If a photo was already uploaded in another flow, show it as the starting state
-    const existing = localStorage.getItem('lumio_user_photo')
-    if (existing) setPhotoDataUrl(existing)
   }, [])
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -5345,32 +5303,31 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      const dataUrl = String(reader.result || '')
-      if (!dataUrl) return
-      setPhotoDataUrl(dataUrl)
-      try { localStorage.setItem('lumio_user_photo', dataUrl) } catch {}
+      const uploadedUrl = String(reader.result || '')
+      if (!uploadedUrl) return
+      setPhotoDataUrl(uploadedUrl)
+      try { localStorage.setItem('lumio_user_photo', uploadedUrl) } catch {}
       // Broadcast so the header avatar updates instantly without a reload.
       try {
-        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: dataUrl } }))
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: uploadedUrl } }))
       } catch { /* ignore */ }
     }
     reader.readAsDataURL(file)
   }
 
-  const gender = detectGender(userName)
-  const genderAvatarSrc =
-    gender === 'female' ? '/business_woman_avatar.png'
-    : gender === 'male' ? '/business_man_avatar.png'
-    : null
-
-  const initials =
-    userName
-      .split(' ')
-      .map(p => p[0])
-      .filter(Boolean)
-      .join('')
-      .slice(0, 2)
-      .toUpperCase() || 'YU'
+  // Resolve the default avatar synchronously from the raw stored name so the first
+  // render already shows the correct gender cartoon (no flash of initials).
+  const rawName =
+    (typeof window !== 'undefined'
+      ? (localStorage.getItem('lumio_user_name')
+        || localStorage.getItem('workspace_user_name')
+        || localStorage.getItem('demo_user_name')
+        || '')
+      : '') || userName
+  const gender = detectGender(rawName)
+  const defaultAvatar = gender === 'female'
+    ? '/business_woman_avatar.png'
+    : '/business_man_avatar.png'
 
   const STATS: Array<[string, number]> = [
     ['PAC', 87], ['DRI', 76],
@@ -5455,7 +5412,7 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                     width: 200,
                     height: 200,
                     borderRadius: '50%',
-                    backgroundColor: photoDataUrl ? 'transparent' : '#111318',
+                    backgroundColor: 'transparent',
                     border: `2px dashed ${photoDataUrl ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.5)'}`,
                     cursor: 'pointer',
                     display: 'flex',
@@ -5463,20 +5420,20 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                     justifyContent: 'center',
                     overflow: 'hidden',
                     padding: 0,
-                    backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
                   }}
                 >
-                  {!photoDataUrl && genderAvatarSrc && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={genderAvatarSrc}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                    />
-                  )}
-                  {!photoDataUrl && !genderAvatarSrc && <Camera size={40} color="#9CA3AF" />}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoDataUrl || defaultAvatar}
+                    alt="avatar"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      display: 'block',
+                    }}
+                  />
                 </button>
                 <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
                   {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
@@ -5535,23 +5492,21 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                         alignItems: 'center',
                         justifyContent: 'center',
                         overflow: 'hidden',
-                        backgroundImage: photoDataUrl ? `url(${photoDataUrl})` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        fontSize: 36,
-                        fontWeight: 900,
                         boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
                       }}
                     >
-                      {!photoDataUrl && genderAvatarSrc && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={genderAvatarSrc}
-                          alt=""
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      )}
-                      {!photoDataUrl && !genderAvatarSrc && initials}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoDataUrl || defaultAvatar}
+                        alt="avatar"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                          display: 'block',
+                        }}
+                      />
                     </div>
                   </div>
                   <div
