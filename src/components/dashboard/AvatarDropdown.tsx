@@ -12,14 +12,17 @@ interface Props {
   logoutClearKeys?: string[]
   /** Slug for settings navigation */
   settingsHref?: string
+  /** Parent-controlled photo override — takes precedence over internal state */
+  photoUrl?: string | null
 }
 
-export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '/', logoutClearKeys, settingsHref }: Props) {
+export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '/', logoutClearKeys, settingsHref, photoUrl }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [showGoLive, setShowGoLive] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [internalAvatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const avatarUrl = photoUrl ?? internalAvatarUrl
   const ref = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -82,8 +85,9 @@ export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '
     }
     // Listen for avatar updates
     function onAvatarUpdated(e: Event) {
-      const url = (e as CustomEvent).detail
-      if (url) setAvatarUrl(url)
+      const detail = (e as CustomEvent).detail
+      const url = typeof detail === 'string' ? detail : detail?.url
+      if (typeof url === 'string' && url) setAvatarUrl(url)
       else setAvatarUrl(null)
     }
     window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
