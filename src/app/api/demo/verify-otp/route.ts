@@ -125,6 +125,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Provision a businesses row for new signups (or any tenant missing business_id)
+    // This enables the workspace logo upload (which needs business_id) to work for demo users.
+    if (!tenant.business_id) {
+      try {
+        const { data: newBusiness, error: bizErr } = await supabase
+          .from('businesses')
+          .insert({
+            slug: tenant.slug,
+            company_name: tenant.company_name,
+            owner_email: email.toLowerCase(),
+            owner_name: tenant.owner_name || '',
+            plan: 'trial',
+            status: 'active',
+            billing_type: 'monthly',
+            onboarded: false,
+            demo_data_active: true,
+            created_at: new Date().toISOString(),
+          })
+          .select('id, slug')
+          .single()
+
+        if (bizErr) {
+          console.error('[demo/verify-otp] Business provision failed:', bizErr.message)
+        } else if (newBusiness) {
+          await supabase
+            .from('demo_tenants')
+            .update({ business_id: newBusiness.id })
+            .eq('id', tenant.id)
+          tenant.business_id = newBusiness.id
+        }
+      } catch (e) {
+        console.error('[demo/verify-otp] Business provision exception:', e)
+      }
+    }
+
     // Create session token (30-day expiry)
     const sessionToken = crypto.randomUUID()
     await supabase.from('demo_sessions').insert({
