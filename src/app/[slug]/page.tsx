@@ -4257,14 +4257,6 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     if (stored) { localStorage.removeItem('lumio_active_dept'); return (stored as DeptId) }
     return 'overview'
   })
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const stored = localStorage.getItem('lumio_active_dept')
-    if (stored) {
-      setActiveDept(stored as DeptId)
-      localStorage.removeItem('lumio_active_dept')
-    }
-  }, [])
   const [company, setCompany]       = useState('')
   const [userName, setUserName]     = useState('')
   const [companyLogo, setCompanyLogo] = useState('')
