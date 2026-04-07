@@ -387,7 +387,18 @@ const SCHOOL_DEMO_PHOTOS = [
 ]
 
 function PhotoFrame() {
-  const [photos, setPhotos] = useState<string[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-photo-frame') : null; if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src) } } catch {} return typeof window !== 'undefined' && (localStorage.getItem('lumio_schools_demo_loaded') === 'true' || localStorage.getItem('lumio_demo_active') === 'true') ? SCHOOL_DEMO_PHOTOS : [] })
+  // Schools uses its own photo frame key, isolated from the business portal.
+  // Starts empty so the teacher can add their own personal photos — no demo seed.
+  const [photos, setPhotos] = useState<string[]>(() => {
+    try {
+      const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-schools-photo-frame') : null
+      if (s) {
+        const p = JSON.parse(s)
+        if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src)
+      }
+    } catch {}
+    return []
+  })
   const [currentIdx, setCurrentIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [intervalSecs, setIntervalSecs] = useState(5)
@@ -406,7 +417,7 @@ function PhotoFrame() {
     if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
-  useEffect(() => { localStorage.setItem('lumio-photo-frame', JSON.stringify(photos)) }, [photos])
+  useEffect(() => { localStorage.setItem('lumio-schools-photo-frame', JSON.stringify(photos)) }, [photos])
   useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
   function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
   function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
