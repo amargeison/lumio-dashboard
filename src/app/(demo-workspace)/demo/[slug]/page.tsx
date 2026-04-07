@@ -5060,7 +5060,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               setShowOnboarding(true)
               return
             }
-            router.replace(`/login?redirectTo=/${slug}&message=${encodeURIComponent('Your session has expired. Please sign in again.')}`)
+            // Demo is public — continue without session
             return
           }
           // Lock slug to current URL — clear any stale values
@@ -5124,15 +5124,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           }
         })
         .catch(() => {
-          // Network error — don't redirect if this looks like a fresh purchase
-          if (!justPurchased) router.replace(`/login?redirectTo=/${slug}`)
+          // Demo is public — never redirect to login on network error
         })
     } else if (!justPurchased) {
       // No workspace_session_token — try to create one from Supabase auth session
       import('@supabase/supabase-js').then(({ createClient }) => {
         const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
         supabase.auth.getUser().then(({ data: { user } }) => {
-          if (!user?.email) { router.replace('/login?redirectTo=/' + slug); return }
+          if (!user?.email) { /* Demo is public — continue without session */ return }
           fetch('/api/workspace/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -5140,7 +5139,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
           })
             .then(r => r.ok ? r.json() : null)
             .then(data => {
-              if (!data?.session_token) { console.log('[session] No token returned from /api/workspace/session'); router.replace('/login?redirectTo=/' + slug); return }
+              if (!data?.session_token) { console.log('[session] No token returned from /api/workspace/session'); /* Demo is public — continue without session */ return }
               console.log('[session] Token saved:', data.session_token ? 'yes' : 'NO TOKEN RETURNED')
               localStorage.setItem('workspace_session_token', data.session_token)
               if (data.business?.company_name) { setCompany(data.business.company_name); localStorage.setItem('workspace_company_name', data.business.company_name); localStorage.setItem('lumio_company_name', data.business.company_name) }
@@ -5163,9 +5162,9 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                 }
               }
             })
-            .catch(() => router.replace('/login?redirectTo=/' + slug))
-        }).catch(() => router.replace('/login?redirectTo=/' + slug))
-      }).catch(() => router.replace(`/login?redirectTo=/${slug}`))
+            .catch(() => { /* Demo is public — never redirect to login */ })
+        }).catch(() => { /* Demo is public — never redirect to login */ })
+      }).catch(() => { /* Demo is public — never redirect to login */ })
     }
   }, [slug, router])
 
