@@ -19,6 +19,11 @@ const DASHBOARD_ROUTES = new Set([
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // /demo/* routes are always public — never redirect to auth
+  if (pathname.startsWith('/demo/')) {
+    return NextResponse.next()
+  }
+
   // ── Dev PIN gate (non-production only) ────────────────────────────────
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
   const devPin = process.env.DEV_ACCESS_PIN
