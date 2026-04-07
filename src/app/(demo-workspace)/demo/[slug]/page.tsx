@@ -5270,7 +5270,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
                 {notifLoading && liveNotifs.length === 0 && !demoDataActive ? <div className="text-center py-10 text-gray-600"><div className="text-2xl mb-2 animate-spin">⟳</div><div className="text-xs">Fetching live notifications…</div></div> : filteredNotifs.length === 0 ? <div className="text-center py-10 text-gray-600"><div className="text-3xl mb-2">{'\u2705'}</div><div className="text-sm">All clear</div></div> : filteredNotifs.map(n=>(
                   <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-all group" style={{ borderBottom: '1px solid rgba(31,41,55,0.4)', borderLeft: `2px solid ${n.priority==='high'?'#EF4444':n.priority==='medium'?'#F59E0B':'#374151'}` }}>
                     <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
-                    <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>{ setNotificationsOpen(false); if(n.deptRoute){ window.location.href=`/${slug}${n.deptRoute}` } }}>
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>{ setNotificationsOpen(false); if(n.deptRoute){ const d = n.deptRoute.replace(/^\//, '') as DeptId; setActiveDept(d) } }}>
                       <div className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-white leading-snug">{n.title}</span><span className="text-[10px] text-gray-600 flex-shrink-0 mt-0.5">{n.time}</span></div>
                       <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{n.body}</p>
                       {n.deptLabel&&<span className="text-[10px] text-teal-600 mt-1 inline-block">&rarr; {n.deptLabel}</span>}
@@ -5283,7 +5283,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
               {!demoDataActive && liveNotifs.length === 0 && !notifLoading && visibleNotifs.length > 0 && (
                 <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(13,148,136,0.03)' }}>
                   <div className="text-[10px] text-gray-500 mb-1.5">🔌 Connect Google Calendar & Gmail to see live notifications</div>
-                  <button onClick={() => { setNotificationsOpen(false); const s = localStorage.getItem('lumio_workspace_slug'); if (s) window.location.href = `/${s}/settings` }} className="text-[10px] text-teal-500 hover:text-teal-400 border border-teal-800/40 px-2.5 py-1 rounded-lg">Go to Integrations →</button>
+                  <button onClick={() => { setNotificationsOpen(false); setActiveDept('settings') }} className="text-[10px] text-teal-500 hover:text-teal-400 border border-teal-800/40 px-2.5 py-1 rounded-lg">Go to Integrations →</button>
                 </div>
               )}
               <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid #1F2937', backgroundColor: 'rgba(17,19,24,0.5)' }}>
@@ -5494,7 +5494,14 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
 
             {activeDept === 'overview' && <OverviewView company={company} firstName={userName ? userName.split(' ')[0] : undefined} onAction={fireToast} ttsEnabled={ttsEnabled} voiceCommandsEnabled={voiceCommandsEnabled} demoDataActive={demoDataActive} onGoSettings={() => setActiveDept('settings')} supabaseStaff={supabaseStaff} onBellClick={() => setNotificationsOpen(o => !o)} roleSwitcher={<RoleSwitcherPill />} settingsHref={`/${slug}/settings`} userNameProp={userName} dismissedWins={dismissedWins} onDismissWin={handleDismissWin} />}
             {activeDept === 'settings' && <SettingsView company={company} demoDataActive={demoDataActive} sessionToken={sessionToken} onDemoToggle={setDemoDataActive} onToast={fireToast} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && <DeptRedirect dept={activeDept} slug={slug} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="text-5xl mb-4">🚧</div>
+                <h2 className="text-lg font-bold text-white mb-2">{deptLabel} preview coming soon</h2>
+                <p className="text-sm text-gray-500 max-w-sm mb-6">This department is part of the full workspace. Explore the Overview to see how Lumio brings everything together.</p>
+                <button onClick={() => setActiveDept('overview')} className="px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#7C3AED', color: '#F9FAFB' }}>← Back to Overview</button>
+              </div>
+            )}
           </main>
         </div>
       </div>
