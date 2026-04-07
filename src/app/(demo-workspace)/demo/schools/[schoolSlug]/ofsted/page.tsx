@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Shield, FileText, Users, BookOpen, AlertTriangle, Check, X, Clock, Download, Sparkles, Search, Plus, ChevronRight, ChevronDown, Activity, BarChart3 } from 'lucide-react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 
@@ -129,6 +130,18 @@ function StatusIcon({ status }: { status: string }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function OfstedModePage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_ofsted_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
   const [activated, setActivated] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [inspectionDate, setInspectionDate] = useState(new Date().toISOString().split('T')[0])
@@ -140,7 +153,7 @@ export default function OfstedModePage() {
   ])
   const [newObs, setNewObs] = useState('')
   const [toast, setToast] = useState('')
-  const [showInsights, setShowInsights] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('lumio_ofsted_mode')
@@ -181,16 +194,12 @@ export default function OfstedModePage() {
     return (
       <div className="space-y-6">
         <DeptAISummary dept="ofsted" portal="schools" />
-        {/* Quick actions */}
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowInsights(true)}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-            <BarChart3 size={14} />Dept Insights
-          </button>
-        </div>
+        <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#1D9E75', color: '#F9FAFB' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#178A64')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1D9E75')}>
+          <BarChart3 size={14} />Dept Insights
+        </button>
         <div className="text-center py-16">
           <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: '#F9FAFB' }}>Ofsted Inspection Mode</h1>
@@ -217,7 +226,7 @@ export default function OfstedModePage() {
             </div>
           </div>
         </div>
-        <AIInsightsReport dept="ofsted" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+        <AIInsightsReport dept="ofsted" portal="schools" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
       </div>
     )
   }
@@ -251,8 +260,67 @@ export default function OfstedModePage() {
   }
 
   // ─── Active Ofsted Dashboard ───────────────────────────────────────────────
+  if (hasData === null) return null
+  if (!hasData) return (
+    <EmptyState
+      pageName="ofsted"
+      title="No Ofsted data yet"
+      description="Your Ofsted readiness score will build as you add pupils, staff and policies. Upload your data or connect your MIS to get started."
+      uploads={[
+        { key: 'policies', label: 'Upload Policies & Evidence (CSV)' },
+        { key: 'mis', label: 'Connect MIS (Arbor / SIMS / Bromcom)' },
+      ]}
+    />
+  )
+
   return (
     <div className="space-y-6">
+      {/* AI Summary + AI Key Highlights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(13,148,136,0.4)' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.1)', borderBottom: '1px solid rgba(13,148,136,0.2)' }}>
+            <Sparkles size={13} style={{ color: '#0D9488' }} />
+            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Summary</p>
+          </div>
+          <div className="p-4 flex flex-col gap-2" style={{ backgroundColor: '#07080F' }}>
+            {[
+              { c: '#22C55E', t: `Overall Ofsted readiness: ${overallScore}% — ${overallScore >= 85 ? 'strong position' : overallScore >= 70 ? 'good but areas to address' : 'significant preparation needed'}` },
+              { c: '#22C55E', t: 'Strongest areas: Behaviour & Attitudes (91%), Leadership & Management (88%), Quality of Education (87%)' },
+              { c: '#F59E0B', t: 'Areas needing attention: Safeguarding (76%) — policy needs updating, 2 DBS checks expired' },
+              { c: '#F59E0B', t: 'Personal Development score at 79% — enrichment programme evidence needs strengthening' },
+              { c: '#3B82F6', t: 'Last inspection: Good (May 2023). Next expected: Autumn 2026. Inspection window approaching.' },
+              { c: '#EF4444', t: 'Watch Out: PP strategy impact not documented for spring term. Safeguarding policy dated Sep 2025 — must be updated before any visit.' },
+            ].map((a, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: a.c + '15', color: a.c }}>{i + 1}</span>
+                <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{a.t}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #0D9488' }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(13,148,136,0.08)', borderBottom: '1px solid rgba(13,148,136,0.3)' }}>
+            <Sparkles size={13} style={{ color: '#0D9488' }} />
+            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
+          </div>
+          <div className="px-4 py-3 space-y-2" style={{ backgroundColor: '#0f0e17' }}>
+            {[
+              'Evidence gaps: Attendance improvement plan and disadvantage gap action plan both incomplete — critical for inspection',
+              'Compliance deadline: DBS renewals for M. Taylor and J. Andrews must be completed before any inspection visit',
+              'Governor actions: Safeguarding visit report from Jan 2025 needs formal board sign-off at next meeting (15 Apr)',
+              'Staff training: Prevent training refresh due for 4 staff members — schedule before end of term',
+              'Policy review: Safeguarding policy, behaviour policy, and SEND policy all due for annual review by July 2026',
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#99F6E4' }}>
+                <span className="flex-shrink-0 mt-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold" style={{ backgroundColor: 'rgba(13,148,136,0.2)', color: '#0D9488' }}>{i + 1}</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Orange inspection banner */}
       <div className="flex items-center justify-between rounded-xl px-5 py-3" style={{ backgroundColor: '#F59E0B', color: '#0A0B10' }}>
         <div className="flex items-center gap-3">
@@ -374,7 +442,7 @@ export default function OfstedModePage() {
               <div key={s.time} className="flex items-center gap-3 py-2.5" style={{ opacity: s.status === 'done' ? 0.4 : 1 }}>
                 <span className="text-xs font-bold w-12 shrink-0" style={{ color: '#6B7280' }}>{s.time}</span>
                 <span className="text-sm" style={{ color: s.status === 'done' ? '#6B7280' : '#F9FAFB', textDecoration: s.status === 'done' ? 'line-through' : 'none', fontWeight: s.status === 'now' ? 700 : 400 }}>{s.event}</span>
-                {s.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />}
+                {s.status === 'now' && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
               </div>
             ))}
           </div>
@@ -434,7 +502,6 @@ export default function OfstedModePage() {
           {toast}
         </div>
       )}
-      <AIInsightsReport dept="ofsted" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
     </div>
   )
 }

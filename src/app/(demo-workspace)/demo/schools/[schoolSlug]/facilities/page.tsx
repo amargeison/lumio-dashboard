@@ -1,19 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles } from 'lucide-react'
-import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
-import { useHasSchoolData } from '@/components/dashboard/EmptyState'
-
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg"
-      style={{ backgroundColor: '#0D9488', color: '#F9FAFB', maxWidth: 320 }}>
-      <span className="text-sm font-medium flex-1">{message}</span>
-      <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1 }}>×</button>
-    </div>
-  )
-}
+import React, { useState, useEffect } from 'react'
+import { EmptyState } from '@/app/(schools)/components/EmptyState'
+import { Wrench, Calendar, UserCheck, Shield, Package, Sparkles, BarChart3, AlertTriangle, ClipboardList, Search, FileText, KeyRound, Flame } from 'lucide-react'
+import { MaintenanceRequestModal, RoomBookingModal } from '@/components/modals/SchoolModals'
+import BookContractorModal from '@/components/modals/BookContractorModal'
+import { HSIncidentModal, VisitorSignInModal, ContractorRequestModal, AssetCheckModal, ComplianceReportModal, KeyRequestModal, FireDrillLogModal } from '@/components/modals/FacilitiesExtraModals'
+import DeptAISummary from '@/components/DeptAISummary'
+import AIInsightsReport from '@/components/AIInsightsReport'
 
 function StatCard({ label, value, sub, color = '#0D9488' }: { label: string; value: string; sub: string; color?: string }) {
   return (
@@ -46,19 +40,20 @@ function AIHighlights({ items }: { items: string[] }) {
   )
 }
 
-function QuickActions({ actions, onAction }: { actions: { label: string; icon: React.ReactNode }[]; onAction?: (label: string) => void }) {
+function QuickActions({ actions }: { actions: { label: string; icon: React.ReactNode; onClick?: () => void; urgent?: boolean }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(a => (
-        <button key={a.label}
-          onClick={() => onAction?.(a.label)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-          style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0F766E')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#0D9488')}>
-          {a.icon}{a.label}
-        </button>
-      ))}
+    <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2.5 uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Quick actions</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            style={{ backgroundColor: a.urgent ? '#DC2626' : '#0D9488', color: '#F9FAFB' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#B91C1C' : '#0F766E')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = a.urgent ? '#DC2626' : '#0D9488')}>
+            {a.icon}{a.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -107,24 +102,61 @@ const aiHighlights = [
   'Hall booked for 6 events this week — confirm setup requirements with caretaker',
 ]
 
-export default function DemoFacilitiesPage() {
-  const hasData = useHasSchoolData('facilities')
-  const [toast, setToast] = useState('')
-  if (hasData === null) return null
-  if (!hasData) return <SchoolEmptyState pageKey="facilities" title="No facilities data yet" description="Upload your asset register and maintenance records to activate Facilities." uploads={[{ key: 'facilities', label: 'Upload Facilities Data (CSV)' }]} />
+export default function FacilitiesPage() {
+  const [hasData, setHasData] = useState<boolean | null>(null)
+  const [showMaintenance, setShowMaintenance] = useState(false)
+  const [showRoomBooking, setShowRoomBooking] = useState(false)
+  const [showContractor, setShowContractor] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [showHSIncident, setShowHSIncident] = useState(false)
+  const [showVisitor, setShowVisitor] = useState(false)
+  const [showContractorReq, setShowContractorReq] = useState(false)
+  const [showAssetCheck, setShowAssetCheck] = useState(false)
+  const [showCompliance, setShowCompliance] = useState(false)
+  const [showKeyRequest, setShowKeyRequest] = useState(false)
+  const [showFireDrill, setShowFireDrill] = useState(false)
 
-  function fireToast(action: string) {
-    setToast(`${action} — demo data only, no changes saved`)
-    setTimeout(() => setToast(''), 3000)
-  }
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  useEffect(() => {
+    const pathname = window.location.pathname
+    const slugMatch = pathname.match(/\/schools\/([^/]+)/)
+    const slug = slugMatch?.[1] ?? 'school'
+    setHasData(
+      localStorage.getItem(`lumio_${slug}_facilities_hasData`) === 'true' ||
+      localStorage.getItem('lumio_schools_demo_loaded') === 'true'
+    )
+  }, [])
+
+  if (hasData === null) return null
+  if (!hasData) return <EmptyState pageName="facilities" title="No facilities data yet" description="Upload your site information, maintenance records and asset register." uploads={[
+    { key: 'assets', label: 'Upload Asset Register (CSV)' },
+    { key: 'maintenance', label: 'Upload Maintenance Log (CSV)' },
+    { key: 'mis', label: 'Connect Data Source' },
+  ]} />
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#07080F' }}>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black" style={{ color: '#F9FAFB' }}>Facilities & Site Management</h1>
         <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Maintenance jobs, compliance certificates, room bookings and contractor access</p>
       </div>
+
+      {/* Quick Actions */}
+      <QuickActions actions={[
+        { label: 'Log Maintenance', icon: <Wrench size={14} />, onClick: () => setShowMaintenance(true) },
+        { label: 'Room Booking', icon: <Calendar size={14} />, onClick: () => setShowRoomBooking(true) },
+        { label: 'H&S Incident', icon: <AlertTriangle size={14} />, onClick: () => setShowHSIncident(true) },
+        { label: 'Visitor Sign-in', icon: <UserCheck size={14} />, onClick: () => setShowVisitor(true) },
+        { label: 'Contractor Request', icon: <ClipboardList size={14} />, onClick: () => setShowContractorReq(true) },
+        { label: 'Asset Check', icon: <Search size={14} />, onClick: () => setShowAssetCheck(true) },
+        { label: 'Compliance Report', icon: <FileText size={14} />, onClick: () => setShowCompliance(true) },
+        { label: 'Key Request', icon: <KeyRound size={14} />, onClick: () => setShowKeyRequest(true) },
+        { label: 'Fire Drill Log', icon: <Flame size={14} />, onClick: () => setShowFireDrill(true) },
+        { label: 'Dept Insights', icon: <BarChart3 size={14} />, onClick: () => setShowInsights(true) },
+      ]} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -133,21 +165,6 @@ export default function DemoFacilitiesPage() {
         <StatCard label="Room Bookings Today" value="8" sub="Hall & classrooms" />
         <StatCard label="Last Fire Drill" value="✓" sub="14 Mar 2026" color="#22C55E" />
       </div>
-
-      {/* Quick Actions */}
-      <QuickActions
-        onAction={fireToast}
-        actions={[
-          { label: 'Log Maintenance', icon: <Wrench size={14} /> },
-          { label: 'Book Room', icon: <Calendar size={14} /> },
-          { label: 'Contractor Sign-in', icon: <UserCheck size={14} /> },
-          { label: 'H&S Check', icon: <Shield size={14} /> },
-          { label: 'Asset Register', icon: <Package size={14} /> },
-        ]}
-      />
-
-      {/* AI Highlights */}
-      <AIHighlights items={aiHighlights} />
 
       {/* Open Maintenance Jobs */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -275,7 +292,28 @@ export default function DemoFacilitiesPage() {
         </div>
       </div>
 
-      {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      {showMaintenance && <MaintenanceRequestModal onClose={() => setShowMaintenance(false)} onToast={showToast} />}
+      {showRoomBooking && <RoomBookingModal onClose={() => setShowRoomBooking(false)} onToast={showToast} />}
+      {showContractor && <BookContractorModal onClose={() => setShowContractor(false)} onToast={showToast} />}
+      {showHSIncident && <HSIncidentModal onClose={() => setShowHSIncident(false)} />}
+      {showVisitor && <VisitorSignInModal onClose={() => setShowVisitor(false)} />}
+      {showContractorReq && <ContractorRequestModal onClose={() => setShowContractorReq(false)} />}
+      {showAssetCheck && <AssetCheckModal onClose={() => setShowAssetCheck(false)} />}
+      {showCompliance && <ComplianceReportModal onClose={() => setShowCompliance(false)} />}
+      {showKeyRequest && <KeyRequestModal onClose={() => setShowKeyRequest(false)} />}
+      {showFireDrill && <FireDrillLogModal onClose={() => setShowFireDrill(false)} />}
+      {toast && <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100, backgroundColor: '#0D9488', color: '#F9FAFB', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{toast}</div>}
+      <AIInsightsReport dept="facilities" portal="schools" isOpen={showInsights} onClose={() => setShowInsights(false)} />
+
+      {/* AI Intelligence — bottom of page */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #1F2937' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <DeptAISummary dept="facilities" portal="schools" />
+          <AIHighlights items={aiHighlights} />
+        </div>
+  
+      </div>
+
     </div>
   )
 }
