@@ -1,8 +1,10 @@
 'use client'
-import React, { useState } from 'react'
-import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Sparkles, UserMinus, UserPlus, MessageSquare, LogOut, Map, Bus } from 'lucide-react'
 import SchoolEmptyState from '@/components/dashboard/SchoolEmptyState'
 import { useHasSchoolData } from '@/components/dashboard/EmptyState'
+import SchoolTripsModal from '@/components/modals/SchoolTripsModal'
 
 const HIGHLIGHTS = [
   '14 pupils marked absent today — 3 with no parent contact yet',
@@ -120,6 +122,13 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 export default function DemoSchoolOfficePage() {
   const hasData = useHasSchoolData('school-office')
   const [toast, setToast] = useState('')
+  const [showTrips, setShowTrips] = useState(false)
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams?.get('openTrip') === '1') {
+      setShowTrips(true)
+    }
+  }, [searchParams])
   if (hasData === null) return null
   if (!hasData) return <SchoolEmptyState pageKey="school-office" title="No school office data yet" description="Upload your admin, cover and communications data to activate School Office." uploads={[{ key: 'school-office', label: 'Upload School Office Data (CSV)' }]} />
   function fireToast(action: string) {
@@ -264,6 +273,7 @@ export default function DemoSchoolOfficePage() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      {showTrips && <SchoolTripsModal onClose={() => setShowTrips(false)} onToast={fireToast} />}
     </div>
   )
 }
