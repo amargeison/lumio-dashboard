@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { welcomeTrialEmail } from '@/lib/emails/welcome-trial'
+import { welcomeTrialSchoolEmail } from '@/lib/emails/welcome-trial-schools'
 import { followupTrialEmail } from '@/lib/emails/followup-trial'
 import { followup14dEmail } from '@/lib/emails/followup-14d'
 import { logEmail } from '@/lib/emails/log'
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
         onboarded_at: new Date().toISOString(),
       })
       .eq('id', session.tenant_id)
-      .select('id, slug, company_name, owner_name, owner_email, expires_at, welcome_email_sent')
+      .select('id, slug, company_name, owner_name, owner_email, expires_at, welcome_email_sent, tenant_type')
       .single()
 
     if (error) {
@@ -75,17 +76,22 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name: string; owner_name: string; owner_email: string; expires_at: string }) {
+async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name: string; owner_name: string; owner_email: string; expires_at: string; tenant_type?: string | null }) {
   const supabase = getSupabase()
 
   const expiresDate = new Date(tenant.expires_at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const firstName = tenant.owner_name?.split(' ')[0] || 'there'
+  const isSchool = tenant.tenant_type === 'schools'
 
   const { error } = await sendEmail({
     from: 'Lumio <hello@lumiocms.com>',
     to: [tenant.owner_email],
-    subject: 'Welcome to Lumio — your 14-day trial starts now 🚀',
-    html: welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
+    subject: isSchool
+      ? 'Welcome to Lumio for Schools — your free trial starts now 🏫'
+      : 'Welcome to Lumio — your 14-day trial starts now 🚀',
+    html: isSchool
+      ? welcomeTrialSchoolEmail({ name: firstName, slug: tenant.slug, expiresDate })
+      : welcomeTrialEmail({ name: firstName, slug: tenant.slug, expiresDate }),
   })
 
   if (error) {
