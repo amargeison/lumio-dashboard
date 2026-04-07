@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   Workflow,
+  ArrowLeft,
   LayoutDashboard,
   GitBranch,
   Users,
@@ -83,8 +84,21 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
         flexDirection: 'column',
       }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-5 py-5">
+      {/* Header — clickable, returns to main portal */}
+      <Link
+        href={crmSlug ? `/${crmSlug}` : '/'}
+        title="Back to portal"
+        aria-label="Back to portal"
+        className="group flex items-center gap-2 px-5 py-5 transition-colors"
+        style={{ color: '#6B7299', textDecoration: 'none' }}
+        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#111322' }}
+        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
+      >
+        <ArrowLeft
+          size={16}
+          style={{ color: '#6B7299', transition: 'transform 0.2s' }}
+          className="group-hover:-translate-x-0.5"
+        />
         <Workflow size={20} style={{ color: '#8B5CF6' }} />
         <span
           style={{
@@ -98,7 +112,7 @@ export default function CRMSidebar({ intelligenceBadgeCount = 0 }: CRMSidebarPro
         >
           LUMIO CRM
         </span>
-      </div>
+      </Link>
 
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-3 flex-1">
