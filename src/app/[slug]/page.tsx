@@ -247,7 +247,22 @@ function Sidebar({ activeDept, onSelect, open, onClose, companyName, companyLogo
           {expanded && (
             <>
               <div className="flex-1 min-w-0">
-                {companyName && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{companyName}</p>}
+                {companyName && (
+                  <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>
+                    {companyName}
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      color: '#0D9488',
+                      border: '1px solid #0D9488',
+                      borderRadius: 4,
+                      padding: '1px 4px',
+                      marginLeft: 6,
+                      verticalAlign: 'middle',
+                    }}>BETA</span>
+                  </p>
+                )}
                 <p className="text-[10px] truncate" style={{ color: '#6B7280' }}>Live workspace</p>
               </div>
               <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? '#0D9488' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} title={pinned ? 'Unpin' : 'Pin open'}>
