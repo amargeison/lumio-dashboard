@@ -35,7 +35,7 @@ export function welcomeTrialEmail({ name, slug, expiresDate }: { name: string; s
   <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">Unifies your communications</strong> &mdash; email, Slack, CRM in one morning roundup</td></tr>
   <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">Automates repetitive workflows</strong> so your team focuses on what matters</td></tr>
   <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">AI-powered insights</strong> across every part of your business</td></tr>
-  <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">Speaks to you &mdash; literally.</strong> Try saying &ldquo;Hi Lumio&rdquo; in your dashboard.</td></tr>
+  <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">Your AI Morning Summary.</strong> Every morning, Lumio briefs you on emails, meetings, tasks and wins &mdash; before your day begins.</td></tr>
 </table>
 
 ${ctaButton('Go to my workspace &rarr;', workspaceUrl)}
