@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 function getSupabase() {
   return createClient(
@@ -70,6 +73,27 @@ export async function POST(req: NextRequest) {
           expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq('id', tenant.id)
+    }
+
+    // Fire new-signup notification to Arron — never block signup on failure.
+    if (isNewUser) {
+      try {
+        await resend.emails.send({
+          from: 'Lumio <notifications@lumiocms.com>',
+          to: 'hello@lumiocms.com',
+          subject: '🚀 New Demo Signup',
+          html: `
+            <h2>New demo account created</h2>
+            <p><strong>Name:</strong> ${tenant.owner_name || 'Unknown'}</p>
+            <p><strong>Email:</strong> ${link.email || 'Unknown'}</p>
+            <p><strong>Company:</strong> ${tenant.company_name || 'Unknown'}</p>
+            <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+            <p><a href="https://lumiocms.com/admin">View in Admin Centre</a></p>
+          `,
+        })
+      } catch (notifyErr) {
+        console.error('New signup notification failed:', notifyErr)
+      }
     }
 
     // Create session token
