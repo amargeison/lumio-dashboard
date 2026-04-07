@@ -113,6 +113,7 @@ function SignupForm() {
       localStorage.setItem('demo_user_name', data.user.name)
       if (portalType) localStorage.setItem('lumio_signup_portal', portalType)
       if (portalType === 'schools' || data.is_school_demo) {
+        localStorage.setItem('lumio_school_demo_active', 'true')
         localStorage.setItem('lumio_schools_demo_loaded', 'true')
       }
 
