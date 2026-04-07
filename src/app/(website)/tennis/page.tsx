@@ -31,6 +31,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 
 const INTEGRATIONS = [
   { icon: '🎾', name: 'ATP/WTA', desc: 'Ranking and points feed' },
+  { icon: '🎾', name: 'Swing Vision', desc: 'Shot tracking and video analysis' },
   { icon: '⚡', name: 'StatsBomb', desc: 'Match data and analytics' },
   { icon: '🎥', name: 'Wyscout', desc: 'Video and opponent database' },
   { icon: '✈️', name: 'Google Flights', desc: 'Travel search integration' },
