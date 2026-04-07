@@ -136,8 +136,19 @@ export default function SchoolLayout({ children }: Props) {
   const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
 
   useEffect(() => {
-    const storedLogo = localStorage.getItem(`lumio_school_logo_${slug}`)
-    if (storedLogo) setSchoolLogo(storedLogo)
+    function sync() {
+      const storedLogo =
+        localStorage.getItem(`lumio_school_logo_${slug}`)
+        || localStorage.getItem('lumio_school_logo')
+      if (storedLogo) setSchoolLogo(storedLogo)
+    }
+    sync()
+    window.addEventListener('storage', sync)
+    window.addEventListener('lumio-logo-updated', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('lumio-logo-updated', sync)
+    }
   }, [slug])
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {

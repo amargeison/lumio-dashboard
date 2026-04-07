@@ -74,7 +74,7 @@ export default function GettingStartedModal({ ownerEmail, sessionToken, onComple
                   key={i}
                   value={email}
                   onChange={e => { const next = [...inviteEmails]; next[i] = e.target.value; setInviteEmails(next) }}
-                  placeholder={`colleague${i + 1}@${domain}`}
+                  placeholder={`teacher${i + 1}@${domain}`}
                   style={S}
                 />
               ))}
