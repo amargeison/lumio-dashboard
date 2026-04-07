@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Upload, Check, Loader2, ArrowRight, ArrowLeft, X, Mail } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Loader2, ArrowRight, ArrowLeft, X, Mail } from 'lucide-react'
 
 const S: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', borderRadius: 8, padding: '10px 14px', fontSize: 14, outline: 'none', width: '100%' }
 
@@ -38,7 +38,7 @@ const TOOLS = [
   { id: 'none', icon: '➖', name: 'None yet' },
 ]
 
-type Step = 'personalise' | 'departments' | 'tools' | 'invite' | 'building'
+type Step = 'departments' | 'tools' | 'invite' | 'building'
 
 interface Props {
   companyName: string
@@ -47,28 +47,16 @@ interface Props {
   onComplete: () => void
 }
 
-export default function GettingStartedModal({ companyName, ownerEmail, sessionToken, onComplete }: Props) {
-  const [step, setStep] = useState<Step>('personalise')
-  const [name, setName] = useState(companyName || '')
-  const [logoPreview, setLogoPreview] = useState('')
-  const [logoFile, setLogoFile] = useState<File | null>(null)
+export default function GettingStartedModal({ ownerEmail, sessionToken, onComplete }: Props) {
+  const [step, setStep] = useState<Step>('departments')
   const [selectedDepts, setSelectedDepts] = useState<string[]>(['hr', 'sales', 'accounts'])
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [inviteEmails, setInviteEmails] = useState(['', '', '', '', ''])
   const [buildProgress, setBuildProgress] = useState(0)
-  const fileRef = useRef<HTMLInputElement>(null)
   const domain = ownerEmail?.split('@')[1] || 'company.com'
-  const initials = name ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'LC'
 
   function toggleDept(id: string) { setSelectedDepts(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]) }
   function toggleTool(id: string) { setSelectedTools(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]) }
-
-  function handleLogoChange(file: File) {
-    setLogoFile(file)
-    const reader = new FileReader()
-    reader.onload = e => setLogoPreview(e.target?.result as string)
-    reader.readAsDataURL(file)
-  }
 
   async function handleBuild() {
     setStep('building')
@@ -78,12 +66,7 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
     }
     if (sessionToken) {
       try {
-        if (logoFile) {
-          const fd = new FormData(); fd.append('logo', logoFile)
-          await fetch('/api/workspace/logo', { method: 'POST', headers: { 'x-workspace-token': sessionToken }, body: fd }).catch(() => {})
-        }
         await fetch('/api/onboarding/complete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-workspace-token': sessionToken } }).catch(() => {})
-        if (name !== companyName) { localStorage.setItem('lumio_company_name', name); localStorage.setItem('workspace_company_name', name) }
         localStorage.setItem('lumio_selected_departments', JSON.stringify(selectedDepts))
         localStorage.setItem('lumio_selected_tools', JSON.stringify(selectedTools))
         const ALL = ['overview','crm','sales','marketing','projects','hr','partners','finance','insights','workflows','strategy','reports','settings','accounts','support','success','trials','operations','it']
@@ -109,7 +92,7 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
     onComplete()
   }
 
-  const stepNum = step === 'personalise' ? 1 : step === 'departments' ? 2 : step === 'tools' ? 3 : step === 'invite' ? 4 : 5
+  const stepNum = step === 'departments' ? 1 : step === 'tools' ? 2 : step === 'invite' ? 3 : 4
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
@@ -118,34 +101,14 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
         {step !== 'building' && (
           <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
-              <p className="text-xs font-semibold tracking-widest" style={{ color: '#0D9488' }}>STEP {stepNum} OF 4</p>
-              <div className="flex gap-1 mt-2">{[1,2,3,4].map(i => <div key={i} className="h-1 rounded-full" style={{ width: 40, backgroundColor: i <= stepNum ? '#0D9488' : '#1F2937' }} />)}</div>
+              <p className="text-xs font-semibold tracking-widest" style={{ color: '#0D9488' }}>STEP {stepNum} OF 3</p>
+              <div className="flex gap-1 mt-2">{[1,2,3].map(i => <div key={i} className="h-1 rounded-full" style={{ width: 40, backgroundColor: i <= stepNum ? '#0D9488' : '#1F2937' }} />)}</div>
             </div>
             <button onClick={onComplete} style={{ color: '#4B5563' }}><X size={16} /></button>
           </div>
         )}
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
-
-          {step === 'personalise' && (
-            <div className="space-y-6">
-              <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Let&apos;s personalise your workspace</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>You can update everything later in Settings.</p></div>
-              <div><label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Company Name</label><input value={name} onChange={e => setName(e.target.value)} style={S} placeholder="Your company" /></div>
-              <div>
-                <label className="text-xs font-semibold block mb-2" style={{ color: '#9CA3AF' }}>Logo (optional)</label>
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{ backgroundColor: logoPreview ? 'transparent' : '#6C3FC5', color: '#F9FAFB', border: '1px solid #1F2937' }}>
-                    {logoPreview ? <img src={logoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="text-xl font-bold">{initials}</span>}
-                  </div>
-                  <div>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) handleLogoChange(e.target.files[0]) }} />
-                    <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #374151' }}><Upload size={14} /> Upload</button>
-                    <p className="text-xs mt-1" style={{ color: '#4B5563' }}>PNG, JPG or SVG</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {step === 'departments' && (
             <div className="space-y-4">
@@ -206,10 +169,10 @@ export default function GettingStartedModal({ companyName, ownerEmail, sessionTo
 
         {step !== 'building' && (
           <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-            {step !== 'personalise' ? (
-              <button onClick={() => { if (step === 'departments') setStep('personalise'); else if (step === 'tools') setStep('departments'); else if (step === 'invite') setStep('tools') }} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#9CA3AF' }}><ArrowLeft size={14} /> Back</button>
+            {step !== 'departments' ? (
+              <button onClick={() => { if (step === 'tools') setStep('departments'); else if (step === 'invite') setStep('tools') }} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#9CA3AF' }}><ArrowLeft size={14} /> Back</button>
             ) : <div />}
-            <button onClick={() => { if (step === 'personalise') setStep('departments'); else if (step === 'departments') setStep('tools'); else if (step === 'tools') setStep('invite'); else if (step === 'invite') handleBuild() }}
+            <button onClick={() => { if (step === 'departments') setStep('tools'); else if (step === 'tools') setStep('invite'); else if (step === 'invite') handleBuild() }}
               disabled={step === 'departments' && selectedDepts.length < 3}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB', opacity: step === 'departments' && selectedDepts.length < 3 ? 0.5 : 1 }}>
