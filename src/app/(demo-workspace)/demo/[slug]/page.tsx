@@ -5493,6 +5493,7 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
       {showDemoWelcome && (
         <DemoWelcomePopup
           slug={slug}
+          ownerName={userName}
           onClose={() => {
             try { localStorage.setItem(`demo_welcome_shown_${slug}`, 'true') } catch {}
             setShowDemoWelcome(false)
@@ -5516,27 +5517,30 @@ function detectGender(name: string): 'male' | 'female' {
   return female.includes(first) ? 'female' : 'male'
 }
 
-function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () => void }) {
+function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; ownerName?: string; onClose: () => void }) {
   const [screen, setScreen] = useState<1 | 2>(1)
   // Hardcoded null — this modal is intentionally isolated from the DB/localStorage
   // user photo. Only the user's uploaded File in *this modal session* fills this in.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('Your Name')
   const [userRole, setUserRole] = useState('Founder')
+  const [defaultAvatarFailed, setDefaultAvatarFailed] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     // Name/role only — never touch photo storage here.
+    // Priority: prop from page state → freshest signup key → other workspace keys
     const name =
-      localStorage.getItem('lumio_user_name')
-      || localStorage.getItem('workspace_user_name')
+      (ownerName && ownerName !== 'Your Name' ? ownerName : '')
       || localStorage.getItem('demo_user_name')
+      || localStorage.getItem('lumio_user_name')
+      || localStorage.getItem('workspace_user_name')
       || localStorage.getItem('owner_name')
       || 'Your Name'
     setDisplayName(name)
     const role = localStorage.getItem('lumio_user_role') || ''
     if (role && role.toLowerCase() !== 'director') setUserRole(role)
-  }, [])
+  }, [ownerName])
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -5558,10 +5562,11 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   // Resolve the default avatar synchronously from the raw stored name so the first
   // render already shows the correct gender cartoon (no flash of initials).
   const rawName =
-    (typeof window !== 'undefined'
-      ? (localStorage.getItem('lumio_user_name')
+    (ownerName && ownerName !== 'Your Name' ? ownerName : '')
+    || (typeof window !== 'undefined'
+      ? (localStorage.getItem('demo_user_name')
+        || localStorage.getItem('lumio_user_name')
         || localStorage.getItem('workspace_user_name')
-        || localStorage.getItem('demo_user_name')
         || localStorage.getItem('owner_name')
         || '')
       : '') || displayName
@@ -5663,22 +5668,26 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                     padding: 0,
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoDataUrl || defaultAvatar}
-                    alt=""
-                    onError={(e) => {
-                      e.currentTarget.onerror = null
-                      e.currentTarget.style.display = 'none'
-                    }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: '50%',
-                      display: 'block',
-                    }}
-                  />
+                  {photoDataUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={photoDataUrl}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                    />
+                  ) : !defaultAvatarFailed ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={defaultAvatar}
+                      alt=""
+                      onError={() => setDefaultAvatarFailed(true)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64, fontWeight: 800, color: '#A78BFA', backgroundColor: 'rgba(124,58,237,0.15)' }}>
+                      {(displayName || 'You').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'YU'}
+                    </div>
+                  )}
                 </button>
                 <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
                   {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
