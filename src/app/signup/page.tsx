@@ -133,11 +133,13 @@ function SignupForm() {
         } catch { /* silent — logo is optional */ }
       }
 
+      console.log('redirect data:', JSON.stringify(data))
       const dest = data.redirect_to
         ? data.redirect_to
         : portalType === 'schools'
           ? `/demo/schools/${data.company?.slug || 'onboarding'}`
           : `/demo/${data.company?.slug || 'onboarding'}`
+      console.log('signup → redirect dest:', dest)
       setVerified(true)
       setTimeout(() => { try { router.push(dest) } catch { window.location.href = dest } }, 1500)
     } catch {
