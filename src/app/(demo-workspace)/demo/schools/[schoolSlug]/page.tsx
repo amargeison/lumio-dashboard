@@ -409,6 +409,7 @@ function PhotoFrame() {
   const [hasEverDragged, setHasEverDragged] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio-photo-dragged') === 'true')
   const [hoveringFrame, setHoveringFrame] = useState(false)
   const [showCloudModal, setShowCloudModal] = useState<'google' | 'icloud' | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const isDragging = useRef(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posStartRef = useRef({ x: 50, y: 50 })
@@ -418,9 +419,44 @@ function PhotoFrame() {
     if (isPlaying && photos.length > 1) intervalRef.current = setInterval(() => setCurrentIdx(i => (i + 1) % photos.length), intervalSecs * 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [isPlaying, photos.length, intervalSecs])
-  useEffect(() => { localStorage.setItem('lumio-schools-photo-frame', JSON.stringify(photos)) }, [photos])
-  useEffect(() => { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) }, [photoPositions])
-  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if (!file || photos.length >= 5) return; const reader = new FileReader(); reader.onload = (ev) => { const src = ev.target?.result as string; setPhotos(prev => [...prev, src]); setCurrentIdx(photos.length) }; reader.readAsDataURL(file); e.target.value = '' }
+  useEffect(() => {
+    try {
+      localStorage.setItem('lumio-schools-photo-frame', JSON.stringify(photos))
+    } catch (err) {
+      // QuotaExceededError or similar — base64 payload too big.
+      // Roll back by dropping the last photo added and surface a message.
+      setPhotos(prev => prev.slice(0, -1))
+      setPhotoError('Photo too large — try a smaller image')
+    }
+  }, [photos])
+  useEffect(() => { try { localStorage.setItem('lumio-photo-positions', JSON.stringify(photoPositions)) } catch {} }, [photoPositions])
+  useEffect(() => {
+    if (!photoError) return
+    const t = setTimeout(() => setPhotoError(null), 4000)
+    return () => clearTimeout(t)
+  }, [photoError])
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || photos.length >= 5) return
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError('Please use an image under 2MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string
+      if (!src) return
+      setPhotos(prev => [...prev, src])
+      setCurrentIdx(photos.length)
+    }
+    reader.onerror = () => setPhotoError('Could not read that image — try another one')
+    try {
+      reader.readAsDataURL(file)
+    } catch {
+      setPhotoError('Could not read that image — try another one')
+    }
+  }
   function handleRemovePhoto() { if (photos.length <= 1) return; setPhotos(prev => prev.filter((_, i) => i !== currentIdx)); setCurrentIdx(prev => Math.max(0, prev - 1)) }
 
   function onDragStart(cx: number, cy: number) {
@@ -467,6 +503,11 @@ function PhotoFrame() {
           <button onClick={e => { e.stopPropagation(); setShowCloudModal('icloud') }} title="Import from iCloud" style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><svg width="12" height="8" viewBox="0 0 24 16"><path d="M19.35 6.04A7.49 7.49 0 0 0 12 0C9.11 0 6.6 1.64 5.35 4.04A5.994 5.994 0 0 0 0 10c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3B82F6"/></svg></button>
         </div>
       </div>
+      )}
+      {photoError && (
+        <div className="text-[11px] font-semibold px-3 py-2" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#FCA5A5', borderTop: '1px solid rgba(239,68,68,0.35)' }}>
+          ⚠ {photoError}
+        </div>
       )}
       <div className="flex items-center justify-between px-3 py-2 flex-shrink-0" style={{ borderTop: photos.length > 0 ? '1px solid #1F2937' : 'none' }}>
         <div className="flex items-center gap-1.5">
@@ -1165,22 +1206,17 @@ function OnboardingModal({
 
 // ─── Getting Started checklist ───────────────────────────────────────────────
 
-const SCHOOL_GS_STEPS: { icon: string; title: string; body: string }[] = [
-  { icon: '🏠', title: 'Your school, fully connected', body: 'Welcome to Lumio for Schools. Explore the demo to see everything pre-loaded.' },
-  { icon: '🏷️', title: 'Add your school logo', body: 'Upload your crest so every page feels like yours.' },
-  { icon: '👥', title: 'Invite your staff', body: 'Add teachers, admin, and SLT. Everyone gets their own magic link.' },
-  { icon: '📋', title: 'Set up attendance', body: 'Configure year groups and enable the daily register.' },
-  { icon: '🎒', title: 'Add your first pupil', body: 'Import your MIS data or add pupils manually.' },
-  { icon: '🛡️', title: 'Configure safeguarding', body: 'Set your DSL, enable concern logging and the safeguarding chronology.' },
-  { icon: '🧠', title: 'Set up your SEND register', body: 'Add EHCP pupils and configure the 20-week deadline tracker.' },
-  { icon: '✉️', title: 'Enable parent communications', body: 'Connect email and SMS for letters, alerts and consultation bookings.' },
-  { icon: '📊', title: 'Run your first report', body: 'Generate an Ofsted-ready attendance or safeguarding summary.' },
-  { icon: '🚀', title: 'Go live', body: "You're ready. Switch off demo data and connect your real school tools." },
-]
+interface SchoolGSStep {
+  icon: string
+  title: string
+  body: string
+  actionLabel: string
+  onAction: (markComplete: () => void) => void
+}
 
 const SCHOOL_GS_KEY = 'lumio_school_getting_started_steps'
 
-function SchoolGettingStartedView() {
+function SchoolGettingStartedView({ steps }: { steps: SchoolGSStep[] }) {
   const [completed, setCompleted] = useState<number[]>([])
 
   useEffect(() => {
@@ -1193,17 +1229,18 @@ function SchoolGettingStartedView() {
     } catch {}
   }, [])
 
-  function toggle(index: number) {
+  function markComplete(index: number) {
     setCompleted(prev => {
-      const next = prev.includes(index) ? prev.filter(n => n !== index) : [...prev, index]
+      if (prev.includes(index)) return prev
+      const next = [...prev, index]
       try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
       return next
     })
   }
 
   const done = completed.length
-  const total = SCHOOL_GS_STEPS.length
-  const pct = Math.round((done / total) * 100)
+  const total = steps.length
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
 
   return (
     <div className="space-y-4">
@@ -1211,23 +1248,23 @@ function SchoolGettingStartedView() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🚀 Getting Started</h2>
-            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Finish setting up your school workspace.</p>
+            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Explore every feature of your school portal with real sample data.</p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-black" style={{ color: '#2DD4BF' }}>{done}/{total}</div>
-            <div className="text-[10px]" style={{ color: '#6B7280' }}>complete</div>
+            <div className="text-[10px]" style={{ color: '#6B7280' }}>explored</div>
           </div>
         </div>
         <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
-          <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#0D9488' }} />
+          <div className="h-full transition-all duration-500 ease-out" style={{ width: `${pct}%`, backgroundColor: '#0D9488' }} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {SCHOOL_GS_STEPS.map((step, i) => {
+        {steps.map((step, i) => {
           const isDone = completed.includes(i)
           return (
-            <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.75 : 1 }}>
+            <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.8 : 1 }}>
               <div className="flex items-center justify-center rounded-lg text-xl shrink-0" style={{ width: 40, height: 40, backgroundColor: isDone ? 'rgba(13,148,136,0.15)' : 'rgba(124,58,237,0.1)' }}>
                 {isDone ? '✓' : step.icon}
               </div>
@@ -1239,11 +1276,11 @@ function SchoolGettingStartedView() {
                 <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.body}</p>
                 <button
                   type="button"
-                  onClick={() => toggle(i)}
+                  onClick={() => step.onAction(() => markComplete(i))}
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg"
                   style={{ backgroundColor: isDone ? 'transparent' : '#0D9488', color: isDone ? '#9CA3AF' : '#F9FAFB', border: isDone ? '1px solid #1F2937' : 'none' }}
                 >
-                  {isDone ? 'Mark incomplete' : 'Mark complete'}
+                  {isDone ? '✓ Done' : step.actionLabel}
                 </button>
               </div>
             </div>
@@ -1497,7 +1534,32 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       )}
 
       {/* TAB: Getting Started */}
-      {activeTab === 'getting-started' && <SchoolGettingStartedView />}
+      {activeTab === 'getting-started' && (
+        <SchoolGettingStartedView
+          steps={[
+            { icon: '🏫', title: 'Welcome to Lumio for Schools', body: 'Your school demo is fully loaded. Explore every feature with real sample data — no setup needed.', actionLabel: 'Start exploring →',
+              onAction: (done) => { done() } },
+            { icon: '🔴', title: 'Try School Lockdown', body: 'One button puts your whole school into lockdown — staff are alerted instantly. Try it now (demo mode, nothing real happens).', actionLabel: 'Trigger lockdown',
+              onAction: (done) => { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance'); done() } },
+            { icon: '🛡️', title: 'Review a safeguarding concern', body: "There's 1 open concern in your demo. See how DSL review, chronology and escalation works.", actionLabel: 'Review now',
+              onAction: (done) => { setShowSafeguardingReview(true); done() } },
+            { icon: '📋', title: "Check today's attendance", body: 'See live attendance by year group, flag absences, and mark the register — all in one place.', actionLabel: 'View attendance',
+              onAction: (done) => { setShowMarkRegister(true); done() } },
+            { icon: '📊', title: 'Explore Insights by role', body: 'Switch between Headteacher, SENCO, and Governor views. Every role sees exactly what they need.', actionLabel: 'Open Insights',
+              onAction: (done) => { setActiveTab('insights'); done() } },
+            { icon: '✈️', title: 'Plan a school trip', body: 'Risk assessments, consent forms, payment tracking and staff:pupil ratios — all in the Trip Planner.', actionLabel: 'Open Trip Planner',
+              onAction: (done) => { setShowRiskAssessment(true); done() } },
+            { icon: '🎓', title: 'See the SEND register', body: 'EHCP pupils, 20-week deadline tracker, provision mapping and the new SEND White Paper readiness check.', actionLabel: 'View SEND',
+              onAction: (done) => { setShowReferSenco(true); done() } },
+            { icon: '🏷️', title: 'Add your school logo', body: 'Make the portal feel like yours — upload your crest and it appears across every page.', actionLabel: 'Upload logo',
+              onAction: (done) => { setShowLiveOnboarding(true); done() } },
+            { icon: '📷', title: 'Add your photo', body: 'Add a personal touch — your photo appears in the top corner and on your staff card.', actionLabel: 'Add photo',
+              onAction: (done) => { setShowSchoolGSModal(true); done() } },
+            { icon: '👥', title: 'Invite your team', body: 'Add your headteacher, SENCO, office manager or governors. Everyone gets their own magic link and role-based view.', actionLabel: 'Invite staff',
+              onAction: (done) => { setShowSchoolGSModal(true); done() } },
+          ]}
+        />
+      )}
 
       {/* TAB: Today */}
       {activeTab === 'today' && (
