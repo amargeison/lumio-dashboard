@@ -5509,7 +5509,10 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   // Hardcoded null — this modal is intentionally isolated from the DB/localStorage
   // user photo. Only the user's uploaded File in *this modal session* fills this in.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
-  const [userName, setUserName] = useState('Your Name')
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [cartoonUrl, setCartoonUrl] = useState<string | null>(null)
+  const [cartoonLoading, setCartoonLoading] = useState(false)
+  const [displayName, setDisplayName] = useState('Your Name')
   const [userRole, setUserRole] = useState('Founder')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -5519,8 +5522,9 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
       localStorage.getItem('lumio_user_name')
       || localStorage.getItem('workspace_user_name')
       || localStorage.getItem('demo_user_name')
-      || ''
-    if (name) setUserName(name)
+      || localStorage.getItem('owner_name')
+      || 'Your Name'
+    setDisplayName(name)
     const role = localStorage.getItem('lumio_user_role') || ''
     if (role && role.toLowerCase() !== 'director') setUserRole(role)
   }, [])
@@ -5528,6 +5532,8 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setPhotoFile(file)
+    setCartoonUrl(null)
     const reader = new FileReader()
     reader.onload = () => {
       const uploadedUrl = String(reader.result || '')
@@ -5542,6 +5548,35 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
     reader.readAsDataURL(file)
   }
 
+  async function handleCartoonify() {
+    if (!photoFile) return
+    setCartoonLoading(true)
+    try {
+      const fd = new FormData()
+      fd.append('image', photoFile)
+      const res = await fetch('/api/cartoon', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.success && data.cartoon_url) {
+        setCartoonUrl(data.cartoon_url)
+        // Show cartoon on the FIFA card immediately
+        setPhotoDataUrl(data.cartoon_url)
+      }
+    } catch (e) {
+      console.error('Cartoon failed:', e)
+    } finally {
+      setCartoonLoading(false)
+    }
+  }
+
+  function handleSavePhoto(url: string | null) {
+    if (!url) return
+    setPhotoDataUrl(url)
+    try { localStorage.setItem('lumio_user_photo', url) } catch {}
+    try {
+      window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url } }))
+    } catch { /* ignore */ }
+  }
+
   // Resolve the default avatar synchronously from the raw stored name so the first
   // render already shows the correct gender cartoon (no flash of initials).
   const rawName =
@@ -5549,8 +5584,9 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
       ? (localStorage.getItem('lumio_user_name')
         || localStorage.getItem('workspace_user_name')
         || localStorage.getItem('demo_user_name')
+        || localStorage.getItem('owner_name')
         || '')
-      : '') || userName
+      : '') || displayName
   const gender = detectGender(rawName)
   const defaultAvatar = gender === 'female'
     ? '/business_woman_avatar.png'
@@ -5630,7 +5666,7 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', marginBottom: 32 }}>
               {/* Upload zone */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                 <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
                 <button
                   type="button"
@@ -5652,7 +5688,11 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photoDataUrl || defaultAvatar}
-                    alt="avatar"
+                    alt=""
+                    onError={(e) => {
+                      e.currentTarget.onerror = null
+                      e.currentTarget.style.display = 'none'
+                    }}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -5665,6 +5705,49 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                 <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
                   {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
                 </p>
+                {photoDataUrl && !cartoonUrl && (
+                  <button
+                    type="button"
+                    onClick={handleCartoonify}
+                    disabled={cartoonLoading}
+                    style={{
+                      marginTop: 12,
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      background: cartoonLoading ? '#374151' : '#7C3AED',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: cartoonLoading ? 'not-allowed' : 'pointer',
+                      fontSize: 13,
+                      width: '100%',
+                    }}
+                  >
+                    {cartoonLoading ? '✨ Creating cartoon...' : '✨ Cartoonify me'}
+                  </button>
+                )}
+                {cartoonUrl && (
+                  <div style={{ marginTop: 12, width: '100%' }}>
+                    <p style={{ fontSize: 11, color: '#6B7280', textAlign: 'center', marginBottom: 8 }}>
+                      Choose your version:
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSavePhoto(photoFile ? URL.createObjectURL(photoFile) : photoDataUrl)}
+                        style={{ flex: 1, padding: '6px 8px', borderRadius: 6, background: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', fontSize: 12, cursor: 'pointer' }}
+                      >
+                        Use original
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSavePhoto(cartoonUrl)}
+                        style={{ flex: 1, padding: '6px 8px', borderRadius: 6, background: '#7C3AED', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer' }}
+                      >
+                        ✨ Use cartoon
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* FIFA card */}
@@ -5725,7 +5808,11 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={photoDataUrl || defaultAvatar}
-                        alt="avatar"
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.onerror = null
+                          e.currentTarget.style.display = 'none'
+                        }}
                         style={{
                           width: '100%',
                           height: '100%',
@@ -5747,7 +5834,7 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                       marginBottom: 2,
                     }}
                   >
-                    {userName}
+                    {displayName}
                   </div>
                   <div
                     style={{
