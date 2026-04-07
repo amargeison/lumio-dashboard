@@ -31,5 +31,26 @@ export async function getWorkspaceSession(req: Request): Promise<{ business_id: 
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
-  return session ?? null
+  if (session) return session
+
+  // Fallback: check demo_sessions table for demo OTP signup users
+  const { data: demoSession } = await supabase
+    .from('demo_sessions')
+    .select('tenant_id, expires_at')
+    .eq('token', token)
+    .maybeSingle()
+
+  if (demoSession?.tenant_id) {
+    if (demoSession.expires_at && new Date(demoSession.expires_at) < new Date()) return null
+    const { data: tenant } = await supabase
+      .from('demo_tenants')
+      .select('business_id')
+      .eq('id', demoSession.tenant_id)
+      .maybeSingle()
+    if (tenant?.business_id) {
+      return { business_id: tenant.business_id }
+    }
+  }
+
+  return null
 }
