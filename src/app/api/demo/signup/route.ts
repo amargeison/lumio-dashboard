@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
     const company_name     = (body.company || body.company_name || '').trim()
     const gdpr_consent     = body.gdpr         || body.gdpr_consent || false
     const marketing_consent = body.marketing_consent || false
+    const portalType       = body.portalType   || ''
+    const tenant_type      = portalType === 'schools' ? 'schools' : 'business'
 
     if (!name || !email || !company_name || !gdpr_consent) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
       gdpr_consent_at: new Date().toISOString(),
       expires_at: expiresAt,
       status: 'pending_onboarding',
+      tenant_type,
     })
 
     if (insertError) {

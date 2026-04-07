@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
         const sessionToken = crypto.randomUUID()
         await supabase.from('demo_sessions').insert({ token: sessionToken, tenant_id: tenant.id, email: email.toLowerCase(), expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() })
         let redirect_to: string | undefined
-        if (tenant.business_id) {
+        if (tenant.tenant_type === 'schools') {
+          redirect_to = `/demo/schools/${tenant.slug}`
+        } else if (tenant.business_id) {
           const { data: biz } = await supabase.from('businesses').select('slug').eq('id', tenant.business_id).single()
           // Always send to demo workspace — live workspace requires workspace_session_token which isn't set here
           if (biz) redirect_to = `/demo/${biz.slug}`
@@ -127,7 +129,8 @@ export async function POST(req: NextRequest) {
 
     // Provision a businesses row for new signups (or any tenant missing business_id)
     // This enables the workspace logo upload (which needs business_id) to work for demo users.
-    if (!tenant.business_id) {
+    // Skip for schools tenants — they don't belong in the businesses table.
+    if (tenant.tenant_type !== 'schools' && !tenant.business_id) {
       try {
         const { data: newBusiness, error: bizErr } = await supabase
           .from('businesses')
@@ -169,9 +172,11 @@ export async function POST(req: NextRequest) {
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
 
-    // Check if this user has a paid business workspace (returning paid user)
+    // Build redirect — schools go to /demo/schools/[slug], business tenants to /demo/[slug]
     let redirect_to: string | undefined
-    if (tenant.business_id) {
+    if (tenant.tenant_type === 'schools') {
+      redirect_to = `/demo/schools/${tenant.slug}`
+    } else if (tenant.business_id) {
       const { data: biz } = await supabase
         .from('businesses')
         .select('slug')
