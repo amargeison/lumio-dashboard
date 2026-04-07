@@ -4998,10 +4998,13 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
     }
     // Listen for same-tab avatar updates (e.g. from dropdown upload or demo welcome modal).
     // Accept either a raw string detail or `{ url }` for forward compatibility.
-    function onAvatarUpdated(e: Event) {
-      const detail = (e as CustomEvent).detail
-      const url = typeof detail === 'string' ? detail : detail?.url
-      setUserPhoto(url || null)
+    const onAvatarUpdated = (e: Event) => {
+      const ce = e as CustomEvent
+      const url = ce.detail?.url ?? ce.detail
+      if (typeof url === 'string' && url.startsWith('http')) {
+        setUserPhoto(url)
+        try { localStorage.setItem('lumio_user_photo', url) } catch {}
+      }
     }
     window.addEventListener('storage', onPhotoUpdate)
     window.addEventListener('lumio-avatar-updated', onAvatarUpdated)
@@ -5522,8 +5525,33 @@ function detectGender(name: string): 'male' | 'female' {
   return female.includes(first) ? 'female' : 'male'
 }
 
-function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; ownerName?: string; onClose: () => void }) {
-  const [screen, setScreen] = useState<1 | 2>(1)
+function DemoWelcomePopup({ slug, ownerName, onClose }: { slug: string; ownerName?: string; onClose: () => void }) {
+  const [screen, setScreen] = useState<1 | 2 | 3>(1)
+  const [copied, setCopied] = useState(false)
+  const [inviteEmails, setInviteEmails] = useState<string[]>(['', '', '', '', ''])
+  const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/demo/${slug}` : `/demo/${slug}`
+  const copyInviteLink = () => {
+    try {
+      navigator.clipboard.writeText(inviteUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* ignore */ }
+  }
+  const sendInvites = () => {
+    const emails = inviteEmails.map(e => e.trim()).filter(e => e.includes('@'))
+    if (emails.length > 0) {
+      try {
+        fetch('/api/onboarding/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails, inviteUrl, slug }),
+        }).catch(() => {
+          window.location.href = `mailto:${emails.join(',')}?subject=${encodeURIComponent('Check out our Lumio workspace')}&body=${encodeURIComponent(`Take a look: ${inviteUrl}`)}`
+        })
+      } catch { /* ignore */ }
+    }
+    onClose()
+  }
   // Hardcoded null — this modal is intentionally isolated from the DB/localStorage
   // user photo. Only the user's uploaded File in *this modal session* fills this in.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
@@ -5634,11 +5662,12 @@ function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; o
         {/* Step indicator */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', color: '#A78BFA', textTransform: 'uppercase' }}>
-            Step {screen} of 2
+            Step {screen} of 3
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: '#7C3AED' }} />
-            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen === 2 ? '#7C3AED' : '#1F2937' }} />
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen >= 2 ? '#7C3AED' : '#1F2937' }} />
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen >= 3 ? '#7C3AED' : '#1F2937' }} />
           </div>
         </div>
 
@@ -5892,7 +5921,7 @@ function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; o
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <a
                 href="mailto:hello@lumiocms.com?subject=Early%20Access%20Application"
-                onClick={() => onClose()}
+                onClick={() => setScreen(3)}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -5913,6 +5942,107 @@ function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; o
               </a>
               <button
                 type="button"
+                onClick={() => setScreen(3)}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#9CA3AF',
+                  borderRadius: 10,
+                  padding: '12px 28px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Continue &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SCREEN 3 — Invite colleagues ── */}
+        {screen === 3 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Invite colleagues to explore
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 16, lineHeight: 1.6 }}>
+              Want to show a colleague? Send them a link to your demo workspace — they can explore it alongside you.
+            </p>
+
+            <div style={{ background: '#1F2937', borderRadius: 8, padding: '12px 16px', margin: '16px 0', fontFamily: 'monospace', fontSize: 14, color: '#0D9488', wordBreak: 'break-all' }}>
+              {inviteUrl}
+            </div>
+
+            <button
+              type="button"
+              onClick={copyInviteLink}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'none',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#F9FAFB',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginBottom: 24,
+              }}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy link'}
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+              {inviteEmails.map((email, i) => (
+                <input
+                  key={i}
+                  type="email"
+                  value={email}
+                  placeholder={`colleague${i + 1}@company.com`}
+                  onChange={e => {
+                    const next = [...inviteEmails]
+                    next[i] = e.target.value
+                    setInviteEmails(next)
+                  }}
+                  style={{
+                    background: '#0D0E14',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    color: '#F9FAFB',
+                    fontSize: 14,
+                    outline: 'none',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                type="button"
+                onClick={sendInvites}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  backgroundColor: TEAL,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '14px 28px',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Send &amp; continue &rarr;
+              </button>
+              <button
+                type="button"
                 onClick={() => onClose()}
                 style={{
                   background: 'none',
@@ -5925,7 +6055,7 @@ function DemoWelcomePopup({ slug: _slug, ownerName, onClose }: { slug: string; o
                   cursor: 'pointer',
                 }}
               >
-                Continue to my dashboard &rarr;
+                Skip — go to dashboard &rarr;
               </button>
             </div>
           </div>
