@@ -41,6 +41,11 @@ const SupportPage = dynamic(() => import('@/app/(dashboard)/support/page'), { ss
 const TrialsPage = dynamic(() => import('@/app/(dashboard)/trials/page'), { ssr: false })
 const WorkflowsPage = dynamic(() => import('@/app/(dashboard)/workflows/page'), { ssr: false })
 const CRMPage = dynamic(() => import('@/app/(dashboard)/crm/dashboard/page'), { ssr: false })
+const PartnersPage = dynamic(() => import('@/app/(dashboard)/partners/page'), { ssr: false })
+const ProjectsPage = dynamic(() => import('@/app/(dashboard)/projects/page'), { ssr: false })
+const SuccessPage = dynamic(() => import('@/app/(dashboard)/success/page'), { ssr: false })
+const ITPage = dynamic(() => import('@/app/(dashboard)/it/page'), { ssr: false })
+const DirectorsPage = dynamic(() => import('@/app/(dashboard)/directors/page'), { ssr: false })
 import QuickWins from '@/app/(dashboard)/overview/components/QuickWins'
 import DailyTasks from '@/app/(dashboard)/overview/components/DailyTasks'
 import Insights from '@/app/(dashboard)/overview/components/Insights'
@@ -5521,7 +5526,12 @@ export default function WorkspaceDashboard({ params }: { params: Promise<{ slug:
             {activeDept === 'trials' && <TrialsPage />}
             {activeDept === 'workflows' && <WorkflowsPage />}
             {activeDept === 'crm' && <CRMPage />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'insights' && activeDept !== 'sales' && activeDept !== 'operations' && activeDept !== 'marketing' && activeDept !== 'support' && activeDept !== 'trials' && activeDept !== 'workflows' && activeDept !== 'crm' && (
+            {activeDept === 'partners' && <PartnersPage />}
+            {activeDept === 'projects' && <ProjectsPage />}
+            {activeDept === 'success' && <SuccessPage />}
+            {activeDept === 'it' && <ITPage />}
+            {activeDept === 'directors' && <DirectorsPage />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'hr' && activeDept !== 'accounts' && activeDept !== 'insights' && activeDept !== 'sales' && activeDept !== 'operations' && activeDept !== 'marketing' && activeDept !== 'support' && activeDept !== 'trials' && activeDept !== 'workflows' && activeDept !== 'crm' && activeDept !== 'partners' && activeDept !== 'projects' && activeDept !== 'success' && activeDept !== 'it' && activeDept !== 'directors' && (
               <ComingSoonView dept={activeDept} />
             )}
           </main>
