@@ -1,399 +1,642 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check } from 'lucide-react'
 
-const ACCENT = '#EC4899'
+const PINK = '#EC4899'
+const PURPLE = '#A855F7'
 const BG = '#07080F'
-const CARD = '#111318'
-const BORDER = '#1F2937'
+const CARD = '#0D1117'
+const CARD_ALT = '#111827'
+const BORDER = '#1E293B'
+const BORDER_ALT = '#1F2937'
+const TEXT = '#F9FAFB'
+const MUTED = '#9CA3AF'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const DIFFERENCES = [
-  {
-    icon: '📋',
-    title: 'FSR, Not PSR',
-    subtitle: 'A different rulebook entirely',
-    body: `Women's clubs operate under Football Sustainability Regulations — not the men's Profit and Sustainability Rules. The FSR imposes an 80% cap on wage spend as a proportion of Relevant Revenue, with strict definitions of what counts as revenue when a parent club shares commercial deals. Bundled sponsorship agreements must be attributed fairly. Age-band salary caps apply across the squad. This is not a simplified version of PSR — it is a distinct regulatory framework that requires its own compliance engine.`,
-  },
-  {
-    icon: '🩺',
-    title: 'Welfare Obligations',
-    subtitle: 'ACL, maternity, mental health — all mandatory',
-    body: `Professional women's football carries specific welfare obligations that have no direct equivalent in the men's game. ACL injury rates in women's football run at four to six times the male rate — clubs must track training loads, pitch conditions, and return-to-play protocols accordingly. Maternity rights for professional players require specific contract provisions and return-to-play planning. The Karen Carney Review placed mental health support at the centre of the duty of care framework. Lumio Women's Football logs all of it in one place.`,
-  },
-  {
-    icon: '🏢',
-    title: 'The Standalone Shift',
-    subtitle: 'The Karen Carney Review changed everything',
-    body: `The Karen Carney Review recommended that WSL clubs demerge from their parent clubs and operate as standalone commercial entities. This shift is already underway — Chelsea Women, Manchester City Women, and others have begun the transition. Standalone clubs need their own commercial pipeline, their own board suite, their own investor tools, and their own valuation model. Lumio Women's Football includes a Demerger Readiness Tracker and a standalone commercial CRM that understands bundled sponsorship attribution for FSR purposes.`,
-  },
+const STAT_PILLS = [
+  'FSR compliant',
+  'Karen Carney standards',
+  'AI powered',
+  'Kitman Labs ready',
+  'WSL approved',
 ]
 
-const FEATURES = [
-  {
-    icon: '📊',
-    title: 'FSR Compliance Dashboard',
-    body: 'Real-time salary spend tracked against the 80% Relevant Revenue cap. Bundled sponsorship attribution modelling for shared parent club deals. Age-band salary compliance view. What-if simulator for new contracts. Board-ready FSR compliance report at one click.',
-  },
-  {
-    icon: '🩺',
-    title: 'Player Welfare Hub',
-    body: 'ACL risk monitor using GPS load data and training surface tracking. Maternity tracker with return-to-play planning and contract status. Mental health log with PFA referral workflow. Karen Carney Review compliant across all welfare categories.',
-  },
-  {
-    icon: '💼',
-    title: 'Standalone Sponsorship Pipeline',
-    body: 'FSR-aware commercial CRM. Log every sponsor deal, apply bundled attribution rules for shared parent club sponsors, and see the FSR-compliant revenue figure in real time. Renewal alerts at 90, 60, and 30 days. Commercial income vs season target dashboard.',
-  },
-  {
-    icon: '🏛️',
-    title: 'Board Suite & Financial Planning',
-    body: 'FSR-constrained Club Planner with 1, 3, and 5-year strategic horizons. Investor toolkit with standalone valuation model. Demerger Readiness Tracker — legal, commercial, operational, governance. One-click board financial report with FSR headroom summary.',
-  },
-  {
-    icon: '⚽',
-    title: 'Squad Pitch & Match Prep',
-    body: 'FIFA-style interactive pitch view with player cards and formation switcher. Dual registration management with expiry alerts for players registered across WSL and parent club academy. Set pieces library with SVG diagrams. Team talks builder for match day.',
-  },
-  {
-    icon: '🤖',
-    title: 'AI Club Director Morning Briefing',
-    body: 'Delivered before training — FSR headroom update, welfare flags, commercial pipeline status, squad availability and injury log, dual registration expiry alerts, and one key action for the day. Voice-powered. Built specifically for the women\'s game.',
-  },
+const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
+  { icon: '💗', title: 'Player Welfare Hub', desc: 'Karen Carney Review mandatory standards built in. ACL monitoring, maternity tracking, mental health case management. Every player protected.' },
+  { icon: '💰', title: 'FSR Compliance', desc: 'Real-time Financial Sustainability Regulation tracking. Salary cap monitoring, bundled sponsorship attribution, headroom calculator. Stay safe automatically.' },
+  { icon: '🏦', title: 'Board Suite', desc: 'FSR status, commercial growth, welfare flags, attendance — one executive view. Board pack generated with a click.' },
+  { icon: '📊', title: 'Revenue Attribution', desc: 'Women-only Relevant Revenue tracked separately. Bundled deal attribution, YoY growth, permitted spend calculator. Know your number.' },
+  { icon: '🪙', title: 'Salary Compliance', desc: 'Every player\u2019s salary tracked against FSR cap. New signing modeller shows headroom impact before you sign.' },
+  { icon: '🏗️', title: 'Standalone Identity Tracker', desc: 'Building your commercial independence? Track demerger readiness, standalone revenue %, indicative valuation and dependency score.' },
+  { icon: '🗓️', title: 'Morning Briefing', desc: 'Every morning, Lumio briefs your CEO in plain English. FSR status, welfare flags, sponsorship renewals, board pack deadline — all in one place.' },
+  { icon: '📋', title: 'Dual Registration', desc: 'Track dual-reg players, expiry dates, parent club agreements. Never miss a registration window.' },
+  { icon: '🤖', title: 'AI Department Intelligence', desc: 'Every department has its own AI layer. Insights Report generated fresh daily — performance, compliance, welfare, commercial, all departments.' },
 ]
 
-const WHO_ITS_FOR = [
-  {
-    icon: '🏆',
-    title: 'WSL Non-Big Four',
-    subtitle: 'Bristol City, Leicester City, Crystal Palace, Everton and more',
-    points: [
-      'FSR compliance without a dedicated finance team',
-      'Commercial pipeline competing against Big Four budgets',
-      'Welfare obligations met — ACL, maternity, mental health',
-      'Board suite for investor conversations and standalone readiness',
-      'AI Club Director briefing every morning',
-    ],
-  },
-  {
-    icon: '🥈',
-    title: 'WSL2 Clubs',
-    subtitle: 'Championship Women\'s clubs building toward promotion',
-    points: [
-      'FSR headroom tracked from day one of the season',
-      'Dual registration management across parent club squads',
-      'Sponsorship pipeline with bundled deal attribution',
-      'Player welfare log ahead of top-flight duty of care standards',
-      'Promotion planning with FSR scenario modelling',
-    ],
-  },
-  {
-    icon: '🏢',
-    title: 'Standalone Women\'s Clubs',
-    subtitle: 'Operating or transitioning to full independence',
-    points: [
-      'Demerger Readiness Tracker — legal, commercial, governance',
-      'Standalone valuation model for investor conversations',
-      'Full commercial CRM with no bundling assumptions',
-      'Independent board suite — separate from parent club reporting',
-      'FSR compliance as a fully autonomous entity',
-    ],
-  },
+const INTEGRATIONS = [
+  { icon: '💗', name: 'Kitman Labs', desc: 'Player welfare and GPS monitoring' },
+  { icon: '📡', name: 'The FA', desc: 'Registration and FSR compliance reporting' },
+  { icon: '🏃', name: 'STATSports', desc: 'Player load and injury prevention' },
+  { icon: '⚽', name: 'StatsBomb', desc: 'Match data and analytics' },
+  { icon: '📹', name: 'Wyscout', desc: 'Video and scouting' },
+  { icon: '🩺', name: 'PFA', desc: 'Player welfare referral pathway' },
+  { icon: '📊', name: 'Opta', desc: 'Live statistics' },
+  { icon: '💰', name: 'Xero', desc: 'Financial management' },
+  { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
+  { icon: '🔔', name: 'Slack', desc: 'Staff notifications' },
+  { icon: '📱', name: 'WhatsApp Business', desc: 'Team comms' },
+  { icon: '🤖', name: 'Claude AI', desc: 'Intelligence and briefings' },
 ]
 
-const PRICING = [
-  {
-    tier: "Grassroots Women's Lite",
-    price: '£199',
-    period: '/mo',
-    desc: 'For women\'s clubs at Steps 4 and below',
-    features: ['Squad management', 'Player welfare log', 'Match day tools', 'Basic AI briefing'],
-    highlight: false,
-  },
-  {
-    tier: "WSL2 Club",
-    price: '£1,200',
-    period: '/mo',
-    desc: 'Championship Women\'s football — full platform',
-    features: ['FSR compliance dashboard', 'Player welfare hub', 'Dual registration management', 'Sponsorship pipeline', 'Board suite', 'AI Club Director briefing'],
-    highlight: false,
-  },
-  {
-    tier: "WSL Non-Big Four",
-    price: '£2,500',
-    period: '/mo',
-    desc: 'The full Lumio Women\'s Football operating system',
-    features: ['Everything in WSL2', 'Full standalone sponsorship CRM', 'Investor toolkit', 'Demerger readiness tracker', 'Standalone valuation model', 'Dedicated onboarding'],
-    highlight: true,
-  },
-  {
-    tier: 'Standalone',
-    price: '£3,500',
-    period: '/mo',
-    desc: 'For clubs operating as fully independent entities',
-    features: ['Everything in WSL Non-Big Four', 'Full standalone board suite', 'Independent financial planning', 'Commercial director view', 'Priority support', 'Quarterly strategy review'],
-    highlight: false,
-  },
+const TIERS = [
+  { name: 'WSL', desc: 'Full FSR compliance suite. Karen Carney welfare standards. Standalone identity tracking. Board suite with pack generator.' },
+  { name: 'Championship', desc: 'FSR-ready from day one. Salary cap monitoring, welfare hub, commercial pipeline. Scale as you grow.' },
+  { name: "Women's National League", desc: 'Everything a growing club needs. Welfare standards, compliance tracking, affordable and built for football people.' },
 ]
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default function WomensFootballPage() {
-  const [_open, _setOpen] = useState(false)
-
+// ── Mockup chrome ───────────────────────────────────────────────────────────
+function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: BG, color: '#F9FAFB' }} className="pt-28 pb-20">
+    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 30px 80px rgba(236,72,153,0.18)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER_ALT}`, backgroundColor: '#0B1020' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981' }} />
+        </div>
+        <div style={{ flex: 1, height: 18, borderRadius: 5, backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}` }} />
+      </div>
+      <div style={{ padding: 18 }}>{children}</div>
+    </div>
+  )
+}
 
-      {/* ── Hero ──────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse at 50% 0%, rgba(236,72,153,0.12) 0%, transparent 65%)` }}
-        />
-        <div className="relative mx-auto max-w-4xl px-6 py-24 md:py-32 text-center">
-          {/* Badge */}
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
-            style={{ backgroundColor: 'rgba(236,72,153,0.12)', border: '1px solid rgba(236,72,153,0.3)' }}>
-            <span className="text-xs font-semibold" style={{ color: ACCENT }}>Lumio Women&apos;s Football</span>
+function MockupHeader({ emoji, title, subtitle, rightBadges }: { emoji: string; title: string; subtitle: string; rightBadges?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{emoji} {title}</div>
+        <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{subtitle}</div>
+      </div>
+      {rightBadges && <div style={{ display: 'flex', gap: 6 }}>{rightBadges}</div>}
+    </div>
+  )
+}
+
+function Badge({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
+  return (
+    <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 999, color, backgroundColor: bg, border: `1px solid ${color}55`, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+      {children}
+    </span>
+  )
+}
+
+function KPI({ value, label, sub, color }: { value: string; label: string; sub?: string; color: string }) {
+  return (
+    <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${color}55`, borderRadius: 10, padding: 12 }}>
+      <div style={{ fontSize: 20, fontWeight: 900, color }}>{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: TEXT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      {sub && <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+// ── Mockups ─────────────────────────────────────────────────────────────────
+function ClubDashboardMockup() {
+  return (
+    <MockupFrame>
+      <MockupHeader
+        emoji="🏠"
+        title="Oakridge Women FC — Club Dashboard"
+        subtitle="FSR compliant · Karen Carney Review standards"
+        rightBadges={<>
+          <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">FSR REVIEW</Badge>
+          <Badge color={PURPLE} bg="rgba(168,85,247,0.15)">WSL</Badge>
+        </>}
+      />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        <KPI value="SAFE" label="FSR Status" sub="Salary 68% of Revenue" color="#10B981" />
+        <KPI value="24" label="Squad" sub="WSL registered" color={PURPLE} />
+        <KPI value="2" label="Welfare Flags" sub="1 ACL · 1 mental health" color="#F59E0B" />
+        <KPI value="Sat 12 Apr" label="Next Match" sub="vs Brighton Women H" color="#3B82F6" />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>FSR Compliance Summary</div>
+          {[
+            ['Relevant Revenue', '£3.2M', PINK],
+            ['Total salary spend', '£2.18M', PINK],
+            ['Salary %', '68%', '#10B981'],
+            ['FSR cap (80%)', '£2.56M', PINK],
+            ['Headroom', '£380k', '#10B981'],
+          ].map(([k, v, c]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, marginTop: 4 }}>
+              <span>{k}</span><span style={{ color: c, fontWeight: 800 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Player Welfare Dashboard</div>
+          {[
+            { name: 'Emily Zhang', tag: 'ACL', color: '#F59E0B' },
+            { name: 'Charlotte Reed', tag: 'Mental Health', color: PURPLE },
+            { name: 'Ava Mitchell', tag: 'Maternity', color: '#3B82F6' },
+          ].map(p => (
+            <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: TEXT, marginTop: 6 }}>
+              <span>{p.name}</span>
+              <Badge color={p.color} bg={`${p.color}22`}>{p.tag}</Badge>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Sponsorship Pipeline</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Nike <span style={{ color: PINK }}>£420k</span> · Active</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Barclays <span style={{ color: PINK }}>£85k</span> · Active</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Local Energy · Renewal due</div>
+        </div>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Dual Registration</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Lucy Whitmore — 30 Apr</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Jade Hopkins — 15 May</div>
+        </div>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Upcoming</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Brighton Women WSL</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Board meeting · Nike review</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Registration closes</div>
+        </div>
+      </div>
+    </MockupFrame>
+  )
+}
+
+function FSRMockup() {
+  return (
+    <MockupFrame>
+      <MockupHeader emoji="💰" title="FSR Compliance Dashboard" subtitle="Financial Sustainability Regulations — 2025/26 Season" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        <KPI value="SAFE" label="FSR Status" color="#10B981" />
+        <KPI value="£3.2M" label="Relevant Revenue" color={PINK} />
+        <KPI value="£2.18M" label="Salary Spend" sub="68%" color={PINK} />
+        <KPI value="£380k" label="Headroom" color="#10B981" />
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Revenue Attribution</div>
+        {[
+          ['Matchday revenue', '£680k', 22],
+          ['Commercial (women-attributed)', '£1.42M', 45],
+          ['Broadcast (WSL allocation)', '£820k', 26],
+          ['Prize money & FA distributions', '£280k', 9],
+        ].map(([label, val, w]) => (
+          <div key={label as string} style={{ marginTop: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: MUTED }}>
+              <span>{label}</span><span style={{ color: PINK, fontWeight: 800 }}>{val}</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', marginTop: 3 }}>
+              <div style={{ width: `${w}%`, height: '100%', borderRadius: 3, backgroundColor: PINK }} />
+            </div>
           </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Bundled Sponsorship Attribution</div>
+        {[
+          { name: 'Emirates (Shared)', total: 'Total £12M', allocated: '£180k', pct: '1.5%' },
+          { name: 'Nike (Kit standalone)', total: '', allocated: '£420k', pct: '100%' },
+          { name: 'Local Energy Co (Women-only)', total: '', allocated: '£35k', pct: '100%' },
+        ].map(s => (
+          <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: MUTED, marginTop: 4 }}>
+            <span>{s.name} {s.total && <span style={{ opacity: 0.6 }}>· {s.total}</span>}</span>
+            <span style={{ color: PINK, fontWeight: 800 }}>→ {s.allocated} ({s.pct})</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.45)', backgroundColor: 'rgba(245,158,11,0.1)', fontSize: 9, color: '#FBBF24' }}>
+        ⚠ FSR Rule: Total salary spend must not exceed 80% of Relevant Revenue
+      </div>
+    </MockupFrame>
+  )
+}
 
-          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
-            The first operating system built for{' '}
-            <span style={{ background: 'linear-gradient(135deg, #EC4899, #F472B6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              professional women&apos;s football.
-            </span>
+function WelfareMockup() {
+  const cases = [
+    { name: 'Emily Zhang', tag: 'ACL Risk', level: 'High', levelColor: '#EF4444', note: 'Previous bilateral ACL (2023, 2024). Next screening: 18 Apr.' },
+    { name: 'Charlotte Reed', tag: 'Mental Health', level: 'Medium', levelColor: '#F59E0B', note: 'Weekly sessions with Dr. Alison Carey. Progress positive.' },
+    { name: 'Ava Mitchell', tag: 'Maternity', level: 'Info', levelColor: '#3B82F6', note: 'Maternity leave May 2026. Return plan: January 2027.' },
+    { name: 'Sophie Turner', tag: 'ACL Risk', level: 'Medium', levelColor: '#F59E0B', note: 'ACL reconstruction Dec 2024. Final return-to-play phase.' },
+  ]
+  return (
+    <MockupFrame>
+      <MockupHeader emoji="💗" title="Player Welfare Hub" subtitle="Karen Carney Review — mandatory welfare standards" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        <KPI value="3" label="Active Flags" sub="2 monitoring · 1 leave" color="#F59E0B" />
+        <KPI value="4 players" label="ACL History" sub="Screening active" color="#EF4444" />
+        <KPI value="1 active" label="Maternity" sub="Ava Mitchell May 26" color="#3B82F6" />
+        <KPI value="0" label="PFA Referrals" sub="This season" color="#10B981" />
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Active Welfare Cases</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {cases.map(c => (
+          <div key={c.name} style={{ backgroundColor: '#0A0B10', border: `1px solid ${c.levelColor}55`, borderRadius: 10, padding: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>{c.name}</span>
+              <Badge color={c.levelColor} bg={`${c.levelColor}22`}>{c.level}</Badge>
+            </div>
+            <div style={{ fontSize: 9, color: PINK, marginBottom: 4 }}>{c.tag}</div>
+            <div style={{ fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{c.note}</div>
+          </div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+function StandaloneMockup() {
+  return (
+    <MockupFrame>
+      <MockupHeader emoji="🏷️" title="Standalone Identity Tracker" subtitle="Building standalone commercial identity — FSR incentivised" />
+      <div style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PINK}55`, backgroundColor: 'rgba(236,72,153,0.08)', fontSize: 9, color: PINK, marginBottom: 12 }}>
+        Revenue attributed directly to women&apos;s football increases your permitted salary cap under FSR.
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+        <div style={{ width: 110, height: 110, borderRadius: '50%', background: `conic-gradient(${PINK} 0% 68%, ${BORDER_ALT} 68% 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', backgroundColor: CARD_ALT, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: PINK }}>68%</div>
+            <div style={{ fontSize: 7, color: MUTED }}>standalone</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>68% standalone revenue</div>
+          <div style={{ fontSize: 9, color: MUTED }}>32% affiliated/bundled</div>
+        </div>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Demerger Readiness Checklist</div>
+        {[
+          { ok: true, label: 'Separate legal entity registered' },
+          { ok: true, label: 'Brand assets independently owned' },
+          { ok: false, label: 'Stadium/facility agreement — In progress' },
+          { ok: false, label: 'TUPE staff transfers — Not started' },
+          { ok: true, label: 'Bank account separation' },
+          { ok: false, label: 'Independent commercial deals — 2 bundled' },
+        ].map(i => (
+          <div key={i.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: MUTED, marginTop: 4 }}>
+            <span style={{ color: i.ok ? '#10B981' : '#F59E0B' }}>{i.ok ? '✓' : '✗'}</span>
+            <span>{i.label}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+        <div style={{ backgroundColor: 'rgba(236,72,153,0.12)', border: `1px solid ${PINK}55`, borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: PINK }}>£7,000,000</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Indicative Valuation</div>
+          <div style={{ fontSize: 8, color: MUTED }}>(Revenue × 2.5x)</div>
+        </div>
+        <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: '#F59E0B' }}>32%</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Dependency Score</div>
+          <div style={{ fontSize: 8, color: MUTED }}>(Lower is better)</div>
+        </div>
+        <div style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.45)', borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: '#3B82F6' }}>58%</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Standalone Readiness</div>
+          <div style={{ fontSize: 8, color: MUTED }}>(Target 85%)</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 4 }}>Standalone readiness: 58%</div>
+      <div style={{ height: 6, borderRadius: 4, backgroundColor: '#1F2937' }}>
+        <div style={{ width: '58%', height: '100%', borderRadius: 4, backgroundColor: PINK }} />
+      </div>
+    </MockupFrame>
+  )
+}
+
+function BriefingMockup() {
+  return (
+    <MockupFrame>
+      <MockupHeader emoji="☀️" title="Good morning, Kate Brennan" subtitle="Tuesday, 7 April 2026" />
+      <div style={{ background: `linear-gradient(135deg, ${PINK}, ${PURPLE})`, borderRadius: 10, padding: 10, marginBottom: 10, color: '#fff' }}>
+        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: '0.1em' }}>MORNING BRIEFING — OAKRIDGE WOMEN FC</div>
+        <div style={{ fontSize: 9, opacity: 0.85, marginTop: 2 }}>WSL · Match Week · Tuesday, 7 April 2026</div>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#F59E0B' }}>FSR Compliance · 74% of cap</span>
+          <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">REVIEW</Badge>
+        </div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 4 }}>£180,000 headroom remaining</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT }}>Squad Welfare</div>
+          <div style={{ fontSize: 8, color: MUTED, marginTop: 3 }}>1 maternity · return-to-play · ACL overdue 3</div>
+        </div>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT }}>Sponsorship</div>
+          <div style={{ fontSize: 8, color: MUTED, marginTop: 3 }}>2 renewals: Kestrel £85k · NovaTech £40k</div>
+        </div>
+        <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: TEXT }}>Compliance</div>
+          <div style={{ fontSize: 8, color: MUTED, marginTop: 3 }}>Dual reg expires Fri · Window closes 8d</div>
+        </div>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PINK}55`, borderRadius: 10, padding: 10, marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: TEXT, fontWeight: 800 }}>
+          <span>Board Pack Deadline</span><span style={{ color: PINK }}>11 days · 65% complete</span>
+        </div>
+        <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', marginTop: 6 }}>
+          <div style={{ width: '65%', height: '100%', borderRadius: 3, backgroundColor: PINK }} />
+        </div>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Today&apos;s Priorities</div>
+        {[
+          'FSR bundled attribution review — Meridian Insurance',
+          'Chase Kestrel Finance renewal — kit deal 30 days',
+          'ACL screening overdue — 3 high-risk players',
+          'Dual reg expiry — Emma Clarke ends Friday',
+          'Transfer window modelling — budget impact',
+        ].map(p => (
+          <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 9, color: MUTED, marginTop: 4 }}>
+            <span style={{ color: PINK, marginTop: 2 }}>●</span>
+            <span>{p}</span>
+          </div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+function BoardSuiteMockup() {
+  return (
+    <MockupFrame>
+      <MockupHeader emoji="🏛️" title="Board Suite — Oakridge Women FC" subtitle="Executive dashboard for board and investors" />
+      <div style={{ background: `linear-gradient(135deg, ${PINK}, ${PURPLE})`, borderRadius: 10, padding: 10, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
+        <div style={{ fontSize: 10, fontWeight: 800 }}>Next board meeting: 15 Apr 2025 · Pack due in 11 days</div>
+        <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.5)' }}>Generate Pack — Phase 2</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 }}>
+        <KPI value="Safe (74%)" label="FSR" color="#10B981" />
+        <KPI value="£180k" label="Headroom" color="#10B981" />
+        <KPI value="87%" label="Revenue vs Budget" color="#3B82F6" />
+        <KPI value="£238k" label="Pipeline" color={PURPLE} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 12 }}>
+        <KPI value="20" label="Squad" color={PURPLE} />
+        <KPI value="2" label="Welfare Flags" color="#F59E0B" />
+        <KPI value="2,847" label="Attendance" color="#3B82F6" />
+        <KPI value="34" label="Points" color="#065F46" />
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Commercial Growth — Season on Season</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 90 }}>
+          {[
+            { label: '22-23', values: [30, 25, 20] },
+            { label: '23-24', values: [45, 35, 30] },
+            { label: '24-25', values: [60, 50, 42] },
+            { label: '25-26', values: [80, 65, 55] },
+          ].map(s => (
+            <div key={s.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 70 }}>
+                <div style={{ width: 8, height: `${s.values[0]}%`, backgroundColor: PINK, borderRadius: 2 }} />
+                <div style={{ width: 8, height: `${s.values[1]}%`, backgroundColor: PURPLE, borderRadius: 2 }} />
+                <div style={{ width: 8, height: `${s.values[2]}%`, backgroundColor: '#14B8A6', borderRadius: 2 }} />
+              </div>
+              <div style={{ fontSize: 8, color: MUTED, marginTop: 4 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 9, color: '#10B981', fontWeight: 800 }}>✓ WSL Compliance · FSR salary cap</div>
+    </MockupFrame>
+  )
+}
+
+// ── Spotlight wrapper ────────────────────────────────────────────────────────
+function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
+  eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
+}) {
+  return (
+    <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ order: reverse ? 2 : 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: PINK, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
+          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bullets.map(b => (
+              <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
+                <span style={{ color: PINK, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ order: reverse ? 1 : 2 }}>{mockup}</div>
+      </div>
+    </section>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+export default function WomensLandingPage() {
+  return (
+    <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
+      {/* ── HERO ── */}
+      <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${PINK}22, transparent 50%), radial-gradient(circle at 80% 60%, ${PURPLE}1f, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/womens_fc_logo.png" alt="Lumio Women's Football" style={{ height: 80, margin: '0 auto 32px', display: 'block' }}
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PINK, textTransform: 'uppercase', marginBottom: 24 }}>
+            LUMIO WOMEN&apos;S FOOTBALL PORTAL
+          </div>
+          <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
+            The only platform built specifically for women&apos;s football clubs.
           </h1>
-
-          <p className="text-lg md:text-xl leading-relaxed mb-3 mx-auto" style={{ color: '#9CA3AF', maxWidth: 620 }}>
-            FSR compliance, player welfare management, and standalone commercial tools — built for the women&apos;s game, not adapted from the men&apos;s.
+          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 40px' }}>
+            FSR compliance, Karen Carney welfare standards, standalone identity tracking, player welfare hub — purpose-built for WSL, Championship and Women&apos;s National League clubs.
           </p>
-
-          {/* Stat pills */}
-          <div className="flex flex-wrap justify-center gap-3 my-8">
-            {[
-              { value: '£500m', label: 'WSL commercial revenue target' },
-              { value: '75%', label: 'of WSL clubs without a kit sponsor' },
-              { value: '0', label: 'platforms built specifically for this' },
-            ].map(s => (
-              <div
-                key={s.label}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
-                style={{ backgroundColor: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.2)', color: '#F9FAFB' }}>
-                <span className="font-black" style={{ color: ACCENT }}>{s.value}</span>
-                <span style={{ color: '#9CA3AF' }}>{s.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold"
-              style={{ backgroundColor: ACCENT, color: '#F9FAFB' }}>
-              Book a Women&apos;s Football demo <ArrowRight size={16} />
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <Link href="/womens/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
+              Try the demo →
             </Link>
-            <Link
-              href="/sports-product"
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-medium"
-              style={{ border: `1px solid ${BORDER}`, color: '#9CA3AF' }}>
-              See all sport portals
-            </Link>
+            <a href="#features" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              See all features ↓
+            </a>
           </div>
-        </div>
-      </section>
-
-      {/* ── What Makes Women's Football Different ─────────────────────────────── */}
-      <section style={{ borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="mx-auto max-w-7xl px-6 py-24">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>
-              Why it matters
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold">What makes women&apos;s football different</h2>
-            <p className="mt-4 text-base mx-auto" style={{ color: '#6B7280', maxWidth: 520 }}>
-              The women&apos;s game operates under different regulations, different welfare obligations, and a fundamentally different commercial structure. Generic club software ignores all three.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {DIFFERENCES.map(d => (
-              <div
-                key={d.title}
-                className="rounded-2xl p-8"
-                style={{ backgroundColor: CARD, border: `1px solid rgba(236,72,153,0.2)` }}>
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl mb-6"
-                  style={{ backgroundColor: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.2)' }}>
-                  {d.icon}
-                </div>
-                <h3 className="text-xl font-black mb-1" style={{ color: '#F9FAFB' }}>{d.title}</h3>
-                <p className="text-xs font-semibold mb-4" style={{ color: ACCENT }}>{d.subtitle}</p>
-                <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{d.body}</p>
-              </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {STAT_PILLS.map(p => (
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(236,72,153,0.08)', border: `1px solid ${PINK}55`, color: PINK, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Features ──────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>The platform</p>
-          <h2 className="text-3xl md:text-4xl font-bold">Built module by module for the women&apos;s game</h2>
-          <p className="mt-4 text-base mx-auto" style={{ color: '#6B7280', maxWidth: 520 }}>
-            Six purpose-built modules that cover every operational challenge a professional women&apos;s club faces today.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(f => (
-            <div
-              key={f.title}
-              className="rounded-2xl p-7"
-              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl mb-5"
-                style={{ backgroundColor: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.2)' }}>
-                {f.icon}
-              </div>
-              <h3 className="text-base font-black mb-3" style={{ color: '#F9FAFB' }}>{f.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{f.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Who It's For ──────────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="mx-auto max-w-7xl px-6 py-24">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Who it&apos;s for</p>
-            <h2 className="text-3xl md:text-4xl font-bold">Built for every level of professional women&apos;s football</h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {WHO_ITS_FOR.map(w => (
-              <div
-                key={w.title}
-                className="rounded-2xl p-8"
-                style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="text-3xl">{w.icon}</span>
-                  <div>
-                    <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{w.title}</h3>
-                    <p className="text-xs" style={{ color: ACCENT }}>{w.subtitle}</p>
-                  </div>
-                </div>
-                <ul className="space-y-3">
-                  {w.points.map(pt => (
-                    <li key={pt} className="flex items-start gap-3 text-sm" style={{ color: '#D1D5DB' }}>
-                      <Check size={14} style={{ color: ACCENT, flexShrink: 0, marginTop: 2 }} />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pricing ───────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Pricing</p>
-          <h2 className="text-3xl font-bold">Priced for the women&apos;s game</h2>
-          <p className="mt-4 text-base mx-auto" style={{ color: '#6B7280', maxWidth: 480 }}>
-            Four tiers — from grassroots to standalone. No men&apos;s football pricing applied.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PRICING.map(p => (
-            <div
-              key={p.tier}
-              className="relative rounded-2xl p-7 flex flex-col"
-              style={{
-                backgroundColor: p.highlight ? 'rgba(236,72,153,0.07)' : CARD,
-                border: `1px solid ${p.highlight ? ACCENT : BORDER}`,
-              }}>
-              {p.highlight && (
-                <div
-                  className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1 rounded-full"
-                  style={{ backgroundColor: ACCENT, color: '#F9FAFB' }}>
-                  Most Popular
-                </div>
-              )}
-              <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{p.tier}</h3>
-              <p className="text-xs mb-4" style={{ color: '#6B7280' }}>{p.desc}</p>
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-3xl font-black" style={{ color: '#F9FAFB' }}>{p.price}</span>
-                <span className="text-sm" style={{ color: '#6B7280' }}>{p.period}</span>
-              </div>
-              <ul className="space-y-2.5 flex-1 mb-7">
-                {p.features.map(f => (
-                  <li key={f} className="flex items-start gap-2 text-xs" style={{ color: '#9CA3AF' }}>
-                    <Check size={13} style={{ color: ACCENT, flexShrink: 0, marginTop: 1 }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/contact"
-                className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
-                style={{
-                  backgroundColor: p.highlight ? ACCENT : 'rgba(255,255,255,0.05)',
-                  color: p.highlight ? '#F9FAFB' : '#9CA3AF',
-                  border: p.highlight ? 'none' : `1px solid ${BORDER}`,
-                }}>
-                Book a demo <ArrowRight size={14} />
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CTA Banner ────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 pb-10">
-        <div
-          className="rounded-2xl px-8 py-16 text-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(236,72,153,0.1) 0%, rgba(244,114,182,0.06) 100%)',
-            border: '1px solid rgba(236,72,153,0.25)',
-          }}>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
-            The time is now
-          </p>
-          <h2 className="text-3xl md:text-5xl font-black mb-5 leading-tight">
-            The FSR just landed.{' '}
-            <span style={{ background: 'linear-gradient(135deg, #EC4899, #F472B6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Are you compliant?
-            </span>
+      {/* ── FEATURE GRID ── */}
+      <section id="features" style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Everything a women&apos;s club needs.<br />
+            <span style={{ color: PINK }}>Nothing a men&apos;s club told you to use.</span>
           </h2>
-          <p className="text-lg leading-relaxed mb-10 mx-auto" style={{ color: '#9CA3AF', maxWidth: 560 }}>
-            The Football Sustainability Regulations are live. Clubs operating without an FSR compliance dashboard are navigating blind. Lumio Women&apos;s Football gives you full visibility — in real time, before every board meeting, and before every signing.
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56 }}>
+            Built with women&apos;s football decision-makers, not adapted from the men&apos;s game.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold"
-              style={{ backgroundColor: ACCENT, color: '#F9FAFB' }}>
-              Book a Women&apos;s Football demo <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/sports"
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-medium"
-              style={{ border: `1px solid ${BORDER}`, color: '#9CA3AF' }}>
-              Explore all sport portals <ArrowRight size={16} />
-            </Link>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* ── SPOTLIGHTS ── */}
+      <Spotlight
+        eyebrow="SPOTLIGHT · CLUB DASHBOARD"
+        title="Your whole club. One screen."
+        body="The Oakridge Women FC dashboard shows FSR status, welfare flags, next match, sponsorship pipeline and dual registration — all before you've had your first coffee."
+        bullets={['FSR status live at a glance', 'Player welfare alerts surfaced immediately', 'Sponsorship pipeline with renewal alerts', 'Upcoming fixtures and deadlines in one view']}
+        mockup={<ClubDashboardMockup />}
+      />
+
+      <Spotlight
+        altBg
+        reverse
+        eyebrow="SPOTLIGHT · FSR COMPLIANCE"
+        title="FSR compliance. Automatic. Accurate."
+        body="The Financial Sustainability Regulations are complex, constantly evolving, and the stakes couldn't be higher. Lumio tracks your salary cap, attributes your revenue correctly, and flags the moment you enter the monitoring zone — before it becomes a problem."
+        bullets={['Live FSR status: Safe / Monitor / At Risk', 'Bundled sponsorship attribution handled correctly', 'Relevant Revenue calculator (women-only)', 'Salary cap headroom updated in real time']}
+        mockup={<FSRMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · PLAYER WELFARE HUB"
+        title="Player welfare isn't a checkbox. It's a culture."
+        body="The Karen Carney Review set mandatory welfare standards for women's football. Lumio builds them in from day one — ACL screening protocols, maternity leave management, mental health check-ins, PFA referral tracking. Every player, every case, properly managed."
+        bullets={['ACL risk monitoring with Kitman Labs integration', 'Maternity leave and return-to-play management', 'Mental health case tracking and PFA referrals', 'Welfare flags surfaced on every dashboard']}
+        mockup={<WelfareMockup />}
+      />
+
+      <Spotlight
+        altBg
+        reverse
+        eyebrow="SPOTLIGHT · STANDALONE IDENTITY"
+        title="Build your independence. Track it in real time."
+        body="The FA incentivises clubs to build standalone commercial identities. Lumio's Standalone Identity Tracker shows your demerger readiness, revenue independence score, indicative valuation and exactly what you need to do next."
+        bullets={['Standalone vs bundled revenue split', 'Demerger readiness checklist', 'Indicative club valuation (Revenue × 2.5x)', 'Dependency score with improvement pathway']}
+        mockup={<StandaloneMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · MORNING BRIEFING"
+        title="Briefed before breakfast."
+        body="Every morning, Lumio reads your club's data and surfaces what matters today. FSR headroom, welfare flags, sponsorship renewals, board pack deadline — in plain English, personalised to your role."
+        bullets={['Personalised by role (CEO, DoF, Head Coach)', 'FSR status and headroom front and centre', "Today's priorities auto-generated", 'Board pack deadline tracking']}
+        mockup={<BriefingMockup />}
+      />
+
+      <Spotlight
+        altBg
+        reverse
+        eyebrow="SPOTLIGHT · BOARD SUITE"
+        title="Board-ready. Always."
+        body="Your board needs FSR status, commercial growth, welfare overview and attendance trends — not a spreadsheet. Lumio's Board Suite puts it all in one executive view, with a one-click board pack generator."
+        bullets={['FSR status and headroom at board level', 'Commercial growth season-on-season chart', 'Welfare flags visible to board', 'Generate Pack button — Phase 2 coming']}
+        mockup={<BoardSuiteMockup />}
+      />
+
+      {/* ── FSR DIFFERENCE ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: BG, borderLeft: `4px solid ${PINK}` }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: PINK, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>THE FSR DIFFERENCE</div>
+          <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1, maxWidth: 900 }}>
+            Women&apos;s football has its own rules. Your platform should too.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
+            {[
+              { icon: '📏', title: 'FSR is not PSR', body: 'The Football Sustainability Regulations for women\u2019s football are separate from the men\u2019s game. Salary caps are based on women-only Relevant Revenue — not parent club turnover.' },
+              { icon: '💗', title: 'Karen Carney is mandatory', body: 'The Carney Review set welfare standards every WSL and Championship club must meet. ACL protocols, maternity provision, mental health support. Lumio tracks every one.' },
+              { icon: '🏗️', title: 'Standalone identity matters', body: 'The FA actively incentivises clubs to build commercial independence from their parent clubs. More standalone revenue = higher salary cap. Lumio helps you get there.' },
+            ].map(c => (
+              <div key={c.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 28 }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>{c.icon}</div>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 10 }}>{c.title}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{c.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── INTEGRATIONS ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Lumio Women&apos;s connects to the tools you already use.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 48 }}>
+            {INTEGRATIONS.map(i => (
+              <div key={i.name} style={{ display: 'flex', alignItems: 'center', gap: 14, backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 26 }}>{i.icon}</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{i.name}</div>
+                  <div style={{ fontSize: 12, color: MUTED }}>{i.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TIERS ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Built for every level of women&apos;s professional football.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
+            {TIERS.map(t => (
+              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${PINK}55`, borderRadius: 16, padding: 32 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: PINK, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>TIER</div>
+                <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── EARLY ACCESS CTA ── */}
+      <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 48, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
+            Be one of the first women&apos;s clubs on Lumio.
+          </h2>
+          <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
+            We&apos;re looking for a small number of clubs to help us build this properly. 6 months free. No commitment. At the end, all we ask is an honest case study.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
+            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(236,72,153,0.08)', border: `1px solid ${PINK}55`, color: PINK, fontSize: 13, fontWeight: 700 }}>{p}</span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="mailto:hello@lumiosports.com?subject=Womens%20Football%20Early%20Access" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
+              Apply for early access →
+            </a>
+            <Link href="/womens/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Or try the demo →
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
