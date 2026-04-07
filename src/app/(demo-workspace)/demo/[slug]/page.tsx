@@ -5508,9 +5508,6 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   // Hardcoded null — this modal is intentionally isolated from the DB/localStorage
   // user photo. Only the user's uploaded File in *this modal session* fills this in.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [cartoonUrl, setCartoonUrl] = useState<string | null>(null)
-  const [cartoonLoading, setCartoonLoading] = useState(false)
   const [displayName, setDisplayName] = useState('Your Name')
   const [userRole, setUserRole] = useState('Founder')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -5531,8 +5528,6 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPhotoFile(file)
-    setCartoonUrl(null)
     const reader = new FileReader()
     reader.onload = () => {
       const uploadedUrl = String(reader.result || '')
@@ -5545,54 +5540,6 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
       } catch { /* ignore */ }
     }
     reader.readAsDataURL(file)
-  }
-
-  async function handleCartoonify() {
-    setCartoonLoading(true)
-    try {
-      let fileToSend: File | null = photoFile
-
-      // If we don't have a fresh File from the picker but we DO have a
-      // photoDataUrl (e.g. after a previous cartoonify, or hydrated from the
-      // default avatar / DB), fetch it as a blob and reconstruct a File so
-      // /api/cartoon has something to send.
-      if (!fileToSend && photoDataUrl) {
-        try {
-          const imgRes = await fetch(photoDataUrl)
-          const blob = await imgRes.blob()
-          fileToSend = new File([blob], 'avatar.jpg', { type: blob.type || 'image/jpeg' })
-        } catch (fetchErr) {
-          console.error('Cartoon: failed to fetch existing photo URL', fetchErr)
-        }
-      }
-
-      if (!fileToSend) return
-
-      const fd = new FormData()
-      fd.append('image', fileToSend)
-      const res = await fetch('/api/cartoon', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (data.success && data.cartoon_url) {
-        setCartoonUrl(data.cartoon_url)
-        // Show cartoon on the FIFA card immediately
-        setPhotoDataUrl(data.cartoon_url)
-      } else {
-        console.error('Cartoon API error:', data)
-      }
-    } catch (e) {
-      console.error('Cartoon failed:', e)
-    } finally {
-      setCartoonLoading(false)
-    }
-  }
-
-  function handleSavePhoto(url: string | null) {
-    if (!url) return
-    setPhotoDataUrl(url)
-    try { localStorage.setItem('lumio_user_photo', url) } catch {}
-    try {
-      window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url } }))
-    } catch { /* ignore */ }
   }
 
   // Resolve the default avatar synchronously from the raw stored name so the first
@@ -5723,49 +5670,6 @@ function DemoWelcomePopup({ slug: _slug, onClose }: { slug: string; onClose: () 
                 <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
                   {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
                 </p>
-                {photoDataUrl && !cartoonUrl && (
-                  <button
-                    type="button"
-                    onClick={handleCartoonify}
-                    disabled={cartoonLoading}
-                    style={{
-                      marginTop: 12,
-                      padding: '8px 16px',
-                      borderRadius: 8,
-                      background: cartoonLoading ? '#374151' : '#7C3AED',
-                      color: '#fff',
-                      border: 'none',
-                      cursor: cartoonLoading ? 'not-allowed' : 'pointer',
-                      fontSize: 13,
-                      width: '100%',
-                    }}
-                  >
-                    {cartoonLoading ? '✨ Creating cartoon...' : '✨ Cartoonify me'}
-                  </button>
-                )}
-                {cartoonUrl && (
-                  <div style={{ marginTop: 12, width: '100%' }}>
-                    <p style={{ fontSize: 11, color: '#6B7280', textAlign: 'center', marginBottom: 8 }}>
-                      Choose your version:
-                    </p>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleSavePhoto(photoFile ? URL.createObjectURL(photoFile) : photoDataUrl)}
-                        style={{ flex: 1, padding: '6px 8px', borderRadius: 6, background: '#1F2937', color: '#D1D5DB', border: '1px solid #374151', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        Use original
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSavePhoto(cartoonUrl)}
-                        style={{ flex: 1, padding: '6px 8px', borderRadius: 6, background: '#7C3AED', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        ✨ Use cartoon
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* FIFA card */}
