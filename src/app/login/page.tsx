@@ -60,7 +60,7 @@ function LoginContent() {
         options: { shouldCreateUser: false },
       })
       if (supaErr) {
-        setFormError('No account found for this email. Start a free trial or contact hello@lumiocms.com.')
+        setFormError('No account found for this email. Start a free trial at lumiocms.com or contact hello@lumiocms.com.')
         setLoading(false)
         return
       }
@@ -267,7 +267,7 @@ function LoginContent() {
           {error && (
             <div className="bg-red-600/10 border border-red-500/20 rounded-xl px-4 py-3 mb-6 text-sm text-red-300">
               {error === 'no_account'
-                ? 'No account found. Please start a free trial or contact support.'
+                ? 'No account found for this email. Start a free trial at lumiocms.com or contact hello@lumiocms.com.'
                 : 'Something went wrong with sign in. Please try again.'}
             </div>
           )}
