@@ -1662,7 +1662,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
               case 'insights':
                 setActiveTab('insights'); markDone(); break
               case 'trips':
-                router.push(`/demo/schools/${_slug}/school-office`); markDone(); break
+                router.push(`/demo/schools/${_slug}/school-office?openTrip=1`); markDone(); break
               case 'send':
                 router.push(`/demo/schools/${_slug}/send-dsl`); markDone(); break
               case 'logo':
