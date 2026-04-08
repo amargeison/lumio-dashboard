@@ -1198,162 +1198,422 @@ function OnboardingModal({
   )
 }
 
-// ─── Getting Started checklist ───────────────────────────────────────────────
+// ─── Getting Started rich tour ───────────────────────────────────────────────
 
-type SchoolGSAction =
-  | 'complete'
-  | 'lockdown'
-  | 'safeguarding'
-  | 'attendance'
-  | 'insights'
-  | 'trips'
-  | 'send'
-  | 'logo'
-  | 'photo'
-  | 'invite'
+const SCHOOL_TOUR_KEY = 'lumio_school_getting_started_steps'
+const SCHOOL_TOUR_TOTAL = 10
 
-interface SchoolGSStep {
-  id: string
-  icon: string
-  title: string
-  subtitle: string
-  buttonLabel: string
-  buttonAction: SchoolGSAction
+interface SchoolTourActions {
+  onLockdown: () => void
+  onAttendance: () => void
+  onSafeguarding: () => void
+  onSend: () => void
+  onTrips: () => void
+  onInsights: () => void
+  onStaffCards: () => void
 }
 
-const SCHOOL_GS_STEPS: SchoolGSStep[] = [
-  { id: 'welcome', icon: '🏫', title: 'Welcome to Lumio for Schools',
-    subtitle: 'Your demo is fully loaded with real sample data — 1,147 pupils, 89 staff, live alerts. No setup needed. Just explore.',
-    buttonLabel: 'Start exploring', buttonAction: 'complete' },
-  { id: 'lockdown', icon: '🔴', title: 'Try School Lockdown',
-    subtitle: 'One button alerts every staff member instantly and locks down the building. Try it now — demo mode, nothing real happens.',
-    buttonLabel: 'Trigger lockdown', buttonAction: 'lockdown' },
-  { id: 'safeguarding', icon: '🛡️', title: 'Review a safeguarding concern',
-    subtitle: "There's 1 open concern in your demo. See how DSL review, chronology logging and escalation to external agencies works.",
-    buttonLabel: 'Review concern', buttonAction: 'safeguarding' },
-  { id: 'attendance', icon: '📋', title: "Check today's attendance",
-    subtitle: '96.2% whole-school attendance today. Year 6 is below target. See registers by year group and flag unexplained absences.',
-    buttonLabel: 'View attendance', buttonAction: 'attendance' },
-  { id: 'insights', icon: '📊', title: 'Explore Insights by role',
-    subtitle: 'Switch between Headteacher, SENCO, and Governor views. Every role sees a completely different — and relevant — dashboard.',
-    buttonLabel: 'Open Insights', buttonAction: 'insights' },
-  { id: 'trips', icon: '✈️', title: 'Plan a school trip',
-    subtitle: 'Risk assessments, consent forms, payment tracking and staff:pupil ratios — all built in. Ofsted-ready in minutes.',
-    buttonLabel: 'Open Trip Planner', buttonAction: 'trips' },
-  { id: 'send', icon: '🎓', title: 'See the SEND register',
-    subtitle: 'EHCP pupils with 20-week deadline tracking, provision mapping, and the 2026 SEND White Paper readiness checker.',
-    buttonLabel: 'View SEND', buttonAction: 'send' },
-  { id: 'logo', icon: '🏷️', title: 'Add your school logo',
-    subtitle: 'Upload your crest and it appears across every page — in the banner, sidebar, and on exported reports.',
-    buttonLabel: 'Upload logo', buttonAction: 'logo' },
-  { id: 'photo', icon: '📷', title: 'Add your profile photo',
-    subtitle: 'Your photo appears in the top corner and on your staff card. Personalise your view in seconds.',
-    buttonLabel: 'Add photo', buttonAction: 'photo' },
-  { id: 'invite', icon: '👥', title: 'Invite your team',
-    subtitle: 'Add your headteacher, SENCO, office manager or governors. Everyone gets their own magic link and sees their role-based view.',
-    buttonLabel: 'Invite staff', buttonAction: 'invite' },
-]
+interface SchoolTourStepDef {
+  num: number
+  icon: string
+  iconColor: string
+  title: string
+  body: string
+  visual: React.ReactNode
+  highlight?: string
+  primaryAction?: { label: string; run: () => void }
+  primary: { label: string; run: () => void; href?: string }
+  secondary?: { label: string; run: () => void }
+}
 
-const SCHOOL_GS_KEY = 'lumio_school_getting_started_steps'
-
-function SchoolGettingStartedView({ onAction }: { onAction: (action: SchoolGSAction, markDone: () => void) => void }) {
-  const [completed, setCompleted] = useState<string[]>([])
+function SchoolGettingStartedView({ actions }: { actions: SchoolTourActions }) {
+  const [step, setStep] = useState(1)
+  const [completed, setCompleted] = useState(false)
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(SCHOOL_GS_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) setCompleted(parsed.filter((x: unknown) => typeof x === 'string'))
-      }
+      const raw = localStorage.getItem(SCHOOL_TOUR_KEY)
+      if (!raw) return
+      const n = parseInt(raw, 10)
+      if (!Number.isFinite(n)) return
+      if (n > SCHOOL_TOUR_TOTAL) { setCompleted(true); return }
+      setStep(Math.max(1, Math.min(SCHOOL_TOUR_TOTAL, n)))
     } catch {}
   }, [])
 
-  function markComplete(id: string) {
-    setCompleted(prev => {
-      if (prev.includes(id)) return prev
-      const next = [...prev, id]
-      try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
-      return next
-    })
+  function goToStep(n: number) {
+    const clamped = Math.max(1, Math.min(SCHOOL_TOUR_TOTAL, n))
+    setStep(clamped)
+    try { localStorage.setItem(SCHOOL_TOUR_KEY, String(clamped)) } catch {}
+  }
+  function finish() {
+    try { localStorage.setItem(SCHOOL_TOUR_KEY, String(SCHOOL_TOUR_TOTAL + 1)) } catch {}
+    setCompleted(true)
+  }
+  const next = () => { if (step >= SCHOOL_TOUR_TOTAL) { finish(); return } goToStep(step + 1) }
+  const back = () => goToStep(step - 1)
+  function restart() {
+    try { localStorage.setItem(SCHOOL_TOUR_KEY, '1') } catch {}
+    setCompleted(false)
+    setStep(1)
   }
 
-  function undoComplete(id: string) {
-    setCompleted(prev => {
-      if (!prev.includes(id)) return prev
-      const next = prev.filter(x => x !== id)
-      try { localStorage.setItem(SCHOOL_GS_KEY, JSON.stringify(next)) } catch {}
-      return next
-    })
-  }
-
-  const total = SCHOOL_GS_STEPS.length
-  const done = completed.length
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🚀 Getting Started</h2>
-            <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Explore every feature of your school portal with real sample data.</p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-black" style={{ color: '#2DD4BF' }}>{done}/{total}</div>
-            <div className="text-[10px]" style={{ color: '#6B7280' }}>explored</div>
+  // ── 10 step definitions ──────────────────────────────────────────────────
+  const STEPS: SchoolTourStepDef[] = [
+    {
+      num: 1, icon: '🏫', iconColor: '#0D9488',
+      title: 'Your school, fully connected',
+      body: 'You are looking at Lumio for Schools — one dashboard for attendance, safeguarding, SEND, staff, finance and curriculum. 1,147 pupils, 89 staff, all pre-loaded. No setup. Just explore.',
+      visual: (
+        <div style={{ background: 'linear-gradient(135deg, #0B1F1E 0%, #0D3D37 55%, #0D9488 100%)', borderRadius: 14, padding: 24, color: '#FFFFFF' }}>
+          <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: '0.12em', fontWeight: 700 }}>OAKRIDGE PRIMARY · LUMIO FOR SCHOOLS</div>
+          <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4, marginBottom: 18 }}>Good morning 👋</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            {[
+              { label: 'Pupils', value: '1,147', color: '#5EEAD4', bg: 'rgba(20,184,166,0.18)' },
+              { label: 'Staff', value: '89', color: '#93C5FD', bg: 'rgba(59,130,246,0.18)' },
+              { label: 'Alerts', value: '6', color: '#FCA5A5', bg: 'rgba(239,68,68,0.18)' },
+              { label: 'Reports', value: '4', color: '#C4B5FD', bg: 'rgba(139,92,246,0.18)' },
+            ].map(s => (
+              <div key={s.label} style={{ backgroundColor: s.bg, border: `1px solid ${s.color}55`, borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: '#D1D5DB', marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
-          <div className="h-full transition-all duration-500 ease-out" style={{ width: `${pct}%`, backgroundColor: '#0D9488' }} />
+      ),
+      primary: { label: "Let's take a tour →", run: next },
+    },
+    {
+      num: 2, icon: '☀️', iconColor: '#F59E0B',
+      title: 'Start every day knowing everything',
+      body: 'Every morning your school briefing is ready — attendance rate, open safeguarding concerns, staff absences, Ofsted deadlines. Press play on the banner to hear it read aloud by your AI assistant.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 14 }}>☀️</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#F9FAFB' }}>Morning Briefing — Tuesday 8 April</div>
+          </div>
+          {[
+            { icon: '📋', text: 'Attendance: 96.2% — Year 6 below target', color: '#F59E0B' },
+            { icon: '🛡️', text: '1 open safeguarding concern — DSL sign-off needed', color: '#EF4444' },
+            { icon: '👤', text: 'Mrs Okafor absent — cover arranged', color: '#60A5FA' },
+            { icon: '⚠️', text: 'M. Taylor DBS expired — action needed', color: '#F59E0B' },
+          ].map(r => (
+            <div key={r.text} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.02)', marginBottom: 6 }}>
+              <span style={{ fontSize: 13 }}>{r.icon}</span>
+              <span style={{ fontSize: 12, color: '#D1D5DB' }}>{r.text}</span>
+              <span style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', backgroundColor: r.color }} />
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 3, icon: '🔴', iconColor: '#EF4444',
+      title: 'School Lockdown — one button, instant alert',
+      body: 'In an emergency, one button locks down the building and alerts every staff member instantly. Try it now — in demo mode, nothing real happens.',
+      highlight: '🔒 Ofsted requirement — documented lockdown procedure',
+      visual: (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '28px 18px', backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12 }}>
+          <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, #EF4444 0%, #991B1B 70%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', boxShadow: '0 0 0 6px rgba(239,68,68,0.25), 0 0 0 14px rgba(239,68,68,0.12), 0 20px 60px rgba(239,68,68,0.5)' }}>
+            <div style={{ fontSize: 44 }}>🔴</div>
+            <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.12em' }}>LOCKDOWN</div>
+          </div>
+        </div>
+      ),
+      primaryAction: { label: 'Try School Lockdown', run: actions.onLockdown },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 4, icon: '📋', iconColor: '#22C55E',
+      title: 'Attendance that runs itself',
+      body: '96.2% whole-school attendance today. Year 6 is at 91.8% — below the 94% target. See absences by year group, flag unexplained absences and trigger parent contact in one click.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          {[
+            { year: 'Year 3', pct: 98.1, color: '#22C55E' },
+            { year: 'Year 4', pct: 97.4, color: '#22C55E' },
+            { year: 'Year 5', pct: 95.2, color: '#F59E0B' },
+            { year: 'Year 6', pct: 91.8, color: '#EF4444' },
+          ].map(y => (
+            <div key={y.year} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#D1D5DB', marginBottom: 4 }}>
+                <span>{y.year}</span>
+                <span style={{ color: y.color, fontWeight: 800 }}>{y.pct}%{y.pct < 94 && ' · below target'}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, backgroundColor: '#1F2937', overflow: 'hidden' }}>
+                <div style={{ width: `${y.pct}%`, height: '100%', backgroundColor: y.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+      primaryAction: { label: 'View attendance →', run: actions.onAttendance },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 5, icon: '🛡️', iconColor: '#8B5CF6',
+      title: 'Safeguarding built for DSLs',
+      body: 'Every concern logged, every action tracked, every decision documented. KCSIE 2024 compliant chronology, escalation to external agencies, and a complete audit trail — all searchable, all exportable for Ofsted.',
+      highlight: '✅ KCSIE 2024 compliant',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          <div style={{ backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 10, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#F9FAFB' }}>🛡️ Open Concern — Liam Chen, Year 4</div>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 999, backgroundColor: 'rgba(245,158,11,0.18)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.4)' }}>DSL REVIEW REQUIRED</span>
+            </div>
+            <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 12 }}>Logged 2 days ago · 3 previous entries</div>
+            <button type="button" style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 8, backgroundColor: '#8B5CF6', color: '#F9FAFB', border: 'none' }}>Review →</button>
+          </div>
+        </div>
+      ),
+      primaryAction: { label: 'Review concern →', run: actions.onSafeguarding },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 6, icon: '🎓', iconColor: '#A78BFA',
+      title: 'SEND — the 2026 White Paper, built in',
+      body: 'EHCP pupils with 20-week statutory deadline tracking, provision mapping, and the new SEND White Paper Phase 1/2/3 readiness checker. Nothing misses a deadline.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { name: 'Jamie P.', label: 'EHCP Week 14 of 20', status: 'On track', color: '#22C55E', pct: 70 },
+            { name: 'Aisha T.', label: 'EHCP Week 19 of 20', status: 'Due soon', color: '#F59E0B', pct: 95 },
+            { name: 'Marcus R.', label: 'Annual Review', status: 'Overdue', color: '#EF4444', pct: 100 },
+          ].map(r => (
+            <div key={r.name} style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderLeft: `3px solid ${r.color}`, borderRadius: 8, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#F9FAFB' }}>{r.name}</span>
+                <span style={{ fontSize: 10, fontWeight: 800, color: r.color }}>{r.status}</span>
+              </div>
+              <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 4 }}>{r.label}</div>
+              <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', overflow: 'hidden' }}>
+                <div style={{ width: `${r.pct}%`, height: '100%', backgroundColor: r.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+      primaryAction: { label: 'View SEND register →', run: actions.onSend },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 7, icon: '✈️', iconColor: '#0D9488',
+      title: 'Plan a school trip in minutes',
+      body: 'Risk assessments, consent forms, payment tracking and staff:pupil ratios — all built in. Choose your trip type, enter your group size, and the AI researcher finds and compares venues for you.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+            {['1 Configure', '2 Research', '3 Results', '4 Book'].map((s, i) => (
+              <div key={s} style={{ backgroundColor: i === 0 ? 'rgba(13,148,136,0.15)' : 'rgba(255,255,255,0.03)', border: i === 0 ? '1px solid #0D9488' : '1px solid #1F2937', borderRadius: 8, padding: '10px 8px', textAlign: 'center', fontSize: 10, fontWeight: 800, color: i === 0 ? '#2DD4BF' : '#9CA3AF' }}>{s}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+            {[
+              { label: 'Museum / Gallery', color: '#A78BFA' },
+              { label: 'Outdoor Education', color: '#22C55E' },
+              { label: 'Theatre / Arts', color: '#F59E0B' },
+              { label: 'Sports Event', color: '#60A5FA' },
+            ].map(t => (
+              <div key={t.label} style={{ fontSize: 11, padding: '8px 10px', borderRadius: 6, backgroundColor: `${t.color}15`, border: `1px solid ${t.color}40`, color: t.color, fontWeight: 700 }}>{t.label}</div>
+            ))}
+          </div>
+        </div>
+      ),
+      primaryAction: { label: 'Open Trip Planner →', run: actions.onTrips },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 8, icon: '📊', iconColor: '#3B82F6',
+      title: 'Every role sees exactly what they need',
+      body: 'Switch between Headteacher, SENCO, Governor and Office Manager views. Every role gets a completely different Insights dashboard — no information overload, no missing data.',
+      highlight: '⭐ Most popular feature',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
+            {[
+              { icon: '👑', label: 'Headteacher', active: true },
+              { icon: '🎓', label: 'SENCO' },
+              { icon: '🏛️', label: 'Governor' },
+              { icon: '🏢', label: 'Office' },
+            ].map(r => (
+              <div key={r.label} style={{ backgroundColor: r.active ? 'rgba(13,148,136,0.2)' : '#111318', border: r.active ? '1px solid #0D9488' : '1px solid #1F2937', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16 }}>{r.icon}</div>
+                <div style={{ fontSize: 9, fontWeight: 800, color: r.active ? '#2DD4BF' : '#9CA3AF', marginTop: 2 }}>{r.label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+            {[
+              { label: 'Attendance', value: '96.2%', color: '#22C55E' },
+              { label: 'Open Concerns', value: '1', color: '#EF4444' },
+              { label: 'EHCP Deadlines', value: '2', color: '#F59E0B' },
+              { label: 'Budget Used', value: '71%', color: '#3B82F6' },
+            ].map(k => (
+              <div key={k.label} style={{ backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: 10 }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: k.color }}>{k.value}</div>
+                <div style={{ fontSize: 9, color: '#9CA3AF', marginTop: 2 }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+      primaryAction: { label: 'Open Insights →', run: actions.onInsights },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 9, icon: '👥', iconColor: '#EC4899',
+      title: 'Your staff, front and centre',
+      body: 'Every member of staff as a profile card — role, department, qualifications, DBS status, absence record. Add your own photo and you appear on your card. Switch to Governor view to see the full governance structure.',
+      visual: (
+        <div style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12, padding: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {[
+              { rating: 94, name: 'J. JACKSON', role: 'HEAD', color: '#0D9488', grad: 'linear-gradient(155deg, #0F766E 0%, #0D9488 60%, #2DD4BF 100%)' },
+              { rating: 88, name: 'S. OKAFOR', role: 'SENCO', color: '#8B5CF6', grad: 'linear-gradient(155deg, #4C1D95 0%, #7C3AED 60%, #A78BFA 100%)' },
+              { rating: 85, name: 'T. PATEL', role: 'Y6 LEAD', color: '#3B82F6', grad: 'linear-gradient(155deg, #1E3A8A 0%, #2563EB 60%, #60A5FA 100%)' },
+            ].map(c => (
+              <div key={c.name} style={{ background: c.grad, borderRadius: 10, padding: 12, color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', boxShadow: `0 14px 35px ${c.color}55` }}>
+                <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{c.rating}</div>
+                <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.1em', marginTop: 2, opacity: 0.85 }}>{c.role}</div>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.35)', margin: '10px auto 8px' }} />
+                <div style={{ fontSize: 10, fontWeight: 800, textAlign: 'center', letterSpacing: '0.05em' }}>{c.name}</div>
+                <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.2)', margin: '8px 0 6px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, fontSize: 8 }}>
+                  <span><strong>TEA</strong> 92</span><span><strong>COM</strong> 88</span>
+                  <span><strong>PLA</strong> 90</span><span><strong>WEL</strong> 94</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+      primaryAction: { label: 'See staff cards →', run: actions.onStaffCards },
+      primary: { label: 'Next →', run: next },
+    },
+    {
+      num: 10, icon: '🚀', iconColor: '#0D9488',
+      title: "You've seen enough to know this is different",
+      body: "That's Lumio for Schools. Attendance, safeguarding, SEND, staff, finance and curriculum — all in one place, all talking to each other, all Ofsted-ready.\n\nMost schools are still running on SIMS, a spreadsheet and a prayer. You don't have to be.",
+      visual: (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[
+            { big: '6 months free', small: 'Early access schools', color: '#0D9488' },
+            { big: '20 min setup', small: 'No training needed', color: '#3B82F6' },
+            { big: 'Ofsted ready', small: 'Day one', color: '#8B5CF6' },
+          ].map(c => (
+            <div key={c.big} style={{ backgroundColor: `${c.color}15`, border: `1px solid ${c.color}55`, borderRadius: 12, padding: 18, textAlign: 'center' }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: c.color }}>{c.big}</div>
+              <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4 }}>{c.small}</div>
+            </div>
+          ))}
+        </div>
+      ),
+      primary: { label: 'Apply for 6 months free →', href: 'mailto:hello@lumiocms.com?subject=Schools%20Early%20Access', run: () => { window.location.href = 'mailto:hello@lumiocms.com?subject=Schools%20Early%20Access' } },
+      secondary: { label: 'Keep exploring →', run: finish },
+    },
+  ]
+
+  // ── Completion screen ───────────────────────────────────────────────────
+  if (completed) {
+    return (
+      <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
+        <div style={{ fontSize: 64, marginBottom: 12 }}>🏫</div>
+        <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>Tour complete</h2>
+        <p className="text-sm max-w-md mx-auto mb-6" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>
+          Explore every department — click anything in the sidebar. Whenever you&apos;re ready for your real data, we&apos;re here.
+        </p>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <a href="mailto:hello@lumiocms.com?subject=Schools%20Early%20Access" className="inline-flex items-center gap-2 font-semibold px-5 py-3 rounded-lg" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', fontSize: 14 }}>
+            Apply for early access →
+          </a>
+          <button type="button" onClick={restart} className="inline-flex items-center gap-2 font-semibold px-5 py-3 rounded-lg" style={{ backgroundColor: 'transparent', color: '#9CA3AF', border: '1px solid #1F2937', fontSize: 14 }}>
+            ↻ Restart tour
+          </button>
+          <span className="inline-flex items-center gap-2 font-semibold px-5 py-3 rounded-lg" style={{ color: '#6B7280', fontSize: 14 }}>
+            Keep exploring
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  const current = STEPS[step - 1]
+  const pct = Math.round((step / SCHOOL_TOUR_TOTAL) * 100)
+
+  return (
+    <div className="rounded-2xl p-6 sm:p-8" style={{ backgroundColor: '#0D0E14', border: '1px solid #1F2937' }}>
+      {/* Progress bar + step counter */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#6B7280', letterSpacing: '0.1em' }}>STEP {step} OF {SCHOOL_TOUR_TOTAL}</span>
+            <span style={{ fontSize: 10, color: '#374151' }}>·</span>
+            <span style={{ fontSize: 10, color: '#9CA3AF' }}>Getting Started</span>
+          </div>
+          <button type="button" onClick={finish} className="text-[10px] font-semibold" style={{ color: '#6B7280' }}>Skip tour</button>
+        </div>
+        <div style={{ height: 6, borderRadius: 3, backgroundColor: '#1F2937', overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: '#0D9488', transition: 'width 0.4s ease-out' }} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {SCHOOL_GS_STEPS.map((step, i) => {
-          const isDone = completed.includes(step.id)
-          return (
-            <div key={step.id} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#0D0E14', border: `1px solid ${isDone ? 'rgba(13,148,136,0.5)' : '#1F2937'}`, opacity: isDone ? 0.8 : 1 }}>
-              <div className="flex items-center justify-center rounded-lg text-xl shrink-0" style={{ width: 40, height: 40, backgroundColor: isDone ? 'rgba(13,148,136,0.15)' : 'rgba(124,58,237,0.1)' }}>
-                {isDone ? '✓' : step.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold" style={{ color: '#6B7280' }}>STEP {i + 1} OF {total}</span>
-                </div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: '#F9FAFB', textDecoration: isDone ? 'line-through' : 'none' }}>{step.title}</h3>
-                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{step.subtitle}</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => !isDone && onAction(step.buttonAction, () => markComplete(step.id))}
-                    disabled={isDone}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{
-                      backgroundColor: isDone ? 'transparent' : '#0D9488',
-                      color: isDone ? '#9CA3AF' : '#F9FAFB',
-                      border: isDone ? '1px solid #1F2937' : 'none',
-                      cursor: isDone ? 'default' : 'pointer',
-                    }}
-                  >
-                    {isDone ? '✓ Done' : step.buttonLabel}
-                  </button>
-                  {isDone && (
-                    <button
-                      type="button"
-                      onClick={() => undoComplete(step.id)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937', cursor: 'pointer' }}
-                      title="Mark this step as not done"
-                    >
-                      ↩ Undo
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      {/* Visual panel */}
+      <div className="mb-6">
+        {current.visual}
+      </div>
+
+      {/* Title + body */}
+      <div className="flex items-start gap-3 mb-4">
+        <div className="flex items-center justify-center rounded-xl shrink-0" style={{ width: 48, height: 48, backgroundColor: `${current.iconColor}22`, border: `1px solid ${current.iconColor}55`, fontSize: 24 }}>
+          {current.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl font-black mb-2" style={{ color: '#F9FAFB', lineHeight: 1.2 }}>{current.title}</h2>
+          <p className="text-sm whitespace-pre-line" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>{current.body}</p>
+        </div>
+      </div>
+
+      {current.highlight && (
+        <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.35)', color: '#2DD4BF', fontSize: 11, fontWeight: 700 }}>
+          {current.highlight}
+        </div>
+      )}
+
+      {/* Optional primary action (try the thing) */}
+      {current.primaryAction && (
+        <div className="mb-4">
+          <button type="button" onClick={current.primaryAction.run} className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: current.iconColor, color: '#FFFFFF', fontSize: 13, border: 'none' }}>
+            {current.primaryAction.label}
+          </button>
+        </div>
+      )}
+
+      {/* Back + Next navigation */}
+      <div className="flex items-center justify-between gap-3 pt-4 mt-2" style={{ borderTop: '1px solid #1F2937' }}>
+        <button
+          type="button"
+          onClick={back}
+          disabled={step === 1}
+          className="font-semibold px-4 py-2 rounded-lg"
+          style={{ backgroundColor: 'transparent', color: step === 1 ? '#374151' : '#9CA3AF', border: '1px solid #1F2937', fontSize: 13, cursor: step === 1 ? 'not-allowed' : 'pointer' }}
+        >
+          ← Back
+        </button>
+        <div className="flex items-center gap-3">
+          {current.secondary && (
+            <button type="button" onClick={current.secondary.run} className="font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'transparent', color: '#9CA3AF', border: '1px solid #1F2937', fontSize: 13 }}>
+              {current.secondary.label}
+            </button>
+          )}
+          <button type="button" onClick={current.primary.run} className="font-semibold px-5 py-2 rounded-lg" style={{ backgroundColor: '#0D9488', color: '#F9FAFB', fontSize: 13, border: 'none' }}>
+            {current.primary.label}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -1724,29 +1984,14 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
       {/* TAB: Getting Started */}
       {activeTab === 'getting-started' && (
         <SchoolGettingStartedView
-          onAction={(action, markDone) => {
-            switch (action) {
-              case 'complete':
-                markDone(); break
-              case 'lockdown':
-                setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance'); markDone(); break
-              case 'safeguarding':
-                setShowSafeguardingReview(true); markDone(); break
-              case 'attendance':
-                setShowMarkRegister(true); markDone(); break
-              case 'insights':
-                setActiveTab('insights'); markDone(); break
-              case 'trips':
-                router.push(`/demo/schools/${_slug}/school-office?openTrip=1`); markDone(); break
-              case 'send':
-                router.push(`/demo/schools/${_slug}/send-dsl`); markDone(); break
-              case 'logo':
-                schoolLogoInputRef.current?.click(); markDone(); break
-              case 'photo':
-                userPhotoInputRef.current?.click(); markDone(); break
-              case 'invite':
-                setShowSchoolGSModal(true); markDone(); break
-            }
+          actions={{
+            onLockdown: () => { setShowLockdown(true); setLockdownStep(0); setLockdownType(''); setLockdownChecks({}); setLockdownIncident('Intruder on site'); setLockdownDesc(''); setLockdownLocation('Main entrance') },
+            onAttendance: () => setShowMarkRegister(true),
+            onSafeguarding: () => setShowSafeguardingReview(true),
+            onSend: () => router.push(`/demo/schools/${_slug}/send-dsl`),
+            onTrips: () => router.push(`/demo/schools/${_slug}/school-office?openTrip=1`),
+            onInsights: () => setActiveTab('insights'),
+            onStaffCards: () => { setActiveTab('staff'); setStaffSubTab('info') },
           }}
         />
       )}
