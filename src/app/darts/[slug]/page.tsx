@@ -1852,76 +1852,328 @@ function TourCardQSchoolView({ onNavigate }: { onNavigate: (id: string) => void 
 }
 
 // ─── EQUIPMENT SETUP VIEW ─────────────────────────────────────────────────────
-function EquipmentSetupView({ player, onNavigate }: { player: DartsPlayer; onNavigate: (id: string) => void }) {
+function EquipmentSetupView({ player: _player }: { player: DartsPlayer }) {
+  const [activeSetup, setActiveSetup] = useState(0);
+  const [tab, setTab] = useState<'specs' | 'performance' | 'changes' | 'compare'>('specs');
+
+  const setups = [
+    {
+      id: 'tournament',
+      name: 'Tournament — The Hammer SE',
+      isActive: true,
+      isTournament: true,
+      isSponsored: true,
+      sponsorName: 'Red Dragon Darts',
+      contentRequired: true,
+      playerRating: 9,
+      matchesPlayed: 47,
+      avgWithSetup: 97.8,
+      checkoutPct: 42.3,
+      dateIntroduced: 'Mar 2024',
+      notes: 'Primary tournament setup. All PDC televised events and Euro Tour.',
+      barrel: { brand: 'Red Dragon', model: 'Morrison "The Hammer" SE', weight: 24.0, material: '97% Tungsten', shape: 'Torpedo', grip: 'Micro', lengthMm: 52.0, diameterMm: 6.4, productCode: 'RD3879' as string | null },
+      shaft: { brand: 'Red Dragon', model: 'Nitrotech Titanium', length: 'Medium', lengthMm: 41.0, material: 'Titanium', angle: 'Straight', colour: 'Gunmetal' },
+      flight: { brand: 'Red Dragon', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black/Red', design: 'The Hammer signature' },
+      point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
+    },
+    {
+      id: 'practice',
+      name: 'Practice setup',
+      isActive: true,
+      isTournament: false,
+      isSponsored: true,
+      sponsorName: 'Red Dragon Darts',
+      contentRequired: false,
+      playerRating: 8,
+      matchesPlayed: 0,
+      avgWithSetup: 99.3,
+      checkoutPct: 44.1,
+      dateIntroduced: 'Jan 2024',
+      notes: '2g lighter than tournament setup. Slim flights for tighter T20 grouping. Doubles practice only.',
+      barrel: { brand: 'Red Dragon', model: 'Morrison Practice Edition', weight: 22.0, material: '90% Tungsten', shape: 'Straight', grip: 'Ringed', lengthMm: 48.0, diameterMm: 6.2, productCode: null as string | null },
+      shaft: { brand: 'Condor', model: 'Standard', length: 'Short', lengthMm: 34.0, material: 'Polycarbonate', angle: 'Straight', colour: 'Black' },
+      flight: { brand: 'Winmau', shape: 'Slim', material: 'Standard polyester', thicknessMicron: 100, colour: 'Black', design: 'Plain' },
+      point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
+    },
+    {
+      id: 'backup',
+      name: 'Backup v1 (retired)',
+      isActive: false,
+      isTournament: true,
+      isSponsored: true,
+      sponsorName: 'Red Dragon Darts',
+      contentRequired: false,
+      playerRating: 7,
+      matchesPlayed: 32,
+      avgWithSetup: 96.1,
+      checkoutPct: 40.8,
+      dateIntroduced: 'Sep 2023',
+      notes: 'Retired Mar 2024. Knurled grip caused T20 pull-left under pressure. Kept as emergency backup.',
+      barrel: { brand: 'Red Dragon', model: 'Morrison "The Hammer" v1', weight: 24.0, material: '95% Tungsten', shape: 'Torpedo', grip: 'Knurled', lengthMm: 51.0, diameterMm: 6.5, productCode: 'RD3712' as string | null },
+      shaft: { brand: 'Red Dragon', model: 'Standard', length: 'Medium', lengthMm: 41.0, material: 'Nylon', angle: 'Straight', colour: 'Black' },
+      flight: { brand: 'Red Dragon', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black', design: 'Plain' },
+      point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
+    },
+  ];
+
+  const changes = [
+    { date: 'Mar 2024', description: 'Switched from v1 (knurled) to SE (micro grip) barrel', avgBefore: 96.1, avgAfter: 97.8, reason: 'Micro grip reduces T20 pull-left under pressure. Recommended by Marco after pressure analysis.' },
+    { date: 'Jun 2024', description: 'Switched shaft from nylon to titanium (Nitrotech)', avgBefore: 97.1, avgAfter: 97.8, reason: 'Titanium eliminated shaft breakage at floor events. More consistent feel across long PC weekends.' },
+  ];
+
+  const current = setups[activeSetup];
+
+  const specRow = (label: string, value: string | number | null | undefined) =>
+    value != null ? (
+      <div key={label} className="flex justify-between py-2 border-b border-white/5 last:border-0 text-sm">
+        <span className="text-gray-500">{label}</span>
+        <span className="text-gray-200 font-medium">{String(value)}</span>
+      </div>
+    ) : null;
+
+  type Setup = typeof setups[0];
+  const comparedSetups: Setup[] = [setups[0], setups[1]];
+  const compareFields: [string, (s: Setup) => string][] = [
+    ['Brand', s => s.barrel.brand],
+    ['Model', s => s.barrel.model],
+    ['Weight', s => `${s.barrel.weight}g`],
+    ['Barrel shape', s => s.barrel.shape],
+    ['Barrel grip', s => s.barrel.grip],
+    ['Shaft material', s => s.shaft.material],
+    ['Shaft length', s => `${s.shaft.length} (${s.shaft.lengthMm}mm)`],
+    ['Flight shape', s => s.flight.shape],
+    ['Flight thickness', s => `${s.flight.thicknessMicron}μm`],
+  ];
+
   return (
-    <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
-      <SectionHeader icon="📦" title="Equipment Setup & Dart Configuration" subtitle="Current setup, history, and equipment inventory." />
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-medium text-white">Equipment Setup</h1>
+          <p className="text-gray-400 text-sm mt-1">Barrel · Shaft · Flight · Point · Performance tracking</p>
+        </div>
+        {current.isSponsored && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            <span className="text-gray-400">Sponsored by {current.sponsorName}</span>
+            {current.contentRequired && (
+              <span className="px-2 py-0.5 bg-amber-950/30 border border-amber-700/30 text-amber-400 rounded text-[10px]">Content due</span>
+            )}
+          </div>
+        )}
+      </div>
 
-      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
-        <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">COMPETITION SETUP</div>
-        <div className="text-white font-bold text-lg mb-3">Jake &quot;The Hammer&quot; Morrison</div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          {[
-            { label: 'Barrels', value: 'Red Dragon Hammer 24g — Tungsten 90%' },
-            { label: 'Flights', value: 'Red Dragon standard — black/gold design' },
-            { label: 'Shafts', value: 'Medium — 41mm — Red Dragon Pro' },
-            { label: 'Board', value: 'Winmau Blade 6 (comp & practice)' },
-            { label: 'Oche', value: '9ft 7.25 inches' },
-            { label: 'Mat', value: 'Winmau circuit board mat' },
-          ].map((e, i) => (
-            <div key={i} className="bg-black/20 rounded-lg p-2">
-              <div className="text-gray-500">{e.label}</div>
-              <div className="text-white font-medium mt-0.5">{e.value}</div>
+      {/* Setup selector */}
+      <div className="flex gap-2 flex-wrap">
+        {setups.map((s, i) => (
+          <button
+            key={s.id}
+            onClick={() => setActiveSetup(i)}
+            className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${activeSetup === i ? 'bg-red-600/20 border-red-500/40 text-red-300' : 'bg-gray-900/40 border-white/5 text-gray-500 hover:text-gray-300'}`}
+          >
+            {s.name}
+            {!s.isActive && <span className="ml-2 text-[10px] text-gray-600">retired</span>}
+          </button>
+        ))}
+        <button className="px-4 py-2 rounded-xl border border-dashed border-white/10 text-gray-600 text-sm hover:text-gray-400 transition-colors">
+          + Add setup
+        </button>
+      </div>
+
+      {/* Performance strip */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Avg with setup', value: String(current.avgWithSetup), sub: `Since ${current.dateIntroduced}`, color: 'text-white' },
+          { label: 'Checkout %', value: `${current.checkoutPct}%`, sub: '', color: 'text-white' },
+          { label: 'Matches', value: current.matchesPlayed > 0 ? String(current.matchesPlayed) : 'Practice only', sub: '', color: 'text-white' },
+          { label: 'Player rating', value: `${current.playerRating}/10`, sub: '', color: current.playerRating >= 9 ? 'text-green-400' : current.playerRating >= 7 ? 'text-amber-400' : 'text-red-400' },
+        ].map((k, i) => (
+          <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+            <p className={`text-2xl font-medium ${k.color}`}>{k.value}</p>
+            {k.sub && <p className="text-xs text-gray-600 mt-1">{k.sub}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex rounded-lg border border-white/5 overflow-hidden w-fit">
+        {(['specs', 'performance', 'changes', 'compare'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-xs font-medium transition-colors border-r border-white/5 last:border-r-0 capitalize ${tab === t ? 'bg-red-600/20 text-red-300' : 'bg-gray-900/40 text-gray-500 hover:text-gray-300'}`}>
+            {t === 'changes' ? 'Change log' : t}
+          </button>
+        ))}
+      </div>
+
+      {/* SPECS */}
+      {tab === 'specs' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-medium text-red-400 uppercase tracking-wide bg-red-500/10 px-2 py-0.5 rounded">Barrel</span>
+              <span className="text-xs text-gray-600">{current.barrel.weight}g · {current.barrel.lengthMm}mm</span>
             </div>
-          ))}
-        </div>
-      </div>
+            {specRow('Brand', current.barrel.brand)}
+            {specRow('Model', current.barrel.model)}
+            {specRow('Weight', `${current.barrel.weight}g`)}
+            {specRow('Material', current.barrel.material)}
+            {specRow('Shape', current.barrel.shape)}
+            {specRow('Grip', current.barrel.grip)}
+            {specRow('Length', `${current.barrel.lengthMm}mm`)}
+            {specRow('Diameter', `${current.barrel.diameterMm}mm`)}
+            {current.barrel.productCode && specRow('Product code', current.barrel.productCode)}
+          </div>
 
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Setup History (Practice Avg Correlation)</div>
-        <div className="space-y-2">
-          {[
-            { setup: '24g current setup (since Jan 2025)', avg: '97.8', active: true },
-            { setup: '22g setup (Aug–Dec 2024)', avg: '95.4', active: false },
-            { setup: '26g setup (before Aug 2024)', avg: '93.8', active: false },
-          ].map((h, i) => (
-            <div key={i} className={`flex items-center justify-between py-2 border-b border-gray-800/50 ${h.active ? 'text-white' : 'text-gray-400'}`}>
-              <span className="text-sm">{h.setup}</span>
-              <span className={`text-sm font-medium ${h.active ? 'text-teal-400' : ''}`}>avg {h.avg}</span>
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-medium text-blue-400 uppercase tracking-wide bg-blue-500/10 px-2 py-0.5 rounded">Shaft</span>
+              <span className="text-xs text-gray-600">{current.shaft.material} · {current.shaft.length}</span>
             </div>
-          ))}
-          <div className="text-xs text-gray-500 mt-2">Note: Lighter barrel improved release consistency — significant avg improvement</div>
-        </div>
-      </div>
+            {specRow('Brand', current.shaft.brand)}
+            {specRow('Model', current.shaft.model)}
+            {specRow('Length', current.shaft.length)}
+            {specRow('Length (mm)', `${current.shaft.lengthMm}mm`)}
+            {specRow('Material', current.shaft.material)}
+            {specRow('Angle', current.shaft.angle)}
+            {specRow('Colour', current.shaft.colour)}
+          </div>
 
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Board Maintenance</div>
-        <div className="text-xs text-gray-400 space-y-1">
-          <div>Rotation schedule: Rotate board every 3 sessions</div>
-          <div>Wire condition: Replaced wires Apr 10 — fresh board for European Ch.</div>
-          <div>Board position: Standard height (5ft 8in to bull) — checked with laser level</div>
-        </div>
-      </div>
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Equipment Inventory</div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: 'Spare barrels', value: '2 sets' }, { label: 'Flights', value: '40 + 6 travel' },
-            { label: 'Shafts', value: '20 sets' }, { label: 'Cases', value: 'PDC + practice' },
-          ].map((e, i) => (
-            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
-              <div className="text-white font-bold">{e.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{e.label}</div>
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-medium text-amber-400 uppercase tracking-wide bg-amber-500/10 px-2 py-0.5 rounded">Flight</span>
+              <span className="text-xs text-gray-600">{current.flight.shape} · {current.flight.thicknessMicron}μm</span>
             </div>
-          ))}
-        </div>
-      </div>
+            {specRow('Brand', current.flight.brand)}
+            {specRow('Shape', current.flight.shape)}
+            {specRow('Material', current.flight.material)}
+            {specRow('Thickness', `${current.flight.thicknessMicron} micron`)}
+            {specRow('Colour', current.flight.colour)}
+            {specRow('Design', current.flight.design)}
+          </div>
 
-      <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4 text-xs text-amber-400">
-        <Zap className="w-3.5 h-3.5 inline mr-1" /> New &quot;Hammer V2&quot; barrel — 25g variant — arriving April 20 for testing
-      </div>
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-medium text-green-400 uppercase tracking-wide bg-green-500/10 px-2 py-0.5 rounded">Point</span>
+              <span className="text-xs text-gray-600">{current.point.type}</span>
+            </div>
+            {specRow('Type', current.point.type)}
+            {specRow('Length', current.point.length)}
+            {specRow('Style', current.point.style)}
+            <div className="mt-4 pt-3 border-t border-white/5">
+              <p className="text-xs text-gray-600 leading-relaxed">{current.notes}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PERFORMANCE */}
+      {tab === 'performance' && (
+        <div className="space-y-4">
+          <h2 className="text-white font-medium">Performance comparison across setups</h2>
+          <div className="rounded-xl border border-white/5 overflow-hidden">
+            <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+              <span className="col-span-2">Setup</span>
+              <span>Matches</span>
+              <span>Average</span>
+              <span>Checkout %</span>
+            </div>
+            {setups.map((s, i) => (
+              <div key={i} className={`grid grid-cols-5 gap-2 px-4 py-3 border-t border-white/5 text-sm ${i === activeSetup ? 'bg-red-950/10' : ''}`}>
+                <span className={`col-span-2 ${i === activeSetup ? 'text-red-300 font-medium' : 'text-gray-400'}`}>
+                  {s.name}
+                  {!s.isActive && <span className="text-gray-600 ml-1">(retired)</span>}
+                </span>
+                <span className="text-gray-400">{s.matchesPlayed || '—'}</span>
+                <span className={i === activeSetup ? 'text-white font-medium' : 'text-gray-400'}>{s.avgWithSetup}</span>
+                <span className={i === activeSetup ? 'text-white font-medium' : 'text-gray-400'}>{s.checkoutPct}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Coach notes</p>
+            <p className="text-sm text-gray-300">
+              &ldquo;The micro grip on the SE barrel has been the biggest positive change — Jake&apos;s T20 cluster tightened immediately after switching in March 2024. The titanium shaft gives a more consistent release point than nylon. Would not recommend changing anything before a major event.&rdquo;
+            </p>
+            <p className="text-xs text-gray-600 mt-2">— Marco · April 2025</p>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE LOG */}
+      {tab === 'changes' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-medium">Equipment change log</h2>
+            <button className="px-3 py-1.5 bg-gray-800/60 border border-white/5 text-gray-400 text-xs rounded-lg hover:text-gray-200">+ Log change</button>
+          </div>
+          <div className="space-y-3">
+            {changes.map((c, i) => (
+              <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-white text-sm font-medium">{c.description}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{c.date}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs flex-shrink-0 ml-4">
+                    <span className="text-gray-500">{c.avgBefore}</span>
+                    <span className="text-gray-600">→</span>
+                    <span className={c.avgAfter > c.avgBefore ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {c.avgAfter} ({c.avgAfter > c.avgBefore ? '+' : ''}{(c.avgAfter - c.avgBefore).toFixed(1)})
+                    </span>
+                  </div>
+                </div>
+                <p className="text-gray-500 text-xs leading-relaxed">{c.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* COMPARE */}
+      {tab === 'compare' && (
+        <div className="space-y-4">
+          <h2 className="text-white font-medium">Tournament vs Practice — side by side</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-xs text-gray-600 uppercase tracking-wide mb-3">Spec</p>
+              {compareFields.map(([label]) => (
+                <div key={label} className="py-2.5 border-b border-white/5 last:border-0 text-xs text-gray-500">{label}</div>
+              ))}
+            </div>
+            {comparedSetups.map((s, si) => (
+              <div key={si}>
+                <p className={`text-xs uppercase tracking-wide mb-3 font-medium ${si === 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                  {si === 0 ? 'Tournament' : 'Practice'}
+                </p>
+                {compareFields.map(([label, getter]) => {
+                  const val = getter(s);
+                  const otherVal = getter(comparedSetups[si === 0 ? 1 : 0]);
+                  const isDiff = val !== otherVal;
+                  return (
+                    <div key={label} className={`py-2.5 border-b border-white/5 last:border-0 text-xs ${isDiff ? (si === 0 ? 'text-red-300 font-medium' : 'text-blue-300 font-medium') : 'text-gray-400'}`}>
+                      {val}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-600">Highlighted values differ between setups · Red = tournament · Blue = practice</p>
+        </div>
+      )}
+
+      {/* Sponsor content obligation strip */}
+      {current.contentRequired && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-950/20 border border-amber-700/20 rounded-xl text-sm">
+          <span className="text-amber-400">🤝</span>
+          <span className="text-gray-300">
+            <span className="font-medium">Red Dragon</span>
+            <span className="text-gray-500"> requires content for this setup — barrel review video due today 16:00.</span>
+          </span>
+          <button className="ml-auto text-red-400 text-xs hover:text-red-300 whitespace-nowrap">→ Sponsorship</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -4773,7 +5025,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
       case 'agent':         return <AgentPipelineView onNavigate={setActiveSection} />;
       case 'travel':        return <TravelLogisticsView onNavigate={setActiveSection} />;
       case 'tourcard':      return <TourCardQSchoolView onNavigate={setActiveSection} />;
-      case 'equipment':     return <EquipmentSetupView player={player} onNavigate={setActiveSection} />;
+      case 'equipment':     return <EquipmentSetupView player={player} />;
       case 'career':        return <CareerPlanningView onNavigate={setActiveSection} />;
       case 'datahub':       return <DataHubView onNavigate={setActiveSection} />;
       case 'settings':      return <SettingsView player={player} onNavigate={setActiveSection} />;
