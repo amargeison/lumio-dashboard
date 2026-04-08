@@ -32,32 +32,47 @@ interface DartsPlayer {
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { id: 'dashboard',     label: 'Dashboard',            icon: '🏠', group: 'OVERVIEW' },
-  { id: 'morning',       label: 'Morning Briefing',     icon: '🌅', group: 'OVERVIEW' },
-  { id: 'orderofmerit',  label: 'Order of Merit & Race',icon: '📊', group: 'PERFORMANCE' },
-  { id: 'schedule',      label: 'Tournament Schedule',  icon: '🗓️', group: 'PERFORMANCE' },
-  { id: 'averages',      label: 'Three-Dart Average',   icon: '🎯', group: 'PERFORMANCE' },
-  { id: 'checkout',      label: 'Checkout Analysis',    icon: '✅', group: 'PERFORMANCE' },
-  { id: 'opponentintel', label: 'Opponent Intel',       icon: '🔍', group: 'PERFORMANCE' },
-  { id: 'practicelog',   label: 'Practice Log',         icon: '📋', group: 'PERFORMANCE' },
-  { id: 'matchreports',  label: 'Match Reports',        icon: '📄', group: 'PERFORMANCE' },
-  { id: 'video',         label: 'Video Library',        icon: '🎬', group: 'PERFORMANCE' },
-  { id: 'teamhub',       label: 'Team Hub',             icon: '👥', group: 'TEAM' },
-  { id: 'mental',        label: 'Mental Performance',   icon: '🧠', group: 'TEAM' },
-  { id: 'sponsorship',   label: 'Sponsorship',          icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'exhibitions',   label: 'Exhibition Manager',   icon: '🎪', group: 'COMMERCIAL' },
-  { id: 'media',         label: 'Media & Content',      icon: '📱', group: 'COMMERCIAL' },
-  { id: 'financial',     label: 'Financial Dashboard',  icon: '💰', group: 'COMMERCIAL' },
-  { id: 'agent',         label: 'Agent Pipeline',       icon: '📬', group: 'COMMERCIAL' },
-  { id: 'travel',        label: 'Travel & Logistics',   icon: '✈️', group: 'OPERATIONS' },
-  { id: 'tourcard',      label: 'Tour Card & Q-School', icon: '🏛️', group: 'OPERATIONS' },
-  { id: 'equipment',     label: 'Equipment Setup',      icon: '📦', group: 'OPERATIONS' },
-  { id: 'career',        label: 'Career Planning',      icon: '🚀', group: 'OPERATIONS' },
-  { id: 'datahub',       label: 'Data Hub',             icon: '📡', group: 'OPERATIONS' },
-  { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'OPERATIONS' },
-  { id: 'dartconnect',   label: 'DartConnect',          icon: '🔌', group: 'INTEGRATIONS' },
-  { id: 'pdclive',       label: 'PDC Live Data',        icon: '📡', group: 'INTEGRATIONS' },
-  { id: 'womens-darts',  label: "Women's Darts",        icon: '⭐', group: 'INTEGRATIONS' },
+  { id: 'dashboard',         label: 'Dashboard',             icon: '🏠', group: 'OVERVIEW' },
+  { id: 'morning',           label: 'Morning Briefing',      icon: '🌅', group: 'OVERVIEW' },
+  { id: 'orderofmerit',      label: 'Order of Merit & Race', icon: '📊', group: 'PERFORMANCE' },
+  { id: 'merit-forecaster',  label: 'Merit Forecaster',      icon: '📈', group: 'PERFORMANCE' },
+  { id: 'entry-manager',     label: 'Entry Manager',         icon: '🗒️', group: 'PERFORMANCE' },
+  { id: 'schedule',          label: 'Tournament Schedule',   icon: '🗓️', group: 'PERFORMANCE' },
+  { id: 'live-scores',       label: 'Live Scores',           icon: '🔴', group: 'PERFORMANCE' },
+  { id: 'draw-bracket',      label: 'Draw & Bracket',        icon: '🏆', group: 'PERFORMANCE' },
+  { id: 'averages',          label: 'Three-Dart Average',    icon: '🎯', group: 'PERFORMANCE' },
+  { id: 'advanced-stats',    label: 'Advanced Stats',        icon: '📊', group: 'PERFORMANCE' },
+  { id: 'dartboard-heatmap', label: 'Dartboard Heatmap',     icon: '🎯', group: 'PERFORMANCE' },
+  { id: 'checkout',          label: 'Checkout Analysis',     icon: '✅', group: 'PERFORMANCE' },
+  { id: 'opponentintel',     label: 'Opponent Intel',        icon: '🔍', group: 'PERFORMANCE' },
+  { id: 'pressure-analysis', label: 'Pressure Analysis',     icon: '🧠', group: 'PERFORMANCE' },
+  { id: 'match-prep',        label: 'Match Prep',            icon: '⚡', group: 'PERFORMANCE' },
+  { id: 'practicelog',       label: 'Practice Log',          icon: '📋', group: 'PERFORMANCE' },
+  { id: 'matchreports',      label: 'Match Reports',         icon: '📄', group: 'PERFORMANCE' },
+  { id: 'video',             label: 'Video Library',         icon: '🎬', group: 'PERFORMANCE' },
+  { id: 'teamhub',           label: 'Team Hub',              icon: '👥', group: 'TEAM' },
+  { id: 'physio-recovery',   label: 'Physio & Recovery',     icon: '⚕️', group: 'TEAM' },
+  { id: 'mental',            label: 'Mental Performance',    icon: '🧠', group: 'TEAM' },
+  { id: 'walk-on-music',     label: 'Walk-on Music',         icon: '🎤', group: 'TEAM' },
+  { id: 'pairs-events',      label: 'Pairs & Team Events',   icon: '👥', group: 'TEAM' },
+  { id: 'sponsorship',       label: 'Sponsorship',           icon: '🤝', group: 'COMMERCIAL' },
+  { id: 'exhibitions',       label: 'Exhibition Manager',    icon: '🎪', group: 'COMMERCIAL' },
+  { id: 'media',             label: 'Media & Content',       icon: '📱', group: 'COMMERCIAL' },
+  { id: 'financial',         label: 'Financial Dashboard',   icon: '💰', group: 'COMMERCIAL' },
+  { id: 'agent',             label: 'Agent Pipeline',        icon: '📬', group: 'COMMERCIAL' },
+  { id: 'travel',            label: 'Travel & Logistics',    icon: '✈️', group: 'OPERATIONS' },
+  { id: 'tourcard',          label: 'Tour Card & Q-School',  icon: '🏛️', group: 'OPERATIONS' },
+  { id: 'tour-card-monitor', label: 'Tour Card Monitor',     icon: '🛡️', group: 'OPERATIONS' },
+  { id: 'prize-forecaster',  label: 'Prize Money Forecaster',icon: '💷', group: 'OPERATIONS' },
+  { id: 'equipment',         label: 'Equipment Setup',       icon: '📦', group: 'OPERATIONS' },
+  { id: 'academy-dev',       label: 'Academy & Dev',         icon: '🏅', group: 'OPERATIONS' },
+  { id: 'practice-games',    label: 'Practice Games',        icon: '#️⃣', group: 'OPERATIONS' },
+  { id: 'career',            label: 'Career Planning',       icon: '🚀', group: 'OPERATIONS' },
+  { id: 'datahub',           label: 'Data Hub',              icon: '📡', group: 'OPERATIONS' },
+  { id: 'settings',          label: 'Settings',              icon: '⚙️', group: 'OPERATIONS' },
+  { id: 'dartconnect',       label: 'DartConnect',           icon: '🔌', group: 'INTEGRATIONS' },
+  { id: 'pdclive',           label: 'PDC Live Data',         icon: '📡', group: 'INTEGRATIONS' },
+  { id: 'womens-darts',      label: "Women's Darts",         icon: '⭐', group: 'INTEGRATIONS' },
 ];
 
 // ─── DEMO PLAYER ──────────────────────────────────────────────────────────────
@@ -2232,6 +2247,16 @@ function WomensDartsView({ onNavigate }: { onNavigate: (id: string) => void }) {
   );
 }
 
+// ─── STUB VIEW (placeholder for new sidebar items) ───────────────────────────
+function StubView({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-medium text-white mb-2">{title}</h1>
+      <p className="text-gray-400">{sub}</p>
+    </div>
+  );
+}
+
 export default function DartsPortalPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -2266,6 +2291,21 @@ export default function DartsPortalPage() {
       case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} />;
       case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} />;
       case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} />;
+      case 'merit-forecaster':  return <StubView title="Merit Forecaster"        sub="Rolling OoM simulator — coming soon." />;
+      case 'entry-manager':     return <StubView title="Entry Manager"           sub="Tournament entry submissions and deadlines — coming soon." />;
+      case 'live-scores':       return <StubView title="Live Scores"             sub="Live PDC match feeds — coming soon." />;
+      case 'draw-bracket':      return <StubView title="Draw & Bracket"          sub="Draw viewer and bracket projections — coming soon." />;
+      case 'advanced-stats':    return <StubView title="Advanced Stats"          sub="Deep statistical breakdown and percentiles — coming soon." />;
+      case 'dartboard-heatmap': return <StubView title="Dartboard Heatmap"       sub="Visual hit-distribution heatmap — coming soon." />;
+      case 'pressure-analysis': return <StubView title="Pressure Analysis"       sub="Performance under pressure metrics — coming soon." />;
+      case 'match-prep':        return <StubView title="Match Prep"              sub="Pre-match opponent and routine preparation — coming soon." />;
+      case 'physio-recovery':   return <StubView title="Physio & Recovery"       sub="Recovery tracking and physio appointments — coming soon." />;
+      case 'walk-on-music':     return <StubView title="Walk-on Music"           sub="Manage walk-on tracks and crowd entrance — coming soon." />;
+      case 'pairs-events':      return <StubView title="Pairs & Team Events"     sub="World Cup of Darts and doubles pairings — coming soon." />;
+      case 'tour-card-monitor': return <StubView title="Tour Card Monitor"       sub="Two-year tour card standings tracker — coming soon." />;
+      case 'prize-forecaster':  return <StubView title="Prize Money Forecaster"  sub="Projected season earnings — coming soon." />;
+      case 'academy-dev':       return <StubView title="Academy & Dev"           sub="Development squad and youth pathway — coming soon." />;
+      case 'practice-games':    return <StubView title="Practice Games"          sub="Round-robin practice game tracker — coming soon." />;
       default:              return <DashboardView player={player} onNavigate={setActiveSection} />;
     }
   };
