@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line, ReferenceLine, Cell } from "recharts";
 
 const C = {
   bg:'#07080F',sidebar:'#0B0D1B',card:'#0F1629',cardAlt:'#111827',
@@ -260,7 +260,10 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'livescores',label:'Live Scores',icon:'📡'},
     {id:'practice-log',label:'Practice Log',icon:'📋'},
     {id:'declaration',label:'Declaration Planner',icon:'📐'},
+    {id:'dls',label:'D/L Calculator',icon:'🌧️'},
+    {id:'net-planner',label:'Net Session Planner',icon:'🏋️'},
     {id:'performance-stats',label:'Performance Stats',icon:'⭐'},
+    {id:'match-report',label:'Match Report',icon:'📄'},
   ]},
   {section:'SQUAD',items:[
     {id:'squad',label:'Squad Manager',icon:'👥'},
@@ -270,6 +273,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'overseas',label:'Overseas Players',icon:'✈'},
     {id:'contract-hub',label:'Contract Hub',icon:'📝'},
     {id:'agent-pipeline',label:'Agent Pipeline',icon:'🤝'},
+    {id:'signings',label:'Signing Pipeline',icon:'🎯'},
   ]},
   {section:'COMPETITIONS',items:[
     {id:'county-championship',label:'County Championship',icon:'🏆'},
@@ -291,6 +295,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'sponsorship',label:'Sponsorship Pipeline',icon:'🤝'},
     {id:'media',label:'Media & Content',icon:'📱'},
     {id:'ticket-matchday',label:'Ticket & Match Day',icon:'🎟'},
+    {id:'fan-engagement',label:'Fan Engagement',icon:'🎟️'},
   ]},
   {section:'GOVERNANCE',items:[
     {id:'board',label:'Board Suite',icon:'📊'},
@@ -305,6 +310,30 @@ void NAV;
 
 const fmt=(n:number)=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
 const pct=(a:number,b:number)=>Math.round((a/b)*100);
+
+const FAN_DATA = {
+  membership: { total: 8240, target: 9000, renewalRate: 84, newThisSeason: 620 },
+  attendance: [
+    { match: 'vs Durham MCCU', att: 3200, cap: 18350, format: '4-day' },
+    { match: 'vs Essex (CC)', att: 8400, cap: 18350, format: '4-day', projected: true },
+    { match: 'vs Lancashire (CC)', att: 17200, cap: 18350, format: '4-day', projected: true },
+    { match: 'vs Warwicks (T20)', att: 14800, cap: 18350, format: 'T20' },
+    { match: 'vs Durham (OD)', att: 6200, cap: 18350, format: 'OD' },
+  ] as Array<{match:string;att:number;cap:number;format:string;projected?:boolean}>,
+  social: { twitter: 48200, instagram: 62400, facebook: 31800, tiktok: 18600, engagementRate: 4.1 },
+  nps: { score: 67, promoters: 72, passives: 18, detractors: 10 },
+  seasonTickets: { sold: 6840, target: 7500, renewedEarly: 5210, newBuyers: 820 },
+};
+
+const SIGNING_PIPELINE = [
+  { id:1, name:'Marcus Bailey',  role:'Fast Bowler',    age:23, county:'Leicestershire', col:'Identified',  value:'£65k/yr',        agent:'AGI Sport',      notes:'Academy product — wants first team cricket', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:2, name:'Jordan Hayes',   role:'Opening Batter', age:26, county:'Northants',      col:'Approached',  value:'£90k/yr',        agent:'Phoenix Sports', notes:'Out of contract Sep 2026 — interested in move north', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:3, name:'Arjun Singh',    role:'Leg Spinner',    age:28, county:'Middlesex',      col:'Approached',  value:'£75k/yr',        agent:'—',              notes:'Self-represented. Championship specialist.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:4, name:'Kyle Petersen',  role:'All-Rounder',    age:30, county:'Cape Town',      col:'Negotiating', value:'£95k + OS slot', agent:'Titan Sports',   notes:'SA passport — would use overseas slot. T20 + OD.', flag:'🇿🇦' },
+  { id:5, name:'Tom Hendricks',  role:'WK-Batter',      age:24, county:'Kent',           col:'Negotiating', value:'£72k/yr',        agent:'ISM',            notes:'Strong Championship avg 36.4. Long-term Bairstow cover.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:6, name:'Dev Sharma',     role:'Off Spinner',    age:29, county:'Warwickshire',   col:'Done',        value:'£68k/yr',        agent:'Elite Cricket',  notes:'Signed for 2027 — red-ball specialist, 3-year deal.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:7, name:'Lee Clifford',   role:'Seam Bowler',    age:22, county:'—',              col:'Failed',      value:'£55k/yr',        agent:'—',              notes:'Released by Durham — signed Nottinghamshire instead.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+];
 
 export default function LumioCricket(){
   const[page,setPage]=useState('dashboard');
@@ -338,6 +367,38 @@ export default function LumioCricket(){
   const[ecbQuestion,setEcbQuestion]=useState('');
   const[ecbAnswer,setEcbAnswer]=useState('');
   const[ecbLoading,setEcbLoading]=useState(false);
+  const[optimiserOpen,setOptimiserOpen]=useState(false);
+  const[optLoading,setOptLoading]=useState(false);
+  const[optResult,setOptResult]=useState<{[fmt:string]:{xi:string[];reasoning:string}}|null>(null);
+  const[optError,setOptError]=useState<string|null>(null);
+
+  async function generateSquadOptimiser() {
+    setOptLoading(true); setOptError(null);
+    try {
+      const fit = (SQUAD as Array<Record<string,unknown>>).filter(p=>p.st==='fit').map(p=>({name:p.n,role:p.r,formats:{ch:p.ch,t2:p.t2,od:p.od}}));
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Yorkshire CCC squad for this week. Available players (fit only): ${JSON.stringify(fit)}. This week: Championship vs Lancashire (4-day, Fri), plus T20 Blast planning. Suggest the optimal XI for each format, considering format eligibility and player roles. Chris Dawson should have capped overs in Championship. Rajan Nortje available Championship + OD only. Respond ONLY in JSON (no markdown): { "championship": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" }, "t20": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" } }` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      setOptResult(JSON.parse(text.slice(s, e + 1)));
+    } catch (err) {
+      setOptError(err instanceof Error ? err.message : 'Failed to generate');
+    } finally {
+      setOptLoading(false);
+    }
+  }
+
+  const[dlsState,setDlsState]=useState({overs:50,wickets:0,interruption:'batting',overslost:10,targetOvers:40,format:'OD' as 'OD'|'T20',team1Score:250,oversFaced:50,currentScore:120,currentOvers:25});
+
   const[declAiLoading,setDeclAiLoading]=useState(false);
   const[declAiResult,setDeclAiResult]=useState('');
   const[declState,setDeclState]=useState({targetScore:280,currentScore:180,overs:45,bowlOvers:90,wickets:4,days:4,dayTime:'Day 3 · Session 2'});
@@ -354,6 +415,20 @@ export default function LumioCricket(){
   const[contractAiLoading,setContractAiLoading]=useState(false);
   const[contractAiResult,setContractAiResult]=useState<{urgent:{player:string;recommendation:string;reason:string}[];strategy_note:string}|null>(null);
   const[contractAiError,setContractAiError]=useState<string|null>(null);
+  // Net session planner + AI
+  const[netSessions,setNetSessions]=useState<Record<string,string>>({Mon:'Batting',Tue:'Bowling',Wed:'S&C',Thu:'Batting',Fri:'Match',Sat:'Match',Sun:'Rest'});
+  const[netAiLoading,setNetAiLoading]=useState(false);
+  const[netAiResult,setNetAiResult]=useState<string|null>(null);
+  const[netAiError,setNetAiError]=useState<string|null>(null);
+  // Match report state
+  const[reportMatchIdx,setReportMatchIdx]=useState(0);
+  const[reportMom,setReportMom]=useState('Harry Brook');
+  const[reportNotes,setReportNotes]=useState('Brook 124, Coad 4-62, disciplined bowling throughout');
+  const[reportLoading,setReportLoading]=useState(false);
+  const[reportText,setReportText]=useState<string|null>(null);
+  const[reportError,setReportError]=useState<string|null>(null);
+  const[reportCopied,setReportCopied]=useState(false);
+  const[reportTab,setReportTab]=useState<'generate'|'previous'>('generate');
 
   async function getTossAdvice() {
     setTossLoading(true); setTossError(null);
@@ -781,6 +856,33 @@ export default function LumioCricket(){
     return(
       <div>
         <SectionHead title="Multi-Format Squad Manager" sub="Player availability, eligibility and format conflicts across all four competitions"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <span style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>🤖 Format Squad Optimiser</span>
+          <button onClick={()=>setOptimiserOpen(!optimiserOpen)} style={{padding:'6px 14px',borderRadius:20,fontSize:12,background:C.tealDim,color:C.teal,border:'none',cursor:'pointer',fontWeight:600}}>{optimiserOpen?'Close':'Suggest XIs for this week'}</button>
+        </div>
+        {optimiserOpen && (
+          <Card style={{marginBottom:16,borderColor:C.purpleDim,background:C.cardAlt}}>
+            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>This week: Championship vs Lancashire (Fri) + T20 Blast qualification push</div>
+            <button onClick={generateSquadOptimiser} disabled={optLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:optLoading?'wait':'pointer',opacity:optLoading?0.6:1}}>{optLoading?'Generating…':'Generate XIs'}</button>
+            {optError && <div style={{fontSize:11,color:C.red,marginTop:8}}>⚠ {optError}</div>}
+            {optResult && (
+              <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                {(['championship','t20'] as const).map(key=>{
+                  const r = optResult[key]; if (!r) return null;
+                  return (
+                    <div key={key} style={{border:`1px solid ${C.border}`,borderRadius:8,padding:12}}>
+                      <div style={{fontSize:11,textTransform:'uppercase',letterSpacing:0.5,color:key==='championship'?C.teal:C.amber,fontWeight:700,marginBottom:8}}>{key==='championship'?'Championship XI':'T20 XI'}</div>
+                      <ol style={{margin:0,paddingLeft:20,fontSize:12,color:C.text,lineHeight:1.7}}>
+                        {r.xi.map((n,i)=><li key={i}>{n}</li>)}
+                      </ol>
+                      <div style={{fontSize:11,color:C.muted,marginTop:10,fontStyle:'italic',lineHeight:1.5}}>{r.reasoning}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        )}
         <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
           {fmts.map(f=><Pill key={f.id} label={f.label} active={format===f.id} onClick={()=>setFormat(f.id)}/>)}
           <div style={{marginLeft:'auto',display:'flex',gap:8}}>
@@ -3213,11 +3315,535 @@ export default function LumioCricket(){
     );
   };
 
+  const DLSCalculator=()=>{
+    const resourceTable: {[overs:number]:number[]} = {
+      50:[100.0,93.4,85.1,74.9,62.7,49.0,34.9,22.0,11.9,4.7],
+      40:[89.3,84.2,77.8,69.6,59.5,47.6,34.6,22.0,11.9,4.7],
+      30:[75.1,71.8,67.3,61.6,54.1,44.7,33.6,21.8,11.9,4.7],
+      20:[56.6,54.8,52.4,49.1,44.6,38.6,30.8,21.2,11.9,4.7],
+      10:[32.1,31.6,30.8,29.8,28.3,26.1,22.8,17.9,10.9,4.7],
+      5:[17.2,17.0,16.8,16.5,16.1,15.4,14.3,12.5,9.4,4.6],
+      0:[0,0,0,0,0,0,0,0,0,0],
+    };
+    const getResource=(oversRem:number,wk:number)=>{
+      const keys=Object.keys(resourceTable).map(Number).sort((a,b)=>b-a);
+      const hi=keys.find(k=>k<=oversRem) ?? 0;
+      const lo=keys.filter(k=>k>oversRem).sort((a,b)=>a-b)[0] ?? hi;
+      const rHi=resourceTable[hi][Math.min(9,Math.max(0,wk))];
+      const rLo=resourceTable[lo]?.[Math.min(9,Math.max(0,wk))] ?? rHi;
+      if (hi===lo) return rHi;
+      const t=(oversRem-hi)/(lo-hi);
+      return rHi + (rLo-rHi)*t;
+    };
+    const upd=<K extends keyof typeof dlsState>(k:K,v:(typeof dlsState)[K])=>setDlsState(s=>({...s,[k]:v}));
+    const fullOvers = dlsState.format==='OD'?50:20;
+    const team1Resources = 100;
+    const team2OversAvail = fullOvers - dlsState.overslost;
+    const team2Resources = getResource(team2OversAvail, 0);
+    const revisedTarget = Math.floor(dlsState.team1Score * (team2Resources / team1Resources)) + 1;
+    const parIntervals = [20,15,10,5].filter(o=>o<=team2OversAvail).map(oRem=>{
+      const oversBowled = team2OversAvail - oRem;
+      const usedRes = team2Resources - getResource(oRem, dlsState.wickets);
+      const par = Math.floor(dlsState.team1Score * (usedRes / team1Resources));
+      return {oRem,oversBowled,par};
+    });
+    const currentRemOvers = team2OversAvail - dlsState.currentOvers;
+    const currentUsedRes = team2Resources - getResource(Math.max(0,currentRemOvers), dlsState.wickets);
+    const currentPar = Math.floor(dlsState.team1Score * (currentUsedRes / team1Resources));
+    const diff = dlsState.currentScore - currentPar;
+    const statusLabel = Math.abs(diff)<3?{t:'On track',c:C.amber}: diff>0?{t:`Ahead by ${diff}`,c:C.green}:{t:`Behind by ${Math.abs(diff)}`,c:C.red};
+    return (
+      <div>
+        <SectionHead title="D/L Calculator" sub="Duckworth-Lewis-Stern par score for weather-interrupted matches"/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Match Situation Input</div>
+            <div style={{display:'flex',gap:6,marginBottom:12}}>
+              {(['OD','T20'] as const).map(f=>(
+                <button key={f} onClick={()=>upd('format',f)} style={{flex:1,padding:'6px 10px',borderRadius:6,border:`1px solid ${C.border}`,background:dlsState.format===f?C.tealDim:'transparent',color:dlsState.format===f?C.teal:C.muted,fontSize:12,cursor:'pointer',fontWeight:600}}>{f==='OD'?'One Day (50 over)':'T20 (20 over)'}</button>
+              ))}
+            </div>
+            {[
+              {k:'team1Score' as const,l:'Team 1 score'},
+              {k:'oversFaced' as const,l:'Overs faced by Team 1'},
+              {k:'overslost' as const,l:'Overs lost to weather'},
+              {k:'wickets' as const,l:'Wickets lost at interruption'},
+              {k:'currentScore' as const,l:'Team 2 current score'},
+              {k:'currentOvers' as const,l:'Team 2 current overs'},
+            ].map(f=>(
+              <div key={f.k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:12,color:C.text}}>{f.l}</div>
+                <input type="number" value={dlsState[f.k]} onChange={e=>upd(f.k,Number(e.target.value))} style={{width:90,background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'6px 8px',color:C.text,fontSize:12,textAlign:'right'}}/>
+              </div>
+            ))}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0'}}>
+              <div style={{fontSize:12,color:C.text}}>Interruption affected</div>
+              <select value={dlsState.interruption} onChange={e=>upd('interruption',e.target.value)} style={{width:120,background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'6px 8px',color:C.text,fontSize:12}}>
+                <option value="batting">Team 2 chase</option>
+                <option value="team1">Team 1 innings</option>
+              </select>
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>D/L Result</div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>Revised target</div>
+              <div style={{fontSize:36,fontWeight:700,color:C.teal,lineHeight:1.1}}>{revisedTarget}</div>
+              <div style={{fontSize:11,color:C.muted}}>from {team2OversAvail} overs · {team2Resources.toFixed(1)}% resources</div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:6}}>Par score by overs remaining</div>
+              <table style={{width:'100%',fontSize:12}}>
+                <thead><tr style={{color:C.dim}}><th style={{textAlign:'left',padding:'4px 0'}}>Overs left</th><th style={{textAlign:'right'}}>Overs bowled</th><th style={{textAlign:'right'}}>Par</th></tr></thead>
+                <tbody>
+                  {parIntervals.map((p,i)=>(
+                    <tr key={i} style={{borderTop:`1px solid ${C.border}`,color:C.text}}><td style={{padding:'4px 0'}}>{p.oRem}</td><td style={{textAlign:'right'}}>{p.oversBowled}</td><td style={{textAlign:'right',fontWeight:600}}>{p.par}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:4}}>Team 2 status</div>
+              <div style={{display:'inline-block',padding:'4px 10px',borderRadius:999,background:statusLabel.c+'22',color:statusLabel.c,fontSize:11,fontWeight:600}}>{statusLabel.t}</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:4}}>Par at {dlsState.currentOvers} overs: {currentPar}</div>
+            </div>
+            <div style={{fontSize:10,color:C.dim,fontStyle:'italic',lineHeight:1.5}}>This uses a simplified resource table. For official match use, consult the ECB/ICC official DLS calculator.</div>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const FanEngagement=()=>{
+    const fmtColor=(f:string)=>f==='T20'?C.amber:f==='OD'?C.purple:C.teal;
+    const nps=FAN_DATA.nps;
+    const soc=FAN_DATA.social;
+    const socialTotal = soc.twitter+soc.instagram+soc.facebook+soc.tiktok;
+    const platforms=[
+      {n:'Twitter/X',v:soc.twitter,c:C.teal},
+      {n:'Instagram',v:soc.instagram,c:C.purple},
+      {n:'Facebook',v:soc.facebook,c:C.amber},
+      {n:'TikTok',v:soc.tiktok,c:C.red},
+    ];
+    return (
+      <div>
+        <SectionHead title="Fan Engagement" sub="Membership, attendance, social media and sentiment — season 2026"/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+          <Stat label="Members" value={FAN_DATA.membership.total.toLocaleString()} color={C.teal} sub={`of ${FAN_DATA.membership.target.toLocaleString()} target`}/>
+          <Stat label="NPS Score" value={String(nps.score)} color={C.green} sub="Promoters - Detractors"/>
+          <Stat label="Season Tickets" value={FAN_DATA.seasonTickets.sold.toLocaleString()} color={C.purple} sub={`of ${FAN_DATA.seasonTickets.target.toLocaleString()}`}/>
+          <Stat label="Social Followers" value={`${Math.round(socialTotal/1000)}k`} color={C.amber} sub={`${soc.engagementRate}% engagement`}/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:12,marginBottom:12}}>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Attendance Tracker</div>
+            <div style={{height:240}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={FAN_DATA.attendance} margin={{top:10,right:10,left:0,bottom:30}}>
+                  <XAxis dataKey="match" tick={{fontSize:10,fill:C.muted}} angle={-18} textAnchor="end" interval={0}/>
+                  <YAxis tick={{fontSize:10,fill:C.muted}}/>
+                  <Tooltip contentStyle={{background:C.card,border:`1px solid ${C.border}`,fontSize:12}}/>
+                  <ReferenceLine y={18350} stroke={C.red} strokeDasharray="3 3" label={{value:'Capacity',fill:C.red,fontSize:10,position:'right'}}/>
+                  <Bar dataKey="att">
+                    {FAN_DATA.attendance.map((d,i)=><Cell key={i} fill={fmtColor(d.format)} fillOpacity={d.projected?0.45:1}/>)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{fontSize:10,color:C.dim,marginTop:6}}>Lower-opacity bars indicate projected attendance</div>
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Membership Health</div>
+            <div style={{marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:C.muted,marginBottom:4}}><span>Renewal rate</span><span style={{color:C.green,fontWeight:600}}>{FAN_DATA.membership.renewalRate}%</span></div>
+              <div style={{height:8,background:'#0b1020',borderRadius:4,overflow:'hidden'}}><div style={{width:`${FAN_DATA.membership.renewalRate}%`,height:'100%',background:C.green}}/></div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:C.muted,marginBottom:4}}><span>Season tickets sold</span><span style={{color:C.purple,fontWeight:600}}>{FAN_DATA.seasonTickets.sold.toLocaleString()} / {FAN_DATA.seasonTickets.target.toLocaleString()}</span></div>
+              <div style={{height:8,background:'#0b1020',borderRadius:4,overflow:'hidden'}}><div style={{width:`${(FAN_DATA.seasonTickets.sold/FAN_DATA.seasonTickets.target)*100}%`,height:'100%',background:C.purple}}/></div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div style={{border:`1px solid ${C.border}`,borderRadius:6,padding:10}}>
+                <div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>Early renewals</div>
+                <div style={{fontSize:18,fontWeight:700,color:C.teal}}>{FAN_DATA.seasonTickets.renewedEarly.toLocaleString()}</div>
+              </div>
+              <div style={{border:`1px solid ${C.border}`,borderRadius:6,padding:10}}>
+                <div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>New buyers</div>
+                <div style={{fontSize:18,fontWeight:700,color:C.amber}}>{FAN_DATA.seasonTickets.newBuyers.toLocaleString()}</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        <Card>
+          <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Social & Sentiment</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+            {platforms.map(p=>(
+              <div key={p.n} style={{border:`1px solid ${C.border}`,borderRadius:8,padding:12}}>
+                <div style={{fontSize:11,color:C.muted}}>{p.n}</div>
+                <div style={{fontSize:20,fontWeight:700,color:p.c}}>{(p.v/1000).toFixed(1)}k</div>
+                <div style={{fontSize:10,color:C.green}}>▲ growing</div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:C.muted,marginBottom:6}}><span>NPS breakdown — score {nps.score}</span><span>Promoters {nps.promoters}% · Passives {nps.passives}% · Detractors {nps.detractors}%</span></div>
+            <div style={{display:'flex',height:14,borderRadius:7,overflow:'hidden'}}>
+              <div style={{width:`${nps.promoters}%`,background:C.green}}/>
+              <div style={{width:`${nps.passives}%`,background:C.amber}}/>
+              <div style={{width:`${nps.detractors}%`,background:C.red}}/>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
+  // ── SIGNING PIPELINE ─────────────────────────────────────────────
+  const SigningPipeline = () => {
+    const [pipeline, setPipeline] = useState<typeof SIGNING_PIPELINE>([...SIGNING_PIPELINE]);
+    const [showForm, setShowForm] = useState(false);
+    const [newTarget, setNewTarget] = useState({ name:'', role:'', county:'', value:'', agent:'', notes:'' });
+    const cols = ['Identified','Approached','Negotiating','Done','Failed'];
+    const colColors: Record<string,string> = { 'Identified':C.blue, 'Approached':C.amber, 'Negotiating':C.purple, 'Done':C.green, 'Failed':C.red };
+    const countByCol = (c: string) => pipeline.filter(p => p.col === c).length;
+    function addTarget() {
+      if (!newTarget.name.trim()) return;
+      const id = Math.max(0, ...pipeline.map(p => p.id)) + 1;
+      setPipeline([...pipeline, { id, ...newTarget, age: 0, col:'Identified', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' }]);
+      setNewTarget({ name:'', role:'', county:'', value:'', agent:'', notes:'' });
+      setShowForm(false);
+    }
+    const inp = { padding:'6px 8px', borderRadius:4, border:`1px solid ${C.border}`, background:C.cardAlt, color:C.text, fontSize:12, width:'100%' } as React.CSSProperties;
+    return (
+      <div>
+        <SectionHead title="Signing Pipeline" sub="Identified targets, negotiations, and completed deals"/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+          <Stat label="Identified" value={countByCol('Identified')} color={C.blue} sub="Scouted targets"/>
+          <Stat label="In Negotiation" value={countByCol('Negotiating')} color={C.purple} sub="Active discussions"/>
+          <Stat label="Signed This Window" value={countByCol('Done')} color={C.green} sub="Completed deals"/>
+          <Stat label="Failed / Withdrawn" value={countByCol('Failed')} color={C.red} sub="Fell through"/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10,marginBottom:12}}>
+          {cols.map(colName => {
+            const color = colColors[colName];
+            const items = pipeline.filter(p => p.col === colName);
+            return (
+              <div key={colName} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:10,minHeight:200}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:color}}/>
+                  <span style={{fontSize:11,fontWeight:700,color:C.text,textTransform:'uppercase',letterSpacing:'0.04em',flex:1}}>{colName}</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:10,background:`${color}22`,color}}>{items.length}</span>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {items.map(p => (
+                    <div key={p.id} style={{background:C.cardAlt,borderRadius:6,padding:8,borderLeft:`3px solid ${color}`}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                        <span style={{fontSize:13}}>{p.flag}</span>
+                        <span style={{fontSize:12,fontWeight:600,color:C.text,flex:1,lineHeight:1.2}}>{p.name}</span>
+                        {p.age > 0 && <span style={{fontSize:10,color:C.dim}}>{p.age}y</span>}
+                      </div>
+                      <div style={{fontSize:10,color:C.muted,marginBottom:4}}>{p.role}{p.county && p.county !== '—' ? ` · ${p.county}` : ''}</div>
+                      {p.value && <div style={{fontSize:10,color:color,fontWeight:600,marginBottom:3}}>{p.value}</div>}
+                      {p.agent && p.agent !== '—' && <div style={{fontSize:9,color:C.dim,marginBottom:4}}>Agent: {p.agent}</div>}
+                      {p.notes && <div style={{fontSize:10,color:C.muted,lineHeight:1.4,fontStyle:'italic'}}>{p.notes}</div>}
+                    </div>
+                  ))}
+                  {items.length === 0 && <div style={{fontSize:10,color:C.dim,fontStyle:'italic',textAlign:'center',padding:10}}>No targets</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {!showForm ? (
+          <button onClick={() => setShowForm(true)} style={{padding:'8px 14px',borderRadius:6,border:`1px solid ${C.teal}55`,background:C.tealDim,color:C.teal,fontSize:12,fontWeight:600,cursor:'pointer'}}>+ Add Target</button>
+        ) : (
+          <Card>
+            <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:10}}>Add New Target</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:10}}>
+              <input placeholder="Name" value={newTarget.name} onChange={e=>setNewTarget({...newTarget,name:e.target.value})} style={inp}/>
+              <input placeholder="Role" value={newTarget.role} onChange={e=>setNewTarget({...newTarget,role:e.target.value})} style={inp}/>
+              <input placeholder="County" value={newTarget.county} onChange={e=>setNewTarget({...newTarget,county:e.target.value})} style={inp}/>
+              <input placeholder="Value (e.g. £70k/yr)" value={newTarget.value} onChange={e=>setNewTarget({...newTarget,value:e.target.value})} style={inp}/>
+              <input placeholder="Agent" value={newTarget.agent} onChange={e=>setNewTarget({...newTarget,agent:e.target.value})} style={inp}/>
+              <input placeholder="Notes" value={newTarget.notes} onChange={e=>setNewTarget({...newTarget,notes:e.target.value})} style={inp}/>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={addTarget} style={{padding:'6px 14px',borderRadius:6,border:'none',background:C.teal,color:'#07080F',fontSize:11,fontWeight:700,cursor:'pointer'}}>Add</button>
+              <button onClick={()=>setShowForm(false)} style={{padding:'6px 14px',borderRadius:6,border:`1px solid ${C.border}`,background:'transparent',color:C.muted,fontSize:11,cursor:'pointer'}}>Cancel</button>
+            </div>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
+  // ── NET SESSION PLANNER ──────────────────────────────────────────
+  const NetSessionPlanner = () => {
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const bowlers = GPS_DATA.filter(g => g.bowl);
+    const projected: Record<string,number> = { 'Sam Reed': 72, 'Jake Harrison': 12, 'Chris Dawson': 48, 'James Hill': 40 };
+    const dawsonCap = 36;
+    const sessionColor = (s: string) => {
+      if (s === 'Match') return C.red;
+      if (s === 'Batting' || s === 'Bowling') return C.teal;
+      if (s === 'Fielding' || s === 'S&C') return C.purple;
+      if (s === 'Rest') return C.muted;
+      return C.blue;
+    };
+    async function runAiReview() {
+      setNetAiLoading(true); setNetAiError(null);
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 400,
+            messages: [{ role: 'user', content: 'Yorkshire CCC net session review. Bowlers: Reed (72 del planned, limit 96, ACWR 0.94), Dawson (48 del planned, limit 36, ACWR 1.62), Harrison (12 del, return-to-play). Championship vs Lancashire in 2 days. Is this week\u2019s load appropriate? Give 2-3 sentence recommendation.' }],
+          }),
+        });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        const text: string = data?.content?.[0]?.text || '';
+        setNetAiResult(text.trim());
+      } catch (err) {
+        setNetAiError(err instanceof Error ? err.message : 'AI review failed');
+      } finally {
+        setNetAiLoading(false);
+      }
+    }
+    return (
+      <div>
+        <SectionHead title="Net Session Planner" sub="Weekly schedule builder with bowling load limits and overuse flagging"/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>This Week&apos;s Sessions</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {days.map(d => {
+                const s = netSessions[d];
+                const c = sessionColor(s);
+                return (
+                  <div key={d} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:C.cardAlt,borderRadius:6,borderLeft:`3px solid ${c}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.dim,width:30,textTransform:'uppercase'}}>{d}</div>
+                    <div style={{flex:1,fontSize:12,color:C.text}}>{s || 'No session'}</div>
+                    {s && s !== 'Rest' && s !== 'Match' && <div style={{fontSize:10,color:C.muted}}>{s === 'S&C' ? '45 min' : '90 min'}</div>}
+                    {!s && (
+                      <button onClick={()=>setNetSessions({...netSessions,[d]:'Batting'})} style={{fontSize:10,padding:'3px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:'transparent',color:C.teal,cursor:'pointer'}}>+ Add</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Bowling Load Monitor</div>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              {bowlers.map(b => {
+                const proj = projected[b.name] ?? 0;
+                const isDawson = b.name === 'Chris Dawson';
+                const cap = isDawson ? dawsonCap : (b.bowl?.lim ?? 96);
+                const pct = cap > 0 ? (proj / cap) * 100 : 0;
+                const color = pct > 100 ? C.red : pct > 80 ? C.amber : C.green;
+                return (
+                  <div key={b.name}>
+                    <div style={{display:'flex',alignItems:'center',marginBottom:4}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,fontWeight:600,color:C.text}}>{b.name}</div>
+                        <div style={{fontSize:10,color:C.dim}}>{b.role}</div>
+                      </div>
+                      <span style={{padding:'2px 7px',borderRadius:10,fontSize:9,fontWeight:700,background:`${color}22`,color,textTransform:'uppercase'}}>
+                        {pct > 100 ? 'Over cap' : pct > 80 ? 'High' : 'Safe'}
+                      </span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+                      <div style={{flex:1,height:4,background:C.border,borderRadius:2,overflow:'hidden'}}>
+                        <div style={{width:`${Math.min(pct,100)}%`,height:'100%',background:color}}/>
+                      </div>
+                      <div style={{fontSize:10,color:C.muted,minWidth:58,textAlign:'right'}}>{proj}/{cap} del</div>
+                    </div>
+                    {isDawson && (
+                      <div style={{fontSize:10,color:C.red,fontStyle:'italic'}}>⚠️ A:C 1.62 — reduced cap this week: 36 deliveries max</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Load Flags &amp; Recommendations</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12}}>
+              <div style={{padding:10,background:C.cardAlt,borderRadius:6,borderLeft:`3px solid ${C.red}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.red,marginBottom:3}}>Chris Dawson</div>
+                <div style={{fontSize:10,color:C.muted,lineHeight:1.5}}>48 projected deliveries exceeds 36-delivery cap this week. Remove 2 bowling slots.</div>
+              </div>
+              <div style={{padding:10,background:C.cardAlt,borderRadius:6,borderLeft:`3px solid ${C.amber}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.amber,marginBottom:3}}>Sam Reed</div>
+                <div style={{fontSize:10,color:C.muted,lineHeight:1.5}}>72 projected deliveries — approaching weekly limit. Monitor closely.</div>
+              </div>
+              <div style={{padding:10,background:C.cardAlt,borderRadius:6,borderLeft:`3px solid ${C.amber}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.amber,marginBottom:3}}>Jake Harrison</div>
+                <div style={{fontSize:10,color:C.muted,lineHeight:1.5}}>Return-to-play only. Max 12 deliveries per session.</div>
+              </div>
+            </div>
+            <button onClick={runAiReview} disabled={netAiLoading} style={{width:'100%',padding:'8px 14px',borderRadius:6,border:'none',background:netAiLoading?C.cardAlt:C.teal,color:netAiLoading?C.muted:'#07080F',fontSize:11,fontWeight:700,cursor:netAiLoading?'wait':'pointer'}}>
+              {netAiLoading ? 'Thinking…' : '✨ AI Session Review'}
+            </button>
+            {netAiError && <div style={{marginTop:8,padding:8,background:C.redDim,borderRadius:6,fontSize:10,color:C.red}}>⚠ {netAiError}</div>}
+            {netAiResult && !netAiError && (
+              <div style={{marginTop:8,padding:10,background:C.tealDim,border:`1px solid ${C.teal}55`,borderRadius:6,fontSize:11,color:C.teal,lineHeight:1.5}}>{netAiResult}</div>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // ── MATCH REPORT ─────────────────────────────────────────────────
+  const MatchReport = () => {
+    const selected = CRICKET_RESULTS[reportMatchIdx] || CRICKET_RESULTS[0];
+    const inp = { padding:'6px 8px', borderRadius:4, border:`1px solid ${C.border}`, background:C.cardAlt, color:C.text, fontSize:12, width:'100%' } as React.CSSProperties;
+    const lbl = { fontSize:10, color:C.dim, textTransform:'uppercase' as const, letterSpacing:'0.04em', marginBottom:3, display:'block' as const };
+    async function generateReport() {
+      setReportLoading(true); setReportError(null); setReportText(null);
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 600,
+            system: 'You are the media officer for Yorkshire CCC. Write match reports in a professional but warm style for club communications.',
+            messages: [{ role: 'user', content: `Write a 150-word match report for: ${selected.opponent} (${selected.homeAway}), ${selected.competition}, ${selected.date}. Score: ${selected.score} vs ${selected.oppScore}. Result: ${selected.result}. Man of match: ${reportMom}. Notes: ${reportNotes}. Format for club website and social media use.` }],
+          }),
+        });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        setReportText((data?.content?.[0]?.text || '').trim());
+      } catch (err) {
+        setReportError(err instanceof Error ? err.message : 'Failed to generate report');
+      } finally {
+        setReportLoading(false);
+      }
+    }
+    function copyReport() {
+      if (!reportText) return;
+      try { navigator.clipboard.writeText(reportText); setReportCopied(true); setTimeout(()=>setReportCopied(false), 2000); } catch {}
+    }
+    function downloadPdf() {
+      if (!reportText) return;
+      const w = window.open('', '_blank', 'width=800,height=1000');
+      if (!w) return;
+      w.document.write(`<!doctype html><html><head><title>Match Report — ${selected.opponent}</title><style>
+@media print { body { margin: 0 } }
+body { font-family: -apple-system, system-ui, serif; font-size: 12px; color: #111; background: #fff; padding: 24px; line-height: 1.6; max-width: 720px; margin: 0 auto }
+h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
+.sub { font-size: 11px; color: #666; margin-bottom: 20px }
+.body { white-space: pre-wrap; font-size: 13px }
+.footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ccc; font-size: 10px; color: #888 }
+</style></head><body>
+<h1>YORKSHIRE CCC — MATCH REPORT</h1>
+<div class="sub">vs ${selected.opponent} (${selected.homeAway}) &middot; ${selected.competition} &middot; ${selected.date} &middot; ${selected.result}</div>
+<div class="body">${reportText.replace(/</g,'&lt;')}</div>
+<div class="footer">Generated by Lumio Tour &middot; Yorkshire CCC Media Office</div>
+</body></html>`);
+      w.document.close();
+      setTimeout(() => { try { w.print(); } catch {} }, 300);
+    }
+    const previousReports = [
+      { date:'18 Mar 2026', opp:'Durham MCCU', result:'W', text:'Yorkshire opened their pre-season with an emphatic performance at Headingley, thanks largely to Harry Brook\u2019s patient 124. Coad led the bowling with 4-62 in a disciplined red-ball display.' },
+      { date:'03 Mar 2026', opp:'Lancashire XI', result:'D', text:'A rain-affected draw at Emirates Old Trafford saw Yorkshire declare on 380/6 before weather intervened. Bairstow contributed 87 from number five.' },
+      { date:'22 Feb 2026', opp:'MCC', result:'W', text:'Gibson\u2019s five-wicket haul was the standout of a commanding 6-wicket win at Lord\u2019s. Yorkshire chased down 210 in 42 overs with Lyth anchoring the innings.' },
+    ];
+    return (
+      <div>
+        <SectionHead title="Match Report Generator" sub="Auto-populate from scorecard data and publish to club communications"/>
+        <div style={{display:'flex',gap:6,marginBottom:14,borderBottom:`1px solid ${C.border}`}}>
+          {(['generate','previous'] as const).map(t => (
+            <button key={t} onClick={()=>setReportTab(t)} style={{padding:'8px 16px',background:'transparent',border:'none',borderBottom:`2px solid ${reportTab===t?C.teal:'transparent'}`,color:reportTab===t?C.teal:C.muted,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+              {t === 'generate' ? 'Generate Report' : 'Previous Reports'}
+            </button>
+          ))}
+        </div>
+        {reportTab === 'generate' && (
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1.2fr',gap:12}}>
+            <Card>
+              <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Scorecard Inputs</div>
+              <div style={{marginBottom:10}}>
+                <label style={lbl}>Match</label>
+                <select value={reportMatchIdx} onChange={e=>setReportMatchIdx(parseInt(e.target.value,10))} style={inp}>
+                  {CRICKET_RESULTS.map((r, i) => (
+                    <option key={r.id} value={i}>vs {r.opponent} — {r.date} — {r.result}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+                <div><label style={lbl}>Opposition</label><div style={{...inp,background:C.card}}>{selected.opponent}</div></div>
+                <div><label style={lbl}>Venue</label><div style={{...inp,background:C.card}}>{selected.homeAway}</div></div>
+                <div><label style={lbl}>Format</label><div style={{...inp,background:C.card}}>{selected.format}</div></div>
+                <div><label style={lbl}>Result</label><div style={{...inp,background:C.card,color:resultColor(selected.result),fontWeight:700}}>{selected.result}</div></div>
+                <div><label style={lbl}>Our score</label><div style={{...inp,background:C.card}}>{selected.score}</div></div>
+                <div><label style={lbl}>Their score</label><div style={{...inp,background:C.card}}>{selected.oppScore}</div></div>
+              </div>
+              <div style={{marginBottom:10}}>
+                <label style={lbl}>Man of match</label>
+                <input value={reportMom} onChange={e=>setReportMom(e.target.value)} style={inp}/>
+              </div>
+              <div style={{marginBottom:10}}>
+                <label style={lbl}>Key performance notes</label>
+                <textarea value={reportNotes} onChange={e=>setReportNotes(e.target.value)} rows={4} style={{...inp,fontFamily:'inherit',resize:'vertical'}}/>
+              </div>
+              <button onClick={generateReport} disabled={reportLoading} style={{width:'100%',padding:'8px 14px',borderRadius:6,border:'none',background:reportLoading?C.cardAlt:C.teal,color:reportLoading?C.muted:'#07080F',fontSize:11,fontWeight:700,cursor:reportLoading?'wait':'pointer'}}>
+                {reportLoading ? 'Generating…' : '✨ Generate Report'}
+              </button>
+            </Card>
+            <Card>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>Preview</div>
+                {reportText && !reportLoading && (
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={copyReport} style={{padding:'4px 10px',borderRadius:4,border:`1px solid ${C.border}`,background:'transparent',color:reportCopied?C.green:C.muted,fontSize:10,fontWeight:600,cursor:'pointer'}}>{reportCopied ? '✓ Copied' : 'Copy'}</button>
+                    <button onClick={downloadPdf} style={{padding:'4px 10px',borderRadius:4,border:`1px solid ${C.border}`,background:'transparent',color:C.muted,fontSize:10,fontWeight:600,cursor:'pointer'}}>Download PDF</button>
+                  </div>
+                )}
+              </div>
+              {reportLoading ? (
+                <div style={{padding:20,textAlign:'center',color:C.dim,fontSize:11}}>Generating report…</div>
+              ) : reportError ? (
+                <div style={{padding:10,background:C.redDim,borderRadius:6,fontSize:11,color:C.red}}>⚠ {reportError}</div>
+              ) : reportText ? (
+                <div style={{padding:14,background:'#fff',color:'#1a1a1a',borderRadius:6,fontSize:13,lineHeight:1.7,fontFamily:'Georgia, serif',whiteSpace:'pre-wrap',minHeight:240}}>{reportText}</div>
+              ) : (
+                <div style={{padding:20,textAlign:'center',color:C.dim,fontSize:11,fontStyle:'italic'}}>Select a match, adjust notes, and click Generate Report.</div>
+              )}
+            </Card>
+          </div>
+        )}
+        {reportTab === 'previous' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {previousReports.map((r, i) => (
+              <Card key={i}>
+                <details>
+                  <summary style={{cursor:'pointer',listStyle:'none',display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{fontSize:11,color:C.dim,width:100}}>{r.date}</div>
+                    <div style={{flex:1,fontSize:13,color:C.text,fontWeight:600}}>vs {r.opp}</div>
+                    <span style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600,background:resultColor(r.result)+'22',color:resultColor(r.result)}}>{r.result}</span>
+                    <span style={{fontSize:10,color:C.teal,marginLeft:8}}>View →</span>
+                  </summary>
+                  <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,lineHeight:1.6}}>{r.text}</div>
+                </details>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const pages={
     dashboard:<Dashboard/>,briefing:<Briefing/>,
     'match-centre':<MatchCentre/>,'batting-analytics':<BattingAnalytics/>,'bowling-analytics':<BowlingAnalytics/>,
-    'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,declaration:<DeclarationPlanner/>,'performance-stats':<PerformanceStats/>,
-    squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,
+    'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,declaration:<DeclarationPlanner/>,dls:<DLSCalculator/>,'fan-engagement':<FanEngagement/>,'performance-stats':<PerformanceStats/>,
+    squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,signings:<SigningPipeline/>,'net-planner':<NetSessionPlanner/>,'match-report':<MatchReport/>,
     'county-championship':<CountyChampionship/>,'vitality-blast':<VitalityBlast/>,'od-cup':<OneDayCup/>,'the-hundred':<TheHundred/>,womens:<Womens/>,academy:<AcademyYouth/>,
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
     commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContent/>,'ticket-matchday':<TicketMatchDay/>,
