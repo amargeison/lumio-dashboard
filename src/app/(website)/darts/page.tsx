@@ -9,23 +9,23 @@ const CARD = '#111318'
 const BORDER = '#1F2937'
 
 const FEATURES = [
-  { icon: '📊', title: 'Order of Merit & Race', desc: 'Rolling 2-year prize money tracker, points expiry calendar, race standings and tour card security indicator.' },
-  { icon: '🎯', title: 'Three-Dart Average Dashboard', desc: 'Career and tournament averages, first-9 analysis, 180s per leg, checkout % and darts at double — all in one view.' },
-  { icon: '✅', title: 'Checkout Analysis', desc: 'Favourite doubles hit rates, common checkout routes, under-pressure finishing stats and double practice target setting.' },
-  { icon: '🎪', title: 'Exhibition Manager', desc: 'Book, track and manage your exhibition calendar — the biggest revenue stream for PDC pros, finally organised.' },
-  { icon: '🔍', title: 'Opponent Intel', desc: 'H2H records, preferred doubles, scoring patterns, pressure stats and tactical briefing notes before every match.' },
-  { icon: '🏛️', title: 'Tour Card & Q-School', desc: 'Track PDC card status, Challenge Tour points, European Tour ranking and Q-School preparation timeline.' },
+  { icon: '📊', title: 'Order of Merit & Tour Card Monitor', desc: 'Rolling 2-year OoM tracker, weekly drop-off table, buffer above the #64 cut and a Merit Forecaster that simulates prize money outcomes by round.' },
+  { icon: '🎯', title: 'Performance Suite', desc: 'Three-dart average, first 9, dartboard heatmap by segment, checkout analysis, pressure analysis, opponent intel and a composite Performance Rating out of 100.' },
+  { icon: '🎽', title: 'Equipment Setup', desc: 'Structured barrel / shaft / flight / point specs across multiple setups. Performance per setup, change log, side-by-side compare. Backed by Supabase.' },
+  { icon: '⚡', title: 'Match Prep & AI Briefings', desc: "Opponent dossier, game plan, tactical AI briefing for tonight's match, Nine-Dart Tracker, Premier League pathway and World Series invitation status." },
+  { icon: '🤝', title: 'Team & Brand', desc: 'Team Hub, threaded Team Comms, Mental Performance log, Walk-on Music tracker, Fan Engagement across 4 platforms, Sponsorship pipeline and Exhibition Manager.' },
+  { icon: '🔌', title: 'Live Data Integrations', desc: 'DartConnect for session averages and 180 counts, PDC Live Data for real-time scores and OoM updates, Scolia for camera-tracked dartboard heatmaps.' },
 ]
 
 const AUDIENCE = [
-  { title: 'PDC Tour Card Holders', desc: 'Professionals managing a full PDC schedule' },
-  { title: 'Challenge Tour Players', desc: 'Developing players building their Order of Merit' },
-  { title: 'Player Management Teams', desc: 'Managers and agents coordinating the full career' },
+  { title: 'PDC Tour Card Holders', desc: 'Professionals managing a full PDC schedule, Euro Tour and Players Championships' },
+  { title: 'Challenge Tour Players', desc: 'Developing players building their Order of Merit and chasing a tour card' },
+  { title: 'Player Management Teams', desc: 'Coaches, agents, physios and mental coaches with their own role views' },
 ]
 
 const PRICING = [
-  { tier: 'Lumio Darts Pro', price: '£199/mo', features: ['Order of Merit tracker', 'Average dashboard', 'Exhibition manager', 'Opponent intel', 'AI morning briefing'] },
-  { tier: 'Lumio Darts Pro+', price: '£349/mo', highlight: true, features: ['Everything in Pro', 'Team access', 'Financial dashboard', 'Media & content hub', 'Full commercial suite'] },
+  { tier: 'Lumio Darts Pro', price: '£149/mo', features: ['51 portal features across 6 sections', 'Order of Merit + Tour Card Monitor', 'Performance Rating + dartboard heatmap', 'Equipment setup tracker', 'Match Prep + AI briefings', 'Up to 3 team accounts'] },
+  { tier: 'Lumio Darts Pro+', price: '£299/mo', highlight: true, features: ['Everything in Pro', 'DartConnect + PDC Live + Scolia integrations', 'Sponsorship pipeline + Fan Engagement hub', 'Premier League + World Series trackers', 'Threaded Team Comms across full team', 'Priority account manager'] },
 ]
 
 export default function DartsPage() {
@@ -38,10 +38,10 @@ export default function DartsPage() {
           Lumio Tour · Darts
         </div>
         <h1 className="text-4xl md:text-5xl font-black mb-4" style={{ color: '#F9FAFB' }}>
-          The first career OS built for professional darts players.
+          The complete platform for professional darts players.
         </h1>
         <p className="text-lg max-w-2xl mx-auto mb-4" style={{ color: '#9CA3AF' }}>
-          PDC Order of Merit tracker, exhibition manager, checkout analysis, opponent intel, sponsorship dashboard and AI morning briefing.
+          Built for PDC Tour Card holders. Every tool you need to manage your performance, your tour, your brand, and your career — in one place. 51 features. Live data. Real player profiles.
         </p>
         <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-8" style={{ backgroundColor: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>
           No tool like this exists anywhere else.
@@ -59,7 +59,7 @@ export default function DartsPage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <h2 className="text-3xl font-black text-center mb-4" style={{ color: '#F9FAFB' }}>Everything a PDC pro needs</h2>
-        <p className="text-sm text-center mb-12" style={{ color: '#9CA3AF' }}>Six core modules built specifically for professional darts.</p>
+        <p className="text-sm text-center mb-12" style={{ color: '#9CA3AF' }}>51 portal features across 6 sections — performance, team, commercial, operations, integrations and AI tools.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((f, i) => (
             <div key={i} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
@@ -107,11 +107,16 @@ export default function DartsPage() {
       {/* Demo CTA */}
       <section className="max-w-4xl mx-auto px-6 py-20">
         <div className="rounded-2xl p-8 md:p-12 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-          <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>The first platform built for darts professionals</h2>
-          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Try it free.</p>
-          <Link href="/darts/darts-demo" className="inline-block px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#FFFFFF' }}>
-            Launch demo →
-          </Link>
+          <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>The complete platform for darts professionals</h2>
+          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Try the demo with the Jake Morrison sample profile, or set up your own portal in 5 steps.</p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Link href="/darts/darts-demo" className="inline-block px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#FFFFFF' }}>
+              Try the demo →
+            </Link>
+            <Link href="/darts/onboarding" className="inline-block px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
+              Set up your portal →
+            </Link>
+          </div>
         </div>
       </section>
     </div>
