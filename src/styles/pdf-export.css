@@ -1,0 +1,193 @@
+/* PDF Export — print stylesheet activated by body.pdf-export-mode */
+
+@media print {
+  body.pdf-export-mode * {
+    visibility: hidden;
+  }
+
+  body.pdf-export-mode .pdf-content,
+  body.pdf-export-mode .pdf-content * {
+    visibility: visible;
+  }
+
+  body.pdf-export-mode .pdf-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 11pt;
+    color: #000000;
+    background: #ffffff;
+    line-height: 1.5;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm 15mm 20mm 15mm;
+  }
+
+  .pdf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #6C63FF;
+    padding-bottom: 8mm;
+    margin-bottom: 8mm;
+  }
+
+  .pdf-club-name {
+    font-size: 18pt;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .pdf-report-title {
+    font-size: 14pt;
+    color: #6C63FF;
+    font-weight: 600;
+    margin: 2mm 0 0 0;
+  }
+
+  .pdf-report-subtitle {
+    font-size: 10pt;
+    color: #666;
+    margin: 1mm 0 0 0;
+  }
+
+  .pdf-generated-at {
+    font-size: 8pt;
+    color: #666;
+    text-align: right;
+  }
+
+  .pdf-lumio-mark {
+    font-size: 9pt;
+    color: #6C63FF;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .pdf-page-break { page-break-after: always; }
+  .pdf-no-break { page-break-inside: avoid; }
+  .pdf-section { margin-bottom: 8mm; }
+  .pdf-section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #6C63FF;
+    margin: 0 0 3mm 0;
+    padding-bottom: 1mm;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+  .pdf-table th {
+    background: #6C63FF;
+    color: white;
+    padding: 3mm 4mm;
+    text-align: left;
+    font-weight: 600;
+  }
+  .pdf-table td {
+    padding: 2mm 4mm;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .pdf-table tr:nth-child(even) td {
+    background: #f9fafb;
+  }
+  .pdf-table .pdf-row-highlight td {
+    background: #ede9fe !important;
+    font-weight: 600;
+  }
+
+  .pdf-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4mm;
+    margin-bottom: 6mm;
+  }
+  .pdf-stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .pdf-stat-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .pdf-stat-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 2mm;
+    padding: 3mm;
+    text-align: center;
+  }
+  .pdf-stat-value {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #6C63FF;
+    display: block;
+  }
+  .pdf-stat-label {
+    font-size: 8pt;
+    color: #666;
+    display: block;
+  }
+
+  .pdf-badge {
+    display: inline-block;
+    padding: 1mm 3mm;
+    border-radius: 2mm;
+    font-size: 8pt;
+    font-weight: 600;
+  }
+  .pdf-badge-green { background: #d1fae5; color: #065f46; }
+  .pdf-badge-red { background: #fee2e2; color: #991b1b; }
+  .pdf-badge-amber { background: #fef3c7; color: #92400e; }
+  .pdf-badge-purple { background: #ede9fe; color: #4c1d95; }
+
+  .pdf-progress {
+    width: 100%;
+    height: 4mm;
+    background: #e5e7eb;
+    border-radius: 2mm;
+    overflow: hidden;
+  }
+  .pdf-progress-fill {
+    height: 100%;
+    background: #6C63FF;
+  }
+
+  .pdf-quote {
+    border-left: 3px solid #6C63FF;
+    padding-left: 4mm;
+    font-style: italic;
+    color: #444;
+    margin: 4mm 0;
+  }
+
+  .pdf-headline {
+    font-size: 22pt;
+    font-weight: 800;
+    margin: 0 0 3mm 0;
+  }
+
+  .pdf-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #e5e7eb;
+    padding: 3mm 0;
+    font-size: 7pt;
+    color: #999;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+/* Hide PDF content in normal browser view */
+.pdf-content {
+  display: none;
+}
+@media print {
+  body.pdf-export-mode .pdf-content {
+    display: block;
+  }
+}
