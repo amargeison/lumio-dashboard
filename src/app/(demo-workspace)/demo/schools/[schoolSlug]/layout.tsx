@@ -11,7 +11,6 @@ import {
   DollarSign, Wrench, UserPlus, Shield, GitBranch, FileText,
   Settings, Bell, Menu, X, GraduationCap, Sunrise, Network, Pin, DoorOpen, Clock,
 } from 'lucide-react'
-import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { getSchoolClientRole } from '@/lib/detect-school-role'
 import { SCHOOL_ROLES, type SchoolRole } from '@/lib/schoolRoles'
 import { SchoolRoleContext } from '@/lib/SchoolRoleContext'
@@ -132,7 +131,7 @@ export default function SchoolLayout({ children }: Props) {
   }, [])
 
   const [schoolName, setSchoolName] = useState(slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
-  const [initials, setInitials] = useState('SC')
+  const [, setInitials] = useState('SC')
   const [planLabel, setPlanLabel] = useState('Live workspace')
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -407,7 +406,7 @@ export default function SchoolLayout({ children }: Props) {
               </button>
             )
           })()}
-          <AvatarDropdown initials={initials} logoutRedirect="/schools/login" logoutClearKeys={['lumio_school_']} settingsHref={`${base}/settings`} />
+          {/* AvatarDropdown rendered in page.tsx as fixed top-right — avoid duplicate here. */}
         </div>
         {notificationsOpen && <SchoolNotificationsPanel onClose={() => setNotificationsOpen(false)} depts={roleConfig.permissions.notificationDepts} />}
 

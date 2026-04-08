@@ -142,6 +142,15 @@ function SignupForm() {
                 const s = data.company?.slug
                 if (s) localStorage.setItem(`lumio_school_logo_${s}`, logoData.logo_url)
                 try { window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: logoData.logo_url } })) } catch {}
+                // Persist the uploaded logo URL back to demo_tenants server-side so it
+                // survives across devices / browsers — fire-and-forget.
+                if (s) {
+                  fetch('/api/demo/update-logo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slug: s, logo_url: logoData.logo_url }),
+                  }).catch(() => { /* silent */ })
+                }
               }
             }
           }
