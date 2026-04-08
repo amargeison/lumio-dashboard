@@ -167,7 +167,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
   { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
   { id: 'statsbomb',   label: 'StatsBomb',      icon: Activity,       section: 'Leagues' },
-  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Integrations' },
 ]
 
 const FOOTBALL_ROLE_OPTIONS = [
@@ -5837,6 +5837,114 @@ function Toast({ message }: { message: string | null }) {
   )
 }
 
+// ─── Dev Tools Panel (settings → only visible on demo slugs) ───────────────
+
+function DevToolsPanel({ effectiveSlug }: { effectiveSlug: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [pinMode, setPinMode] = useState(false)
+  const [pinValue, setPinValue] = useState('')
+  const [pinError, setPinError] = useState(false)
+  const isLumio = effectiveSlug === 'lumio-dev'
+  const isAfc = effectiveSlug === 'lumio-dev-afc'
+
+  function switchToLumio() {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem('lumio_football_club')
+    localStorage.removeItem('lumio_football_demo_active')
+    window.location.reload()
+  }
+
+  function confirmPin() {
+    if (pinValue === '071711') {
+      if (typeof window === 'undefined') return
+      localStorage.setItem('lumio_football_club', 'lumio-dev-afc')
+      localStorage.setItem('lumio_football_demo_active', 'true')
+      window.location.reload()
+    } else {
+      setPinError(true)
+      setPinValue('')
+    }
+  }
+
+  return (
+    <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base">🔧</span>
+          <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Developer Tools</span>
+        </div>
+        <span className="text-xs" style={{ color: '#6B7280' }}>{expanded ? '▾' : '▸'}</span>
+      </button>
+      {expanded && (
+        <div className="px-5 pb-5 space-y-4" style={{ borderTop: '1px solid #1F2937', paddingTop: 16 }}>
+          <div>
+            <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Switch Demo Club</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Internal use only — switch between demo club identities</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase" style={{ color: '#6B7280' }}>Current</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}>{effectiveSlug}</span>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={switchToLumio}
+              className="flex-1 py-2.5 rounded-lg text-xs font-bold"
+              style={{
+                backgroundColor: isLumio ? '#6C63FF' : 'transparent',
+                color: isLumio ? '#FFFFFF' : '#6C63FF',
+                border: '1px solid #6C63FF',
+              }}
+            >
+              🟣 Lumio FC
+            </button>
+            <button
+              onClick={() => { setPinMode(true); setPinError(false); setPinValue('') }}
+              className="flex-1 py-2.5 rounded-lg text-xs font-bold"
+              style={{
+                backgroundColor: isAfc ? '#0033A0' : 'transparent',
+                color: isAfc ? '#FFD700' : '#3B82F6',
+                border: '1px solid #0033A0',
+              }}
+            >
+              🔵 AFC Wimbledon
+            </button>
+          </div>
+
+          {pinMode && !isAfc && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  placeholder="Enter PIN"
+                  value={pinValue}
+                  onChange={e => { setPinValue(e.target.value); setPinError(false) }}
+                  onKeyDown={e => { if (e.key === 'Enter') confirmPin() }}
+                  autoFocus
+                  className="flex-1 px-3 py-2 rounded-lg text-xs font-mono"
+                  style={{ backgroundColor: '#07080F', border: `1px solid ${pinError ? '#EF4444' : '#1F2937'}`, color: '#F9FAFB', outline: 'none' }}
+                />
+                <button
+                  onClick={confirmPin}
+                  className="px-4 py-2 rounded-lg text-xs font-bold"
+                  style={{ backgroundColor: '#0033A0', color: '#FFD700' }}
+                >
+                  Confirm
+                </button>
+              </div>
+              {pinError && <p className="text-[10px]" style={{ color: '#EF4444' }}>Incorrect PIN</p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
@@ -6201,6 +6309,11 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
                   onBrandingUpdate={(updated) => setDbClub({ ...(dbClub as any), ...updated })}
                 />
               </div>
+              {(effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc') && (
+                <div className="max-w-2xl mt-6">
+                  <DevToolsPanel effectiveSlug={effectiveSlug} />
+                </div>
+              )}
             </>)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
