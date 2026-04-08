@@ -8,13 +8,13 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { targetId: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ targetId: string }> }) {
   try {
     const supabase = getSupabase()
     if (!supabase) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
     }
-    const { targetId } = params
+    const { targetId } = await params
     if (!targetId) {
       return NextResponse.json({ error: 'targetId required' }, { status: 400 })
     }

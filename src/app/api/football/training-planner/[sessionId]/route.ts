@@ -8,11 +8,11 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
     const supabase = getSupabase()
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
-    const { sessionId } = params
+    const { sessionId } = await params
     if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 })
 
     await supabase.from('football_training_player_plans').delete().eq('session_id', sessionId)
@@ -28,7 +28,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { sessionI
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
     const supabase = getSupabase()
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { sessionId:
     if (!body || !body.planId) {
       return NextResponse.json({ error: 'planId required' }, { status: 400 })
     }
-    void params
+    await params
 
     const updates: Record<string, any> = {}
     if (body.participation !== undefined) updates.participation = body.participation
