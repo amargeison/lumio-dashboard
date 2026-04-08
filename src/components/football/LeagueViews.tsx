@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import type { LeagueTable } from '@/lib/api-football'
+import type { ClubTier } from '@/lib/feature-gates'
+import ClubComparisonView from './ClubComparisonView'
 
 const LEAGUE_IDS: Record<string, number> = { 'Premier League': 39, 'Championship': 40, 'League One': 41, 'League Two': 42, 'National League': 43 }
 
 const TEAM_IDS: Record<string, number> = {
   'Arsenal': 42, 'Aston Villa': 66, 'Bournemouth': 35, 'Brentford': 55, 'Brighton & Hove Albion': 51, 'Chelsea': 49, 'Crystal Palace': 52, 'Everton': 45, 'Fulham': 36, 'Liverpool': 40, 'Manchester City': 50, 'Manchester United': 33, 'Newcastle United': 34, 'Nottingham Forest': 65, 'Tottenham Hotspur': 47, 'West Ham United': 48, 'Wolverhampton Wanderers': 39, 'Ipswich Town': 57, 'Leicester City': 46, 'Southampton': 41,
   'Blackburn Rovers': 69, 'Bristol City': 70, 'Burnley': 44, 'Cardiff City': 75, 'Coventry City': 71, 'Derby County': 76, 'Hull City': 80, 'Leeds United': 63, 'Luton Town': 1359, 'Middlesbrough': 25, 'Millwall': 81, 'Norwich City': 72, 'Oxford United': 2283, 'Plymouth Argyle': 3371, 'Preston North End': 1108, 'QPR': 67, 'Sheffield United': 62, 'Stoke City': 74, 'Swansea City': 78, 'Watford': 38, 'West Bromwich Albion': 60, 'Wrexham': 763,
-  'AFC Wimbledon': 638, 'Barnsley': 750, 'Bolton Wanderers': 1107, 'Bristol Rovers': 775, 'Charlton Athletic': 68, 'Exeter City': 784, 'Lincoln City': 729, 'Northampton Town': 773, 'Peterborough United': 73, 'Reading': 777, 'Shrewsbury Town': 772, 'Stockport County': 769, 'Wigan Athletic': 87,
+  'AFC Wimbledon': 663, 'Barnsley': 750, 'Bolton Wanderers': 1107, 'Bristol Rovers': 775, 'Charlton Athletic': 68, 'Exeter City': 784, 'Lincoln City': 729, 'Northampton Town': 773, 'Peterborough United': 73, 'Reading': 777, 'Shrewsbury Town': 772, 'Stockport County': 769, 'Wigan Athletic': 87,
   'Accrington Stanley': 770, 'Bradford City': 749, 'Carlisle United': 752, 'Doncaster Rovers': 761, 'Fleetwood Town': 764, 'Gillingham': 766, 'Grimsby Town': 767, 'Newport County': 1387, 'Notts County': 798, 'Port Vale': 800, 'Salford City': 3723, 'Swindon Town': 803, 'Tranmere Rovers': 805, 'Walsall': 806,
 }
 
@@ -1096,7 +1099,28 @@ function StatsBombPanel({ teamName }: { teamName: string }) {
 }
 
 // ─── LEAGUES VIEW ────────────────────────────────────────────────────────────
-export function LeaguesView() {
+export function LeaguesView({
+  clubName = 'AFC Wimbledon',
+  standings: standingsProp,
+  clubId = null,
+  clubTier = 'starter',
+  leagueId = null,
+  season = 2024,
+  apiStandings = null,
+  resolvedFixturesForRender = [],
+  isDemo = false,
+}: {
+  clubName?: string
+  standings?: LeagueTable[]
+  clubId?: string | null
+  clubTier?: ClubTier
+  leagueId?: number | null
+  season?: number
+  apiStandings?: LeagueTable[] | null
+  resolvedFixturesForRender?: any[]
+  isDemo?: boolean
+} = {}) {
+  const [outerTab, setOuterTab] = useState<'standings' | 'comparison'>('standings')
   const [selectedLeague, setSelectedLeague] = useState<typeof TIER_LEAGUES[0] | null>(null)
   const [activeTab, setActiveTab] = useState<'table' | 'scorers' | 'assists' | 'advanced'>('table')
   const [standings, setStandings] = useState<any[]>([])
@@ -1132,8 +1156,68 @@ export function LeaguesView() {
     setLoading(false)
   }
 
+  const tabStrip = (
+    <div className="flex gap-1.5 mb-3">
+      {(['standings', 'comparison'] as const).map((t) => (
+        <button key={t} onClick={() => setOuterTab(t)} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{
+          backgroundColor: outerTab === t ? 'rgba(0,61,165,0.15)' : 'transparent',
+          color: outerTab === t ? C.yellow : '#6B7280',
+          border: `1px solid ${outerTab === t ? 'rgba(0,61,165,0.4)' : C.border}`,
+        }}>{t === 'standings' ? '📋 Standings' : '📊 Club Comparison'}</button>
+      ))}
+    </div>
+  )
+
+  if (outerTab === 'comparison') {
+    return (
+      <div className="space-y-4">
+        {tabStrip}
+        <ClubComparisonView
+          clubId={clubId}
+          clubName={clubName}
+          clubTier={clubTier}
+          leagueId={leagueId}
+          season={season}
+          apiStandings={apiStandings}
+          resolvedFixturesForRender={resolvedFixturesForRender}
+          isDemo={isDemo}
+        />
+      </div>
+    )
+  }
+
+  if (standingsProp && standingsProp.length > 0) {
+    return (
+      <div className="space-y-6">
+        {tabStrip}
+        <div className="flex items-center gap-2 mb-6"><span className="text-xl">🏆</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Leagues & Tables</h2><p className="text-sm ml-2" style={{ color: C.muted }}>Live standings from API-Football</p></div>
+        <div className="rounded-xl overflow-hidden mb-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="p-4 flex items-center gap-2" style={{ borderBottom: `1px solid ${C.border}` }}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+            <div className="text-sm font-semibold" style={{ color: C.text }}>Your league — live</div>
+          </div>
+          <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-xs" style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3 w-8">#</th><th className="text-left p-3">Club</th><th className="text-center p-3">P</th><th className="text-center p-3">W</th><th className="text-center p-3">D</th><th className="text-center p-3">L</th><th className="text-center p-3">GD</th><th className="text-center p-3 font-bold">Pts</th><th className="text-center p-3">Form</th></tr></thead>
+          <tbody>{standingsProp.map((t, i) => (
+            <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: t.teamName === clubName ? 'rgba(0,61,165,0.08)' : undefined }}>
+              <td className="p-3"><span className="text-xs font-bold" style={{ color: C.muted }}>{t.rank}</span></td>
+              <td className="p-3"><div className="flex items-center gap-2">{t.teamLogo && <img src={t.teamLogo} alt="" className="w-5 h-5 object-contain" />}<span className="font-medium" style={{ color: t.teamName === clubName ? '#60A5FA' : C.text }}>{t.teamName}</span>{t.teamName === clubName && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow }}>You</span>}</div></td>
+              <td className="p-3 text-center" style={{ color: C.muted }}>{t.played}</td>
+              <td className="p-3 text-center" style={{ color: C.teal }}>{t.won}</td>
+              <td className="p-3 text-center" style={{ color: '#F59E0B' }}>{t.drawn}</td>
+              <td className="p-3 text-center" style={{ color: '#EF4444' }}>{t.lost}</td>
+              <td className="p-3 text-center font-medium" style={{ color: t.gd > 0 ? C.teal : t.gd < 0 ? '#EF4444' : C.muted }}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
+              <td className="p-3 text-center font-bold" style={{ color: C.text }}>{t.points}</td>
+              <td className="p-3"><div className="flex gap-0.5 justify-center">{(t.form || '').split('').slice(-5).map((r, j) => (<div key={j} className="w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.3)' : r === 'D' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)', color: r === 'W' ? C.teal : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>))}</div></td>
+            </tr>
+          ))}</tbody></table></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {tabStrip}
       <div className="flex items-center gap-2 mb-6"><span className="text-xl">🏆</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Leagues & Tables</h2><p className="text-sm ml-2" style={{ color: C.muted }}>Live standings, top scorers and assists</p></div>
       {loadingStandings && (
         <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
@@ -1162,9 +1246,9 @@ export function LeaguesView() {
             <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>{selectedLeague.name} — 2025/26</div></div>
             <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-xs" style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}><th className="text-left p-3 w-8">#</th><th className="text-left p-3">Club</th><th className="text-center p-3">P</th><th className="text-center p-3">W</th><th className="text-center p-3">D</th><th className="text-center p-3">L</th><th className="text-center p-3">GF</th><th className="text-center p-3">GA</th><th className="text-center p-3">GD</th><th className="text-center p-3 font-bold">Pts</th><th className="text-center p-3">Form</th></tr></thead>
             <tbody>{standings.map((t: any, i: number) => (
-              <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: t.team?.name === 'AFC Wimbledon' ? 'rgba(0,61,165,0.08)' : undefined }}>
+              <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: t.team?.name === clubName ? 'rgba(0,61,165,0.08)' : undefined }}>
                 <td className="p-3"><span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${i < 2 ? 'bg-teal-600/30 text-teal-400' : i < 6 ? 'bg-blue-600/30 text-blue-400' : i >= standings.length - 3 ? 'bg-red-600/30 text-red-400' : ''}`} style={{ color: i >= 6 && i < standings.length - 3 ? C.muted : undefined }}>{t.rank}</span></td>
-                <td className="p-3"><div className="flex items-center gap-2">{t.team?.logo && <img src={t.team.logo} alt="" className="w-5 h-5 object-contain" />}<span className="font-medium" style={{ color: t.team?.name === 'AFC Wimbledon' ? '#60A5FA' : C.text }}>{t.team?.name}</span>{t.team?.name === 'AFC Wimbledon' && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow }}>You</span>}</div></td>
+                <td className="p-3"><div className="flex items-center gap-2">{t.team?.logo && <img src={t.team.logo} alt="" className="w-5 h-5 object-contain" />}<span className="font-medium" style={{ color: t.team?.name === clubName ? '#60A5FA' : C.text }}>{t.team?.name}</span>{t.team?.name === clubName && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: C.yellow }}>You</span>}</div></td>
                 <td className="p-3 text-center" style={{ color: C.muted }}>{t.all?.played}</td><td className="p-3 text-center" style={{ color: C.teal }}>{t.all?.win}</td><td className="p-3 text-center" style={{ color: '#F59E0B' }}>{t.all?.draw}</td><td className="p-3 text-center" style={{ color: '#EF4444' }}>{t.all?.lose}</td>
                 <td className="p-3 text-center" style={{ color: '#D1D5DB' }}>{t.all?.goals?.for}</td><td className="p-3 text-center" style={{ color: '#D1D5DB' }}>{t.all?.goals?.against}</td>
                 <td className="p-3 text-center font-medium" style={{ color: (t.goalsDiff || 0) > 0 ? C.teal : (t.goalsDiff || 0) < 0 ? '#EF4444' : C.muted }}>{t.goalsDiff > 0 ? '+' : ''}{t.goalsDiff}</td>
@@ -1376,7 +1460,7 @@ export function FixturesView() {
   const [loadingFixtures, setLoadingFixtures] = useState(false)
   useEffect(() => {
     setLoadingFixtures(true)
-    fetch('/api/football/fixtures?teamId=638&season=2025&next=10')
+    fetch('/api/football/fixtures?teamId=663&season=2025&next=10')
       .then(r => r.ok ? r.json() : null)
       .then(data => { const items = data?.response || data?.data || data; if (Array.isArray(items) && items.length > 0) setLiveFixtures(items) })
       .catch(() => {})

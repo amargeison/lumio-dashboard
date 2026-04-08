@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Activity, Users, Zap, TrendingUp, Upload, Settings, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
+import GPSUploadView from './GPSUploadView'
 
 const RED = '#C0392B'
 const GOLD = '#F1C40F'
@@ -27,7 +29,70 @@ function acwrLabel(v: number) { return v > 1.5 ? 'High Risk' : v > 1.3 ? 'Cautio
 function acwrStatus(v: number) { return v > 1.5 ? 'Rest recommended' : v > 1.3 ? 'Manage load' : 'Ready to play' }
 function loadColor(v: number) { return v > 900 ? '#EF4444' : v > 800 ? '#F59E0B' : '#22C55E' }
 
-export default function GPSPerformanceView() {
+type OuterTab = 'performance' | 'upload' | 'acwr'
+
+interface ACWRRow {
+  player_name: string
+  acute_load: number
+  chronic_load: number
+  acwr_ratio: number
+  risk_level: string
+  flagged: boolean
+  calculated_at: string
+}
+
+function ACWRScoresTab({ clubId }: { clubId?: string | null }) {
+  const [rows, setRows] = useState<ACWRRow[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    if (!clubId) return
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) { setRows([]); return }
+    setLoading(true)
+    const supabase = createClient(url, key)
+    supabase
+      .from('football_acwr_scores')
+      .select('player_name, acute_load, chronic_load, acwr_ratio, risk_level, flagged, calculated_at')
+      .eq('club_id', clubId)
+      .order('calculated_at', { ascending: false })
+      .then(({ data }) => { setRows((data ?? []) as ACWRRow[]); setLoading(false) })
+  }, [clubId])
+
+  if (!clubId) return <div className="text-xs" style={{ color: '#9CA3AF' }}>No club selected.</div>
+  if (loading) return <div className="text-xs" style={{ color: '#9CA3AF' }}>Loading ACWR scores...</div>
+  if (!rows || rows.length === 0) return <div className="rounded-xl p-6 text-xs" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, color: '#9CA3AF' }}>No ACWR scores yet — upload a session to populate.</div>
+
+  const colorFor = (r: string) => r === 'High' || r === 'Very High' ? '#EF4444' : r === 'Moderate' ? '#F59E0B' : r === 'Undertraining' ? '#3B82F6' : '#22C55E'
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+      <table className="w-full text-sm">
+        <thead><tr className="text-xs" style={{ borderBottom: `1px solid ${BORDER}`, color: '#9CA3AF' }}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-right p-3">Acute</th>
+          <th className="text-right p-3">Chronic</th>
+          <th className="text-right p-3">ACWR</th>
+          <th className="text-right p-3">Risk</th>
+        </tr></thead>
+        <tbody>{rows.map((r, i) => (
+          <tr key={i} style={{ borderBottom: `1px solid ${BORDER}`, backgroundColor: r.flagged && (r.risk_level === 'High' || r.risk_level === 'Very High') ? 'rgba(239,68,68,0.05)' : undefined }}>
+            <td className="p-3 font-medium" style={{ color: '#F9FAFB' }}>{r.player_name}</td>
+            <td className="p-3 text-right" style={{ color: '#9CA3AF' }}>{r.acute_load}</td>
+            <td className="p-3 text-right" style={{ color: '#9CA3AF' }}>{r.chronic_load}</td>
+            <td className="p-3 text-right font-bold" style={{ color: '#F9FAFB' }}>{Number(r.acwr_ratio).toFixed(2)}</td>
+            <td className="p-3 text-right">
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${r.risk_level === 'Very High' ? 'animate-pulse' : ''}`} style={{ backgroundColor: `${colorFor(r.risk_level)}22`, color: colorFor(r.risk_level), border: `1px solid ${colorFor(r.risk_level)}55` }}>{r.risk_level}</span>
+            </td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  )
+}
+
+export default function GPSPerformanceView({ clubId, isDemo = false }: { clubId?: string | null; isDemo?: boolean } = {}) {
+  const [outerTab, setOuterTab] = useState<OuterTab>('performance')
   const [tab, setTab] = useState<Tab>('session')
   const [connectToken, setConnectToken] = useState('')
   const [connectProvider, setConnectProvider] = useState<'catapult' | 'statsports'>('catapult')
@@ -61,11 +126,49 @@ export default function GPSPerformanceView() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const OUTER_TABS: { id: OuterTab; label: string }[] = [
+    { id: 'performance', label: 'Performance' },
+    { id: 'upload', label: 'Upload Session' },
+    { id: 'acwr', label: 'ACWR Scores' },
+  ]
+
+  if (outerTab !== 'performance') {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Performance & GPS</h1>
+          <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Player load, readiness and GPS tracking data</p>
+        </div>
+        <div className="flex gap-1.5">
+          {OUTER_TABS.map((t) => (
+            <button key={t.id} onClick={() => setOuterTab(t.id)} className="px-4 py-1.5 rounded-full text-xs font-semibold" style={{
+              backgroundColor: outerTab === t.id ? 'rgba(0,61,165,0.15)' : 'transparent',
+              color: outerTab === t.id ? '#F1C40F' : '#6B7280',
+              border: `1px solid ${outerTab === t.id ? 'rgba(0,61,165,0.4)' : '#1F2937'}`,
+            }}>{t.label}</button>
+          ))}
+        </div>
+        {outerTab === 'upload' && <GPSUploadView clubId={clubId} isDemo={isDemo} />}
+        {outerTab === 'acwr' && <ACWRScoresTab clubId={clubId} />}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>Performance & GPS</h1>
         <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Player load, readiness and GPS tracking data</p>
+      </div>
+
+      <div className="flex gap-1.5">
+        {OUTER_TABS.map((t) => (
+          <button key={t.id} onClick={() => setOuterTab(t.id)} className="px-4 py-1.5 rounded-full text-xs font-semibold" style={{
+            backgroundColor: outerTab === t.id ? 'rgba(0,61,165,0.15)' : 'transparent',
+            color: outerTab === t.id ? '#F1C40F' : '#6B7280',
+            border: `1px solid ${outerTab === t.id ? 'rgba(0,61,165,0.4)' : '#1F2937'}`,
+          }}>{t.label}</button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-1.5">

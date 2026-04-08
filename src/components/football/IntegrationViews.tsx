@@ -383,7 +383,7 @@ export function FindClubView() {
 }
 
 // ─── FIND PLAYER VIEW ────────────────────────────────────────────────────────
-export function FindPlayerView() {
+export function FindPlayerView({ clubName = 'AFC Wimbledon' }: { clubName?: string } = {}) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -404,7 +404,7 @@ export function FindPlayerView() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">⚽</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Find Player</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>AI-powered player intelligence — stats, contract, market value, agent details, and AFC Wimbledon fit.</p></div>
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">⚽</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Find Player</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>AI-powered player intelligence — stats, contract, market value, agent details, and {clubName} fit.</p></div>
       <div className="flex gap-3">
         <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchPlayer(query)} placeholder="Search any professional player..." className="flex-1 rounded-xl px-4 py-3 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
         <button onClick={() => searchPlayer(query)} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: C.blue, color: C.yellow, opacity: loading ? 0.6 : 1 }}>{loading ? 'Searching...' : '🔍 Find Player'}</button>
@@ -427,7 +427,7 @@ export function FindPlayerView() {
             <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs font-semibold mb-2" style={{ color: C.teal }}>✓ Strengths</div><div className="space-y-1">{(result.strengths || []).map((s: string, i: number) => <div key={i} className="text-xs" style={{ color: '#D1D5DB' }}>• {s}</div>)}</div></div>
             <div className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}><div className="text-xs font-semibold mb-2" style={{ color: '#EF4444' }}>✗ Weaknesses</div><div className="space-y-1">{(result.weaknesses || []).map((w: string, i: number) => <div key={i} className="text-xs" style={{ color: '#D1D5DB' }}>• {w}</div>)}</div></div>
           </div>
-          <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.06), rgba(0,0,0,0.02))', border: '1px solid rgba(0,61,165,0.2)' }}><div className="text-xs font-semibold uppercase mb-2" style={{ color: C.yellow }}>AFC Wimbledon Fit Assessment</div><p className="text-sm mb-3" style={{ color: '#D1D5DB' }}>{result.fitForWimbledon}</p><div className="grid grid-cols-2 gap-3 text-xs"><div><span style={{ color: C.muted }}>Approach: </span><span style={{ color: '#D1D5DB' }}>{result.approachRoute}</span></div><div><span style={{ color: C.muted }}>PSR impact: </span><span style={{ color: '#D1D5DB' }}>{result.psrImpact}</span></div></div></div>
+          <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.06), rgba(0,0,0,0.02))', border: '1px solid rgba(0,61,165,0.2)' }}><div className="text-xs font-semibold uppercase mb-2" style={{ color: C.yellow }}>{clubName} Fit Assessment</div><p className="text-sm mb-3" style={{ color: '#D1D5DB' }}>{result.fitForWimbledon}</p><div className="grid grid-cols-2 gap-3 text-xs"><div><span style={{ color: C.muted }}>Approach: </span><span style={{ color: '#D1D5DB' }}>{result.approachRoute}</span></div><div><span style={{ color: C.muted }}>PSR impact: </span><span style={{ color: '#D1D5DB' }}>{result.psrImpact}</span></div></div></div>
           <div className="flex gap-3"><button onClick={() => { setResult(null); setQuery('') }} className="text-xs" style={{ color: C.muted }}>← Search another player</button><button className="text-xs px-3 py-1 rounded-lg" style={{ color: C.yellow, border: '1px solid rgba(0,61,165,0.3)' }}>+ Add to transfer pipeline</button></div>
         </div>
       )}
@@ -448,7 +448,7 @@ export function FootballPyramidView() {
     { tier: 1, name: 'Premier League', clubs: ['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton & Hove Albion','Chelsea','Crystal Palace','Everton','Fulham','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Tottenham Hotspur','West Ham United','Wolverhampton Wanderers','Ipswich Town','Leicester City','Southampton'] },
     { tier: 2, name: 'EFL Championship', clubs: ['Blackburn Rovers','Bristol City','Burnley','Coventry City','Derby County','Hull City','Leeds United','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Preston North End','QPR','Sheffield United','Stoke City','Swansea City','Watford','West Bromwich Albion','Sheffield Wednesday','Sunderland','Portsmouth','Luton Town','Cardiff City'] },
     { tier: 3, name: 'EFL League One', clubs: ['AFC Wimbledon','Barnsley','Birmingham City','Bolton Wanderers','Bristol Rovers','Burton Albion','Cambridge United','Charlton Athletic','Exeter City','Leyton Orient','Lincoln City','Mansfield Town','Northampton Town','Peterborough United','Reading','Shrewsbury Town','Stockport County','Wigan Athletic','Wrexham','Huddersfield Town','Rotherham United','Blackpool','Crawley Town','Wycombe Wanderers'] },
-    { tier: 4, name: 'EFL League Two', clubs: ['Accrington Stanley','Barrow','Bradford City','Bromley','Carlisle United','Cheltenham Town','Chesterfield','Colchester United','Crewe Alexandra','Doncaster Rovers','Fleetwood Town','Gillingham','Grimsby Town','Harrogate Town','Morecambe','Newport County','Notts County','Port Vale','Salford City','Swindon Town','Tranmere Rovers','Walsall','MK Dons','AFC Wimbledon'] },
+    { tier: 4, name: 'EFL League Two', clubs: ['Accrington Stanley','Barrow','Bradford City','Bromley','Carlisle United','Cheltenham Town','Chesterfield','Colchester United','Crewe Alexandra','Doncaster Rovers','Fleetwood Town','Gillingham','Grimsby Town','Harrogate Town','Morecambe','Newport County','Notts County','Port Vale','Salford City','Swindon Town','Tranmere Rovers','Walsall','MK Dons'] },
     { tier: 5, name: 'National League', clubs: ['Aldershot Town','Altrincham','Boreham Wood','Dagenham & Redbridge','Dorking Wanderers','Eastleigh','FC Halifax Town','Gateshead','Hartlepool United','Maidenhead United','Oldham Athletic','Rochdale','Solihull Moors','Southend United','Sutton United','Torquay United','Woking','York City','Barnet','Ebbsfleet United','Forest Green Rovers','Tamworth','Wealdstone','Yeovil Town'] },
     { tier: 6, name: 'National League North & South', clubs: ['AFC Fylde','Blyth Spartans','Chester FC','Chorley','Curzon Ashton','Darlington','Farsley Celtic','FC United of Manchester','Hereford FC','Scarborough Athletic','South Shields','Spennymoor Town','Bath City','Braintree Town','Dartford','Eastbourne Borough','Farnborough','Hampton & Richmond Borough','Havant & Waterlooville','Hemel Hempstead Town','Slough Town','St Albans City','Tonbridge Angels','Welling United'] },
   ]
@@ -467,7 +467,7 @@ export function FootballPyramidView() {
     'QPR': 67, 'Sheffield United': 62, 'Stoke City': 74, 'Swansea City': 78,
     'Watford': 38, 'West Bromwich Albion': 60, 'Sheffield Wednesday': 64,
     'Sunderland': 73, 'Portsmouth': 85,
-    'AFC Wimbledon': 638, 'Barnsley': 750, 'Bolton Wanderers': 1107,
+    'AFC Wimbledon': 663, 'Barnsley': 750, 'Bolton Wanderers': 1107,
     'Bristol Rovers': 775, 'Burton Albion': 778, 'Cambridge United': 779,
     'Charlton Athletic': 68, 'Exeter City': 784, 'Lincoln City': 729,
     'Northampton Town': 773, 'Peterborough United': 1350, 'Reading': 777,

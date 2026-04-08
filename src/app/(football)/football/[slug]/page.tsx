@@ -18,17 +18,47 @@ import {
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
-  Maximize2, Printer, Share2,
+  Maximize2, Printer, Share2, Palette,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
+import {
+  getFootballClub, getFootballSquad, getFootballContracts, getFootballFixtures, getFootballFinance,
+  adaptDBSquad, adaptDBFixtures, adaptDBContracts, adaptDBFinance,
+  adaptAPIFixtures, mergePlayerStats,
+  type FootballClub as DBFootballClub, type FootballPlayer as DBFootballPlayer,
+  type FootballContract as DBFootballContract, type FootballFixture as DBFootballFixture,
+  type FootballFinance as DBFootballFinance,
+  type MockPlayer, type MockFixture, type MockContract, type MockFinance,
+} from '@/lib/football-data'
+import type { LeagueTable as APILeagueTable, ApiFixture as APIFixture, ApiPlayer as APIPlayerType } from '@/lib/api-football'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
+import PressBriefingModal from '@/components/football/PressBriefingModal'
+import OppositionReportModal from '@/components/football/OppositionReportModal'
+import TransferPipelineView from '@/components/football/TransferPipelineView'
+import TrainingPlannerView from '@/components/football/TrainingPlannerView'
+import MatchReportBuilder from '@/components/football/MatchReportBuilder'
+import ClubImportWizard from '@/components/football/ClubImportWizard'
+import PDFHeader from '@/components/football/pdf/PDFHeader'
+import PDFExportButton from '@/components/football/pdf/PDFExportButton'
+import PDFSquadReport from '@/components/football/pdf/PDFSquadReport'
+import PDFInsightsReport from '@/components/football/pdf/PDFInsightsReport'
+import PDFBoardReport from '@/components/football/pdf/PDFBoardReport'
+import PDFFanReport from '@/components/football/pdf/PDFFanReport'
+import ClubThemeProvider from '@/components/football/ClubThemeProvider'
+import ClubBrandingSettings from '@/components/football/ClubBrandingSettings'
+import PostMatchAnalysisModal from '@/components/football/PostMatchAnalysisModal'
+import PlayerProfileDrawer from '@/components/football/PlayerProfileDrawer'
+import FanEngagementView from '@/components/football/FanEngagementView'
+import { FeatureGate, UpgradePrompt, TierBadge } from '@/components/football/FeatureGate'
+import UpgradeModal from '@/components/football/UpgradeModal'
+import { hasFeature, getTierInfo, type ClubTier } from '@/lib/feature-gates'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView, FindClubView, FindPlayerView, FootballPyramidView } from '@/components/football/IntegrationViews'
@@ -37,6 +67,23 @@ import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import FootballPinGate from './FootballPinGate'
+import LumioFCCrest from '@/components/football/LumioFCCrest'
+
+function ClubCrest({ club, size = 48 }: { club?: DBFootballClub | null; size?: number }) {
+  if (club?.slug === 'lumio-dev-afc') {
+    return (
+      <div
+        className="flex items-center justify-center rounded-full bg-[#0033A0] text-white font-bold text-sm"
+        style={{ width: size, height: size }}
+        aria-label="AFC Wimbledon crest placeholder"
+      >
+        AFCW{/* REPLACE: AFC Wimbledon official crest on signing */}
+      </div>
+    )
+  }
+  return <LumioFCCrest size={size} />
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -48,7 +95,7 @@ type DeptId =
   | 'staff' | 'facilities' | 'settings'
   | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
   | 'find-club' | 'find-player' | 'pyramid'
-  | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
+  | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb' | 'fan-hub'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -100,6 +147,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
   { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
   { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
+  { id: 'fan-hub',     label: 'Fan Hub',        icon: Users,          section: 'Departments' },
   { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
   { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'Tools' },
   { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
@@ -134,20 +182,7 @@ const FOOTBALL_ROLE_OPTIONS = [
 
 type FitnessStatus = 'fit' | 'injured' | 'suspended' | 'modified' | 'doubt'
 
-interface Player {
-  name: string
-  number: number
-  position: string
-  nationality: string
-  age: number
-  contractExpiry: string
-  marketValue: string
-  fitness: FitnessStatus
-  lastRating: number
-  goals: number
-  assists: number
-  stats?: { PAC: number; SHO: number; PAS: number; DRI: number; DEF: number; PHY: number }
-}
+type Player = MockPlayer
 
 const FB_PRIMARY = '#003DA5'
 const FB_SECONDARY = '#F1C40F'
@@ -472,8 +507,15 @@ function WorldClock() {
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
-  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string
+const SIDEBAR_FEATURE_GATES: Partial<Record<DeptId, string>> = {
+  'gps-hardware': 'gps_hardware_catapult',
+  'opta': 'opta_integration',
+  'wyscout': 'wyscout_integration',
+  'statsbomb': 'statsbomb_integration',
+}
+
+function Sidebar({ activeDept, onSelect, open, onClose, clubName, clubTier = 'starter', onLockedClick }: {
+  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string; clubTier?: ClubTier; onLockedClick?: (featureKey: string) => void
 }) {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
@@ -533,20 +575,26 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
               )}
               {sec.items.map(item => {
                 const active = activeDept === item.id
+                const gateKey = SIDEBAR_FEATURE_GATES[item.id]
+                const locked = gateKey ? !hasFeature(clubTier, gateKey) : false
                 return (
                   <button key={item.id}
-                    onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
+                    onClick={() => {
+                      if (locked && gateKey) { onLockedClick?.(gateKey); if (!pinned) setHovered(false); return }
+                      onSelect(item.id); if (!pinned) setHovered(false)
+                    }}
                     className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
                     style={{
                       backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
-                      color: active ? PRIMARY : '#9CA3AF',
+                      color: active ? PRIMARY : locked ? '#6B7280' : '#9CA3AF',
                       borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
                     }}
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
-                    {expanded && <span className="truncate">{item.label}</span>}
+                    {expanded && <span className="truncate flex-1">{item.label}</span>}
+                    {expanded && locked && <TierBadge tier="elite" />}
                   </button>
                 )
               })}
@@ -600,9 +648,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDemo = false, clubLogo }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null
+function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDemo = false, clubLogo, logoNode, fixtures, tierPill }: {
+  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null; logoNode?: React.ReactNode; fixtures?: typeof FIXTURES; tierPill?: React.ReactNode
 }) {
+  const resolvedFixtures = fixtures ?? FIXTURES
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -642,7 +691,7 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
     const closingLine = FOOTBALL_CLOSING_LINES[dayOfYear % FOOTBALL_CLOSING_LINES.length]
     const fitCount = SQUAD.filter(p => p.fitness === 'fit').length
     const injuredCount = SQUAD.filter(p => p.fitness === 'injured').length
-    const script = `${greeting}, ${firstName || 'gaffer'}. ${openingLine} You have ${fitCount} players fit for selection, ${injuredCount} injured, and 1 suspended. ${FIXTURES[0] ? `Next match: ${FIXTURES[0].opponent} on ${FIXTURES[0].date} at ${FIXTURES[0].time}, ${FIXTURES[0].venue}.` : ''} ${closingLine}`
+    const script = `${greeting}, ${firstName || 'gaffer'}. ${openingLine} You have ${fitCount} players fit for selection, ${injuredCount} injured, and 1 suspended. ${resolvedFixtures[0] ? `Next match: ${resolvedFixtures[0].opponent} on ${resolvedFixtures[0].date} at ${resolvedFixtures[0].time}, ${resolvedFixtures[0].venue}.` : ''} ${closingLine}`
     speak(script)
   }
 
@@ -653,11 +702,15 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
   return (
     <>
       <div className={`relative bg-gradient-to-r ${bg} overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+        {tierPill && <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 30 }}>{tierPill}</div>}
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <img src="/badges/afc_wimbledon_badge_studio.png" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
-        <img src="/badges/afc_wimbledon_badge_studio.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
+        {logoNode && (
+          <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} aria-label="Club badge">
+            {React.isValidElement(logoNode) ? React.cloneElement(logoNode as React.ReactElement<any>, { size: 120 }) : logoNode}
+          </div>
+        )}
         <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -738,6 +791,7 @@ const FOOTBALL_QUICK_ACTIONS = [
   { label: 'Scout Report', icon: Eye },
   { label: 'Board Report', icon: Briefcase },
   { label: 'Dept Insights', icon: BarChart3 },
+  { label: 'Branding', icon: Palette },
 ]
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
@@ -877,15 +931,16 @@ function MorningRoundup() {
 
 // ─── Fixtures Panel ─────────────────────────────────────────────────────────
 
-function FixturesPanel() {
+function FixturesPanel({ fixtures }: { fixtures?: typeof FIXTURES } = {}) {
+  const resolved = fixtures ?? FIXTURES
   return (
     <div className="rounded-2xl p-5 h-full" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm" style={{ color: '#F9FAFB' }}>📅 This Week&apos;s Fixtures</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{FIXTURES.length} matches</span>
+        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{resolved.length} matches</span>
       </div>
       <div className="space-y-3">
-        {FIXTURES.map((f, i) => (
+        {resolved.map((f, i) => (
           <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? 'rgba(0,61,165,0.08)' : 'rgba(255,255,255,0.02)', border: i === 0 ? '1px solid rgba(0,61,165,0.25)' : '1px solid #1F2937' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -1353,8 +1408,9 @@ function TeamInfoTab() {
   )
 }
 
-function TabContent({ tab }: { tab: OverviewTab }) {
+function TabContent({ tab, clubId, clubName, isDemo, fixtures }: { tab: OverviewTab; clubId?: string | null; clubName?: string; isDemo?: boolean; fixtures?: any[] }) {
   const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'|'teaminfo'>('today')
+  const [matchWeekSubTab, setMatchWeekSubTab] = useState<'week' | 'reports'>('week')
   if (tab === 'today') return null // handled separately
 
   if (tab === 'quick-wins') return (
@@ -1404,13 +1460,31 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'match-week') return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-6xl">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📅 Match Week</h2>
           <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Your match preparation checklist — everything that needs doing.</p>
         </div>
+        <div className="flex items-center gap-2">
+          {([
+            { id: 'week' as const, label: '📅 This Week' },
+            { id: 'reports' as const, label: '📄 Match Reports' },
+          ]).map((t) => (
+            <button key={t.id} onClick={() => setMatchWeekSubTab(t.id)} className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+              style={{ backgroundColor: matchWeekSubTab === t.id ? '#7C3AED' : '#111318', color: matchWeekSubTab === t.id ? '#fff' : '#9CA3AF', border: '1px solid #1F2937' }}>{t.label}</button>
+          ))}
+        </div>
       </div>
+      {matchWeekSubTab === 'reports' && (
+        <MatchReportBuilder
+          clubId={clubId ?? null}
+          clubName={clubName ?? 'Lumio FC'}
+          lastResult={(fixtures ?? []).find((f: any) => f.result) ?? null}
+          isDemo={!!isDemo}
+        />
+      )}
+      {matchWeekSubTab === 'week' && (<></>)}
       <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(0,61,165,0.08)', border: '1px solid rgba(0,61,165,0.2)' }}>
         <span>🔗</span>
         <span className="text-sm" style={{ color: '#FCA5A5' }}>These suggestions are AI-generated based on your role. Connect your club data in Settings for personalised insights.</span>
@@ -1661,7 +1735,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
-              {[['Club','AFC Wimbledon'],['Founded','2002'],['Nickname','The Dons'],['Colours','Blue & Yellow'],['Stadium','Plough Lane (9,215)'],['Training Ground','Wimbledon Training Ground'],['League','EFL League One'],['EPPP Category','Category 2']].map(([l,v]) => (
+              {[['Club','Lumio FC'],['Founded','2002'],['Nickname','The Dons'],['Colours','Blue & Yellow'],['Stadium','Plough Lane (9,215)'],['Training Ground','Club Training Ground'],['League','EFL League One'],['EPPP Category','Category 2']].map(([l,v]) => (
                 <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
               ))}
             </div>
@@ -1767,7 +1841,8 @@ function InjuryRoomCard() {
 
 // ─── Overview View ──────────────────────────────────────────────────────────
 
-function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
+function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo, logoNode, fixtures, clubId, tierPill }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null; logoNode?: React.ReactNode; fixtures?: typeof FIXTURES; clubId?: string | null; tierPill?: React.ReactNode }) {
+  const resolvedOvFixtures = fixtures ?? FIXTURES
   const [tab, setTab] = useState<OverviewTab>('today')
 
   function handleVoiceCommand(cmd: FootballCommandResult) {
@@ -1776,7 +1851,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
 
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} logoNode={logoNode} fixtures={resolvedOvFixtures} tierPill={tierPill} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -1828,7 +1903,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
               <MorningRoundup />
             </div>
             <div className="lg:col-span-1 flex flex-col">
-              <FixturesPanel />
+              <FixturesPanel fixtures={resolvedOvFixtures} />
             </div>
             <div className="lg:col-span-1 flex flex-col gap-4">
               <PhotoFrame />
@@ -1842,7 +1917,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
                 <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
                 <StatCard label="Fit Players" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
                 <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#F59E0B" />
-                <StatCard label="Next Match" value={FIXTURES[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
+                <StatCard label="Next Match" value={resolvedOvFixtures[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
               </div>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
@@ -1898,7 +1973,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
           </>}
         </div>
       ) : (
-        <TabContent tab={tab} />
+        <TabContent tab={tab} clubId={clubId} clubName={clubName} isDemo={isDemo} fixtures={resolvedOvFixtures} />
       )}
     </div>
   )
@@ -2390,18 +2465,18 @@ function InsightsView() {
 
 // ─── Squad View ─────────────────────────────────────────────────────────────
 
-function SquadView() {
+function SquadView({ squad, onPlayerClick }: { squad?: MockPlayer[]; onPlayerClick?: (idOrName: string) => void } = {}) {
+  const resolvedSquad = squad ?? SQUAD
   const [sortCol, setSortCol] = useState<string>('number')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [posFilter, setPosFilter] = useState<string>('All')
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   function handleSort(col: string) {
     if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
     else { setSortCol(col); setSortDir('asc') }
   }
 
-  const filtered = posFilter === 'All' ? SQUAD : SQUAD.filter(p => p.position === posFilter)
+  const filtered = posFilter === 'All' ? resolvedSquad : resolvedSquad.filter(p => p.position === posFilter)
   const sorted = [...filtered].sort((a, b) => {
     const key = sortCol as keyof Player
     const av = a[key], bv = b[key]
@@ -2409,9 +2484,9 @@ function SquadView() {
     return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
   })
 
-  const topScorer = [...SQUAD].sort((a, b) => b.goals - a.goals)[0]
-  const topAssists = [...SQUAD].sort((a, b) => b.assists - a.assists)[0]
-  const topRated = [...SQUAD].sort((a, b) => b.lastRating - a.lastRating)[0]
+  const topScorer = [...resolvedSquad].sort((a, b) => b.goals - a.goals)[0]
+  const topAssists = [...resolvedSquad].sort((a, b) => b.assists - a.assists)[0]
+  const topRated = [...resolvedSquad].sort((a, b) => b.lastRating - a.lastRating)[0]
 
   const [sqToast, setSqToast] = useState<string | null>(null)
   function sqAction(l: string) { setSqToast(`${l} — opening workflow...`); setTimeout(() => setSqToast(null), 2500) }
@@ -2444,10 +2519,10 @@ function SquadView() {
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
-        <StatCard label="Fit" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
-        <StatCard label="Injured" value={String(SQUAD.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
-        <StatCard label="Avg Age" value={(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length).toFixed(1)} icon={Users} color="#3B82F6" />
+        <StatCard label="Squad Size" value={String(resolvedSquad.length)} icon={Users} color="#003DA5" />
+        <StatCard label="Fit" value={String(resolvedSquad.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Injured" value={String(resolvedSquad.filter(p => p.fitness === 'injured').length)} icon={Heart} color="#EF4444" />
+        <StatCard label="Avg Age" value={(resolvedSquad.reduce((s, p) => s + p.age, 0) / resolvedSquad.length).toFixed(1)} icon={Users} color="#3B82F6" />
       </div>
 
       {/* Top Performers */}
@@ -2584,7 +2659,7 @@ function SquadView() {
             </thead>
             <tbody>
               {sorted.map((p, i) => (
-                <tr key={i} onClick={() => setSelectedPlayer(p)} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined, cursor: 'pointer' }} className="hover:bg-white/[0.02]">
+                <tr key={i} onClick={() => onPlayerClick?.(p.id ?? p.name)} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1F2937' : undefined, cursor: 'pointer' }} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-2.5 font-bold" style={{ color: '#6B7280' }}>{p.number}</td>
                   <td className="px-4 py-2.5 font-medium" style={{ color: '#F9FAFB' }}>{p.name}</td>
                   <td className="px-4 py-2.5"><span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{p.position}</span></td>
@@ -2688,14 +2763,6 @@ function SquadView() {
         </div>
       </div>
 
-      {selectedPlayer && (
-        <PlayerProfileModal
-          player={selectedPlayer}
-          onClose={() => setSelectedPlayer(null)}
-          PRIMARY={FB_PRIMARY}
-          SECONDARY={FB_SECONDARY}
-        />
-      )}
     </div>
   )
 }
@@ -2757,16 +2824,161 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
 
 // ─── Transfers View (with Multi-Step Researcher) ────────────────────────────
 
-function TransfersView({ onActionClick }: { onActionClick?: (label: string) => void }) {
+interface AITransferTarget {
+  name: string
+  age: number
+  nationality: string
+  currentClub: string
+  currentLeague: string
+  position: string
+  estimatedValue: string
+  weeklyWageEstimate: string
+  contractExpires: string
+  strengths: string[]
+  weaknesses: string[]
+  lumioFitScore: number
+  recommendation: string
+}
+
+function TransfersView({ onActionClick, clubId, clubName, league, isDemo = false, clubTier = 'starter', onUpgradeClick }: { onActionClick?: (label: string) => void; clubId?: string | null; clubName?: string; league?: string; isDemo?: boolean; clubTier?: ClubTier; onUpgradeClick?: (f?: string) => void }) {
+  const [transfersTab, setTransfersTab] = useState<'researcher' | 'pipeline'>('researcher')
+  const [pipelineAdded, setPipelineAdded] = useState<Record<string, boolean>>({})
+  const [pipelineToast, setPipelineToast] = useState<string | null>(null)
+
+  async function addToPipeline(target: AITransferTarget, idx: number) {
+    if (!clubId) return
+    try {
+      const res = await fetch('/api/football/transfer-pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clubId, stage: 'Identified', target }),
+      })
+      if (res.ok) {
+        setPipelineAdded((p) => ({ ...p, [`${target.name}-${idx}`]: true }))
+        setPipelineToast('✅ Added to pipeline')
+        setTimeout(() => setPipelineToast(null), 2000)
+      }
+    } catch { /* ignore */ }
+  }
+
   const [researchStep, setResearchStep] = useState(1)
+
+  // Criteria state
+  const [position, setPosition] = useState<string>('Centre Midfielder')
+  const [budget, setBudget] = useState<string>(isDemo ? '£500k-£1.5m' : '£500k - £1m')
+  const [ageRange, setAgeRange] = useState<string>(isDemo ? '21-26' : '21-26')
+  const [leaguePref, setLeaguePref] = useState<string>('Any')
+  const [playingStyle, setPlayingStyle] = useState<string>(isDemo ? 'High press, box-to-box' : '')
+  const [squadWeakness, setSquadWeakness] = useState<string>(isDemo ? 'Lack of creativity in central midfield' : '')
+  const [nationality, setNationality] = useState<string>(isDemo ? 'Any' : 'Any')
+
+  // Results / loading
+  const [aiTargets, setAiTargets] = useState<AITransferTarget[] | null>(null)
+  const [searchId, setSearchId] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [loadingStage, setLoadingStage] = useState(0)
+
+  function maxAgeFromRange(r: string): number | undefined {
+    const m = r.match(/(\d+)\s*[-–]\s*(\d+)/)
+    if (m) return Number(m[2])
+    if (/Any/i.test(r)) return undefined
+    return undefined
+  }
+
+  async function runResearch() {
+    if (!clubId) { setAiError('No club selected'); return }
+    setAiError(null)
+    setAiLoading(true)
+    setResearchStep(2)
+    setLoadingStage(0)
+    const stageTimer = setInterval(() => setLoadingStage((s) => Math.min(s + 1, 3)), 800)
+    try {
+      const res = await fetch('/api/ai/transfer-researcher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId,
+          clubName: clubName ?? 'AFC Wimbledon',
+          league: league ?? 'EFL League One',
+          position,
+          maxAge: maxAgeFromRange(ageRange),
+          maxBudget: budget,
+          playingStyle: playingStyle || undefined,
+          currentSquadWeaknesses: squadWeakness || undefined,
+          nationality: nationality && nationality !== 'Any' ? nationality : undefined,
+        }),
+      })
+      const json = await res.json()
+      clearInterval(stageTimer)
+      setLoadingStage(3)
+      if (!res.ok || !json.targets) {
+        setAiError(json.error || 'AI search failed')
+        setAiLoading(false)
+        return
+      }
+      setAiTargets(json.targets)
+      setSearchId(json.searchId ?? null)
+      setAiLoading(false)
+      setResearchStep(3)
+    } catch {
+      clearInterval(stageTimer)
+      setAiError('AI search failed')
+      setAiLoading(false)
+    }
+  }
+
+  function fitColor(score: number): string {
+    if (score <= 50) return '#EF4444'
+    if (score <= 70) return '#F59E0B'
+    if (score <= 85) return '#22C55E'
+    return '#A855F7'
+  }
 
   const RESEARCH_TARGETS = [
     { name: 'Aaron Collins', position: 'LW', club: 'Wrexham', age: 26, value: '£700k', fit: 92, summary: 'Direct left winger, strong in 1v1 duels. 4 assists this season. Suited to wide attacking style.' },
     { name: 'Louie Barry', position: 'CAM', club: 'Stockport County', age: 22, value: '£1.2m', fit: 87, summary: 'Creative attacking midfielder, high work rate. Press-resistant with 89% pass accuracy.' },
     { name: 'Harvey Knibbs', position: 'ST', club: 'Burton Albion', age: 24, value: '£500k', fit: 78, summary: 'Mobile striker, good movement. 2 goals from set pieces this season.' },
   ]
+  void RESEARCH_TARGETS
+
+  const transfersTabStrip = (
+    <div className="flex items-center gap-2 mb-3">
+      {([
+        { id: 'researcher' as const, label: '🔬 AI Researcher' },
+        { id: 'pipeline' as const, label: '🔄 Pipeline' },
+      ]).map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setTransfersTab(tab.id)}
+          className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+          style={{
+            backgroundColor: transfersTab === tab.id ? '#003DA5' : '#111318',
+            color: transfersTab === tab.id ? '#F1C40F' : '#9CA3AF',
+            border: '1px solid #1F2937',
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (transfersTab === 'pipeline') {
+    return (
+      <div className="space-y-2">
+        {transfersTabStrip}
+        <TransferPipelineView clubId={clubId ?? null} clubName={clubName ?? 'Lumio FC'} isDemo={isDemo} />
+      </div>
+    )
+  }
 
   return (
+    <>
+    {transfersTabStrip}
+    {pipelineToast && (
+      <div className="fixed bottom-6 right-6 z-[80] px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#22C55E', color: '#000' }}>{pipelineToast}</div>
+    )}
     <PlaceholderView
       title="Transfer Hub"
       subtitle="Target research, negotiations, and budget tracking."
@@ -2829,78 +3041,128 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Position Needed</label>
-                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                <select value={position} onChange={(e) => setPosition(e.target.value)} className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
                   <option>Left Back</option><option>Centre Midfielder</option><option>Centre Back</option><option>Striker</option><option>Winger</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Max Budget</label>
-                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
-                  <option>£500k - £1m</option><option>£1m - £2m</option><option>£2m - £3m</option><option>£3m+</option>
+                <select value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                  <option>£500k - £1m</option><option>£500k-£1.5m</option><option>£1m - £2m</option><option>£2m - £3m</option><option>£3m+</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Age Range</label>
-                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
                   <option>18-23</option><option>21-26</option><option>24-30</option><option>Any</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>League Preference</label>
-                <select className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
+                <select value={leaguePref} onChange={(e) => setLeaguePref(e.target.value)} className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }}>
                   <option>Any</option><option>Belgian Pro League</option><option>Primeira Liga</option><option>Eredivisie</option><option>Championship</option>
                 </select>
               </div>
             </div>
-            <button onClick={() => setResearchStep(2)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
-              Start Research →
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Playing Style</label>
+                <input value={playingStyle} onChange={(e) => setPlayingStyle(e.target.value)} placeholder="e.g. high press, box-to-box" className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Squad Weakness</label>
+                <input value={squadWeakness} onChange={(e) => setSquadWeakness(e.target.value)} placeholder="e.g. lack of creativity" className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: '#9CA3AF' }}>Nationality</label>
+                <input value={nationality} onChange={(e) => setNationality(e.target.value)} placeholder="Any" className="w-full text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#0A0B10', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+              </div>
+            </div>
+            {aiError && <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>{aiError}</div>}
+            {hasFeature(clubTier, 'ai_transfer_researcher') ? (
+              <button onClick={runResearch} disabled={aiLoading} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F', opacity: aiLoading ? 0.6 : 1 }}>
+                {aiLoading ? 'Searching...' : 'Find Targets →'}
+              </button>
+            ) : (
+              <UpgradePrompt featureKey="ai_transfer_researcher" featureName="AI Transfer Researcher" requiredTier="professional" compact onUpgradeClick={onUpgradeClick} />
+            )}
           </div>
         )}
 
         {researchStep === 2 && (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <Loader2 size={28} className="animate-spin" style={{ color: '#003DA5' }} />
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Researcher scanning databases...</p>
-            <p className="text-xs" style={{ color: '#6B7280' }}>Analysing 2,400+ players across 12 leagues</p>
-            <div className="flex gap-2 mt-2">
-              {['Stats', 'Video', 'Medical', 'Agent'].map((stage, i) => (
-                <span key={stage} className="text-xs px-2 py-1 rounded-lg" style={{
-                  backgroundColor: i < 2 ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
-                  color: i < 2 ? '#22C55E' : '#6B7280',
-                }}>{i < 2 ? '✓' : '...'} {stage}</span>
+            {isDemo && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F1C40F', border: '1px solid rgba(245,158,11,0.3)' }}>⚡ Live AI search</span>
+            )}
+            <div className="flex flex-col gap-1.5 mt-2 items-center">
+              {['🔍 Scanning databases...', '🧠 Analysing squad fit...', '📊 Scoring candidates...', '✅ Targets identified'].map((msg, i) => (
+                <span key={i} className="text-xs" style={{ color: i <= loadingStage ? '#F9FAFB' : '#6B7280', fontWeight: i === loadingStage ? 600 : 400 }}>
+                  {msg}
+                </span>
               ))}
             </div>
-            <button onClick={() => setResearchStep(3)} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
-              Skip to Results →
-            </button>
+            {aiError && <div className="text-xs mt-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>{aiError}</div>}
           </div>
         )}
 
         {researchStep === 3 && (
           <div className="space-y-3">
-            <p className="text-xs" style={{ color: '#6B7280' }}>3 targets identified matching your criteria</p>
-            {RESEARCH_TARGETS.map((t, i) => (
-              <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs" style={{ color: '#6B7280' }}>{aiTargets?.length ?? 0} targets identified by Claude</p>
+              <div className="flex gap-2">
+                <button onClick={() => { setResearchStep(1); setAiTargets(null) }} className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}>Refine Search</button>
+                <button className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E' }}>{searchId ? 'Saved ✓' : 'Save Search'}</button>
+              </div>
+            </div>
+            {(aiTargets ?? []).map((t, i) => (
+              <div key={i} className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{t.name}</span>
-                    <span className="text-xs ml-2" style={{ color: '#6B7280' }}>{t.position} · {t.club} · Age {t.age}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{t.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.3)' }}>{t.position}</span>
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Age {t.age} · {t.nationality} · {t.currentClub} ({t.currentLeague})</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold" style={{ color: '#22C55E' }}>{t.value}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                      backgroundColor: t.fit >= 90 ? 'rgba(34,197,94,0.12)' : t.fit >= 80 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: t.fit >= 90 ? '#22C55E' : t.fit >= 80 ? '#F59E0B' : '#EF4444',
-                    }}>{t.fit}% fit</span>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-bold" style={{ color: '#22C55E' }}>{t.estimatedValue}</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{t.weeklyWageEstimate}/wk</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>Exp: {t.contractExpires}</div>
                   </div>
                 </div>
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>{t.summary}</p>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Lumio Fit Score</span>
+                    <span className="text-xs font-bold" style={{ color: fitColor(t.lumioFitScore) }}>{t.lumioFitScore}/100</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, Math.min(100, t.lumioFitScore))}%`, backgroundColor: fitColor(t.lumioFitScore) }} />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(t.strengths ?? []).map((s, j) => (
+                    <span key={`s${j}`} className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E' }}>+ {s}</span>
+                  ))}
+                  {(t.weaknesses ?? []).map((w, j) => (
+                    <span key={`w${j}`} className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>− {w}</span>
+                  ))}
+                </div>
+                <p className="text-xs" style={{ color: '#D1D5DB' }}>{t.recommendation}</p>
+                <div className="flex gap-2 pt-1">
+                  {pipelineAdded[`${t.name}-${i}`] ? (
+                    <button disabled className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#22C55E', color: '#000' }}>✓ In Pipeline</button>
+                  ) : (
+                    <button onClick={() => addToPipeline(t, i)} className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>+ Add to Pipeline</button>
+                  )}
+                </div>
               </div>
             ))}
-            <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
-              Take Action →
-            </button>
+            {(aiTargets?.length ?? 0) > 0 && (
+              <button onClick={() => setResearchStep(4)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
+                Take Action →
+              </button>
+            )}
           </div>
         )}
 
@@ -2928,6 +3190,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         )}
       </div>
     </PlaceholderView>
+    </>
   )
 }
 
@@ -3486,11 +3749,11 @@ function AnalyticsView() {
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Last 5 Matches — Key Metrics</p>
         </div>
         {[
-          { match: 'Wimbledon 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
-          { match: 'Ashford 0-0 Wimbledon', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
-          { match: 'Wimbledon 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
-          { match: 'Crestwood 1-2 Wimbledon', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
-          { match: 'Wimbledon 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
+          { match: 'Lumio FC 2-1 Riverside', xg: '1.8', xga: '0.9', poss: '62%', date: '22 Mar' },
+          { match: 'Ashford 0-0 Lumio FC', xg: '0.4', xga: '1.1', poss: '47%', date: '15 Mar' },
+          { match: 'Lumio FC 3-2 Millfield', xg: '2.4', xga: '1.6', poss: '55%', date: '8 Mar' },
+          { match: 'Crestwood 1-2 Lumio FC', xg: '1.9', xga: '1.2', poss: '51%', date: '1 Mar' },
+          { match: 'Lumio FC 1-0 Lakeside', xg: '1.1', xga: '0.7', poss: '59%', date: '22 Feb' },
         ].map((m, i) => (
           <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
             <div>
@@ -4198,9 +4461,43 @@ function PerformanceGPSView() {
 
 // ─── Training View ──────────────────────────────────────────────────────────
 
-function TrainingView() {
+function TrainingView({ clubId, squad, isDemo }: { clubId?: string | null; squad?: MockPlayer[]; isDemo?: boolean }) {
+  const [trainingTab, setTrainingTab] = useState<'overview' | 'planner'>('overview')
+
+  const trainingTabStrip = (
+    <div className="flex items-center gap-2">
+      {([
+        { id: 'overview' as const, label: '📋 Training Overview' },
+        { id: 'planner' as const, label: '📅 Load Planner' },
+      ]).map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setTrainingTab(tab.id)}
+          className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+          style={{
+            backgroundColor: trainingTab === tab.id ? '#003DA5' : '#111318',
+            color: trainingTab === tab.id ? '#F1C40F' : '#9CA3AF',
+            border: '1px solid #1F2937',
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (trainingTab === 'planner') {
+    return (
+      <div className="space-y-4">
+        {trainingTabStrip}
+        <TrainingPlannerView clubId={clubId ?? null} squad={squad ?? []} isDemo={!!isDemo} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
+      {trainingTabStrip}
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Training</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Session planning, GPS load monitoring, and recovery schedules.</p>
@@ -4306,7 +4603,16 @@ function TrainingView() {
 }
 
 
-function FinanceView() {
+const DEFAULT_FINANCE: MockFinance = {
+  transferBudget: '£4.2m',
+  wageBill: '£2.1m/yr',
+  revenueYTD: '£3.4m',
+  wageRevRatio: '62%',
+}
+
+function FinanceView({ finance, contracts }: { finance?: MockFinance; contracts?: MockContract[] } = {}) {
+  const resolvedFinance = finance ?? DEFAULT_FINANCE
+  const resolvedContracts = contracts ?? CONTRACT_DATA
   return (
     <div className="space-y-5">
       <div>
@@ -4329,10 +4635,10 @@ function FinanceView() {
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#22C55E" />
-        <StatCard label="Wage Bill" value="£2.1m/yr" icon={Users} color="#003DA5" />
-        <StatCard label="Revenue (YTD)" value="£3.4m" icon={TrendingUp} color="#3B82F6" />
-        <StatCard label="Wage/Rev Ratio" value="62%" icon={BarChart3} color="#F59E0B" />
+        <StatCard label="Transfer Budget" value={resolvedFinance.transferBudget} icon={DollarSign} color="#22C55E" />
+        <StatCard label="Wage Bill" value={resolvedFinance.wageBill} icon={Users} color="#003DA5" />
+        <StatCard label="Revenue (YTD)" value={resolvedFinance.revenueYTD} icon={TrendingUp} color="#3B82F6" />
+        <StatCard label="Wage/Rev Ratio" value={resolvedFinance.wageRevRatio} icon={BarChart3} color="#F59E0B" />
       </div>
 
       {/* Contract Tracker */}
@@ -4351,10 +4657,10 @@ function FinanceView() {
               </tr>
             </thead>
             <tbody>
-              {CONTRACT_DATA.map((c, i) => {
-                const statusColor = c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
+              {resolvedContracts.map((c, i) => {
+                const statusColor = (c.status as string) === 'Signed' ? '#22C55E' : c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
                 return (
-                  <tr key={i} style={{ borderBottom: i < CONTRACT_DATA.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
+                  <tr key={i} style={{ borderBottom: i < resolvedContracts.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{c.player}</td>
                     <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.1)', color: '#F1C40F' }}>{c.position}</span></td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{c.weeklyWage}</td>
@@ -4603,16 +4909,18 @@ const VOICES = [
 
 // ─── Social Media View ──────────────────────────────────────────────────────
 
-const SOCIAL_MENTIONS = [
-  { user: '@AFCWimbFan92', content: 'Great performance from AFC Wimbledon last night! Browne was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing AFC Wimbledon are close to signing a new winger — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
-  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Wimbledon! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@League1News', content: 'AFC Wimbledon move up to 14th after beating Stockport County. Solid showing.', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
-  { user: '@TacticsBoard', content: 'Stevens\'s pass map vs Stockport County was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
-  { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Academy Player (17) training with Wimbledon first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'AFC Wimbledon have reportedly tracked a League One winger. Clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
-]
+function buildSocialPosts(clubName: string) {
+  return [
+    { user: '@AFCWimbFan92', content: `Great performance from ${clubName} last night! Browne was incredible ⚽🔥`, time: '2 min ago', likes: 847, sentiment: 'positive' as const },
+    { user: '@SportsBlogger', content: `Hearing ${clubName} are close to signing a new winger — big move if true 👀`, time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
+    { user: '@LocalFan', content: `Season ticket renewed. Can't wait for Saturday. Come on ${clubName}! 🔴`, time: '32 min ago', likes: 45, sentiment: 'positive' as const },
+    { user: '@League1News', content: `${clubName} move up to 14th after beating Stockport County. Solid showing.`, time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
+    { user: '@TacticsBoard', content: `Stevens's pass map vs Stockport County was elite. 92% accuracy, 4 key passes.`, time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
+    { user: '@DisappointedFan', content: `Still think we need a proper left-back. Davies isn't good enough for this level.`, time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
+    { user: '@YouthFootball', content: `Academy Player (17) training with ${clubName} first team today. One to watch 🌟`, time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
+    { user: '@TransferWatch', content: `${clubName} have reportedly tracked a League One winger. Clubs circling.`, time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
+  ]
+}
 
 const SOCIAL_PLATFORMS = [
   { name: 'X / Twitter', emoji: '🐦', followers: '124k', growth: '+840', engagement: '5.1%', bestTime: '12:30pm' },
@@ -4633,18 +4941,20 @@ const SOCIAL_CALENDAR = [
   { day: 'Sun', time: '11am', content: 'Highlights + report', platforms: 'All' },
 ]
 
-function SocialMediaView() {
+function SocialMediaView({ club }: { club?: DBFootballClub } = {}) {
+  const clubName = club?.name ?? 'Lumio FC'
+  const posts = buildSocialPosts(clubName)
   const [platform, setPlatform] = useState(0)
   const [sentimentFilter, setSentimentFilter] = useState<string>('all')
   const [socToast, setSocToast] = useState<string | null>(null)
   function socAction(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
 
-  const filtered = sentimentFilter === 'all' ? SOCIAL_MENTIONS : SOCIAL_MENTIONS.filter(m => m.sentiment === sentimentFilter)
+  const filtered = sentimentFilter === 'all' ? posts : posts.filter(m => m.sentiment === sentimentFilter)
   const p = SOCIAL_PLATFORMS[platform]
 
   return (
     <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about AFC Wimbledon</p></div>
+      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about {clubName}</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
         {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
@@ -4896,12 +5206,14 @@ function SquadPlannerView() {
   )
 }
 
-function ClubProfileView() {
+function ClubProfileView({ club }: { club?: DBFootballClub } = {}) {
+  const name = club?.name ?? 'Lumio FC'
+  const leagueLine = club?.league ?? 'EFL League One'
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#003DA5' }}>⚽</div>
-        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>AFC Wimbledon</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL League One · Founded 2002</p></div>
+        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>{name}</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>{leagueLine} · Founded 2002</p></div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -5005,7 +5317,7 @@ function ApiStatusStrip() {
   )
 }
 
-function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
+function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove, onOpenImport }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void; onOpenImport?: () => void }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
@@ -5036,6 +5348,13 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
         <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your football portal preferences.</p>
       </div>
+
+      {onOpenImport && (
+        <button onClick={onOpenImport} className="w-full text-left px-4 py-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: '#7C3AED', color: '#fff' }}>
+          <span className="text-sm font-semibold">📥 Import Club Data</span>
+          <span className="text-xs opacity-90">Squad · Contracts · Fixtures →</span>
+        </button>
+      )}
 
       {/* ── Club Details ──────────────────────────────────────────────── */}
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -5520,154 +5839,22 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
-function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: Player, onClose: () => void, PRIMARY: string, SECONDARY: string }) {
-  const form = [7.8, 6.9, 7.5, 8.1, 7.2]
-  const statColor = (v: number) => v >= 80 ? '#22c55e' : v >= 65 ? PRIMARY : v >= 50 ? '#eab308' : '#ef4444'
-  const moraleScore = player.fitness === 'fit' ? 82 : player.fitness === 'injured' ? 45 : player.fitness === 'suspended' ? 60 : 70
-  const injuryHistory = player.fitness === 'injured'
-    ? [{ type: 'Current', date: 'Mar 2026', games: 3 }]
-    : [{ type: 'Muscle strain', date: 'Oct 2025', games: 2 }, { type: 'None recent', date: '—', games: 0 }]
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#0F1117', border: `1px solid ${PRIMARY}40`, borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: SECONDARY }}>
-              {player.number}
-            </div>
-            <div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#F9FAFB' }}>{player.name}</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
-                <span style={{ backgroundColor: PRIMARY + '30', color: PRIMARY === '#003DA5' ? SECONDARY : PRIMARY, padding: '2px 10px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>{player.position}</span>
-                <span style={{ fontSize: 18 }}>{player.nationality}</span>
-                <span style={{ color: '#6B7280', fontSize: 13 }}>Age {player.age}</span>
-                <span style={{ backgroundColor: player.fitness === 'fit' ? '#16a34a30' : player.fitness === 'injured' ? '#dc262630' : '#d9770630', color: player.fitness === 'fit' ? '#4ade80' : player.fitness === 'injured' ? '#f87171' : '#fb923c', padding: '2px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{player.fitness}</span>
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: '1px solid #374151', color: '#9CA3AF', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>✕ Close</button>
-        </div>
-
-        {/* 3 column grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
-
-          {/* Col 1 — Performance */}
-          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Performance</div>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: SECONDARY }}>{player.lastRating.toFixed(1)}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Rating</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.goals}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Goals</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 900, color: '#F9FAFB' }}>{player.assists}</div><div style={{ fontSize: 11, color: '#6B7280' }}>Assists</div></div>
-            </div>
-            <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Last 5 matches</div>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-              {form.map((r, i) => (
-                <div key={i} style={{ flex: 1, textAlign: 'center', backgroundColor: r >= 7.5 ? '#16a34a30' : r >= 6.5 ? PRIMARY + '30' : '#dc262630', borderRadius: 6, padding: '4px 0' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: r >= 7.5 ? '#4ade80' : r >= 6.5 ? SECONDARY : '#f87171' }}>{r.toFixed(1)}</div>
-                </div>
-              ))}
-            </div>
-            {player.stats && (
-              <div>
-                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Attributes</div>
-                {Object.entries({ PAC: player.stats.PAC, SHO: player.stats.SHO, PAS: player.stats.PAS, DRI: player.stats.DRI, DEF: player.stats.DEF, PHY: player.stats.PHY }).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 30, fontSize: 11, color: '#9CA3AF', fontWeight: 700 }}>{k}</div>
-                    <div style={{ flex: 1, height: 6, backgroundColor: '#374151', borderRadius: 3 }}>
-                      <div style={{ width: `${v}%`, height: '100%', backgroundColor: statColor(v), borderRadius: 3, transition: 'width 0.5s' }} />
-                    </div>
-                    <div style={{ width: 24, fontSize: 11, fontWeight: 700, color: statColor(v), textAlign: 'right' }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Col 2 — Contract & Value */}
-          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Contract & Value</div>
-            {[
-              { label: 'Market Value', value: player.marketValue },
-              { label: 'Contract Until', value: player.contractExpiry },
-              { label: 'Wage Band', value: player.marketValue === '£600k' ? '£4,200/wk' : player.marketValue === '£350k' ? '£2,800/wk' : player.marketValue === '£300k' ? '£2,200/wk' : '£1,800/wk' },
-              { label: 'Agent', value: 'Stellar Group' },
-              { label: 'Nationality', value: player.nationality + ' ' + (player.nationality === '🏴󠁧󠁢󠁥󠁮󠁧󠁿' ? 'English' : player.nationality === '🇮🇪' ? 'Irish' : player.nationality === '🇩🇪' ? 'German' : player.nationality === '🏴󠁧󠁢󠁳󠁣󠁴󠁿' ? 'Scottish' : 'International') },
-              { label: 'Appearances', value: '28' },
-              { label: 'Minutes Played', value: '2,340' },
-              { label: 'Signed From', value: 'Academy' },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #1F2937' }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>{label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#F9FAFB' }}>{value}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Col 3 — Wellbeing */}
-          <div style={{ backgroundColor: '#1A1D27', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Wellbeing & Load</div>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>Morale</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: moraleScore >= 75 ? '#4ade80' : moraleScore >= 50 ? SECONDARY : '#f87171' }}>{moraleScore}/100</span>
-              </div>
-              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
-                <div style={{ width: `${moraleScore}%`, height: '100%', backgroundColor: moraleScore >= 75 ? '#16a34a' : moraleScore >= 50 ? PRIMARY : '#dc2626', borderRadius: 4 }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>GPS Load (this week)</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#F9FAFB' }}>74%</span>
-              </div>
-              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
-                <div style={{ width: '74%', height: '100%', backgroundColor: SECONDARY, borderRadius: 4 }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>Recovery Score</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#4ade80' }}>88%</span>
-              </div>
-              <div style={{ height: 8, backgroundColor: '#374151', borderRadius: 4 }}>
-                <div style={{ width: '88%', height: '100%', backgroundColor: '#16a34a', borderRadius: 4 }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Injury History</div>
-            {injuryHistory.map((inj, i) => (
-              <div key={i} style={{ backgroundColor: '#111318', borderRadius: 8, padding: '8px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#F9FAFB' }}>{inj.type}</span>
-                <span style={{ fontSize: 12, color: '#6B7280' }}>{inj.date} {inj.games > 0 ? `· ${inj.games} games` : ''}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer quick actions */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {['Log Injury', 'Contact Agent', 'Extend Contract', 'Transfer List', 'Player Report', 'Team Talk'].map(action => (
-            <button key={action} onClick={() => {}} style={{ backgroundColor: PRIMARY, color: SECONDARY, border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-              {action}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  const [demoSlugOverride, setDemoSlugOverride] = useState<string | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const v = localStorage.getItem('lumio_football_club')
+    if (v) setDemoSlugOverride(v)
+  }, [])
+  const effectiveSlug = demoSlugOverride ?? slug
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_club_name') || 'AFC Wimbledon'
+      return localStorage.getItem('football_club_name') || 'Lumio FC'
     }
-    return 'AFC Wimbledon'
+    return 'Lumio FC'
   })
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -5679,6 +5866,13 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   const [fbNotifOpen, setFbNotifOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
+  const [pressBriefingOpen, setPressBriefingOpen] = useState(false)
+  const [oppositionReportOpen, setOppositionReportOpen] = useState(false)
+  const [postMatchOpen, setPostMatchOpen] = useState(false)
+  const [importWizardOpen, setImportWizardOpen] = useState(false)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
+  const [upgradeHighlightFeature, setUpgradeHighlightFeature] = useState<string | null>(null)
   const [showAIInsights, setShowAIInsights] = useState(false)
   const [isFootballDemo, setIsFootballDemo] = useState(false)
   const [fbMounted, setFbMounted] = useState(false)
@@ -5687,35 +5881,80 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   )
 
   // Live API data
-  const [liveSquad, setLiveSquad] = useState<any[]|null>(null);
-  const [liveFixtures, setLiveFixtures] = useState<any[]|null>(null);
-  const [liveResults, setLiveResults] = useState<any[]|null>(null);
-  const [liveStandings, setLiveStandings] = useState<any[]|null>(null);
-  const [liveTopScorers, setLiveTopScorers] = useState<any[]|null>(null);
-  const [liveInjuries, setLiveInjuries] = useState<any[]|null>(null);
-  const [loadingLive, setLoadingLive] = useState<Record<string,boolean>>({});
+  // API-Football live data (gated on dbClub.team_id_api_football)
+  const [apiStandings, setApiStandings] = useState<APILeagueTable[] | null>(null);
+  const [apiFixtures, setApiFixtures] = useState<APIFixture[] | null>(null);
+  const [apiPlayers, setApiPlayers] = useState<APIPlayerType[] | null>(null);
+  const [apiLoading, setApiLoading] = useState<boolean>(false);
 
+  // Supabase live data (replaces hardcoded SQUAD/CONTRACT_DATA/FIXTURES)
+  const [dbClub, setDbClub] = useState<DBFootballClub | null>(null);
+  const [dbSquad, setDbSquad] = useState<DBFootballPlayer[] | null>(null);
+  const [dbContracts, setDbContracts] = useState<DBFootballContract[] | null>(null);
+  const [dbFixtures, setDbFixtures] = useState<DBFootballFixture[] | null>(null);
+  const [dbFinance, setDbFinance] = useState<DBFootballFinance | null>(null);
+
+  // Fetch from Supabase on slug change. Demo mode uses the same DB rows
+  // (seeded data matches the existing constants exactly).
   useEffect(() => {
-    const fetchLive = async (key: string, url: string, setter: (d:any)=>void) => {
-      setLoadingLive(prev => ({...prev, [key]: true}));
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          const items = data?.response || data?.data || data;
-          if (Array.isArray(items) && items.length > 0) setter(items);
-        }
-      } catch(e) { console.warn(`Failed to fetch ${key}:`, e); }
-      finally { setLoadingLive(prev => ({...prev, [key]: false})); }
-    };
+    let cancelled = false;
+    (async () => {
+      const club = await getFootballClub(effectiveSlug);
+      if (cancelled || !club) return;
+      setDbClub(club);
+      const [squad, contracts, fixtures, finance] = await Promise.all([
+        getFootballSquad(club.id),
+        getFootballContracts(club.id),
+        getFootballFixtures(club.id),
+        getFootballFinance(club.id),
+      ]);
+      if (cancelled) return;
+      setDbSquad(squad);
+      setDbContracts(contracts);
+      setDbFixtures(fixtures);
+      setDbFinance(finance);
+    })();
+    return () => { cancelled = true; };
+  }, [effectiveSlug]);
 
-    fetchLive('squad', '/api/football/squad?teamId=638&season=2025', setLiveSquad);
-    fetchLive('fixtures', '/api/football/fixtures?teamId=638&season=2025&next=10', setLiveFixtures);
-    fetchLive('results', '/api/football/fixtures?teamId=638&season=2025&last=5', setLiveResults);
-    fetchLive('standings', '/api/football/standings?leagueId=41&season=2025', setLiveStandings);
-    fetchLive('topscorers', '/api/football/topscorers?leagueId=41&season=2025', setLiveTopScorers);
-    fetchLive('injuries', '/api/football/injuries?teamId=638&season=2025', setLiveInjuries);
-  }, []);
+  // API-Football fetches: gated on dbClub.team_id_api_football and api_league_id.
+  // Lumio FC (effectiveSlug 'lumio-dev') is fictional — never hits the live API.
+  useEffect(() => {
+    const isLumioFC = effectiveSlug === 'lumio-dev'
+    if (isLumioFC) return
+    if (!dbClub?.team_id_api_football) return
+
+    const teamId = dbClub.team_id_api_football
+    const leagueId = dbClub.api_league_id ?? null
+    const season = dbClub.api_season ?? 2024
+
+    let cancelled = false
+    setApiLoading(true)
+
+    const fetchJson = async (url: string) => {
+      try {
+        const res = await fetch(url)
+        if (!res.ok) return null
+        return await res.json()
+      } catch { return null }
+    }
+
+    const standingsP = leagueId
+      ? fetchJson(`/api/apifootball/standings?leagueId=${leagueId}&season=${season}`)
+      : Promise.resolve(null)
+    const fixturesP = fetchJson(`/api/apifootball/fixtures?teamId=${teamId}&season=${season}`)
+    const playersP = fetchJson(`/api/apifootball/players?teamId=${teamId}&season=${season}`)
+
+    Promise.all([standingsP, fixturesP, playersP]).then(([st, fx, pl]) => {
+      if (cancelled) return
+      if (Array.isArray(st)) setApiStandings(st)
+      if (Array.isArray(fx)) setApiFixtures(fx)
+      if (Array.isArray(pl)) setApiPlayers(pl)
+      setApiLoading(false)
+    })
+
+    return () => { cancelled = true; setApiLoading(false) }
+  }, [dbClub, effectiveSlug]);
 
   useEffect(() => {
     const check = () => setIsFootballDemo(localStorage.getItem('lumio_football_demo_active') === 'true')
@@ -5725,11 +5964,8 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     return () => clearInterval(interval)
   }, [])
 
-  // Set default badge when demo is active — state only, no localStorage
   useEffect(() => {
-    if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
-      setClubLogo('/badges/afc_wimbledon_badge_studio.png')
-    } else if (!isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
+    if (!localStorage.getItem('lumio_football_logo')) {
       setClubLogo(null)
     }
   }, [isFootballDemo])
@@ -5775,32 +6011,64 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   }
 
   function handleActionClick(label: string) {
+    const tier = (dbClub?.tier ?? 'starter') as ClubTier
+    const QA_GATES: Record<string, string> = {
+      'Scout Report': 'ai_opposition_report',
+      'Opposition Report': 'ai_opposition_report',
+      'Transfer Hub': 'ai_transfer_researcher',
+      'Submit Bid': 'ai_transfer_researcher',
+      'Board Report': 'board_suite',
+    }
+    const gate = QA_GATES[label]
+    if (gate && !hasFeature(tier, gate)) {
+      setUpgradeHighlightFeature(gate)
+      setUpgradeModalOpen(true)
+      return
+    }
     if (label === 'Dept Insights') { setShowAIInsights(true); return }
+    if (label === 'Press Conf' || label === 'Press Brief') { setPressBriefingOpen(true); return }
+    if (label === 'Scout Report' || label === 'Opposition Report') { setOppositionReportOpen(true); return }
+    if (label === 'Match Report') { setPostMatchOpen(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
   }
 
   useEffect(() => {
-    const name = localStorage.getItem('football_club_name') || 'AFC Wimbledon'
+    const name = localStorage.getItem('football_club_name') || dbClub?.name || 'Lumio FC'
     const user = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
     setClubName(name)
     setUserName(user)
-  }, [slug])
+  }, [effectiveSlug, dbClub])
 
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
+  const baseSquadForRender: MockPlayer[] = dbSquad ? adaptDBSquad(dbSquad) : SQUAD
+  const resolvedSquadForRender: MockPlayer[] = apiPlayers ? mergePlayerStats(baseSquadForRender, apiPlayers) : baseSquadForRender
+  const resolvedFixturesForRender: MockFixture[] = apiFixtures
+    ? adaptAPIFixtures(apiFixtures)
+    : (dbFixtures ? adaptDBFixtures(dbFixtures) : FIXTURES)
   const initials = userName ? userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'FC'
 
   if (!fbMounted) return null
 
   return (
+    <ClubThemeProvider dbClub={dbClub as any}>
+    <FootballPinGate>
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
       <Toast message={toast} />
 
       {/* Demo banner */}
       {isFootballDemo && (
         <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F', paddingRight: 140 }}>
-          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <span>Demo workspace — exploring with sample data</span>
+            <span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span>
+            {apiLoading && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#F1C40F' }}>
+                ⚡ Live data loading...
+              </span>
+            )}
+          </div>
           <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
         </div>
       )}
@@ -5823,7 +6091,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} />
+        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} clubTier={(dbClub?.tier ?? 'starter') as ClubTier} onLockedClick={(f) => { setUpgradeHighlightFeature(f); setUpgradeModalOpen(true) }} />
 
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
@@ -5836,42 +6104,104 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
-            {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
+            {activeDept === 'overview' && (() => {
+              const ti = getTierInfo(dbClub)
+              const colorMap: Record<string, string> = { starter: '#6B7280', professional: '#3B82F6', elite: '#8B5CF6', enterprise: '#F59E0B' }
+              let pillText = ''
+              let pillColor = colorMap[ti.tier]
+              let clickable = false
+              if (ti.isTrialing) { pillText = `⏳ Trial — ${ti.daysUntilExpiry} days left`; pillColor = '#F59E0B'; clickable = true }
+              else if (ti.tier === 'elite') { pillText = '⚡ Elite Plan' }
+              else if (ti.tier === 'enterprise') { pillText = '🏢 Enterprise' }
+              else if (ti.tier === 'professional') { pillText = '✨ Professional' }
+              else { pillText = '🔒 Starter — Upgrade'; clickable = true }
+              const pill = (
+                <button
+                  onClick={clickable ? () => { setUpgradeHighlightFeature(null); setUpgradeModalOpen(true) } : undefined}
+                  className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
+                  style={{ backgroundColor: `${pillColor}33`, color: pillColor, border: `1px solid ${pillColor}66`, cursor: clickable ? 'pointer' : 'default' }}
+                >{pillText}</button>
+              )
+              return <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} isDemo={isFootballDemo} clubLogo={clubLogo} logoNode={<ClubCrest club={dbClub} />} fixtures={resolvedFixturesForRender} clubId={dbClub?.id} tierPill={pill} />
+            })()}
+            {activeDept === 'insights' && (isFootballDemo ? (<>
+              <div className="flex justify-end mb-3"><PDFExportButton viewId="insights" filename={`${clubName} Insights ${new Date().toISOString().slice(0,10)}.pdf`} /></div>
+              <InsightsView />
+              <div className="pdf-content" id="pdf-insights-content" aria-hidden="true">
+                <PDFHeader clubName={clubName} reportTitle="Club Insights" primaryColour={dbClub?.primary_colour ?? '#6C63FF'} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />
+                <PDFInsightsReport clubName={clubName} squad={resolvedSquadForRender} fixtures={resolvedFixturesForRender as any} leaguePosition={(apiStandings ?? []).find((t) => t.teamName === dbClub?.name)?.rank ?? null} />
+                <div className="pdf-footer"><span>Powered by Lumio · lumiosports.com</span><span>Confidential — {clubName} internal use</span><span>{new Date().toLocaleDateString('en-GB')}</span></div>
+              </div>
+            </>) : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
-            {isFootballDemo && activeDept === 'squad' && <SquadView />}
+            {isFootballDemo && activeDept === 'squad' && (<>
+              <div className="flex justify-end mb-3"><PDFExportButton viewId="squad" filename={`${clubName} Squad Report ${new Date().toISOString().slice(0,10)}.pdf`} /></div>
+              <SquadView squad={resolvedSquadForRender} onPlayerClick={(id) => setSelectedPlayerId(id)} />
+              <div className="pdf-content" id="pdf-squad-content" aria-hidden="true">
+                <PDFHeader clubName={clubName} reportTitle="Squad Report" primaryColour={dbClub?.primary_colour ?? '#6C63FF'} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />
+                <PDFSquadReport clubName={clubName} squad={resolvedSquadForRender as any} />
+                <div className="pdf-footer"><span>Powered by Lumio · lumiosports.com</span><span>Confidential — {clubName} internal use</span><span>{new Date().toLocaleDateString('en-GB')}</span></div>
+              </div>
+            </>)}
             {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
-            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
-            {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
+            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} clubId={dbClub?.id} clubName={dbClub?.name ?? clubName} league={dbClub?.league ?? undefined} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} clubTier={(dbClub?.tier ?? 'starter') as ClubTier} onUpgradeClick={(f) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }} />}
+            {isFootballDemo && activeDept === 'board' && (<>
+              <div className="flex justify-end mb-3"><PDFExportButton viewId="board" filename={`${clubName} Board Report ${new Date().toISOString().slice(0,10)}.pdf`} /></div>
+              <FeatureGate featureKey="board_suite" clubTier={(dbClub?.tier ?? 'starter') as ClubTier} featureName="Board Suite" onUpgradeClick={(f) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }}><BoardSuiteView /></FeatureGate>
+              <div className="pdf-content" id="pdf-board-content" aria-hidden="true">
+                <PDFHeader clubName={clubName} reportTitle="Board Report" reportSubtitle="Weekly executive briefing" primaryColour={dbClub?.primary_colour ?? '#6C63FF'} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />
+                <PDFBoardReport clubName={clubName} squad={resolvedSquadForRender as any} fixtures={resolvedFixturesForRender as any} leaguePosition={(apiStandings ?? []).find((t) => t.teamName === dbClub?.name)?.rank ?? null} apiStandings={apiStandings as any} league={dbClub?.league ?? 'EFL League One'} />
+                <div className="pdf-footer"><span>Powered by Lumio · lumiosports.com</span><span>Confidential — {clubName} internal use</span><span>{new Date().toLocaleDateString('en-GB')}</span></div>
+              </div>
+            </>)}
             {isFootballDemo && activeDept === 'medical' && <MedicalView />}
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
             {isFootballDemo && activeDept === 'media' && <MediaView />}
-            {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
+            {isFootballDemo && activeDept === 'social' && <SocialMediaView club={dbClub ?? undefined} />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
-            {isFootballDemo && activeDept === 'training' && <TrainingView />}
-            {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
-            {isFootballDemo && activeDept === 'finance' && <FinanceView />}
+            {isFootballDemo && activeDept === 'training' && <TrainingView clubId={dbClub?.id} squad={resolvedSquadForRender} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />}
+            {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView clubId={dbClub?.id} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />}
+            {isFootballDemo && activeDept === 'fan-hub' && (<>
+              <div className="flex justify-end mb-3"><PDFExportButton viewId="fan" filename={`${clubName} Fan Report ${new Date().toISOString().slice(0,10)}.pdf`} /></div>
+              <FanEngagementView clubId={dbClub?.id ?? null} clubName={dbClub?.name ?? 'Lumio FC'} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} squad={resolvedSquadForRender} fixtures={resolvedFixturesForRender} avgTicketPrice={dbClub?.avg_ticket_price ?? 22} groundCapacity={dbClub?.ground_capacity ?? 9000} clubTier={(dbClub?.tier ?? 'starter') as ClubTier} />
+              <div className="pdf-content" id="pdf-fan-content" aria-hidden="true">
+                <PDFHeader clubName={clubName} reportTitle="Fan Engagement Report" primaryColour={dbClub?.primary_colour ?? '#6C63FF'} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />
+                <PDFFanReport clubName={clubName} fanData={null} />
+                <div className="pdf-footer"><span>Powered by Lumio · lumiosports.com</span><span>Confidential — {clubName} internal use</span><span>{new Date().toLocaleDateString('en-GB')}</span></div>
+              </div>
+            </>)}
+            {isFootballDemo && activeDept === 'finance' && <FinanceView finance={dbFinance ? adaptDBFinance(dbFinance) : undefined} contracts={dbContracts && dbSquad ? adaptDBContracts(dbContracts, dbSquad) : undefined} />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
             {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
             {isFootballDemo && activeDept === 'psr' && <PSRView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
-            {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
-            {activeDept === 'wyscout' && <WyscoutView />}
+            {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView club={dbClub ?? undefined} />}
+            {activeDept === 'wyscout' && (() => { const ct: ClubTier = ((dbClub?.tier ?? 'starter') as ClubTier); const openUp = (f?: string) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }; return <FeatureGate featureKey="wyscout_integration" clubTier={ct} featureName="Wyscout" onUpgradeClick={openUp}><WyscoutView /></FeatureGate> })()}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
-            {activeDept === 'gps-hardware' && <GPSHardwareView />}
-            {activeDept === 'opta' && <OptaStatsBombView />}
+            {activeDept === 'gps-hardware' && (() => { const ct: ClubTier = ((dbClub?.tier ?? 'starter') as ClubTier); const openUp = (f?: string) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }; return <FeatureGate featureKey="gps_hardware_catapult" clubTier={ct} featureName="GPS Hardware Integration" onUpgradeClick={openUp}><GPSHardwareView /></FeatureGate> })()}
+            {activeDept === 'opta' && (() => { const ct: ClubTier = ((dbClub?.tier ?? 'starter') as ClubTier); const openUp = (f?: string) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }; return <FeatureGate featureKey="opta_integration" clubTier={ct} featureName="Opta / StatsBomb" onUpgradeClick={openUp}><OptaStatsBombView /></FeatureGate> })()}
             {activeDept === 'find-club' && <FindClubView />}
-            {activeDept === 'find-player' && <FindPlayerView />}
+            {activeDept === 'find-player' && <FindPlayerView clubName={dbClub?.name ?? 'Lumio FC'} />}
             {activeDept === 'teams' && <TeamsView />}
-            {activeDept === 'leagues' && <LeaguesView />}
+            {activeDept === 'leagues' && <LeaguesView clubName={dbClub?.name ?? 'Lumio FC'} standings={apiStandings ?? undefined} clubId={dbClub?.id ?? null} clubTier={(dbClub?.tier ?? 'starter') as ClubTier} leagueId={dbClub?.api_league_id ?? null} season={dbClub?.api_season ?? 2024} apiStandings={apiStandings} resolvedFixturesForRender={resolvedFixturesForRender} isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'} />}
             {activeDept === 'fixtures-results' && <FixturesView />}
             {activeDept === 'pyramid' && <FootballPyramidView />}
-            {activeDept === 'statsbomb' && <StatsBombView />}
-            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
+            {activeDept === 'statsbomb' && (() => { const ct: ClubTier = ((dbClub?.tier ?? 'starter') as ClubTier); const openUp = (f?: string) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }; return <FeatureGate featureKey="statsbomb_integration" clubTier={ct} featureName="StatsBomb" onUpgradeClick={openUp}><StatsBombView /></FeatureGate> })()}
+            {activeDept === 'settings' && (<>
+              <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} onOpenImport={() => setImportWizardOpen(true)} />
+              <div className="max-w-2xl mt-6">
+                <ClubBrandingSettings
+                  clubId={dbClub?.id ?? null}
+                  dbClub={dbClub as any}
+                  clubTier={(dbClub?.tier as ClubTier) ?? 'professional'}
+                  onBrandingUpdate={(updated) => setDbClub({ ...(dbClub as any), ...updated })}
+                />
+              </div>
+            </>)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
                 squad: ['Top performers this week: Marcus Browne (8.2 avg), Mathew Stevens (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
@@ -5937,6 +6267,100 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
         />
       )}
       <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+      {(() => {
+        const isDemo = effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'
+        const demoLastResult = isDemo
+          ? { opponent: 'Stockport County', homeScore: 1, awayScore: 2, venue: 'Away' as const, competition: 'League One' }
+          : null
+        const demoUpcoming = isDemo ? 'Huddersfield Town' : null
+        const demoInjured = isDemo ? ['J. Smith', 'M. Johnson'] : null
+        const demoSuspended = isDemo ? ['T. Williams'] : null
+        const demoPosition = isDemo ? 14 : null
+
+        // Derive from real data when not demo
+        const playedFixtures = (resolvedFixturesForRender ?? []).filter((f: MockFixture) => !!f.result)
+        const lastFromData: { opponent: string; homeScore: number | null; awayScore: number | null; venue: 'Home' | 'Away'; competition: string } | null =
+          playedFixtures.length > 0
+            ? (() => {
+                const f = playedFixtures[playedFixtures.length - 1]
+                const parts = (f.result ?? '').split('-').map((n) => Number(n))
+                const venue: 'Home' | 'Away' = f.venue === 'Away' ? 'Away' : 'Home'
+                return {
+                  opponent: f.opponent,
+                  homeScore: Number.isFinite(parts[0]) ? parts[0] : null,
+                  awayScore: Number.isFinite(parts[1]) ? parts[1] : null,
+                  venue,
+                  competition: f.competition,
+                }
+              })()
+            : null
+        const nextFromData = (resolvedFixturesForRender ?? []).find((f: MockFixture) => !f.result)?.opponent ?? null
+        const injuredFromData = (resolvedSquadForRender ?? []).filter((p) => p.fitness === 'injured').map((p) => p.name)
+        const suspendedFromData = (resolvedSquadForRender ?? []).filter((p) => p.fitness === 'suspended').map((p) => p.name)
+        const posFromData = (apiStandings ?? []).find((t) => t.teamName === dbClub?.name)?.rank ?? null
+
+        return (
+          <PressBriefingModal
+            isOpen={pressBriefingOpen}
+            onClose={() => setPressBriefingOpen(false)}
+            clubName={dbClub?.name ?? clubName}
+            lastResult={demoLastResult ?? lastFromData}
+            upcomingOpponent={demoUpcoming ?? nextFromData}
+            injuredPlayers={demoInjured ?? injuredFromData}
+            suspendedPlayers={demoSuspended ?? suspendedFromData}
+            league={dbClub?.league ?? 'EFL League One'}
+            leaguePosition={demoPosition ?? posFromData}
+          />
+        )
+      })()}
+      <OppositionReportModal
+        isOpen={oppositionReportOpen}
+        onClose={() => setOppositionReportOpen(false)}
+        clubName={dbClub?.name ?? clubName}
+        league={dbClub?.league ?? 'EFL League One'}
+        upcomingFixtures={(resolvedFixturesForRender ?? []).filter((f: MockFixture) => !f.result)}
+        clubId={dbClub?.id ?? ''}
+        isDemo={isFootballDemo}
+        clubTier={(dbClub?.tier ?? 'starter') as ClubTier}
+        onUpgradeClick={(f) => { setUpgradeHighlightFeature(f ?? null); setUpgradeModalOpen(true) }}
+      />
+      <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} clubTier={((dbClub?.tier ?? 'starter') as ClubTier)} highlightFeature={upgradeHighlightFeature} />
+      <PlayerProfileDrawer
+        isOpen={selectedPlayerId !== null}
+        onClose={() => setSelectedPlayerId(null)}
+        playerId={selectedPlayerId}
+        clubId={dbClub?.id}
+        isDemo={effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'}
+      />
+      <ClubImportWizard
+        isOpen={importWizardOpen}
+        onClose={() => setImportWizardOpen(false)}
+        clubId={dbClub?.id ?? null}
+        clubName={dbClub?.name ?? 'Lumio FC'}
+        dbClub={dbClub as any}
+        onComplete={() => { setImportWizardOpen(false); window.location.reload() }}
+      />
+      {(() => {
+        const isDemoPm = effectiveSlug === 'lumio-dev' || effectiveSlug === 'lumio-dev-afc'
+        const playedFixturesPm = (resolvedFixturesForRender ?? []).filter((f: MockFixture) => !!f.result)
+        const lastResultPm = playedFixturesPm.length > 0 ? playedFixturesPm[playedFixturesPm.length - 1] : null
+        const positionPm = (apiStandings ?? []).find((t) => t.teamName === dbClub?.name)?.rank ?? null
+        return (
+          <PostMatchAnalysisModal
+            isOpen={postMatchOpen}
+            onClose={() => setPostMatchOpen(false)}
+            clubName={dbClub?.name ?? clubName}
+            league={dbClub?.league ?? 'EFL League One'}
+            lastResult={lastResultPm}
+            squad={resolvedSquadForRender}
+            leaguePosition={positionPm}
+            clubId={dbClub?.id ?? ''}
+            isDemo={isDemoPm}
+          />
+        )
+      })()}
     </div>
+    </FootballPinGate>
+    </ClubThemeProvider>
   )
 }
