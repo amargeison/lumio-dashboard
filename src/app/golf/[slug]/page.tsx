@@ -3050,6 +3050,180 @@ function MobileAppView() {
   );
 }
 
+type PitchResponse = {
+  subject: string;
+  opening: string;
+  fit: string;
+  deliverables: string;
+  closing: string;
+};
+
+type PipelineCard = { brand: string; category: string; value: string; next: string };
+type PipelineColumn = { key: string; title: string; cards: PipelineCard[] };
+
+const PIPELINE: PipelineColumn[] = [
+  { key: 'prospect', title: 'Prospect', cards: [
+    { brand: 'Oakley', category: 'Eyewear', value: '£35k/yr', next: 'Intro email — draft ready' },
+  ]},
+  { key: 'discussion', title: 'In Discussion', cards: [
+    { brand: 'Hublot', category: 'Watch', value: '£180k/yr', next: 'Follow-up call Thu 15:00' },
+  ]},
+  { key: 'offer', title: 'Offer Made', cards: [
+    { brand: 'Bentley', category: 'Vehicle', value: '£95k/yr + car', next: 'Awaiting counter-offer' },
+  ]},
+  { key: 'agreed', title: 'Agreed', cards: [
+    { brand: 'Mizuno', category: 'Equipment', value: '£22k/yr', next: 'Contract signing Monday' },
+  ]},
+];
+
+function AgentPipelineView() {
+  const [tab, setTab] = useState<'pipeline' | 'pitch'>('pipeline');
+  const [brand, setBrand] = useState('');
+  const [category, setCategory] = useState('Clubs');
+  const [value, setValue] = useState('');
+  const [brandWants, setBrandWants] = useState('');
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pitch, setPitch] = useState<PitchResponse | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function generatePitch() {
+    setLoading(true);
+    setError(null);
+    try {
+      const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Harrington. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: TaylorMade (clubs), Callaway (wedges/ball), Rolex (watch), BMW (vehicle), Puma (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: 'You are Sarah Mitchell, ISM sports agent, writing a sponsorship pitch on behalf of your client. Write in professional but warm agent voice. Be specific with stats.',
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{');
+      const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(s, e + 1)) as PitchResponse;
+      setPitch(parsed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate pitch');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyEmail() {
+    if (!pitch) return;
+    const body = `Subject: ${pitch.subject}\n\n${pitch.opening}\n\n${pitch.fit}\n\n${pitch.deliverables}\n\n${pitch.closing}\n\n— Sarah Mitchell\nISM Sports Management`;
+    navigator.clipboard.writeText(body).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const inp = 'w-full bg-[#0d0f1a] border border-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-green-600';
+  const lbl = 'block text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1';
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📬" title="Agent Pipeline" subtitle="Deal pipeline and AI-generated sponsorship pitches." />
+      <div className="flex gap-2 border-b border-gray-800">
+        {(['pipeline', 'pitch'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'text-green-300 border-green-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}>
+            {t === 'pipeline' ? 'Deal Pipeline' : 'Pitch Generator'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'pipeline' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {PIPELINE.map(col => (
+            <div key={col.key} className="space-y-2">
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{col.title}</div>
+              {col.cards.map((c, i) => (
+                <div key={i} className="bg-gray-900/40 border border-gray-800 rounded-lg p-3">
+                  <div className="text-sm font-semibold text-white">{c.brand}</div>
+                  <div className="text-[10px] text-gray-500">{c.category}</div>
+                  <div className="text-xs text-green-400 font-medium mt-1">{c.value}</div>
+                  <div className="text-[10px] text-gray-500 border-t border-gray-800 pt-2 mt-2">{c.next}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'pitch' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-white">Pitch Brief</h3>
+            <div>
+              <label className={lbl}>Brand</label>
+              <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Oakley" className={inp} />
+            </div>
+            <div>
+              <label className={lbl}>Category</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} className={inp}>
+                {['Clubs','Apparel','Watch','Vehicle','Equipment','Nutrition','Finance','Other'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>Proposed annual value</label>
+              <input value={value} onChange={e => setValue(e.target.value)} placeholder="£35k/yr" className={inp} />
+            </div>
+            <div>
+              <label className={lbl}>What they want</label>
+              <textarea value={brandWants} onChange={e => setBrandWants(e.target.value)} rows={3} className={inp} />
+            </div>
+            <div>
+              <label className={lbl}>Notes (optional)</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={inp} />
+            </div>
+            <button onClick={generatePitch} disabled={!brand.trim() || loading}
+              className="w-full bg-green-600/20 border border-green-500/40 text-green-300 text-sm font-semibold py-2.5 rounded hover:bg-green-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              {loading ? 'Generating…' : 'Generate Pitch'}
+            </button>
+            {error && <div className="text-red-400 text-xs">⚠️ {error}</div>}
+          </div>
+
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            {pitch ? (
+              <div>
+                <div className="flex items-center justify-between bg-gray-900/50 border-b border-gray-800 px-4 py-2">
+                  <div className="text-[11px] text-gray-400">📧 From: Sarah Mitchell · ISM Sports Management</div>
+                  <button onClick={copyEmail} className="text-[11px] text-green-300 hover:text-green-200">
+                    {copied ? '✓ Copied!' : 'Copy as email'}
+                  </button>
+                </div>
+                <div className="p-5 space-y-3">
+                  <div className="border-b border-gray-800 pb-2">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Subject</div>
+                    <div className="text-sm font-semibold text-white">{pitch.subject}</div>
+                  </div>
+                  <p className="text-sm text-gray-300 leading-relaxed">{pitch.opening}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed">{pitch.fit}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed">{pitch.deliverables}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed">{pitch.closing}</p>
+                  <div className="text-xs text-gray-500 pt-3 border-t border-gray-800">— Sarah Mitchell / ISM Sports Management</div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 text-gray-500 text-sm italic">Fill in the brief and hit Generate Pitch.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function GolfTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
