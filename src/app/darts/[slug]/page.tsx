@@ -2392,6 +2392,910 @@ function WomensDartsView({ onNavigate }: { onNavigate: (id: string) => void }) {
 }
 
 // ─── STUB VIEW (placeholder for new sidebar items) ───────────────────────────
+// ─── DARTBOARD HEATMAP VIEW ───────────────────────────────────────────────────
+function DartboardHeatmapView({ player: _player }: { player: DartsPlayer }) {
+  const [scenario, setScenario] = useState<'match' | 'practice' | 'pressure'>('match');
+  const [hoveredSeg, setHoveredSeg] = useState<number | null>(null);
+  const [compare, setCompare] = useState(false);
+
+  const SEGMENTS = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+
+  const heatData: Record<'match' | 'practice' | 'pressure', Record<number, number>> = {
+    match: { 20: 0.92, 19: 0.72, 18: 0.38, 16: 0.65, 8: 0.44, 4: 0.31, 1: 0.18, 5: 0.12, 12: 0.14, 9: 0.11, 14: 0.16, 11: 0.13, 6: 0.22, 10: 0.19, 15: 0.21, 2: 0.17, 17: 0.24, 3: 0.28, 7: 0.15, 13: 0.20 },
+    practice: { 20: 0.96, 19: 0.75, 18: 0.41, 16: 0.68, 8: 0.48, 4: 0.34, 1: 0.20, 5: 0.14, 12: 0.16, 9: 0.13, 14: 0.18, 11: 0.15, 6: 0.24, 10: 0.21, 15: 0.23, 2: 0.19, 17: 0.26, 3: 0.30, 7: 0.17, 13: 0.22 },
+    pressure: { 20: 0.78, 19: 0.65, 18: 0.31, 16: 0.54, 8: 0.37, 4: 0.24, 1: 0.15, 5: 0.10, 12: 0.12, 9: 0.09, 14: 0.13, 11: 0.11, 6: 0.18, 10: 0.16, 15: 0.18, 2: 0.14, 17: 0.20, 3: 0.23, 7: 0.12, 13: 0.17 },
+  };
+
+  const doublesData: Record<number, { attempts: number; rate: number; trend: string }> = {
+    20: { attempts: 187, rate: 41, trend: '↑' }, 16: { attempts: 142, rate: 38, trend: '↑' },
+    18: { attempts: 98, rate: 34, trend: '→' }, 8: { attempts: 76, rate: 49, trend: '↑' },
+    4: { attempts: 61, rate: 52, trend: '↑' }, 10: { attempts: 44, rate: 29, trend: '↓' },
+    1: { attempts: 38, rate: 27, trend: '→' }, 2: { attempts: 31, rate: 23, trend: '↓' },
+    3: { attempts: 29, rate: 31, trend: '↑' }, 5: { attempts: 22, rate: 26, trend: '→' },
+    6: { attempts: 19, rate: 28, trend: '→' }, 7: { attempts: 17, rate: 21, trend: '↓' },
+    9: { attempts: 15, rate: 25, trend: '→' }, 11: { attempts: 12, rate: 24, trend: '→' },
+    12: { attempts: 11, rate: 22, trend: '→' }, 13: { attempts: 9, rate: 18, trend: '↓' },
+    14: { attempts: 8, rate: 26, trend: '→' }, 15: { attempts: 7, rate: 30, trend: '↑' },
+    17: { attempts: 6, rate: 27, trend: '→' }, 19: { attempts: 5, rate: 33, trend: '↑' },
+  };
+
+  const heatToColor = (h: number) => {
+    if (h > 0.8) return 'rgba(239,68,68,0.7)';
+    if (h > 0.6) return 'rgba(251,146,60,0.65)';
+    if (h > 0.4) return 'rgba(250,204,21,0.5)';
+    if (h > 0.2) return 'rgba(250,204,21,0.25)';
+    return 'rgba(255,255,255,0.05)';
+  };
+
+  const renderBoard = (scenarioKey: 'match' | 'practice' | 'pressure', size: number = 320) => {
+    const cx = size / 2, cy = size / 2;
+    const r = { bull: size * 0.036, bull25: size * 0.072, inner: size * 0.2, treble: size * 0.29, outer: size * 0.4, edge: size * 0.48 };
+    const segAngle = 18;
+    const polarToXY = (angle: number, radius: number) => ({ x: cx + radius * Math.sin((angle * Math.PI) / 180), y: cy - radius * Math.cos((angle * Math.PI) / 180) });
+    const arcPath = (r1: number, r2: number, startDeg: number, endDeg: number) => {
+      const s1 = polarToXY(startDeg, r1), s2 = polarToXY(startDeg, r2);
+      const e1 = polarToXY(endDeg, r1), e2 = polarToXY(endDeg, r2);
+      return `M ${s1.x} ${s1.y} L ${s2.x} ${s2.y} A ${r2} ${r2} 0 0 1 ${e2.x} ${e2.y} L ${e1.x} ${e1.y} A ${r1} ${r1} 0 0 0 ${s1.x} ${s1.y} Z`;
+    };
+    const data = heatData[scenarioKey];
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={r.edge} fill="#1a1a1a" />
+        {SEGMENTS.map((num, idx) => {
+          const startDeg = idx * segAngle - segAngle / 2;
+          const endDeg = startDeg + segAngle;
+          const h = data[num] || 0.1;
+          const isHovered = hoveredSeg === num;
+          const baseLight = idx % 2 === 0 ? '#f5f5dc' : '#1a1a1a';
+          const midDeg = startDeg + segAngle / 2;
+          const pos = polarToXY(midDeg, r.edge * 1.06);
+          return (
+            <g key={num} onMouseEnter={() => setHoveredSeg(num)} onMouseLeave={() => setHoveredSeg(null)} style={{ cursor: 'pointer' }}>
+              <path d={arcPath(r.treble, r.inner, startDeg, endDeg)} fill={baseLight} stroke="#333" strokeWidth="0.5" opacity={0.9} />
+              <path d={arcPath(r.outer, r.treble, startDeg, endDeg)} fill={idx % 2 === 0 ? '#c41e3a' : '#1a7a3c'} stroke="#333" strokeWidth="0.5" />
+              <path d={arcPath(r.inner, r.bull25 * 1.4, startDeg, endDeg)} fill={baseLight} stroke="#333" strokeWidth="0.5" opacity={0.9} />
+              <path d={arcPath(r.edge, r.outer, startDeg, endDeg)} fill={idx % 2 === 0 ? '#c41e3a' : '#1a7a3c'} stroke="#333" strokeWidth="0.5" />
+              <path d={arcPath(r.outer, r.bull25 * 1.4, startDeg, endDeg)} fill={heatToColor(h)} opacity={isHovered ? 0.9 : 0.75} />
+              {isHovered && <path d={arcPath(r.edge, r.bull25 * 1.4, startDeg, endDeg)} fill="white" fillOpacity={0.08} stroke="white" strokeWidth="0.5" strokeOpacity={0.3} />}
+              <text x={pos.x} y={pos.y} textAnchor="middle" dominantBaseline="central" fontSize={size * 0.038} fill="white" fontWeight="500" style={{ pointerEvents: 'none', userSelect: 'none' }}>{num}</text>
+            </g>
+          );
+        })}
+        <circle cx={cx} cy={cy} r={r.bull25} fill="#1a7a3c" stroke="#333" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={r.bull} fill="#c41e3a" stroke="#333" strokeWidth="0.5" />
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={size * 0.04} fill="white" fontWeight="600" style={{ pointerEvents: 'none' }}>B</text>
+      </svg>
+    );
+  };
+
+  const hovered = hoveredSeg;
+  const dbl = hovered ? doublesData[hovered] : null;
+  const heat = hovered ? (heatData[scenario][hovered] || 0.1) : null;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Dartboard Heatmap</h1>
+        <p className="text-gray-400 text-sm mt-1">Hit distribution · Segment accuracy · Doubles &amp; trebles</p>
+      </div>
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex rounded-lg border border-white/5 overflow-hidden">
+          {(['match', 'practice', 'pressure'] as const).map(s => (
+            <button key={s} onClick={() => setScenario(s)} className={`px-4 py-2 text-xs font-medium transition-colors ${scenario === s ? 'bg-red-600/20 text-red-300 border-r border-white/5' : 'bg-gray-900/40 text-gray-500 hover:text-gray-300 border-r border-white/5'} last:border-r-0`}>
+              {s === 'match' ? 'Match play' : s === 'practice' ? 'Practice' : 'Under pressure'}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setCompare(!compare)} className={`px-4 py-2 text-xs font-medium rounded-lg border transition-colors ${compare ? 'bg-blue-600/20 text-blue-300 border-blue-500/30' : 'bg-gray-900/40 text-gray-500 border-white/5 hover:text-gray-300'}`}>
+          {compare ? '✕ Close comparison' : 'Compare practice vs match'}
+        </button>
+      </div>
+      <div className="flex gap-6 items-start">
+        {compare ? (
+          <div className="flex gap-6">
+            <div className="flex flex-col items-center gap-2"><p className="text-xs text-gray-500 uppercase tracking-wide">Practice</p>{renderBoard('practice', 280)}</div>
+            <div className="flex flex-col items-center gap-2"><p className="text-xs text-gray-500 uppercase tracking-wide">Match play</p>{renderBoard('match', 280)}</div>
+          </div>
+        ) : renderBoard(scenario, 340)}
+        <div className="flex-1 min-w-[200px]">
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4 min-h-[200px]">
+            {hovered ? (
+              <>
+                <h3 className="text-white font-medium mb-3">Segment {hovered}</h3>
+                <div className="space-y-2.5">
+                  <div>
+                    <p className="text-xs text-gray-500">Heat score</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-2 flex-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${Math.round((heat || 0) * 100)}%`, background: heatToColor(heat || 0) }} />
+                      </div>
+                      <span className="text-white text-sm font-medium">{Math.round((heat || 0) * 100)}%</span>
+                    </div>
+                  </div>
+                  {dbl && (
+                    <>
+                      <div className="flex justify-between text-sm"><span className="text-gray-500">Double {hovered} attempts</span><span className="text-white">{dbl.attempts}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-500">Conversion rate</span><span className={`font-medium ${dbl.rate >= 40 ? 'text-green-400' : dbl.rate >= 30 ? 'text-amber-400' : 'text-red-400'}`}>{dbl.rate}%</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-500">Trend</span><span className={dbl.trend === '↑' ? 'text-green-400' : dbl.trend === '↓' ? 'text-red-400' : 'text-gray-400'}>{dbl.trend} {dbl.trend === '↑' ? 'Improving' : dbl.trend === '↓' ? 'Declining' : 'Stable'}</span></div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-600 text-sm">Hover a segment to see stats</div>
+            )}
+          </div>
+          <div className="mt-4 bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Heat key</p>
+            <div className="space-y-1.5">
+              {[
+                { color: 'rgba(239,68,68,0.7)', label: 'Very high (80–100%)' },
+                { color: 'rgba(251,146,60,0.65)', label: 'High (60–80%)' },
+                { color: 'rgba(250,204,21,0.5)', label: 'Medium (40–60%)' },
+                { color: 'rgba(250,204,21,0.25)', label: 'Low (20–40%)' },
+                { color: 'rgba(255,255,255,0.05)', label: 'Minimal (0–20%)' },
+              ].map((it, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: it.color, border: '1px solid rgba(255,255,255,0.1)' }} />
+                  {it.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Doubles conversion — 2025 season</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Double</span><span>Attempts</span><span>Hit rate</span><span>Trend</span><span>Rating</span>
+          </div>
+          {Object.entries(doublesData).sort((a, b) => b[1].attempts - a[1].attempts).map(([num, d]) => (
+            <div key={num} onMouseEnter={() => setHoveredSeg(Number(num))} onMouseLeave={() => setHoveredSeg(null)} className={`grid grid-cols-5 gap-2 px-4 py-2.5 border-t border-white/5 text-sm cursor-pointer transition-colors ${hoveredSeg === Number(num) ? 'bg-gray-800/40' : 'hover:bg-gray-900/40'}`}>
+              <span className="text-white font-medium">D{num}</span>
+              <span className="text-gray-400">{d.attempts}</span>
+              <span className={`font-medium ${d.rate >= 45 ? 'text-green-400' : d.rate >= 35 ? 'text-amber-400' : 'text-red-400'}`}>{d.rate}%</span>
+              <span className={d.trend === '↑' ? 'text-green-400' : d.trend === '↓' ? 'text-red-400' : 'text-gray-500'}>{d.trend}</span>
+              <div className="flex items-center">
+                <div className="h-1.5 flex-1 bg-gray-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${d.rate >= 45 ? 'bg-green-500' : d.rate >= 35 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${d.rate}%` }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADVANCED STATS VIEW ──────────────────────────────────────────────────────
+function AdvancedStatsView({ player: _player }: { player: DartsPlayer }) {
+  const first9Avg = [102.1, 106.4, 98.3, 103.8, 108.4, 101.2, 99.8, 105.7, 103.2, 101.6, 108.9, 100.4, 104.8, 102.1, 103.9];
+  const scoringZones = [
+    { label: '180 (max)', jake: 198, pdc: 162, color: 'bg-red-500' },
+    { label: '140+', jake: 312, pdc: 274, color: 'bg-orange-500' },
+    { label: '100+', jake: 689, pdc: 641, color: 'bg-amber-500' },
+    { label: '60–99', jake: 891, pdc: 908, color: 'bg-blue-500' },
+    { label: 'Below 60', jake: 423, pdc: 498, color: 'bg-gray-500' },
+  ];
+  const legLengths = [
+    { darts: 9, won: 1 }, { darts: 12, won: 14 }, { darts: 15, won: 67 },
+    { darts: 18, won: 89 }, { darts: 21, won: 76 }, { darts: 24, won: 43 },
+  ];
+  const maxLegs = Math.max(...legLengths.map(l => l.won));
+  const h2h = [
+    { opp: 'Luke Littler', rank: 1, w: 2, l: 4, avg: 96.1 },
+    { opp: 'Michael van Gerwen', rank: 2, w: 1, l: 5, avg: 95.4 },
+    { opp: 'Luke Humphries', rank: 3, w: 3, l: 2, avg: 97.8 },
+    { opp: 'Nathan Aspinall', rank: 4, w: 4, l: 3, avg: 98.2 },
+    { opp: 'Rob Cross', rank: 9, w: 4, l: 4, avg: 97.1 },
+    { opp: 'Gerwyn Price', rank: 7, w: 8, l: 3, avg: 99.4 },
+    { opp: 'Gary Anderson', rank: 14, w: 5, l: 4, avg: 98.7 },
+    { opp: 'Michael Smith', rank: 6, w: 3, l: 5, avg: 96.8 },
+  ];
+  const busts = [
+    { score: 36, count: 12, reason: 'Hits S18 leaving 18' },
+    { score: 32, count: 9, reason: 'Hits S16 leaving 16, then misses' },
+    { score: 64, count: 8, reason: 'Hits S16 leaving 48, misses D24' },
+    { score: 48, count: 7, reason: 'Misses D16, hits S8 leaving 40' },
+    { score: 24, count: 6, reason: 'Hits S8 leaving 16, then misses D8' },
+  ];
+  return (
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Advanced Performance Stats</h1>
+        <p className="text-gray-400 text-sm mt-1">2025 season · 47 matches played · All PDC events</p>
+      </div>
+      <div className="grid grid-cols-6 gap-3">
+        {[
+          { label: 'Match average', value: '97.8' }, { label: 'First 9 average', value: '101.4' },
+          { label: 'Checkout %', value: '41.2%' }, { label: '180s / match', value: '4.2' },
+          { label: 'Legs won / match', value: '8.1' }, { label: 'Win rate', value: '68%' },
+        ].map((k, i) => (
+          <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+            <p className="text-2xl font-medium text-white">{k.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div><h2 className="text-white font-medium">First 9-dart average</h2><p className="text-gray-500 text-xs mt-0.5">Average score in the first 3 visits per leg · Elite threshold: 100+</p></div>
+          <div className="flex gap-4 text-xs text-gray-400"><span>Jake 2025: <strong className="text-white">101.4</strong></span><span>PDC avg: <strong className="text-gray-300">96.8</strong></span></div>
+        </div>
+        <div className="relative h-28">
+          <div className="absolute inset-0 flex items-end gap-1">
+            {first9Avg.map((v, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className={`w-full rounded-sm transition-all ${v >= 100 ? 'bg-red-500/70' : 'bg-gray-700'}`} style={{ height: `${((v - 88) / 25) * 100}%` }} />
+              </div>
+            ))}
+          </div>
+          <div className="absolute left-0 right-0 border-t border-dashed border-red-500/40" style={{ bottom: `${((100 - 88) / 25) * 100}%` }} />
+        </div>
+        <div className="flex justify-between text-xs text-gray-500 mt-2"><span>PC 1</span><span>PC 5</span><span>PC 10</span><span>PC 15</span></div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Scoring zones — 2025 season totals</h2>
+        <div className="space-y-3">
+          {scoringZones.map((z, i) => (
+            <div key={i} className="grid grid-cols-12 gap-3 items-center text-sm">
+              <span className="col-span-2 text-gray-400">{z.label}</span>
+              <div className="col-span-7 relative h-5 bg-gray-800 rounded overflow-hidden">
+                <div className={`absolute left-0 top-0 h-full ${z.color} opacity-70 rounded`} style={{ width: `${(z.jake / 900) * 100}%` }} />
+                <div className="absolute top-0 h-full border-r-2 border-white/40" style={{ left: `${(z.pdc / 900) * 100}%` }} />
+              </div>
+              <div className="col-span-3 flex gap-3 text-xs"><span className="text-white">{z.jake}</span><span className="text-gray-500">PDC: {z.pdc}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-1">Leg efficiency</h2>
+        <p className="text-gray-500 text-xs mb-3">Legs won in X darts · Season avg won: 18.3 darts</p>
+        <div className="flex items-end gap-2 h-24">
+          {legLengths.map((leg, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-white text-xs font-medium">{leg.won}</span>
+              <div className="w-full bg-red-500/60 rounded-sm" style={{ height: `${(leg.won / maxLegs) * 72}px` }} />
+              <span className="text-[10px] text-gray-500">{leg.darts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-1">Bust rate analysis</h2>
+        <p className="text-gray-500 text-xs mb-3">Overall 3.8% of checkout attempts — was 5.1% in 2024</p>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-3 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide"><span>Score left</span><span>Occurrences</span><span>Common cause</span></div>
+          {busts.map((b, i) => (
+            <div key={i} className="grid grid-cols-3 gap-2 px-4 py-3 border-t border-white/5 text-sm">
+              <span className="text-red-400 font-medium">{b.score}</span>
+              <span className="text-gray-300">{b.count}×</span>
+              <span className="text-gray-500 text-xs">{b.reason}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Head-to-head vs top players</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide"><span className="col-span-2">Opponent</span><span>Rank</span><span>Record</span><span>Jake avg</span></div>
+          {h2h.map((h, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3 border-t border-white/5 text-sm items-center">
+              <span className="col-span-2 text-gray-200">{h.opp}</span>
+              <span className="text-gray-500">#{h.rank}</span>
+              <span className={`font-medium ${h.w > h.l ? 'text-green-400' : h.w < h.l ? 'text-red-400' : 'text-gray-300'}`}>W{h.w} L{h.l}</span>
+              <span className="text-gray-300">{h.avg}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MATCH PREP VIEW ──────────────────────────────────────────────────────────
+function MatchPrepView({ player: _player }: { player: DartsPlayer }) {
+  const routes = [
+    { score: 170, route: 'T20 T20 Bull', note: 'Max checkout — only if confident' },
+    { score: 164, route: 'T20 T18 Bull', note: 'Keep bull as fallback' },
+    { score: 158, route: 'T20 T20 D19', note: 'Practise D19 setup' },
+    { score: 132, route: 'T20 T16 D12', note: 'Standard — no surprises' },
+    { score: 121, route: 'T20 11 D25', note: 'Bull setup' },
+    { score: 100, route: 'T20 D20', note: 'Cleanest finish' },
+    { score: 81, route: 'T19 D12', note: 'Price leaves 81 often' },
+    { score: 60, route: 'S20 D20', note: 'D20 — your best double' },
+    { score: 40, route: 'D20', note: 'Standard' },
+    { score: 36, route: 'D18', note: 'Avoid S18 leaving 18' },
+    { score: 32, route: 'D16', note: 'Solid double' },
+    { score: 16, route: 'D8', note: 'D8 52% — your best' },
+  ];
+  const mentalChecklist = [
+    'Arrive venue 19:15 — dressing room warm-up',
+    'Headphones in during warm-up — no distractions',
+    '18-second throwing routine between throws',
+    'Breathe deeply between visits',
+    'Walk calmly between boards — match Price\'s slow tempo',
+  ];
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Match Prep</h1>
+        <p className="text-gray-400 text-sm mt-1">Tonight's tactical plan — PDC European Championship R1</p>
+      </div>
+      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
+        <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">TONIGHT'S MATCH</div>
+        <div className="text-white font-bold text-xl mb-1">Jake Morrison vs Gerwyn Price</div>
+        <div className="text-sm text-gray-300">20:00 · Westfalenhalle, Dortmund · First round · Win = £110,000</div>
+        <div className="text-xs text-gray-500 mt-2">H2H lifetime: <strong className="text-white">W8 L3</strong> · Last 3: W, L, W</div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Opponent intel — Gerwyn Price (#7)</h2>
+        <div className="grid grid-cols-4 gap-3 text-sm">
+          <div><p className="text-xs text-gray-500">Average</p><p className="text-white font-medium">96.2</p></div>
+          <div><p className="text-xs text-gray-500">Checkout %</p><p className="text-white font-medium">40.1%</p></div>
+          <div><p className="text-xs text-gray-500">180s/leg</p><p className="text-white font-medium">0.79</p></div>
+          <div><p className="text-xs text-gray-500">Best double</p><p className="text-white font-medium">D16 (52%)</p></div>
+        </div>
+        <p className="text-xs text-amber-400 mt-3">⚠ Price starts slow — attack first 3 legs aggressively. His scoring drops 6% when behind early.</p>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">3-phase game plan</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { phase: 'Opening (legs 1–3)', color: 'from-red-900/40 to-red-900/10 border-red-600/30', note: 'Attack aggressively. Target 100+ legs. Disrupt Price\'s rhythm before he settles.' },
+            { phase: 'Mid-match (legs 4–8)', color: 'from-amber-900/40 to-amber-900/10 border-amber-600/30', note: 'Maintain routine. Capitalise on his scoring dips. Don\'t force 180s — play percentages.' },
+            { phase: 'Closing (legs 9+)', color: 'from-teal-900/40 to-teal-900/10 border-teal-600/30', note: 'Stay calm. Trust D20 / D16. If ahead, hold the trigger. If behind, T20–T20 Bull finishes.' },
+          ].map((p, i) => (
+            <div key={i} className={`bg-gradient-to-br ${p.color} border rounded-xl p-4`}>
+              <div className="text-xs font-semibold uppercase tracking-wider text-white mb-2">{p.phase}</div>
+              <p className="text-xs text-gray-300 leading-relaxed">{p.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Checkout routes — tonight's plan</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span className="col-span-1">Score</span><span className="col-span-3">Route</span><span className="col-span-8">Tonight's note</span>
+          </div>
+          {routes.map((r, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+              <span className="col-span-1 text-red-400 font-medium">{r.score}</span>
+              <span className="col-span-3 text-white">{r.route}</span>
+              <span className="col-span-8 text-gray-400 text-xs">{r.note}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Mental prep — from Sarah (mental coach)</h2>
+        <div className="space-y-2">
+          {mentalChecklist.map((item, i) => (
+            <div key={i} className="flex items-start gap-2.5 text-sm">
+              <div className="mt-0.5 w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+              <span className="text-gray-300">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── WALK-ON MUSIC VIEW ───────────────────────────────────────────────────────
+function WalkOnMusicView({ player: _player }: { player: DartsPlayer }) {
+  const [showToast, setShowToast] = useState(false);
+  const [newTrack, setNewTrack] = useState('');
+  const [reason, setReason] = useState('');
+  function submit() { setShowToast(true); setNewTrack(''); setReason(''); setTimeout(() => setShowToast(false), 3000); }
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Walk-on Music</h1>
+        <p className="text-gray-400 text-sm mt-1">Approved tracks, broadcaster clearance, change requests</p>
+      </div>
+      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 rounded-lg bg-black/40 border border-red-600/30 flex items-center justify-center text-3xl flex-shrink-0">🎵</div>
+          <div className="flex-1">
+            <div className="text-xs text-red-400 uppercase tracking-wider font-semibold mb-1">Current walk-on track</div>
+            <div className="text-white font-bold text-lg">"Iron" — Within Temptation</div>
+            <div className="text-xs text-gray-400 mt-1">Duration 2:04 · BPM 138 · PDC Ref #WM-2847</div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Broadcaster approval status</h2>
+        <div className="grid grid-cols-5 gap-2 text-sm">
+          {[
+            { b: 'Sky Sports', ok: true }, { b: 'DAZN', ok: true }, { b: 'ITV', ok: true },
+            { b: 'BBC', ok: true }, { b: 'RTL (DE)', ok: true },
+          ].map((s, i) => (
+            <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3 text-center">
+              <div className="text-[10px] text-gray-500 uppercase tracking-wide">{s.b}</div>
+              <div className={`text-sm font-medium mt-1 ${s.ok ? 'text-green-400' : 'text-amber-400'}`}>{s.ok ? '✓ Approved' : 'Pending'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-white font-medium">Backup track</h2>
+          <span className="text-[10px] text-amber-400 uppercase tracking-wide">Partially approved</span>
+        </div>
+        <div className="text-gray-300 text-sm">"Eye of the Tiger" — Survivor</div>
+        <div className="text-xs text-gray-500 mt-1">Sky ✓ · ITV ✓ · BBC ✓ · DAZN ⏳ Pending · RTL ✓</div>
+      </div>
+      <div className="bg-amber-950/40 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
+        ⚠ DAZN backup approval still pending — submit by <strong className="text-amber-100">May 1</strong> for Grand Slam eligibility.
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-2">Brand identity notes</h2>
+        <p className="text-gray-400 text-sm leading-relaxed">"Iron" aligns with the Red Dragon sponsor palette and Jake&apos;s aggressive throwing style. Cadence sits well with the 2m walk-on window. Alternatives must match 130+ BPM and avoid explicit language for broadcast clearance.</p>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Upcoming televised events — music required</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Event</span><span>Date</span><span>Broadcaster</span><span>Status</span>
+          </div>
+          {[
+            { ev: 'Grand Slam of Darts', date: 'Nov 8', br: 'Sky Sports', st: '✓ Approved' },
+            { ev: 'Premier League Night 14', date: 'May 2', br: 'Sky + DAZN', st: '⏳ DAZN pending' },
+            { ev: 'World Matchplay', date: 'Jul 19', br: 'Sky Sports', st: '✓ Approved' },
+            { ev: 'German Masters', date: 'Oct 4', br: 'RTL', st: '✓ Approved' },
+          ].map((e, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+              <span className="text-white">{e.ev}</span>
+              <span className="text-gray-400">{e.date}</span>
+              <span className="text-gray-400">{e.br}</span>
+              <span className={e.st.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}>{e.st}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Request track change</h2>
+        <div className="space-y-3">
+          <input value={newTrack} onChange={e => setNewTrack(e.target.value)} placeholder="Proposed track (Artist - Title)" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-red-500/60 focus:outline-none" />
+          <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason for change" rows={3} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-red-500/60 focus:outline-none" />
+          <button onClick={submit} className="px-4 py-2 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 text-sm font-medium hover:bg-red-600/30">Submit request</button>
+        </div>
+        {showToast && <div className="mt-3 px-3 py-2 rounded-lg bg-green-600/20 border border-green-500/30 text-green-300 text-sm">✓ Request submitted for review</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── PRACTICE GAMES VIEW ──────────────────────────────────────────────────────
+function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
+  const games = [
+    { name: "Bob's 27",          pb: 141,  avg: 87,  target: 100, unit: 'pts',   sparkline: [72, 85, 78, 91, 88, 94, 83, 108, 95, 141] },
+    { name: 'Around the Clock',  pb: '4:12', avg: '5:40', target: '4:30', unit: 'time', sparkline: [] },
+    { name: '180 Challenge',     pb: 11,   avg: 7,   target: 9,   unit: '180s',  sparkline: [] },
+    { name: 'Doubles Round',     pb: '3:45', avg: '5:10', target: '4:00', unit: 'time', sparkline: [] },
+    { name: 'Checkout Trainer',  pb: '14/20', avg: '11/20', target: '13/20', unit: 'hits', sparkline: [] },
+    { name: 'Halve It',          pb: 320,  avg: 215, target: 260, unit: 'pts',   sparkline: [] },
+    { name: 'Shanghai',          pb: 167,  avg: 108, target: 130, unit: 'pts',   sparkline: [] },
+    { name: 'Cricket',           pb: 8,    avg: 5,   target: 7,   unit: 'rounds',sparkline: [] },
+  ];
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Practice Games</h1>
+        <p className="text-gray-400 text-sm mt-1">Logged practice sessions — personal bests, averages, coach targets</p>
+      </div>
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/60 border border-white/5 text-sm">
+        <span className="text-base">📊</span>
+        <span className="text-gray-300"><strong className="text-white">4 sessions logged this week</strong> · 92 minutes average · Bob&apos;s 27 PB this week</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {games.map((g, i) => (
+          <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="text-white font-medium">{g.name}</h3>
+                <div className="flex gap-4 mt-1 text-xs">
+                  <span className="text-gray-500">PB: <strong className="text-white">{g.pb}</strong></span>
+                  <span className="text-gray-500">Avg: <strong className="text-gray-300">{g.avg}</strong></span>
+                  <span className="text-gray-500">Target: <strong className="text-amber-400">{g.target}</strong></span>
+                </div>
+              </div>
+              <button className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 text-xs font-medium hover:bg-red-600/30">Log session</button>
+            </div>
+            {g.sparkline.length > 0 && (
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Last 10 sessions</p>
+                <div className="flex items-end gap-1 h-8">
+                  {g.sparkline.map((v, j) => (
+                    <div key={j} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / 141) * 100}%` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Bob&apos;s 27 — 30-session trend</h2>
+        <div className="flex items-end gap-1 h-24">
+          {[45, 52, 48, 63, 58, 71, 66, 78, 72, 85, 79, 91, 87, 83, 94, 88, 96, 92, 101, 97, 104, 98, 112, 108, 119, 115, 127, 123, 135, 141].map((v, i) => (
+            <div key={i} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / 141) * 100}%` }} />
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">Personal best: <strong className="text-white">141</strong> · Trend: <strong className="text-green-400">↑ improving</strong></p>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Coach targets (Marco)</h2>
+        <ul className="space-y-2 text-sm text-gray-400">
+          <li>• Hit 100+ on Bob&apos;s 27 in 80% of sessions</li>
+          <li>• Sub-4:30 on Around the Clock consistently</li>
+          <li>• 13/20 on Checkout Trainer — focus on 40, 32, 16 finishes</li>
+          <li>• 9+ maximums on 180 Challenge</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── PHYSIO & RECOVERY VIEW ───────────────────────────────────────────────────
+function PhysioRecoveryView({ player: _player }: { player: DartsPlayer }) {
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const bodyParts: Record<string, { status: string; note: string; colour: string }> = {
+    'Right shoulder': { status: 'Monitor', note: 'Minor tightness 3/10 — cleared for play, ice post-match', colour: 'amber' },
+    'Elbow': { status: 'OK', note: 'No issues — full range of motion', colour: 'green' },
+    'Wrist': { status: 'OK', note: 'No issues', colour: 'green' },
+    'Back': { status: 'OK', note: 'Lower back prevention routine in place', colour: 'green' },
+  };
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Physio &amp; Recovery</h1>
+        <p className="text-gray-400 text-sm mt-1">Body map, treatment log, prevention programme</p>
+      </div>
+      <div className="bg-gradient-to-r from-green-900/30 to-green-900/10 border border-green-600/30 rounded-xl p-5">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">✅</span>
+          <div>
+            <div className="text-white font-medium">Cleared for tonight</div>
+            <div className="text-xs text-gray-400 mt-0.5">Arm good · Minor shoulder tightness 3/10 (right) · No restrictions</div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Body map</h2>
+          <div className="flex justify-center">
+            <svg width="180" height="260" viewBox="0 0 180 260">
+              <circle cx="90" cy="30" r="22" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <rect x="60" y="52" width="60" height="90" rx="10" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <rect x="32" y="58" width="22" height="74" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <rect x="126" y="58" width="22" height="74" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <rect x="66" y="142" width="22" height="90" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <rect x="92" y="142" width="22" height="90" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
+              <circle cx="128" cy="62" r="8" fill="#f59e0b" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Right shoulder')} />
+              <circle cx="138" cy="92" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Elbow')} />
+              <circle cx="144" cy="128" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Wrist')} />
+              <circle cx="90" cy="100" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Back')} />
+            </svg>
+          </div>
+          {selectedBodyPart && (
+            <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium text-sm">{selectedBodyPart}</span>
+                <span className={`text-xs ${bodyParts[selectedBodyPart].colour === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>{bodyParts[selectedBodyPart].status}</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">{bodyParts[selectedBodyPart].note}</p>
+            </div>
+          )}
+        </div>
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Injury history</h2>
+          <div className="space-y-2">
+            {[
+              { date: '2024-11', site: 'Left shoulder strain', severity: 'Moderate', days: 9 },
+              { date: '2024-06', site: 'Right elbow tendonitis', severity: 'Mild', days: 4 },
+              { date: '2024-02', site: 'Lower back tightness', severity: 'Mild', days: 2 },
+            ].map((inj, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+                <div>
+                  <div className="text-gray-200">{inj.site}</div>
+                  <div className="text-xs text-gray-500">{inj.date} · {inj.severity}</div>
+                </div>
+                <span className="text-xs text-gray-400">{inj.days}d out</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
+        <div className="rounded-lg border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-black/40 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Date</span><span>Therapist</span><span>Focus</span><span>Duration</span>
+          </div>
+          {[
+            { date: '15 Apr', therapist: 'Dr. Singh', focus: 'Shoulder mobility + soft tissue', time: '45 min' },
+            { date: '12 Apr', therapist: 'J. Porter', focus: 'Full upper body sports massage', time: '60 min' },
+            { date: '9 Apr', therapist: 'Dr. Singh', focus: 'Elbow ultrasound + ice', time: '30 min' },
+            { date: '5 Apr', therapist: 'M. Lawrence', focus: 'Deep tissue — back + shoulders', time: '75 min' },
+            { date: '2 Apr', therapist: 'Dr. Singh', focus: 'ROM assessment', time: '30 min' },
+          ].map((s, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+              <span className="text-gray-400">{s.date}</span>
+              <span className="text-white">{s.therapist}</span>
+              <span className="text-gray-400 text-xs">{s.focus}</span>
+              <span className="text-gray-400">{s.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Prevention — daily routine</h2>
+        <div className="space-y-2">
+          {['Foam roll — 10 min', 'Shoulder mobility drills', 'Wrist &amp; forearm stretches', 'Neck release', 'Hydration — 3L water'].map((item, i) => (
+            <div key={i} className="flex items-center gap-2.5 text-sm">
+              <div className="w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+              <span className="text-gray-300" dangerouslySetInnerHTML={{ __html: item }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Physio contacts</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { name: 'Dr. Anita Singh', role: 'Lead Physio', phone: '07700 900001' },
+            { name: 'James Porter', role: 'Sports Rehab', phone: '07700 900002' },
+            { name: 'Mike Lawrence', role: 'Massage Therapist', phone: '07700 900003' },
+          ].map((p, i) => (
+            <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-3">
+              <div className="text-white font-medium text-sm">{p.name}</div>
+              <div className="text-xs text-gray-500">{p.role}</div>
+              <div className="text-xs text-red-400 mt-1">{p.phone}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DRAW & BRACKET VIEW ──────────────────────────────────────────────────────
+function DrawBracketView({ player: _player }: { player: DartsPlayer }) {
+  const [tournament, setTournament] = useState<'european' | 'grand-slam' | 'matchplay' | 'uk-open'>('european');
+  const [showFull, setShowFull] = useState(false);
+  const path = [
+    { round: 'R1', opp: 'Gerwyn Price (#7)', prize: '£25,000', status: 'tonight' },
+    { round: 'R2', opp: 'Winner M. Smith/R. Cross', prize: '£35,000', status: 'pending' },
+    { round: 'QF', opp: 'Projected: L. Humphries (#3)', prize: '£50,000', status: 'pending' },
+    { round: 'SF', opp: 'Projected: L. Littler (#1)', prize: '£80,000', status: 'pending' },
+    { round: 'Final', opp: 'Projected: MVG (#2)', prize: '£110,000 winner', status: 'pending' },
+  ];
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Draw &amp; Bracket</h1>
+        <p className="text-gray-400 text-sm mt-1">Tournament draws and projected paths</p>
+      </div>
+      <div className="flex items-center gap-2">
+        {([
+          { id: 'european', label: 'European Championship' },
+          { id: 'grand-slam', label: 'Grand Slam' },
+          { id: 'matchplay', label: 'World Matchplay' },
+          { id: 'uk-open', label: 'UK Open' },
+        ] as const).map(t => (
+          <button key={t.id} onClick={() => setTournament(t.id)} className={`px-4 py-2 text-xs font-medium rounded-lg border transition-colors ${tournament === t.id ? 'bg-red-600/20 text-red-300 border-red-500/30' : 'bg-gray-900/40 text-gray-500 border-white/5 hover:text-gray-300'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-4">Jake&apos;s quarter — Round 1</h2>
+        <div className="grid grid-cols-4 gap-3 text-xs">
+          <div className="bg-red-600/20 border border-red-500/50 rounded-lg p-3">
+            <div className="text-red-300 font-semibold">LIVE TONIGHT</div>
+            <div className="text-white mt-1">Jake Morrison (#19)</div>
+            <div className="text-gray-400">vs Gerwyn Price (#7)</div>
+          </div>
+          {[
+            { top: 'Michael Smith', bot: 'Rob Cross' },
+            { top: 'Gary Anderson', bot: 'Dirk van Duijvenbode' },
+            { top: 'Luke Humphries', bot: 'Daryl Gurney' },
+          ].map((m, i) => (
+            <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3">
+              <div className="text-gray-400">{m.top}</div>
+              <div className="text-gray-500 text-[10px] my-1">vs</div>
+              <div className="text-gray-400">{m.bot}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-gray-500 mt-3">Winner of Jake's bracket enters QF Thursday night</div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Path to the title</h2>
+        <div className="space-y-2">
+          {path.map((p, i) => (
+            <div key={i} className={`flex items-center justify-between px-4 py-3 rounded-lg border ${p.status === 'tonight' ? 'bg-red-600/20 border-red-500/30' : 'bg-gray-900/60 border-white/5'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${p.status === 'tonight' ? 'bg-red-500 text-white' : 'bg-gray-800 text-gray-400'}`}>{p.round}</div>
+                <span className={p.status === 'tonight' ? 'text-white font-medium' : 'text-gray-300'}>{p.opp}</span>
+              </div>
+              <span className={`text-sm font-medium ${p.status === 'tonight' ? 'text-red-300' : 'text-gray-400'}`}>{p.prize}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl">
+        <button onClick={() => setShowFull(!showFull)} className="w-full flex items-center justify-between px-5 py-4 text-left">
+          <h2 className="text-white font-medium">Full 32-player bracket</h2>
+          <span className="text-xs text-gray-400">{showFull ? '▲ Hide' : '▼ Show'}</span>
+        </button>
+        {showFull && (
+          <div className="px-5 pb-5">
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              {['L. Littler', 'M. Smith', 'R. Cross', 'J. Wade', 'G. Anderson', 'D. van Duijvenbode', 'J. Morrison', 'G. Price', 'L. Humphries', 'D. Gurney', 'M. van Gerwen', 'D. Chisnall', 'N. Aspinall', 'P. Wright', 'D. Noppert', 'G. Clayton'].map((p, i) => (
+                <div key={i} className="bg-black/30 border border-white/5 rounded px-2 py-1.5 text-gray-400">{p}</div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="bg-amber-950/20 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
+        ℹ️ Players Championship events use a no-advance-draw format — opponents are drawn on the day of the event.
+      </div>
+    </div>
+  );
+}
+
+// ─── PRIZE MONEY FORECAST VIEW ────────────────────────────────────────────────
+function PrizeForecastView({ player: _player }: { player: DartsPlayer }) {
+  const pctEarned = (42800 / 150000) * 100;
+  const years = [
+    { year: '2020', amount: 32000 },
+    { year: '2021', amount: 58000 },
+    { year: '2022', amount: 71000 },
+    { year: '2023', amount: 89000 },
+    { year: '2024', amount: 102000 },
+    { year: '2025', amount: 139000, projected: true },
+  ];
+  const upcoming = [
+    { ev: 'Prague Open', date: 'Apr 22', pool: '£120k', expect: 'R3', earn: '£3,500' },
+    { ev: 'Players Ch. 8', date: 'Apr 28', pool: '£100k', expect: 'QF', earn: '£5,000' },
+    { ev: 'Players Ch. 9', date: 'May 3', pool: '£100k', expect: 'R3', earn: '£2,500' },
+    { ev: 'Premier League N14', date: 'May 9', pool: '£275k', expect: 'Win', earn: '£15,000' },
+    { ev: 'European Open', date: 'May 23', pool: '£150k', expect: 'QF', earn: '£7,500' },
+    { ev: 'World Cup', date: 'Jun 12', pool: '£450k', expect: 'SF', earn: '£12,000' },
+    { ev: 'Players Ch. 12', date: 'Jun 20', pool: '£100k', expect: 'SF', earn: '£7,500' },
+    { ev: 'World Matchplay', date: 'Jul 19', pool: '£800k', expect: 'QF', earn: '£20,000' },
+    { ev: 'World Masters', date: 'Aug 15', pool: '£350k', expect: 'SF', earn: '£18,000' },
+    { ev: 'German Masters', date: 'Oct 4', pool: '£150k', expect: 'R3', earn: '£4,000' },
+    { ev: 'Grand Slam', date: 'Nov 8', pool: '£650k', expect: 'QF', earn: '£16,000' },
+    { ev: 'Players Championship Finals', date: 'Nov 22', pool: '£500k', expect: 'R3', earn: '£8,000' },
+  ];
+  const waterfall = [
+    { label: 'Gross earnings', amount: 140000, running: 140000, colour: 'text-white' },
+    { label: 'PDPA levy (2%)', amount: -2800, running: 137200, colour: 'text-red-400' },
+    { label: 'Agent fee (12%)', amount: -16800, running: 120400, colour: 'text-red-400' },
+    { label: 'Travel, hotels, entries', amount: -28000, running: 92400, colour: 'text-red-400' },
+    { label: 'Tax (approx)', amount: -25400, running: 67000, colour: 'text-red-400' },
+    { label: 'Net to Jake', amount: 67000, running: 67000, colour: 'text-green-400' },
+  ];
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Prize Money Forecaster</h1>
+        <p className="text-gray-400 text-sm mt-1">Season earnings, projections, deductions</p>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-white font-medium">Season earnings tracker</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Through 16 of 48 events</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-white">£42,800</div>
+            <div className="text-xs text-gray-400">earned · on pace for <strong className="text-red-300">£139,000</strong></div>
+          </div>
+        </div>
+        <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-full bg-red-500/70 rounded-full" style={{ width: `${pctEarned}%` }} />
+        </div>
+        <div className="flex justify-between text-[10px] text-gray-500 mt-1.5">
+          <span>£0</span><span>Target: £150k</span>
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Earnings by tour type</h2>
+        <div className="space-y-2">
+          {[
+            { label: 'Players Championships', amount: 18400, pct: 43 },
+            { label: 'European Tour', amount: 11200, pct: 26 },
+            { label: 'Majors (TV)', amount: 13200, pct: 31 },
+          ].map((t, i) => (
+            <div key={i} className="grid grid-cols-12 gap-3 items-center text-sm">
+              <span className="col-span-3 text-gray-300">{t.label}</span>
+              <div className="col-span-7 h-5 bg-gray-800 rounded overflow-hidden">
+                <div className="h-full bg-red-500/70 rounded" style={{ width: `${t.pct}%` }} />
+              </div>
+              <span className="col-span-2 text-right text-white font-medium">£{t.amount.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Upcoming events — projected earnings</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span className="col-span-4">Event</span><span className="col-span-2">Date</span><span className="col-span-2">Prize pool</span><span className="col-span-2">Expected</span><span className="col-span-2 text-right">Projected</span>
+          </div>
+          {upcoming.map((u, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+              <span className="col-span-4 text-white">{u.ev}</span>
+              <span className="col-span-2 text-gray-400">{u.date}</span>
+              <span className="col-span-2 text-gray-500">{u.pool}</span>
+              <span className="col-span-2 text-amber-400">{u.expect}</span>
+              <span className="col-span-2 text-right text-red-300 font-medium">{u.earn}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Deductions waterfall (annual)</h2>
+        <div className="space-y-2">
+          {waterfall.map((w, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-white/5 text-sm">
+              <span className="text-gray-300">{w.label}</span>
+              <div className="flex items-center gap-6">
+                <span className={w.colour}>{w.amount < 0 ? '-' : ''}£{Math.abs(w.amount).toLocaleString()}</span>
+                <span className="text-xs text-gray-500 w-24 text-right">Running: £{w.running.toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-600 mt-3">Net take-home approximately <strong className="text-green-400">£67,000</strong> on projected gross of £140k</p>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Career earnings 2020–2025</h2>
+        <div className="flex items-end gap-3 h-32">
+          {years.map((y, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-xs text-white font-medium">£{(y.amount / 1000).toFixed(0)}k</span>
+              <div className={`w-full rounded-sm ${y.projected ? 'bg-amber-500/60' : 'bg-red-500/60'}`} style={{ height: `${(y.amount / 150000) * 100}%` }} />
+              <span className="text-[10px] text-gray-500">{y.year}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-600 mt-2">Amber = projected</p>
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Pending payments</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Event</span><span>Amount</span><span>Due</span><span>Status</span>
+          </div>
+          {[
+            { ev: 'Players Ch. 19', amount: '£4,200', due: 'May 1', status: 'Pending' },
+            { ev: 'Euro Tour 4', amount: '£2,800', due: 'Apr 28', status: 'Processing' },
+            { ev: 'Premier League N11', amount: '£5,000', due: 'Apr 20', status: 'Paid' },
+          ].map((p, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+              <span className="text-white">{p.ev}</span>
+              <span className="text-gray-300">{p.amount}</span>
+              <span className="text-gray-400">{p.due}</span>
+              <span className={p.status === 'Paid' ? 'text-green-400' : p.status === 'Processing' ? 'text-amber-400' : 'text-gray-400'}>{p.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StubView({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="p-8">
@@ -3051,18 +3955,18 @@ export default function DartsPortalPage() {
       case 'merit-forecaster':  return <MeritForecasterView player={player} />;
       case 'entry-manager':     return <EntryManagerView player={player} />;
       case 'live-scores':       return <StubView title="Live Scores"             sub="Live PDC match feeds — coming soon." />;
-      case 'draw-bracket':      return <StubView title="Draw & Bracket"          sub="Draw viewer and bracket projections — coming soon." />;
-      case 'advanced-stats':    return <StubView title="Advanced Stats"          sub="Deep statistical breakdown and percentiles — coming soon." />;
-      case 'dartboard-heatmap': return <StubView title="Dartboard Heatmap"       sub="Visual hit-distribution heatmap — coming soon." />;
+      case 'draw-bracket':      return <DrawBracketView player={player} />;
+      case 'advanced-stats':    return <AdvancedStatsView player={player} />;
+      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} />;
       case 'pressure-analysis': return <PressureAnalysisView player={player} />;
-      case 'match-prep':        return <StubView title="Match Prep"              sub="Pre-match opponent and routine preparation — coming soon." />;
-      case 'physio-recovery':   return <StubView title="Physio & Recovery"       sub="Recovery tracking and physio appointments — coming soon." />;
-      case 'walk-on-music':     return <StubView title="Walk-on Music"           sub="Manage walk-on tracks and crowd entrance — coming soon." />;
+      case 'match-prep':        return <MatchPrepView player={player} />;
+      case 'physio-recovery':   return <PhysioRecoveryView player={player} />;
+      case 'walk-on-music':     return <WalkOnMusicView player={player} />;
       case 'pairs-events':      return <StubView title="Pairs & Team Events"     sub="World Cup of Darts and doubles pairings — coming soon." />;
       case 'tour-card-monitor': return <TourCardMonitorView player={player} />;
-      case 'prize-forecaster':  return <StubView title="Prize Money Forecaster"  sub="Projected season earnings — coming soon." />;
+      case 'prize-forecaster':  return <PrizeForecastView player={player} />;
       case 'academy-dev':       return <StubView title="Academy & Dev"           sub="Development squad and youth pathway — coming soon." />;
-      case 'practice-games':    return <StubView title="Practice Games"          sub="Round-robin practice game tracker — coming soon." />;
+      case 'practice-games':    return <PracticeGamesView player={player} />;
       default:              return <DashboardView player={player} onNavigate={setActiveSection} />;
     }
   };
