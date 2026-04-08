@@ -167,7 +167,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
   { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
   { id: 'statsbomb',   label: 'StatsBomb',      icon: Activity,       section: 'Leagues' },
-  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Integrations' },
+  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Leagues' },
 ]
 
 const FOOTBALL_ROLE_OPTIONS = [
