@@ -314,7 +314,16 @@ export default function LumioCricket(){
   const[perfTab,setPerfTab]=useState<'Batting'|'Bowling'|'Fielding'>('Batting');
   const[expandedMatch,setExpandedMatch]=useState<number|null>(null);
   const[format,setFormat]=useState('ch');
+  const[matchDay,setMatchDay]=useState<number|null>(null);
   const[gpsIdx,setGpsIdx]=useState(0);
+
+  function getPitchReport(md: number | null): { label: string; icon: string; color: string; description: string } {
+    if(md===null) return { label:'Pre-match', icon:'🏏', color:C.teal,  description:'Pitch prep underway — dry surface, covers on overnight' };
+    if(md===1)    return { label:'Day 1 — Fresh',    icon:'🟢', color:C.green, description:'Hard, dry surface. Seam movement early. Pack the slips.' };
+    if(md===2)    return { label:'Day 2 — Settling', icon:'🟡', color:C.amber, description:'Surface flattening. Batters in command from Session 2.' };
+    if(md===3)    return { label:'Day 3 — Wearing',  icon:'🟠', color:C.amber, description:'Rough patches developing. Spinners increasingly effective.' };
+    return { label:'Day 4 — Turning', icon:'🔴', color:C.red, description:'Significant turn and uneven bounce. Spinners to lead attack.' };
+  }
   const gp=GPS_DATA[gpsIdx];
 
   const statusColor=(st:string)=>{
@@ -1288,12 +1297,55 @@ export default function LumioCricket(){
     </div>
   );
 
+  const FORMAT_TABS: Array<{ id: string; label: string }> = [
+    { id:'ch', label:'Championship' },
+    { id:'t2', label:'T20 Blast' },
+    { id:'od', label:'One Day Cup' },
+    { id:'hu', label:'The Hundred' },
+  ];
+  const FORMAT_META: Record<string,{ sub:string; pos:{ label:string; value:string; sub:string }; next:{ label:string; value:string; sub:string } }> = {
+    ch:{ sub:'Wednesday 8 April 2026 · Headingley · Championship opener Friday vs Lancashire',
+      pos:{ label:'League Position', value:'2nd',         sub:'Div 1 · 61 pts' },
+      next:{ label:'Next Match',      value:'Fri 11 Apr',  sub:'vs Lancashire (H)' } },
+    t2:{ sub:'Wednesday 8 April 2026 · Headingley · T20 Blast — opener vs Warwickshire',
+      pos:{ label:'North Group Position', value:'2nd',    sub:'6 pts' },
+      next:{ label:'Next Blast',           value:'Fri 6 Jun', sub:'vs Warwickshire (H)' } },
+    od:{ sub:'Wednesday 8 April 2026 · Headingley · One Day Cup group stage',
+      pos:{ label:'One Day Cup Group', value:'3rd',       sub:'Group B' },
+      next:{ label:'Next OD',          value:'Sun 18 May', sub:'vs Durham (H)' } },
+    hu:{ sub:'Wednesday 8 April 2026 · Headingley · Northern Superchargers preparations',
+      pos:{ label:'Hundred Status',    value:'Visa pending', sub:'Brett Mason — Home Office' },
+      next:{ label:'Next Hundred',     value:'TBC',          sub:'Season opener — awaiting fixture' } },
+  };
+  const fmtMeta = FORMAT_META[format] || FORMAT_META.ch;
+  const pitch = getPitchReport(matchDay);
+
   const Dashboard=()=>(
     <div>
-      <SectionHead title="Yorkshire CCC — Director's Dashboard" sub="Wednesday 8 April 2026 · Headingley · Championship opener Friday vs Lancashire"/>
+      <SectionHead title="Yorkshire CCC — Director's Dashboard" sub={fmtMeta.sub}/>
+      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+        {FORMAT_TABS.map(t => {
+          const active = format === t.id;
+          return (
+            <button key={t.id}
+              type="button"
+              onClick={() => setFormat(t.id)}
+              style={{
+                padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600,
+                cursor:'pointer',
+                border:`1px solid ${active ? C.teal : C.border}`,
+                background: active ? C.tealDim : 'transparent',
+                color: active ? C.teal : C.muted,
+                transition:'all 0.15s ease',
+              }}>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
-        <Stat label="League Position" value="2nd" color={C.teal} sub="Div 1 · 61 pts"/>
-        <Stat label="Next Match" value="Fri 11 Apr" color={C.purple} sub="vs Lancashire (H)"/>
+        <Stat label={fmtMeta.pos.label} value={fmtMeta.pos.value} color={C.teal} sub={fmtMeta.pos.sub}/>
+        <Stat label={fmtMeta.next.label} value={fmtMeta.next.value} color={C.purple} sub={fmtMeta.next.sub}/>
         <Stat label="Squad Available" value="16 / 18" color={C.green} sub="1 injury · 1 monitoring"/>
         <Stat label="Budget Remaining" value="£3.2m" color={C.amber} sub="of £9.8m annual"/>
       </div>
@@ -1351,7 +1403,41 @@ export default function LumioCricket(){
               <div style={{fontSize:11,color:C.dim}}>Wind SW 14 km/h · Humidity 68%</div>
             </div>
           </div>
-          <div style={{marginTop:12,padding:10,background:C.tealDim,borderRadius:6,fontSize:11,color:C.teal}}>Pitch report: dry surface, swing early, spin day 3+</div>
+          <div style={{marginTop:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+              <span style={{fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,flex:1}}>Pitch</span>
+              {[
+                {k:null,l:'Pre'},
+                {k:1,l:'D1'},
+                {k:2,l:'D2'},
+                {k:3,l:'D3'},
+                {k:4,l:'D4'},
+              ].map((d,i)=>{
+                const active = matchDay === d.k;
+                return (
+                  <button key={i}
+                    type="button"
+                    onClick={()=>setMatchDay(d.k)}
+                    style={{
+                      padding:'3px 8px', borderRadius:4, fontSize:10, fontWeight:600,
+                      cursor:'pointer',
+                      border:`1px solid ${active ? pitch.color : C.border}`,
+                      background: active ? `${pitch.color}22` : 'transparent',
+                      color: active ? pitch.color : C.muted,
+                    }}>
+                    {d.l}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{padding:10,background:`${pitch.color}1A`,border:`1px solid ${pitch.color}55`,borderRadius:6,fontSize:11,color:pitch.color,display:'flex',alignItems:'flex-start',gap:8}}>
+              <span style={{fontSize:13,lineHeight:1}}>{pitch.icon}</span>
+              <div>
+                <div style={{fontWeight:700,marginBottom:2}}>{pitch.label}</div>
+                <div style={{color:C.muted,fontSize:10,lineHeight:1.5}}>{pitch.description}</div>
+              </div>
+            </div>
+          </div>
         </Card>
         <Card style={{background:'linear-gradient(135deg,#0F1629 0%,#141d35 100%)',borderColor:C.purpleDim}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
@@ -2588,14 +2674,21 @@ export default function LumioCricket(){
             </div>
           ))}
         </nav>
-        <div style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`}}>
+        <button
+          type="button"
+          onClick={() => setPage('gps')}
+          title="Go to GPS Tracking"
+          style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`,cursor:'pointer',background:'transparent',border:'none',borderBottom:'none',borderLeft:'none',borderRight:'none',textAlign:'left',width:'100%',display:'block',transition:'background 0.15s ease'}}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+        >
           <div style={{fontSize:11,color:C.dim,marginBottom:4}}>GPS System</div>
           <div style={{display:'flex',alignItems:'center',gap:6}}>
             <div style={{width:6,height:6,borderRadius:'50%',background:C.green}}/>
             <span style={{fontSize:11,color:C.green}}>Lumio Vest · 7 active</span>
           </div>
           <div style={{fontSize:10,color:C.dim,marginTop:2}}>Last sync: 08:12 today</div>
-        </div>
+        </button>
       </div>
       {/* Content */}
       <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
