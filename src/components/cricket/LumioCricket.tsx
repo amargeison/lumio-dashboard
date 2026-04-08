@@ -259,6 +259,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'opposition',label:'Opposition Scout',icon:'🔬'},
     {id:'livescores',label:'Live Scores',icon:'📡'},
     {id:'practice-log',label:'Practice Log',icon:'📋'},
+    {id:'declaration',label:'Declaration Planner',icon:'📐'},
     {id:'performance-stats',label:'Performance Stats',icon:'⭐'},
   ]},
   {section:'SQUAD',items:[
@@ -316,6 +317,238 @@ export default function LumioCricket(){
   const[format,setFormat]=useState('ch');
   const[matchDay,setMatchDay]=useState<number|null>(null);
   const[gpsIdx,setGpsIdx]=useState(0);
+
+  // ── AI feature state (parent scope — inline components remount each render) ──
+  type OppDossier = { batting_threats: string; bowling_threats: string; weaknesses: string; game_plan: string; key_matchup: string };
+  const[oppLoading,setOppLoading]=useState(false);
+  const[oppDossier,setOppDossier]=useState<OppDossier|null>(null);
+  const[oppError,setOppError]=useState<string|null>(null);
+  const[oppTarget,setOppTarget]=useState('Lancashire');
+  const[oppFormat,setOppFormat]=useState<'Championship'|'T20'|'OD'>('Championship');
+
+  type PressConferenceResult = { questions: { q: string; a: string }[] };
+  const[pcLoading,setPcLoading]=useState(false);
+  const[pcResult,setPcResult]=useState<PressConferenceResult|null>(null);
+  const[pcError,setPcError]=useState<string|null>(null);
+  const[pcOpen,setPcOpen]=useState<number|null>(null);
+  const[pcRecent,setPcRecent]=useState('Won vs Durham MCCU — 412/7d');
+  const[pcUpcoming,setPcUpcoming]=useState('vs Lancashire, Championship Round 1, Fri 11 Apr');
+  const[pcNews,setPcNews]=useState('Harrison fitness doubt, Nortje arriving Thu, Dawson workload managed');
+
+  const[ecbQuestion,setEcbQuestion]=useState('');
+  const[ecbAnswer,setEcbAnswer]=useState('');
+  const[ecbLoading,setEcbLoading]=useState(false);
+  const[declAiLoading,setDeclAiLoading]=useState(false);
+  const[declAiResult,setDeclAiResult]=useState('');
+  const[declState,setDeclState]=useState({targetScore:280,currentScore:180,overs:45,bowlOvers:90,wickets:4,days:4,dayTime:'Day 3 · Session 2'});
+
+  // Toss Advisor state
+  const[tossGround,setTossGround]=useState('Headingley');
+  const[tossWeather,setTossWeather]=useState('Overcast');
+  const[tossPitch,setTossPitch]=useState('Normal');
+  const[tossBatting,setTossBatting]=useState('Balanced');
+  const[tossLoading,setTossLoading]=useState(false);
+  const[tossResult,setTossResult]=useState<{decision:string;confidence:string;reasoning:string;key_factor:string}|null>(null);
+  const[tossError,setTossError]=useState<string|null>(null);
+  // Contract AI state
+  const[contractAiLoading,setContractAiLoading]=useState(false);
+  const[contractAiResult,setContractAiResult]=useState<{urgent:{player:string;recommendation:string;reason:string}[];strategy_note:string}|null>(null);
+  const[contractAiError,setContractAiError]=useState<string|null>(null);
+
+  async function getTossAdvice() {
+    setTossLoading(true); setTossError(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 600,
+          messages: [{ role: 'user', content: `You are a county cricket analyst. Toss situation: Ground: ${tossGround}. Weather: ${tossWeather}. Pitch: ${tossPitch}. Opposition batting: ${tossBatting}. Should Yorkshire bat or field first in a 4-day County Championship match? Give a clear recommendation with reasoning. Respond ONLY in JSON (no markdown): { "decision": "BAT" or "FIELD", "confidence": "High/Medium/Low", "reasoning": "2-3 sentences", "key_factor": "one sentence on the single most important factor" }` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(s, e + 1));
+      setTossResult({ decision: parsed.decision || '', confidence: parsed.confidence || '', reasoning: parsed.reasoning || '', key_factor: parsed.key_factor || '' });
+    } catch (err) {
+      setTossError(err instanceof Error ? err.message : 'Failed to get toss advice');
+    } finally {
+      setTossLoading(false);
+    }
+  }
+
+  async function getContractAiSummary() {
+    setContractAiLoading(true); setContractAiError(null);
+    try {
+      const expiring2026 = CRICKET_CONTRACTS.filter(c => c.expiry.includes('2026'));
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 800,
+          messages: [{ role: 'user', content: `You are a cricket club's commercial director. Here are the contracts expiring this season: ${JSON.stringify(expiring2026)}. Also note: Adam Lyth is 37 and considering retirement. Shan Masood is Pakistan captain with international commitments. Ben Coad is the leading Championship bowler. Write a renewal priority memo for the Board. Respond ONLY in JSON (no markdown): { "urgent": [{ "player": "name", "recommendation": "action", "reason": "1 sentence" }], "strategy_note": "2-3 sentence overall strategic note for the board" }` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(s, e + 1));
+      setContractAiResult({
+        urgent: Array.isArray(parsed.urgent) ? parsed.urgent : [],
+        strategy_note: parsed.strategy_note || '',
+      });
+    } catch (err) {
+      setContractAiError(err instanceof Error ? err.message : 'Failed to generate summary');
+    } finally {
+      setContractAiLoading(false);
+    }
+  }
+
+  async function askEcbCompliance(q: string) {
+    const question = q || ecbQuestion;
+    if (!question.trim()) return;
+    setEcbQuestion(question);
+    setEcbLoading(true); setEcbAnswer('');
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 600,
+          system: 'You are an ECB compliance expert helping a County Championship club. Be direct and specific. The club is Yorkshire CCC, CPA completion 73%, 3 DBS issues, safeguarding incidents pending. Answer questions about County Partnership Agreement requirements, ECB standards, and deadlines.',
+          messages: [{ role: 'user', content: question }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setEcbAnswer(data?.content?.[0]?.text || '');
+    } catch (err) {
+      setEcbAnswer(`Error: ${err instanceof Error ? err.message : 'request failed'}`);
+    } finally {
+      setEcbLoading(false);
+    }
+  }
+
+  async function askDeclarationAdvice() {
+    setDeclAiLoading(true); setDeclAiResult('');
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 400,
+          messages: [{ role: 'user', content: `County Championship 4-day match. Current score: ${declState.currentScore}/${declState.wickets}. Planning to declare at ${declState.targetScore}. ${declState.overs} overs left in the match. Should we declare now or bat on? Give a direct 2-3 sentence recommendation.` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setDeclAiResult(data?.content?.[0]?.text || '');
+    } catch (err) {
+      setDeclAiResult(`Error: ${err instanceof Error ? err.message : 'request failed'}`);
+    } finally {
+      setDeclAiLoading(false);
+    }
+  }
+
+  async function generateOppDossier() {
+    setOppLoading(true); setOppError(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Generate a cricket opposition dossier for Yorkshire CCC vs ${oppTarget} in the ${oppFormat === 'Championship' ? 'County Championship 2026' : oppFormat === 'T20' ? 'Vitality Blast 2026' : 'Metro Bank One Day Cup 2026'}. Include realistic insights. Respond ONLY in JSON (no markdown): { "batting_threats": "2-3 sentence analysis", "bowling_threats": "2-3 sentence analysis", "weaknesses": "2-3 sentence analysis", "game_plan": "3-4 sentence tactical recommendation", "key_matchup": "one specific player vs player matchup to target" }` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      setOppDossier(JSON.parse(text.slice(s, e + 1)) as OppDossier);
+    } catch (err) {
+      setOppError(err instanceof Error ? err.message : 'Failed to generate dossier');
+    } finally {
+      setOppLoading(false);
+    }
+  }
+
+  async function generatePressConference() {
+    setPcLoading(true); setPcError(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are a cricket media officer preparing a Yorkshire CCC head coach for a press conference. Based on: Recent result: ${pcRecent}. Upcoming: ${pcUpcoming}. Team news: ${pcNews}. Generate 5 likely journalist questions with suggested answers. Respond ONLY in JSON (no markdown): { "questions": [ { "q": "question text", "a": "suggested answer 2-3 sentences" }, ... ] }` }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      setPcResult(JSON.parse(text.slice(s, e + 1)) as PressConferenceResult);
+    } catch (err) {
+      setPcError(err instanceof Error ? err.message : 'Failed to generate briefing');
+    } finally {
+      setPcLoading(false);
+    }
+  }
+
+  const printMorningBriefing = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>Morning Briefing — Yorkshire CCC — 8 April 2026</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; color: #1a1a2e; font-size: 13px; line-height: 1.7; }
+  h1 { font-size: 20px; border-bottom: 2px solid #8B5CF6; padding-bottom: 8px; margin-bottom: 6px; }
+  .meta { font-size: 11px; color: #666; margin-bottom: 20px; }
+  .briefing { font-style: italic; border-left: 3px solid #8B5CF6; padding-left: 16px; margin-bottom: 24px; }
+  .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { border: 1px solid #ddd; border-radius: 6px; padding: 12px; text-align: center; }
+  .kpi-val { font-size: 20px; font-weight: 600; }
+  .kpi-label { font-size: 10px; color: #666; text-transform: uppercase; }
+  .section { margin-bottom: 20px; }
+  .section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 10px; }
+  .action { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .red { background: #EF4444; } .amber { background: #F59E0B; }
+  footer { margin-top: 32px; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 12px; }
+  @media print { body { margin: 20px; } }
+</style></head><body>
+<h1>Lumio AI — Morning Briefing</h1>
+<div class="meta">Yorkshire County Cricket Club · Wednesday 8 April 2026 · Generated 06:45 · CONFIDENTIAL</div>
+<div class="kpis">
+  <div class="kpi"><div class="kpi-val" style="color:#10B981">11/13</div><div class="kpi-label">Squad Fit</div><div style="font-size:10px;color:#666">1 injury · 1 monitoring</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#F59E0B">73%</div><div class="kpi-label">CPA Completion</div><div style="font-size:10px;color:#666">3 sections incomplete</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#EF4444">3</div><div class="kpi-label">DBS Issues</div><div style="font-size:10px;color:#666">1 expired · 2 at risk</div></div>
+  <div class="kpi"><div class="kpi-val" style="color:#14B8A6">£4.7m</div><div class="kpi-label">Windfall Remaining</div><div style="font-size:10px;color:#666">of £8.4m total</div></div>
+</div>
+<div class="briefing">
+  <p>"Good morning. The County Championship opens in six days. Jake Harrison is 70% — hamstring, grade 2. Physio wants a final assessment Wednesday. Chris Dawson's A:C ratio is at 1.62 — cap his workload this block. Rajan Nortje visa confirmed — arrives Thursday. Brett Mason still pending — chase the agent today. Noah Patel contract decision overdue since 31 March. Phil Grant DBS expired — must resolve before academy activity resumes. Midlands Bank activation at 85% — one outstanding obligation before round one. Make it count."</p>
+</div>
+<div class="section"><h3>Priority Actions Today</h3>
+  <div class="action"><div class="dot red"></div>Noah Patel contract review — overdue since 31 Mar</div>
+  <div class="action"><div class="dot amber"></div>Chase Brett Mason visa — agent Southern Cross Cricket</div>
+  <div class="action"><div class="dot red"></div>Phil Grant DBS renewal — expired Apr 2026</div>
+  <div class="action"><div class="dot amber"></div>Jake Harrison physio assessment — Wed AM</div>
+  <div class="action"><div class="dot amber"></div>CPA player welfare log — 2 entries pending</div>
+</div>
+<footer>Generated by Lumio Cricket · lumiocms.com · For internal distribution only · ${new Date().toLocaleDateString('en-GB')}</footer>
+</body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
 
   function getPitchReport(md: number | null): { label: string; icon: string; color: string; description: string } {
     if(md===null) return { label:'Pre-match', icon:'🏏', color:C.teal,  description:'Pitch prep underway — dry surface, covers on overnight' };
@@ -468,7 +701,13 @@ export default function LumioCricket(){
   // ── PAGE: BRIEFING ────────────────────────────────────────────────
   const Briefing=()=>(
     <div>
-      <SectionHead title="Morning Briefing" sub="Wednesday 8 April 2026 · Northbrook CC · County Championship begins in 6 days"/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,gap:16}}>
+        <div>
+          <h2 style={{margin:0,fontSize:20,fontWeight:600,color:C.text}}>Morning Briefing</h2>
+          <p style={{margin:'4px 0 0',fontSize:12,color:C.muted}}>Wednesday 8 April 2026 · Northbrook CC · County Championship begins in 6 days</p>
+        </div>
+        <button onClick={printMorningBriefing} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>📄 Print Briefing</button>
+      </div>
       <Card style={{background:'linear-gradient(135deg,#0F1629 0%,#141d35 100%)',borderColor:C.purpleDim,marginBottom:16}}>
         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
           <div style={{width:36,height:36,borderRadius:'50%',background:C.purpleDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🤖</div>
@@ -724,6 +963,97 @@ export default function LumioCricket(){
           </tbody>
         </table>
       </Card>
+      {gp.bowl && (() => {
+        const acr = gp.bowl.acr ?? 1.0;
+        const weeks = [0.82, 0.91, 1.12, acr];
+        const minW = 0.6, maxW = 1.6, chartW = 260, chartH = 80, padL = 28, padR = 8, padT = 10, padB = 20;
+        const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
+        const xFor = (i: number) => padL + (i / (weeks.length - 1)) * plotW;
+        const yFor = (v: number) => padT + plotH - ((v - minW) / (maxW - minW)) * plotH;
+        const polyline = weeks.map((v, i) => `${xFor(i)},${yFor(v)}`).join(' ');
+        // Safe zone 0.8–1.3 band
+        const safeTopY = yFor(1.3);
+        const safeBottomY = yFor(0.8);
+        // Red zone > 1.3
+        const redTopY = padT;
+        const redBottomY = yFor(1.3);
+        // Load recommendation
+        let recoColor = C.green, recoText = '🟢 Well within safe zone. Can increase by up to 10% this block.';
+        if (acr > 1.3) { recoColor = C.red;   recoText = '🔴 Reduce load immediately — risk of injury spike. Max 4 overs next 3 days.'; }
+        else if (acr >= 1.0) { recoColor = C.amber; recoText = '🟡 Manage carefully — on the edge of the safe zone. No increases this week.'; }
+        // Player format flags — check if this player is in both Championship and T20 squads
+        const squadRow = SQUAD.find(s => s.n === gp.name);
+        const dualFormat = Boolean(squadRow && (squadRow as Record<string, unknown>).ch && (squadRow as Record<string, unknown>).t2);
+        const weekPlan = [
+          { day:'Mon', load:'light',  del:24, ov:4,  label:'Recovery' },
+          { day:'Tue', load:'light',  del:24, ov:4,  label:'Recovery' },
+          { day:'Wed', load:'medium', del:36, ov:6,  label:'Build' },
+          { day:'Thu', load:'match',  del:48, ov:8,  label:'Match' },
+          { day:'Fri', load:'match',  del:48, ov:8,  label:'Match' },
+          { day:'Sat', load:'medium', del:36, ov:6,  label:'Match' },
+          { day:'Sun', load:'light',  del:24, ov:4,  label:'Recovery' },
+        ];
+        const loadColor = (l: string) => l === 'match' ? C.red : l === 'medium' ? C.amber : C.green;
+        const loadBg    = (l: string) => l === 'match' ? C.redDim : l === 'medium' ? C.amberDim : C.greenDim;
+        return (
+          <Card style={{marginTop:12}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>📊 Bowling Load Management — {gp.name}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:14,marginBottom:12}}>
+              {/* Week planner */}
+              <div>
+                <div style={{fontSize:10,color:C.dim,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.04em'}}>Week planner — delivery caps</div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:4}}>
+                  {weekPlan.map((d,i)=>(
+                    <div key={i} style={{padding:'8px 4px',borderRadius:4,background:loadBg(d.load),border:`1px solid ${loadColor(d.load)}55`,textAlign:'center'}}>
+                      <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:'uppercase'}}>{d.day}</div>
+                      <div style={{fontSize:14,color:loadColor(d.load),fontWeight:800,lineHeight:1.1,marginTop:2}}>{d.del}</div>
+                      <div style={{fontSize:8,color:C.dim,marginTop:1}}>{d.ov} ov</div>
+                      <div style={{fontSize:8,color:loadColor(d.load),marginTop:2,fontWeight:600}}>{d.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* A/C ratio chart */}
+              <div>
+                <div style={{fontSize:10,color:C.dim,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.04em'}}>A/C ratio — last 4 weeks</div>
+                <svg width={chartW} height={chartH} style={{display:'block',background:C.cardAlt,borderRadius:4,border:`1px solid ${C.border}`}}>
+                  {/* Safe zone band (green) */}
+                  <rect x={padL} y={safeTopY} width={plotW} height={safeBottomY - safeTopY} fill={C.green} opacity="0.1"/>
+                  {/* Red zone (> 1.3) */}
+                  <rect x={padL} y={redTopY} width={plotW} height={redBottomY - redTopY} fill={C.red} opacity="0.08"/>
+                  {/* Reference lines at 0.8 and 1.3 */}
+                  <line x1={padL} x2={chartW - padR} y1={yFor(0.8)} y2={yFor(0.8)} stroke={C.green} strokeWidth="1" strokeDasharray="2,2" opacity="0.6"/>
+                  <line x1={padL} x2={chartW - padR} y1={yFor(1.3)} y2={yFor(1.3)} stroke={C.red}   strokeWidth="1" strokeDasharray="2,2" opacity="0.6"/>
+                  {/* Polyline */}
+                  <polyline points={polyline} fill="none" stroke={C.teal} strokeWidth="2"/>
+                  {/* Dots */}
+                  {weeks.map((v, i) => (
+                    <circle key={i} cx={xFor(i)} cy={yFor(v)} r="3" fill={i === weeks.length - 1 ? recoColor : C.teal} />
+                  ))}
+                  {/* Y labels */}
+                  <text x="4" y={yFor(0.8) + 3} fontSize="9" fill={C.dim}>0.8</text>
+                  <text x="4" y={yFor(1.3) + 3} fontSize="9" fill={C.dim}>1.3</text>
+                  {/* X labels */}
+                  {['-3w','-2w','-1w','Now'].map((lbl, i) => (
+                    <text key={i} x={xFor(i)} y={chartH - 6} fontSize="9" fill={C.dim} textAnchor="middle">{lbl}</text>
+                  ))}
+                </svg>
+                <div style={{fontSize:10,color:C.muted,marginTop:4}}>Current ACWR: <strong style={{color:recoColor}}>{acr.toFixed(2)}</strong></div>
+              </div>
+            </div>
+            {/* Recommendation */}
+            <div style={{padding:10,borderRadius:6,background:`${recoColor}14`,border:`1px solid ${recoColor}55`,color:recoColor,fontSize:12,fontWeight:600,marginBottom:8}}>
+              {recoText}
+            </div>
+            {/* Dual format warning */}
+            {dualFormat && (
+              <div style={{padding:10,borderRadius:6,background:C.amberDim,border:`1px solid ${C.amber}55`,color:C.amber,fontSize:11}}>
+                ⚠️ Dual format week — Championship overs will impact T20 readiness. Prioritise Championship, cap T20 contribution.
+              </div>
+            )}
+          </Card>
+        );
+      })()}
     </div>
   );
 
@@ -861,6 +1191,32 @@ export default function LumioCricket(){
             ))}
           </Card>
         </div>
+        <Card style={{marginTop:16,borderColor:C.purpleDim,background:C.cardAlt}}>
+          <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>🤖 AI ECB Compliance Assistant</div>
+          <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Ask questions about CPA, ECB standards and deadlines.</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+            {['CPA 73% complete','Wage cap declaration due 30 Apr','Phil Grant DBS expired'].map((p,i)=>(
+              <div key={i} style={{fontSize:10,padding:'4px 8px',borderRadius:999,border:`1px solid ${C.border}`,background:'#0b1020',color:C.muted}}>{p}</div>
+            ))}
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:10}}>
+            <input value={ecbQuestion} onChange={e=>setEcbQuestion(e.target.value)} placeholder="Ask about your compliance..." style={{flex:1,background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 10px',color:C.text,fontSize:12}}/>
+            <button onClick={()=>askEcbCompliance(ecbQuestion)} disabled={ecbLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:ecbLoading?'wait':'pointer',opacity:ecbLoading?0.6:1}}>{ecbLoading?'Thinking…':'Ask Lumio AI'}</button>
+          </div>
+          <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:6}}>Quick prompts</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+            {[
+              'What are the consequences of missing the wage cap deadline?',
+              "What do I need to fix Phil Grant's DBS urgently?",
+              "What's the priority order for the outstanding CPA sections?",
+            ].map((q,i)=>(
+              <button key={i} onClick={()=>askEcbCompliance(q)} style={{fontSize:11,padding:'5px 10px',borderRadius:999,border:`1px solid ${C.border}`,background:'transparent',color:C.text,cursor:'pointer'}}>{q}</button>
+            ))}
+          </div>
+          {ecbAnswer && (
+            <div style={{borderLeft:`3px solid ${C.purple}`,paddingLeft:12,fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:'pre-wrap'}}>{ecbAnswer}</div>
+          )}
+        </Card>
       </div>
     );
   };
@@ -1081,6 +1437,30 @@ export default function LumioCricket(){
   const Opposition=()=>(
     <div>
       <SectionHead title="Opposition Analysis" sub="AI match prep packs · CricViz integration placeholder · Head-to-head intelligence"/>
+      <Card style={{marginBottom:16,borderColor:C.purpleDim,background:C.cardAlt}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:600,color:C.text}}>🤖 AI Opposition Dossier Generator</div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr auto',gap:10,marginBottom:12}}>
+          <input value={oppTarget} onChange={e=>setOppTarget(e.target.value)} placeholder="Opponent name" style={{background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 10px',color:C.text,fontSize:12}}/>
+          <select value={oppFormat} onChange={e=>setOppFormat(e.target.value as 'Championship'|'T20'|'OD')} style={{background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 10px',color:C.text,fontSize:12}}>
+            <option value="Championship">Championship</option>
+            <option value="T20">T20</option>
+            <option value="OD">One Day</option>
+          </select>
+          <button onClick={generateOppDossier} disabled={oppLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:oppLoading?'wait':'pointer',opacity:oppLoading?0.6:1}}>{oppLoading?'Generating…':'Generate Dossier'}</button>
+        </div>
+        {oppError && <div style={{fontSize:11,color:C.red,marginBottom:8}}>⚠ {oppError}</div>}
+        {oppDossier && (
+          <div style={{display:'grid',gap:10,marginTop:8}}>
+            <div><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:0.5,color:C.red,fontWeight:600,marginBottom:4}}>Batting Threats</div><div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{oppDossier.batting_threats}</div></div>
+            <div><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:0.5,color:C.amber,fontWeight:600,marginBottom:4}}>Bowling Threats</div><div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{oppDossier.bowling_threats}</div></div>
+            <div><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:0.5,color:C.green,fontWeight:600,marginBottom:4}}>Weaknesses</div><div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{oppDossier.weaknesses}</div></div>
+            <div><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:0.5,color:C.teal,fontWeight:600,marginBottom:4}}>Game Plan</div><div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{oppDossier.game_plan}</div></div>
+            <div><div style={{fontSize:10,textTransform:'uppercase',letterSpacing:0.5,color:C.purple,fontWeight:600,marginBottom:4}}>Key Matchup</div><div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{oppDossier.key_matchup}</div></div>
+          </div>
+        )}
+      </Card>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
         <Card style={{border:`1px solid ${C.purpleDim}`}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
@@ -1449,6 +1829,68 @@ export default function LumioCricket(){
           </div>
         </Card>
       </div>
+      {/* AI Toss Decision Advisor */}
+      <Card style={{marginBottom:12}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>🌤️ AI Toss Decision Advisor</div>
+          <button onClick={getTossAdvice} disabled={tossLoading} style={{padding:'6px 14px',borderRadius:6,border:'none',background:tossLoading?C.cardAlt:C.teal,color:tossLoading?C.muted:'#07080F',fontSize:11,fontWeight:700,cursor:tossLoading?'wait':'pointer'}}>
+            {tossLoading?'Thinking…':'Get Toss Advice'}
+          </button>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:12}}>
+          <div>
+            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ground</div>
+            <input value={tossGround} onChange={e=>setTossGround(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Weather</div>
+            <select value={tossWeather} onChange={e=>setTossWeather(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
+              {['Sunny','Overcast','Rain risk','Hot & dry'].map(o=><option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Pitch look</div>
+            <select value={tossPitch} onChange={e=>setTossPitch(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
+              {['Green and grassy','Dry and brown','Normal','Damp'].map(o=><option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Opposition batting</div>
+            <select value={tossBatting} onChange={e=>setTossBatting(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
+              {['Strong top order','Balanced','Tail-heavy'].map(o=><option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+        {tossError && <div style={{padding:10,background:C.redDim,border:`1px solid ${C.red}55`,borderRadius:6,fontSize:11,color:C.red}}>⚠ {tossError}</div>}
+        {tossResult && !tossError && (()=>{
+          const bat = tossResult.decision?.toUpperCase().includes('BAT');
+          const color = bat ? C.green : C.amber;
+          const bg = bat ? C.greenDim : C.amberDim;
+          return (
+            <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:14,alignItems:'start'}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+                <div style={{padding:'14px 20px',borderRadius:8,background:bg,border:`2px solid ${color}`,color,fontSize:20,fontWeight:800,letterSpacing:'0.03em',whiteSpace:'nowrap'}}>
+                  {bat ? 'BAT FIRST' : 'FIELD FIRST'}
+                </div>
+                <div style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,background:C.cardAlt,color:C.muted,border:`1px solid ${C.border}`,textTransform:'uppercase',letterSpacing:'0.04em'}}>
+                  {tossResult.confidence} confidence
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6,marginBottom:10}}>{tossResult.reasoning}</div>
+                {tossResult.key_factor && (
+                  <div style={{padding:10,background:C.tealDim,border:`1px solid ${C.teal}55`,borderRadius:6,fontSize:11,color:C.teal}}>
+                    <strong>Key factor:</strong> {tossResult.key_factor}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+        {!tossResult && !tossLoading && !tossError && (
+          <div style={{fontSize:11,color:C.dim,fontStyle:'italic'}}>Enter match conditions above and click Get Toss Advice.</div>
+        )}
+      </Card>
       <Card>
         <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Quick Actions</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -2062,7 +2504,7 @@ export default function LumioCricket(){
             </tbody>
           </table>
         </Card>
-        <Card>
+        <Card style={{marginBottom:12}}>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Top Wages</div>
           {CRICKET_CONTRACTS.map((c,i)=>(
             <div key={c.player} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:i<CRICKET_CONTRACTS.length-1?`1px solid ${C.border}`:'none'}}>
@@ -2070,6 +2512,52 @@ export default function LumioCricket(){
               <span style={{fontSize:13,color:C.teal,fontWeight:500}}>{fmt(c.wage)}</span>
             </div>
           ))}
+        </Card>
+        {/* AI Contract Renewal Summary */}
+        <Card>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>🤖 AI Contract Renewal Summary</div>
+            <button onClick={getContractAiSummary} disabled={contractAiLoading} style={{padding:'6px 14px',borderRadius:6,border:'none',background:contractAiLoading?C.cardAlt:C.purple,color:contractAiLoading?C.muted:'#fff',fontSize:11,fontWeight:700,cursor:contractAiLoading?'wait':'pointer'}}>
+              {contractAiLoading?'Thinking…':'Generate Summary'}
+            </button>
+          </div>
+          {contractAiError && <div style={{padding:10,background:C.redDim,border:`1px solid ${C.red}55`,borderRadius:6,fontSize:11,color:C.red}}>⚠ {contractAiError}</div>}
+          {contractAiResult && !contractAiError && (
+            <div>
+              {contractAiResult.strategy_note && (
+                <div style={{marginBottom:12,padding:12,borderLeft:`3px solid ${C.purple}`,background:C.purpleDim,borderRadius:4}}>
+                  <div style={{fontSize:10,color:C.purple,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>Strategy Note</div>
+                  <div style={{fontSize:12,color:C.text,lineHeight:1.6,fontStyle:'italic'}}>{contractAiResult.strategy_note}</div>
+                </div>
+              )}
+              {contractAiResult.urgent.length > 0 && (
+                <div>
+                  <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Urgent Actions</div>
+                  {contractAiResult.urgent.map((u, i) => {
+                    const rec = (u.recommendation || '').toLowerCase();
+                    const color = rec.includes('extend') || rec.includes('retain') ? C.green
+                                : rec.includes('release') || rec.includes('decline') ? C.red
+                                : rec.includes('renegoti') || rec.includes('monitor') ? C.amber
+                                : C.teal;
+                    return (
+                      <div key={i} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 0',borderBottom:i<contractAiResult.urgent.length-1?`1px solid ${C.border}`:'none'}}>
+                        <div style={{flex:'0 0 140px'}}>
+                          <div style={{fontSize:12,color:C.text,fontWeight:600}}>{u.player}</div>
+                        </div>
+                        <div style={{flex:'0 0 auto'}}>
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,background:`${color}22`,color,border:`1px solid ${color}55`,textTransform:'uppercase',letterSpacing:'0.04em'}}>{u.recommendation}</span>
+                        </div>
+                        <div style={{flex:1,fontSize:11,color:C.muted,lineHeight:1.5}}>{u.reason}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          {!contractAiResult && !contractAiLoading && !contractAiError && (
+            <div style={{fontSize:11,color:C.dim,fontStyle:'italic'}}>Click Generate Summary to get an AI-written renewal memo for the Board.</div>
+          )}
         </Card>
       </div>
     );
@@ -2345,6 +2833,40 @@ export default function LumioCricket(){
   const MediaContent=()=>(
     <div>
       <SectionHead title="Media & Content" sub="Social, broadcast, content calendar, press"/>
+      <Card style={{marginBottom:16,borderColor:C.purpleDim,background:C.cardAlt}}>
+        <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:12}}>🎙️ AI Press Conference Briefing Generator</div>
+        <div style={{display:'grid',gap:8,marginBottom:10}}>
+          <div>
+            <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:3}}>Recent Result</div>
+            <input value={pcRecent} onChange={e=>setPcRecent(e.target.value)} style={{width:'100%',background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'7px 10px',color:C.text,fontSize:12}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:3}}>Upcoming Match</div>
+            <input value={pcUpcoming} onChange={e=>setPcUpcoming(e.target.value)} style={{width:'100%',background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'7px 10px',color:C.text,fontSize:12}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:3}}>Key Team News</div>
+            <input value={pcNews} onChange={e=>setPcNews(e.target.value)} style={{width:'100%',background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'7px 10px',color:C.text,fontSize:12}}/>
+          </div>
+        </div>
+        <button onClick={generatePressConference} disabled={pcLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:pcLoading?'wait':'pointer',opacity:pcLoading?0.6:1}}>{pcLoading?'Generating…':'Generate Briefing'}</button>
+        {pcError && <div style={{fontSize:11,color:C.red,marginTop:8}}>⚠ {pcError}</div>}
+        {pcLoading && <div style={{marginTop:12,display:'grid',gap:6}}>{[0,1,2,3,4].map(i=><div key={i} style={{height:32,background:'#0b1020',borderRadius:4,opacity:0.5}}/>)}</div>}
+        {pcResult && (
+          <div style={{marginTop:14,display:'grid',gap:6}}>
+            {pcResult.questions.map((qa,i)=>(
+              <div key={i} style={{border:`1px solid ${C.border}`,borderRadius:6,overflow:'hidden'}}>
+                <button onClick={()=>setPcOpen(pcOpen===i?null:i)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'transparent',border:'none',cursor:'pointer',textAlign:'left'}}>
+                  <div style={{width:22,height:22,borderRadius:'50%',background:C.purple,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>{i+1}</div>
+                  <div style={{flex:1,fontSize:12,fontWeight:600,color:C.text}}>{qa.q}</div>
+                  <div style={{color:C.muted,fontSize:12}}>{pcOpen===i?'▾':'▸'}</div>
+                </button>
+                {pcOpen===i && <div style={{padding:'0 12px 12px 44px',fontSize:12,color:C.muted,lineHeight:1.6}}>{qa.a}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
         <Stat label="X / Twitter" value="214k" color={C.blue} sub="+1.2% this week"/>
         <Stat label="Instagram" value="168k" color={C.pink} sub="+2.8% this week"/>
@@ -2626,10 +3148,75 @@ export default function LumioCricket(){
     </div>
   );
 
+  const DeclarationPlanner=()=>{
+    const runsToAdd = declState.targetScore - declState.currentScore;
+    const overs4rpo = runsToAdd > 0 ? Math.ceil(runsToAdd / 4) : 0;
+    const risk = declState.targetScore < 200 ? {label:'Too low — opposition favourite',color:C.red}
+      : declState.targetScore <= 280 ? {label:'Competitive',color:C.amber}
+      : declState.targetScore <= 350 ? {label:'Strong position',color:C.green}
+      : {label:'May not bowl them out',color:C.red};
+    const recommendation = runsToAdd <= 0
+      ? 'Target already reached — consider declaring now to maximise bowling overs.'
+      : declState.targetScore < 200
+        ? 'Target is too low — bat on and build a safer lead before declaring.'
+        : declState.bowlOvers < 60
+          ? 'Limited bowling overs remaining — declare now or risk a draw.'
+          : `Bat on for ~${overs4rpo} more overs at 4 rpo to reach the target, then declare.`;
+    const upd=(k:keyof typeof declState,v:number|string)=>setDeclState(s=>({...s,[k]:v}));
+    return (
+      <div>
+        <SectionHead title="Declaration Planner" sub="4-day match run rate calculator and declaration risk model"/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Match Situation</div>
+            {[
+              {k:'currentScore',l:'Your current score'},
+              {k:'targetScore',l:'Target to set'},
+              {k:'overs',l:'Overs remaining'},
+              {k:'bowlOvers',l:'Overs available to bowl'},
+              {k:'wickets',l:'Wickets in hand'},
+            ].map(f=>(
+              <div key={f.k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:12,color:C.text}}>{f.l}</div>
+                <input type="number" value={declState[f.k as 'currentScore']} onChange={e=>upd(f.k as 'currentScore',Number(e.target.value))} style={{width:90,background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'6px 8px',color:C.text,fontSize:12,textAlign:'right'}}/>
+              </div>
+            ))}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0'}}>
+              <div style={{fontSize:12,color:C.text}}>Match day</div>
+              <select value={declState.days} onChange={e=>upd('days',Number(e.target.value))} style={{width:90,background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'6px 8px',color:C.text,fontSize:12}}>
+                {[1,2,3,4].map(d=><option key={d} value={d}>Day {d}</option>)}
+              </select>
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Declaration Analysis</div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>Runs to add</div>
+              <div style={{fontSize:32,fontWeight:700,color:C.teal,lineHeight:1.1}}>{Math.max(0,runsToAdd)}</div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
+              <div><div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>Time at 4 rpo</div><div style={{fontSize:16,color:C.text,fontWeight:600}}>{overs4rpo} overs</div></div>
+              <div><div style={{fontSize:10,textTransform:'uppercase',color:C.muted}}>Bowl time</div><div style={{fontSize:16,color:C.text,fontWeight:600}}>{declState.bowlOvers} overs</div></div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,textTransform:'uppercase',color:C.muted,marginBottom:4}}>Risk assessment</div>
+              <div style={{display:'inline-block',padding:'4px 10px',borderRadius:999,background:risk.color+'22',color:risk.color,fontSize:11,fontWeight:600}}>{risk.label}</div>
+            </div>
+            <div style={{marginBottom:14,fontSize:12,color:C.text,lineHeight:1.5,fontStyle:'italic'}}>{recommendation}</div>
+            <button onClick={askDeclarationAdvice} disabled={declAiLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:declAiLoading?'wait':'pointer',opacity:declAiLoading?0.6:1}}>{declAiLoading?'Asking Lumio AI…':'Get AI Declaration Advice'}</button>
+            {declAiResult && (
+              <div style={{marginTop:12,borderLeft:`3px solid ${C.purple}`,paddingLeft:12,fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:'pre-wrap'}}>{declAiResult}</div>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   const pages={
     dashboard:<Dashboard/>,briefing:<Briefing/>,
     'match-centre':<MatchCentre/>,'batting-analytics':<BattingAnalytics/>,'bowling-analytics':<BowlingAnalytics/>,
-    'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,'performance-stats':<PerformanceStats/>,
+    'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,declaration:<DeclarationPlanner/>,'performance-stats':<PerformanceStats/>,
     squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,
     'county-championship':<CountyChampionship/>,'vitality-blast':<VitalityBlast/>,'od-cup':<OneDayCup/>,'the-hundred':<TheHundred/>,womens:<Womens/>,academy:<AcademyYouth/>,
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
