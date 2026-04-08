@@ -1,146 +1,141 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { parseCSV, type ParsedPlayerLoad } from '@/lib/gps-parser'
+import { calculateACWR, type ACWRResult } from '@/lib/acwr-calculator'
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-}
-
-// Known column header patterns per provider
-const CATAPULT_HEADERS = ['player load', 'total player load', 'velocity band', 'max_vel', 'openfield']
-const STATSPORTS_HEADERS = ['dynamic stress load', 'hsr distance', 'speed zone', 'sonra', 'statsports']
-
-function detectProvider(headers: string[]): 'catapult' | 'statsports' | 'unknown' {
-  const joined = headers.join(' ').toLowerCase()
-  if (CATAPULT_HEADERS.some(h => joined.includes(h))) return 'catapult'
-  if (STATSPORTS_HEADERS.some(h => joined.includes(h))) return 'statsports'
-  return 'unknown'
-}
-
-function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
-  const lines = text.split(/\r?\n/).filter(l => l.trim())
-  if (lines.length < 2) return { headers: [], rows: [] }
-
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-  const rows = lines.slice(1).map(line => {
-    const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
-    const row: Record<string, string> = {}
-    headers.forEach((h, i) => { row[h] = values[i] || '' })
-    return row
-  })
-
-  return { headers, rows }
-}
-
-function findCol(row: Record<string, string>, ...candidates: string[]): string | null {
-  for (const c of candidates) {
-    const key = Object.keys(row).find(k => k.toLowerCase().includes(c.toLowerCase()))
-    if (key && row[key]) return row[key]
-  }
-  return null
-}
-
-function num(val: string | null): number | null {
-  if (!val) return null
-  const n = parseFloat(val)
-  return isNaN(n) ? null : n
-}
-
-function int(val: string | null): number | null {
-  if (!val) return null
-  const n = parseInt(val, 10)
-  return isNaN(n) ? null : n
-}
-
-function mapCatapultRow(row: Record<string, string>) {
-  return {
-    player_name: findCol(row, 'athlete', 'player', 'name') || 'Unknown',
-    player_id: findCol(row, 'athlete_id', 'player_id') || '',
-    total_distance: num(findCol(row, 'total_distance', 'distance')),
-    high_speed_distance: num(findCol(row, 'velocity_band6', 'high_speed', 'hsr')),
-    sprint_distance: num(findCol(row, 'velocity_band5', 'sprint_distance')),
-    max_speed: num(findCol(row, 'max_vel', 'max_speed', 'top_speed')),
-    player_load: num(findCol(row, 'total_player_load', 'player_load')),
-    accelerations: int(findCol(row, 'accel', 'acceleration')),
-    decelerations: int(findCol(row, 'decel', 'deceleration')),
-    duration_mins: int(findCol(row, 'duration', 'total_duration')),
-    heart_rate_avg: int(findCol(row, 'heart_rate_avg', 'avg_hr', 'avg_heart')),
-    heart_rate_max: int(findCol(row, 'heart_rate_max', 'max_hr', 'max_heart')),
-  }
-}
-
-function mapStatsportsRow(row: Record<string, string>) {
-  return {
-    player_name: findCol(row, 'player', 'athlete', 'name') || 'Unknown',
-    player_id: findCol(row, 'player_id', 'athlete_id') || '',
-    total_distance: num(findCol(row, 'total_distance', 'distance_km')),
-    high_speed_distance: num(findCol(row, 'hsr_distance', 'high_speed', 'speed_zone_5')),
-    sprint_distance: num(findCol(row, 'sprint_distance', 'speed_zone_6')),
-    max_speed: num(findCol(row, 'max_speed', 'top_speed')),
-    player_load: num(findCol(row, 'dynamic_stress_load', 'player_load', 'dsl')),
-    accelerations: int(findCol(row, 'high_accel', 'accelerations')),
-    decelerations: int(findCol(row, 'high_decel', 'decelerations')),
-    duration_mins: int(findCol(row, 'duration', 'session_duration')),
-    heart_rate_avg: int(findCol(row, 'avg_hr', 'heart_rate_avg')),
-    heart_rate_max: int(findCol(row, 'max_hr', 'heart_rate_max')),
-  }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabase()
-
-  const formData = await req.formData()
-  const file = formData.get('file') as File | null
-  const clubId = formData.get('club_id') as string | null
-  const sessionName = formData.get('session_name') as string | null
-  const sessionType = (formData.get('session_type') as string | null) || 'training'
-  const sessionDate = (formData.get('session_date') as string | null) || new Date().toISOString().split('T')[0]
-
-  if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
-  if (!clubId) return NextResponse.json({ error: 'club_id required' }, { status: 400 })
-
   try {
+    const supabase = getSupabase()
+
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    const clubId = (formData.get('clubId') ?? formData.get('club_id')) as string | null
+    const sessionTypeOverride = formData.get('sessionType') as string | null
+    const uploadedBy = formData.get('uploadedBy') as string | null
+
+    if (!file) return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 })
+    if (!clubId) return NextResponse.json({ success: false, error: 'clubId required' }, { status: 400 })
+
     const text = await file.text()
-    const { headers, rows } = parseCSV(text)
+    const parsed = parseCSV(text)
+    if (!parsed) {
+      return NextResponse.json({ success: false, error: 'Failed to parse CSV' }, { status: 400 })
+    }
 
-    if (rows.length === 0) return NextResponse.json({ error: 'CSV is empty or has no data rows' }, { status: 400 })
+    const sessionType = sessionTypeOverride || parsed.sessionType || 'Training'
 
-    const provider = detectProvider(headers)
-    const mapRow = provider === 'catapult' ? mapCatapultRow : mapStatsportsRow
-
-    // Insert session
+    // Insert session row
     const { data: session, error: sessErr } = await supabase
       .from('gps_sessions')
       .insert({
         football_club_id: clubId,
-        session_date: sessionDate,
+        session_date: parsed.sessionDate,
         session_type: sessionType,
-        session_name: sessionName || file.name.replace(/\.csv$/i, ''),
-        provider: 'csv',
-        raw_data: { source_provider: provider, columns: headers, row_count: rows.length },
+        session_name: file.name.replace(/\.csv$/i, ''),
+        provider: parsed.source.toLowerCase(),
+        raw_data: { source: parsed.source, row_count: parsed.rows.length },
       })
       .select('id')
       .single()
 
-    if (sessErr) return NextResponse.json({ error: 'Failed to store session', detail: sessErr.message }, { status: 500 })
+    if (sessErr || !session) {
+      console.error('[upload-gps] session insert error:', sessErr)
+      return NextResponse.json({ success: false, error: 'Failed to store session' }, { status: 500 })
+    }
 
-    // Map and insert player data
-    const playerRows = rows.map(row => ({
+    // Look up squad for player matching
+    const { data: squad } = await supabase
+      .from('football_players')
+      .select('id, name')
+      .eq('club_id', clubId)
+
+    const matchPlayerId = (rawName: string): string | null => {
+      if (!squad) return null
+      const target = rawName.toLowerCase().trim()
+      const hit = squad.find((p) => {
+        const n = (p.name || '').toLowerCase().trim()
+        return n === target || n.includes(target) || target.includes(n)
+      })
+      return hit?.id ?? null
+    }
+
+    // Insert per-player loads
+    const playerRows = parsed.rows.map((r: ParsedPlayerLoad) => ({
       session_id: session.id,
-      ...mapRow(row),
+      player_name: r.playerName,
+      player_id: matchPlayerId(r.playerName),
+      total_distance: r.totalDistanceM,
+      high_speed_distance: r.highSpeedDistanceM,
+      high_speed_distance_m: r.highSpeedDistanceM,
+      sprint_distance: r.sprintDistanceM,
+      sprint_distance_m: r.sprintDistanceM,
+      max_speed: r.maxSpeedMs,
+      training_load: r.trainingLoad,
     }))
 
     const { error: playerErr } = await supabase.from('gps_player_data').insert(playerRows)
     if (playerErr) console.error('[upload-gps] player insert error:', playerErr)
 
+    // For each player, fetch last 28 days of training_load and compute ACWR
+    const cutoff = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const flagged: ACWRResult[] = []
+    const allResults: ACWRResult[] = []
+
+    for (const r of parsed.rows) {
+      const { data: history } = await supabase
+        .from('gps_player_data')
+        .select('training_load, gps_sessions!inner(session_date, football_club_id)')
+        .eq('player_name', r.playerName)
+        .gte('gps_sessions.session_date', cutoff)
+        .eq('gps_sessions.football_club_id', clubId)
+
+      const recentSessions =
+        (history ?? []).map((row: any) => ({
+          session_date: row.gps_sessions?.session_date,
+          training_load: Number(row.training_load) || 0,
+        })) ?? []
+
+      const acwr = calculateACWR(r.playerName, clubId, recentSessions)
+      allResults.push(acwr)
+      if (acwr.flagged) flagged.push(acwr)
+
+      // Upsert ACWR score
+      const { error: upsertErr } = await supabase
+        .from('football_acwr_scores')
+        .upsert(
+          {
+            club_id: clubId,
+            player_id: matchPlayerId(r.playerName),
+            player_name: r.playerName,
+            acute_load: acwr.acuteLoad,
+            chronic_load: acwr.chronicLoad,
+            acwr_ratio: acwr.acwrRatio,
+            risk_level: acwr.riskLevel,
+            flagged: acwr.flagged,
+            calculated_at: new Date().toISOString(),
+          },
+          { onConflict: 'club_id,player_name' }
+        )
+      if (upsertErr) console.error('[upload-gps] acwr upsert error:', upsertErr)
+    }
+
+    void uploadedBy
     return NextResponse.json({
       success: true,
-      session_id: session.id,
-      provider_detected: provider,
-      players_imported: playerRows.length,
-      session_name: sessionName || file.name,
+      sessionId: session.id,
+      playersProcessed: parsed.rows.length,
+      results: allResults,
+      flagged,
     })
   } catch (err) {
     console.error('[upload-gps]', err)
-    return NextResponse.json({ error: 'Failed to parse CSV' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Upload failed' }, { status: 500 })
   }
 }
