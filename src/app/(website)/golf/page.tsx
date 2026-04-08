@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 
 const ACCENT = '#2DD4BF' // teal-400
 const ACCENT_DEEP = '#0D9488' // teal-600
@@ -269,29 +268,34 @@ export default function GolfPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#E5E7EB' }}>
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
-        <Image src="/Sports/golf_logo.png" alt="Lumio Golf" width={120} height={120} className="mx-auto mb-6" />
-        <div className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6" style={{ backgroundColor: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>
-          Lumio Tour · Golf
-        </div>
-        <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight" style={{ color: '#F9FAFB' }}>
-          The career OS for touring golf professionals.
-        </h1>
-        <p className="text-lg max-w-3xl mx-auto mb-8" style={{ color: MUTED }}>
-          OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — and an AI morning briefing that knows your week before you do.
-        </p>
-        <div className="flex items-center justify-center gap-4 flex-wrap mb-10">
-          <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
-            Try the demo →
-          </Link>
-          <Link href="#features" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
-            See all features ↓
-          </Link>
-        </div>
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          {STAT_PILLS.map(p => (
-            <span key={p} className="text-[10px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${ACCENT}10`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>{p}</span>
-          ))}
+      <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${ACCENT}33, transparent 50%), radial-gradient(circle at 80% 60%, ${ACCENT_DEEP}22, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Sports/golf_logo.png" alt="Lumio Golf" style={{ height: 80, margin: '0 auto 32px', display: 'block' }}
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: ACCENT, textTransform: 'uppercase', marginBottom: 24 }}>
+            LUMIO TOUR · GOLF
+          </div>
+          <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: '#F9FAFB', marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
+            The career OS for touring golf professionals.
+          </h1>
+          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 820, margin: '0 auto 40px' }}>
+            OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — and an AI morning briefing that knows your week before you do.
+          </p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <Link href="/golf/golf-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#07080F', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
+              Try the demo →
+            </Link>
+            <a href="#features" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              See all features ↓
+            </a>
+          </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {STAT_PILLS.map(p => (
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: `${ACCENT}1A`, border: `1px solid ${ACCENT}66`, color: ACCENT, fontSize: 13, fontWeight: 700 }}>{p}</span>
+            ))}
+          </div>
         </div>
       </section>
 
