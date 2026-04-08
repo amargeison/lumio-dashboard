@@ -288,11 +288,15 @@ export default function SchoolLayout({ children }: Props) {
           }).map((item, i) => {
             const prev = NAV[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
+            // Absolute-path nav items (like /parent) are separate standalone routes
+            // that live outside the demo tree — never add the /demo prefix to them.
+            const EXTERNAL_ABSOLUTE_PATHS = ['/parent']
+            const isExternalAbsolute = item.path.startsWith('/') && EXTERNAL_ABSOLUTE_PATHS.includes(item.path)
             const absolutePrefixed = item.path.startsWith('/')
-              ? (isDemoRoute ? `/demo${item.path}/${slug}` : `${item.path}/${slug}`)
+              ? (isDemoRoute && !isExternalAbsolute ? `/demo${item.path}/${slug}` : `${item.path}/${slug}`)
               : `${base}/${item.path}`
             const href = item.path === '' ? base : absolutePrefixed
-            const absoluteActiveRoot = item.path.startsWith('/') ? (isDemoRoute ? `/demo${item.path}` : item.path) : ''
+            const absoluteActiveRoot = item.path.startsWith('/') ? (isDemoRoute && !isExternalAbsolute ? `/demo${item.path}` : item.path) : ''
             const isActive = item.path === ''
               ? pathname === base || pathname === `${base}/`
               : item.path.startsWith('/')
