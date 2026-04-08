@@ -391,7 +391,18 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
       {/* Alerts */}
       <div className="grid grid-cols-3 gap-4">
         {(() => {
-          const sorted = [...POINTS_EXPIRY].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
+          const now = new Date();
+          const upcoming = POINTS_EXPIRY.filter(e => new Date(e.expires) >= now);
+          if (upcoming.length === 0) {
+            return (
+              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4">
+                <div className="text-gray-300 text-sm font-semibold mb-1">✅ Points Expiring</div>
+                <div className="text-white font-bold text-lg">All clear</div>
+                <div className="text-xs text-gray-500">No upcoming expiries in the next 104 weeks.</div>
+              </div>
+            );
+          }
+          const sorted = [...upcoming].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
           const primary = sorted[0];
           const secondary = sorted[1];
           const urg = getExpiryUrgency(primary.expires);
@@ -449,14 +460,233 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
   );
 }
 
+// ─── Round Prep (with AI post-round debrief) ─────────────────────────────────
+function RoundPrepView() {
+  const [tab, setTab] = useState<'prep'|'debrief'>('prep');
+  const [form, setForm] = useState({
+    tournament: 'BMW International Open',
+    round: 'R1',
+    score: '',
+    fairways: '',
+    gir: '',
+    putts: '',
+    sgPutt: '',
+    sgOtt: '',
+    sgApp: '',
+    notes: '',
+  });
+  const [debrief, setDebrief] = useState<{ headline: string; what_worked: string; what_didnt: string; practice_focus: string; mindset_note: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function upd<K extends keyof typeof form>(key: K, val: string) {
+    setForm(f => ({ ...f, [key]: val }));
+  }
+
+  async function generateDebrief() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 800,
+          system: 'You are Lumio AI, golf performance analyst for James Harrington (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
+          messages: [{
+            role: 'user',
+            content: `Generate a post-round debrief. Round data: ${JSON.stringify(form)}. Player's season SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Respond ONLY in JSON: { "headline": "one sentence summary", "what_worked": "...", "what_didnt": "...", "practice_focus": "one specific drill or focus for next session", "mindset_note": "one sentence for mental coach" }`,
+          }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start === -1 || end === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(start, end + 1));
+      setDebrief({
+        headline: parsed.headline || '',
+        what_worked: parsed.what_worked || '',
+        what_didnt: parsed.what_didnt || '',
+        practice_focus: parsed.practice_focus || '',
+        mindset_note: parsed.mindset_note || '',
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate debrief');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const inp = 'w-full bg-[#0d0f1a] border border-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-green-600';
+  const lbl = 'block text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1';
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎯" title="Round Prep" subtitle="Pre-round game plan and post-round AI debrief." />
+
+      <div className="flex gap-2 border-b border-gray-800">
+        {(['prep', 'debrief'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'text-green-400 border-green-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}>
+            {t === 'prep' ? 'Round Prep' : 'Post-Round Debrief'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'prep' && (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-8 text-center">
+          <div className="text-5xl mb-3">🎯</div>
+          <h2 className="text-lg font-bold text-white mb-2">Round Prep</h2>
+          <p className="text-sm text-gray-400 max-w-md mx-auto">Hole-by-hole strategy, playing conditions, and pre-round routine — see Caddie Workflow for the full yardage book.</p>
+        </div>
+      )}
+
+      {tab === 'debrief' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Scorecard entry */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-white">Scorecard</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={lbl}>Tournament</label>
+                <input value={form.tournament} onChange={e => upd('tournament', e.target.value)} className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>Round</label>
+                <select value={form.round} onChange={e => upd('round', e.target.value)} className={inp}>
+                  {['R1','R2','R3','R4'].map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={lbl}>Score</label>
+                <input type="number" value={form.score} onChange={e => upd('score', e.target.value)} placeholder="68" className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>Putts</label>
+                <input type="number" value={form.putts} onChange={e => upd('putts', e.target.value)} placeholder="29" className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>Fairways hit</label>
+                <input value={form.fairways} onChange={e => upd('fairways', e.target.value)} placeholder="10/14" className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>GIR</label>
+                <input value={form.gir} onChange={e => upd('gir', e.target.value)} placeholder="11/18" className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>SG Putting (optional)</label>
+                <input type="number" step="0.01" value={form.sgPutt} onChange={e => upd('sgPutt', e.target.value)} placeholder="-0.8" className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>SG Off Tee (optional)</label>
+                <input type="number" step="0.01" value={form.sgOtt} onChange={e => upd('sgOtt', e.target.value)} placeholder="+0.4" className={inp} />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>SG Approach (optional)</label>
+                <input type="number" step="0.01" value={form.sgApp} onChange={e => upd('sgApp', e.target.value)} placeholder="+0.6" className={inp} />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>Any notes? (3-putts, missed short ones, driving issues...)</label>
+                <textarea value={form.notes} onChange={e => upd('notes', e.target.value)} rows={4} className={inp} />
+              </div>
+            </div>
+            <button onClick={generateDebrief} disabled={loading} className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 rounded-lg transition-colors">
+              {loading ? '✨ Generating debrief...' : '✨ Generate Debrief'}
+            </button>
+          </div>
+
+          {/* Debrief output */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-4">AI Debrief</h3>
+            {loading ? (
+              <div className="space-y-3">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-3 w-24 rounded bg-gray-800 animate-pulse" />
+                    <div className="h-3 rounded bg-gray-800 animate-pulse" style={{ width: `${80 + (i % 3) * 5}%` }} />
+                    <div className="h-3 rounded bg-gray-800 animate-pulse" style={{ width: `${60 + (i % 4) * 5}%` }} />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-red-400 text-sm">⚠️ {error} — try again in a moment.</div>
+            ) : debrief ? (
+              <div className="space-y-4">
+                <div className="border-l-2 border-green-500 pl-3">
+                  <div className="text-[10px] uppercase tracking-wider text-green-400 font-semibold mb-1">Headline</div>
+                  <div className="text-white text-sm font-medium">{debrief.headline}</div>
+                </div>
+                <div className="border-l-2 border-teal-500 pl-3">
+                  <div className="text-[10px] uppercase tracking-wider text-teal-400 font-semibold mb-1">What worked</div>
+                  <div className="text-gray-300 text-sm leading-relaxed">{debrief.what_worked}</div>
+                </div>
+                <div className="border-l-2 border-red-500 pl-3">
+                  <div className="text-[10px] uppercase tracking-wider text-red-400 font-semibold mb-1">What didn&apos;t</div>
+                  <div className="text-gray-300 text-sm leading-relaxed">{debrief.what_didnt}</div>
+                </div>
+                <div className="border-l-2 border-amber-500 pl-3">
+                  <div className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold mb-1">Practice focus</div>
+                  <div className="text-gray-300 text-sm leading-relaxed">{debrief.practice_focus}</div>
+                </div>
+                <div className="border-l-2 border-purple-500 pl-3">
+                  <div className="text-[10px] uppercase tracking-wider text-purple-400 font-semibold mb-1">Mindset note</div>
+                  <div className="text-gray-300 text-sm leading-relaxed">{debrief.mindset_note}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-sm italic">Fill in your round data and hit Generate Debrief.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MorningBriefingView({ player }: { player: GolfPlayer }) {
   const [recipient, setRecipient] = useState<'player'|'caddie'|'coach'|'agent'>('player');
-  const briefings = {
-    player: `Good morning, ${player.name.split(' ')[0]}. OWGR: 87th, up three places. Race to Dubai: 43rd — you need a top-12 finish this week to break into the top 40. This week at Golfclub München Eichenried is your third-best course fit on tour based on your approach stats from 150–175 yards. Your SG Putting is losing 1.18 strokes per round from 8–15 feet over the last six events — Pete has set this as the practice priority this morning. Tee time Thursday at 09:42 alongside Rory McIlroy and Tyrrell Hatton. TaylorMade equipment review call at 4pm — deal renewal is 18 days out. Your Callaway post is due today — Sarah has the caption ready for your review. Make it count.`,
-    caddie: `Morning briefing for Mick O'Brien. Course conditions: heavy dew, soft greens, 12mph wind from the south-west — club up on approaches. Player readiness score: 78/100, lower back flagged mild — watch his tempo. Hole strategy notes: Hole 7 and 15 are the scoring holes based on last year's data; play conservatively into 9 and 16. James wants to attack the par-5s in two — wind should allow on 4 and 12. Putting has been poor from 8–15ft — encourage aggressive reads early to find rhythm. Carry sheet updated in the app.`,
-    coach: `Morning briefing for Pete Larsen. James's SG Putting has deteriorated to -1.18 over the last 6 events. Practice focus today: 120 balls from 8–15ft, left-to-right reads on fast grain. His SG Approach is holding at +0.41 — distance control from 150–175 yards remains elite. His SG Off the Tee has dropped -0.28 — three fairways missed right in each of the last two rounds, possible early extension. Track his tempo in morning session. Course fit for this week: 8.1 out of 10 — excellent. He should be confident.`,
-    agent: `Morning briefing for Sarah Mitchell. TaylorMade deal renewal is 18 days out — agenda confirmed for 4pm call. Callaway post is due today — draft is in the sponsorship tab awaiting James's approval. Performance bonus trigger: top 10 this week activates the Callaway performance clause — £8,500 bonus. Race to Dubai position is 43rd — update report due to all sponsors end of month. Next pro-am commitment: BMW International partners briefing today at 2:30pm. Media obligation: one press conference post-round Thursday.`,
-  };
+  const [briefings, setBriefings] = useState<Record<string, string>>({ player: '', caddie: '', coach: '', agent: '' });
+  const [loading, setLoading] = useState(false);
+  const [generated, setGenerated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function generateBriefings() {
+    setLoading(true);
+    setError(null);
+    try {
+      const prompt = `You are Lumio AI, the golf performance assistant for ${player.name}. Generate four morning briefings (player, caddie, coach, agent) for today. Context: OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos}, current event BMW International Open Munich, tee time 09:42 Thursday, SG Putting -1.18 (critical weakness from 8-15ft), Callaway post due today, TaylorMade call 16:00, sponsor renewal in 18 days. Respond ONLY with valid JSON: { "player": "...", "caddie": "...", "coach": "...", "agent": "..." } — each value is a 2-3 sentence briefing, no markdown.`;
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const jsonStart = text.indexOf('{');
+      const jsonEnd = text.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+      setBriefings({
+        player: parsed.player || '', caddie: parsed.caddie || '',
+        coach: parsed.coach || '',   agent: parsed.agent || '',
+      });
+      setGenerated(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate briefing');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const recs = [
     { key: 'player', label: 'Player', icon: '⛳', time: '7:30am' },
     { key: 'caddie', label: 'Caddie', icon: '🏌️', time: '8:00am' },
@@ -479,16 +709,38 @@ function MorningBriefingView({ player }: { player: GolfPlayer }) {
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-sm text-green-400 font-medium">Today's briefing — {recs.find(r => r.key === recipient)?.label}</span>
+            <div className={`w-2 h-2 rounded-full ${generated ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`}></div>
+            <span className="text-sm text-green-400 font-medium">Today&apos;s briefing — {recs.find(r => r.key === recipient)?.label}</span>
           </div>
-          <button className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-lg transition-colors">
-            ▶ Play Briefing
-          </button>
+          {!generated ? (
+            <button onClick={generateBriefings} disabled={loading} className="flex items-center gap-2 bg-green-700 hover:bg-green-800 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm px-4 py-2 rounded-lg transition-colors">
+              {loading ? '✨ Generating...' : '✨ Generate Briefing'}
+            </button>
+          ) : (
+            <button onClick={() => { setGenerated(false); generateBriefings(); }} disabled={loading} className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 disabled:cursor-not-allowed text-gray-300 text-sm px-4 py-2 rounded-lg transition-colors border border-gray-700">
+              {loading ? '✨ Regenerating...' : '↻ Regenerate'}
+            </button>
+          )}
         </div>
-        <div className="text-gray-300 text-sm leading-relaxed border-l-2 border-green-600/50 pl-4">
-          "{briefings[recipient]}"
-        </div>
+        {loading ? (
+          <div className="space-y-2 pl-4 border-l-2 border-green-600/50">
+            <div className="h-3 rounded bg-gray-800 animate-pulse" style={{ width: '95%' }} />
+            <div className="h-3 rounded bg-gray-800 animate-pulse" style={{ width: '88%' }} />
+            <div className="h-3 rounded bg-gray-800 animate-pulse" style={{ width: '72%' }} />
+          </div>
+        ) : error ? (
+          <div className="text-red-400 text-sm pl-4 border-l-2 border-red-600/50">
+            ⚠️ {error} — try again in a moment.
+          </div>
+        ) : generated ? (
+          <div className="text-gray-300 text-sm leading-relaxed border-l-2 border-green-600/50 pl-4">
+            &ldquo;{briefings[recipient]}&rdquo;
+          </div>
+        ) : (
+          <div className="text-gray-500 text-sm italic pl-4 border-l-2 border-gray-700">
+            Click Generate Briefing to get today&apos;s personalised intel from Lumio AI.
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-3 gap-4">
         {[{ label: 'Briefing Time', value: '2m 38s', sub: 'Average' }, { label: 'Voice', value: 'Marcus', sub: 'ElevenLabs TTS' }, { label: 'Delivery', value: '07:30', sub: 'Auto-send daily' }].map((s, i) => (
@@ -518,10 +770,12 @@ function RollingExpiryCalendar({ points }: { points: ExpiryEntry[] }) {
   }
 
   // Bucket entries by month (first of the month containing the expiry date).
+  // Exclude entries whose expiry date is already in the past — they're history, not forecast.
   const bucket: Record<string, ExpiryEntry[]> = {};
   for (const p of points) {
     const d = new Date(p.expires);
     if (Number.isNaN(d.getTime())) continue;
+    if (d < now) continue;
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     if (!bucket[key]) bucket[key] = [];
     bucket[key].push(p);
@@ -677,14 +931,17 @@ function OWGRView({ player }: { player: GolfPlayer }) {
               <th className="text-left pb-2">Points</th>
               <th className="text-left pb-2">Expires</th>
             </tr></thead>
-            <tbody>{pointsExpiry.map((p, i) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="py-2 text-gray-300">{p.event}</td>
-                <td className="py-2 text-gray-400">{p.pos}</td>
-                <td className={`py-2 font-medium ${p.urgency === 'high' ? 'text-red-400' : p.urgency === 'medium' ? 'text-yellow-400' : 'text-gray-400'}`}>{p.points}</td>
-                <td className="py-2 text-gray-500">{p.expires}</td>
-              </tr>
-            ))}</tbody>
+            <tbody>{pointsExpiry.map((p, i) => {
+              const expired = getExpiryUrgency(p.expires).daysLeft < 0;
+              return (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className={`py-2 ${expired ? 'text-gray-600' : 'text-gray-300'}`}>{p.event}</td>
+                  <td className={`py-2 ${expired ? 'text-gray-600' : 'text-gray-400'}`}>{p.pos}</td>
+                  <td className={`py-2 font-medium ${expired ? 'text-gray-600 line-through' : p.urgency === 'high' ? 'text-red-400' : p.urgency === 'medium' ? 'text-yellow-400' : 'text-gray-400'}`}>{p.points}</td>
+                  <td className={`py-2 ${expired ? 'text-gray-600 line-through' : 'text-gray-500'}`}>{p.expires}</td>
+                </tr>
+              );
+            })}</tbody>
           </table>
         </div>
       </div>
@@ -2099,7 +2356,7 @@ export default function GolfTourPage() {
       case 'proam':       return <ProAmView />;
       case 'practicelog': return <PracticeLogView />;
       case 'exemptions':  return <ExemptionsView />;
-      case 'matchprep':   return <PlaceholderView icon="🎯" title="Round Prep" description="Hole-by-hole strategy, opponent/playing partner analysis, weather briefing, and pre-round routine builder." />;
+      case 'matchprep':   return <RoundPrepView />;
       case 'media':       return <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." />;
       case 'agent':       return <PlaceholderView icon="📬" title="Agent Pipeline" description="Deals in negotiation, sponsor pipeline, renewal timelines, and commercial opportunity tracking." />;
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." />;
