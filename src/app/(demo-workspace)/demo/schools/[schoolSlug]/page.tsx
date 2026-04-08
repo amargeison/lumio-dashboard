@@ -12,7 +12,6 @@ import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useSchoolVoiceCommands } from '@/hooks/useSchoolVoiceCommands'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
-import GettingStartedModal from '@/components/onboarding/GettingStartedModal'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { SafeguardingReviewModal } from '@/components/modals/SafeguardingReviewModal'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
@@ -1752,7 +1751,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   }
   const [activeTab, setActiveTab] = useState('today')
   const [staffSubTab, setStaffSubTab] = useState<'today'|'org'|'info'|'school'>('today')
-  const [showSchoolGSModal, setShowSchoolGSModal] = useState(false)
+  const [showSchoolWelcome, setShowSchoolWelcome] = useState(false)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const key = `lumio_school_onboarding_done_${_slug}`
@@ -1782,7 +1781,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     try { localStorage.setItem('lumio_school_last_slug', _slug) } catch {}
     const isFirstLoad = localStorage.getItem(key) !== 'true'
     if (demoLoaded && isFirstLoad) {
-      setShowSchoolGSModal(true)
+      setShowSchoolWelcome(true)
       // Clear any stale user photo bleeding through from a previous
       // business demo / different portal session on first load.
       try {
@@ -1793,7 +1792,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   }, [_slug])
   function handleSchoolGSModalComplete() {
     try { localStorage.setItem(`lumio_school_onboarding_done_${_slug}`, 'true') } catch {}
-    setShowSchoolGSModal(false)
+    setShowSchoolWelcome(false)
   }
 
   // User photo (top-right avatar) — mirrors business demo
@@ -2658,13 +2657,14 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         <OnboardingModal slug={_slug} school={schoolData} onComplete={completeOnboarding} />
       )}
 
-      {/* ── Getting Started modal (first visit / invite team) ───── */}
-      {showSchoolGSModal && (
-        <GettingStartedModal
-          companyName={schoolName || 'Your school'}
+      {/* ── School Welcome popup (first visit) — 3-screen onboarding ── */}
+      {showSchoolWelcome && (
+        <SchoolWelcomePopup
+          slug={_slug}
+          ownerName={(typeof window !== 'undefined' ? localStorage.getItem('lumio_user_name') : '') || undefined}
           ownerEmail={userEmail}
-          sessionToken={typeof window !== 'undefined' ? (localStorage.getItem('workspace_session_token') || '') : ''}
-          onComplete={handleSchoolGSModalComplete}
+          onPhotoSaved={(url) => setUserPhoto(url)}
+          onClose={handleSchoolGSModalComplete}
         />
       )}
 
@@ -2908,6 +2908,344 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
         </div>
         )
       })()}
+    </div>
+  )
+}
+
+// ─── School Welcome Popup (3-screen first-visit onboarding) ──────────────────
+
+function SchoolWelcomePopup({ slug, ownerName, ownerEmail, onClose, onPhotoSaved }: { slug: string; ownerName?: string; ownerEmail?: string; onClose: () => void; onPhotoSaved?: (url: string) => void }) {
+  const [screen, setScreen] = useState<1 | 2 | 3>(1)
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [inviteEmails, setInviteEmails] = useState<string[]>(['', '', '', '', ''])
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const displayName = ownerName
+    || (typeof window !== 'undefined' ? (localStorage.getItem('lumio_user_name') || localStorage.getItem('demo_user_name') || '') : '')
+    || 'Your Name'
+  const userRole = (typeof window !== 'undefined' ? localStorage.getItem('lumio_user_role') : '') || 'Headteacher'
+  const emailForDomain = ownerEmail || (typeof window !== 'undefined' ? (localStorage.getItem('lumio_user_email') || localStorage.getItem('demo_user_email') || '') : '')
+  const domain = emailForDomain.split('@')[1] || 'school.com'
+  const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/demo/schools/${slug}` : `/demo/schools/${slug}`
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = String(reader.result || '')
+      if (!url) return
+      setPhotoDataUrl(url)
+      try {
+        localStorage.setItem('lumio_user_photo', url)
+        window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url } }))
+      } catch {}
+      onPhotoSaved?.(url)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function copyLink() {
+    try {
+      navigator.clipboard.writeText(inviteUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  function sendInvites() {
+    const emails = inviteEmails.map(e => e.trim()).filter(e => e.includes('@'))
+    if (emails.length > 0) {
+      try {
+        fetch('/api/onboarding/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails, inviteUrl, slug }),
+        }).catch(() => {
+          window.location.href = `mailto:${emails.join(',')}?subject=${encodeURIComponent('Check out our Lumio for Schools workspace')}&body=${encodeURIComponent(`Take a look: ${inviteUrl}`)}`
+        })
+      } catch {}
+    }
+    onClose()
+  }
+
+  const STATS: [string, number][] = [['ATT', 91], ['SAF', 88], ['ENG', 85], ['CPD', 79], ['COM', 87], ['WEL', 83]]
+  const TEAL = '#0D9488'
+  const TEAL_FAINT = 'rgba(13,148,136,0.1)'
+  const TEAL_BORDER = 'rgba(13,148,136,0.35)'
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: 16,
+      }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes lumio-card-reveal {
+          0%   { opacity: 0; transform: scale(0.92) translateY(8px); }
+          100% { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+      ` }} />
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 760,
+          maxHeight: '92vh',
+          overflowY: 'auto',
+          backgroundColor: '#0A0B10',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          padding: 32,
+          position: 'relative',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.7)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', color: '#A78BFA', textTransform: 'uppercase' }}>
+            Step {screen} of 3
+          </span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: '#7C3AED' }} />
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen >= 2 ? '#7C3AED' : '#1F2937' }} />
+            <div style={{ width: 32, height: 3, borderRadius: 999, backgroundColor: screen >= 3 ? '#7C3AED' : '#1F2937' }} />
+          </div>
+        </div>
+
+        {/* ── SCREEN 1 — Photo + school staff card ── */}
+        {screen === 1 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Add your photo — see how you look in Lumio
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 36 }}>
+              Your photo appears on your staff card and across your school workspace.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', marginBottom: 32 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: '50%',
+                    backgroundColor: 'transparent',
+                    border: `2px dashed ${photoDataUrl ? 'rgba(124,58,237,0.8)' : 'rgba(124,58,237,0.5)'}`,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    padding: 0,
+                  }}
+                >
+                  {photoDataUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, fontWeight: 800, color: '#A78BFA', backgroundColor: 'rgba(124,58,237,0.15)' }}>
+                      {(displayName || 'You').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'YU'}
+                    </div>
+                  )}
+                </button>
+                <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9CA3AF' }}>
+                  {photoDataUrl ? 'Tap to change photo' : 'Upload your photo'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div
+                  key={photoDataUrl || 'placeholder'}
+                  style={{
+                    width: 240,
+                    height: 360,
+                    borderRadius: 18,
+                    background: 'linear-gradient(155deg, #065F46 0%, #047857 35%, #064E3B 70%, #022C22 100%)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    boxShadow: '0 24px 70px rgba(4,120,87,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    padding: 18,
+                    position: 'relative',
+                    color: '#FFFFFF',
+                    animation: 'lumio-card-reveal 420ms ease-out',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 0%, rgba(255,255,255,0.12), transparent 60%)', pointerEvents: 'none' }} />
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em' }}>94</div>
+                      <div style={{ fontSize: 10, fontWeight: 800, marginTop: 4, letterSpacing: '0.1em' }}>{userRole.toUpperCase()}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
+                        YOU
+                      </div>
+                      <div style={{ fontSize: 18 }}>🏫</div>
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '12px 0 8px' }}>
+                    <div style={{ width: 116, height: 116, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', border: '3px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 6px 20px rgba(0,0,0,0.35)' }}>
+                      {photoDataUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: 36, fontWeight: 900, color: 'rgba(255,255,255,0.6)' }}>
+                          {(displayName || 'You').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'YU'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', textAlign: 'center', fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>
+                    {displayName}
+                  </div>
+                  <div style={{ position: 'relative', textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.75)', marginBottom: 12, textTransform: 'capitalize' }}>
+                    {userRole}
+                  </div>
+                  <div style={{ position: 'relative', height: 1, backgroundColor: 'rgba(255,255,255,0.18)', margin: '0 -4px 10px' }} />
+                  <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 5, columnGap: 24, fontSize: 11, padding: '0 6px' }}>
+                    {STATS.map(([label, value]) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 900, minWidth: 20 }}>{value}</span>
+                        <span style={{ fontWeight: 700, opacity: 0.85, letterSpacing: '0.05em' }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
+              <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: 14, cursor: 'pointer', padding: '8px 12px' }}>
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen(2)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#7C3AED', color: '#FFFFFF', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Continue &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SCREEN 2 — Early Access offer ── */}
+        {screen === 2 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Want 6 months free with your own school data?
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 20, lineHeight: 1.6 }}>
+              We&apos;re looking for a small number of schools to help us shape Lumio for Schools. Sign up for our early access programme and get 6 months completely free — no commitment, no contract, no pushy sales team.
+            </p>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 28, lineHeight: 1.6 }}>
+              All we ask at the end is an honest case study and the chance to keep working with you.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+              {[
+                '6 months completely free',
+                'We build features your school asks for',
+                'No commitment or lock-in',
+                'Honest feedback shapes the product',
+              ].map(b => (
+                <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', backgroundColor: TEAL_FAINT, border: `1px solid ${TEAL_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: TEAL, fontWeight: 800 }}>
+                    ✓
+                  </div>
+                  <span style={{ fontSize: 15, color: '#F9FAFB' }}>{b}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a
+                href="mailto:hello@lumiocms.com?subject=Schools%20Early%20Access%20Application"
+                onClick={() => setScreen(3)}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: TEAL, color: '#FFFFFF', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
+              >
+                Apply for Early Access
+              </a>
+              <button
+                type="button"
+                onClick={() => setScreen(3)}
+                style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#9CA3AF', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Continue &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SCREEN 3 — Invite colleagues ── */}
+        {screen === 3 && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: '#F9FAFB', marginBottom: 8 }}>
+              Invite colleagues to explore
+            </h1>
+            <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 16, lineHeight: 1.6 }}>
+              Want to show a colleague? Send them a link to your demo workspace — they can explore it alongside you.
+            </p>
+
+            <div style={{ background: '#1F2937', borderRadius: 8, padding: '12px 16px', margin: '16px 0', fontFamily: 'monospace', fontSize: 14, color: TEAL, wordBreak: 'break-all' }}>
+              {inviteUrl}
+            </div>
+
+            <button
+              type="button"
+              onClick={copyLink}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#F9FAFB', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 24 }}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy link'}
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+              {inviteEmails.map((email, i) => (
+                <input
+                  key={i}
+                  type="email"
+                  value={email}
+                  placeholder={`teacher${i + 1}@${domain}`}
+                  onChange={e => {
+                    const next = [...inviteEmails]
+                    next[i] = e.target.value
+                    setInviteEmails(next)
+                  }}
+                  style={{ background: '#0D0E14', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '10px 14px', color: '#F9FAFB', fontSize: 14, outline: 'none' }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                type="button"
+                onClick={sendInvites}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: TEAL, color: '#FFFFFF', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Send &amp; continue &rarr;
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#9CA3AF', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Skip — go to dashboard &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
