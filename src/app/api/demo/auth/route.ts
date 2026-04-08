@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy — avoid constructing at module scope so build-time page-data collection
+// doesn't crash when RESEND_API_KEY is missing from the build env.
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY || 're_placeholder')
+}
 
 function getSupabase() {
   return createClient(
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
     // Fire new-signup notification to Arron — never block signup on failure.
     if (isNewUser) {
       try {
-        await resend.emails.send({
+        await getResend().emails.send({
           from: 'Lumio <notifications@lumiocms.com>',
           to: 'hello@lumiocms.com',
           subject: '🚀 New Demo Signup',
