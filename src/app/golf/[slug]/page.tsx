@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -249,16 +249,20 @@ const FormTracker = ({ results }: { results: Array<{event: string; pos: string; 
 );
 
 // ─── PLAYER CARD ─────────────────────────────────────────────────────────────
-const PlayerCard = ({ player }: { player: GolfPlayer }) => (
+const PlayerCard = ({ player, setActiveSection = () => {} }: { player: GolfPlayer; setActiveSection?: (s: string) => void }) => (
   <div className="relative w-52 rounded-xl overflow-hidden border-2 border-green-600/40 shadow-2xl shadow-green-900/30 flex-shrink-0"
     style={{ background: 'linear-gradient(135deg, #0a1a0a 0%, #0d1929 50%, #0a1a12 100%)' }}>
     <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #16a34a, #0D9488, #6C3FC5)' }}></div>
     <div className="p-4">
       <div className="flex items-start justify-between mb-3">
-        <div className="text-center">
+        <button
+          onClick={() => setActiveSection('owgr')}
+          className="text-center hover:bg-white/5 rounded-lg p-1 -m-1 transition-all cursor-pointer"
+          title="Go to OWGR & Race to Dubai"
+        >
           <div className="text-3xl font-black text-white leading-none">{player.owgr}</div>
           <div className="text-[10px] text-green-400 font-medium uppercase tracking-wider">OWGR</div>
-        </div>
+        </button>
         <div className="text-2xl">{player.flag}</div>
       </div>
       <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center text-6xl"
@@ -292,6 +296,23 @@ const PlayerCard = ({ player }: { player: GolfPlayer }) => (
 );
 
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
+
+const POINTS_EXPIRY = [
+  { event: 'Genesis Scottish Open', pos: 'T6', points: 330, expires: 'Jul 12 2026', urgency: 'high' },
+  { event: 'KLM Open', pos: 'T3', points: 480, expires: 'Jun 7 2026', urgency: 'medium' },
+  { event: 'BMW PGA Championship', pos: 'T14', points: 88, expires: 'Sep 6 2026', urgency: 'low' },
+  { event: 'Austrian Alpine Open', pos: 'T31', points: 42, expires: 'May 31 2026', urgency: 'medium' },
+  { event: 'Hero Indian Open', pos: 'T22', points: 38, expires: 'Mar 29 2026', urgency: 'high' },
+]
+
+function getExpiryUrgency(expiresStr: string): { daysLeft: number; color: string; label: string } {
+  const expiry = new Date(expiresStr)
+  const today = new Date()
+  const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (daysLeft <= 14) return { daysLeft, color: 'red', label: 'CRITICAL' }
+  if (daysLeft <= 30) return { daysLeft, color: 'yellow', label: 'EXPIRING SOON' }
+  return { daysLeft, color: 'gray', label: 'Upcoming' }
+}
 
 function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection: (s: string) => void }) {
   const recentForm = [
@@ -369,11 +390,35 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
       </div>
       {/* Alerts */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-          <div className="text-yellow-400 text-sm font-semibold mb-1">⚠️ Points Expiring</div>
-          <div className="text-white font-bold text-lg">330 pts</div>
-          <div className="text-xs text-gray-400">Scottish Open T6 (Jul 25) — need T10 or better this week to replace</div>
-        </div>
+        {(() => {
+          const sorted = [...POINTS_EXPIRY].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
+          const primary = sorted[0];
+          const secondary = sorted[1];
+          const urg = getExpiryUrgency(primary.expires);
+          const palette: Record<string, { bg: string; border: string; text: string; badgeBg: string }> = {
+            red:    { bg: 'bg-red-500/10',    border: 'border-red-500/40',    text: 'text-red-400',    badgeBg: 'bg-red-500/20' },
+            yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', badgeBg: 'bg-yellow-500/20' },
+            gray:   { bg: 'bg-gray-800/40',   border: 'border-gray-700/40',   text: 'text-gray-300',   badgeBg: 'bg-gray-700/40' },
+          };
+          const c = palette[urg.color];
+          const secondaryUrg = secondary ? getExpiryUrgency(secondary.expires) : null;
+          const showSecondary = secondaryUrg && secondaryUrg.daysLeft <= 60;
+          return (
+            <div className={`${c.bg} border ${c.border} rounded-xl p-4`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className={`${c.text} text-sm font-semibold`}>⚠️ Points Expiring</div>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${c.badgeBg} ${c.text} uppercase tracking-wider`}>{urg.label}</span>
+              </div>
+              <div className="text-white font-bold text-lg">{primary.points} pts · {urg.daysLeft < 0 ? 'EXPIRED' : `${urg.daysLeft} days`}</div>
+              <div className="text-xs text-gray-400">{primary.event} {primary.pos} — expires {primary.expires}</div>
+              {showSecondary && (
+                <div className="text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-white/5">
+                  Next: {secondary.points} pts · {secondary.event} {secondary.pos} ({secondaryUrg!.daysLeft} days)
+                </div>
+              )}
+            </div>
+          );
+        })()}
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
           <div className="text-blue-400 text-sm font-semibold mb-1">📋 Obligation Today</div>
           <div className="text-white font-bold text-lg">Callaway Post</div>
@@ -458,6 +503,108 @@ function MorningBriefingView({ player }: { player: GolfPlayer }) {
   );
 }
 
+type ExpiryEntry = { event: string; pos: string; points: number; expires: string; urgency: string };
+
+function RollingExpiryCalendar({ points }: { points: ExpiryEntry[] }) {
+  const now = new Date();
+  const months: { key: string; label: string; date: Date }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      label: d.toLocaleDateString('en-GB', { month: 'short' }),
+      date: d,
+    });
+  }
+
+  // Bucket entries by month (first of the month containing the expiry date).
+  const bucket: Record<string, ExpiryEntry[]> = {};
+  for (const p of points) {
+    const d = new Date(p.expires);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (!bucket[key]) bucket[key] = [];
+    bucket[key].push(p);
+  }
+
+  // Short tournament label for pills.
+  const abbrev = (event: string) => {
+    const words = event.split(/\s+/);
+    return words.length === 1 ? words[0].slice(0, 6) : words.map(w => w[0]).join('').slice(0, 4).toUpperCase();
+  };
+
+  // Pill urgency by days from month start.
+  const pillClass = (d: Date) => {
+    const diff = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    if (diff <= 30) return 'bg-red-600/20 border border-red-500/40 text-red-300';
+    if (diff <= 90) return 'bg-yellow-600/20 border border-yellow-500/40 text-yellow-300';
+    return 'bg-gray-700/40 border border-gray-600/40 text-gray-400';
+  };
+
+  // Total points at risk in next 6 months.
+  const sixMonthCutoff = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+  const pointsAtRisk = points
+    .filter(p => {
+      const d = new Date(p.expires);
+      return !Number.isNaN(d.getTime()) && d <= sixMonthCutoff;
+    })
+    .reduce((sum, p) => sum + p.points, 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-gray-500 uppercase tracking-wider">Next 12 months</div>
+        <div className="text-sm text-yellow-400 font-semibold">
+          {pointsAtRisk.toLocaleString()} pts expiring in next 6 months
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="grid grid-cols-12 gap-1 min-w-[720px]">
+          {months.map(m => {
+            const entries = bucket[m.key] || [];
+            const monthTotal = entries.reduce((s, e) => s + e.points, 0);
+            return (
+              <div key={m.key} className="bg-gray-900/40 border border-gray-800 rounded-lg p-2 flex flex-col gap-1.5">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center border-b border-gray-800 pb-1">
+                  {m.label}
+                </div>
+                <div className="flex flex-col gap-1 min-h-[42px]">
+                  {entries.length === 0 ? (
+                    <div className="text-[9px] text-gray-700 text-center mt-2">—</div>
+                  ) : (
+                    entries.map((e, i) => {
+                      const d = new Date(e.expires);
+                      return (
+                        <div
+                          key={i}
+                          title={`${e.event} (${e.pos}) — ${e.expires}`}
+                          className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate ${pillClass(d)}`}
+                        >
+                          {e.points} · {abbrev(e.event)}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                {monthTotal > 0 && (
+                  <div className="text-[9px] text-gray-500 text-center border-t border-gray-800 pt-1">
+                    {monthTotal} at risk
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-500">
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-red-500/60" /><span>≤30 days</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-yellow-500/60" /><span>31–90 days</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-gray-600/60" /><span>&gt;90 days</span></div>
+      </div>
+    </div>
+  );
+}
+
 function OWGRView({ player }: { player: GolfPlayer }) {
   const scenarios = [
     { result: 'Win', event: 'BMW International', newOWGR: 71, change: '+16', rtd: 'T35' },
@@ -467,13 +614,7 @@ function OWGRView({ player }: { player: GolfPlayer }) {
     { result: 'T21–T40', event: 'BMW International', newOWGR: 88, change: '-1', rtd: 'T44' },
     { result: 'MC', event: 'BMW International', newOWGR: 92, change: '-5', rtd: 'T46' },
   ];
-  const pointsExpiry = [
-    { event: 'Genesis Scottish Open', pos: 'T6', points: 330, expires: 'Jul 12 2026', urgency: 'high' },
-    { event: 'KLM Open', pos: 'T3', points: 480, expires: 'Jun 7 2026', urgency: 'medium' },
-    { event: 'BMW PGA Championship', pos: 'T14', points: 88, expires: 'Sep 6 2026', urgency: 'low' },
-    { event: 'Austrian Alpine Open', pos: 'T31', points: 42, expires: 'May 31 2026', urgency: 'medium' },
-    { event: 'Hero Indian Open', pos: 'T22', points: 38, expires: 'Mar 29 2026', urgency: 'high' },
-  ];
+  const pointsExpiry = POINTS_EXPIRY;
   return (
     <div className="space-y-6">
       <SectionHeader icon="📊" title="OWGR & Race to Dubai" subtitle="Live world ranking, points tracker, Race to Dubai standings, and scenario modelling." />
@@ -546,6 +687,11 @@ function OWGRView({ player }: { player: GolfPlayer }) {
             ))}</tbody>
           </table>
         </div>
+      </div>
+      {/* Rolling 104-week expiry calendar */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">📅 Rolling 104-Week Expiry Calendar</div>
+        <RollingExpiryCalendar points={pointsExpiry} />
       </div>
     </div>
   );
@@ -1910,8 +2056,29 @@ function MobileAppView() {
 export default function GolfTourPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
+  const [toastDismissed, setToastDismissed] = useState(false);
   const player = DEMO_PLAYER;
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
+
+  // Sponsor obligation toast — fires once on mount if it's past 09:00 and not dismissed.
+  useEffect(() => {
+    if (toastDismissed) return;
+    const hour = new Date().getHours();
+    // Demo deals — the most urgent is Callaway (renewal due, content obligation today).
+    const deals = [
+      { sponsor: 'Callaway', status: 'Renewal due', days: 18, dailyObligation: true },
+      { sponsor: 'Titleist', status: 'Active', days: 82, dailyObligation: false },
+      { sponsor: 'Rolex', status: 'Active', days: 146, dailyObligation: false },
+    ];
+    const dailyDue = deals.find(d => d.dailyObligation);
+    const renewalSoon = deals.find(d => d.days <= 18);
+    if (hour >= 9 && dailyDue) {
+      setToast({ sponsor: dailyDue.sponsor, message: 'Instagram post due today — Sarah has the caption ready' });
+    } else if (renewalSoon) {
+      setToast({ sponsor: renewalSoon.sponsor, message: `Contract renewal in ${renewalSoon.days} days — agent needs sign-off` });
+    }
+  }, [toastDismissed]);
 
   const renderView = () => {
     switch (activeSection) {
@@ -1951,6 +2118,42 @@ export default function GolfTourPage() {
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+      {/* Sponsor obligation toast */}
+      {toast && !toastDismissed && (
+        <div
+          className="fixed bottom-6 right-6 z-50 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl w-80"
+          style={{ animation: 'golf-toast-in 260ms cubic-bezier(0.2, 0, 0, 1)' }}
+        >
+          <style dangerouslySetInnerHTML={{ __html: `
+@keyframes golf-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+          ` }} />
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-yellow-400 text-base leading-none">🤝</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider">{toast.sponsor}</div>
+              <div className="text-sm text-gray-200 mt-0.5">{toast.message}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => { setActiveSection('sponsorship'); setToast(null); }}
+              className="flex-1 text-xs font-semibold px-3 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500/30 transition-colors"
+            >
+              Review now
+            </button>
+            <button
+              onClick={() => { setToastDismissed(true); setToast(null); }}
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-gray-800/60 border border-white/5 text-gray-400 hover:text-gray-200 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`} style={{ background: '#0a0c14' }}>
         <div className="p-3 border-b border-gray-800 flex items-center justify-between">
@@ -1965,10 +2168,14 @@ export default function GolfTourPage() {
         </div>
         {!sidebarCollapsed && (
           <div className="p-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveSection('owgr')}
+              className="w-full text-left hover:bg-gray-800/50 rounded-lg p-1 -m-1 transition-all cursor-pointer flex items-center gap-2"
+              title="Go to OWGR & Race to Dubai"
+            >
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-green-500/40" style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.3), rgba(13,148,136,0.3))' }}>{player.flag}</div>
               <div><div className="text-xs font-semibold text-white">{player.name}</div><div className="text-[10px] text-gray-500">#{player.owgr} OWGR · {player.nationality}</div></div>
-            </div>
+            </button>
           </div>
         )}
         <nav className="flex-1 overflow-y-auto py-2 px-2">
@@ -2016,7 +2223,7 @@ export default function GolfTourPage() {
           <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
           {/* Right column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
-            <PlayerCard player={player} />
+            <PlayerCard player={player} setActiveSection={setActiveSection} />
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">This Week</div>
               <div className="text-xs text-green-400 font-medium">● In Progress</div>
