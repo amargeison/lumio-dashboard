@@ -4352,7 +4352,7 @@ function FinanceView() {
             </thead>
             <tbody>
               {CONTRACT_DATA.map((c, i) => {
-                const statusColor = (c.status as string) === 'Signed' ? '#22C55E' : c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
+                const statusColor = c.status === 'Offered' ? '#3B82F6' : c.status === 'Negotiating' ? '#F59E0B' : '#6B7280'
                 return (
                   <tr key={i} style={{ borderBottom: i < CONTRACT_DATA.length - 1 ? '1px solid #1F2937' : undefined }} className="hover:bg-white/[0.02]">
                     <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{c.player}</td>
