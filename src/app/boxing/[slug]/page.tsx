@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface BoxingFighter {
@@ -51,6 +51,7 @@ const SIDEBAR_ITEMS = [
   { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'FIGHT CAMP' },
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
   { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
+  { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
   { id: 'recovery',        label: 'Recovery & HRV',      icon: '💚', group: 'WEIGHT & HEALTH' },
@@ -79,6 +80,8 @@ const SIDEBAR_ITEMS = [
   { id: 'opscout',         label: 'Opposition Scout',    icon: '🎯', group: 'INTEL' },
   { id: 'broadcast',       label: 'Broadcast Tracker',   icon: '📺', group: 'INTEL' },
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
+  { id: 'gps',             label: 'GPS Load Monitor',    icon: '📡', group: 'INTEGRATIONS' },
+  { id: 'gpsvest',         label: 'GPS Vest Dashboard',  icon: '🦺', group: 'INTEGRATIONS' },
 ];
 
 // ─── DEMO FIGHTER DATA ────────────────────────────────────────────────────────
@@ -179,22 +182,40 @@ const QuickActionsBar = () => {
 
 // ─── WAVE BANNER ──────────────────────────────────────────────────────────────
 const WaveBanner = ({ fighter }: { fighter: BoxingFighter }) => (
-  <div className="bg-gradient-to-r from-red-900/60 via-[#07080F] to-orange-900/40 rounded-xl px-5 py-3 mb-5 flex items-center justify-between gap-4">
-    <div className="flex items-center gap-3">
-      <button className="w-8 h-8 rounded-full bg-red-600/30 border border-red-500/40 flex items-center justify-center text-sm hover:bg-red-600/50 transition-colors">
-        🥊
-      </button>
-      <div>
-        <div className="text-xs text-gray-400">Next fight</div>
-        <div className="text-sm text-white font-medium">vs {fighter.next_fight.opponent} {fighter.next_fight.opponent_flag} — {fighter.next_fight.days_away} days</div>
+  <div className="bg-gradient-to-r from-red-900/60 via-[#07080F] to-orange-900/40 rounded-xl px-5 py-3 mb-5">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <button className="w-8 h-8 rounded-full bg-red-600/30 border border-red-500/40 flex items-center justify-center text-sm hover:bg-red-600/50 transition-colors">
+          🥊
+        </button>
+        <div>
+          <div className="text-xs text-gray-400">Next fight</div>
+          <div className="text-sm text-white font-medium">vs {fighter.next_fight.opponent} {fighter.next_fight.opponent_flag} — {fighter.next_fight.days_away} days</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <div className="text-xs text-gray-500">Camp Day {fighter.camp_day}/{fighter.camp_total}</div>
+          <div className="text-xs text-gray-400">{fighter.next_fight.venue}</div>
+        </div>
+        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
       </div>
     </div>
-    <div className="flex items-center gap-4">
-      <div className="text-right">
-        <div className="text-xs text-gray-500">Camp Day {fighter.camp_day}/{fighter.camp_total}</div>
-        <div className="text-xs text-gray-400">{fighter.next_fight.venue}</div>
+    <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+      <div className="text-xs text-gray-400">
+        ⚖️ Weight cut: <span className="text-white font-medium">{fighter.current_weight}kg</span>
+        <span className="text-gray-500 mx-2">→</span>
+        <span className="text-teal-400 font-medium">{fighter.target_weight}kg</span>
+        <span className="text-gray-500 mx-2">·</span>
+        <span className="text-red-400">{(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to go</span>
       </div>
-      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+      <div className="text-xs">
+        {(fighter.current_weight - fighter.target_weight) > 3 ? (
+          <span className="text-yellow-400 font-medium">⚠ Daily target: -{((fighter.current_weight - fighter.target_weight) / (fighter.next_fight.days_away / 7) / 7).toFixed(2)}kg</span>
+        ) : (
+          <span className="text-green-400 font-medium">✓ On track for fight weight</span>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -231,16 +252,87 @@ const FighterCard = ({ fighter }: { fighter: BoxingFighter }) => (
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS DEMO DATA & RING COMPONENTS ──────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const GPS_SESSIONS = [
+  { day: 15, date: '2026-03-28', type: 'Sparring', duration: 65, distance: 4.2, load: 312, acr_acute: 1.02, acr_chronic: 0.88, acwr: 1.16,
+    ring: { centre: 38, ropes: 34, corners: 28 },
+    heatmap: [{x:200,y:200,r:45,o:0.7},{x:185,y:210,r:35,o:0.55},{x:215,y:195,r:30,o:0.45},{x:80,y:200,r:28,o:0.5},{x:320,y:200,r:25,o:0.45},{x:200,y:80,r:22,o:0.4},{x:200,y:320,r:20,o:0.35}] },
+  { day: 16, date: '2026-03-29', type: 'Roadwork', duration: 52, distance: 8.4, load: 198, acr_acute: 0.94, acr_chronic: 0.88, acwr: 1.07,
+    ring: { centre: 0, ropes: 0, corners: 0 },
+    heatmap: [] },
+  { day: 17, date: '2026-03-30', type: 'Strength', duration: 70, distance: 2.1, load: 241, acr_acute: 0.97, acr_chronic: 0.89, acwr: 1.09,
+    ring: { centre: 0, ropes: 0, corners: 0 },
+    heatmap: [] },
+  { day: 18, date: '2026-03-31', type: 'Sparring', duration: 80, distance: 5.1, load: 389, acr_acute: 1.14, acr_chronic: 0.91, acwr: 1.25,
+    ring: { centre: 42, ropes: 31, corners: 27 },
+    heatmap: [{x:200,y:200,r:50,o:0.75},{x:195,y:205,r:38,o:0.6},{x:80,y:200,r:30,o:0.5},{x:320,y:200,r:28,o:0.48},{x:200,y:80,r:25,o:0.42},{x:200,y:320,r:22,o:0.38},{x:80,y:80,r:18,o:0.3}] },
+  { day: 19, date: '2026-04-01', type: 'Rest', duration: 0, distance: 0, load: 0, acr_acute: 0.98, acr_chronic: 0.90, acwr: 1.09,
+    ring: { centre: 0, ropes: 0, corners: 0 },
+    heatmap: [] },
+  { day: 20, date: '2026-04-02', type: 'Sparring', duration: 90, distance: 5.8, load: 421, acr_acute: 1.22, acr_chronic: 0.93, acwr: 1.31,
+    ring: { centre: 35, ropes: 38, corners: 27 },
+    heatmap: [{x:200,y:200,r:40,o:0.6},{x:80,y:200,r:38,o:0.65},{x:320,y:200,r:35,o:0.6},{x:200,y:80,r:30,o:0.5},{x:200,y:320,r:28,o:0.48},{x:80,y:80,r:20,o:0.35},{x:320,y:80,r:18,o:0.3}] },
+  { day: 21, date: '2026-04-03', type: 'Pads', duration: 45, distance: 3.4, load: 267, acr_acute: 1.18, acr_chronic: 0.94, acwr: 1.26,
+    ring: { centre: 55, ropes: 28, corners: 17 },
+    heatmap: [{x:200,y:200,r:55,o:0.8},{x:195,y:198,r:42,o:0.65},{x:210,y:205,r:35,o:0.5},{x:80,y:200,r:20,o:0.35},{x:320,y:200,r:18,o:0.3}] },
+  { day: 22, date: '2026-04-04', type: 'Sparring', duration: 75, distance: 4.9, load: 358, acr_acute: 1.19, acr_chronic: 0.95, acwr: 1.25,
+    ring: { centre: 40, ropes: 35, corners: 25 },
+    heatmap: [{x:200,y:200,r:48,o:0.72},{x:190,y:205,r:36,o:0.58},{x:80,y:200,r:32,o:0.52},{x:320,y:200,r:30,o:0.5},{x:200,y:80,r:24,o:0.42},{x:200,y:320,r:22,o:0.38}] },
+];
+
+const ROADWORK_ROUTES = [
+  { day: 16, date: '2026-03-29', distance: 8.4, duration: 52, avgPace: '6:11/km',
+    points: [{x:200,y:180},{x:240,y:150},{x:280,y:140},{x:310,y:160},{x:320,y:200},{x:300,y:240},{x:260,y:260},{x:220,y:280},{x:190,y:260},{x:170,y:220},{x:175,y:190},{x:200,y:180}],
+    paceZones: [{label:'Easy',km:2.1,color:'#22C55E'},{label:'Steady',km:4.2,color:'#F59E0B'},{label:'Tempo',km:2.1,color:'#EF4444'}] },
+];
+
+function RingHeatmap({ session, size = 300 }: { session: typeof GPS_SESSIONS[0]; size?: number }) {
+  const s = size;
+  const cx = s / 2; const cy = s / 2;
+  const scale = s / 400;
+
+  return (
+    <svg viewBox={`0 0 ${s} ${s}`} width={s} height={s} style={{display:'block'}}>
+      <rect x={s*0.05} y={s*0.05} width={s*0.9} height={s*0.9} rx={s*0.02} fill="#1a1a0a" stroke="#555" strokeWidth="1"/>
+      {[0.92, 0.84, 0.76].map((f, i) => (
+        <rect key={i} x={s*0.05+(s*0.9*(1-f)/2)} y={s*0.05+(s*0.9*(1-f)/2)} width={s*0.9*f} height={s*0.9*f} rx={s*0.01} fill="none" stroke="#8B4513" strokeWidth="1.5" opacity="0.6"/>
+      ))}
+      {[[0.06,0.06],[0.88,0.06],[0.06,0.88],[0.88,0.88]].map(([px,py],i) => (
+        <rect key={i} x={s*px} y={s*py} width={s*0.06} height={s*0.06} rx="2" fill="#8B4513" opacity="0.5"/>
+      ))}
+      <line x1={s*0.05} y1={cy} x2={s*0.95} y2={cy} stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4,4"/>
+      {session.heatmap.map((z, i) => (
+        <circle key={i} cx={z.x*scale} cy={z.y*scale} r={z.r*scale} fill="#EF4444" opacity={z.o} style={{filter:'blur(8px)'}}/>
+      ))}
+      {session.ring.centre > 0 && <text x={cx} y={cy+4} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize={s*0.038} fontWeight="600">{session.ring.centre}%</text>}
+      <text x={s*0.5} y={s*0.96} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize={s*0.028}>CENTRE · ROPES · CORNERS</text>
+    </svg>
+  );
+}
+
+function RingZoneBar({ session }: { session: typeof GPS_SESSIONS[0] }) {
+  const { centre, ropes, corners } = session.ring;
+  if (!centre && !ropes && !corners) return <div className="text-xs text-gray-500 italic">No ring data — non-sparring session</div>;
+  return (
+    <div className="space-y-2">
+      {[{label:'Centre',value:centre,color:'bg-red-500'},{label:'Ropes',value:ropes,color:'bg-orange-500'},{label:'Corners',value:corners,color:'bg-yellow-500'}].map(z => (
+        <div key={z.label} className="flex items-center gap-3">
+          <div className="w-16 text-xs text-gray-400">{z.label}</div>
+          <div className="flex-1 bg-gray-800 rounded-full h-2">
+            <div className={`${z.color} h-2 rounded-full transition-all`} style={{width:`${z.value}%`}}/>
+          </div>
+          <div className="w-8 text-xs text-gray-300 text-right">{z.value}%</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function CampDashboardView({ fighter }: { fighter: BoxingFighter }) {
-  const campPhases = [
-    { name: 'General', start: 1, end: 21, color: 'bg-blue-500' },
-    { name: 'Specific', start: 22, end: 42, color: 'bg-yellow-500' },
-    { name: 'Peak', start: 43, end: 60, color: 'bg-red-500' },
-    { name: 'Taper', start: 61, end: 70, color: 'bg-green-500' },
-  ];
-
   const todaySessions = [
     { time: '06:00', type: 'Roadwork', detail: '8km steady state run + hill sprints x6', status: 'completed', statusColor: 'text-green-400' },
     { time: '11:00', type: 'Sparring', detail: '8 rounds w/ Darnell "Tank" Hughes (southpaw)', status: 'upcoming', statusColor: 'text-yellow-400' },
@@ -313,33 +405,46 @@ function CampDashboardView({ fighter }: { fighter: BoxingFighter }) {
         <StatCard label="Recovery Score" value={`${recoveryScore}%`} sub="HRV: 62ms — Good" color="green" />
       </div>
 
-      {/* Camp Phase Timeline */}
+      {/* GPS Ring Activity */}
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Camp Phase Timeline</div>
-        <div className="flex gap-1 h-8 rounded-lg overflow-hidden">
-          {campPhases.map((phase) => {
-            const width = ((phase.end - phase.start + 1) / fighter.camp_total) * 100;
-            const isActive = fighter.camp_day >= phase.start && fighter.camp_day <= phase.end;
-            return (
-              <div
-                key={phase.name}
-                className={`${phase.color} ${isActive ? 'opacity-100 ring-2 ring-white/30' : 'opacity-30'} flex items-center justify-center relative`}
-                style={{ width: `${width}%` }}
-              >
-                <span className="text-[10px] font-bold text-white/90 drop-shadow">{phase.name}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">Live Ring Heatmap — Today&apos;s Sparring</div>
+            <div className="text-xs text-gray-400">Day 22 · 75 min sparring · UWB tracking active</div>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-600/30 font-medium">● LUMIO VEST LIVE</span>
+        </div>
+        <div className="flex gap-6 items-start">
+          <div className="flex-shrink-0">
+            <RingHeatmap session={GPS_SESSIONS[GPS_SESSIONS.length - 1]} size={220} />
+          </div>
+          <div className="flex-1 space-y-4">
+            <RingZoneBar session={GPS_SESSIONS[GPS_SESSIONS.length - 1]} />
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
+                <div className="text-orange-400 font-bold text-lg">1.25</div>
+                <div className="text-gray-500">ACWR</div>
               </div>
-            );
-          })}
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
+                <div className="text-teal-400 font-bold text-lg">358</div>
+                <div className="text-gray-500">Session Load</div>
+              </div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
+                <div className="text-white font-bold text-lg">4.9km</div>
+                <div className="text-gray-500">Distance</div>
+              </div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
+                <div className="text-yellow-400 font-bold text-lg">75m</div>
+                <div className="text-gray-500">Duration</div>
+              </div>
+            </div>
+            <div className="text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-600/20 rounded p-2">
+              ⚠ ACWR 1.25 — approaching upper threshold. Monitor tomorrow&apos;s session load.
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between text-[10px] text-gray-500 mt-2">
-          <span>Day 1</span>
-          <span>Day 21</span>
-          <span>Day 42</span>
-          <span>Day 60</span>
-          <span>Day 70</span>
-        </div>
-        <div className="mt-3 text-xs text-yellow-400">Currently in: Specific Phase — Transitioning to fight-specific drills and opponent-patterned sparring</div>
       </div>
+      <div className="text-xs text-yellow-400">Camp phase: Specific — Transitioning to fight-specific drills and opponent-patterned sparring</div>
 
       {/* Today's Sessions */}
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -965,6 +1070,32 @@ function WeightTrackerView({ fighter }: { fighter: BoxingFighter }) {
 // ─── CUT PLANNER VIEW ─────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function CutPlannerView({ fighter }: { fighter: BoxingFighter }) {
+  const [cutAiLoading, setCutAiLoading] = useState(false);
+  const [cutAiResult, setCutAiResult] = useState<{assessment: string; daily_target: string; gps_adjustment: string; risk_flags: string[]; recommendation: string} | null>(null);
+
+  const generateCutAdvice = async () => {
+    setCutAiLoading(true);
+    try {
+      const recentLoad = GPS_SESSIONS.slice(-4).reduce((a,s)=>a+s.load,0)/4;
+      const currentACWR = GPS_SESSIONS[GPS_SESSIONS.length-1].acwr;
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: `Boxing weight cut analysis for Marcus Cole (Heavyweight, 27yo). Current: ${fighter.current_weight}kg. Target: ${fighter.target_weight}kg. Days to weigh-in: ${fighter.next_fight.days_away}. Camp GPS data: avg 4-session load ${recentLoad.toFixed(0)} AU, current ACWR ${currentACWR.toFixed(2)}. Hard sparring 3x/week. Nutritionist already has him on 3200kcal/day. Factor in GPS load when advising safe cut rate. Respond ONLY in JSON: {"assessment":"2 sentence overview","daily_target":"e.g. -0.18kg/day","gps_adjustment":"how GPS load affects the cut advice","risk_flags":["risk1","risk2"],"recommendation":"2 sentence final recommendation"}`
+          }]
+        })
+      });
+      const data = await response.json();
+      setCutAiResult(JSON.parse(data.content[0].text));
+    } catch { console.error('Cut advice failed'); }
+    finally { setCutAiLoading(false); }
+  };
+
   const cutSchedule = [
     { phase: 'Current — Steady Reduction', weeks: 'Weeks 1-6', method: 'Natural weight loss via training + nutrition', targetRate: '0.3-0.5kg/week', status: 'active' },
     { phase: 'Pre-Cut Prep', weeks: 'Week 7 (Day 43-49)', method: 'Increase water intake to 8L/day, sodium loading', targetRate: 'Maintain weight', status: 'upcoming' },
@@ -1041,6 +1172,42 @@ function CutPlannerView({ fighter }: { fighter: BoxingFighter }) {
             <div className="text-xs text-gray-400">Monitor mood and energy levels during the final water cut. Marcus has historically experienced mild headaches during dehydration. Ensure rehydration plan includes magnesium and potassium supplementation.</div>
           </div>
         </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">🤖 AI Weight Cut Advisor</div>
+            <div className="text-xs text-gray-400">GPS load-adjusted daily calorie deficit calculator</div>
+          </div>
+          <button onClick={generateCutAdvice} disabled={cutAiLoading}
+            className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+            {cutAiLoading ? 'Calculating...' : 'Generate Advice'}
+          </button>
+        </div>
+        {cutAiResult && (
+          <div className="space-y-3">
+            <div className="text-xs text-teal-400 border-l-2 border-teal-500 pl-3">{cutAiResult.assessment}</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-3">
+                <div className="text-xs text-gray-500 mb-1">Daily Cut Target</div>
+                <div className="text-white font-bold">{cutAiResult.daily_target}</div>
+              </div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded p-3">
+                <div className="text-xs text-gray-500 mb-1">GPS Adjustment</div>
+                <div className="text-yellow-400 font-medium text-xs">{cutAiResult.gps_adjustment}</div>
+              </div>
+            </div>
+            {cutAiResult.risk_flags.length > 0 && (
+              <div className="space-y-1">
+                {cutAiResult.risk_flags.map((flag, i) => (
+                  <div key={i} className="text-xs text-red-400 flex gap-2"><span>⚠</span><span>{flag}</span></div>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-gray-300 bg-[#0a0c14] border border-gray-800 rounded p-3">{cutAiResult.recommendation}</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1229,6 +1396,50 @@ function MedicalRecordView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">🏛️ BBBofC Compliance Tracker</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {[
+            { label: 'Boxer Licence', value: 'Valid — expires Dec 2026', status: 'green' },
+            { label: 'Annual Medical', value: 'Completed Feb 2026', status: 'green' },
+            { label: 'Brain Scan (MRI)', value: 'Nov 2025 — clear', status: 'green' },
+            { label: 'Eye Test', value: 'Jan 2026 — passed', status: 'green' },
+            { label: 'Cardiac Screen', value: 'Due Jun 2026', status: 'amber' },
+            { label: 'Blood Work', value: 'Required pre-fight', status: 'amber' },
+          ].map(item => (
+            <div key={item.label} className={`p-3 rounded-lg border ${item.status==='green'?'bg-green-900/10 border-green-600/20':'bg-yellow-900/10 border-yellow-600/20'}`}>
+              <div className="text-[10px] text-gray-500 mb-1">{item.label}</div>
+              <div className={`text-xs font-medium ${item.status==='green'?'text-green-400':'text-yellow-400'}`}>{item.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Suspension &amp; Injury Log</div>
+        <div className="space-y-2">
+          {[
+            { date: 'Nov 2025', event: 'Post-fight medical — vs White', detail: 'Mandatory 28-day suspension served. Medical clearance granted Dec 2025.', status: 'resolved' },
+            { date: 'Mar 2025', event: 'Post-fight medical — vs Gorman', detail: 'Standard 28-day suspension. No injuries noted.', status: 'resolved' },
+          ].map((item, i) => (
+            <div key={i} className="flex gap-3 p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg">
+              <div className="w-1 bg-green-500 rounded-full flex-shrink-0"/>
+              <div>
+                <div className="text-xs text-white font-medium">{item.event}</div>
+                <div className="text-[10px] text-gray-500">{item.date} · {item.detail}</div>
+              </div>
+              <span className="ml-auto text-[10px] text-green-400 font-medium flex-shrink-0">{item.status}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600/20 rounded-lg">
+          <div className="text-xs text-blue-400 font-medium mb-1">Pre-Fight Requirements — Cole vs Petrov (May 22)</div>
+          <div className="space-y-1 text-[10px] text-gray-400">
+            <div>□ Blood work — submit to BBBofC by May 15</div>
+            <div>□ MRI scan — valid (Nov 2025, within 12 months ✓)</div>
+            <div>□ Pre-fight medical — BBBofC doctor, May 21 (venue)</div>
+            <div>□ Weigh-in — May 21, official BBBofC scales</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1413,6 +1624,54 @@ function WorldRankingsView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+
+      <div className="bg-[#0D1117] border border-yellow-600/20 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">🏆 Undisputed Tracker — Heavyweight Division</div>
+        <div className="text-xs text-gray-400 mb-4">4 belts needed — current holder status and mandatory timelines</div>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {[
+            { belt: 'WBC', champion: 'Tyson Fury', flag: '🇬🇧', record: '34-1-1', mandatoryNext: 'Zhang (ordered)', marcusRanking: '#5', timelineTo: '~24 months', color: 'border-green-600/30 bg-green-900/10' },
+            { belt: 'WBA', champion: 'Oleksandr Usyk', flag: '🇺🇦', record: '22-0', mandatoryNext: 'Vacant (Super)', marcusRanking: '#9', timelineTo: '~30 months', color: 'border-purple-600/30 bg-purple-900/10' },
+            { belt: 'WBO', champion: 'Oleksandr Usyk', flag: '🇺🇦', record: '22-0', mandatoryNext: 'Dubois or Anderson', marcusRanking: '#5', timelineTo: '~18 months', color: 'border-blue-600/30 bg-blue-900/10' },
+            { belt: 'IBF', champion: 'Daniel Dubois', flag: '🇬🇧', record: '22-2', mandatoryNext: 'Hrgovic (Jun 2026)', marcusRanking: '#12', timelineTo: '~36 months', color: 'border-red-600/30 bg-red-900/10' },
+          ].map(b => (
+            <div key={b.belt} className={`border ${b.color} rounded-xl p-4`}>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-bold text-yellow-400">{b.belt}</span>
+                <span className="text-xs text-gray-500">Marcus: {b.marcusRanking}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">{b.flag}</span>
+                <div>
+                  <div className="text-sm text-white font-medium">{b.champion}</div>
+                  <div className="text-xs text-gray-400">{b.record}</div>
+                </div>
+              </div>
+              <div className="text-[10px] text-gray-500">Mandatory: {b.mandatoryNext}</div>
+              <div className="text-[10px] text-teal-400 mt-1">Est. path: {b.timelineTo}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs font-medium text-gray-400 mb-3 uppercase tracking-wide">Marcus Cole&apos;s Fastest Path to Undisputed</div>
+        <div className="space-y-2">
+          {[
+            { step: 1, action: 'Beat Petrov (WBC #3)', timeline: 'May 2026', result: 'Move to WBC #3 / WBO #2', status: 'upcoming' },
+            { step: 2, action: 'WBC Eliminator vs Zhang or #4', timeline: 'Q4 2026', result: 'WBC Mandatory contender', status: 'future' },
+            { step: 3, action: 'WBO Title shot (Usyk or successor)', timeline: '2027', result: 'First belt — WBO Champion', status: 'future' },
+            { step: 4, action: 'Unification — WBC/WBO', timeline: '2027-28', result: 'Two-belt holder', status: 'future' },
+            { step: 5, action: 'Undisputed — all 4 belts', timeline: '2028-29', result: '🏆 Undisputed Heavyweight Champion', status: 'goal' },
+          ].map(s => (
+            <div key={s.step} className={`flex items-center gap-3 p-2.5 rounded-lg ${s.status==='upcoming'?'bg-red-900/20 border border-red-600/20':s.status==='goal'?'bg-yellow-900/20 border border-yellow-600/20':'bg-[#0a0c14] border border-gray-800'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.status==='upcoming'?'bg-red-600 text-white':s.status==='goal'?'bg-yellow-600 text-black':'bg-gray-700 text-gray-400'}`}>{s.step}</div>
+              <div className="flex-1">
+                <div className="text-xs text-white font-medium">{s.action}</div>
+                <div className="text-[10px] text-gray-500">{s.result}</div>
+              </div>
+              <div className="text-[10px] text-gray-500 flex-shrink-0">{s.timeline}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1567,37 +1826,87 @@ function PathToTitleView({ fighter }: { fighter: BoxingFighter }) {
 // ─── PURSE BID ALERTS VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PurseBidAlertsView() {
-  const purseBids = [
-    { body: 'IBF', fight: 'Dubois vs Hrgovic', bidDate: 'Apr 18, 2026', minBid: '$4,200,000', status: 'Open', bidders: 'Matchroom, Queensberry, Top Rank', relevance: 'If Dubois vacates, IBF rankings shift upward' },
-    { body: 'WBC', fight: 'Fury vs Zhang (Eliminator)', bidDate: 'May 2, 2026', minBid: '$6,500,000', status: 'Negotiations first', bidders: 'Queensberry (Fury side), Top Rank (Zhang side)', relevance: 'Winner gets mandatory. Loser drops — could open spot for Marcus.' },
-    { body: 'WBO', fight: 'Anderson vs TBD (#4 vs #5)', bidDate: 'TBD', minBid: 'TBD', status: 'Not yet ordered', bidders: 'TBD', relevance: 'Marcus is #5 — could be called for this eliminator.' },
-  ];
+  const [purseBid, setPurseBid] = useState(3000000);
+  const [isChampion, setIsChampion] = useState(false);
+
+  const challengerShare = isChampion ? 0.75 : 0.25;
+  const marcusGross = purseBid * challengerShare;
+  const agentCut = marcusGross * 0.15;
+  const trainerCut = marcusGross * 0.10;
+  const campcosts = 120000;
+  const netEstimate = marcusGross - agentCut - trainerCut - campcosts;
 
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="🔔" title="Purse Bid Alerts" subtitle="Track upcoming purse bids, negotiations, and sanctioning body auctions." />
+      <SectionHeader icon="🔔" title="Purse Bid Tracker" subtitle="WBC/WBA/WBO/IBF mandatory proceedings and real-time purse split calculator" />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <StatCard label="Active Bids" value="1" sub="IBF — Dubois vs Hrgovic" color="red" />
-        <StatCard label="Upcoming" value="2" sub="WBC & WBO" color="yellow" />
-        <StatCard label="Marcus Relevance" value="Medium" sub="Watch WBO closely" color="blue" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="WBC Mandatory" value="Ordered" sub="#3 vs #5 by Q4 2026" color="green" />
+        <StatCard label="WBO Mandatory" value="Upcoming" sub="Dubois eliminator Jun" color="yellow" />
+        <StatCard label="Floor %" value="25%" sub="Challenger minimum" color="orange" />
+        <StatCard label="Current Best" value="WBO #5" sub="Best route to mandatory" color="teal" />
       </div>
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Current & Upcoming Purse Bids</div>
-        <div className="space-y-3">
-          {purseBids.map((bid, i) => (
-            <div key={i} className="p-4 bg-[#0a0c14] border border-gray-800 rounded-lg">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="text-sm text-white font-medium">{bid.body}: {bid.fight}</div>
-                  <div className="text-xs text-gray-400">Bid date: {bid.bidDate} — Minimum: {bid.minBid}</div>
-                </div>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${bid.status === 'Open' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{bid.status}</span>
+        <div className="text-sm font-semibold text-white mb-4">💷 Purse Bid Simulator</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <div className="text-xs text-gray-500 mb-2">Total Purse (£)</div>
+              <input type="range" min={500000} max={20000000} step={250000} value={purseBid}
+                onChange={e => setPurseBid(Number(e.target.value))}
+                className="w-full accent-red-500"/>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>£500k</span>
+                <span className="text-white font-bold text-sm">£{(purseBid/1000000).toFixed(2)}M</span>
+                <span>£20M</span>
               </div>
-              <div className="text-xs text-gray-500">Bidders: {bid.bidders}</div>
-              <div className="text-xs text-teal-400 mt-1">{bid.relevance}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 mb-2">Marcus&apos;s Role</div>
+              <div className="flex gap-2">
+                <button onClick={() => setIsChampion(false)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${!isChampion ? 'bg-red-600 text-white' : 'border border-gray-700 text-gray-400'}`}>Challenger (25% floor)</button>
+                <button onClick={() => setIsChampion(true)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${isChampion ? 'bg-red-600 text-white' : 'border border-gray-700 text-gray-400'}`}>Champion (75% floor)</button>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {[
+              { label: 'Marcus Gross', value: marcusGross, color: 'text-white', bold: false },
+              { label: 'Agent (15%)', value: -agentCut, color: 'text-red-400', bold: false },
+              { label: 'Trainer (10%)', value: -trainerCut, color: 'text-red-400', bold: false },
+              { label: 'Est. Camp Costs', value: -campcosts, color: 'text-red-400', bold: false },
+              { label: 'NET ESTIMATE', value: netEstimate, color: 'text-green-400', bold: true },
+            ].map(row => (
+              <div key={row.label} className={`flex justify-between py-2 ${row.bold ? 'border-t border-gray-700 pt-3' : 'border-b border-gray-800/50'}`}>
+                <span className="text-xs text-gray-400">{row.label}</span>
+                <span className={`text-sm ${row.bold ? 'font-bold' : 'font-medium'} ${row.color}`}>
+                  {row.value < 0 ? '-' : ''}£{Math.abs(row.value).toLocaleString('en-GB', {maximumFractionDigits:0})}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Active Mandatory Proceedings</div>
+        <div className="space-y-3">
+          {[
+            { belt: 'WBC', matchup: 'Cole (#5) vs Zhang (#2)', status: 'Ordered', deadline: 'Q4 2026', notes: 'WBC executive committee voted May 2026. 60 days to negotiate, then purse bid.', urgent: false },
+            { belt: 'WBO', matchup: 'Cole (#5) vs Anderson (#4)', status: 'Possible', deadline: 'Dubois must defend first', notes: 'If Dubois beats Hrgovic in June, eliminator between #4 and #5 likely ordered Q3 2026.', urgent: false },
+          ].map((p, i) => (
+            <div key={i} className={`p-4 rounded-xl border ${p.urgent ? 'border-red-600/30 bg-red-900/10' : 'border-gray-700 bg-[#0a0c14]'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">{p.belt}</span>
+                  <span className="text-sm text-white font-medium">{p.matchup}</span>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${p.status==='Ordered'?'bg-green-600/20 text-green-400':'bg-gray-600/20 text-gray-400'}`}>{p.status}</span>
+              </div>
+              <div className="text-xs text-gray-400 mb-1">Deadline: {p.deadline}</div>
+              <div className="text-xs text-gray-500">{p.notes}</div>
             </div>
           ))}
         </div>
@@ -2623,6 +2932,26 @@ function ContractTrackerView({ fighter }: { fighter: BoxingFighter }) {
 // ─── FIGHT RECORD VIEW ────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function FightRecordView({ fighter }: { fighter: BoxingFighter }) {
+  const [debrief, setDebrief] = useState<{performance_rating: string; strengths: string; weaknesses: string; gps_insight: string; next_camp_focus: string} | null>(null);
+  const [debriefLoading, setDebriefLoading] = useState(false);
+  const [selectedFight, setSelectedFight] = useState('vs White (Nov 2025)');
+
+  const generateDebrief = async () => {
+    setDebriefLoading(true);
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:600,
+          messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. CompuBox: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
+        })
+      });
+      const data = await response.json();
+      setDebrief(JSON.parse(data.content[0].text));
+    } catch { console.error('Debrief failed'); }
+    finally { setDebriefLoading(false); }
+  };
+
   const record = [
     { no: 23, date: '2025-11-15', opponent: 'Dillian White', oppRecord: '29-4', result: 'W', method: 'KO R6', rounds: '6/12', title: '', venue: 'AO Arena, Manchester' },
     { no: 22, date: '2025-07-19', opponent: 'Derek Chisora', oppRecord: '35-13', result: 'W', method: 'UD', rounds: '10/10', title: '', venue: 'Copper Box, London' },
@@ -2653,6 +2982,48 @@ function FightRecordView({ fighter }: { fighter: BoxingFighter }) {
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="📜" title="Fight Record" subtitle={`Professional record: ${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws} (${fighter.record.ko} KO)`} />
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="text-sm font-semibold text-white mb-4">🤖 AI Post-Fight Debrief Generator</div>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Fight</div>
+            <select value={selectedFight} onChange={e => setSelectedFight(e.target.value)}
+              className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option>vs White (Nov 2025)</option>
+              <option>vs Chisora (Jul 2025)</option>
+              <option>vs Gorman (Mar 2025)</option>
+            </select>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Result</div>
+            <input defaultValue="W TKO9 — stopped in corner" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white" placeholder="Result and method"/>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">CompuBox — Landed / Thrown</div>
+            <input defaultValue="224/498 (45%) jabs 82/188, power 142/310" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white"/>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Notes</div>
+            <input defaultValue="Strong body work, managed southpaw well, slight chin wobble R6" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white"/>
+          </div>
+        </div>
+        <button onClick={generateDebrief} disabled={debriefLoading}
+          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-colors">
+          {debriefLoading ? 'Generating...' : 'Generate Debrief'}
+        </button>
+        {debrief && (
+          <div className="mt-4 space-y-3 border-t border-gray-800 pt-4">
+            <div className="flex items-center gap-2"><span className="text-xs text-gray-500">Performance Rating</span><span className="text-white font-bold">{debrief.performance_rating}</span></div>
+            {[{label:'Strengths',value:debrief.strengths,color:'text-green-400'},{label:'Weaknesses',value:debrief.weaknesses,color:'text-red-400'},{label:'GPS Insight',value:debrief.gps_insight,color:'text-orange-400'},{label:'Next Camp Focus',value:debrief.next_camp_focus,color:'text-teal-400'}].map(item=>(
+              <div key={item.label} className="bg-[#0a0c14] border border-gray-800 rounded p-3">
+                <div className={`text-xs font-medium mb-1 ${item.color}`}>{item.label}</div>
+                <div className="text-xs text-gray-300">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -2880,38 +3251,60 @@ function AIMorningBriefingView({ fighter }: { fighter: BoxingFighter }) {
   const [briefing, setBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const generateBriefing = () => {
+  const generateBriefing = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setBriefing(`MORNING BRIEFING — ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-Camp Day ${fighter.camp_day} of ${fighter.camp_total} | ${fighter.next_fight.days_away} days to fight | vs ${fighter.next_fight.opponent}
+    try {
+      const todayGPS = GPS_SESSIONS[GPS_SESSIONS.length - 1];
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 800,
+          messages: [{
+            role: 'user',
+            content: `Generate a structured morning briefing for professional boxer Marcus Cole. Today is Camp Day ${fighter.camp_day} of ${fighter.camp_total}. Fight vs ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_record}) in ${fighter.next_fight.days_away} days at ${fighter.next_fight.venue} on ${fighter.next_fight.broadcast}.
 
----
+GPS DATA (yesterday's session): Type: ${todayGPS.type}, Load: ${todayGPS.load} AU, Distance: ${todayGPS.distance}km, ACWR: ${todayGPS.acwr.toFixed(2)}, Ring time — Centre: ${todayGPS.ring.centre}%, Ropes: ${todayGPS.ring.ropes}%, Corners: ${todayGPS.ring.corners}%.
 
-TRAINING
-Today is a heavy sparring day. 8 rounds scheduled with Darnell Hughes (southpaw) to simulate Petrov's movement patterns. Afternoon strength session — upper body power focus with Greg Mayfield. Evening physio with Liam for shoulder maintenance work.
+Weight: ${fighter.current_weight}kg (target: ${fighter.target_weight}kg — ${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg remaining).
+Recovery: 81% HRV: 62ms. Right shoulder monitoring.
+Today's schedule: 11:00 Sparring (8 rounds vs Darnell Hughes), 15:00 Strength (upper body power), 18:00 Physio.
+Trainer: ${fighter.trainer}. Nutritionist: ${fighter.nutritionist}. Physio: ${fighter.physio}.
 
-NUMBERS
-Weight: ${fighter.current_weight}kg (target ${fighter.target_weight}kg — ${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to go, on track)
-HRV: 62ms (baseline 65ms — acceptable, green light for hard session)
-Sleep: 7.8 hours (target 8hrs — marginal, aim for earlier bedtime tonight)
-Recovery: 81% (good — cleared for full training load)
-
-SPARRING FOCUS
-Drill the pull counter right hand that Jim introduced on Wednesday. When Hughes throws the jab, slip right and counter. This is the money shot against Petrov. Also work on body shots from the clinch — uppercut followed by left hook to the body on the break.
-
-FLAGS
-Right shoulder tightness — Liam has recommended reduced overhead pressing for 7 days. Greg will adjust the afternoon strength program accordingly. Monitor and report any increase in discomfort.
-
-OBLIGATIONS
-No media today. Next obligation: DAZN promo shoot April 12 (London — travel day April 11). Sarah Chen will confirm logistics.
-
-INTEL
-Petrov filmed doing open workout in Big Bear. New conditioning coach observed. Working more body shots than usual in pad work — unusual for him, may be adjusting game plan.
-
-Stay focused, stay disciplined, 48 days to go.`);
+Write a concise, focused morning briefing covering: TRAINING (today's sessions), NUMBERS (weight and recovery status), GPS SUMMARY (yesterday's load and ring zone notes), SPARRING FOCUS (one tactical drill to prioritise), FLAGS (any concerns), OBLIGATIONS (media/sponsor commitments). End with a motivational closer. Use headers. Be direct and specific. No filler.`
+          }]
+        })
+      });
+      const data = await response.json();
+      setBriefing(data.content[0].text);
+    } catch {
+      setBriefing('Error generating briefing. Check connection and try again.');
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
+  };
+
+  const printBriefing = () => {
+    if (!briefing) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>Morning Briefing — Marcus Cole</title>
+    <style>
+      body{font-family:Georgia,serif;max-width:720px;margin:32px auto;color:#1a1a2e;font-size:13px;line-height:1.7;padding:0 24px}
+      h1{font-size:22px;border-bottom:3px solid #EF4444;padding-bottom:8px;margin-bottom:4px}
+      .meta{font-size:11px;color:#666;margin-bottom:24px}
+      pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:13px}
+      footer{margin-top:32px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px}
+      @media print{body{margin:16px}}
+    </style></head><body>
+    <h1>🌅 Morning Briefing — Marcus Cole</h1>
+    <div class="meta">Camp Day ${fighter.camp_day} of ${fighter.camp_total} · ${fighter.next_fight.days_away} days to ${fighter.next_fight.opponent} · ${new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+    <pre>${briefing.replace(/</g,'&lt;')}</pre>
+    <footer>Generated by Lumio Fight · CONFIDENTIAL — Team Only</footer>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
   };
 
   return (
@@ -2946,7 +3339,10 @@ Stay focused, stay disciplined, 48 days to go.`);
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm font-semibold text-white">AI Morning Briefing</div>
-            <button onClick={() => setBriefing(null)} className="text-xs text-gray-500 hover:text-gray-300">Regenerate</button>
+            <div className="flex items-center gap-3">
+              <button onClick={printBriefing} className="text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">📄 Print Briefing</button>
+              <button onClick={() => setBriefing(null)} className="text-xs text-gray-500 hover:text-gray-300">Regenerate</button>
+            </div>
           </div>
           <div className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed font-mono bg-[#0a0c14] p-5 rounded-lg border border-gray-800">
             {briefing}
@@ -2961,6 +3357,28 @@ Stay focused, stay disciplined, 48 days to go.`);
 // ─── OPPOSITION SCOUT VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function OppositionScoutView({ fighter }: { fighter: BoxingFighter }) {
+  const [scoutTarget, setScoutTarget] = useState('Viktor Petrov');
+  const [scoutLoading, setScoutLoading] = useState(false);
+  const [scoutResult, setScoutResult] = useState<{style_analysis: string; key_threat: string; weakness: string; ring_strategy: string; gps_target_zones: string} | null>(null);
+
+  const generateScoutReport = async () => {
+    setScoutLoading(true);
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:500,
+          messages:[{role:'user',content:`Generate a boxing scout report on ${scoutTarget} for Marcus Cole (22-1 HW, Orthodox, 6'4" 82" reach, strong jab and body work). Marcus's GPS ring data shows he averages 40% centre, 35% ropes, 25% corners. Include GPS ring zone strategy specifically. Respond ONLY in JSON: {"style_analysis":"2 sentences on opponent style and tendencies","key_threat":"biggest danger to Marcus in 1 sentence","weakness":"main exploitable weakness in 1 sentence","ring_strategy":"2 sentence tactical plan","gps_target_zones":"where Marcus should target positioning based on his GPS profile vs this opponent's style"}`}]
+        })
+      });
+      const data = await response.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
+      setScoutResult(JSON.parse(text.slice(s, e + 1)));
+    } catch { console.error('Scout failed'); }
+    finally { setScoutLoading(false); }
+  };
+
   const scoutedFighters = [
     { name: 'Viktor Petrov', flag: '🇷🇺', record: '28-2 (24 KO)', ranking: 'WBC #3', threat: 'High', notes: 'Next opponent. Currently in Big Bear camp. New conditioning coach. Working body shots more than usual.' },
     { name: 'Zhilei Zhang', flag: '🇨🇳', record: '27-2-1 (22 KO)', ranking: 'WBC #2', threat: 'High', notes: 'Potential future opponent if Petrov win secured. Massive power. Slow feet. Age a factor (43).' },
@@ -2973,6 +3391,41 @@ function OppositionScoutView({ fighter }: { fighter: BoxingFighter }) {
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="🎯" title="Opposition Scout" subtitle="Active scouting reports on current and potential future opponents." />
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-white mb-1">🤖 AI Scout + GPS Ring Strategy</div>
+            <select value={scoutTarget} onChange={e => setScoutTarget(e.target.value)}
+              className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
+              {['Viktor Petrov','Zhilei Zhang','Jared Anderson','Martin Bakole','Daniel Dubois'].map(f=><option key={f}>{f}</option>)}
+            </select>
+          </div>
+          <button onClick={generateScoutReport} disabled={scoutLoading}
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors self-end whitespace-nowrap">
+            {scoutLoading ? 'Scouting...' : 'Generate Report'}
+          </button>
+        </div>
+        {scoutResult && (
+          <div className="space-y-3 border-t border-gray-800 pt-4">
+            {[
+              {label:'Style Analysis',value:scoutResult.style_analysis,icon:'🥊'},
+              {label:'Key Threat',value:scoutResult.key_threat,icon:'⚠️',color:'text-red-400'},
+              {label:'Exploitable Weakness',value:scoutResult.weakness,icon:'🎯',color:'text-green-400'},
+              {label:'Ring Movement Strategy',value:scoutResult.ring_strategy,icon:'📡'},
+              {label:'GPS Target Zones',value:scoutResult.gps_target_zones,icon:'🗺️',color:'text-orange-400'},
+            ].map(item => (
+              <div key={item.label} className="flex gap-3 items-start">
+                <span>{item.icon}</span>
+                <div>
+                  <div className={`text-xs font-medium mb-0.5 ${item.color || 'text-gray-400'}`}>{item.label}</div>
+                  <div className="text-xs text-gray-300">{item.value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard label="Fighters Scouted" value={scoutedFighters.length} sub="Active reports" color="red" />
@@ -3119,6 +3572,476 @@ function IndustryNewsView() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS LOAD MONITOR VIEW ────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function GPSLoadMonitorView({ fighter }: { fighter: BoxingFighter }) {
+  const [selectedDay, setSelectedDay] = useState(GPS_SESSIONS.length - 1);
+  const [footworkLoading, setFootworkLoading] = useState(false);
+  const [footworkResult, setFootworkResult] = useState<{drills: {name: string; description: string; reason: string}[]; summary: string} | null>(null);
+  const [compareA, setCompareA] = useState(0);
+  const [compareB, setCompareB] = useState(GPS_SESSIONS.length - 1);
+  const session = GPS_SESSIONS[selectedDay];
+
+  const generateFootworkAnalysis = async () => {
+    setFootworkLoading(true);
+    try {
+      const ringData = GPS_SESSIONS.filter(s => s.ring.centre > 0);
+      const avgCentre = Math.round(ringData.reduce((a,s)=>a+s.ring.centre,0)/ringData.length);
+      const avgRopes = Math.round(ringData.reduce((a,s)=>a+s.ring.ropes,0)/ringData.length);
+      const avgCorners = Math.round(ringData.reduce((a,s)=>a+s.ring.corners,0)/ringData.length);
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 600,
+          messages: [{
+            role: 'user',
+            content: `You are a boxing GPS analyst for Marcus Cole (22-1, Heavyweight, Orthodox, 6'4"). His ring zone data from camp shows: Centre ${avgCentre}%, Ropes ${avgRopes}%, Corners ${avgCorners}%. Next opponent Viktor Petrov is WBC #3, southpaw, 28-2 with 24 KOs, known for controlling the centre ring. Generate 3 specific footwork drills to address the weaknesses shown in this zone data. Respond ONLY in JSON (no markdown): { "summary": "2 sentence overall footwork assessment", "drills": [{"name": "drill name", "description": "how to execute — 2 sentences", "reason": "why this addresses the zone data"}, ...3 items] }`
+          }]
+        })
+      });
+      const data = await response.json();
+      setFootworkResult(JSON.parse(data.content[0].text));
+    } catch {
+      console.error('Footwork analysis failed');
+    } finally {
+      setFootworkLoading(false);
+    }
+  };
+
+  const acwrData = GPS_SESSIONS.map(s => ({ day: s.day, acwr: s.acwr, load: s.load, type: s.type }));
+  const latestACWR = GPS_SESSIONS[GPS_SESSIONS.length - 1].acwr;
+  const acwrStatus = latestACWR > 1.3 ? { label: 'High Risk', color: 'text-red-400', bg: 'bg-red-600/20' }
+    : latestACWR > 1.15 ? { label: 'Manage Carefully', color: 'text-yellow-400', bg: 'bg-yellow-600/20' }
+    : { label: 'Safe Zone', color: 'text-green-400', bg: 'bg-green-600/20' };
+
+  const totalDistanceCamp = GPS_SESSIONS.reduce((a, s) => a + s.distance, 0);
+  const totalLoadCamp = GPS_SESSIONS.reduce((a, s) => a + s.load, 0);
+  const sparringSessions = GPS_SESSIONS.filter(s => s.ring.centre > 0).length;
+
+  const generateCampReport = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const totalDist = GPS_SESSIONS.reduce((a,s)=>a+s.distance,0).toFixed(1);
+    const totalLoad = GPS_SESSIONS.reduce((a,s)=>a+s.load,0);
+    const peakACWR = Math.max(...GPS_SESSIONS.map(s=>s.acwr)).toFixed(2);
+    const sparringSess = GPS_SESSIONS.filter(s=>s.ring.centre>0);
+    const avgCentreTime = sparringSess.length ? Math.round(sparringSess.reduce((a,s)=>a+s.ring.centre,0)/sparringSess.length) : 0;
+    w.document.write(`<!DOCTYPE html><html><head><title>Camp Load Report — Marcus Cole vs Viktor Petrov</title>
+    <style>
+      body{font-family:Georgia,serif;max-width:780px;margin:32px auto;color:#1a1a2e;font-size:12px;line-height:1.6}
+      h1{font-size:22px;margin-bottom:4px;border-bottom:3px solid #EF4444;padding-bottom:8px}
+      .meta{font-size:10px;color:#666;margin-bottom:24px}
+      .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+      .kpi{border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center}
+      .kpi-val{font-size:22px;font-weight:700;color:#EF4444}
+      .kpi-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.05em}
+      h2{font-size:13px;text-transform:uppercase;letter-spacing:0.06em;color:#888;border-bottom:1px solid #eee;padding-bottom:4px;margin:20px 0 10px}
+      table{width:100%;border-collapse:collapse;font-size:11px}
+      th{background:#f5f5f5;padding:6px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;color:#666}
+      td{padding:7px 10px;border-bottom:1px solid #eee}
+      .zone-row{display:flex;gap:12px;margin-bottom:8px;align-items:center}
+      .zone-bar{flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden}
+      .zone-fill{height:100%;border-radius:4px}
+      .badge-red{color:#EF4444;font-weight:700} .badge-amber{color:#F59E0B;font-weight:700} .badge-green{color:#22C55E;font-weight:700}
+      footer{margin-top:32px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px}
+      @media print{body{margin:16px}}
+    </style></head><body>
+    <h1>🥊 Camp Load Report — Marcus Cole</h1>
+    <div class="meta">vs Viktor Petrov · Camp Days 15–${fighter.camp_day} of ${fighter.camp_total} · Generated ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL — Team Only</div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-val">${totalDist}km</div><div class="kpi-label">Total Distance</div></div>
+      <div class="kpi"><div class="kpi-val">${totalLoad}</div><div class="kpi-label">Total Load (AU)</div></div>
+      <div class="kpi"><div class="kpi-val">${peakACWR}</div><div class="kpi-label">Peak ACWR</div></div>
+      <div class="kpi"><div class="kpi-val">${sparringSess.length}</div><div class="kpi-label">Ring Sessions</div></div>
+      <div class="kpi"><div class="kpi-val">${avgCentreTime}%</div><div class="kpi-label">Avg Centre Time</div></div>
+      <div class="kpi"><div class="kpi-val">${fighter.next_fight.days_away}d</div><div class="kpi-label">Days to Fight</div></div>
+    </div>
+    <h2>Daily Session Log</h2>
+    <table><thead><tr><th>Day</th><th>Date</th><th>Type</th><th>Duration</th><th>Distance</th><th>Load (AU)</th><th>ACWR</th><th>Status</th></tr></thead><tbody>
+    ${GPS_SESSIONS.map(s=>`<tr>
+      <td>${s.day}</td><td>${s.date}</td><td>${s.type}</td><td>${s.duration>0?s.duration+'m':'—'}</td>
+      <td>${s.distance>0?s.distance+'km':'—'}</td><td>${s.load>0?s.load:'—'}</td>
+      <td class="${s.acwr>1.3?'badge-red':s.acwr>1.15?'badge-amber':'badge-green'}">${s.acwr.toFixed(2)}</td>
+      <td class="${s.acwr>1.3?'badge-red':s.acwr>1.15?'badge-amber':'badge-green'}">${s.acwr>1.3?'⚠ High Risk':s.acwr>1.15?'Monitor':'Safe'}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <h2>Ring Zone Analysis — Sparring Sessions</h2>
+    ${sparringSess.map(s=>`<div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px">Day ${s.day} · ${s.date} · ${s.duration}min</div>
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Centre</span><div class="zone-bar"><div class="zone-fill" style="width:${s.ring.centre}%;background:#EF4444"></div></div><span style="font-size:10px;width:30px;text-align:right">${s.ring.centre}%</span></div>
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Ropes</span><div class="zone-bar"><div class="zone-fill" style="width:${s.ring.ropes}%;background:#F97316"></div></div><span style="font-size:10px;width:30px;text-align:right">${s.ring.ropes}%</span></div>
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Corners</span><div class="zone-bar"><div class="zone-fill" style="width:${s.ring.corners}%;background:#EAB308"></div></div><span style="font-size:10px;width:30px;text-align:right">${s.ring.corners}%</span></div>
+    </div>`).join('')}
+    <h2>Trainer Notes — Jim Bevan</h2>
+    <p style="font-style:italic;color:#444">Marcus is tracking well through the specific phase. ACWR peaked at ${peakACWR} — within acceptable range for this stage of camp. Ring zone data shows good centre-ring presence in early sparring sessions. Week 7 onward, we target ≥40% centre time as we build confidence working inside Petrov's jab range.</p>
+    <footer>Generated by Lumio Fight GPS · lumiofight.com · ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL</footer>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+  };
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📡" title="GPS Load Monitor" subtitle={`Camp Days 15–${fighter.camp_day} · Lumio Fight Vest · UWB Ring Tracking Active`} />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Camp Distance" value={`${totalDistanceCamp.toFixed(1)}km`} sub="Total GPS tracked" color="teal" />
+        <StatCard label="Total Camp Load" value={totalLoadCamp} sub="Composite AU" color="blue" />
+        <StatCard label="ACWR Today" value={latestACWR.toFixed(2)} sub={acwrStatus.label} color={latestACWR > 1.3 ? 'red' : latestACWR > 1.15 ? 'yellow' : 'green'} />
+        <StatCard label="Ring Sessions" value={sparringSessions} sub="With heatmap data" color="orange" />
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">ACWR — Acute:Chronic Workload Ratio</div>
+          <span className={`text-xs px-2 py-0.5 rounded font-medium ${acwrStatus.bg} ${acwrStatus.color}`}>{acwrStatus.label}</span>
+        </div>
+        <div className="relative h-40">
+          <svg viewBox="0 0 600 140" className="w-full h-full" preserveAspectRatio="none">
+            <rect x="0" y="26" width="600" height="70" fill="rgba(34,197,94,0.06)" rx="0"/>
+            <line x1="0" y1="26" x2="600" y2="26" stroke="#22C55E" strokeWidth="1" strokeDasharray="4,4" opacity="0.4"/>
+            <line x1="0" y1="96" x2="600" y2="96" stroke="#EF4444" strokeWidth="1" strokeDasharray="4,4" opacity="0.4"/>
+            <text x="4" y="23" fill="#22C55E" fontSize="8" opacity="0.6">0.8</text>
+            <text x="4" y="93" fill="#EF4444" fontSize="8" opacity="0.6">1.3</text>
+            <polyline fill="none" stroke="#F97316" strokeWidth="2"
+              points={acwrData.map((d, i) => {
+                const x = (i / (acwrData.length - 1)) * 590 + 5;
+                const y = 140 - ((d.acwr - 0.6) / 1.0) * 130;
+                return `${x},${y}`;
+              }).join(' ')} />
+            {acwrData.map((d, i) => {
+              const x = (i / (acwrData.length - 1)) * 590 + 5;
+              const y = 140 - ((d.acwr - 0.6) / 1.0) * 130;
+              return <circle key={i} cx={x} cy={y} r="3" fill={d.acwr > 1.3 ? '#EF4444' : '#F97316'} />;
+            })}
+            {acwrData.map((d, i) => {
+              const x = (i / (acwrData.length - 1)) * 590 + 5;
+              return <text key={i} x={x} y="138" textAnchor="middle" fill="#4B5563" fontSize="7">D{d.day}</text>;
+            })}
+          </svg>
+        </div>
+        <div className="flex gap-4 text-xs mt-2">
+          <span className="text-green-400">── Safe zone (0.8–1.3)</span>
+          <span className="text-orange-400">── Your ACWR</span>
+          <span className="text-red-400">● High risk (&gt;1.3)</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-4">Session Selector</div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {GPS_SESSIONS.map((s, i) => (
+              <button key={i} onClick={() => setSelectedDay(i)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${selectedDay === i ? 'bg-red-600/20 border-red-600/30 text-red-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>
+                D{s.day} · {s.type}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-2 text-xs border-t border-gray-800 pt-4">
+            <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="text-white">{session.type}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="text-white">{session.duration} min</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Distance</span><span className="text-teal-400">{session.distance} km</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Session Load</span><span className="text-orange-400">{session.load} AU</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">ACWR</span><span className={session.acwr > 1.3 ? 'text-red-400' : session.acwr > 1.15 ? 'text-yellow-400' : 'text-green-400'}>{session.acwr.toFixed(2)}</span></div>
+          </div>
+        </div>
+
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-4">Ring Heatmap — {session.date}</div>
+          <div className="flex justify-center mb-4">
+            <RingHeatmap session={session} size={240} />
+          </div>
+          <RingZoneBar session={session} />
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Daily Load — Camp Days 15–{fighter.camp_day}</div>
+        <div className="flex items-end gap-1 h-28">
+          {GPS_SESSIONS.map((s, i) => {
+            const maxLoad = Math.max(...GPS_SESSIONS.map(x => x.load), 1);
+            const h = s.load > 0 ? Math.max(8, (s.load / maxLoad) * 100) : 4;
+            const color = s.load > 380 ? '#EF4444' : s.load > 260 ? '#F97316' : s.load > 0 ? '#14B8A6' : '#374151';
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => setSelectedDay(i)}>
+                {s.load > 0 && <div className="text-[9px] text-gray-500">{s.load}</div>}
+                <div className="w-full rounded-t transition-all" style={{height:`${h}%`, background:color, opacity: selectedDay===i ? 1 : 0.7}}/>
+                <div className="text-[9px] text-gray-600">D{s.day}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">Camp Load Report PDF</div>
+            <div className="text-xs text-gray-400 mt-1">Jim&apos;s most-requested feature — total distance, load by day, ACWR chart, ring zone summary</div>
+          </div>
+          <button onClick={generateCampReport} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+            📄 Generate Report
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-xs">
+          {[
+            {label:'Total Distance',value:`${GPS_SESSIONS.reduce((a,s)=>a+s.distance,0).toFixed(1)} km`},
+            {label:'Total Load',value:`${GPS_SESSIONS.reduce((a,s)=>a+s.load,0)} AU`},
+            {label:'Peak ACWR',value:Math.max(...GPS_SESSIONS.map(s=>s.acwr)).toFixed(2)},
+            {label:'Sparring Sessions',value:GPS_SESSIONS.filter(s=>s.ring.centre>0).length},
+            {label:'Avg Daily Load',value:Math.round(GPS_SESSIONS.filter(s=>s.load>0).reduce((a,s)=>a+s.load,0)/GPS_SESSIONS.filter(s=>s.load>0).length)},
+            {label:'Days Tracked',value:GPS_SESSIONS.length},
+          ].map(stat => (
+            <div key={stat.label} className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
+              <div className="text-white font-medium">{stat.value}</div>
+              <div className="text-gray-500 text-[10px] mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">🤖 AI Footwork Analyst</div>
+            <div className="text-xs text-gray-400 mt-0.5">Analyses ring zone data and generates targeted footwork drills</div>
+          </div>
+          <button onClick={generateFootworkAnalysis} disabled={footworkLoading}
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+            {footworkLoading ? 'Analysing...' : 'Analyse Footwork'}
+          </button>
+        </div>
+        {footworkResult && (
+          <div className="space-y-4">
+            <div className="text-xs text-gray-300 border-l-2 border-red-500 pl-3 italic">{footworkResult.summary}</div>
+            <div className="space-y-3">
+              {footworkResult.drills.map((drill, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full bg-red-600/30 text-red-400 text-xs flex items-center justify-center font-bold">{i+1}</span>
+                    <span className="text-sm text-white font-medium">{drill.name}</span>
+                  </div>
+                  <div className="text-xs text-gray-300 mb-1">{drill.description}</div>
+                  <div className="text-xs text-yellow-400">Why: {drill.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">Multi-Session Heatmap Overlay</div>
+        <div className="text-xs text-gray-400 mb-4">Compare ring positioning across camp weeks — visual proof of footwork improvement</div>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Session A (Earlier camp)</div>
+            <select value={compareA} onChange={e => setCompareA(Number(e.target.value))}
+              className="w-full bg-[#0a0c14] border border-gray-700 rounded px-2 py-1.5 text-xs text-white">
+              {GPS_SESSIONS.filter(s=>s.ring.centre>0).map(s => {
+                const idx = GPS_SESSIONS.indexOf(s);
+                return <option key={idx} value={idx}>Day {s.day} — {s.type} ({s.date})</option>;
+              })}
+            </select>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Session B (Later camp)</div>
+            <select value={compareB} onChange={e => setCompareB(Number(e.target.value))}
+              className="w-full bg-[#0a0c14] border border-gray-700 rounded px-2 py-1.5 text-xs text-white">
+              {GPS_SESSIONS.filter(s=>s.ring.centre>0).map(s => {
+                const idx = GPS_SESSIONS.indexOf(s);
+                return <option key={idx} value={idx}>Day {s.day} — {s.type} ({s.date})</option>;
+              })}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {[GPS_SESSIONS[compareA], GPS_SESSIONS[compareB]].map((s, i) => (
+            <div key={i} className="space-y-3">
+              <div className="text-xs font-medium text-gray-400 text-center">Session {i===0?'A':'B'} — Day {s.day}</div>
+              <div className="flex justify-center">
+                <RingHeatmap session={s} size={200} />
+              </div>
+              <RingZoneBar session={s} />
+            </div>
+          ))}
+        </div>
+        {GPS_SESSIONS[compareA].ring.centre > 0 && GPS_SESSIONS[compareB].ring.centre > 0 && (() => {
+          const deltaC = GPS_SESSIONS[compareB].ring.centre - GPS_SESSIONS[compareA].ring.centre;
+          const deltaR = GPS_SESSIONS[compareB].ring.ropes - GPS_SESSIONS[compareA].ring.ropes;
+          return (
+            <div className={`mt-4 p-3 rounded-lg border text-xs ${deltaC > 0 ? 'bg-green-900/20 border-green-600/20 text-green-400' : 'bg-yellow-900/20 border-yellow-600/20 text-yellow-400'}`}>
+              <span className="font-medium">Footwork Trend: </span>
+              Centre time {deltaC > 0 ? `+${deltaC}%` : `${deltaC}%`} · Ropes time {deltaR > 0 ? `+${deltaR}%` : `${deltaR}%`} between sessions.
+              {deltaC > 3 ? ' ✓ Centre ring control improving — Jim\'s drills are working.' : deltaC < -3 ? ' ⚠ Drifting from centre — review footwork focus in next session.' : ' → Footwork pattern stable.'}
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+function GPSVestDashboardView({ fighter }: { fighter: BoxingFighter }) {
+  const vests = [
+    { id: 'LF-001', assigned: 'Marcus Cole', status: 'Active', battery: 94, lastSync: '08:14 today', sessions: 22, firmware: 'v2.4.1' },
+    { id: 'LF-002', assigned: 'Darnell Hughes (Sparring)', status: 'Active', battery: 67, lastSync: '08:14 today', sessions: 14, firmware: 'v2.4.1' },
+    { id: 'LF-003', assigned: 'Unassigned', status: 'Standby', battery: 100, lastSync: '3 days ago', sessions: 0, firmware: 'v2.4.0' },
+  ];
+  const beacons = [
+    { id: 'UWB-NW', position: 'North West Corner', signal: 98 },
+    { id: 'UWB-NE', position: 'North East Corner', signal: 96 },
+    { id: 'UWB-SW', position: 'South West Corner', signal: 99 },
+    { id: 'UWB-SE', position: 'South East Corner', signal: 72 },
+  ];
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🦺" title="GPS Vest Dashboard" subtitle="Lumio Fight Vest hardware management — vests, UWB beacons, sync status" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Vests Active" value="2" sub="of 3 registered" color="green" />
+        <StatCard label="UWB Beacons" value="4" sub="Ring tracking system" color="teal" />
+        <StatCard label="Last Sync" value="08:14" sub="All data current" color="blue" />
+        <StatCard label="Camp Sessions" value={fighter.camp_day} sub="GPS logged" color="orange" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Registered Vests</div>
+        <div className="space-y-3">
+          {vests.map((v, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 bg-[#0a0c14] border border-gray-800 rounded-lg">
+              <div className="w-10 h-10 rounded-lg bg-red-600/20 border border-red-600/30 flex items-center justify-center text-lg">🦺</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-white">{v.id}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${v.status === 'Active' ? 'bg-green-600/20 text-green-400' : 'bg-gray-600/20 text-gray-400'}`}>{v.status}</span>
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">{v.assigned} · {v.sessions} sessions · Firmware {v.firmware}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-gray-500 mb-1">Battery</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-800 rounded-full h-1.5">
+                    <div className={`h-1.5 rounded-full ${v.battery > 50 ? 'bg-green-500' : v.battery > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width:`${v.battery}%`}}/>
+                  </div>
+                  <span className="text-xs text-gray-300">{v.battery}%</span>
+                </div>
+                <div className="text-[10px] text-gray-600 mt-1">{v.lastSync}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">UWB Beacon Network — Ring Layout</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="relative">
+            <svg viewBox="0 0 300 300" className="w-full max-w-xs mx-auto">
+              <rect x="20" y="20" width="260" height="260" rx="8" fill="#0a0c14" stroke="#555" strokeWidth="1.5"/>
+              {beacons.map((beacon, i) => {
+                const px = [20,260,20,260][i]; const py = [20,20,260,260][i];
+                const col = beacon.signal > 90 ? '#22C55E' : beacon.signal > 75 ? '#F59E0B' : '#EF4444';
+                return (
+                  <g key={beacon.id}>
+                    <circle cx={px} cy={py} r="14" fill={col} opacity="0.2"/>
+                    <circle cx={px} cy={py} r="8" fill={col} opacity="0.7"/>
+                    <text x={px} y={py+4} textAnchor="middle" fill="white" fontSize="7" fontWeight="600">UWB</text>
+                    <text x={px+(i%2===0?-22:22)} y={py+(i<2?-6:6)} textAnchor="middle" fill={col} fontSize="7">{beacon.signal}%</text>
+                  </g>
+                );
+              })}
+              <text x="150" y="155" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="10">RING</text>
+              <text x="150" y="168" textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8">UWB Active</text>
+            </svg>
+          </div>
+          <div className="space-y-2">
+            {beacons.map((b) => (
+              <div key={b.id} className="flex items-center justify-between p-2 bg-[#0a0c14] border border-gray-800 rounded">
+                <div>
+                  <div className="text-xs font-medium text-white">{b.id}</div>
+                  <div className="text-[10px] text-gray-500">{b.position}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 bg-gray-800 rounded-full h-1">
+                    <div className={`h-1 rounded-full ${b.signal > 90 ? 'bg-green-500' : b.signal > 75 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width:`${b.signal}%`}}/>
+                  </div>
+                  <span className={`text-xs ${b.signal > 90 ? 'text-green-400' : b.signal > 75 ? 'text-yellow-400' : 'text-red-400'}`}>{b.signal}%</span>
+                </div>
+              </div>
+            ))}
+            <div className="text-xs text-yellow-400 p-2 bg-yellow-900/20 border border-yellow-600/20 rounded">⚠ UWB-SE signal weak — reposition beacon or check for interference</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const COMPUBOX_DATA = [
+  { round: 1, jabsLanded: 12, jabsThrown: 28, powerLanded: 8, powerThrown: 18, received: 9, ringZone: { centre: 60, ropes: 25, corners: 15 } },
+  { round: 2, jabsLanded: 14, jabsThrown: 30, powerLanded: 11, powerThrown: 22, received: 7, ringZone: { centre: 55, ropes: 30, corners: 15 } },
+  { round: 3, jabsLanded: 10, jabsThrown: 26, powerLanded: 9, powerThrown: 20, received: 12, ringZone: { centre: 45, ropes: 38, corners: 17 } },
+  { round: 4, jabsLanded: 15, jabsThrown: 32, powerLanded: 13, powerThrown: 24, received: 6, ringZone: { centre: 62, ropes: 24, corners: 14 } },
+  { round: 5, jabsLanded: 11, jabsThrown: 27, powerLanded: 10, powerThrown: 21, received: 11, ringZone: { centre: 50, ropes: 33, corners: 17 } },
+];
+
+function PunchAnalyticsView({ fighter: _fighter }: { fighter: BoxingFighter }) {
+  const totalJabsLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsLanded,0);
+  const totalJabsThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsThrown,0);
+  const totalPowerLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.powerLanded,0);
+  const totalPowerThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.powerThrown,0);
+  const totalLanded = totalJabsLanded + totalPowerLanded;
+  const totalThrown = totalJabsThrown + totalPowerThrown;
+  const avgCentre = Math.round(COMPUBOX_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/COMPUBOX_DATA.length);
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Connect %" value={`${Math.round((totalLanded/totalThrown)*100)}%`} sub={`${totalLanded} of ${totalThrown} thrown`} color="red" />
+        <StatCard label="Jab Accuracy" value={`${Math.round((totalJabsLanded/totalJabsThrown)*100)}%`} sub={`${totalJabsLanded}/${totalJabsThrown}`} color="orange" />
+        <StatCard label="Power Connect" value={`${Math.round((totalPowerLanded/totalPowerThrown)*100)}%`} sub={`${totalPowerLanded}/${totalPowerThrown}`} color="yellow" />
+        <StatCard label="Avg Centre Time" value={`${avgCentre}%`} sub="GPS zone average" color="teal" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Round-by-Round Fusion Data</div></div>
+        <table className="w-full text-xs">
+          <thead><tr className="text-gray-500 border-b border-gray-800 bg-[#0a0c14]">
+            {['Round','Jabs L/T','Power L/T','Received','Connect %','Centre%','Ropes%','Corners%'].map(h=><th key={h} className="px-4 py-2 text-left font-medium">{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {COMPUBOX_DATA.map((r, i) => {
+              const conn = Math.round(((r.jabsLanded+r.powerLanded)/(r.jabsThrown+r.powerThrown))*100);
+              return (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="px-4 py-2.5 text-white font-bold">R{r.round}</td>
+                  <td className="px-4 py-2.5 text-gray-300">{r.jabsLanded}/{r.jabsThrown}</td>
+                  <td className="px-4 py-2.5 text-gray-300">{r.powerLanded}/{r.powerThrown}</td>
+                  <td className="px-4 py-2.5 text-red-400">{r.received}</td>
+                  <td className="px-4 py-2.5"><span className={`font-medium ${conn>45?'text-green-400':conn>35?'text-yellow-400':'text-red-400'}`}>{conn}%</span></td>
+                  <td className="px-4 py-2.5 text-teal-400">{r.ringZone.centre}%</td>
+                  <td className="px-4 py-2.5 text-orange-400">{r.ringZone.ropes}%</td>
+                  <td className="px-4 py-2.5 text-yellow-400">{r.ringZone.corners}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-2">GPS + Punch Correlation Insight</div>
+        <div className="text-xs text-gray-300 leading-relaxed">
+          Rounds where Marcus spent &gt;55% in the centre ring (R1, R2, R4) averaged <span className="text-green-400 font-medium">49% connect rate</span>. Rounds where he drifted to the ropes (&gt;35%) dropped to <span className="text-red-400 font-medium">37% connect rate</span>. This confirms the centre-ring strategy is directly linked to punch output efficiency. Jim&apos;s instruction: &quot;work the jab to keep centre position&quot; is statistically validated.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── FIGHT NIGHT OPS VIEW ─────────────────────────────────────────────────────
 const FIGHT_NIGHT_TIMELINE = [
   { time: '17:00', title: 'Arrive at venue',             detail: 'Dressing Room 14, Level 3' },
@@ -3134,6 +4057,79 @@ const FIGHT_NIGHT_TIMELINE = [
 
 function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
   const [roundTab, setRoundTab] = useState<'early' | 'mid' | 'late'>('early')
+
+  const generateCornerSheet = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const latestGPS = GPS_SESSIONS.filter(s=>s.ring.centre>0).slice(-1)[0];
+    w.document.write(`<!DOCTYPE html><html><head><title>Corner Sheet — Cole vs Petrov</title>
+    <style>
+      *{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0;padding:16px}
+      h1{font-size:18px;margin:0 0 2px;color:#c0392b}h2{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin:12px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;border-bottom:3px solid #c0392b;padding-bottom:8px}
+      .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+      .box{border:1px solid #ddd;border-radius:4px;padding:8px}.box-label{font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px}.box-val{font-size:14px;font-weight:700}
+      .round-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-bottom:8px}
+      .round-box{border:1px solid #ccc;border-radius:2px;padding:6px 2px;text-align:center;font-size:9px}
+      .round-num{font-weight:700;margin-bottom:2px}.round-notes{height:32px;border-top:1px solid #eee;margin-top:4px}
+      .game-plan{background:#fff8dc;border:1px solid #f0c040;border-radius:4px;padding:8px;margin-bottom:8px}
+      .zone-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+      .zone-bar{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden}
+      .zone-fill{height:100%;border-radius:3px}
+      footer{margin-top:16px;font-size:8px;color:#aaa;border-top:1px solid #eee;padding-top:6px;display:flex;justify-content:space-between}
+      @media print{body{padding:8px}@page{size:A4;margin:8mm}}
+    </style></head><body>
+    <div class="header">
+      <div>
+        <h1>🥊 CORNER SHEET</h1>
+        <div style="font-size:13px;font-weight:700">Marcus Cole vs Viktor Petrov</div>
+        <div style="font-size:10px;color:#666">The O2 Arena, London · May 22, 2026 · DAZN PPV · Heavyweight</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:#666">
+        <div style="font-weight:700;font-size:12px">TEAM COLE</div>
+        <div>Trainer: Jim Bevan</div><div>Cutman: Mick Williamson</div><div>Corner: Danny Walsh</div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div>
+        <h2>Marcus Cole</h2>
+        <div class="grid3">
+          <div class="box"><div class="box-label">Record</div><div class="box-val">22-1</div></div>
+          <div class="box"><div class="box-label">Stance</div><div class="box-val">Orthodox</div></div>
+          <div class="box"><div class="box-label">Reach</div><div class="box-val">82"</div></div>
+        </div>
+      </div>
+      <div>
+        <h2>Viktor Petrov</h2>
+        <div class="grid3">
+          <div class="box"><div class="box-label">Record</div><div class="box-val" style="color:#c0392b">28-2</div></div>
+          <div class="box"><div class="box-label">Stance</div><div class="box-val">Southpaw</div></div>
+          <div class="box"><div class="box-label">Ranking</div><div class="box-val">WBC #3</div></div>
+        </div>
+      </div>
+    </div>
+    <h2>GPS Ring Zone Targets (from camp data)</h2>
+    ${latestGPS ? `
+    <div style="margin-bottom:10px">
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Centre</span><div class="zone-bar"><div class="zone-fill" style="width:${latestGPS.ring.centre}%;background:#c0392b"></div></div><span style="font-size:10px;font-weight:700">${latestGPS.ring.centre}%</span><span style="font-size:9px;color:#888;margin-left:8px">Target: ≥45% — control the centre against Petrov's southpaw jab</span></div>
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Ropes</span><div class="zone-bar"><div class="zone-fill" style="width:${latestGPS.ring.ropes}%;background:#e67e22"></div></div><span style="font-size:10px;font-weight:700">${latestGPS.ring.ropes}%</span><span style="font-size:9px;color:#888;margin-left:8px">Max 30% — don't let Petrov trap you</span></div>
+      <div class="zone-row"><span style="width:60px;font-size:10px;color:#666">Corners</span><div class="zone-bar"><div class="zone-fill" style="width:${latestGPS.ring.corners}%;background:#f1c40f"></div></div><span style="font-size:10px;font-weight:700">${latestGPS.ring.corners}%</span><span style="font-size:9px;color:#888;margin-left:8px">Max 20% — exit immediately when trapped</span></div>
+    </div>` : '<div style="color:#888;font-size:10px">No GPS data — session not tracked</div>'}
+    <div class="game-plan"><div style="font-size:10px;font-weight:700;margin-bottom:4px">⚡ Game Plan — Jim Bevan</div><div style="font-size:10px">Jab to centre position. Pull counter right hand when Petrov throws his jab. Body shots from the clinch — left hook to body on the break. Do NOT let him work on the ropes. Rounds 1-4: establish jab, feel him out. R5-8: increase pressure, body work. R9+: take over.</div></div>
+    <h2>Round-by-Round Notes</h2>
+    <div class="round-grid">
+      ${Array.from({length:12},(_,i)=>`<div class="round-box"><div class="round-num">R${i+1}</div><div class="round-notes"></div></div>`).join('')}
+    </div>
+    <div class="grid2">
+      <div><h2>Cutman Notes</h2><div style="height:60px;border:1px solid #ddd;border-radius:4px;padding:6px;font-size:10px;color:#aaa">Cuts / swelling notes here...</div></div>
+      <div><h2>Between Rounds — Key Reminders</h2><div style="font-size:10px;line-height:1.8">□ Breathe through nose between rounds<br/>□ Stay off the ropes in R1<br/>□ Work the body when in close<br/>□ Protect the chin against right hands<br/>□ Take water every round</div></div>
+    </div>
+    <footer><span>Lumio Fight · ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL — Team Only</span><span>Cole vs Petrov · May 22, 2026 · The O2</span></footer>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
+
   const roundText: Record<'early' | 'mid' | 'late', string> = {
     early: 'Establish jab, gauge distance, respect his right hand. No risks. Win on points.',
     mid:   'If jab working — start throwing the right behind it. Body work in close.',
@@ -3147,7 +4143,15 @@ function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🥊" title="Fight Night Ops" subtitle="Tonight's command centre — timeline, corner, strategy, broadcast, medical" />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-2"><span className="text-xl">🥊</span><h2 className="text-xl font-bold text-white">Fight Night Ops</h2></div>
+          <p className="text-sm text-gray-400 mt-1 ml-7">Tonight&apos;s command centre — timeline, corner, strategy, broadcast, medical.</p>
+        </div>
+        <button onClick={generateCornerSheet} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+          📋 Print Corner Sheet
+        </button>
+      </div>
 
       {/* 1. EVENT HEADER */}
       <div className="bg-gradient-to-br from-red-600/20 to-red-900/10 border border-red-600/30 rounded-xl p-5">
@@ -3298,7 +4302,21 @@ function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
 export default function BoxingPortalPage() {
   const [activeSection, setActiveSection] = useState('camp');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
+  const [toastDismissed, setToastDismissed] = useState(false);
   const fighter = DEMO_FIGHTER;
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 9 && !toastDismissed) {
+      const obligations = [
+        { condition: true, message: 'DAZN promo shoot — confirm logistics with Sarah Chen today', sponsor: 'DAZN' },
+        { condition: true, message: 'Under Armour post due — kit photo needed this week', sponsor: 'Under Armour' },
+      ];
+      const due = obligations.find(o => o.condition);
+      if (due) setToast(due);
+    }
+  }, [toastDismissed]);
 
   const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL'];
 
@@ -3309,6 +4327,7 @@ export default function BoxingPortalPage() {
       case 'sparring':        return <SparringPlannerView fighter={fighter} />;
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} />;
       case 'fight-night':     return <FightNightOpsView fighter={fighter} />;
+      case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} />;
       case 'cut':             return <CutPlannerView fighter={fighter} />;
       case 'recovery':        return <RecoveryHRVView fighter={fighter} />;
@@ -3337,12 +4356,25 @@ export default function BoxingPortalPage() {
       case 'opscout':         return <OppositionScoutView fighter={fighter} />;
       case 'broadcast':       return <BroadcastTrackerView />;
       case 'news':            return <IndustryNewsView />;
+      case 'gps':             return <GPSLoadMonitorView fighter={fighter} />;
+      case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} />;
       default:                return <CampDashboardView fighter={fighter} />;
     }
   };
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+      {toast && !toastDismissed && (
+        <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
+          <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          <div className="text-xs font-bold text-yellow-400 uppercase tracking-wide mb-1">🤝 {toast.sponsor}</div>
+          <div className="text-xs text-gray-300 mb-3">{toast.message}</div>
+          <div className="flex gap-2">
+            <button onClick={() => { setActiveSection('sponsorships'); setToast(null); }} className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors">Review →</button>
+            <button onClick={() => { setToastDismissed(true); setToast(null); }} className="flex-1 text-xs border border-gray-700 text-gray-400 hover:text-gray-200 px-3 py-1.5 rounded-lg transition-colors">Dismiss</button>
+          </div>
+        </div>
+      )}
       {/* Sidebar */}
       <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`}
         style={{ background: '#0a0c14' }}>
