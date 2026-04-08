@@ -3,31 +3,268 @@
 import Link from 'next/link'
 import Image from 'next/image'
 
-const ACCENT = '#38BDF8'
-const BG = '#0A0B10'
-const CARD = '#111318'
+const ACCENT = '#2DD4BF' // teal-400
+const ACCENT_DEEP = '#0D9488' // teal-600
+const BG = '#07080F'
+const CARD = '#0D0F1A'
 const BORDER = '#1F2937'
+const MUTED = '#9CA3AF'
 
 const FEATURES = [
-  { icon: '📊', title: 'OWGR & Race to Dubai', desc: 'Real-time world ranking with Race to Dubai/FedExCup standings, points expiry calendar and ranking forecaster.' },
-  { icon: '📈', title: 'Strokes Gained Analytics', desc: 'Full SG breakdown: Off the Tee, Approach, Around the Green, Putting — with alerts when categories need attention.' },
-  { icon: '🏌️', title: 'Course Fit & Strategy', desc: 'AI-powered course fit scoring, historical performance data and strategic notes for every venue on tour.' },
-  { icon: '🧢', title: 'Caddie Workflow', desc: 'Dedicated caddie dashboard with yardage notes, weather adjustments, club recommendations and round prep tools.' },
-  { icon: '🏛️', title: 'Exemptions & Tour Status', desc: 'Track your tour card, exemption categories, Q-School position and conditional status all in one place.' },
-  { icon: '💰', title: 'Commercial Dashboard', desc: 'Sponsorship, Pro-Am appearances, prize money ledger, multi-jurisdiction tax tracker and agent pipeline.' },
+  { icon: '📊', title: 'OWGR & Race to Dubai', desc: "Rolling 104-week ranking tracker, Race to Dubai standings, weekly movement and a scenario modeller that shows your new OWGR for every finish bracket." },
+  { icon: '📅', title: 'Points Expiry Calendar', desc: "Visual 12-month calendar showing exactly when each OWGR result expires — colour-coded by urgency. Plan your schedule around protecting your peak points." },
+  { icon: '📈', title: 'Strokes Gained Analytics', desc: 'Full SG breakdown: Off the Tee, Approach, Around the Green, Putting. Spider chart, round-by-round log, and an AI alert on your weakest category.' },
+  { icon: '🗺️', title: 'Course Fit & Strategy', desc: "Your SG profile scored against every course's historical demands. Know your best-fit events before the season starts." },
+  { icon: '🌅', title: 'AI Morning Briefing', desc: 'Role-specific daily briefings for player, coach, caddie and agent. Voice-delivered via ElevenLabs. Knows your tee time, your SG weakness, and your sponsor obligations.' },
+  { icon: '💰', title: 'Financial Dashboard', desc: 'Prize money ledger in EUR and GBP, expense tracker, multi-jurisdiction tax dashboard. Exportable for your accountant.' },
+  { icon: '🤝', title: 'Sponsorship Manager', desc: "Every deal, every obligation, every deadline — tracked automatically. Renewal alerts before it's too late. Performance bonus triggers tracked live." },
+  { icon: '🏌️', title: 'Caddie Workflow', desc: 'Digital yardage book, hole strategy notes, wind-adjusted club recommendations, and a one-click printable caddie sheet.' },
+  { icon: '👥', title: 'Team Hub', desc: 'Coach, physio, agent, fitness trainer, mental coach, accountant — role-specific feeds and shared data for your full team of 8.' },
+  { icon: '🏛️', title: 'Exemptions & Tour Status', desc: 'Tour card, Major qualification, Ryder Cup points — every exemption tracked with status and condition in one place.' },
+  { icon: '⭐', title: 'Pro-Am & Appearances', desc: "Pro-am partner briefing packs, appearance fee tracker, commercial event calendar. Everything your agent needs." },
+  { icon: '🚀', title: 'Career Planning', desc: 'OWGR goal ladder: from current rank to Top 50 (Major invitations) to Top 25. Ryder Cup 2028 points accumulation built in.' },
 ]
 
-const AUDIENCE = [
-  { title: 'DP World Tour Players', desc: 'European Tour professionals managing a full season' },
-  { title: 'PGA Tour Players', desc: 'US Tour competitors tracking FedExCup and rankings' },
-  { title: 'Korn Ferry / Challenge Tour', desc: 'Developing talent pursuing their tour card' },
+const STAT_PILLS = ['30+ features', 'DP World Tour & PGA Tour', 'AI powered', 'ElevenLabs voice', 'DataGolf ready']
+
+const INTEGRATIONS = [
+  { icon: '⛳', name: 'DataGolf',       desc: 'Ranking and SG data' },
+  { icon: '📡', name: 'Arccos',         desc: 'Shot tracking and club data' },
+  { icon: '🎯', name: 'TrackMan',       desc: 'Launch monitor and fitting' },
+  { icon: '🔗', name: 'ShotLink',       desc: 'PGA Tour shot data (Phase 3)' },
+  { icon: '🏆', name: 'DP World Tour',  desc: 'Race to Dubai live feed' },
+  { icon: '🌍', name: 'R&A',            desc: 'Schedule and exemptions' },
+  { icon: '🎵', name: 'ElevenLabs',     desc: 'Voice briefing delivery' },
+  { icon: '🤖', name: 'Claude AI',      desc: 'Intelligence and briefings' },
+  { icon: '💰', name: 'Xero',           desc: 'Financial management' },
+  { icon: '✈️', name: 'Google Flights', desc: 'Travel search' },
+  { icon: '🏨', name: 'Booking.com',    desc: 'Hotel management' },
+  { icon: '📧', name: 'Microsoft 365',  desc: 'Email and calendar' },
+]
+
+const TIERS = [
+  { name: 'Challenge Tour / Korn Ferry', desc: 'Rankings intelligence, tournament schedule, entry management, financial tracking. Everything you need to pursue your tour card.' },
+  { name: 'DP World Tour / PGA Tour',    desc: 'Full team hub, AI briefings, sponsorship management, caddie workflow, travel logistics. The complete professional toolkit.' },
+  { name: 'Top 50 / Ryder Cup',          desc: 'Advanced SG analytics, exemption tracking, career planning, Major preparation, tax-ready financials. Trusted by players at the highest level.' },
 ]
 
 const PRICING = [
-  { tier: 'Lumio Tour Pro', price: '£199/mo', features: ['Individual dashboard', 'Rankings tracker', 'Tournament schedule', 'Sponsorship manager', 'AI morning briefing'] },
-  { tier: 'Lumio Tour Pro+', price: '£349/mo', highlight: true, features: ['Everything in Pro', 'Full team access', 'Caddie/agent/coach views', 'Video library', 'Financial dashboard', 'Tax tracker'] },
+  { tier: 'Lumio Tour Pro',  price: '£199/mo', features: ['Individual dashboard', 'OWGR + Race to Dubai tracker', 'Strokes Gained analytics', 'Tournament schedule', 'Sponsorship manager', 'AI morning briefing'] },
+  { tier: 'Lumio Tour Pro+', price: '£349/mo', highlight: true, features: ['Everything in Pro', 'Full team access (8 roles)', 'Caddie workflow + printable sheet', 'Financial dashboard + tax tracker', 'Course fit AI + scenario modeller', 'Priority account manager'] },
 ]
 
+// ── Spotlight wrapper ────────────────────────────────────────────────────────
+function Spotlight({ eyebrow, title, bullets, mockup, reverse }: {
+  eyebrow: string
+  title: string
+  bullets: string[]
+  mockup: React.ReactNode
+  reverse?: boolean
+}) {
+  return (
+    <section className="max-w-6xl mx-auto px-6 py-20">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className={reverse ? 'lg:order-2' : ''}>
+          <div className="inline-block text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: ACCENT }}>{eyebrow}</div>
+          <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight" style={{ color: '#F9FAFB' }}>{title}</h2>
+          <ul className="space-y-3">
+            {bullets.map((b, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>
+                <span className="mt-0.5 flex-shrink-0" style={{ color: ACCENT }}>✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className={reverse ? 'lg:order-1' : ''}>{mockup}</div>
+      </div>
+    </section>
+  )
+}
+
+// ── Mockups ──────────────────────────────────────────────────────────────────
+function DashboardMockup() {
+  return (
+    <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
+      <div className="text-lg font-bold mb-4" style={{ color: '#F9FAFB' }}>Good morning, James.</div>
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {[
+          { val: '#87', lbl: 'OWGR ▲3', color: ACCENT },
+          { val: '#43', lbl: 'Race to Dubai', color: '#A78BFA' },
+          { val: '4.82', lbl: 'Pts Avg', color: '#60A5FA' },
+          { val: '#61', lbl: 'Career High', color: '#FB923C' },
+        ].map((k, i) => (
+          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+            <div className="text-sm font-black" style={{ color: k.color }}>{k.val}</div>
+            <div className="text-[9px] mt-0.5" style={{ color: MUTED }}>{k.lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-lg px-3 py-2 mb-2 text-xs flex items-start gap-2" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+        <span className="text-yellow-400">⚠️</span>
+        <span className="text-yellow-300"><strong>330 pts expiring Jul 12</strong> — need T10 or better this week</span>
+      </div>
+      <div className="rounded-lg px-3 py-2 mb-3 text-xs flex items-start gap-2" style={{ backgroundColor: 'rgba(45,212,191,0.08)', border: '1px solid rgba(45,212,191,0.3)' }}>
+        <span style={{ color: ACCENT }}>🎯</span>
+        <span className="text-teal-300"><strong>SG Putting: -1.18 from 8-15ft</strong> · Practice focus: today 08:30 with Pete</span>
+      </div>
+      <div className="flex gap-2 mb-3">
+        {['Caddie Sheet', 'SG Analysis', 'Sponsor Check'].map(b => (
+          <button key={b} className="flex-1 text-[10px] font-semibold px-2 py-1.5 rounded-lg" style={{ backgroundColor: ACCENT_DEEP, color: '#F9FAFB' }}>{b}</button>
+        ))}
+      </div>
+      <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+        <div className="font-semibold" style={{ color: '#F9FAFB' }}>R1 · Thu 09:42 · Hole 1</div>
+        <div className="text-[10px] mt-0.5" style={{ color: MUTED }}>BMW International Open · Course fit 8.1/10</div>
+      </div>
+    </div>
+  )
+}
+
+function OWGRMockup() {
+  const rows = [
+    { result: 'Win',      new: '#71', pts: '+16', color: '#F1C40F' },
+    { result: 'T2–T5',    new: '#79', pts: '+8',  color: ACCENT },
+    { result: 'T6–T10',   new: '#83', pts: '+4',  color: ACCENT },
+    { result: 'T21–T40',  new: '#88', pts: '+1',  color: MUTED },
+    { result: 'MC',       new: '#92', pts: '-5',  color: '#F87171' },
+  ]
+  return (
+    <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
+      <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ACCENT }}>BMW International — Scenarios</div>
+      <div className="space-y-1.5 mb-4">
+        {rows.map((r, i) => (
+          <div key={i} className="flex items-center gap-3 rounded px-3 py-2 text-xs" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+            <span className="w-14 font-semibold" style={{ color: r.color }}>{r.result}</span>
+            <span className="flex-1" style={{ color: '#D1D5DB' }}>New OWGR <strong className="text-white">{r.new}</strong></span>
+            <span className="text-[10px] font-bold" style={{ color: r.color }}>{r.pts}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: MUTED }}>Upcoming Expiries</div>
+      <div className="flex gap-2 mb-4">
+        {[
+          { pts: '330', month: 'Jul', urgent: true },
+          { pts: '480', month: 'Jun', urgent: true },
+          { pts: '88',  month: 'Sep', urgent: false },
+        ].map((e, i) => (
+          <div key={i} className="flex-1 rounded-lg px-2 py-2 text-center text-[10px]" style={{ backgroundColor: e.urgent ? 'rgba(239,68,68,0.08)' : '#0A0B12', border: `1px solid ${e.urgent ? 'rgba(239,68,68,0.4)' : BORDER}` }}>
+            <div className={`font-black ${e.urgent ? 'text-red-400' : 'text-gray-300'}`}>{e.pts} pts</div>
+            <div style={{ color: MUTED }}>{e.month}</div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: 'rgba(45,212,191,0.08)', border: '1px solid rgba(45,212,191,0.3)' }}>
+        <div className="flex items-center justify-between">
+          <span className="text-teal-300 font-semibold">Top 50 cut</span>
+          <span className="text-[10px]" style={{ color: MUTED }}>980 pts</span>
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-white font-bold">You: 1,240 pts</span>
+          <span className="text-[10px] text-teal-400 font-semibold">Buffer: +260 pts</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StrokesGainedMockup() {
+  const bars = [
+    { label: 'Off the Tee',   val: 0.41 },
+    { label: 'Approach',      val: -0.28 },
+    { label: 'Around Green',  val: 0.15 },
+    { label: 'Putting',       val: -1.18 },
+    { label: 'Total',         val: -0.90 },
+  ]
+  const max = 1.5
+  return (
+    <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
+      <div className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: ACCENT }}>SG Breakdown vs Field</div>
+      <div className="space-y-3 mb-4">
+        {bars.map((b, i) => {
+          const w = Math.min(100, (Math.abs(b.val) / max) * 50)
+          const positive = b.val >= 0
+          return (
+            <div key={i}>
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span style={{ color: '#D1D5DB' }}>{b.label}</span>
+                <span className={`font-bold ${positive ? 'text-teal-400' : 'text-red-400'}`}>{positive ? '+' : ''}{b.val.toFixed(2)}</span>
+              </div>
+              <div className="relative h-2 rounded-full" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+                <div className="absolute top-0 bottom-0 w-px" style={{ left: '50%', backgroundColor: BORDER }} />
+                <div className="absolute top-0 bottom-0 rounded-full" style={{
+                  [positive ? 'left' : 'right']: '50%',
+                  width: `${w}%`,
+                  backgroundColor: positive ? ACCENT : '#EF4444',
+                }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+        <span className="text-red-300">🔴 </span>
+        <span className="text-red-200"><strong>Putting is the clear weakness.</strong> -1.18 from 8-15ft over last 6 events.</span>
+      </div>
+    </div>
+  )
+}
+
+function SponsorshipMockup() {
+  const deals = [
+    { brand: 'TaylorMade',  cat: 'Clubs',          value: '£80k/yr + bonuses', status: 'Active',         statusColor: ACCENT, expiry: 'Dec 2026', note: 'Use TaylorMade driver, woods, irons' },
+    { brand: 'Callaway',    cat: 'Wedges + Ball',  value: '£55k/yr',           status: 'Renewal due 🔴', statusColor: '#F87171', expiry: '18 days', note: 'Chrome Tour X ball mandatory · Post due today' },
+    { brand: 'Rolex',       cat: 'Watch',          value: '£45k/yr',           status: 'Active',         statusColor: ACCENT, expiry: 'Jan 2027', note: 'Wear at all press conferences' },
+  ]
+  return (
+    <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT }}>Sponsorship Manager</div>
+        <div className="text-xs font-black text-white">£250k+ /yr</div>
+      </div>
+      <div className="space-y-2">
+        {deals.map((d, i) => (
+          <div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-sm font-bold text-white">{d.brand}</div>
+              <div className="text-[10px] font-semibold" style={{ color: d.statusColor }}>{d.status}</div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] mb-1" style={{ color: MUTED }}>
+              <span>{d.cat}</span><span>·</span><span>{d.value}</span><span>·</span><span>{d.expiry}</span>
+            </div>
+            <div className="text-[10px]" style={{ color: '#D1D5DB' }}>{d.note}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TeamHubMockup() {
+  const team = [
+    { name: 'Pete Larsen',       role: 'Lead Coach',   status: 'On-site Munich',       statusColor: ACCENT,     note: 'Practice session notes uploaded · 08:30' },
+    { name: "Mick O'Brien",      role: 'Caddie',       status: 'On-site Munich',       statusColor: ACCENT,     note: 'Strategy notes updated · 07:45' },
+    { name: 'Sarah Mitchell',    role: 'Agent',        status: 'TaylorMade renewal!',  statusColor: '#F87171',  note: 'Callaway caption drafted — awaiting approval' },
+    { name: 'Dr. Alison Reed',   role: 'Mental Coach', status: 'Video call 20:00',     statusColor: '#A78BFA',  note: 'Pre-round routine shared · 09:00' },
+  ]
+  return (
+    <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
+      <div className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: ACCENT }}>Team Hub · 8 Roles</div>
+      <div className="grid grid-cols-2 gap-2">
+        {team.map((m, i) => (
+          <div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
+            <div className="text-xs font-bold text-white truncate">{m.name}</div>
+            <div className="text-[10px]" style={{ color: MUTED }}>{m.role}</div>
+            <div className="mt-2 text-[10px] font-semibold" style={{ color: m.statusColor }}>{m.status}</div>
+            <div className="mt-1 text-[10px] leading-relaxed" style={{ color: '#D1D5DB' }}>{m.note}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 export default function GolfPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#E5E7EB' }}>
@@ -37,45 +274,129 @@ export default function GolfPage() {
         <div className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6" style={{ backgroundColor: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>
           Lumio Tour · Golf
         </div>
-        <h1 className="text-4xl md:text-5xl font-black mb-4" style={{ color: '#F9FAFB' }}>
+        <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight" style={{ color: '#F9FAFB' }}>
           The career OS for touring golf professionals.
         </h1>
-        <p className="text-lg max-w-2xl mx-auto mb-8" style={{ color: '#9CA3AF' }}>
-          OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit scoring, sponsorship manager and AI morning briefing.
+        <p className="text-lg max-w-3xl mx-auto mb-8" style={{ color: MUTED }}>
+          OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — and an AI morning briefing that knows your week before you do.
         </p>
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#0A0B10' }}>
+        <div className="flex items-center justify-center gap-4 flex-wrap mb-10">
+          <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
             Try the demo →
           </Link>
-          <Link href="/contact" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
-            Book a walkthrough
+          <Link href="#features" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
+            See all features ↓
           </Link>
+        </div>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          {STAT_PILLS.map(p => (
+            <span key={p} className="text-[10px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${ACCENT}10`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>{p}</span>
+          ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-center mb-4" style={{ color: '#F9FAFB' }}>Everything a touring pro needs</h2>
-        <p className="text-sm text-center mb-12" style={{ color: '#9CA3AF' }}>Six core modules built specifically for professional golf.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Features Grid */}
+      <section id="features" className="max-w-6xl mx-auto px-6 py-20">
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-3" style={{ color: '#F9FAFB' }}>Everything a touring pro needs. In one place.</h2>
+        <p className="text-sm text-center mb-12 max-w-2xl mx-auto" style={{ color: MUTED }}>Built with DP World Tour and PGA Tour professionals. Not adapted from a general sports app.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f, i) => (
-            <div key={i} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{f.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{f.desc}</p>
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <div className="text-2xl mb-2">{f.icon}</div>
+              <h3 className="text-sm font-bold mb-1.5" style={{ color: '#F9FAFB' }}>{f.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: MUTED }}>{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Who It's For */}
+      {/* Spotlights */}
+      <Spotlight
+        eyebrow="Spotlight · Dashboard"
+        title="Your entire week. One screen."
+        bullets={[
+          "Today's tee time, course fit score, and prize fund at a glance",
+          "Dynamic points expiry strip — colour-coded by urgency, days counted down live",
+          "SG Alert banner — AI identifies your weakest category and sets the practice agenda",
+          "Sponsor obligation toast — notifies you at 09:00 when content is due",
+        ]}
+        mockup={<DashboardMockup />}
+      />
+
+      <Spotlight
+        reverse
+        eyebrow="Spotlight · OWGR & Points Forecaster"
+        title="Know your ranking before the round ends."
+        bullets={[
+          "Live OWGR with weekly movement and 12-month trajectory chart",
+          "Scenario modeller: pick your finish, see your exact new OWGR and Race to Dubai position",
+          "Rolling 104-week expiry calendar — see which months your points drop off",
+          "Race to Dubai standings showing your position relative to the top 50 cut",
+        ]}
+        mockup={<OWGRMockup />}
+      />
+
+      <Spotlight
+        eyebrow="Spotlight · Strokes Gained"
+        title="See exactly where you're losing shots."
+        bullets={[
+          "SG breakdown vs DP World Tour field average: OTT, Approach, ARG, Putting",
+          "Spider chart showing your SG profile at a glance",
+          "Round-by-round SG log for last 5 rounds",
+          "AI-generated insight: \u201cFixing putting from 8-15ft alone could add 1+ shot per round\u201d",
+        ]}
+        mockup={<StrokesGainedMockup />}
+      />
+
+      <Spotlight
+        reverse
+        eyebrow="Spotlight · Sponsorship Manager"
+        title="Every obligation. Every deadline. Tracked."
+        bullets={[
+          "£250k+ total annual value tracked",
+          "Performance bonus triggers logged live (win bonus, ranking bonus)",
+          "Renewal alerts — red when under 30 days",
+          "Obligation reminder fires at 09:00 on content due days",
+        ]}
+        mockup={<SponsorshipMockup />}
+      />
+
+      <Spotlight
+        eyebrow="Spotlight · Team Hub"
+        title="Your team. In sync. Wherever they are."
+        bullets={[
+          "8 team roles, each with their own role-specific feed",
+          "Status: on-site tournament, remote, treatment, cleared to play",
+          "Latest activity visible to all — coach notes, caddie strategy, agent updates",
+          "Morning briefing routed to each role separately",
+        ]}
+        mockup={<TeamHubMockup />}
+      />
+
+      {/* Integrations */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-3" style={{ color: '#F9FAFB' }}>Lumio Golf connects to the tools you already use.</h2>
+        <p className="text-sm text-center mb-12" style={{ color: MUTED }}>DataGolf, Arccos, TrackMan and everything in between — your existing stack just works.</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {INTEGRATIONS.map((it, i) => (
+            <div key={i} className="rounded-xl p-4" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <div className="text-2xl mb-2">{it.icon}</div>
+              <div className="text-sm font-bold mb-1" style={{ color: '#F9FAFB' }}>{it.name}</div>
+              <div className="text-xs" style={{ color: MUTED }}>{it.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Tiers */}
       <section className="max-w-5xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Who it&apos;s for</h2>
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Built for every professional golfer.</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {AUDIENCE.map((a, i) => (
-            <div key={i} className="rounded-2xl p-6 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{a.title}</h3>
-              <p className="text-sm" style={{ color: '#9CA3AF' }}>{a.desc}</p>
+          {TIERS.map((t, i) => (
+            <div key={i} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <div className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: ACCENT }}>Tier {i + 1}</div>
+              <h3 className="text-base font-bold mb-3" style={{ color: '#F9FAFB' }}>{t.name}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: MUTED }}>{t.desc}</p>
             </div>
           ))}
         </div>
@@ -83,7 +404,7 @@ export default function GolfPage() {
 
       {/* Pricing */}
       <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Simple pricing</h2>
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Simple pricing</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {PRICING.map((p, i) => (
             <div key={i} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${ACCENT}` : `1px solid ${BORDER}` }}>
@@ -91,8 +412,9 @@ export default function GolfPage() {
               <div className="text-2xl font-black mb-4" style={{ color: ACCENT }}>{p.price}</div>
               <ul className="space-y-2">
                 {p.features.map((f, j) => (
-                  <li key={j} className="flex items-center gap-2 text-sm" style={{ color: '#D1D5DB' }}>
-                    <span style={{ color: ACCENT }}>✓</span> {f}
+                  <li key={j} className="flex items-start gap-2 text-sm" style={{ color: '#D1D5DB' }}>
+                    <span className="mt-0.5" style={{ color: ACCENT }}>✓</span>
+                    <span>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -101,14 +423,26 @@ export default function GolfPage() {
         </div>
       </section>
 
-      {/* Demo CTA */}
+      {/* Early Access */}
       <section className="max-w-4xl mx-auto px-6 py-20">
         <div className="rounded-2xl p-8 md:p-12 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-          <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>See it in action</h2>
-          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Try the Lumio Golf demo — no login required.</p>
-          <Link href="/golf/golf-demo" className="inline-block px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#0A0B10' }}>
-            Launch demo →
-          </Link>
+          <h2 className="text-3xl md:text-4xl font-black mb-4" style={{ color: '#F9FAFB' }}>Be one of the first players on Lumio Golf.</h2>
+          <p className="text-sm max-w-2xl mx-auto mb-6" style={{ color: MUTED }}>
+            We&apos;re working with a small number of professional players and their teams to shape the product. 6 months free. No commitment. All we ask for at the end is an honest case study.
+          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
+            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
+              <span key={p} className="text-[10px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${ACCENT}10`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>{p}</span>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <a href="mailto:hello@lumiosports.com?subject=Golf%20Early%20Access" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
+              Apply for early access →
+            </a>
+            <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
+              Or try the demo →
+            </Link>
+          </div>
         </div>
       </section>
     </div>
