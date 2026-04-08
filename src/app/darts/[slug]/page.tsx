@@ -3296,6 +3296,475 @@ function PrizeForecastView({ player: _player }: { player: DartsPlayer }) {
   );
 }
 
+// ─── LIVE SCORES VIEW ─────────────────────────────────────────────────────────
+type LiveMatch = { p1: string; r1: number; p2: string; r2: number; avg1: number; avg2: number; status: 'live' | 'upcoming' | 'complete'; board: number; round: string; isJake?: boolean; time?: string };
+
+function LiveScoresView({ player: _player }: { player: DartsPlayer }) {
+  const [tab, setTab] = useState<'jake' | 'all' | 'upcoming'>('jake');
+
+  const allMatches: LiveMatch[] = [
+    { p1: 'Luke Littler', r1: 2, p2: 'Martin Schindler', r2: 0, avg1: 108.2, avg2: 94.1, status: 'live', board: 1, round: 'R1' },
+    { p1: 'Michael van Gerwen', r1: 1, p2: 'Niels Zonneveld', r2: 1, avg1: 99.4, avg2: 97.8, status: 'live', board: 2, round: 'R1' },
+    { p1: 'Luke Humphries', r1: 2, p2: 'Ricky Evans', r2: 0, avg1: 104.1, avg2: 91.2, status: 'live', board: 3, round: 'R1' },
+    { p1: 'Jake Morrison', r1: 1, p2: 'Gerwyn Price', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
+    { p1: 'Rob Cross', r1: 1, p2: 'Danny Noppert', r2: 0, avg1: 96.8, avg2: 95.1, status: 'live', board: 5, round: 'R1' },
+    { p1: 'Nathan Aspinall', r1: 0, p2: 'Florian Hempel', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 6, round: 'R1', time: '21:00' },
+    { p1: 'Michael Smith', r1: 0, p2: 'Kevin Doets', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 7, round: 'R1', time: '21:00' },
+    { p1: 'Peter Wright', r1: 2, p2: 'Bradley Brooks', r2: 1, avg1: 97.3, avg2: 94.8, status: 'complete', board: 1, round: 'R1' },
+    { p1: 'Damon Heta', r1: 2, p2: 'Callan Rydz', r2: 0, avg1: 98.1, avg2: 88.4, status: 'complete', board: 2, round: 'R1' },
+  ];
+
+  const jakeVisits = [
+    { visit: 1, jake: 60, price: 60, jakeLeft: 441, priceLeft: 441 },
+    { visit: 2, jake: 100, price: 81, jakeLeft: 341, priceLeft: 360 },
+    { visit: 3, jake: 60, price: 60, jakeLeft: 281, priceLeft: 300 },
+    { visit: 4, jake: 140, price: 89, jakeLeft: 141, priceLeft: 211 },
+    { visit: 5, jake: 60, price: 60, jakeLeft: 81, priceLeft: 151 },
+  ];
+
+  const live = allMatches.filter(m => m.status === 'live');
+  const complete = allMatches.filter(m => m.status === 'complete');
+  const upcoming = allMatches.filter(m => m.status === 'upcoming');
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-medium text-white">Live Scores</h1>
+          <p className="text-gray-400 text-sm mt-1">PDC European Championship · Dortmund · April 8 2025</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          <span className="text-red-400 font-medium">Live · 5 matches in progress</span>
+        </div>
+      </div>
+
+      <div className="flex rounded-lg border border-white/5 overflow-hidden w-fit">
+        {(['jake', 'all', 'upcoming'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-xs font-medium transition-colors border-r border-white/5 last:border-r-0 ${tab === t ? 'bg-red-600/20 text-red-300' : 'bg-gray-900/40 text-gray-500 hover:text-gray-300'}`}>
+            {t === 'jake' ? "Jake's match" : t === 'all' ? 'All matches' : 'Upcoming'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'jake' && (
+        <div className="space-y-4">
+          <div className="bg-gray-900/60 rounded-xl border border-red-500/20 p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-red-400 font-medium uppercase tracking-wide">🔴 Live · R1 · Board 4 · Set 1</span>
+              <span className="text-xs text-gray-500">PDC European Championship</span>
+            </div>
+            <div className="grid grid-cols-3 gap-4 mt-4 text-center">
+              <div>
+                <p className="text-white font-medium">Jake Morrison 🏴󠁧󠁢󠁥󠁮󠁧󠁿</p>
+                <p className="text-xs text-gray-500 mb-3">#19 PDC</p>
+                <p className="text-5xl font-medium text-white">1</p>
+                <p className="text-xs text-gray-500 mt-1">legs</p>
+                <p className="text-2xl font-medium text-red-400 mt-3">81</p>
+                <p className="text-xs text-gray-500">remaining · on checkout</p>
+                <p className="text-xs text-green-400 mt-1">→ T19 D12 or T15 D18</p>
+              </div>
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-gray-600 text-2xl font-medium">vs</p>
+                <div className="mt-4 space-y-1 text-xs text-gray-500">
+                  <p>avg: 101.4 · 96.8</p>
+                  <p>180s: 1 · 0</p>
+                  <p>Sets: 0 · 0</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-white font-medium">Gerwyn Price 🏴󠁧󠁢󠁷󠁬󠁳󠁿</p>
+                <p className="text-xs text-gray-500 mb-3">#7 PDC</p>
+                <p className="text-5xl font-medium text-gray-400">0</p>
+                <p className="text-xs text-gray-500 mt-1">legs</p>
+                <p className="text-2xl font-medium text-gray-300 mt-3">151</p>
+                <p className="text-xs text-gray-500">remaining</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-white font-medium mb-3">Current leg — visit by visit</h2>
+            <div className="rounded-xl border border-white/5 overflow-hidden">
+              <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+                <span>Visit</span><span>Jake</span><span>Jake left</span><span>Price</span><span>Price left</span>
+              </div>
+              {jakeVisits.map((v, i) => (
+                <div key={i} className="grid grid-cols-5 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+                  <span className="text-gray-500">{v.visit}</span>
+                  <span className={`font-medium ${v.jake >= 140 ? 'text-red-400' : v.jake >= 100 ? 'text-amber-400' : 'text-gray-300'}`}>{v.jake}</span>
+                  <span className="text-gray-300">{v.jakeLeft}</span>
+                  <span className="text-gray-400">{v.price}</span>
+                  <span className="text-gray-400">{v.priceLeft}</span>
+                </div>
+              ))}
+              <div className="grid grid-cols-5 gap-2 px-4 py-2.5 border-t border-white/5 text-sm bg-red-950/20">
+                <span className="text-gray-500">Now</span>
+                <span className="text-red-400 font-medium">On finish</span>
+                <span className="text-red-300 font-medium">81</span>
+                <span className="text-gray-400">—</span>
+                <span className="text-gray-400">151</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-4 py-3 bg-gray-900/60 rounded-xl border border-white/5 text-sm text-gray-400">
+            H2H: Jake leads <span className="text-white font-medium">8–3</span> · Jake&apos;s avg vs Price: <span className="text-white font-medium">99.4</span> · Win probability tonight: <span className="text-green-400 font-medium">62%</span>
+          </div>
+        </div>
+      )}
+
+      {tab === 'all' && (
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">In progress ({live.length})</p>
+            <div className="space-y-2">
+              {live.map((m, i) => (
+                <div key={i} className={`grid grid-cols-7 gap-2 px-4 py-3 rounded-xl border text-sm items-center ${m.isJake ? 'bg-red-950/20 border-red-500/20' : 'bg-gray-900/60 border-white/5'}`}>
+                  <span className="col-span-2 text-gray-200 font-medium">{m.p1} {m.isJake ? '⭐' : ''}</span>
+                  <span className="text-center">
+                    <span className="text-white font-medium text-lg">{m.r1}</span>
+                    <span className="text-gray-600 mx-1">–</span>
+                    <span className="text-gray-400 text-lg">{m.r2}</span>
+                  </span>
+                  <span className="col-span-2 text-gray-400 text-right">{m.p2}</span>
+                  <span className="text-gray-600 text-xs text-right col-span-2">avg {m.avg1} · {m.avg2}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {complete.length > 0 && (
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Completed ({complete.length})</p>
+              <div className="space-y-2">
+                {complete.map((m, i) => (
+                  <div key={i} className="grid grid-cols-7 gap-2 px-4 py-3 rounded-xl border border-white/5 bg-gray-900/30 text-sm items-center opacity-70">
+                    <span className="col-span-2 text-gray-300">{m.p1}</span>
+                    <span className="text-center">
+                      <span className="text-white font-medium">{m.r1}</span>
+                      <span className="text-gray-600 mx-1">–</span>
+                      <span className="text-gray-500">{m.r2}</span>
+                    </span>
+                    <span className="col-span-2 text-gray-500 text-right">{m.p2}</span>
+                    <span className="text-gray-600 text-xs text-right col-span-2">Final · avg {m.avg1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'upcoming' && (
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Later tonight ({upcoming.length} matches)</p>
+          {upcoming.map((m, i) => (
+            <div key={i} className="grid grid-cols-7 gap-2 px-4 py-3 rounded-xl border border-white/5 bg-gray-900/60 text-sm items-center">
+              <span className="col-span-2 text-gray-300">{m.p1}</span>
+              <span className="text-center text-gray-500">vs</span>
+              <span className="col-span-2 text-gray-300 text-right">{m.p2}</span>
+              <span className="text-gray-500 text-xs text-right col-span-2">Board {m.board} · {m.time}</span>
+            </div>
+          ))}
+          <p className="text-xs text-gray-600 mt-3 text-center">Quarter-finals draw tomorrow following R1 completion</p>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-4 px-4 py-3 bg-gray-900/40 rounded-xl border border-white/5 text-xs text-gray-500">
+        <span>Most 180s today: <span className="text-white">Littler (4)</span></span>
+        <span>Highest finish: <span className="text-white">161 (Humphries)</span></span>
+        <span>Highest avg: <span className="text-white">108.2 (Littler)</span></span>
+        <span>Total 180s: <span className="text-white">31</span></span>
+        <span className="ml-auto text-gray-600">* Demo data · Live would update from DartConnect every 3s</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── ACADEMY & DEV VIEW ───────────────────────────────────────────────────────
+function AcademyDevView({ player: _player }: { player: DartsPlayer }) {
+  const devTour = [
+    { pos: 1, name: 'Gian van Veen', flag: '🇳🇱', earned: 18400 },
+    { pos: 2, name: 'Niko Springer', flag: '🇩🇪', earned: 14200 },
+    { pos: 3, name: 'Nathan Rafferty', flag: '🇮🇪', earned: 12800 },
+    { pos: 4, name: 'Bradley Brooks', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 11400 },
+    { pos: 5, name: 'James Beeton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 9600 },
+    { pos: 6, name: 'Dylan Slevin', flag: '🇮🇪', earned: 8200 },
+    { pos: 7, name: 'Connor Scutt', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 7400 },
+    { pos: 8, name: 'Rhys Griffin', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 6800 },
+  ];
+  const challengeTour = [
+    { pos: 1, name: 'Berry van Peer', flag: '🇳🇱', earned: 22800 },
+    { pos: 2, name: 'Owen Bates', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 19400 },
+    { pos: 3, name: 'Christian Kist', flag: '🇳🇱', earned: 17200 },
+    { pos: 4, name: 'Lewy Williams', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 14600 },
+    { pos: 5, name: 'Paul Hogan', flag: '🇮🇪', earned: 12100 },
+    { pos: 6, name: 'Alan Warriner', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 10800 },
+    { pos: 7, name: 'Robert Owen', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 9200 },
+    { pos: 8, name: 'Scott Williams', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 8100 },
+  ];
+  const pathway = [
+    { level: 'County / grassroots', detail: 'BDO-affiliated regional play' },
+    { level: 'PDC Development Tour', detail: 'Ages 16–24 · 24 events/yr · Top 2 → Tour Card' },
+    { level: 'PDC Challenge Tour', detail: 'Open · 24 events/yr · Top 2 → Tour Card' },
+    { level: 'PDC Pro Tour', detail: '128 tour card holders · PC + Euro Tour' },
+    { level: 'Premier League / Majors', detail: 'Top 8 invitation only' },
+  ];
+  const careerPath = [
+    { year: 2018, event: 'County darts — Yorkshire' },
+    { year: 2019, event: 'Q-School attempt — unsuccessful' },
+    { year: 2020, event: 'Challenge Tour — finished #8' },
+    { year: 2021, event: 'Q-School — won Tour Card (day 3, final stage)' },
+    { year: 2022, event: 'First season on Tour — ranked #89' },
+    { year: 2023, event: 'Improved to #31' },
+    { year: 2024, event: 'Career high #12' },
+    { year: 2025, event: 'Currently #19 · targeting Top 10' },
+  ];
+  const fmt = (n: number) => `£${n.toLocaleString()}`;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Academy &amp; Development</h1>
+        <p className="text-gray-400 text-sm mt-1">PDC Development Tour · Challenge Tour · Junior pathway</p>
+      </div>
+
+      <div className="px-4 py-3 bg-gray-900/60 rounded-xl border border-white/5 text-sm">
+        <span className="text-gray-400">As a PDC Tour Card holder you are above the development pathway. This section tracks the routes players take to reach the Pro Tour and monitors development players in your network.</span>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">PDC development pathway</h2>
+        <div className="space-y-2">
+          {pathway.map((p, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className={`flex-1 px-4 py-3 rounded-xl border text-sm ${i === 3 ? 'bg-red-950/30 border-red-500/30' : 'bg-gray-900/60 border-white/5'}`}>
+                <span className={`font-medium ${i === 3 ? 'text-red-300' : 'text-gray-200'}`}>{i === 3 ? '⭐ ' : ''}{p.level}</span>
+                <span className="text-gray-500 text-xs ml-2">{p.detail}</span>
+              </div>
+              {i < pathway.length - 1 && <span className="text-gray-700 text-xs flex-shrink-0">↓</span>}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-600 mt-2">⭐ = Jake&apos;s current level</p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-white font-medium">Development Tour 2025 — top 8</h2>
+          <span className="text-xs text-gray-500">Ages 16–24 · Top 2 earn Tour Card</span>
+        </div>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>#</span><span className="col-span-2">Player</span><span>Earned</span>
+          </div>
+          {devTour.map((p, i) => (
+            <div key={i} className={`grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm ${i < 2 ? 'bg-green-950/10' : ''}`}>
+              <span className={i < 2 ? 'text-green-400 font-medium' : 'text-gray-500'}>#{p.pos}</span>
+              <span className="col-span-2 text-gray-200">
+                {p.flag} {p.name}
+                {i < 2 && <span className="ml-2 text-[10px] text-green-400">→ Tour Card</span>}
+              </span>
+              <span className="text-gray-400">{fmt(p.earned)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+          <span className="w-2 h-2 rounded-sm bg-green-950/40 border border-green-700/30" />
+          Tour Card boundary between #2 and #3 · Gap: £1,400
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-white font-medium">Challenge Tour 2025 — top 8</h2>
+          <span className="text-xs text-gray-500">Open entry · Top 2 earn Tour Card</span>
+        </div>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>#</span><span className="col-span-2">Player</span><span>Earned</span>
+          </div>
+          {challengeTour.map((p, i) => (
+            <div key={i} className={`grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm ${i < 2 ? 'bg-green-950/10' : ''}`}>
+              <span className={i < 2 ? 'text-green-400 font-medium' : 'text-gray-500'}>#{p.pos}</span>
+              <span className="col-span-2 text-gray-200">
+                {p.flag} {p.name}
+                {i < 2 && <span className="ml-2 text-[10px] text-green-400">→ Tour Card</span>}
+              </span>
+              <span className="text-gray-400">{fmt(p.earned)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <h2 className="text-white font-medium mb-3">Development player — your network</h2>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-white font-medium">Jack Sherwood</p>
+            <p className="text-gray-500 text-xs mt-0.5">Age 19 · Sheffield · Challenge Tour</p>
+          </div>
+          <span className="text-xs text-amber-400 bg-amber-950/30 border border-amber-700/30 px-2 py-1 rounded-lg">CT #18</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3">
+          {[
+            { label: 'Last result', value: 'R2 exit (CT 6)' },
+            { label: 'Earned', value: '£800' },
+            { label: 'Next event', value: 'CT 7 · Apr 26' },
+          ].map((s, i) => (
+            <div key={i} className="bg-gray-800/40 rounded-lg p-2.5">
+              <p className="text-xs text-gray-500">{s.label}</p>
+              <p className="text-sm text-gray-200 mt-0.5">{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">Your career pathway</h2>
+        <div className="space-y-0">
+          {careerPath.map((c, i) => (
+            <div key={i} className="flex gap-4 items-start">
+              <div className="flex flex-col items-center">
+                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${i === careerPath.length - 1 ? 'bg-red-500' : 'bg-gray-700'}`} />
+                {i < careerPath.length - 1 && <div className="w-px flex-1 bg-gray-800 min-h-[24px]" />}
+              </div>
+              <div className="pb-4">
+                <span className="text-xs text-gray-600 font-medium">{c.year}</span>
+                <p className={`text-sm ${i === careerPath.length - 1 ? 'text-white font-medium' : 'text-gray-400'}`}>{c.event}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PAIRS & TEAM EVENTS VIEW ─────────────────────────────────────────────────
+function PairsEventsView({ player }: { player: DartsPlayer }) {
+  const englishPlayers = [
+    { pos: 1, pdcPos: 1, name: 'Luke Littler', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
+    { pos: 2, pdcPos: 6, name: 'Michael Smith', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
+    { pos: 3, pdcPos: 9, name: 'Rob Cross', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
+    { pos: 4, pdcPos: 12, name: 'Dave Chisnall', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
+    { pos: 5, pdcPos: 19, name: 'Jake Morrison', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: true },
+  ];
+  const wcEvents = [
+    { year: 2023, result: 'Did not qualify', detail: 'Pre-top-64 era' },
+    { year: 2024, result: 'Did not qualify', detail: '#31 PDC — just missed England top 4' },
+    { year: 2025, result: 'Not selected', detail: '#19 PDC — 5th English player' },
+    { year: 2026, result: 'Target', detail: 'Need to pass Cross or Chisnall' },
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Pairs &amp; Team Events</h1>
+        <p className="text-gray-400 text-sm mt-1">World Cup of Darts · World Pairs · National team</p>
+      </div>
+
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-white font-medium">England national team</h2>
+          <span className="text-xs text-amber-400 bg-amber-950/30 border border-amber-700/30 px-2 py-1 rounded-lg">#5 English player — not selected</span>
+        </div>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Eng rank</span><span className="col-span-2">Player</span><span>PDC rank</span>
+          </div>
+          {englishPlayers.map((p, i) => (
+            <div key={i} className={`grid grid-cols-4 gap-2 px-4 py-3 border-t border-white/5 text-sm items-center ${p.isJake ? 'bg-red-950/10' : p.selected ? 'bg-green-950/10' : ''}`}>
+              <span className={p.selected ? 'text-green-400 font-medium' : p.isJake ? 'text-red-400 font-medium' : 'text-gray-500'}>#{p.pos}</span>
+              <span className="col-span-2 text-gray-200 font-medium">
+                {p.flag} {p.name}
+                {p.selected && <span className="ml-2 text-[10px] text-green-400">✅ Selected</span>}
+                {p.isJake && <span className="ml-2 text-[10px] text-red-400">← You</span>}
+              </span>
+              <span className="text-gray-500">#{p.pdcPos}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 px-4 py-3 bg-amber-950/30 border border-amber-700/30 rounded-xl text-sm">
+          <span className="text-amber-300">⚠️ </span>
+          <span className="text-gray-300">To make the World Cup squad Jake needs to pass <span className="text-white font-medium">Rob Cross (#9 PDC)</span> in the Order of Merit. Gap: approximately £82,000.</span>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">World Cup of Darts</h2>
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          {[
+            { label: 'Format', value: 'Pairs · nations compete' },
+            { label: 'Venue', value: 'Frankfurt, Germany' },
+            { label: 'Prize fund', value: '£800,000+' },
+          ].map((s, i) => (
+            <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-3">
+              <p className="text-xs text-gray-500">{s.label}</p>
+              <p className="text-sm text-gray-200 mt-1">{s.value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-3 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Year</span><span>Result</span><span>Context</span>
+          </div>
+          {wcEvents.map((e, i) => (
+            <div key={i} className={`grid grid-cols-3 gap-2 px-4 py-2.5 border-t border-white/5 text-sm ${i === wcEvents.length - 1 ? 'bg-red-950/10' : ''}`}>
+              <span className="text-gray-500">{e.year}</span>
+              <span className={i === wcEvents.length - 1 ? 'text-red-400 font-medium' : 'text-gray-400'}>{e.result}</span>
+              <span className="text-gray-600 text-xs">{e.detail}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-white font-medium">PDC World Pairs Championship</h2>
+          <span className="text-xs text-green-400 bg-green-950/30 border border-green-700/30 px-2 py-1 rounded-lg">✅ Entered</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500 mb-2">Pairing</p>
+            <p className="text-white font-medium">{player.name} + Mark &ldquo;The Spider&rdquo; Webb</p>
+            <p className="text-gray-500 text-xs mt-1">Event: August 2025 · Minehead (Butlins)</p>
+            <p className="text-gray-500 text-xs">Last year: R2 exit · £800 each</p>
+          </div>
+          <div className="space-y-2">
+            {[
+              { label: 'Combined avg', value: '96.4' },
+              { label: `${player.name.split(' ')[0]}'s doubles %`, value: '41.2%' },
+              { label: "Mark's doubles %", value: '38.7%' },
+            ].map((s, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-gray-500">{s.label}</span>
+                <span className="text-white font-medium">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 bg-gray-900/60 rounded-xl border border-white/5">
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Premier League — 2026 target</p>
+        <p className="text-sm text-gray-300">The Premier League features 8 invited players. Jake is not currently in the PL but a Top 10 OoM finish this season makes a 2026 invitation likely.</p>
+        <div className="mt-3 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-full bg-red-500 rounded-full" style={{ width: '62%' }} />
+        </div>
+        <div className="flex justify-between text-xs text-gray-600 mt-1">
+          <span>Current: #19</span>
+          <span>PL threshold: Top 10</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StubView({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="p-8">
@@ -3954,7 +4423,7 @@ export default function DartsPortalPage() {
       case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} />;
       case 'merit-forecaster':  return <MeritForecasterView player={player} />;
       case 'entry-manager':     return <EntryManagerView player={player} />;
-      case 'live-scores':       return <StubView title="Live Scores"             sub="Live PDC match feeds — coming soon." />;
+      case 'live-scores':       return <LiveScoresView player={player} />;
       case 'draw-bracket':      return <DrawBracketView player={player} />;
       case 'advanced-stats':    return <AdvancedStatsView player={player} />;
       case 'dartboard-heatmap': return <DartboardHeatmapView player={player} />;
@@ -3962,10 +4431,10 @@ export default function DartsPortalPage() {
       case 'match-prep':        return <MatchPrepView player={player} />;
       case 'physio-recovery':   return <PhysioRecoveryView player={player} />;
       case 'walk-on-music':     return <WalkOnMusicView player={player} />;
-      case 'pairs-events':      return <StubView title="Pairs & Team Events"     sub="World Cup of Darts and doubles pairings — coming soon." />;
+      case 'pairs-events':      return <PairsEventsView player={player} />;
       case 'tour-card-monitor': return <TourCardMonitorView player={player} />;
       case 'prize-forecaster':  return <PrizeForecastView player={player} />;
-      case 'academy-dev':       return <StubView title="Academy & Dev"           sub="Development squad and youth pathway — coming soon." />;
+      case 'academy-dev':       return <AcademyDevView player={player} />;
       case 'practice-games':    return <PracticeGamesView player={player} />;
       default:              return <DashboardView player={player} onNavigate={setActiveSection} />;
     }
