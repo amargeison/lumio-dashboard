@@ -181,9 +181,37 @@ const QuickActionsBar = ({ onNavigate }: { onNavigate: (id: string) => void }) =
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
 function DashboardView({ player, onNavigate }: { player: DartsPlayer; onNavigate: (id: string) => void }) {
+  const [dashTab, setDashTab] = useState<'tasks'|'insights'|'dontmiss'|'team'>('tasks');
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
+
+      {/* World clock strip */}
+      <div className="flex items-center gap-6 px-1 mb-4 text-xs text-gray-400">
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500">🇬🇧</span>
+          <span className="text-white font-medium">London</span>
+          <span>12:00 BST</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500">🇩🇪</span>
+          <span className="text-white font-medium">Dortmund</span>
+          <span>13:00 CET</span>
+          <span className="ml-1 text-red-400 text-[10px] font-medium">TONIGHT</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500">🇦🇺</span>
+          <span className="text-white font-medium">Melbourne</span>
+          <span>21:00 AEST</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500">🇺🇸</span>
+          <span className="text-white font-medium">Las Vegas</span>
+          <span>04:00 PDT</span>
+        </div>
+        <div className="ml-auto text-gray-500">Dortmund · 14°C · Overcast</div>
+      </div>
+
       <SectionHeader icon="🏠" title={`Good morning, ${player.name.split(' ')[0]}.`} subtitle="Here's your overview — PDC European Championship week." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -191,6 +219,122 @@ function DashboardView({ player, onNavigate }: { player: DartsPlayer; onNavigate
         <StatCard label="Order of Merit" value={`#${player.orderOfMeritRank}`} sub="£687,420" color="orange" />
         <StatCard label="3-Dart Avg" value={player.threeDartAverage} sub="2025 season" color="teal" />
         <StatCard label="Career High" value="#12" sub="Mar 2024" color="purple" />
+      </div>
+
+      {/* OoM expiry warning strip */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-950/40 border border-amber-800/30 text-sm mb-4">
+        <span className="text-amber-400 text-base">⏰</span>
+        <span className="text-amber-200">
+          <span className="font-medium">£12,400 drops off your Order of Merit this week</span>
+          <span className="text-amber-400/70"> — Players Ch. 8 (Apr 2023). Win your match tonight to stay at #19.</span>
+        </span>
+        <button onClick={() => onNavigate('merit-forecaster')} className="ml-auto text-amber-400 text-xs hover:text-amber-300 whitespace-nowrap">
+          Merit Forecaster →
+        </button>
+      </div>
+
+      {/* Quick Win tabs */}
+      <div className="rounded-xl bg-gray-900/60 border border-white/5 mb-4">
+        <div className="flex border-b border-white/5">
+          {(['tasks','insights','dontmiss','team'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setDashTab(t)}
+              className={`px-4 py-2.5 text-xs font-medium transition-colors ${dashTab === t ? 'text-red-400 border-b-2 border-red-500 -mb-px' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              {t === 'tasks' ? 'Daily Tasks' : t === 'insights' ? 'Insights' : t === 'dontmiss' ? "Don't Miss" : 'Team'}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-4">
+          {dashTab === 'tasks' && (
+            <div className="space-y-2.5">
+              {[
+                { done: false, text: 'Confirm practice session time with venue (10:00)' },
+                { done: false, text: 'Review Red Dragon barrel options before content shoot' },
+                { done: true,  text: 'Check PDC entry system — Prague Open confirmed' },
+                { done: false, text: 'Reply to Paddy Power ambassador inquiry' },
+                { done: false, text: 'Sign off travel insurance for Bahrain Masters' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5 text-sm">
+                  <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center ${item.done ? 'bg-green-500/20 border-green-500/40' : 'border-white/10'}`}>
+                    {item.done && <span className="text-green-400 text-[10px]">✓</span>}
+                  </div>
+                  <span className={item.done ? 'text-gray-500 line-through' : 'text-gray-300'}>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dashTab === 'insights' && (
+            <div className="space-y-2.5">
+              {[
+                { icon: '📉', text: 'Doubles conversion 38.2% — 4.1% below your 2025 season average' },
+                { icon: '✅', text: '2-0 vs left-handed opponents in 2025' },
+                { icon: '⚠️', text: 'Average drops 3.1 pts in deciding legs — focus for mental coach' },
+                { icon: '🏆', text: 'Best average this season: 104.7 (Players Championship 12)' },
+                { icon: '📈', text: 'Last 8 weeks: 6 wins 2 losses — strongest run of 2025' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                  <span className="text-base leading-5 flex-shrink-0">{item.icon}</span>
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dashTab === 'dontmiss' && (
+            <div className="space-y-2.5">
+              {[
+                { icon: '🔴', text: 'Red Dragon contract renewal: 23 days', view: 'sponsorship', cta: '→ Sponsorship' },
+                { icon: '⚠️', text: 'Prague Open entry window closes: 6 days', view: 'entry-manager', cta: '→ Entry Manager' },
+                { icon: '⚠️', text: '£4,200 prize payment pending — Players Championship 19', view: 'prize-forecaster', cta: '→ Prize Forecaster' },
+                { icon: '📅', text: 'Q-School reserve list update: Friday', view: 'tour-card-monitor', cta: '→ Tour Card Monitor' },
+                { icon: '🎵', text: 'Walk-on music approval needed for Grand Slam submission', view: 'walk-on-music', cta: '→ Walk-on Music' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 text-sm">
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    <span className="text-gray-300">{item.text}</span>
+                  </div>
+                  <button onClick={() => onNavigate(item.view)} className="text-red-400 text-xs hover:text-red-300 whitespace-nowrap flex-shrink-0">
+                    {item.cta}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dashTab === 'team' && (
+            <div className="space-y-3">
+              {[
+                { name: 'Marco',    role: 'Coach',        msg: 'Focus on T20 cluster tightness — pulling left under pressure' },
+                { name: 'James',    role: 'Agent',        msg: 'Red Dragon renewal call scheduled Thursday 14:00' },
+                { name: 'Dr. Singh',role: 'Physio',       msg: 'Shoulder treatment confirmed 08:30 tomorrow' },
+                { name: 'Sarah',    role: 'Mental coach', msg: 'Pre-match routine updated — check Match Prep before tonight' },
+              ].map((item, i) => (
+                <div key={i} className="text-sm">
+                  <span className="text-white font-medium">{item.name}</span>
+                  <span className="text-gray-500 text-xs ml-1.5">{item.role}</span>
+                  <p className="text-gray-400 mt-0.5">{item.msg}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sponsor obligation strip */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/40 border border-white/5 text-sm mb-4">
+        <span className="text-base">🤝</span>
+        <span className="text-gray-300">
+          <span className="font-medium">Red Dragon</span>
+          <span className="text-gray-500"> · Content shoot today 16:00 · Barrel review video · 2 posts due this week</span>
+        </span>
+        <button onClick={() => onNavigate('sponsorship')} className="ml-auto text-red-400 text-xs hover:text-red-300 whitespace-nowrap">
+          → Sponsorship
+        </button>
       </div>
 
       {/* This Week */}
@@ -2257,6 +2401,173 @@ function StubView({ title, sub }: { title: string; sub: string }) {
   );
 }
 
+// ─── Tour Card Monitor ────────────────────────────────────────────────────────
+function TourCardMonitorView({ player }: { player: DartsPlayer }) {
+  const [targetRank, setTargetRank] = useState(19);
+
+  const currentOom = 687420;
+  const rank64threshold = 498000;
+  const buffer = currentOom - rank64threshold;
+
+  const dropOffs = [
+    { week: 17, event: 'Players Ch. 8 (2023)',       amount: 4200,  date: 'Apr 14' },
+    { week: 18, event: 'Euro Tour – Prague (2023)',  amount: 12000, date: 'Apr 21' },
+    { week: 19, event: 'Players Ch. 10 (2023)',      amount: 2000,  date: 'Apr 28' },
+    { week: 20, event: 'Players Ch. 11 (2023)',      amount: 8000,  date: 'May 5'  },
+    { week: 21, event: 'Players Ch. 12 (2023)',      amount: 4200,  date: 'May 12' },
+    { week: 22, event: 'Euro Tour – Germany (2023)', amount: 18000, date: 'May 19' },
+    { week: 23, event: 'Players Ch. 14 (2023)',      amount: 2000,  date: 'May 26' },
+    { week: 24, event: 'World Matchplay QF (2023)',  amount: 22500, date: 'Jun 2'  },
+    { week: 25, event: 'Players Ch. 15–18 (2023)',   amount: 6400,  date: 'Jun–Jul'},
+    { week: 29, event: 'Euro Tour – Austria (2023)', amount: 8000,  date: 'Jul 21' },
+    { week: 30, event: 'Players Ch. 19 (2023)',      amount: 4200,  date: 'Jul 28' },
+  ];
+
+  const rankScenarios = [
+    { label: 'Hold #19',            target: 19, needed: 42000  },
+    { label: 'Break Top 16',        target: 16, needed: 152580 },
+    { label: 'Break Top 10',        target: 10, needed: 312580 },
+    { label: 'Stay safe (Top 64)',  target: 64, needed: 0      },
+  ];
+
+  const scenarioForRank = rankScenarios.find(s => s.target <= targetRank) || rankScenarios[3];
+  const fmt = (n: number) => `£${n.toLocaleString()}`;
+
+  let runningTotal = currentOom;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-medium text-white">Tour Card Monitor</h1>
+        <p className="text-gray-400 text-sm mt-1">PDC Order of Merit · Rolling 2-year window · Tour card held by top 64</p>
+      </div>
+
+      {/* Status banner */}
+      <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-green-950/40 border border-green-700/30">
+        <span className="text-2xl">✅</span>
+        <div>
+          <p className="text-green-300 font-medium">SAFE — You hold #{player.pdcRank}</p>
+          <p className="text-green-400/70 text-sm">The 64th-place threshold is {fmt(buffer)} below your current OoM total.</p>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Current OoM',     value: fmt(currentOom),     sub: `#${player.pdcRank} PDC` },
+          { label: '64th place at',   value: fmt(rank64threshold),sub: 'Approximate threshold' },
+          { label: 'Buffer above cut',value: fmt(buffer),         sub: 'Your safety margin' },
+          { label: 'Card expires',    value: 'Jan 4 2026',        sub: '9 months remaining' },
+        ].map((k, i) => (
+          <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+            <p className="text-xl font-medium text-white">{k.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Drop-off table */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Prize money dropping off your OoM — next 12 weeks</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-5 gap-4 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Wk</span>
+            <span className="col-span-2">Tournament</span>
+            <span>Drops</span>
+            <span>New OoM</span>
+          </div>
+          {dropOffs.map((row, i) => {
+            runningTotal -= row.amount;
+            const danger = runningTotal - rank64threshold < 50000;
+            return (
+              <div key={i} className={`grid grid-cols-5 gap-4 px-4 py-3 border-t border-white/5 text-sm ${danger ? 'bg-amber-950/20' : ''}`}>
+                <span className="text-gray-500">Wk {row.week}</span>
+                <span className="col-span-2 text-gray-300">{row.event}</span>
+                <span className={danger ? 'text-amber-400' : 'text-red-400'}>-{fmt(row.amount)}</span>
+                <span className={danger ? 'text-amber-300 font-medium' : 'text-gray-300'}>{fmt(runningTotal)}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">* Amber rows = within £50,000 of the 64th-place cut if unmatched</p>
+      </div>
+
+      {/* What do I need calculator */}
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <h2 className="text-white font-medium mb-4">What do I need to earn?</h2>
+
+        <div className="flex flex-wrap gap-2 mb-5">
+          {rankScenarios.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => setTargetRank(s.target)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${targetRank === s.target ? 'bg-red-600/20 border-red-500/40 text-red-300' : 'bg-gray-800/60 border-white/5 text-gray-400 hover:text-gray-200'}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 mb-5">
+          <span className="text-xs text-gray-500 w-24">Target rank</span>
+          <input
+            type="range" min={1} max={64} value={targetRank}
+            onChange={e => setTargetRank(Number(e.target.value))}
+            className="flex-1 accent-red-500"
+          />
+          <span className="text-white font-medium w-8">#{targetRank}</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Target OoM',   value: fmt(currentOom + (scenarioForRank?.needed ?? 0)) },
+            { label: 'Current OoM',  value: fmt(currentOom) },
+            { label: 'Need to earn', value: fmt(Math.max(0, scenarioForRank?.needed ?? 0)) },
+          ].map((item, i) => (
+            <div key={i} className="bg-gray-800/40 rounded-lg p-3">
+              <p className="text-xs text-gray-500">{item.label}</p>
+              <p className="text-lg font-medium text-white mt-1">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Card timeline */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Tour card timeline</h2>
+        <div className="relative bg-gray-900/60 rounded-xl border border-white/5 p-5">
+          <div className="relative h-2 bg-gray-800 rounded-full">
+            <div className="absolute left-0 top-0 h-full bg-red-600 rounded-full" style={{ width: '55%' }} />
+            <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900" style={{ left: '55%' }} />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-3">
+            <span>Q-School Jan 2024<br/><span className="text-gray-600">Card start</span></span>
+            <span className="text-red-400 font-medium">Apr 2025<br/>NOW</span>
+            <span className="text-right">Jan 4 2026<br/><span className="text-gray-600">Expires</span></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Q-School info */}
+      <details className="bg-gray-900/60 rounded-xl border border-white/5">
+        <summary className="px-5 py-4 text-white font-medium cursor-pointer hover:text-gray-200 list-none flex justify-between items-center">
+          If you lost your tour card — Q-School information
+          <ChevronRight className="w-4 h-4 text-gray-500" />
+        </summary>
+        <div className="px-5 pb-5 space-y-2 text-sm text-gray-400">
+          <p>📅 <strong className="text-gray-200">Dates:</strong> January 2026 (UK: Milton Keynes · Europe: Kalkar, Germany)</p>
+          <p>🏗️ <strong className="text-gray-200">Format:</strong> First Stage (open) → Final Stage (top performers)</p>
+          <p>🎯 <strong className="text-gray-200">Cards available:</strong> Top 64 OoM auto-retain. ~40 additional cards via Q-School + Challenge/Development Tour</p>
+          <p>💷 <strong className="text-gray-200">Entry:</strong> Free for PDPA members (PDPA membership required)</p>
+          <p>⚠️ <strong className="text-gray-200">Reset:</strong> New tour card holders start at £0 OoM — previous earnings do not carry over</p>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export default function DartsPortalPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -2302,7 +2613,7 @@ export default function DartsPortalPage() {
       case 'physio-recovery':   return <StubView title="Physio & Recovery"       sub="Recovery tracking and physio appointments — coming soon." />;
       case 'walk-on-music':     return <StubView title="Walk-on Music"           sub="Manage walk-on tracks and crowd entrance — coming soon." />;
       case 'pairs-events':      return <StubView title="Pairs & Team Events"     sub="World Cup of Darts and doubles pairings — coming soon." />;
-      case 'tour-card-monitor': return <StubView title="Tour Card Monitor"       sub="Two-year tour card standings tracker — coming soon." />;
+      case 'tour-card-monitor': return <TourCardMonitorView player={player} />;
       case 'prize-forecaster':  return <StubView title="Prize Money Forecaster"  sub="Projected season earnings — coming soon." />;
       case 'academy-dev':       return <StubView title="Academy & Dev"           sub="Development squad and youth pathway — coming soon." />;
       case 'practice-games':    return <StubView title="Practice Games"          sub="Round-robin practice game tracker — coming soon." />;
@@ -2391,9 +2702,46 @@ export default function DartsPortalPage() {
               <div className="text-xs text-red-400 font-medium mt-1">#{player.pdcRank} PDC</div>
               <div className="text-xs text-gray-400 mt-1">{player.threeDartAverage} avg</div>
               <div className="text-xs text-gray-500">£{(player.careerEarnings / 1000).toFixed(0)}k career</div>
+
+              <div className="border-t border-white/5 pt-3 mt-3 space-y-1.5 text-left">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Doubles %</span>
+                  <span className="text-white font-medium">38.2%</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">TV avg</span>
+                  <span className="text-white font-medium">99.1</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Floor avg</span>
+                  <span className="text-white font-medium">97.3</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">180s/match</span>
+                  <span className="text-white font-medium">4.2</span>
+                </div>
+              </div>
+
+              {/* Recent form mini sparkline */}
+              <div className="border-t border-white/5 pt-3 mt-3 text-left">
+                <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Recent form (avg)</p>
+                <div className="flex items-end gap-1 h-10">
+                  {[94.1, 98.7, 101.4, 99.2, 103.8, 97.6, 102.1, 96.8].map((avg, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                      <div className="w-full rounded-sm bg-red-500/60" style={{ height: `${((avg - 90) / 20) * 100}%` }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
-              <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Tonight</div>
+              <div className="flex items-center gap-1.5 text-xs mb-1">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                <span className="text-red-400 font-medium text-[10px] uppercase tracking-wide">Live Tonight</span>
+              </div>
               <div className="text-xs text-red-400 font-medium">European Ch. R1</div>
               <div className="text-xs text-gray-300 mt-1">vs G. Price (#7)</div>
               <div className="text-xs text-gray-500">20:00 · Dortmund</div>
