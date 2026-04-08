@@ -325,37 +325,11 @@ function RoleShowcase() {
   )
 }
 
-// ─── Scrolling Ticker ────────────────────────────────────────────────────────
-
-function LiveTicker() {
-  const items = [
-    '\u{1F7E2} LIVE: Lumio FC 1-0 Cardiff City \u00B7 67\' \u00B7 Browne (34\')',
-    '\u26BD League One Table updated \u00B7 Birmingham City top',
-    '\u{1F915} Injury: O. Bugiel (Hamstring) \u00B7 2-3 weeks',
-    '\u{1F4CA} Top scorer: M. Browne \u00B7 12 goals \u00B7 League One',
-    '\u{1F4C5} Next: Stockport vs Lumio FC \u00B7 Sat 15:00',
-    '\u{1F3C6} Bolton Wanderers 2-1 Barnsley \u00B7 FT',
-  ]
-  const text = items.join('   \u00B7\u00B7\u00B7   ')
-
-  return (
-    <div className="overflow-hidden whitespace-nowrap" style={{ backgroundColor: '#070810', borderBottom: `1px solid ${BORDER}` }}>
-      <div className="inline-block animate-[ticker_40s_linear_infinite] py-2 px-4">
-        <span className="text-xs font-medium" style={{ color: '#6B7280' }}>{text}   &middot;&middot;&middot;   {text}</span>
-      </div>
-      <style>{`@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
-    </div>
-  )
-}
-
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function FootballPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#F9FAFB' }}>
-
-      {/* ── STEP 9: Scrolling Ticker ─────────────────────────────────── */}
-      <LiveTicker />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${BG}, #1a0a0a)` }}>
