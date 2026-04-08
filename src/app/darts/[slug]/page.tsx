@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList } from 'lucide-react';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ const DEMO_PLAYER: DartsPlayer = {
   threeDartAverage: 97.8,
   checkoutPercent: 42.3,
   oneEightiesPerLeg: 0.84,
-  firstNineAverage: 72.4,
+  firstNineAverage: 101.4,
   highestCheckout: 164,
   tourCard: 'Secured — top 32',
   plan: 'Premier League · £279/mo',
@@ -2570,7 +2570,7 @@ function DartboardHeatmapView({ player: _player }: { player: DartsPlayer }) {
 }
 
 // ─── ADVANCED STATS VIEW ──────────────────────────────────────────────────────
-function AdvancedStatsView({ player: _player }: { player: DartsPlayer }) {
+function AdvancedStatsView({ player }: { player: DartsPlayer }) {
   const first9Avg = [102.1, 106.4, 98.3, 103.8, 108.4, 101.2, 99.8, 105.7, 103.2, 101.6, 108.9, 100.4, 104.8, 102.1, 103.9];
   const scoringZones = [
     { label: '180 (max)', jake: 198, pdc: 162, color: 'bg-red-500' },
@@ -2609,7 +2609,7 @@ function AdvancedStatsView({ player: _player }: { player: DartsPlayer }) {
       </div>
       <div className="grid grid-cols-6 gap-3">
         {[
-          { label: 'Match average', value: '97.8' }, { label: 'First 9 average', value: '101.4' },
+          { label: 'Match average', value: '97.8' }, { label: 'First 9 average', value: String(player.firstNineAverage) },
           { label: 'Checkout %', value: '41.2%' }, { label: '180s / match', value: '4.2' },
           { label: 'Legs won / match', value: '8.1' }, { label: 'Win rate', value: '68%' },
         ].map((k, i) => (
@@ -2622,7 +2622,7 @@ function AdvancedStatsView({ player: _player }: { player: DartsPlayer }) {
       <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
         <div className="flex items-center justify-between mb-4">
           <div><h2 className="text-white font-medium">First 9-dart average</h2><p className="text-gray-500 text-xs mt-0.5">Average score in the first 3 visits per leg · Elite threshold: 100+</p></div>
-          <div className="flex gap-4 text-xs text-gray-400"><span>Jake 2025: <strong className="text-white">101.4</strong></span><span>PDC avg: <strong className="text-gray-300">96.8</strong></span></div>
+          <div className="flex gap-4 text-xs text-gray-400"><span>Jake 2025: <strong className="text-white">{player.firstNineAverage}</strong></span><span>PDC avg: <strong className="text-gray-300">96.8</strong></span></div>
         </div>
         <div className="relative h-28">
           <div className="absolute inset-0 flex items-end gap-1">
@@ -2872,17 +2872,122 @@ function WalkOnMusicView({ player: _player }: { player: DartsPlayer }) {
 }
 
 // ─── PRACTICE GAMES VIEW ──────────────────────────────────────────────────────
+// Defaults used when there's nothing in localStorage yet.
+const PRACTICE_DEFAULTS: Record<string, number[]> = {
+  bobs27:   [45, 52, 48, 63, 58, 71, 66, 78, 72, 85, 79, 91, 87, 83, 94, 88, 96, 92, 101, 97, 104, 98, 112, 108, 119, 115, 127, 123, 135, 141],
+  atc:      [340, 332, 328, 319, 312, 305, 298, 294, 289, 282], // seconds (lower = better)
+  t180:     [4, 5, 3, 6, 7, 5, 8, 6, 9, 11],
+  doubles:  [325, 318, 312, 305, 298, 290, 284, 278, 272, 225], // seconds
+  checkout: [8, 9, 10, 9, 11, 10, 12, 11, 13, 14],
+  halveit:  [185, 198, 210, 225, 240, 258, 275, 290, 305, 320],
+  shanghai: [72, 85, 91, 104, 118, 127, 135, 148, 159, 167],
+  cricket:  [3, 4, 4, 5, 5, 6, 6, 7, 7, 8],
+};
+
+const PRACTICE_LS_KEYS: Record<string, string> = {
+  bobs27:   'lumio_darts_bobs27_scores',
+  atc:      'lumio_darts_atc_scores',
+  t180:     'lumio_darts_180_scores',
+  doubles:  'lumio_darts_doubles_scores',
+  checkout: 'lumio_darts_checkout_scores',
+  halveit:  'lumio_darts_halveit_scores',
+  shanghai: 'lumio_darts_shanghai_scores',
+  cricket:  'lumio_darts_cricket_scores',
+};
+
+function loadScores(key: string, fallback: number[]): number[] {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(PRACTICE_LS_KEYS[key]);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.every(n => typeof n === 'number') ? parsed : fallback;
+  } catch { return fallback; }
+}
+
 function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
-  const games = [
-    { name: "Bob's 27",          pb: 141,  avg: 87,  target: 100, unit: 'pts',   sparkline: [72, 85, 78, 91, 88, 94, 83, 108, 95, 141] },
-    { name: 'Around the Clock',  pb: '4:12', avg: '5:40', target: '4:30', unit: 'time', sparkline: [] },
-    { name: '180 Challenge',     pb: 11,   avg: 7,   target: 9,   unit: '180s',  sparkline: [] },
-    { name: 'Doubles Round',     pb: '3:45', avg: '5:10', target: '4:00', unit: 'time', sparkline: [] },
-    { name: 'Checkout Trainer',  pb: '14/20', avg: '11/20', target: '13/20', unit: 'hits', sparkline: [] },
-    { name: 'Halve It',          pb: 320,  avg: 215, target: 260, unit: 'pts',   sparkline: [] },
-    { name: 'Shanghai',          pb: 167,  avg: 108, target: 130, unit: 'pts',   sparkline: [] },
-    { name: 'Cricket',           pb: 8,    avg: 5,   target: 7,   unit: 'rounds',sparkline: [] },
+  const [bobs27, setBobs27] = useState<number[]>(() => loadScores('bobs27', PRACTICE_DEFAULTS.bobs27));
+  const [atc, setAtc] = useState<number[]>(() => loadScores('atc', PRACTICE_DEFAULTS.atc));
+  const [t180, setT180] = useState<number[]>(() => loadScores('t180', PRACTICE_DEFAULTS.t180));
+  const [doubles, setDoubles] = useState<number[]>(() => loadScores('doubles', PRACTICE_DEFAULTS.doubles));
+  const [checkout, setCheckout] = useState<number[]>(() => loadScores('checkout', PRACTICE_DEFAULTS.checkout));
+  const [halveit, setHalveit] = useState<number[]>(() => loadScores('halveit', PRACTICE_DEFAULTS.halveit));
+  const [shanghai, setShanghai] = useState<number[]>(() => loadScores('shanghai', PRACTICE_DEFAULTS.shanghai));
+  const [cricket, setCricket] = useState<number[]>(() => loadScores('cricket', PRACTICE_DEFAULTS.cricket));
+
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.bobs27, JSON.stringify(bobs27)); }, [bobs27]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.atc, JSON.stringify(atc)); }, [atc]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.t180, JSON.stringify(t180)); }, [t180]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.doubles, JSON.stringify(doubles)); }, [doubles]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.checkout, JSON.stringify(checkout)); }, [checkout]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.halveit, JSON.stringify(halveit)); }, [halveit]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.shanghai, JSON.stringify(shanghai)); }, [shanghai]);
+  useEffect(() => { localStorage.setItem(PRACTICE_LS_KEYS.cricket, JSON.stringify(cricket)); }, [cricket]);
+
+  const [logOpen, setLogOpen] = useState<string | null>(null);
+  const [logValue, setLogValue] = useState<string>('');
+
+  const pb = (arr: number[], lower: boolean = false) => {
+    if (!arr.length) return 0;
+    return lower ? Math.min(...arr) : Math.max(...arr);
+  };
+  const avg = (arr: number[]) => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0;
+
+  const fmtTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  type GameCfg = {
+    key: string;
+    name: string;
+    scores: number[];
+    setScores: (v: number[]) => void;
+    target: string;
+    unit: string;
+    lowerIsBetter?: boolean;
+    displayValue: (n: number) => string;
+  };
+
+  const games: GameCfg[] = [
+    { key: 'bobs27',   name: "Bob's 27",         scores: bobs27,   setScores: setBobs27,   target: '100',    unit: 'pts',    displayValue: n => String(n) },
+    { key: 'atc',      name: 'Around the Clock', scores: atc,      setScores: setAtc,      target: '4:30',   unit: 'time',   lowerIsBetter: true, displayValue: fmtTime },
+    { key: 't180',     name: '180 Challenge',    scores: t180,     setScores: setT180,     target: '9',      unit: '180s',   displayValue: n => String(n) },
+    { key: 'doubles',  name: 'Doubles Round',    scores: doubles,  setScores: setDoubles,  target: '4:00',   unit: 'time',   lowerIsBetter: true, displayValue: fmtTime },
+    { key: 'checkout', name: 'Checkout Trainer', scores: checkout, setScores: setCheckout, target: '13/20',  unit: 'hits',   displayValue: n => `${n}/20` },
+    { key: 'halveit',  name: 'Halve It',         scores: halveit,  setScores: setHalveit,  target: '260',    unit: 'pts',    displayValue: n => String(n) },
+    { key: 'shanghai', name: 'Shanghai',         scores: shanghai, setScores: setShanghai, target: '130',    unit: 'pts',    displayValue: n => String(n) },
+    { key: 'cricket',  name: 'Cricket',          scores: cricket,  setScores: setCricket,  target: '7',      unit: 'rounds', displayValue: n => String(n) },
   ];
+
+  const submitLog = () => {
+    if (!logOpen) return;
+    const n = Number(logValue);
+    if (!Number.isFinite(n)) { setLogOpen(null); setLogValue(''); return; }
+    const g = games.find(x => x.key === logOpen);
+    if (g) g.setScores([n, ...g.scores].slice(0, 30));
+    setLogOpen(null);
+    setLogValue('');
+  };
+
+  const resetAll = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.confirm('Reset all practice game scores to the default demo data? This cannot be undone.')) return;
+    Object.values(PRACTICE_LS_KEYS).forEach(k => localStorage.removeItem(k));
+    setBobs27(PRACTICE_DEFAULTS.bobs27);
+    setAtc(PRACTICE_DEFAULTS.atc);
+    setT180(PRACTICE_DEFAULTS.t180);
+    setDoubles(PRACTICE_DEFAULTS.doubles);
+    setCheckout(PRACTICE_DEFAULTS.checkout);
+    setHalveit(PRACTICE_DEFAULTS.halveit);
+    setShanghai(PRACTICE_DEFAULTS.shanghai);
+    setCricket(PRACTICE_DEFAULTS.cricket);
+  };
+
+  const bobs27PB = pb(bobs27);
+  const bobs27Max = Math.max(...bobs27, 1);
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -2891,43 +2996,66 @@ function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
       </div>
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/60 border border-white/5 text-sm">
         <span className="text-base">📊</span>
-        <span className="text-gray-300"><strong className="text-white">4 sessions logged this week</strong> · 92 minutes average · Bob&apos;s 27 PB this week</span>
+        <span className="text-gray-300"><strong className="text-white">{bobs27.length} sessions logged</strong> · Bob&apos;s 27 PB: <strong className="text-white">{bobs27PB}</strong> · All scores saved locally</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {games.map((g, i) => (
-          <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="text-white font-medium">{g.name}</h3>
-                <div className="flex gap-4 mt-1 text-xs">
-                  <span className="text-gray-500">PB: <strong className="text-white">{g.pb}</strong></span>
-                  <span className="text-gray-500">Avg: <strong className="text-gray-300">{g.avg}</strong></span>
-                  <span className="text-gray-500">Target: <strong className="text-amber-400">{g.target}</strong></span>
+        {games.map(g => {
+          const last10 = g.scores.slice(0, 10);
+          const gameMax = Math.max(...g.scores, 1);
+          const pbVal = pb(g.scores, g.lowerIsBetter);
+          const avgVal = avg(g.scores);
+          return (
+            <div key={g.key} className="bg-gray-900/60 border border-white/5 rounded-xl p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-white font-medium">{g.name}</h3>
+                  <div className="flex gap-4 mt-1 text-xs">
+                    <span className="text-gray-500">PB: <strong className="text-white">{g.displayValue(pbVal)}</strong></span>
+                    <span className="text-gray-500">Avg: <strong className="text-gray-300">{g.unit === 'time' ? fmtTime(avgVal) : avgVal}</strong></span>
+                    <span className="text-gray-500">Target: <strong className="text-amber-400">{g.target}</strong></span>
+                  </div>
                 </div>
+                <button onClick={() => { setLogOpen(g.key); setLogValue(''); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 text-xs font-medium hover:bg-red-600/30">Log session</button>
               </div>
-              <button className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 text-xs font-medium hover:bg-red-600/30">Log session</button>
+              {logOpen === g.key && (
+                <div className="mb-3 p-3 rounded-lg bg-black/40 border border-white/10">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1.5">Log new score ({g.unit === 'time' ? 'seconds' : g.unit})</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={logValue}
+                      onChange={e => setLogValue(e.target.value)}
+                      placeholder="Enter score"
+                      autoFocus
+                      className="flex-1 bg-black/60 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder-gray-600 focus:border-red-500/60 focus:outline-none"
+                    />
+                    <button onClick={submitLog} className="px-3 py-1.5 rounded bg-red-600/30 text-red-300 border border-red-500/40 text-xs font-medium hover:bg-red-600/50">Confirm</button>
+                    <button onClick={() => { setLogOpen(null); setLogValue(''); }} className="px-3 py-1.5 rounded bg-gray-800 text-gray-400 border border-white/10 text-xs font-medium hover:bg-gray-700">Cancel</button>
+                  </div>
+                </div>
+              )}
+              {last10.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Last {last10.length} sessions</p>
+                  <div className="flex items-end gap-1 h-8">
+                    {last10.slice().reverse().map((v, j) => (
+                      <div key={j} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / gameMax) * 100}%` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            {g.sparkline.length > 0 && (
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Last 10 sessions</p>
-                <div className="flex items-end gap-1 h-8">
-                  {g.sparkline.map((v, j) => (
-                    <div key={j} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / 141) * 100}%` }} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
-        <h2 className="text-white font-medium mb-3">Bob&apos;s 27 — 30-session trend</h2>
+        <h2 className="text-white font-medium mb-3">Bob&apos;s 27 — last {Math.min(bobs27.length, 30)}-session trend</h2>
         <div className="flex items-end gap-1 h-24">
-          {[45, 52, 48, 63, 58, 71, 66, 78, 72, 85, 79, 91, 87, 83, 94, 88, 96, 92, 101, 97, 104, 98, 112, 108, 119, 115, 127, 123, 135, 141].map((v, i) => (
-            <div key={i} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / 141) * 100}%` }} />
+          {bobs27.slice(0, 30).slice().reverse().map((v, i) => (
+            <div key={i} className="flex-1 bg-red-500/60 rounded-sm" style={{ height: `${(v / bobs27Max) * 100}%` }} />
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-2">Personal best: <strong className="text-white">141</strong> · Trend: <strong className="text-green-400">↑ improving</strong></p>
+        <p className="text-xs text-gray-500 mt-2">Personal best: <strong className="text-white">{bobs27PB}</strong> · Sessions stored: <strong className="text-gray-300">{bobs27.length}</strong></p>
       </div>
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
         <h2 className="text-white font-medium mb-3">Coach targets (Marco)</h2>
@@ -2937,6 +3065,9 @@ function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
           <li>• 13/20 on Checkout Trainer — focus on 40, 32, 16 finishes</li>
           <li>• 9+ maximums on 180 Challenge</li>
         </ul>
+      </div>
+      <div className="flex justify-end">
+        <button onClick={resetAll} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 border border-white/10 text-xs font-medium hover:bg-gray-700 hover:text-white">↺ Reset to demo data</button>
       </div>
     </div>
   );
@@ -3901,11 +4032,11 @@ function EntryManagerView({ player: _player }: { player: DartsPlayer }) {
 }
 
 // ─── Pressure Analysis ────────────────────────────────────────────────────────
-function PressureAnalysisView({ player: _player }: { player: DartsPlayer }) {
+function PressureAnalysisView({ player }: { player: DartsPlayer }) {
   const comparisons = [
     { label: 'Match average',   standard: 97.8,  pressure: 94.2, unit: '' },
     { label: 'Checkout %',      standard: 41.2,  pressure: 33.8, unit: '%' },
-    { label: 'First 9 average', standard: 101.4, pressure: 97.1, unit: '' },
+    { label: 'First 9 average', standard: player.firstNineAverage, pressure: 97.1, unit: '' },
     { label: 'T20 accuracy',    standard: 68,    pressure: 61,   unit: '%' },
     { label: '180s per match',  standard: 4.2,   pressure: 3.1,  unit: '' },
   ];
@@ -4387,10 +4518,66 @@ function TourCardMonitorView({ player }: { player: DartsPlayer }) {
   );
 }
 
-export default function DartsPortalPage() {
+// Maps a snake_case Supabase row to the camelCase DartsPlayer interface used by views
+function mapSupabaseToDartsPlayer(row: Record<string, unknown>): DartsPlayer {
+  const r = row as Record<string, string | number | null | undefined>;
+  return {
+    name:                String(r.name ?? DEMO_PLAYER.name),
+    nickname:            String(r.nickname ?? DEMO_PLAYER.nickname),
+    nationality:         String(r.nationality ?? DEMO_PLAYER.nationality),
+    nationalityFlag:     String(r.flag ?? DEMO_PLAYER.nationalityFlag),
+    pdcRank:             Number(r.pdc_rank ?? DEMO_PLAYER.pdcRank),
+    orderOfMeritRank:    Number(r.order_of_merit_rank ?? DEMO_PLAYER.orderOfMeritRank),
+    threeDartAverage:    Number(r.three_dart_average ?? DEMO_PLAYER.threeDartAverage),
+    checkoutPercent:     Number(r.checkout_percent ?? DEMO_PLAYER.checkoutPercent),
+    oneEightiesPerLeg:   Number(r.one_eighties_per_leg ?? DEMO_PLAYER.oneEightiesPerLeg),
+    firstNineAverage:    Number(r.first_nine_average ?? DEMO_PLAYER.firstNineAverage),
+    highestCheckout:     Number(r.highest_checkout ?? DEMO_PLAYER.highestCheckout),
+    tourCard:            String(r.tour_card ?? DEMO_PLAYER.tourCard),
+    plan:                String(r.plan ?? DEMO_PLAYER.plan),
+    manager:             String(r.manager ?? DEMO_PLAYER.manager),
+    coach:               String(r.coach ?? DEMO_PLAYER.coach),
+    sponsor1:            String(r.sponsor_1 ?? DEMO_PLAYER.sponsor1),
+    sponsor2:            String(r.sponsor_2 ?? DEMO_PLAYER.sponsor2),
+    walkOnMusic:         String(r.walk_on_music ?? DEMO_PLAYER.walkOnMusic),
+    dartSetup:           DEMO_PLAYER.dartSetup, // structured field — keep demo value for now
+    careerEarnings:      Number(r.career_earnings ?? DEMO_PLAYER.careerEarnings),
+    thisYearEarnings:    Number(r.this_year_earnings ?? DEMO_PLAYER.thisYearEarnings),
+    careerTitles:        Number(r.career_titles ?? DEMO_PLAYER.careerTitles),
+    majorTitles:         Number(r.major_titles ?? DEMO_PLAYER.majorTitles),
+  };
+}
+
+export default function DartsPortalPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const player = DEMO_PLAYER;
+  const [livePlayer, setLivePlayer] = useState<DartsPlayer | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!url || !key) return;
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(url, key);
+        const { data, error } = await supabase
+          .from('darts_players')
+          .select('*')
+          .eq('slug', slug)
+          .single();
+        if (cancelled) return;
+        if (data && !error) {
+          setLivePlayer(mapSupabaseToDartsPlayer(data));
+        }
+      } catch { /* silent — fall back to demo */ }
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  const player: DartsPlayer = livePlayer || DEMO_PLAYER;
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
 
   const renderView = () => {
