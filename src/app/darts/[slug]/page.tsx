@@ -30,6 +30,18 @@ interface DartsPlayer {
   majorTitles: number;
 }
 
+// ─── FEATURE GATING ───────────────────────────────────────────────────────────
+// Pro plan unlocks advanced views. Essentials users see a locked CTA.
+const PRO_FEATURES = [
+  'tour-card-monitor', 'pressure-analysis', 'dartboard-heatmap',
+  'merit-forecaster', 'walk-on-music', 'dartconnect', 'pdclive',
+  'performance-rating', 'prize-forecaster', 'nine-dart-tracker',
+];
+const isPro = (plan: string) =>
+  plan.toLowerCase().includes('premier')
+  || plan.toLowerCase().includes('pro')
+  || plan.toLowerCase().includes('279');
+
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',         label: 'Dashboard',             icon: '🏠', group: 'OVERVIEW' },
@@ -50,11 +62,18 @@ const SIDEBAR_ITEMS = [
   { id: 'practicelog',       label: 'Practice Log',          icon: '📋', group: 'PERFORMANCE' },
   { id: 'matchreports',      label: 'Match Reports',         icon: '📄', group: 'PERFORMANCE' },
   { id: 'video',             label: 'Video Library',         icon: '🎬', group: 'PERFORMANCE' },
+  { id: 'performance-rating',label: 'Performance Rating',    icon: '⭐', group: 'PERFORMANCE' },
+  { id: 'nine-dart-tracker', label: 'Nine-Dart Tracker',     icon: '⚡', group: 'PERFORMANCE' },
+  { id: 'premier-league',    label: 'Premier League',        icon: '🏆', group: 'PERFORMANCE' },
+  { id: 'world-series',      label: 'World Series',          icon: '🌍', group: 'PERFORMANCE' },
   { id: 'teamhub',           label: 'Team Hub',              icon: '👥', group: 'TEAM' },
   { id: 'physio-recovery',   label: 'Physio & Recovery',     icon: '⚕️', group: 'TEAM' },
   { id: 'mental',            label: 'Mental Performance',    icon: '🧠', group: 'TEAM' },
   { id: 'walk-on-music',     label: 'Walk-on Music',         icon: '🎤', group: 'TEAM' },
   { id: 'pairs-events',      label: 'Pairs & Team Events',   icon: '👥', group: 'TEAM' },
+  { id: 'team-comms',        label: 'Team Comms',            icon: '💬', group: 'TEAM' },
+  { id: 'fan-engagement',    label: 'Fan Engagement',        icon: '📣', group: 'TEAM' },
+  { id: 'nutrition-log',     label: 'Nutrition & Conditioning', icon: '🥗', group: 'TEAM' },
   { id: 'sponsorship',       label: 'Sponsorship',           icon: '🤝', group: 'COMMERCIAL' },
   { id: 'exhibitions',       label: 'Exhibition Manager',    icon: '🎪', group: 'COMMERCIAL' },
   { id: 'media',             label: 'Media & Content',       icon: '📱', group: 'COMMERCIAL' },
@@ -67,6 +86,9 @@ const SIDEBAR_ITEMS = [
   { id: 'equipment',         label: 'Equipment Setup',       icon: '📦', group: 'OPERATIONS' },
   { id: 'academy-dev',       label: 'Academy & Dev',         icon: '🏅', group: 'OPERATIONS' },
   { id: 'practice-games',    label: 'Practice Games',        icon: '#️⃣', group: 'OPERATIONS' },
+  { id: 'board-booking',     label: 'Practice Board Booking',icon: '📍', group: 'OPERATIONS' },
+  { id: 'accreditations',    label: 'Accreditations',        icon: '🛡️', group: 'OPERATIONS' },
+  { id: 'county-darts',      label: 'County Darts',          icon: '🥇', group: 'OPERATIONS' },
   { id: 'career',            label: 'Career Planning',       icon: '🚀', group: 'OPERATIONS' },
   { id: 'datahub',           label: 'Data Hub',              icon: '📡', group: 'OPERATIONS' },
   { id: 'settings',          label: 'Settings',              icon: '⚙️', group: 'OPERATIONS' },
@@ -409,11 +431,94 @@ function DashboardView({ player, onNavigate }: { player: DartsPlayer; onNavigate
 }
 
 // ─── MORNING BRIEFING VIEW ────────────────────────────────────────────────────
-function MorningBriefingView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function MorningBriefingView({ player: _player }: { player: DartsPlayer }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const briefingItems = [
+    { id: 'match', icon: '🎯', title: "Tonight's match", urgent: true,
+      summary: 'European Championship R1 vs Gerwyn Price (#7) · 20:00 · Dortmund · Board 4',
+      detail: "H2H: Jake leads 8–3. Price averages 96.2 this season, starts slowly. Jake's avg vs Price: 99.4. Win probability: 62%. Prize if win: £11,000. → Match Prep has full briefing ready." },
+    { id: 'oom', icon: '📊', title: 'Order of Merit', urgent: false,
+      summary: '#19 PDC · £687,420 · £12,400 drops off this week',
+      detail: 'You need to earn £12,400 this week to hold #19. A R1 win tonight (£11,000) plus any PC earnings will cover the drop. Buffer above 64th place: £189,420 — you are safe.' },
+    { id: 'messages', icon: '💬', title: 'Team messages', urgent: false,
+      summary: '4 messages — Marco, James, Dr. Singh, Sarah',
+      detail: 'Marco: "Focus on T20 cluster tightness — pulling left under pressure." James: "Red Dragon renewal call Thursday 14:00." Dr. Singh: "Shoulder treatment confirmed 08:30 tomorrow." Sarah: "Pre-match routine updated — check Match Prep."' },
+    { id: 'weather', icon: '🌤️', title: 'Dortmund weather', urgent: false,
+      summary: '14°C · Overcast · Wind 8km/h SW',
+      detail: 'Venue: Westfalenhallen, Dortmund. Indoor event — weather does not affect play. Travel tip: light jacket for evening travel to venue.' },
+    { id: 'sponsors', icon: '🤝', title: 'Sponsor obligations', urgent: true,
+      summary: 'Red Dragon content shoot today 16:00',
+      detail: 'Barrel review video required before travel to Dortmund. 2 posts due this week total. Contract renewal in 23 days — James to call Thursday. Paddy Power ambassador post due Friday.' },
+    { id: 'entries', icon: '📋', title: 'Entry deadlines', urgent: true,
+      summary: 'Prague Open closes Apr 19 — 6 days',
+      detail: 'You are auto-qualified via OoM #19. Entry is recommended — Prague has been good for you historically (avg 99.2 in 2024). German Masters deadline Apr 26. Both require manual confirmation in Entry Manager.' },
+  ];
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-medium text-white">Morning Briefing</h1>
+          <p className="text-gray-400 text-sm mt-1">Tuesday, April 8 2025 · PDC European Championship week</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span className="w-2 h-2 rounded-full bg-green-500" />Briefing ready · 06:30
+        </div>
+      </div>
+      <div className="bg-gradient-to-r from-red-950/40 to-gray-900/40 rounded-xl border border-red-500/20 p-5">
+        <p className="text-xs text-red-400 font-medium uppercase tracking-wide mb-3">✦ AI Morning Summary</p>
+        <p className="text-gray-200 text-sm leading-relaxed">Big night ahead, Jake. You play Gerwyn Price at 20:00 in Dortmund — your H2H is 8–3 in your favour and you average 99.4 against him. Price starts slowly so applying pressure in the first three legs is key. Watch your doubles under pressure — your checkout % drops 7.4 points in deciding legs. The Red Dragon content shoot at 16:00 means you need to leave for the venue by 17:30 at the latest. Prague Open entry closes in 6 days — confirm with James today.</p>
+      </div>
+      <div className="space-y-2">
+        {briefingItems.map(item => (
+          <div key={item.id} className={`rounded-xl border transition-all ${expanded === item.id ? 'bg-gray-900/80 border-white/10' : 'bg-gray-900/40 border-white/5'}`}>
+            <button onClick={() => setExpanded(expanded === item.id ? null : item.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+              <span className="text-lg">{item.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm font-medium">{item.title}</span>
+                  {item.urgent && <span className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">Action</span>}
+                </div>
+                <p className="text-gray-500 text-xs mt-0.5 truncate">{item.summary}</p>
+              </div>
+              <ChevronRight className={`w-4 h-4 text-gray-600 flex-shrink-0 transition-transform ${expanded === item.id ? 'rotate-90' : ''}`} />
+            </button>
+            {expanded === item.id && (
+              <div className="px-4 pb-4 pt-0">
+                <div className="border-t border-white/5 pt-3">
+                  <p className="text-gray-300 text-sm leading-relaxed">{item.detail}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div>
+        <h2 className="text-white font-medium mb-3">Today at a glance</h2>
+        <div className="space-y-1">
+          {[
+            { time: '10:00', event: 'Practice session — doubles finishing (90 min)', urgent: false },
+            { time: '12:30', event: 'Physio: shoulder treatment (Dr. Singh)', urgent: false },
+            { time: '14:00', event: 'Red Dragon content shoot — barrel review video', urgent: true },
+            { time: '16:00', event: 'Travel to Dortmund (flight BA1234)', urgent: false },
+            { time: '20:00', event: 'PDC European Championship R1 vs G. Price', urgent: true },
+          ].map((item, i) => (
+            <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${item.urgent ? 'bg-red-950/20' : ''}`}>
+              <span className="text-gray-500 w-10 flex-shrink-0 text-xs">{item.time}</span>
+              <span className={item.urgent ? 'text-red-300' : 'text-gray-300'}>{item.event}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-gray-600 text-center">Briefing generated at 06:30 · Connect Claude API for AI-personalised audio briefing</p>
+    </div>
+  );
+}
+
+function _OldMorningBriefingView_REMOVED({ onNavigate: _onNavigate }: { onNavigate?: (id: string) => void }) {
   const [briefingTab, setBriefingTab] = useState<'player' | 'manager' | 'sponsor'>('player');
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+      <div />
       <SectionHeader icon="🌅" title="AI Morning Briefing" subtitle="Daily intelligence for Jake Morrison and team — European Championship week." />
       <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
         {(['player', 'manager', 'sponsor'] as const).map(t => (
@@ -2720,10 +2825,35 @@ function MatchPrepView({ player: _player }: { player: DartsPlayer }) {
     'Walk calmly between boards — match Price\'s slow tempo',
   ];
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-medium text-white">Match Prep</h1>
-        <p className="text-gray-400 text-sm mt-1">Tonight's tactical plan — PDC European Championship R1</p>
+    <div className="p-6 space-y-6 match-prep-content">
+      <style dangerouslySetInnerHTML={{ __html: `
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, nav, .quick-actions, .print\\:hidden { display: none !important; }
+  .match-prep-content { max-width: 100% !important; padding: 0 !important; }
+  .bg-gray-900\\/60, .bg-gray-800\\/40 { background: #f5f5f5 !important; border: 1px solid #ddd !important; }
+  .text-white { color: black !important; }
+  .text-gray-400, .text-gray-300, .text-gray-500 { color: #555 !important; }
+  .text-red-400, .text-red-300 { color: #c41e3a !important; }
+  .text-green-400 { color: #166534 !important; }
+  .border-white\\/5 { border-color: #ddd !important; }
+  h1 { font-size: 18pt !important; }
+  h2 { font-size: 13pt !important; }
+  p, span { font-size: 10pt !important; }
+}
+      ` }} />
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-medium text-white">Match Prep</h1>
+          <p className="text-gray-400 text-sm mt-1">Tonight&apos;s tactical plan — PDC European Championship R1</p>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="px-3 py-1.5 bg-gray-800/60 border border-white/5 text-gray-400 text-xs rounded-lg hover:text-gray-200 flex items-center gap-1.5 print:hidden"
+        >
+          <FileText className="w-3 h-3" />
+          Print briefing
+        </button>
       </div>
       <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
         <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">TONIGHT'S MATCH</div>
@@ -4386,11 +4516,37 @@ function TourCardMonitorView({ player }: { player: DartsPlayer }) {
   let runningTotal = currentOom;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 tour-card-content">
+      <style dangerouslySetInnerHTML={{ __html: `
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, nav, .quick-actions, .print\\:hidden { display: none !important; }
+  .tour-card-content { max-width: 100% !important; padding: 0 !important; }
+  .bg-gray-900\\/60, .bg-gray-800\\/40 { background: #f5f5f5 !important; border: 1px solid #ddd !important; }
+  .bg-green-950\\/40 { background: #f0fdf4 !important; border: 1px solid #bbf7d0 !important; }
+  .text-white { color: black !important; }
+  .text-gray-400, .text-gray-300, .text-gray-500 { color: #555 !important; }
+  .text-red-400, .text-red-300 { color: #c41e3a !important; }
+  .text-green-400, .text-green-300 { color: #166534 !important; }
+  .border-white\\/5, .border-gray-800 { border-color: #ddd !important; }
+  h1 { font-size: 18pt !important; }
+  h2 { font-size: 13pt !important; }
+  p, span { font-size: 10pt !important; }
+}
+      ` }} />
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-medium text-white">Tour Card Monitor</h1>
-        <p className="text-gray-400 text-sm mt-1">PDC Order of Merit · Rolling 2-year window · Tour card held by top 64</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-medium text-white">Tour Card Monitor</h1>
+          <p className="text-gray-400 text-sm mt-1">PDC Order of Merit · Rolling 2-year window · Tour card held by top 64</p>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="px-3 py-1.5 bg-gray-800/60 border border-white/5 text-gray-400 text-xs rounded-lg hover:text-gray-200 flex items-center gap-1.5 print:hidden"
+        >
+          <FileText className="w-3 h-3" />
+          Export PDF
+        </button>
       </div>
 
       {/* Status banner */}
@@ -4581,9 +4737,25 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
 
   const renderView = () => {
+    // Pro-only feature gate — demo player is on Premier League so all pass.
+    if (PRO_FEATURES.includes(activeSection) && !isPro(player.plan)) {
+      return (
+        <div className="p-8 flex flex-col items-center justify-center min-h-96">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-medium text-white mb-2">Pro feature</h2>
+          <p className="text-gray-400 text-sm text-center max-w-xs mb-6">
+            {activeSection.replace(/-/g, ' ')} is available on the Premier League plan (£279/mo).
+          </p>
+          <button className="px-6 py-3 bg-red-600/20 border border-red-500/40 text-red-300 text-sm rounded-xl hover:bg-red-600/30 transition-colors">
+            Upgrade to Premier League &rarr;
+          </button>
+          <p className="text-gray-600 text-xs mt-3">Currently on: {player.plan || 'Essentials'}</p>
+        </div>
+      );
+    }
     switch (activeSection) {
       case 'dashboard':     return <DashboardView player={player} onNavigate={setActiveSection} />;
-      case 'morning':       return <MorningBriefingView onNavigate={setActiveSection} />;
+      case 'morning':       return <MorningBriefingView player={player} />;
       case 'orderofmerit':  return <OrderOfMeritView onNavigate={setActiveSection} />;
       case 'schedule':      return <TournamentScheduleView onNavigate={setActiveSection} />;
       case 'averages':      return <ThreeDartAverageView player={player} onNavigate={setActiveSection} />;
@@ -4697,7 +4869,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
+          <div className="flex-1 overflow-y-auto p-6 pb-16 md:pb-0">{renderView()}</div>
 
           {/* Right Sidebar — Player Card */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
@@ -4762,6 +4934,26 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
           </div>
         </div>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-950/95 border-t border-white/10 flex items-center justify-around py-2 md:hidden">
+        {[
+          { id: 'dashboard',         icon: '🏠',  label: 'Home' },
+          { id: 'live-scores',       icon: '🔴',  label: 'Live' },
+          { id: 'merit-forecaster',  icon: '📈',  label: 'OoM'  },
+          { id: 'match-prep',        icon: '⚡',  label: 'Prep' },
+          { id: 'tour-card-monitor', icon: '🛡️', label: 'Card' },
+        ].map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${activeSection === item.id ? 'text-red-400' : 'text-gray-600 hover:text-gray-400'}`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="text-[10px] font-medium">{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
