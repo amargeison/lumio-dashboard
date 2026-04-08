@@ -314,6 +314,80 @@ function getExpiryUrgency(expiresStr: string): { daysLeft: number; color: string
   return { daysLeft, color: 'gray', label: 'Upcoming' }
 }
 
+function SeasonIntelligenceStrip() {
+  // Results: T14, T6, MC, T3, T31, T8 (most-recent last)
+  const results: Array<{ label: string; cutMade: boolean }> = [
+    { label: 'T14', cutMade: true },
+    { label: 'T6',  cutMade: true },
+    { label: 'MC',  cutMade: false },
+    { label: 'T3',  cutMade: true },
+    { label: 'T31', cutMade: true },
+    { label: 'T8',  cutMade: true },
+  ];
+  const cutsMade = results.filter(r => r.cutMade).length;
+  const cutPct = Math.round((cutsMade / results.length) * 100);
+  // Consecutive cuts since last MC (working backwards from most recent)
+  let streak = 0;
+  for (let i = results.length - 1; i >= 0; i--) {
+    if (results[i].cutMade) streak++;
+    else break;
+  }
+  const prize = 367000;
+  const cost = 289000;
+  const ratio = Math.round((prize / cost) * 100);
+  return (
+    <div>
+      <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">📊 Season Intelligence</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Cut-Made % */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+          <div className="text-xs text-gray-500 mb-1">Cut-Made %</div>
+          <div className="text-2xl font-black text-yellow-400">{cutPct}%</div>
+          <div className="text-xs text-gray-500 mb-2">{cutsMade} of last {results.length} events</div>
+          <div className="flex items-center gap-1.5">
+            {results.map((r, i) => (
+              <span key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${r.cutMade ? 'bg-green-600/20 text-green-300 border border-green-500/30' : 'bg-red-600/20 text-red-300 border border-red-500/30'}`}>
+                {r.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Consecutive Cuts */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+          <div className="text-xs text-gray-500 mb-1">Consecutive Cuts</div>
+          <div className="text-2xl font-black text-teal-400">{streak}</div>
+          <div className="text-xs text-gray-500 mb-2">streak since US Open MC</div>
+          <div className="flex items-center gap-1">
+            {results.map((r, i) => (
+              <span key={i} className={`w-2.5 h-2.5 rounded-full ${r.cutMade ? 'bg-green-500' : 'bg-red-500'}`} />
+            ))}
+          </div>
+        </div>
+
+        {/* Back Nine Avg */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+          <div className="text-xs text-gray-500 mb-1">Back Nine Avg</div>
+          <div className="text-2xl font-black text-orange-400">34.2</div>
+          <div className="text-xs text-gray-500 mb-2">vs 33.8 front · +0.4 deficit</div>
+          <div className="text-[10px] text-gray-600 leading-tight">Back nine scoring weakness — review 9th, 12th, 15th hole strategies</div>
+        </div>
+
+        {/* Prize / Cost ratio */}
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+          <div className="text-xs text-gray-500 mb-1">Prize / Cost Ratio</div>
+          <div className="text-2xl font-black text-green-400">{ratio}%</div>
+          <div className="text-xs text-gray-500 mb-2">£{(prize/1000).toFixed(0)}k earned vs £{(cost/1000).toFixed(0)}k costs</div>
+          <div className="h-1.5 rounded-full bg-gray-800 overflow-hidden mb-1">
+            <div className="h-full rounded-full bg-green-500" style={{ width: `${Math.min(100, ratio / 2)}%` }} />
+          </div>
+          <div className="text-[10px] text-gray-600 leading-tight">Above 100% = self-sustaining. Target 200%+</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection: (s: string) => void }) {
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
@@ -456,13 +530,16 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
           ))}
         </div>
       </div>
+
+      {/* Season Intelligence Strip */}
+      <SeasonIntelligenceStrip />
     </div>
   );
 }
 
 // ─── Round Prep (with AI post-round debrief) ─────────────────────────────────
 function RoundPrepView() {
-  const [tab, setTab] = useState<'prep'|'debrief'>('prep');
+  const [tab, setTab] = useState<'prep'|'debrief'|'scorecard'>('prep');
   const [form, setForm] = useState({
     tournament: 'BMW International Open',
     round: 'R1',
@@ -529,10 +606,10 @@ function RoundPrepView() {
       <SectionHeader icon="🎯" title="Round Prep" subtitle="Pre-round game plan and post-round AI debrief." />
 
       <div className="flex gap-2 border-b border-gray-800">
-        {(['prep', 'debrief'] as const).map(t => (
+        {(['prep', 'debrief', 'scorecard'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'text-green-400 border-green-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}>
-            {t === 'prep' ? 'Round Prep' : 'Post-Round Debrief'}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'text-green-300 border-green-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}>
+            {t === 'prep' ? 'Round Prep' : t === 'debrief' ? 'Post-Round Debrief' : 'Scorecard Entry'}
           </button>
         ))}
       </div>
@@ -643,6 +720,183 @@ function RoundPrepView() {
           </div>
         </div>
       )}
+
+      {tab === 'scorecard' && <ScorecardEntry />}
+    </div>
+  );
+}
+
+type ScoreRow = { par: number; yards: number; score: number; fairway: 'Y' | 'N' | 'N-A'; gir: 'Y' | 'N'; putts: number; notes: string };
+type SavedRound = { date: string; rows: ScoreRow[]; totals: { total: number; vsPar: number } };
+
+function ScorecardEntry() {
+  const initialPars = [4,5,4,3,4,4,3,5,4,4,4,3,5,4,4,5,3,4];
+  const initialYards = [412, 556, 398, 184, 428, 445, 162, 545, 434, 408, 440, 198, 588, 432, 441, 565, 172, 436];
+  const buildInitial = (): ScoreRow[] => initialPars.map((par, i) => ({
+    par,
+    yards: initialYards[i],
+    score: 0,
+    fairway: par === 3 ? 'N-A' : 'N',
+    gir: 'N',
+    putts: 0,
+    notes: '',
+  }));
+  const [rows, setRows] = useState<ScoreRow[]>(buildInitial);
+  const [toast, setToast] = useState<string | null>(null);
+  const [saved, setSaved] = useState<SavedRound[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('lumio_golf_scorecards');
+      if (raw) setSaved(JSON.parse(raw) as SavedRound[]);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function update<K extends keyof ScoreRow>(idx: number, key: K, val: ScoreRow[K]) {
+    setRows(rs => rs.map((r, i) => i === idx ? { ...r, [key]: val } : r));
+  }
+
+  const front9 = rows.slice(0, 9).reduce((s, r) => s + (r.score || 0), 0);
+  const back9 = rows.slice(9).reduce((s, r) => s + (r.score || 0), 0);
+  const total = front9 + back9;
+  const vsPar = total - 72;
+  const vsParStr = total === 0 ? '–' : vsPar === 0 ? 'E' : vsPar > 0 ? `+${vsPar}` : `${vsPar}`;
+  const fairwayOpps = rows.filter(r => r.fairway !== 'N-A').length;
+  const fairwaysHit = rows.filter(r => r.fairway === 'Y').length;
+  const girCount = rows.filter(r => r.gir === 'Y').length;
+  const totalPutts = rows.reduce((s, r) => s + (r.putts || 0), 0);
+  const avgPuttsPerGir = girCount > 0 ? (totalPutts / girCount).toFixed(1) : '–';
+
+  function saveRound() {
+    const round: SavedRound = {
+      date: new Date().toISOString(),
+      rows,
+      totals: { total, vsPar },
+    };
+    try {
+      const raw = localStorage.getItem('lumio_golf_scorecards');
+      const existing: SavedRound[] = raw ? JSON.parse(raw) : [];
+      const next = [...existing, round];
+      localStorage.setItem('lumio_golf_scorecards', JSON.stringify(next));
+      setSaved(next);
+      setToast('✓ Round saved to local storage');
+      setTimeout(() => setToast(null), 2000);
+    } catch {
+      setToast('⚠️ Failed to save');
+      setTimeout(() => setToast(null), 2000);
+    }
+  }
+
+  function loadRound(idx: number) {
+    if (idx < 0 || idx >= saved.length) return;
+    setRows(saved[idx].rows);
+  }
+
+  const cellInp = 'w-full bg-[#0d0f1a] border border-gray-800 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-green-600';
+
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-sm font-bold text-white">Hole-by-Hole Scorecard</h3>
+        <div className="flex items-center gap-2">
+          <select
+            onChange={e => loadRound(parseInt(e.target.value, 10))}
+            defaultValue=""
+            className="bg-[#0d0f1a] border border-gray-800 rounded px-2 py-1 text-xs text-gray-300"
+          >
+            <option value="" disabled>Load previous…</option>
+            {saved.map((r, i) => (
+              <option key={i} value={i}>
+                {new Date(r.date).toLocaleDateString()} — {r.totals.vsPar === 0 ? 'E' : r.totals.vsPar > 0 ? `+${r.totals.vsPar}` : r.totals.vsPar}
+              </option>
+            ))}
+          </select>
+          <button onClick={saveRound} className="bg-green-600/20 border border-green-500/40 text-green-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-green-600/30 transition-colors">
+            Save Round
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800">
+              <th className="text-left py-1 px-2">Hole</th>
+              <th className="text-left py-1 px-2">Par</th>
+              <th className="text-left py-1 px-2">Yards</th>
+              <th className="text-left py-1 px-2">Score</th>
+              <th className="text-left py-1 px-2">Fairway</th>
+              <th className="text-left py-1 px-2">GIR</th>
+              <th className="text-left py-1 px-2">Putts</th>
+              <th className="text-left py-1 px-2">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="text-sm py-1 px-2 text-gray-400">{i + 1}</td>
+                <td className="text-sm py-1 px-2"><input type="number" value={r.par} onChange={e => update(i, 'par', parseInt(e.target.value, 10) || 0)} className={`${cellInp} w-14`} /></td>
+                <td className="text-sm py-1 px-2"><input type="number" value={r.yards} onChange={e => update(i, 'yards', parseInt(e.target.value, 10) || 0)} className={`${cellInp} w-20`} /></td>
+                <td className="text-sm py-1 px-2"><input type="number" value={r.score || ''} onChange={e => update(i, 'score', parseInt(e.target.value, 10) || 0)} className={`${cellInp} w-14`} /></td>
+                <td className="text-sm py-1 px-2">
+                  <div className="flex gap-1">
+                    {(['Y','N','N-A'] as const).map(opt => (
+                      <button key={opt} onClick={() => update(i, 'fairway', opt)}
+                        className={`text-[10px] px-1.5 py-0.5 rounded border ${r.fairway === opt ? 'bg-green-600/20 border-green-500/40 text-green-300' : 'border-gray-800 text-gray-500'}`}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </td>
+                <td className="text-sm py-1 px-2">
+                  <div className="flex gap-1">
+                    {(['Y','N'] as const).map(opt => (
+                      <button key={opt} onClick={() => update(i, 'gir', opt)}
+                        className={`text-[10px] px-1.5 py-0.5 rounded border ${r.gir === opt ? 'bg-green-600/20 border-green-500/40 text-green-300' : 'border-gray-800 text-gray-500'}`}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </td>
+                <td className="text-sm py-1 px-2"><input type="number" min={1} max={4} value={r.putts || ''} onChange={e => update(i, 'putts', parseInt(e.target.value, 10) || 0)} className={`${cellInp} w-14`} /></td>
+                <td className="text-sm py-1 px-2"><input type="text" value={r.notes} onChange={e => update(i, 'notes', e.target.value)} className={`${cellInp} min-w-[140px]`} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-gray-800">
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Front / Back / Total</div>
+          <div className="text-sm text-white font-medium">{front9} / {back9} / {total}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">vs Par</div>
+          <div className="text-sm text-green-300 font-medium">{vsParStr}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Fairways</div>
+          <div className="text-sm text-white font-medium">{fairwaysHit}/{fairwayOpps}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">GIR</div>
+          <div className="text-sm text-white font-medium">{girCount}/18</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Total Putts</div>
+          <div className="text-sm text-white font-medium">{totalPutts}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Avg Putts / GIR</div>
+          <div className="text-sm text-white font-medium">{avgPuttsPerGir}</div>
+        </div>
+      </div>
+
+      <div className="text-[11px] text-gray-500 italic">Saved rounds feed into your SG calculations and Practice Log.</div>
+      {toast && <div className="text-xs text-green-300">{toast}</div>}
     </div>
   );
 }
@@ -954,7 +1208,186 @@ function OWGRView({ player }: { player: GolfPlayer }) {
   );
 }
 
+type OptimiserResult = {
+  must_play: { event: string; reason: string }[];
+  consider_skipping: { event: string; reason: string }[];
+  season_strategy: string;
+};
+
+function ScheduleOptimiser() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<OptimiserResult | null>(null);
+
+  async function generate() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
+          messages: [{
+            role: 'user',
+            content: 'Optimise the tournament schedule for James Harrington. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: BMW International 8.1, BMW PGA 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: BMW International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
+          }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text || '';
+      const s = text.indexOf('{');
+      const e = text.lastIndexOf('}');
+      if (s === -1 || e === -1) throw new Error('No JSON in response');
+      const parsed = JSON.parse(text.slice(s, e + 1)) as OptimiserResult;
+      setResult(parsed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between p-4">
+        <span className="text-sm font-bold text-white">🤖 AI Schedule Optimiser</span>
+        <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-4 border-t border-gray-800 pt-4">
+          <p className="text-xs text-gray-400">Lumio AI weighs course fit, current form, Race to Dubai cut math, and fatigue load to recommend which events James should prioritise — and which to skip.</p>
+          <button onClick={generate} disabled={loading} className="bg-green-600/20 border border-green-500/40 text-green-300 text-xs font-semibold px-3 py-2 rounded hover:bg-green-600/30 disabled:opacity-50 transition-colors">
+            {loading ? 'Generating…' : 'Generate Recommendations'}
+          </button>
+          {error && <div className="text-red-400 text-xs">⚠️ {error}</div>}
+          {result && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-teal-900/30 to-green-900/20 border border-teal-600/30 rounded-lg p-3 italic text-sm text-teal-100">
+                &quot;{result.season_strategy}&quot;
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Must Play</div>
+                <div className="space-y-2">
+                  {result.must_play.map((m, i) => (
+                    <div key={i} className="bg-teal-900/15 border border-teal-600/30 rounded-lg p-3">
+                      <div className="text-sm font-semibold text-white">{m.event}</div>
+                      <div className="text-xs text-gray-400 mt-1">{m.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Consider Skipping</div>
+                <div className="space-y-2">
+                  {result.consider_skipping.map((m, i) => (
+                    <div key={i} className="bg-gray-900/40 border border-gray-700/50 rounded-lg p-3">
+                      <div className="text-sm font-semibold text-white">{m.event}</div>
+                      <div className="text-xs text-gray-500 mt-1">{m.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Peer = {
+  name: string;
+  flag: string;
+  owgr: number;
+  r2d_pos: number;
+  r2d_pts: number;
+  last5: string[];
+  trend: 'up' | 'down' | 'flat';
+};
+
+const PEERS: Peer[] = [
+  { name: 'A. Rozner',           flag: '🇫🇷', owgr: 82, r2d_pos: 38, r2d_pts: 1380, last5: ['T8','T22','MC','T15','T4'], trend: 'up' },
+  { name: 'M. Schmid',           flag: '🇩🇪', owgr: 84, r2d_pos: 40, r2d_pts: 1310, last5: ['MC','T18','T6','T29','MC'], trend: 'flat' },
+  { name: 'H. Porteous',         flag: '🇿🇦', owgr: 89, r2d_pos: 46, r2d_pts: 1090, last5: ['T12','MC','T8','T33','T11'], trend: 'up' },
+  { name: 'J. Janewattananond',  flag: '🇹🇭', owgr: 91, r2d_pos: 47, r2d_pts: 1050, last5: ['T5','T19','T8','MC','T14'], trend: 'down' },
+  { name: 'J. Tarres',           flag: '🇪🇸', owgr: 93, r2d_pos: 49, r2d_pts: 990,  last5: ['T30','T11','MC','T8','T22'], trend: 'flat' },
+  { name: 'R. Ramsay',           flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', owgr: 95, r2d_pos: 51, r2d_pts: 930, last5: ['MC','MC','T14','T6','T28'], trend: 'down' },
+];
+
+const JAMES_OWGR = 87;
+const JAMES_R2D_PTS = 1250;
+
+function CompetitorTracker() {
+  function chipClass(r: string): string {
+    if (r === 'MC') return 'bg-red-900/30 border-red-700/40 text-red-300';
+    if (r.startsWith('T')) {
+      const n = parseInt(r.slice(1), 10);
+      return n <= 10 ? 'bg-green-900/30 border-green-700/40 text-green-300' : 'bg-yellow-900/30 border-yellow-700/40 text-yellow-300';
+    }
+    return 'bg-gray-800 border-gray-700 text-gray-400';
+  }
+  function trendArrow(t: 'up' | 'down' | 'flat'): { sym: string; cls: string } {
+    if (t === 'up')   return { sym: '↑', cls: 'text-green-400' };
+    if (t === 'down') return { sym: '↓', cls: 'text-red-400' };
+    return { sym: '→', cls: 'text-gray-500' };
+  }
+  return (
+    <div className="space-y-4">
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+        <div className="text-sm text-gray-300">You are <span className="text-green-300 font-semibold">#43</span> in Race to Dubai. <span className="text-white">3 peers</span> are ahead of you in the standings. <span className="text-yellow-300">Tarres is 7 pts behind the cut line</span> — worth watching.</div>
+      </div>
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-left p-3">OWGR</th>
+              <th className="text-left p-3">R2D Pos</th>
+              <th className="text-left p-3">R2D Pts</th>
+              <th className="text-left p-3">Gap</th>
+              <th className="text-left p-3">Last 5</th>
+              <th className="text-left p-3">Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PEERS.map(p => {
+              const owgrCls = p.owgr < JAMES_OWGR ? 'text-green-400' : 'text-red-400';
+              const gap = p.r2d_pts - JAMES_R2D_PTS;
+              const gapStr = gap >= 0 ? `+${gap} pts above` : `${gap} pts below`;
+              const gapCls = gap >= 0 ? 'text-green-400' : 'text-red-400';
+              const tr = trendArrow(p.trend);
+              return (
+                <tr key={p.name} className="border-b border-gray-800/50 hover:bg-gray-900/30">
+                  <td className="p-3 text-gray-200"><span className="mr-2">{p.flag}</span>{p.name}</td>
+                  <td className={`p-3 font-medium ${owgrCls}`}>#{p.owgr}</td>
+                  <td className="p-3 text-gray-300">#{p.r2d_pos}</td>
+                  <td className="p-3 text-gray-400">{p.r2d_pts}</td>
+                  <td className={`p-3 text-xs font-medium ${gapCls}`}>{gapStr}</td>
+                  <td className="p-3">
+                    <div className="flex gap-1">
+                      {p.last5.map((r, i) => (
+                        <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded border ${chipClass(r)}`}>{r}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className={`p-3 text-base ${tr.cls}`}>{tr.sym}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ScheduleView() {
+  const [tab, setTab] = useState<'calendar' | 'competitors'>('calendar');
   const calendar = [
     { date: '3–6 Jul',   event: 'BMW International Open',         tier: 'DP World Tour',  venue: 'Golfclub München Eichenried, Munich',    status: 'active',   entered: true, prize: '$4.5M' },
     { date: '10–13 Jul', event: 'Estrella Damm N.A. Challenge',   tier: 'DP World Tour',  venue: 'Club de Golf Terramar, Barcelona',         status: 'upcoming', entered: true, prize: '$2M' },
@@ -971,6 +1404,17 @@ function ScheduleView() {
   return (
     <div className="space-y-6">
       <SectionHeader icon="🗓️" title="Tournament Schedule" subtitle="2026 season calendar — DP World Tour, Majors, Rolex Series, and co-sanctioned events." />
+      <div className="flex gap-2 border-b border-gray-800">
+        {(['calendar', 'competitors'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'text-green-300 border-green-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}>
+            {t === 'calendar' ? 'Season Calendar' : 'Competitor Watch'}
+          </button>
+        ))}
+      </div>
+      {tab === 'competitors' && <CompetitorTracker />}
+      {tab === 'calendar' && <>
+      <ScheduleOptimiser />
       <div className="grid grid-cols-3 gap-4">
         <StatCard label="Events Played" value="18" sub="2026 season" color="blue" />
         <StatCard label="Cuts Made" value="13" sub="72% cut rate" color="teal" />
@@ -1001,6 +1445,169 @@ function ScheduleView() {
             </tr>
           ))}</tbody>
         </table>
+      </div>
+      </>}
+    </div>
+  );
+}
+
+// ─── Putting Heat Map ─────────────────────────────────────────────────────────
+type Putt = { distance: number; made: boolean; direction: 'left' | 'centre' | 'right' };
+const DEMO_PUTTS: Putt[] = [
+  { distance: 3,  made: true,  direction: 'centre' },
+  { distance: 4,  made: true,  direction: 'centre' },
+  { distance: 5,  made: true,  direction: 'centre' },
+  { distance: 6,  made: true,  direction: 'centre' },
+  { distance: 7,  made: false, direction: 'left'   },
+  { distance: 9,  made: false, direction: 'left'   },
+  { distance: 10, made: false, direction: 'right'  },
+  { distance: 11, made: true,  direction: 'centre' },
+  { distance: 12, made: false, direction: 'left'   },
+  { distance: 13, made: false, direction: 'right'  },
+  { distance: 14, made: false, direction: 'left'   },
+  { distance: 15, made: false, direction: 'right'  },
+  { distance: 17, made: false, direction: 'left'   },
+  { distance: 18, made: true,  direction: 'centre' },
+  { distance: 22, made: false, direction: 'right'  },
+];
+
+function PuttingHeatMap() {
+  const [putts, setPutts] = useState<Putt[]>(DEMO_PUTTS);
+  const [dist, setDist] = useState('');
+  const [res, setRes] = useState<'made'|'missed'>('made');
+  const [dir, setDir] = useState<'left'|'centre'|'right'>('centre');
+
+  const bands: Array<{ label: string; min: number; max: number }> = [
+    { label: '3-5ft',   min: 3,   max: 5.99 },
+    { label: '5-8ft',   min: 6,   max: 8.99 },
+    { label: '8-12ft',  min: 9,   max: 12.99 },
+    { label: '12-15ft', min: 13,  max: 15.99 },
+    { label: '15-20ft', min: 16,  max: 20.99 },
+    { label: '20ft+',   min: 21,  max: 9999 },
+  ];
+  const dirs: Array<'left'|'centre'|'right'> = ['left', 'centre', 'right'];
+
+  function cellStat(band: {min: number; max: number}, direction: 'left'|'centre'|'right') {
+    const inCell = putts.filter(p => p.distance >= band.min && p.distance <= band.max && p.direction === direction);
+    if (inCell.length === 0) return { pct: null as number | null, count: 0 };
+    const made = inCell.filter(p => p.made).length;
+    return { pct: Math.round((made / inCell.length) * 100), count: inCell.length };
+  }
+
+  function cellBg(pct: number | null): string {
+    if (pct === null) return 'bg-gray-900/40 border border-gray-800';
+    if (pct > 70)     return 'bg-green-600/20 border border-green-500/40';
+    if (pct >= 40)    return 'bg-yellow-600/20 border border-yellow-500/40';
+    return 'bg-red-600/20 border border-red-500/40';
+  }
+  function cellText(pct: number | null): string {
+    if (pct === null) return 'text-gray-600';
+    if (pct > 70)     return 'text-green-300';
+    if (pct >= 40)    return 'text-yellow-300';
+    return 'text-red-300';
+  }
+
+  // Summary stats
+  const inside5 = putts.filter(p => p.distance <= 5);
+  const inside5Pct = inside5.length ? Math.round((inside5.filter(p => p.made).length / inside5.length) * 100) : 0;
+  const band8_15 = putts.filter(p => p.distance >= 8 && p.distance <= 15);
+  const band8_15Pct = band8_15.length ? Math.round((band8_15.filter(p => p.made).length / band8_15.length) * 100) : 0;
+  const avgPuttsRound = (putts.length / 1 * (31.2 / 15)).toFixed(1); // rough scaling from 15-putt demo
+
+  function addPutt() {
+    const d = parseFloat(dist);
+    if (!Number.isFinite(d) || d <= 0) return;
+    setPutts(prev => [...prev, { distance: d, made: res === 'made', direction: dir }]);
+    setDist('');
+  }
+  function clearSession() {
+    setPutts(DEMO_PUTTS);
+    setDist('');
+    setRes('made');
+    setDir('centre');
+  }
+
+  return (
+    <div>
+      <div className="grid mb-3" style={{ gridTemplateColumns: '100px repeat(3, 1fr)' }}>
+        <div></div>
+        {dirs.map(d => (
+          <div key={d} className="text-xs text-gray-500 uppercase tracking-wider font-semibold text-center pb-2">{d}</div>
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        {bands.map(band => (
+          <div key={band.label} className="grid items-center gap-1.5" style={{ gridTemplateColumns: '100px repeat(3, 1fr)' }}>
+            <div className="text-xs text-gray-400 font-medium">{band.label}</div>
+            {dirs.map(direction => {
+              const { pct, count } = cellStat(band, direction);
+              return (
+                <div key={direction} className={`rounded-lg ${cellBg(pct)} px-3 py-4 text-center`}>
+                  <div className={`text-lg font-black ${cellText(pct)}`}>{pct === null ? '—' : `${pct}%`}</div>
+                  <div className="text-[9px] text-gray-500 mt-0.5">{count} putt{count === 1 ? '' : 's'}</div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Stat pills */}
+      <div className="flex items-center gap-2 flex-wrap mt-4">
+        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${band8_15Pct < 40 ? 'bg-red-600/20 border-red-500/40 text-red-300' : band8_15Pct < 70 ? 'bg-yellow-600/20 border-yellow-500/40 text-yellow-300' : 'bg-green-600/20 border-green-500/40 text-green-300'}`}>
+          Make % 8–15ft: {band8_15Pct}%
+        </span>
+        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${inside5Pct >= 90 ? 'bg-green-600/20 border-green-500/40 text-green-300' : inside5Pct >= 70 ? 'bg-yellow-600/20 border-yellow-500/40 text-yellow-300' : 'bg-red-600/20 border-red-500/40 text-red-300'}`}>
+          Make % inside 5ft: {inside5Pct}%
+        </span>
+        <span className="text-xs font-semibold px-3 py-1.5 rounded-full border bg-gray-800/60 border-gray-700 text-gray-300">
+          Average putts/round: {avgPuttsRound}
+        </span>
+      </div>
+
+      {/* Log a putt form */}
+      <div className="mt-5 pt-4 border-t border-gray-800">
+        <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">Log a putt</div>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div>
+            <label className="block text-[10px] text-gray-500 mb-1">Distance (ft)</label>
+            <input type="number" value={dist} onChange={e => setDist(e.target.value)} placeholder="12"
+              className="w-24 bg-[#0a0b12] border border-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-green-600" />
+          </div>
+          <div>
+            <label className="block text-[10px] text-gray-500 mb-1">Result</label>
+            <div className="flex rounded-lg border border-gray-800 overflow-hidden">
+              {(['made', 'missed'] as const).map(r => (
+                <button key={r} onClick={() => setRes(r)}
+                  className={`px-3 py-2 text-xs font-medium transition-colors ${res === r ? (r === 'made' ? 'bg-green-600/30 text-green-300' : 'bg-red-600/30 text-red-300') : 'bg-[#0a0b12] text-gray-500 hover:text-gray-300'}`}>
+                  {r === 'made' ? '✓ Made' : '✗ Missed'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] text-gray-500 mb-1">Direction</label>
+            <div className="flex rounded-lg border border-gray-800 overflow-hidden">
+              {(['left', 'centre', 'right'] as const).map(d => (
+                <button key={d} onClick={() => setDir(d)}
+                  className={`px-3 py-2 text-xs font-medium capitalize transition-colors ${dir === d ? 'bg-green-600/30 text-green-300' : 'bg-[#0a0b12] text-gray-500 hover:text-gray-300'}`}>
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button onClick={addPutt} disabled={!dist}
+            className="px-4 py-2 bg-green-700 hover:bg-green-800 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors">
+            Add
+          </button>
+          <button onClick={clearSession} className="text-xs text-gray-500 hover:text-gray-300 underline ml-auto">
+            Clear session
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 text-[10px] text-gray-600 italic">
+        Connect Arccos to auto-populate from real round data.
       </div>
     </div>
   );
@@ -1051,6 +1658,11 @@ function StrokesGainedView() {
             🔴 Putting is the clear weakness. At -1.18 from 8–15ft, fixing this alone could add 1+ shot per round.
           </div>
         </div>
+      </div>
+      {/* Putting Heat Map */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">🎯 Putting Heat Map</div>
+        <PuttingHeatMap />
       </div>
       {/* Round by round */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
@@ -1140,9 +1752,59 @@ function CaddieView() {
     { hole: 15, par: 5, yards: 578, wind: 'Down', strategy: 'SCORING HOLE. Eagle putt opportunity. Driver, hybrid, short wedge. Be aggressive.', risk: 'Attack' },
     { hole: 18, par: 4, yards: 468, wind: 'Into', strategy: 'Into wind. Driver, take 6-iron. Two-putt par to close. Do not go for broke.', risk: 'Low' },
   ];
+  const checklist = [
+    { task: 'Yardage book updated', done: true },
+    { task: 'Pin sheet collected', done: true },
+    { task: 'Carry distances loaded', done: true },
+    { task: 'Weather checked', done: true },
+    { task: 'Ball supply (12) packed', done: false },
+    { task: 'Gloves (3 pairs) packed', done: false },
+    { task: 'Wet weather gear', done: false },
+    { task: 'Snacks / hydration', done: false },
+  ];
+  function printCaddieSheet() {
+    const w = window.open('', '_blank', 'width=900,height=1200');
+    if (!w) return;
+    const rows = strategy.map(s => `<tr><td style="font-weight:700">${s.hole}</td><td>Par ${s.par}</td><td>${s.yards}y</td><td>${s.wind}</td><td>${s.strategy}</td><td>${s.risk}</td></tr>`).join('');
+    const check = checklist.map(c => `<label><input type="checkbox" ${c.done ? 'checked' : ''} disabled> ${c.task}</label>`).join('');
+    const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    w.document.write(`<!doctype html><html><head><title>Caddie Sheet</title><style>
+@media print { body { margin: 0 } }
+body { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 16px; line-height: 1.35 }
+h1 { font-size: 16px; margin: 0 0 2px; letter-spacing: 0.02em }
+h2 { font-size: 12px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.06em; color: #333; border-bottom: 1px solid #333; padding-bottom: 2px }
+.sub { font-size: 10px; color: #555; margin-bottom: 4px }
+.conditions { border: 1px solid #000; padding: 6px 10px; margin: 10px 0; font-weight: 700; font-size: 11px }
+table { width: 100%; border-collapse: collapse; font-size: 10px }
+th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top }
+th { background: #eee; text-transform: uppercase; font-size: 9px; letter-spacing: 0.04em }
+.checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-size: 10px }
+.notes { margin-top: 12px; padding: 8px; border: 1px solid #333; background: #f8f8f8 }
+.notes li { margin: 2px 0 }
+</style></head><body>
+<h1>CADDIE SHEET — Golfclub München Eichenried</h1>
+<div class="sub">James Harrington · Round 1 · Thu 09:42 &nbsp;|&nbsp; ${today}</div>
+<div class="conditions">12mph SW · Soft greens · +1 club adjustments</div>
+<h2>Hole Strategy</h2>
+<table><thead><tr><th>Hole</th><th>Par</th><th>Yardage</th><th>Wind</th><th>Strategy</th><th>Risk</th></tr></thead><tbody>${rows}</tbody></table>
+<h2>Pre-Round Checklist</h2>
+<div class="checklist">${check}</div>
+<h2>Key Notes</h2>
+<div class="notes"><ul>
+<li>Putting weakness 8&ndash;15ft &mdash; commit to reads</li>
+<li>Scoring holes: 7 and 15 &mdash; be aggressive</li>
+<li>Lower back &mdash; watch tempo in rounds 3&ndash;4</li>
+</ul></div>
+</body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.print(); } catch {} }, 300);
+  }
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🏌️" title="Caddie Workflow" subtitle="Digital yardage book, hole strategy notes, in-round stat log, and pre-round checklist." />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader icon="🏌️" title="Caddie Workflow" subtitle="Digital yardage book, hole strategy notes, in-round stat log, and pre-round checklist." />
+        <button onClick={printCaddieSheet} className="bg-green-700 hover:bg-green-800 text-white text-xs px-4 py-2 rounded-lg flex-shrink-0 whitespace-nowrap mt-1">🖨️ Print Caddie Sheet</button>
+      </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">Mick O'Brien</div><div className="text-xs text-gray-400 mt-1">Lead caddie · 8 years</div><div className="text-xs text-teal-400 mt-1">Synced to today's round</div></div>
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">09:42 Tee</div><div className="text-xs text-gray-400 mt-1">Thursday · Hole 1 · Munich</div><div className="text-xs text-green-400 mt-1">Carry sheet loaded</div></div>
@@ -1413,6 +2075,85 @@ function FinancialView() {
     { event: 'Soudal Open', pos: 'T8', amount_eur: 56000, amount_gbp: 47000, tour: 'DP World Tour' },
   ];
   const totalGBP = prizeMoney.reduce((a, b) => a + b.amount_gbp, 0);
+  const taxJurisdictions = [
+    { country: '🇬🇧 UK', amount: '£201,000', events: '6 events', status: 'Filed' },
+    { country: '🇩🇪 Germany', amount: '€42,000', events: '1 event (BMW)', status: 'Pending' },
+    { country: '🇺🇸 USA', amount: '$0', events: 'MC — no liability', status: 'N/A' },
+    { country: '🇳🇱 Netherlands', amount: '€124,000', events: '1 event (KLM)', status: 'Open' },
+    { country: '🇦🇹 Austria', amount: '€18,000', events: '1 event (Alpine)', status: 'Open' },
+  ];
+  const earningsBars = [
+    { cat: 'Majors',          amount: 45000 },
+    { cat: 'Rolex Series',    amount: 78000 },
+    { cat: 'DP World Tour',   amount: 124000 },
+    { cat: 'Pro-Ams',         amount: 38000 },
+  ];
+  function exportFinancialPDF() {
+    const w = window.open('', '_blank', 'width=900,height=1200');
+    if (!w) return;
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const prizeRows = prizeMoney.map(p => `<tr><td>${p.event}</td><td>${p.pos}</td><td>${p.tour}</td><td class="r">&euro;${p.amount_eur.toLocaleString()}</td><td class="r">&pound;${p.amount_gbp.toLocaleString()}</td></tr>`).join('');
+    const expenseRows = expenses.map(e => `<tr><td>${e.cat}</td><td>${e.notes}</td><td class="r">${e.amount}</td></tr>`).join('');
+    const taxRows = taxJurisdictions.map(t => `<tr><td>${t.country}</td><td class="r">${t.amount}</td><td>${t.events}</td><td>${t.status}</td></tr>`).join('');
+    const maxBar = Math.max(...earningsBars.map(b => b.amount));
+    const barHtml = earningsBars.map(b => `
+      <div class="bar-row">
+        <div class="bar-label">${b.cat}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(b.amount / maxBar) * 100}%"></div></div>
+        <div class="bar-val">&pound;${(b.amount / 1000).toFixed(0)}k</div>
+      </div>`).join('');
+    w.document.write(`<!doctype html><html><head><title>Financial Summary — James Harrington</title><style>
+@media print { body { margin: 0 } .pb { page-break-before: always } }
+body { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 20px; line-height: 1.4 }
+h1 { font-size: 18px; margin: 0 0 2px; letter-spacing: 0.02em }
+h2 { font-size: 12px; margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; color: #333; border-bottom: 1px solid #333; padding-bottom: 3px }
+.sub { font-size: 10px; color: #555; margin-bottom: 14px }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 4px }
+.kpi { border: 1px solid #ccc; background: #f8f8f8; padding: 10px; text-align: center }
+.kpi .lbl { font-size: 9px; text-transform: uppercase; color: #666; letter-spacing: 0.05em }
+.kpi .val { font-size: 16px; font-weight: 800; color: #000; margin-top: 2px }
+table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 4px }
+th, td { border: 1px solid #ccc; padding: 5px 7px; text-align: left }
+th { background: #eee; text-transform: uppercase; font-size: 9px; letter-spacing: 0.04em }
+td.r, th.r { text-align: right }
+tr.total td { background: #f0f0f0; font-weight: 700 }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 80px; gap: 10px; align-items: center; margin: 5px 0; font-size: 10px }
+.bar-label { color: #333 }
+.bar-track { height: 14px; background: #eee; border: 1px solid #ccc; position: relative }
+.bar-fill { height: 100%; background: #16a34a }
+.bar-val { text-align: right; font-weight: 700 }
+.footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 9px; color: #666; text-align: center }
+</style></head><body>
+<h1>FINANCIAL SUMMARY &mdash; JAMES HARRINGTON</h1>
+<div class="sub">Prepared by Lumio Tour &middot; ${today} &middot; <strong>CONFIDENTIAL</strong></div>
+<div class="kpis">
+  <div class="kpi"><div class="lbl">Prize Money YTD</div><div class="val">&pound;${(totalGBP / 1000).toFixed(0)}k</div></div>
+  <div class="kpi"><div class="lbl">Endorsements</div><div class="val">&pound;250k</div></div>
+  <div class="kpi"><div class="lbl">Est. Annual Costs</div><div class="val">&pound;289k</div></div>
+  <div class="kpi"><div class="lbl">Net Position</div><div class="val">&pound;${((totalGBP + 250000 - 289000) / 1000).toFixed(0)}k</div></div>
+</div>
+<h2>Prize Money Ledger &mdash; 2026</h2>
+<table>
+<thead><tr><th>Tournament</th><th>Position</th><th>Category</th><th class="r">EUR</th><th class="r">GBP</th></tr></thead>
+<tbody>${prizeRows}<tr class="total"><td colspan="4" class="r">Total YTD (GBP)</td><td class="r">&pound;${totalGBP.toLocaleString()}</td></tr></tbody>
+</table>
+<h2>Earnings by Category</h2>
+${barHtml}
+<h2>Annual Expense Breakdown</h2>
+<table>
+<thead><tr><th>Category</th><th>Structure</th><th class="r">Estimate</th></tr></thead>
+<tbody>${expenseRows}<tr class="total"><td colspan="2" class="r">Total (annual)</td><td class="r">~&pound;289k</td></tr></tbody>
+</table>
+<h2>Tax Jurisdiction Tracker</h2>
+<table>
+<thead><tr><th>Country</th><th class="r">Amount</th><th>Events</th><th>Status</th></tr></thead>
+<tbody>${taxRows}</tbody>
+</table>
+<div class="footer">Generated by Lumio Tour &middot; lumiosports.com/golf &middot; For accountant use only</div>
+</body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.print(); } catch {} }, 400);
+  }
   const expenses = [
     { cat: 'Swing Coach (Pete Larsen)', amount: '~£48k', notes: '12% of prize money + travel' },
     { cat: 'Caddie (Mick O\'Brien)', amount: '~£52k', notes: '10% of prize money + weekly fee + travel' },
@@ -1442,7 +2183,7 @@ function FinancialView() {
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <div className="text-sm font-semibold text-white">Prize Money Ledger — 2026</div>
-          <button className="text-xs text-green-400 hover:text-green-300">Export for accountant →</button>
+          <button onClick={exportFinancialPDF} className="text-xs text-green-400 hover:text-green-300">Export for accountant →</button>
         </div>
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
