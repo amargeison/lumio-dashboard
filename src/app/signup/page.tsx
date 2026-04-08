@@ -122,8 +122,25 @@ function SignupForm() {
         }
       }
 
-      // Upload logo if provided — silent failure (logo is optional)
-      if (logoFile && data.session_token) {
+      // Logo handling:
+      // - Schools demo signups: the user has no workspace session token yet,
+      //   so /api/workspace/logo returns 401. Read the file locally as a
+      //   data URL and store in localStorage only — demo-only, no server upload.
+      // - Business signups: upload to /api/workspace/logo as before.
+      if (logoFile && (portalType === 'schools' || data.is_school_demo)) {
+        try {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string
+            if (!dataUrl) return
+            const s = data.company?.slug || ''
+            localStorage.setItem('lumio_school_logo', dataUrl)
+            if (s) localStorage.setItem(`lumio_school_logo_${s}`, dataUrl)
+            try { window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: dataUrl } })) } catch {}
+          }
+          reader.readAsDataURL(logoFile)
+        } catch { /* silent — logo is optional */ }
+      } else if (logoFile && data.session_token) {
         try {
           const fd = new FormData()
           fd.append('logo', logoFile)
@@ -137,21 +154,6 @@ function SignupForm() {
             if (logoData.logo_url) {
               localStorage.setItem('lumio_company_logo', logoData.logo_url)
               localStorage.setItem('workspace_company_logo', logoData.logo_url)
-              if (portalType === 'schools' || data.is_school_demo) {
-                localStorage.setItem('lumio_school_logo', logoData.logo_url)
-                const s = data.company?.slug
-                if (s) localStorage.setItem(`lumio_school_logo_${s}`, logoData.logo_url)
-                try { window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: logoData.logo_url } })) } catch {}
-                // Persist the uploaded logo URL back to demo_tenants server-side so it
-                // survives across devices / browsers — fire-and-forget.
-                if (s) {
-                  fetch('/api/demo/update-logo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ slug: s, logo_url: logoData.logo_url }),
-                  }).catch(() => { /* silent */ })
-                }
-              }
             }
           }
         } catch { /* silent — logo is optional */ }
