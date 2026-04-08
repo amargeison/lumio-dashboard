@@ -2401,6 +2401,452 @@ function StubView({ title, sub }: { title: string; sub: string }) {
   );
 }
 
+// ─── Entry Manager ────────────────────────────────────────────────────────────
+function EntryManagerView({ player: _player }: { player: DartsPlayer }) {
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  type EntryStatus = 'confirmed' | 'action' | 'auto' | 'pending' | 'invited';
+
+  const events: Array<{
+    event: string; date: string; type: string;
+    status: EntryStatus; qualification: string;
+    deadline: string; actionNeeded: boolean;
+  }> = [
+    { event: 'European Championship', date: 'Apr 8 (tonight)', type: 'Euro Tour', status: 'confirmed', qualification: 'Auto (OoM Top 16)', deadline: 'Past', actionNeeded: false },
+    { event: 'Prague Open',           date: 'Apr 25–27',      type: 'Euro Tour',   status: 'action',    qualification: 'Auto-qualified (OoM #19)', deadline: 'Apr 19', actionNeeded: true },
+    { event: 'Players Ch. 9',         date: 'Apr 26',          type: 'Players Ch.', status: 'auto',      qualification: 'Tour card holder', deadline: 'Auto', actionNeeded: false },
+    { event: 'Players Ch. 10',        date: 'Apr 27',          type: 'Players Ch.', status: 'auto',      qualification: 'Tour card holder', deadline: 'Auto', actionNeeded: false },
+    { event: 'German Masters',        date: 'May 2–4',         type: 'Euro Tour',   status: 'action',    qualification: 'Auto-qualified (OoM #19)', deadline: 'Apr 26', actionNeeded: true },
+    { event: 'Players Ch. 11',        date: 'May 3',           type: 'Players Ch.', status: 'auto',      qualification: 'Tour card holder', deadline: 'Auto', actionNeeded: false },
+    { event: 'Players Ch. 12',        date: 'May 4',           type: 'Players Ch.', status: 'auto',      qualification: 'Tour card holder', deadline: 'Auto', actionNeeded: false },
+    { event: 'Bahrain Masters',       date: 'May 9–11',        type: 'Euro Tour',   status: 'pending',   qualification: 'Auto-qualified', deadline: 'May 3', actionNeeded: false },
+    { event: 'UK Open',               date: 'May 30–Jun 1',    type: 'Ranking Major', status: 'auto',    qualification: 'Tour card holder', deadline: 'Auto', actionNeeded: false },
+    { event: 'Nordic Masters',        date: 'Jun 13–15',       type: 'World Series', status: 'invited',  qualification: 'Invited (OoM Top 32)', deadline: 'Jun 7', actionNeeded: true },
+    { event: 'World Matchplay',       date: 'Jul 18–27',       type: 'Major',        status: 'confirmed',qualification: 'Qualified (OoM Top 32)', deadline: 'Auto', actionNeeded: false },
+  ];
+
+  const statusConfig: Record<EntryStatus, { label: string; dot: string; row: string }> = {
+    confirmed: { label: '✅ Confirmed',      dot: 'bg-green-500',  row: '' },
+    action:    { label: '⚠️ Action needed',  dot: 'bg-amber-400',  row: 'bg-amber-950/20' },
+    auto:      { label: '✅ Auto-entered',   dot: 'bg-blue-500',   row: '' },
+    pending:   { label: '⏳ Not yet open',   dot: 'bg-gray-500',   row: '' },
+    invited:   { label: '📨 Invite pending', dot: 'bg-purple-400', row: 'bg-purple-950/10' },
+  };
+
+  return (
+    <div className="p-6 space-y-6 relative">
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 bg-gray-800 border border-white/10 rounded-xl px-4 py-3 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <div>
+        <h1 className="text-2xl font-medium text-white">Entry Manager</h1>
+        <p className="text-gray-400 text-sm mt-1">PDC PDPA entry system · Tournament entries · Deadlines · Withdrawals</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Upcoming entries confirmed', value: '8', color: 'text-green-400' },
+          { label: 'Deadline passed',            value: '2', color: 'text-gray-400' },
+          { label: 'Action required',            value: '2', color: 'text-amber-400' },
+        ].map((c, i) => (
+          <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 mb-1">{c.label}</p>
+            <p className={`text-3xl font-medium ${c.color}`}>{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-950/30 border border-amber-700/30 text-sm">
+        <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+        <span className="text-amber-200">
+          <strong>Prague Open entry deadline Apr 19</strong> — 6 days away. You are auto-qualified via OoM. Confirm or skip below.
+        </span>
+      </div>
+
+      <div className="rounded-xl border border-white/5 overflow-hidden">
+        <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+          <span className="col-span-3">Event</span>
+          <span className="col-span-2">Date</span>
+          <span className="col-span-2">Type</span>
+          <span className="col-span-2">Status</span>
+          <span className="col-span-2">Deadline</span>
+          <span className="col-span-1">Action</span>
+        </div>
+        {events.map((ev, i) => {
+          const cfg = statusConfig[ev.status];
+          return (
+            <div key={i} className={`grid grid-cols-12 gap-2 px-4 py-3 border-t border-white/5 text-sm items-center ${cfg.row}`}>
+              <span className="col-span-3 text-gray-200 font-medium">{ev.event}</span>
+              <span className="col-span-2 text-gray-400">{ev.date}</span>
+              <span className="col-span-2">
+                <span className="text-xs bg-gray-800/60 border border-white/5 rounded px-1.5 py-0.5 text-gray-400">{ev.type}</span>
+              </span>
+              <span className="col-span-2 flex items-center gap-1.5 text-xs">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                <span className="text-gray-300">{cfg.label}</span>
+              </span>
+              <span className={`col-span-2 text-xs ${ev.actionNeeded ? 'text-amber-400 font-medium' : 'text-gray-500'}`}>{ev.deadline}</span>
+              <span className="col-span-1 flex gap-1">
+                {ev.actionNeeded && (
+                  <>
+                    <button onClick={() => showToast('Entry confirmed (demo — would submit via PDPA portal)')} className="px-2 py-1 bg-green-600/20 border border-green-500/30 text-green-400 text-[11px] rounded hover:bg-green-600/30">Enter</button>
+                    <button onClick={() => showToast('Entry skipped for this event')} className="px-2 py-1 bg-gray-800/40 border border-white/5 text-gray-500 text-[11px] rounded hover:text-gray-300">Skip</button>
+                  </>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">World Series invitations</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { event: 'US Masters, Las Vegas',     status: 'Expected if OoM holds Top 24', badge: '🟡 Awaited' },
+            { event: 'Australian Darts Open',     status: 'Confirmed',                     badge: '✅ Confirmed' },
+            { event: 'New Zealand Darts Masters', status: 'To be confirmed',               badge: '⏳ TBC' },
+            { event: 'Nordic Masters',            status: 'Invitation pending (Jun 7)',    badge: '📨 Pending' },
+          ].map((inv, i) => (
+            <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+              <p className="text-sm font-medium text-white">{inv.event}</p>
+              <p className="text-xs text-gray-500 mt-1">{inv.status}</p>
+              <p className="text-xs text-gray-400 mt-2">{inv.badge}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pressure Analysis ────────────────────────────────────────────────────────
+function PressureAnalysisView({ player: _player }: { player: DartsPlayer }) {
+  const comparisons = [
+    { label: 'Match average',   standard: 97.8,  pressure: 94.2, unit: '' },
+    { label: 'Checkout %',      standard: 41.2,  pressure: 33.8, unit: '%' },
+    { label: 'First 9 average', standard: 101.4, pressure: 97.1, unit: '' },
+    { label: 'T20 accuracy',    standard: 68,    pressure: 61,   unit: '%' },
+    { label: '180s per match',  standard: 4.2,   pressure: 3.1,  unit: '' },
+  ];
+
+  const tv = [
+    { label: 'Average',    tv: 99.1, floor: 97.3 },
+    { label: 'Checkout %', tv: 43.7, floor: 40.1 },
+    { label: '180s/match', tv: 4.8,  floor: 4.0 },
+    { label: 'Win rate',   tv: 71,   floor: 66 },
+  ];
+
+  const scorelines = [
+    { situation: '2 sets ahead',  avg: 99.1, co: 43.2, wr: 78 },
+    { situation: '1 set ahead',   avg: 98.2, co: 41.8, wr: 72 },
+    { situation: 'Level',         avg: 97.2, co: 40.8, wr: 65 },
+    { situation: '1 set behind',  avg: 96.4, co: 38.2, wr: 54 },
+    { situation: '2 sets behind', avg: 94.8, co: 31.1, wr: 38 },
+  ];
+
+  const tierData = [
+    { tier: 'vs Top 10',     avg: 96.1, co: 38.8, wr: 42 },
+    { tier: 'vs Top 11–32',  avg: 98.4, co: 41.3, wr: 68 },
+    { tier: 'vs Top 33–64',  avg: 99.7, co: 43.1, wr: 79 },
+    { tier: 'vs Outside 64', avg: 102.3,co: 46.7, wr: 91 },
+  ];
+
+  const gapColor = (gap: number) => gap >= 5 ? 'text-red-400' : gap >= 2 ? 'text-amber-400' : 'text-green-400';
+
+  return (
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Pressure Performance Analysis</h1>
+        <p className="text-gray-400 text-sm mt-1">How your game changes when it matters most</p>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">Standard vs under pressure</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span className="col-span-2">Metric</span>
+            <span>Standard</span>
+            <span>Deciding leg</span>
+          </div>
+          {comparisons.map((c, i) => {
+            const gap = Math.abs(c.standard - c.pressure);
+            const worse = c.pressure < c.standard;
+            return (
+              <div key={i} className="grid grid-cols-4 gap-2 px-4 py-3.5 border-t border-white/5 text-sm items-center">
+                <span className="col-span-2 text-gray-300">{c.label}</span>
+                <span className="text-gray-400">{c.standard}{c.unit}</span>
+                <div className="flex items-center gap-2">
+                  <span className={worse ? 'text-red-400 font-medium' : 'text-green-400 font-medium'}>{c.pressure}{c.unit}</span>
+                  <span className={`text-xs ${gapColor(gap)}`}>({worse ? '-' : '+'}{gap.toFixed(1)}{c.unit})</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 px-4 py-3 bg-red-950/30 border border-red-800/20 rounded-xl text-sm">
+          <span className="text-red-300">⚠️ </span>
+          <span className="text-gray-300">
+            Checkout % drops <strong className="text-red-400">7.4 points</strong> in must-win situations — the biggest gap in your game. This is your primary focus area with Sarah.
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">TV / stage events vs floor events</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-red-400 font-medium uppercase tracking-wide mb-3">📺 TV / Stage events</p>
+            {tv.map((t, i) => (
+              <div key={i} className="flex justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+                <span className="text-gray-400">{t.label}</span>
+                <span className="text-white font-medium">{t.tv}{t.label.includes('%') || t.label.includes('rate') ? '%' : ''}</span>
+              </div>
+            ))}
+          </div>
+          <div className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-3">🏢 Floor events (PC)</p>
+            {tv.map((t, i) => (
+              <div key={i} className="flex justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+                <span className="text-gray-400">{t.label}</span>
+                <span className="text-gray-300">{t.floor}{t.label.includes('%') || t.label.includes('rate') ? '%' : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 px-4 py-3 bg-green-950/30 border border-green-800/20 rounded-xl text-sm">
+          <span className="text-green-400">✅ </span>
+          <span className="text-gray-300">
+            You average <strong className="text-green-400">1.8 pts higher on TV</strong> — you rise to the occasion. Many players see the opposite. This is a significant mental strength.
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">Performance by scoreline</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span>Situation</span><span>Average</span><span>Checkout %</span><span>Win rate</span>
+          </div>
+          {scorelines.map((s, i) => (
+            <div key={i} className={`grid grid-cols-4 gap-2 px-4 py-3 border-t border-white/5 text-sm ${i >= 3 ? 'bg-red-950/10' : ''}`}>
+              <span className={i >= 3 ? 'text-amber-300' : 'text-gray-300'}>{s.situation}</span>
+              <span className="text-gray-300">{s.avg}</span>
+              <span className="text-gray-300">{s.co}%</span>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 flex-1 bg-gray-800 rounded overflow-hidden">
+                  <div className={`h-full rounded ${s.wr >= 65 ? 'bg-green-500' : s.wr >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${s.wr}%` }} />
+                </div>
+                <span className={`text-xs font-medium ${s.wr >= 65 ? 'text-green-400' : s.wr >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{s.wr}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-white font-medium mb-3">Performance by opponent ranking tier</h2>
+        <div className="space-y-2">
+          {tierData.map((t, i) => (
+            <div key={i} className="grid grid-cols-4 gap-3 bg-gray-900/60 rounded-xl border border-white/5 px-4 py-3 text-sm">
+              <span className="text-gray-300">{t.tier}</span>
+              <span className="text-gray-400">avg {t.avg}</span>
+              <span className="text-gray-400">co {t.co}%</span>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 flex-1 bg-gray-800 rounded overflow-hidden">
+                  <div className={`h-full rounded ${t.wr >= 70 ? 'bg-green-500' : t.wr >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${t.wr}%` }} />
+                </div>
+                <span className={`text-xs font-medium ${t.wr >= 70 ? 'text-green-400' : t.wr >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{t.wr}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Mental coach — Sarah · Focus areas</p>
+        <div className="space-y-3">
+          {[
+            { n: 1, text: 'Pre-throw routine in must-win legs — breathing pattern and stance reset before each dart' },
+            { n: 2, text: 'Reducing T20 cluster drift under pressure — the data shows pulling left when behind' },
+            { n: 3, text: 'Checkout confidence — start with D20 more often in deciding legs, stop switching to D16' },
+          ].map(item => (
+            <div key={item.n} className="flex gap-3 text-sm">
+              <span className="w-5 h-5 rounded-full bg-red-600/20 border border-red-500/30 text-red-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{item.n}</span>
+              <span className="text-gray-300">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Merit Forecaster ─────────────────────────────────────────────────────────
+function MeritForecasterView({ player: _player }: { player: DartsPlayer }) {
+  const [selectedRound, setSelectedRound] = useState<string>('r1-win');
+
+  const currentOom = 687420;
+  const currentRank = 19;
+
+  const thisWeek = {
+    event: 'PDC European Championship',
+    location: 'Dortmund',
+    prizeFund: '£500,000',
+    rounds: [
+      { id: 'lose',    label: 'R1 Loss',  prize: 0,      rankEstimate: 22 },
+      { id: 'r1-win',  label: 'R1 Win',   prize: 11000,  rankEstimate: 19 },
+      { id: 'qf',      label: 'QF',       prize: 22000,  rankEstimate: 18 },
+      { id: 'sf',      label: 'SF',       prize: 50000,  rankEstimate: 16 },
+      { id: 'final',   label: 'Final',    prize: 90000,  rankEstimate: 13 },
+      { id: 'winner',  label: 'Winner',   prize: 110000, rankEstimate: 11 },
+    ],
+  };
+
+  const remainingEvents = [
+    { event: 'Prague Open',        type: 'Euro Tour',  fund: 175000,  r1: 4000,  sf: 16000, win: 25000 },
+    { event: 'Players Ch. 9 & 10', type: 'PC (×2)',    fund: 250000,  r1: 4000,  sf: 16000, win: 30000 },
+    { event: 'German Masters',     type: 'Euro Tour',  fund: 175000,  r1: 4000,  sf: 16000, win: 25000 },
+    { event: 'PC 11, 12 + Euro',   type: 'Mixed (×3)', fund: 425000,  r1: 9000,  sf: 32000, win: 65000 },
+    { event: 'UK Open',            type: 'Ranking',    fund: 500000,  r1: 4000,  sf: 50000, win: 100000 },
+    { event: 'PC 13–18 (×6)',      type: 'PC',         fund: 750000,  r1: 12000, sf: 48000, win: 90000 },
+    { event: 'World Matchplay',    type: 'Major',      fund: 800000,  r1: 13000, sf: 100000,win: 200000 },
+    { event: 'World Grand Prix',   type: 'Major',      fund: 750000,  r1: 12000, sf: 90000, win: 187500 },
+    { event: 'Grand Slam',         type: 'Major',      fund: 700000,  r1: 10000, sf: 75000, win: 175000 },
+    { event: 'PC Finals',          type: 'Major',      fund: 500000,  r1: 8000,  sf: 60000, win: 120000 },
+    { event: 'World Championship', type: 'Major',      fund: 5000000, r1: 35000, sf: 300000,win: 700000 },
+  ];
+
+  const milestones = [
+    { label: 'Top 32 (PC seeding)',        threshold: 600000,  achieved: true  },
+    { label: 'Top 16 (Euro Tour seeding)', threshold: 720000,  achieved: false },
+    { label: 'Top 10 (PL invitation)',     threshold: 850000,  achieved: false },
+    { label: 'Top 8 (PL confirmed)',       threshold: 1100000, achieved: false },
+  ];
+
+  const selected = thisWeek.rounds.find(r => r.id === selectedRound) || thisWeek.rounds[1];
+  const newOom = currentOom + selected.prize;
+  const fmt = (n: number) => `£${n.toLocaleString()}`;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-medium text-white">Merit Forecaster</h1>
+        <p className="text-gray-400 text-sm mt-1">Simulate prize money outcomes · PDC Order of Merit (rolling 2-year)</p>
+      </div>
+
+      {/* This week simulator */}
+      <div className="bg-gray-900/60 rounded-xl border border-white/5 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-white font-medium">{thisWeek.event}</h2>
+            <p className="text-gray-500 text-sm">{thisWeek.location} · Prize fund {thisWeek.prizeFund}</p>
+          </div>
+          <span className="text-xs text-red-400 font-medium px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20">In progress tonight</span>
+        </div>
+
+        <div className="grid grid-cols-6 gap-2 mb-5">
+          {thisWeek.rounds.map(r => (
+            <button
+              key={r.id}
+              onClick={() => setSelectedRound(r.id)}
+              className={`rounded-lg border p-3 text-center transition-all ${selectedRound === r.id ? 'bg-red-600/20 border-red-500/40' : 'bg-gray-800/40 border-white/5 hover:border-white/10'}`}
+            >
+              <p className={`text-xs font-medium ${selectedRound === r.id ? 'text-red-300' : 'text-gray-400'}`}>{r.label}</p>
+              <p className={`text-sm font-medium mt-1 ${selectedRound === r.id ? 'text-white' : 'text-gray-300'}`}>
+                {r.prize === 0 ? '—' : fmt(r.prize)}
+              </p>
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Prize this week', value: fmt(selected.prize) },
+            { label: 'New OoM total',   value: fmt(newOom) },
+            { label: 'Estimated rank',  value: `#${selected.rankEstimate}` },
+            { label: 'Rank change',     value: selected.rankEstimate < currentRank
+              ? `▲ ${currentRank - selected.rankEstimate}`
+              : selected.rankEstimate > currentRank
+              ? `▼ ${selected.rankEstimate - currentRank}`
+              : '— No change' },
+          ].map((item, i) => (
+            <div key={i} className="bg-gray-800/60 rounded-lg p-3">
+              <p className="text-xs text-gray-500">{item.label}</p>
+              <p className={`text-lg font-medium mt-1 ${i === 3 && selected.rankEstimate < currentRank ? 'text-green-400' : i === 3 && selected.rankEstimate > currentRank ? 'text-red-400' : 'text-white'}`}>{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Remaining events table */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Season earnings potential</h2>
+        <div className="rounded-xl border border-white/5 overflow-hidden">
+          <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
+            <span className="col-span-2">Event</span>
+            <span>R1 win</span>
+            <span>Semi-final</span>
+            <span>Winner</span>
+          </div>
+          {remainingEvents.map((ev, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3 border-t border-white/5 text-sm hover:bg-gray-800/20 transition-colors">
+              <div className="col-span-2">
+                <p className="text-gray-200">{ev.event}</p>
+                <p className="text-xs text-gray-500">{ev.type}</p>
+              </div>
+              <span className="text-gray-400">{fmt(ev.r1)}</span>
+              <span className="text-gray-300">{fmt(ev.sf)}</span>
+              <span className="text-green-400">{fmt(ev.win)}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-5 gap-2 px-4 py-3 border-t border-white/10 bg-gray-900/60 text-sm font-medium">
+            <span className="col-span-2 text-gray-300">Maximum possible</span>
+            <span className="text-gray-300">{fmt(remainingEvents.reduce((s, e) => s + e.r1, 0))}</span>
+            <span className="text-gray-200">{fmt(remainingEvents.reduce((s, e) => s + e.sf, 0))}</span>
+            <span className="text-green-300">{fmt(remainingEvents.reduce((s, e) => s + e.win, 0))}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Milestone tracker */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Rank milestone tracker</h2>
+        <div className="space-y-3">
+          {milestones.map((m, i) => {
+            const pct = Math.min(100, Math.round((currentOom / m.threshold) * 100));
+            const gap = Math.max(0, m.threshold - currentOom);
+            return (
+              <div key={i} className="bg-gray-900/60 rounded-xl border border-white/5 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-200">{m.label}</span>
+                  {m.achieved
+                    ? <span className="text-xs text-green-400 font-medium">✅ Achieved</span>
+                    : <span className="text-xs text-gray-500">Need {fmt(gap)} more</span>}
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${m.achieved ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                  <span>{fmt(currentOom)}</span>
+                  <span>Target: {fmt(m.threshold)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Tour Card Monitor ────────────────────────────────────────────────────────
 function TourCardMonitorView({ player }: { player: DartsPlayer }) {
   const [targetRank, setTargetRank] = useState(19);
@@ -2602,13 +3048,13 @@ export default function DartsPortalPage() {
       case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} />;
       case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} />;
       case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} />;
-      case 'merit-forecaster':  return <StubView title="Merit Forecaster"        sub="Rolling OoM simulator — coming soon." />;
-      case 'entry-manager':     return <StubView title="Entry Manager"           sub="Tournament entry submissions and deadlines — coming soon." />;
+      case 'merit-forecaster':  return <MeritForecasterView player={player} />;
+      case 'entry-manager':     return <EntryManagerView player={player} />;
       case 'live-scores':       return <StubView title="Live Scores"             sub="Live PDC match feeds — coming soon." />;
       case 'draw-bracket':      return <StubView title="Draw & Bracket"          sub="Draw viewer and bracket projections — coming soon." />;
       case 'advanced-stats':    return <StubView title="Advanced Stats"          sub="Deep statistical breakdown and percentiles — coming soon." />;
       case 'dartboard-heatmap': return <StubView title="Dartboard Heatmap"       sub="Visual hit-distribution heatmap — coming soon." />;
-      case 'pressure-analysis': return <StubView title="Pressure Analysis"       sub="Performance under pressure metrics — coming soon." />;
+      case 'pressure-analysis': return <PressureAnalysisView player={player} />;
       case 'match-prep':        return <StubView title="Match Prep"              sub="Pre-match opponent and routine preparation — coming soon." />;
       case 'physio-recovery':   return <StubView title="Physio & Recovery"       sub="Recovery tracking and physio appointments — coming soon." />;
       case 'walk-on-music':     return <StubView title="Walk-on Music"           sub="Manage walk-on tracks and crowd entrance — coming soon." />;
