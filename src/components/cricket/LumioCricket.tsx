@@ -397,6 +397,11 @@ export default function LumioCricket(){
     }
   }
 
+  const[overseasTab,setOverseasTab]=useState<'current'|'recruitment'>('current');
+  const[eligName,setEligName]=useState('');
+  const[eligCountry,setEligCountry]=useState('');
+  const[eligGuideOpen,setEligGuideOpen]=useState(false);
+
   const[dlsState,setDlsState]=useState({overs:50,wickets:0,interruption:'batting',overslost:10,targetOvers:40,format:'OD' as 'OD'|'T20',team1Score:250,oversFaced:50,currentScore:120,currentOvers:25});
 
   const[declAiLoading,setDeclAiLoading]=useState(false);
@@ -1381,9 +1386,97 @@ export default function LumioCricket(){
   );
 
   // ── PAGE: OVERSEAS ────────────────────────────────────────────────
-  const Overseas=()=>(
+  const Overseas=()=>{
+    const targets = [
+      { name:'Trent Boult', country:'New Zealand', role:'Fast Bowler', age:35, available:'T20 Blast', ecbCat:'Category B', status:'Available', contact:'NZ Cricket Board', notes:'Interested in county stint. IPL-free window Jun-Jul.' },
+      { name:'Quinton de Kock', country:'South Africa', role:'WK-Batter', age:32, available:'Full season', ecbCat:'Category B', status:'Exploring', contact:'CSA Agent', notes:'Retirement from Tests — open to county contract.' },
+      { name:'Mujeeb Ur Rahman', country:'Afghanistan', role:'Off Spinner', age:23, available:'T20 Only', ecbCat:'Category C', status:'Available', contact:'Direct', notes:'Blast specialist. High economy risk in 4-day.' },
+      { name:'Aiden Markram', country:'South Africa', role:'Batter', age:30, available:'Championship', ecbCat:'Category B', status:'Interested', contact:'Titan Sports', notes:'Strong red-ball average 43.2. Available May onward.' },
+    ];
+    const catColor = (c:string)=>c.includes('A')?C.green:c.includes('B')?C.amber:C.red;
+    const statusColorR = (s:string)=>s==='Available'?C.green:s==='Exploring'?C.amber:C.teal;
+    const categoryACountries = ['UK','United Kingdom','England','Scotland','Wales','Northern Ireland','Ireland'];
+    const categoryBCountries = ['Australia','New Zealand','South Africa','India','Pakistan','Sri Lanka','Bangladesh','Zimbabwe','West Indies','Jamaica','Barbados','Trinidad'];
+    const eligResult = (() => {
+      if (!eligCountry.trim()) return null;
+      const c = eligCountry.trim();
+      if (categoryACountries.some(x=>x.toLowerCase()===c.toLowerCase())) return {cat:'Category A',color:C.green,note:'British/Irish — no overseas slot used.'};
+      if (categoryBCountries.some(x=>x.toLowerCase()===c.toLowerCase())) return {cat:'Category B',color:C.amber,note:'Full overseas allocation (max 2 per county in Championship).'};
+      return {cat:'Category C',color:C.red,note:'T20 Blast/Hundred only — cannot play 4-day.'};
+    })();
+    return (
     <div>
       <SectionHead title="Overseas Player Management" sub="ECB eligibility tracking, visa management and format rotation planning"/>
+      <div style={{display:'flex',gap:8,marginBottom:16}}>
+        {(['current','recruitment'] as const).map(t=>(
+          <button key={t} onClick={()=>setOverseasTab(t)} style={{padding:'6px 14px',borderRadius:20,fontSize:12,border:`1px solid ${overseasTab===t?C.teal:C.border}`,background:overseasTab===t?C.tealDim:'transparent',color:overseasTab===t?C.teal:C.muted,cursor:'pointer',fontWeight:600}}>{t==='current'?'Current Players':'Recruitment Hub'}</button>
+        ))}
+      </div>
+      {overseasTab==='recruitment' ? (
+        <div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+            <Stat label="Available Targets" value={String(targets.length)} color={C.teal} sub="In scouting pipeline"/>
+            <Stat label="Category B" value={String(targets.filter(t=>t.ecbCat.includes('B')).length)} color={C.amber} sub="Full allocation"/>
+            <Stat label="Category C" value={String(targets.filter(t=>t.ecbCat.includes('C')).length)} color={C.red} sub="Limited formats"/>
+            <Stat label="Active Conversations" value={String(targets.filter(t=>t.status!=='Available').length)} color={C.purple} sub="Exploring or interested"/>
+          </div>
+          <Card style={{marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Recruitment Targets</div>
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                <thead>
+                  <tr style={{borderBottom:`1px solid ${C.border}`,color:C.dim,textAlign:'left'}}>
+                    {['Player','Country','Role','Age','Available for','ECB Cat','Status','Contact','Notes'].map(h=><th key={h} style={{padding:'8px 10px',fontSize:10,textTransform:'uppercase'}}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {targets.map((t,i)=>(
+                    <tr key={i} style={{borderBottom:`1px solid ${C.border}`,color:C.text}}>
+                      <td style={{padding:'10px',fontWeight:600}}>{t.name}</td>
+                      <td style={{padding:'10px'}}>{t.country}</td>
+                      <td style={{padding:'10px'}}>{t.role}</td>
+                      <td style={{padding:'10px'}}>{t.age}</td>
+                      <td style={{padding:'10px'}}>{t.available}</td>
+                      <td style={{padding:'10px'}}><span style={{padding:'3px 8px',borderRadius:999,background:catColor(t.ecbCat)+'22',color:catColor(t.ecbCat),fontSize:10,fontWeight:600}}>{t.ecbCat}</span></td>
+                      <td style={{padding:'10px'}}><span style={{padding:'3px 8px',borderRadius:999,background:statusColorR(t.status)+'22',color:statusColorR(t.status),fontSize:10,fontWeight:600}}>{t.status}</span></td>
+                      <td style={{padding:'10px',color:C.muted}}>{t.contact}</td>
+                      <td style={{padding:'10px',color:C.muted,maxWidth:240}}>{t.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Card style={{marginBottom:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>ECB Eligibility Guide</div>
+              <button onClick={()=>setEligGuideOpen(!eligGuideOpen)} style={{background:'transparent',border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:'4px 10px',fontSize:11,cursor:'pointer'}}>{eligGuideOpen?'Hide':'Show'}</button>
+            </div>
+            {eligGuideOpen && (
+              <div style={{marginTop:12,fontSize:12,color:C.text,lineHeight:1.7}}>
+                <div><strong style={{color:C.green}}>Category A:</strong> British/Irish passport — no overseas slot used.</div>
+                <div><strong style={{color:C.amber}}>Category B:</strong> Full overseas allocation (max 2 per county in Championship).</div>
+                <div><strong style={{color:C.red}}>Category C:</strong> T20 Blast/Hundred only — cannot play 4-day.</div>
+              </div>
+            )}
+          </Card>
+          <Card>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Check Eligibility</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,alignItems:'center'}}>
+              <input value={eligName} onChange={e=>setEligName(e.target.value)} placeholder="Player name" style={{background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 10px',color:C.text,fontSize:12}}/>
+              <input value={eligCountry} onChange={e=>setEligCountry(e.target.value)} placeholder="Country" style={{background:'#0b1020',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 10px',color:C.text,fontSize:12}}/>
+              {eligResult ? (
+                <span style={{padding:'6px 12px',borderRadius:999,background:eligResult.color+'22',color:eligResult.color,fontSize:11,fontWeight:600,whiteSpace:'nowrap'}}>{eligResult.cat}</span>
+              ) : <span style={{fontSize:11,color:C.dim}}>Enter country →</span>}
+            </div>
+            {eligResult && <div style={{fontSize:11,color:C.muted,marginTop:8}}>{eligName||'Player'}: {eligResult.note}</div>}
+          </Card>
+        </div>
+      ) : (<></>)}
+      {overseasTab==='current' && (<></>)}
+      {overseasTab==='current' && (<>
+      </>)}
+      <div style={{display:overseasTab==='current'?'block':'none'}}>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
         <Stat label="Overseas Players" value="2" color={C.teal} sub="This season"/>
         <Stat label="Confirmed" value="1" color={C.green} sub="Rajan Nortje"/>
@@ -1440,8 +1533,10 @@ export default function LumioCricket(){
           </tbody>
         </table>
       </Card>
+      </div>
     </div>
   );
+  };
 
   // ── PAGE: COMMERCIAL ──────────────────────────────────────────────
   const Commercial=()=>{
