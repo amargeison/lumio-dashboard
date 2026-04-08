@@ -385,13 +385,15 @@ function SchoolWorldClock() {
 // ─── Photo Frame ────────────────────────────────────────────────────────────
 
 const SCHOOL_DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80',
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80',
+  'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80',
+  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&q=80',
+  'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&q=80',
 ]
 
 function PhotoFrame() {
   // Schools uses its own photo frame key, isolated from the business portal.
-  // Starts empty so the teacher can add their own personal photos — no demo seed.
+  // Seeds with 3 school-appropriate Unsplash photos when demo mode is active
+  // and the frame is otherwise empty.
   const [photos, setPhotos] = useState<string[]>(() => {
     try {
       const s = typeof window !== 'undefined' ? localStorage.getItem('lumio-schools-photo-frame') : null
@@ -400,6 +402,9 @@ function PhotoFrame() {
         if (Array.isArray(p) && p.length > 0) return p.map((x: any) => typeof x === 'string' ? x : x.src)
       }
     } catch {}
+    if (typeof window !== 'undefined' && localStorage.getItem('lumio_schools_demo_loaded') === 'true') {
+      return SCHOOL_DEMO_PHOTOS
+    }
     return []
   })
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -1493,13 +1498,23 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     const key = `lumio_school_onboarding_done_${_slug}`
     const demoLoaded = localStorage.getItem('lumio_schools_demo_loaded') === 'true'
     const lastSlug = localStorage.getItem('lumio_school_last_slug')
-    // New school account — clear any leftover onboarding-done / logo / photo from a previous session
-    if (demoLoaded && lastSlug && lastSlug !== _slug) {
+    // New school account — clear leftover onboarding-done / logo / photo / photo-frame from a previous session
+    if (demoLoaded && lastSlug !== _slug) {
       try {
+        // Current slug's onboarding-done key — clear so the modal shows fresh for each new school
         localStorage.removeItem(key)
+        // Logos
         localStorage.removeItem('lumio_school_logo')
-        localStorage.removeItem(`lumio_school_logo_${lastSlug}`)
+        if (lastSlug) localStorage.removeItem(`lumio_school_logo_${lastSlug}`)
+        // User photo
         localStorage.removeItem('lumio_user_photo')
+        // Photo-frame keys from other portals (football + business) so no cross-portal images bleed in
+        localStorage.removeItem('lumio-football-photo-frame')
+        localStorage.removeItem('lumio-photo-frame')
+        // Sidebar name — sync lumio_company_name to the current school so the sidebar doesn't
+        // keep showing the previous school / portal's name.
+        const currentName = localStorage.getItem(`lumio_school_${_slug}_name`)
+        if (currentName) localStorage.setItem('lumio_company_name', currentName)
         window.dispatchEvent(new CustomEvent('lumio-logo-updated', { detail: { logo: null } }))
         window.dispatchEvent(new CustomEvent('lumio-avatar-updated', { detail: { url: null } }))
       } catch { /* ignore */ }
