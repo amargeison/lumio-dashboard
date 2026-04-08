@@ -55,6 +55,9 @@ const SIDEBAR_ITEMS = [
   { id: 'career',        label: 'Career Planning',      icon: '🚀', group: 'OPERATIONS' },
   { id: 'datahub',       label: 'Data Hub',             icon: '📡', group: 'OPERATIONS' },
   { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'OPERATIONS' },
+  { id: 'dartconnect',   label: 'DartConnect',          icon: '🔌', group: 'INTEGRATIONS' },
+  { id: 'pdclive',       label: 'PDC Live Data',        icon: '📡', group: 'INTEGRATIONS' },
+  { id: 'womens-darts',  label: "Women's Darts",        icon: '⭐', group: 'INTEGRATIONS' },
 ];
 
 // ─── DEMO PLAYER ──────────────────────────────────────────────────────────────
@@ -1849,11 +1852,391 @@ function SettingsView({ player, onNavigate }: { player: DartsPlayer; onNavigate:
 }
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
+// ─── DartConnect Integration ──────────────────────────────────────────────────
+function DartConnectView({ onNavigate }: { onNavigate: (id: string) => void }) {
+  const [apiKey, setApiKey] = useState('');
+  const [connected, setConnected] = useState(false);
+  const sessions = [
+    { date: '2025-04-06', type: 'Match', avg: 96.8, checkout: 44 },
+    { date: '2025-04-05', type: 'Practice', avg: 99.1, checkout: 51 },
+    { date: '2025-04-04', type: 'Practice', avg: 98.4, checkout: 49 },
+    { date: '2025-04-03', type: 'Match', avg: 95.2, checkout: 38 },
+    { date: '2025-04-02', type: 'Practice', avg: 100.3, checkout: 55 },
+  ];
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar onNavigate={onNavigate} />
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-1">🔌 DartConnect</h1>
+        <p className="text-xs text-gray-500">Sync match averages, checkout data and practice sessions automatically.</p>
+      </div>
+
+      {!connected && (
+        <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-700/30 rounded-xl p-5">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="text-2xl">🔌</div>
+            <div>
+              <div className="text-sm font-bold text-white mb-1">Connect your DartConnect account</div>
+              <div className="text-xs text-gray-400">Sync match averages, checkout data and practice sessions automatically. Pulls every session from your DartConnect history into Lumio overnight.</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Paste your DartConnect API key" className="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-red-600/60" />
+            <button onClick={() => apiKey && setConnected(true)} disabled={!apiKey} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${apiKey ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-800 text-gray-600 cursor-not-allowed'}`}>Connect</button>
+          </div>
+        </div>
+      )}
+
+      {connected && (
+        <>
+          <div className="bg-teal-900/20 border border-teal-600/30 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle size={16} className="text-teal-400" />
+            <div className="text-xs text-teal-300"><span className="font-semibold">Connected.</span> Last sync 3 minutes ago · 28 sessions imported this month.</div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4">
+            <StatCard label="Practice Avg" value="99.3" sub="Last 14 days" color="teal" />
+            <StatCard label="Match Avg" value="97.0" sub="Last 14 days" color="red" />
+            <StatCard label="Gap" value="+2.3" sub="Practice over match" color="orange" />
+            <StatCard label="Sessions" value="28" sub="This month" color="purple" />
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-900/30 to-red-900/20 border border-purple-700/30 rounded-xl p-5">
+            <div className="flex items-start gap-3">
+              <Brain size={20} className="text-purple-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm font-bold text-white mb-1">AI Insight — Practice vs Match Gap</div>
+                <div className="text-xs text-gray-300 leading-relaxed">Your practice average is <span className="font-bold text-purple-300">2.3 points above</span> your match average. That&apos;s a meaningful gap — it&apos;s either nerves on the walk-on or a consistency issue in second-session legs. Suggestion: schedule a pressure-simulation session with your sports psychologist.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-800 text-xs font-semibold text-gray-400 uppercase tracking-wider">Last 5 Sessions</div>
+            <table className="w-full text-xs">
+              <thead className="bg-black/30 text-gray-500">
+                <tr><th className="text-left px-4 py-2 font-medium">Date</th><th className="text-left px-4 py-2 font-medium">Type</th><th className="text-right px-4 py-2 font-medium">3-Dart Avg</th><th className="text-right px-4 py-2 font-medium">Checkout %</th></tr>
+              </thead>
+              <tbody>
+                {sessions.map((s, i) => (
+                  <tr key={i} className="border-t border-gray-800/60">
+                    <td className="px-4 py-2.5 text-gray-400">{s.date}</td>
+                    <td className="px-4 py-2.5"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${s.type === 'Match' ? 'bg-red-600/20 text-red-300' : 'bg-teal-600/20 text-teal-300'}`}>{s.type}</span></td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-white">{s.avg}</td>
+                    <td className="px-4 py-2.5 text-right text-gray-300">{s.checkout}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── PDC Live Data ────────────────────────────────────────────────────────────
+function PDCLiveView({ onNavigate }: { onNavigate: (id: string) => void }) {
+  const events = [
+    { name: 'Players Ch. 23 (Wigan)',     date: '14 Apr', status: 'Entered',    earned: 2500,  hold: 2500,  gain: 5000 },
+    { name: 'Players Ch. 24 (Wigan)',     date: '15 Apr', status: 'Entered',    earned: 10000, hold: 10000, gain: 12000 },
+    { name: 'European Tour 5 (Hildesheim)', date: '18 Apr', status: 'Entered',    earned: 6000,  hold: 6000,  gain: 9000 },
+    { name: 'Players Ch. 25 (Leicester)', date: '28 Apr', status: 'Entered',    earned: 4000,  hold: 4000,  gain: 7000 },
+    { name: 'Players Ch. 26 (Leicester)', date: '29 Apr', status: 'Not entered', earned: 0,     hold: 1000,  gain: 2000 },
+    { name: 'Premier League (Night 12)',  date: '01 May', status: 'Entered',    earned: 25000, hold: 25000, gain: 35000 },
+    { name: 'Players Ch. 27 (Barnsley)',  date: '05 May', status: 'Entered',    earned: 15000, hold: 15000, gain: 25000 },
+    { name: 'Players Ch. 28 (Barnsley)',  date: '06 May', status: 'Withdrew',    earned: 5000,  hold: 5000,  gain: 8000 },
+  ];
+  const totalDefending = events.reduce((s, e) => s + e.earned, 0);
+  const next4Weeks = events.slice(0, 4).reduce((s, e) => s + e.earned, 0);
+  const somGraph = [
+    { period: '24mo ago', amount: 42000 }, { period: '20mo ago', amount: 68000 }, { period: '16mo ago', amount: 124000 },
+    { period: '12mo ago', amount: 95000 }, { period: '8mo ago', amount: 142000 }, { period: '4mo ago', amount: 108000 },
+    { period: 'Current',  amount: 108420 },
+  ];
+  const maxAmount = Math.max(...somGraph.map(g => g.amount));
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar onNavigate={onNavigate} />
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-1">📡 PDC Live Data</h1>
+        <p className="text-xs text-gray-500">Live tournament ticker, defending money calculator and Order of Merit tracker.</p>
+      </div>
+
+      {/* Live ticker */}
+      <div className="bg-gradient-to-r from-red-900/40 to-black border border-red-700/40 rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <div className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Live Now</div>
+          <div className="text-xs text-gray-400">PDC European Championship · Westfalenhalle, Dortmund</div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-xs">
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">L. Humphries 6-3 R. Smith</span></div>
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">M. van Gerwen vs J. Henderson</span><span className="text-red-400 ml-2">LIVE 4-2</span></div>
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">G. Price vs J. Morrison</span><span className="text-gray-600 ml-2">20:00</span></div>
+        </div>
+      </div>
+
+      {/* Defending money calculator — KEY FEATURE */}
+      <div className="bg-[#0d0f1a] border border-orange-700/30 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-800 bg-gradient-to-r from-orange-900/30 to-transparent">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-bold text-white">💰 Defending Money Calculator</div>
+            <div className="text-xs text-orange-400">Next 8 weeks</div>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <div><span className="text-gray-500">Total defending: </span><span className="text-orange-300 font-bold">£{totalDefending.toLocaleString()}</span></div>
+            <div><span className="text-gray-500">Next 4 weeks: </span><span className="text-red-300 font-bold">£{next4Weeks.toLocaleString()}</span></div>
+          </div>
+        </div>
+        <table className="w-full text-xs">
+          <thead className="bg-black/40 text-gray-500">
+            <tr>
+              <th className="text-left px-4 py-2 font-medium">Event</th>
+              <th className="text-left px-4 py-2 font-medium">Date</th>
+              <th className="text-left px-4 py-2 font-medium">Status</th>
+              <th className="text-right px-4 py-2 font-medium">Earned Last Year</th>
+              <th className="text-right px-4 py-2 font-medium">To Hold #19</th>
+              <th className="text-right px-4 py-2 font-medium">To Gain 1 Place</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((e, i) => (
+              <tr key={i} className="border-t border-gray-800/60">
+                <td className="px-4 py-2.5 text-gray-300">{e.name}</td>
+                <td className="px-4 py-2.5 text-gray-500">{e.date}</td>
+                <td className="px-4 py-2.5">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${e.status === 'Entered' ? 'bg-teal-600/20 text-teal-300' : e.status === 'Not entered' ? 'bg-gray-700/40 text-gray-400' : 'bg-red-600/20 text-red-300'}`}>{e.status}</span>
+                </td>
+                <td className="px-4 py-2.5 text-right text-orange-300 font-semibold">£{e.earned.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right text-red-300">£{e.hold.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right text-purple-300">£{e.gain.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="px-5 py-3 bg-gradient-to-r from-purple-900/30 to-transparent border-t border-gray-800">
+          <div className="flex items-start gap-2">
+            <Brain size={14} className="text-purple-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-gray-300">You are defending <span className="text-orange-300 font-bold">£18,400</span> over the next 4 weeks. A <span className="text-teal-300 font-semibold">QF finish at PC27</span> would protect your current <span className="text-red-300 font-semibold">#19 ranking</span>.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Order of Merit tracker */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-bold text-white">Order of Merit</div>
+            <div className="text-xs text-gray-500">Rolling 24-month prize money</div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-black text-orange-400">£687,420</div>
+            <div className="text-[10px] text-gray-500">Current total · #19</div>
+          </div>
+        </div>
+        <div className="flex items-end gap-2 h-28">
+          {somGraph.map((g, i) => {
+            const height = (g.amount / maxAmount) * 100;
+            const isBig = g.amount > 120000;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="text-[9px] text-gray-500 font-semibold">£{(g.amount / 1000).toFixed(0)}k</div>
+                <div className="w-full rounded-t transition-all" style={{ height: `${height}%`, background: isBig ? 'linear-gradient(180deg, #DC2626, #7F1D1D)' : 'linear-gradient(180deg, #F97316, #9A3412)' }} />
+                <div className="text-[9px] text-gray-600">{g.period}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 text-[10px] text-gray-500 italic">The red bars are big earnings that drop off the rolling 24-month window — plan your defence around them.</div>
+      </div>
+
+      {/* Tour Card security */}
+      <div className="bg-gradient-to-r from-teal-900/30 to-black border border-teal-700/30 rounded-xl p-5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-teal-600/20 border border-teal-500/40 flex items-center justify-center shrink-0"><Shield size={22} className="text-teal-400" /></div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="text-sm font-bold text-white">Tour Card</div>
+            <span className="px-2 py-0.5 bg-teal-600/20 text-teal-300 text-[10px] font-bold rounded uppercase">SECURE</span>
+          </div>
+          <div className="text-xs text-gray-400">You are <span className="text-teal-300 font-bold">£142,000 above</span> the #64 Tour Card cutoff. Q-School not required next January.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Women's Darts ────────────────────────────────────────────────────────────
+function WomensDartsView({ onNavigate }: { onNavigate: (id: string) => void }) {
+  const oom = [
+    { rank: 1, name: 'Beau Greaves',    country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 68420, avg: 90.4 },
+    { rank: 2, name: 'Fallon Sherrock', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 52800, avg: 86.2 },
+    { rank: 3, name: 'Deta Hedman',     country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 38200, avg: 82.8 },
+    { rank: 4, name: 'Lisa Ashton',     country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 34600, avg: 84.1 },
+    { rank: 5, name: 'Mikuru Suzuki',   country: '🇯🇵',          earnings: 28400, avg: 81.9 },
+    { rank: 6, name: 'Aileen de Graaf', country: '🇳🇱',          earnings: 24800, avg: 80.3 },
+    { rank: 7, name: 'Noa-Lynn van Leuven', country: '🇳🇱',      earnings: 22100, avg: 83.0 },
+    { rank: 8, name: 'Rhian Edwards',   country: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earnings: 19600, avg: 79.5 },
+    { rank: 9, name: 'Lorraine Winstanley', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 17200, avg: 78.8 },
+    { rank: 10, name: 'Kirsty Hutchinson', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 14800, avg: 79.1 },
+  ];
+  const schedule = [
+    { weekend: 'Weekend 1', dates: '12-13 Apr', venue: 'Wigan', events: 4, status: 'Completed' },
+    { weekend: 'Weekend 2', dates: '17-18 May', venue: 'Gibraltar', events: 4, status: 'Upcoming' },
+    { weekend: 'Weekend 3', dates: '14-15 Jun', venue: 'Hildesheim', events: 4, status: 'Upcoming' },
+    { weekend: 'Weekend 4', dates: '12-13 Jul', venue: 'Leicester', events: 4, status: 'Upcoming' },
+    { weekend: 'Weekend 5', dates: '13-14 Sep', venue: 'Barnsley', events: 4, status: 'Upcoming' },
+    { weekend: 'Weekend 6', dates: '11-12 Oct', venue: 'Minehead', events: 4, status: 'Upcoming' },
+  ];
+  const prizePairs = [
+    { event: 'Players Championship', men: 10000, women: 2500 },
+    { event: 'European Tour event',  men: 25000, women: 6000 },
+    { event: 'World Matchplay',      men: 200000, women: 25000 },
+    { event: 'World Championship',   men: 500000, women: 50000 },
+  ];
+  const maxPrize = Math.max(...prizePairs.map(p => p.men));
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar onNavigate={onNavigate} />
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-1">⭐ Women&apos;s Darts</h1>
+        <p className="text-xs text-gray-500">Women&apos;s Series, Order of Merit, Matchplay qualification and partnership planning.</p>
+      </div>
+
+      {/* Schedule */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-800">
+          <div className="text-sm font-bold text-white">PDC Women&apos;s Series 2025</div>
+          <div className="text-[10px] text-gray-500">6 weekends · 4 events per weekend · 24 events total</div>
+        </div>
+        <table className="w-full text-xs">
+          <thead className="bg-black/30 text-gray-500">
+            <tr><th className="text-left px-4 py-2 font-medium">Weekend</th><th className="text-left px-4 py-2 font-medium">Dates</th><th className="text-left px-4 py-2 font-medium">Venue</th><th className="text-right px-4 py-2 font-medium">Events</th><th className="text-right px-4 py-2 font-medium">Status</th></tr>
+          </thead>
+          <tbody>
+            {schedule.map((w, i) => (
+              <tr key={i} className="border-t border-gray-800/60">
+                <td className="px-4 py-2.5 text-gray-300 font-semibold">{w.weekend}</td>
+                <td className="px-4 py-2.5 text-gray-500">{w.dates}</td>
+                <td className="px-4 py-2.5 text-gray-400">{w.venue}</td>
+                <td className="px-4 py-2.5 text-right text-gray-300">{w.events}</td>
+                <td className="px-4 py-2.5 text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${w.status === 'Completed' ? 'bg-teal-600/20 text-teal-300' : 'bg-gray-700/40 text-gray-400'}`}>{w.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Order of Merit */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-800">
+            <div className="text-sm font-bold text-white">Women&apos;s Order of Merit — Top 10</div>
+            <div className="text-[10px] text-gray-500">Rolling 12 months · GBP</div>
+          </div>
+          <div className="divide-y divide-gray-800/60">
+            {oom.map(p => (
+              <div key={p.rank} className="flex items-center gap-3 px-4 py-2.5">
+                <div className={`text-xs font-black w-6 text-center ${p.rank <= 3 ? 'text-orange-400' : 'text-gray-500'}`}>#{p.rank}</div>
+                <div className="text-sm shrink-0">{p.country}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">{p.name}</div>
+                  <div className="text-[10px] text-gray-500">Avg {p.avg}</div>
+                </div>
+                <div className="text-xs text-orange-300 font-bold">£{p.earnings.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Matchplay qualification */}
+        <div className="space-y-4">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-bold text-white">Women&apos;s World Matchplay</div>
+              <span className="px-2 py-0.5 bg-red-600/20 text-red-300 text-[10px] font-bold rounded uppercase">Top 8 Qualify</span>
+            </div>
+            <div className="text-xs text-gray-400 mb-3">Qualification from the Women&apos;s Order of Merit — cutoff as of Weekend 6 (Minehead).</div>
+            <div className="space-y-1.5">
+              {oom.slice(0, 8).map(p => (
+                <div key={p.rank} className="flex items-center gap-2 text-xs">
+                  <div className={`w-5 text-center font-black ${p.rank <= 8 ? 'text-teal-400' : 'text-gray-600'}`}>#{p.rank}</div>
+                  <div className="flex-1 text-gray-300">{p.name}</div>
+                  <CheckCircle size={12} className="text-teal-400" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-pink-900/30 to-purple-900/20 border border-pink-700/30 rounded-xl p-5">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="text-xl">💜</div>
+              <div>
+                <div className="text-sm font-bold text-white mb-1">Support Women&apos;s Darts</div>
+                <div className="text-xs text-gray-400">Join the PDPA women&apos;s tour membership — advocacy, development grants, and equal prize money campaigning.</div>
+              </div>
+            </div>
+            <button className="w-full bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all">Join PDPA Women&apos;s Tour →</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Prize money comparison */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-bold text-white">Prize Money — Winner&apos;s Cheque</div>
+            <div className="text-[10px] text-gray-500">Men vs women per flagship event</div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {prizePairs.map((p, i) => (
+            <div key={i}>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-xs text-gray-300 font-semibold">{p.event}</div>
+                <div className="text-[10px] text-gray-500">£{p.men.toLocaleString()} / £{p.women.toLocaleString()}</div>
+              </div>
+              <div className="flex gap-1 h-5">
+                <div className="rounded-sm bg-gradient-to-r from-red-700 to-red-500" style={{ width: `${(p.men / maxPrize) * 100}%` }} title={`Men: £${p.men.toLocaleString()}`} />
+                <div className="rounded-sm bg-gradient-to-r from-pink-700 to-pink-500" style={{ width: `${(p.women / maxPrize) * 100}%` }} title={`Women: £${p.women.toLocaleString()}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center gap-3 text-[10px] text-gray-500">
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-red-600" /> Men</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-pink-600" /> Women</div>
+        </div>
+      </div>
+
+      {/* Mixed doubles partnership planner */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-bold text-white mb-1">Mixed Doubles Partnership Planner</div>
+        <div className="text-[10px] text-gray-500 mb-4">Pair with a women&apos;s tour player for the mixed doubles event at the World Cup of Darts.</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {oom.slice(0, 3).map(p => (
+            <div key={p.rank} className="bg-black/40 border border-gray-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-lg">{p.country}</div>
+                <div>
+                  <div className="text-xs font-bold text-white">{p.name}</div>
+                  <div className="text-[10px] text-gray-500">Avg {p.avg} · #{p.rank}</div>
+                </div>
+              </div>
+              <button className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 text-[10px] font-semibold px-3 py-1.5 rounded transition-all">Request pairing</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DartsPortalPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const player = DEMO_PLAYER;
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
 
   const renderView = () => {
     switch (activeSection) {
@@ -1880,6 +2263,9 @@ export default function DartsPortalPage() {
       case 'career':        return <CareerPlanningView onNavigate={setActiveSection} />;
       case 'datahub':       return <DataHubView onNavigate={setActiveSection} />;
       case 'settings':      return <SettingsView player={player} onNavigate={setActiveSection} />;
+      case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} />;
+      case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} />;
+      case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} />;
       default:              return <DashboardView player={player} onNavigate={setActiveSection} />;
     }
   };

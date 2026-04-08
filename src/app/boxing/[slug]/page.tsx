@@ -50,6 +50,7 @@ const SIDEBAR_ITEMS = [
   { id: 'training',        label: 'Training Log',        icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'FIGHT CAMP' },
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
+  { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
   { id: 'recovery',        label: 'Recovery & HRV',      icon: '💚', group: 'WEIGHT & HEALTH' },
@@ -3118,6 +3119,180 @@ function IndustryNewsView() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── FIGHT NIGHT OPS VIEW ─────────────────────────────────────────────────────
+const FIGHT_NIGHT_TIMELINE = [
+  { time: '17:00', title: 'Arrive at venue',             detail: 'Dressing Room 14, Level 3' },
+  { time: '17:30', title: 'Medicals — commission doctor', detail: 'Dr. Sarah Hughes, BBBofC' },
+  { time: '18:00', title: 'Glove check with officials',   detail: '10oz Reyes, pre-approved' },
+  { time: '18:30', title: 'Wrapping begins',              detail: 'Head cutman Mike Torres' },
+  { time: '19:00', title: 'Undercard begins',             detail: '5-bout card' },
+  { time: '20:30', title: 'Begin warm-up',                detail: 'Pad work with Ray Mitchell' },
+  { time: '21:30', title: 'Final stretch & focus time',   detail: 'Hydration, mental reset' },
+  { time: '22:00', title: 'RINGWALK',                     detail: '"Eye of the Tiger" — confirmed' },
+  { time: '22:10', title: 'FIRST BELL',                   detail: 'Show time.' },
+]
+
+function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
+  const [roundTab, setRoundTab] = useState<'early' | 'mid' | 'late'>('early')
+  const roundText: Record<'early' | 'mid' | 'late', string> = {
+    early: 'Establish jab, gauge distance, respect his right hand. No risks. Win on points.',
+    mid:   'If jab working — start throwing the right behind it. Body work in close.',
+    late:  'If ahead — stay disciplined. If behind — open up, take risks from R10.',
+  }
+  const roundLabel: Record<'early' | 'mid' | 'late', string> = {
+    early: 'Early rounds (R1–4)',
+    mid:   'Middle rounds (R5–8)',
+    late:  'Late rounds (R9–12)',
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🥊" title="Fight Night Ops" subtitle="Tonight's command centre — timeline, corner, strategy, broadcast, medical" />
+
+      {/* 1. EVENT HEADER */}
+      <div className="bg-gradient-to-br from-red-600/20 to-red-900/10 border border-red-600/30 rounded-xl p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-xs text-red-300 font-semibold uppercase tracking-widest mb-1">Main event</div>
+            <div className="text-2xl font-bold text-white mb-1">{fighter.name} &ldquo;{fighter.nickname}&rdquo; vs Viktor Petrov</div>
+            <div className="text-sm text-gray-300">{fighter.next_fight.venue}  ·  Saturday 15 June 2026  ·  22:00 Ringwalk</div>
+          </div>
+          <div className="bg-red-600 text-white text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-lg flex-shrink-0">
+            FIGHT NIGHT — T-4 hours
+          </div>
+        </div>
+      </div>
+
+      {/* 2. TIMELINE */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Timeline</div>
+        <div className="space-y-3">
+          {FIGHT_NIGHT_TIMELINE.map((t, i) => (
+            <div key={i} className="flex items-start gap-4 border-l-2 border-red-600/40 pl-4 pb-2">
+              <div className="text-xs font-mono font-bold text-red-400 w-12 flex-shrink-0">{t.time}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-white font-semibold">{t.title}</div>
+                <div className="text-xs text-gray-400">{t.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. CORNER TEAM CARD */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Corner team</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            { role: 'Head Trainer', name: 'Ray Mitchell', note: 'Tactics: pressure jab, cut off ring' },
+            { role: 'Cutman',       name: 'Mike Torres',  note: 'Vaseline pre-loaded, adrenaline ready' },
+            { role: 'Second',       name: 'Danny Cole (brother)', note: 'Water, mouthguard, stool' },
+            { role: 'Manager',      name: 'Tommy Walsh',  note: 'At ringside, promoter liaison' },
+          ].map((m, i) => (
+            <div key={i} className="bg-black/40 border border-gray-800 rounded-lg p-3">
+              <div className="text-[10px] uppercase tracking-widest text-red-400 font-semibold">{m.role}</div>
+              <div className="text-sm text-white font-semibold mt-0.5">{m.name}</div>
+              <div className="text-xs text-gray-400 mt-1">{m.note}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 4. ROUND-BY-ROUND STRATEGY */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Round-by-round strategy</div>
+        <div className="flex items-center gap-2 mb-4">
+          {(['early', 'mid', 'late'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setRoundTab(t)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${roundTab === t ? 'border-red-500 bg-red-600/20 text-red-300' : 'border-gray-800 bg-black/40 text-gray-400 hover:border-gray-700'}`}
+            >
+              {roundLabel[t]}
+            </button>
+          ))}
+        </div>
+        <div className="bg-black/40 border border-gray-800 rounded-lg p-4 text-sm text-gray-200 italic mb-4">
+          &ldquo;{roundText[roundTab]}&rdquo;
+        </div>
+        <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2">Corner instruction — between rounds</div>
+        <textarea
+          defaultValue="Eyes on me. Breathe. Keep that jab high, pivot off the right foot. You're winning this round — same again."
+          className="w-full bg-black/40 border border-gray-800 rounded-lg p-3 text-xs text-gray-200 min-h-[70px] focus:border-red-500/60 focus:outline-none"
+        />
+      </div>
+
+      {/* 5. BROADCAST CHECKLIST */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Broadcast checklist</div>
+        <div className="space-y-2">
+          {[
+            { done: true,  text: 'Sky Sports producer briefed (3-minute feature pre-fight)' },
+            { done: true,  text: 'DAZN stream active — 180 countries' },
+            { done: false, text: 'Post-fight interview confirmed (ring or backstage?)' },
+            { done: false, text: 'Social media team ready for result graphic' },
+          ].map((c, i) => (
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/60">
+              <span className={`text-base ${c.done ? 'text-green-400' : 'text-gray-600'}`}>{c.done ? '☑' : '☐'}</span>
+              <span className={`text-xs ${c.done ? 'text-white' : 'text-gray-400'}`}>{c.text}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-gray-500 mt-3">Press contact: Sarah James, Matchroom — 07xxx</div>
+      </div>
+
+      {/* 6. MEDICAL & SAFETY */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Medical &amp; safety</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Commission doctor</div>
+            <div className="text-sm text-white mt-0.5">Dr. Sarah Hughes, BBBofC</div>
+            <div className="text-xs text-gray-400 mt-1">Ringside throughout</div>
+          </div>
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Ambulance</div>
+            <div className="text-sm text-green-400 mt-0.5">Confirmed — Bay 3</div>
+            <div className="text-xs text-gray-400 mt-1">On standby</div>
+          </div>
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Hospital</div>
+            <div className="text-sm text-white mt-0.5">King&apos;s College Hospital</div>
+            <div className="text-xs text-gray-400 mt-1">2.4 miles · trauma team alerted</div>
+          </div>
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Suspension status</div>
+            <div className="text-sm text-green-400 mt-0.5">Clean</div>
+            <div className="text-xs text-gray-400 mt-1">Last test 14 May — passed</div>
+          </div>
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-3 md:col-span-2">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Brain scan</div>
+            <div className="text-sm text-green-400 mt-0.5">MRI completed 1 June — cleared</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 7. WEIGH-IN CONFIRMATION */}
+      <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Weigh-in confirmation</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-4 text-center">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500">Petrov</div>
+            <div className="text-2xl font-bold text-white mt-1">201.4 <span className="text-sm text-gray-400">lbs</span></div>
+            <div className="text-xs text-green-400 mt-1">✅ Inside limit</div>
+          </div>
+          <div className="bg-black/40 border border-gray-800 rounded-lg p-4 text-center">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500">{fighter.name.split(' ')[1] || 'Cole'}</div>
+            <div className="text-2xl font-bold text-white mt-1">199.8 <span className="text-sm text-gray-400">lbs</span></div>
+            <div className="text-xs text-green-400 mt-1">✅ Inside limit</div>
+          </div>
+        </div>
+        <div className="text-xs text-gray-500 mt-3 text-center">Heavyweight division — no upper limit</div>
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function BoxingPortalPage() {
@@ -3133,6 +3308,7 @@ export default function BoxingPortalPage() {
       case 'training':        return <TrainingLogView fighter={fighter} />;
       case 'sparring':        return <SparringPlannerView fighter={fighter} />;
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} />;
+      case 'fight-night':     return <FightNightOpsView fighter={fighter} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} />;
       case 'cut':             return <CutPlannerView fighter={fighter} />;
       case 'recovery':        return <RecoveryHRVView fighter={fighter} />;

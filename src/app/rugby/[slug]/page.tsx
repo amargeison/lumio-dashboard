@@ -42,6 +42,10 @@ const SIDEBAR_ITEMS = [
   { id: 'selection',       label: 'Selection Planner',     icon: '📝', group: 'SQUAD' },
   { id: 'international',   label: 'International Duty',    icon: '🌍', group: 'SQUAD' },
   { id: 'loans',           label: 'Loan Management',       icon: '🔄', group: 'SQUAD' },
+  { id: 'gps-load',        label: 'GPS & Load',            icon: '📡', group: 'PERFORMANCE' },
+  { id: 'video-analysis',  label: 'Video Analysis',        icon: '🎬', group: 'PERFORMANCE' },
+  { id: 'match-stats',     label: 'Match Stats',           icon: '📊', group: 'PERFORMANCE' },
+  { id: 'training-planner',label: 'Training Planner',      icon: '📋', group: 'PERFORMANCE' },
   { id: 'scouting',        label: 'Scouting Pipeline',     icon: '🔍', group: 'RECRUITMENT' },
   { id: 'capimpact',       label: 'Cap Impact Modeller',   icon: '💷', group: 'RECRUITMENT' },
   { id: 'agents',          label: 'Agent Contacts',        icon: '📞', group: 'RECRUITMENT' },
@@ -1648,12 +1652,411 @@ function IndustryNewsView() {
   );
 }
 
+// ─── GPS & LOAD VIEW ──────────────────────────────────────────────────────────
+const GPS_DATA = [
+  { name: 'Danny Foley',  pos: 'No.8',       dist: 12.4, hi: 1240, sprints: 28, maxSpeed: 32.1, acwr: 1.38, status: 'overload' as const },
+  { name: 'Tom Harrison', pos: 'Prop',       dist: 10.8, hi:  720, sprints: 14, maxSpeed: 27.8, acwr: 0.94, status: 'optimal'  as const },
+  { name: 'Marcus Webb',  pos: 'Lock',       dist: 11.6, hi:  880, sprints: 18, maxSpeed: 29.2, acwr: 1.12, status: 'optimal'  as const },
+  { name: 'Karl Foster',  pos: 'Flanker',    dist: 12.1, hi: 1080, sprints: 24, maxSpeed: 30.5, acwr: 1.44, status: 'manage'   as const },
+  { name: 'Sam Ellis',    pos: 'Scrum Half', dist: 11.2, hi:  940, sprints: 22, maxSpeed: 31.4, acwr: 1.08, status: 'optimal'  as const },
+  { name: 'Danny Cole',   pos: 'Fly Half',   dist:  9.8, hi:  680, sprints: 16, maxSpeed: 29.6, acwr: 0.78, status: 'underload' as const },
+  { name: 'Matt Jones',   pos: 'Centre',     dist: 11.9, hi:  960, sprints: 21, maxSpeed: 30.8, acwr: 1.16, status: 'optimal'  as const },
+  { name: 'Luke Barnes',  pos: 'Fullback',   dist: 12.3, hi: 1120, sprints: 26, maxSpeed: 31.9, acwr: 1.52, status: 'overload' as const },
+]
+
+function GPSLoadView() {
+  const ready    = GPS_DATA.filter(p => p.status === 'optimal').length
+  const manage   = GPS_DATA.filter(p => p.status === 'manage').length
+  const rest     = GPS_DATA.filter(p => p.status === 'overload').length
+  const underlod = GPS_DATA.filter(p => p.status === 'underload').length
+  const flagged  = GPS_DATA.filter(p => p.acwr > 1.5)
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📡" title="GPS & Load" subtitle="Catapult + STATSports feeds — team ACWR readiness this week" />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
+          <div className="text-3xl font-bold text-green-400">{ready}</div>
+          <div className="text-xs text-gray-400 mt-1">Ready (optimal)</div>
+        </div>
+        <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4">
+          <div className="text-3xl font-bold text-amber-400">{manage}</div>
+          <div className="text-xs text-gray-400 mt-1">Manage</div>
+        </div>
+        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4">
+          <div className="text-3xl font-bold text-red-400">{rest}</div>
+          <div className="text-xs text-gray-400 mt-1">Rest (overload)</div>
+        </div>
+        <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
+          <div className="text-3xl font-bold text-blue-400">{underlod}</div>
+          <div className="text-xs text-gray-400 mt-1">Underload</div>
+        </div>
+      </div>
+
+      {flagged.length > 0 && (
+        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-sm text-red-300">
+          ⚠ Injury risk — {flagged.length} player{flagged.length > 1 ? 's' : ''} with ACWR &gt; 1.5: {flagged.map(p => p.name).join(', ')}. Recommend reduced loading Tuesday–Wednesday.
+        </div>
+      )}
+
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Per-player GPS (this week)</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800">
+                <th className="text-left py-2 font-medium">Player</th>
+                <th className="text-left py-2 font-medium">Position</th>
+                <th className="text-right py-2 font-medium">Distance (km)</th>
+                <th className="text-right py-2 font-medium">HI Running (m)</th>
+                <th className="text-right py-2 font-medium">Sprints</th>
+                <th className="text-right py-2 font-medium">Max Speed (km/h)</th>
+                <th className="text-right py-2 font-medium">ACWR</th>
+                <th className="text-right py-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {GPS_DATA.map((p, i) => {
+                const colour = p.status === 'optimal' ? 'text-green-400' : p.status === 'manage' ? 'text-amber-400' : p.status === 'overload' ? 'text-red-400' : 'text-blue-400'
+                const label  = p.status === 'optimal' ? 'Ready' : p.status === 'manage' ? 'Manage' : p.status === 'overload' ? 'Rest' : 'Underload'
+                return (
+                  <tr key={i} className="border-b border-gray-800/50">
+                    <td className="py-2 text-white">{p.name}</td>
+                    <td className="py-2 text-gray-400">{p.pos}</td>
+                    <td className="py-2 text-right text-gray-200">{p.dist.toFixed(1)}</td>
+                    <td className="py-2 text-right text-gray-200">{p.hi}</td>
+                    <td className="py-2 text-right text-gray-200">{p.sprints}</td>
+                    <td className="py-2 text-right text-gray-200">{p.maxSpeed.toFixed(1)}</td>
+                    <td className={`py-2 text-right font-semibold ${p.acwr > 1.5 ? 'text-red-400' : p.acwr > 1.3 ? 'text-amber-400' : p.acwr < 0.8 ? 'text-blue-400' : 'text-green-400'}`}>{p.acwr.toFixed(2)}</td>
+                    <td className={`py-2 text-right font-semibold ${colour}`}>{label}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Session comparison — team avg</div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Distance / player</span>
+              <span className="text-white font-medium">11.5 km <span className="text-green-400 ml-2">+4% vs last week</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">HI running / player</span>
+              <span className="text-white font-medium">953 m <span className="text-green-400 ml-2">+7%</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Sprints / player</span>
+              <span className="text-white font-medium">21 <span className="text-amber-400 ml-2">+12%</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-gray-400">Team ACWR</span>
+              <span className="text-white font-medium">1.18 <span className="text-amber-400 ml-2">trending up</span></span>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Integrations</div>
+          <div className="space-y-2">
+            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
+              <span className="text-white">Catapult OpenField</span>
+              <span className="text-green-400">● Connected</span>
+            </button>
+            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
+              <span className="text-white">STATSports Sonra</span>
+              <span className="text-gray-500">Connect</span>
+            </button>
+            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
+              <span className="text-white">Polar Team Pro</span>
+              <span className="text-gray-500">Connect</span>
+            </button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+// ─── VIDEO ANALYSIS VIEW ──────────────────────────────────────────────────────
+const VIDEO_CLIPS = [
+  { id: 1, title: 'Opposition — Bath RFC (attack shapes)', category: 'Opposition',  duration: '18:42', date: '8 Apr',  tags: ['Bath', 'Attack', 'Phase play'], notes: 'Look for their 10-12 loop after 3 phases — key attacking shape.' },
+  { id: 2, title: 'Training — Lineout patterns session',    category: 'Training',    duration: '24:10', date: '7 Apr',  tags: ['Lineout', 'Set piece'],        notes: 'New front-ball option for #2 — discuss Friday.' },
+  { id: 3, title: 'Match review — Saracens (full)',         category: 'Match',       duration: '1:14:30', date: '5 Apr', tags: ['Saracens', 'Full match'],     notes: 'Second-half defence let us down between 60–70.' },
+  { id: 4, title: 'Set piece — attacking maul drive',       category: 'Training',    duration: '11:05', date: '4 Apr',  tags: ['Maul', 'Attack'],              notes: 'Foley cleanout technique — teach to the front row.' },
+  { id: 5, title: 'Individual — Foley breakdown technique', category: 'Individual',  duration: '9:22',  date: '3 Apr',  tags: ['Foley', 'Breakdown'],          notes: 'Body height is excellent — share as coaching clip.' },
+]
+
+function VideoAnalysisView() {
+  const [filter, setFilter] = useState<string>('All')
+  const categories = ['All', 'Match', 'Training', 'Opposition', 'Individual']
+  const filtered = filter === 'All' ? VIDEO_CLIPS : VIDEO_CLIPS.filter(c => c.category === filter)
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🎬" title="Video Analysis" subtitle={`${VIDEO_CLIPS.length} clips in library — match footage, training, opposition & individual breakdowns`} />
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          {categories.map(c => (
+            <button key={c} onClick={() => setFilter(c)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${filter === c ? 'border-purple-500 bg-purple-600/20 text-purple-300' : 'border-gray-800 bg-[#0a0c14] text-gray-400 hover:border-gray-700'}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+        <button className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-500">+ Upload new clip</button>
+      </div>
+
+      <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl p-3 text-xs text-purple-300">
+        🤖 AI tagging coming soon — automatic breakdown by player and phase.
+      </div>
+
+      <div className="space-y-3">
+        {filtered.map(c => (
+          <Card key={c.id}>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-36 h-20 rounded-lg bg-gradient-to-br from-purple-900/40 to-gray-900 border border-gray-800 flex items-center justify-center text-3xl">▶</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-sm font-semibold text-white truncate">{c.title}</div>
+                  <div className="text-[10px] text-gray-500 flex-shrink-0 ml-2">{c.duration} · {c.date}</div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                  <span className="text-[10px] font-semibold text-purple-300 bg-purple-600/20 border border-purple-600/30 rounded px-1.5 py-0.5">{c.category}</span>
+                  {c.tags.map(t => (
+                    <span key={t} className="text-[10px] text-gray-400 bg-gray-800/60 rounded px-1.5 py-0.5">#{t}</span>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 italic">&ldquo;{c.notes}&rdquo;</div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── MATCH STATS VIEW ─────────────────────────────────────────────────────────
+const MATCH_RESULTS = [
+  { date: '5 Apr',  opp: 'Saracens',      ha: 'A' as const, score: '21-27', result: 'L' as const, poss: 48, tackles: 89, lineout: 78, scrum: 75 },
+  { date: '29 Mar', opp: 'Bristol',       ha: 'H' as const, score: '34-18', result: 'W' as const, poss: 58, tackles: 91, lineout: 85, scrum: 82 },
+  { date: '22 Mar', opp: 'Worcester',     ha: 'A' as const, score: '17-17', result: 'D' as const, poss: 51, tackles: 84, lineout: 80, scrum: 77 },
+  { date: '15 Mar', opp: 'Ealing',        ha: 'H' as const, score: '29-12', result: 'W' as const, poss: 61, tackles: 92, lineout: 88, scrum: 81 },
+  { date: '8 Mar',  opp: 'Doncaster',     ha: 'A' as const, score: '24-22', result: 'W' as const, poss: 54, tackles: 86, lineout: 81, scrum: 79 },
+]
+
+function MatchStatsView() {
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📊" title="Match Stats" subtitle="Last 5 results and season aggregates" />
+
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Last 5 results</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800">
+                <th className="text-left py-2 font-medium">Date</th>
+                <th className="text-left py-2 font-medium">Opposition</th>
+                <th className="text-center py-2 font-medium">H/A</th>
+                <th className="text-center py-2 font-medium">Score</th>
+                <th className="text-center py-2 font-medium">Result</th>
+                <th className="text-right py-2 font-medium">Possession</th>
+                <th className="text-right py-2 font-medium">Tackles</th>
+                <th className="text-right py-2 font-medium">Lineout %</th>
+                <th className="text-right py-2 font-medium">Scrum %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MATCH_RESULTS.map((m, i) => {
+                const resClass = m.result === 'W' ? 'text-green-400' : m.result === 'L' ? 'text-red-400' : 'text-amber-400'
+                return (
+                  <tr key={i} className="border-b border-gray-800/50">
+                    <td className="py-2 text-gray-400">{m.date}</td>
+                    <td className="py-2 text-white">{m.opp}</td>
+                    <td className="py-2 text-center text-gray-400">{m.ha}</td>
+                    <td className="py-2 text-center text-white font-medium">{m.score}</td>
+                    <td className={`py-2 text-center font-bold ${resClass}`}>{m.result}</td>
+                    <td className="py-2 text-right text-gray-200">{m.poss}%</td>
+                    <td className="py-2 text-right text-gray-200">{m.tackles}</td>
+                    <td className="py-2 text-right text-gray-200">{m.lineout}%</td>
+                    <td className="py-2 text-right text-gray-200">{m.scrum}%</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl p-4">
+          <div className="text-2xl font-bold text-purple-300">54%</div>
+          <div className="text-xs text-gray-400 mt-1">Avg possession</div>
+        </div>
+        <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
+          <div className="text-2xl font-bold text-green-400">87%</div>
+          <div className="text-xs text-gray-400 mt-1">Tackle success</div>
+        </div>
+        <div className="bg-teal-600/10 border border-teal-600/30 rounded-xl p-4">
+          <div className="text-2xl font-bold text-teal-400">82%</div>
+          <div className="text-xs text-gray-400 mt-1">Lineout success</div>
+        </div>
+        <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4">
+          <div className="text-2xl font-bold text-amber-400">79%</div>
+          <div className="text-xs text-gray-400 mt-1">Scrum win %</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Top performers</div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Most tackles / game</span>
+              <span className="text-white">Danny Foley <span className="text-purple-300 ml-2">14.0</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Line breaks / game</span>
+              <span className="text-white">Tom Harrison <span className="text-purple-300 ml-2">3.0</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Metres made / game</span>
+              <span className="text-white">Luke Barnes <span className="text-purple-300 ml-2">108</span></span>
+            </div>
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-gray-400">Turnovers won / game</span>
+              <span className="text-white">Karl Foster <span className="text-purple-300 ml-2">2.4</span></span>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Discipline</div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Yellow cards</span>
+              <span className="text-amber-400 font-semibold">3</span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
+              <span className="text-gray-400">Red cards</span>
+              <span className="text-green-400 font-semibold">0</span>
+            </div>
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-gray-400">Penalties conceded / game</span>
+              <span className="text-white font-semibold">9.2</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Set piece heat map — lineouts won / lost by zone</div>
+        <div className="text-[10px] text-gray-500 mb-2">Green = won · red = lost · size = count</div>
+        <svg viewBox="0 0 600 260" className="w-full" style={{ maxHeight: 220 }}>
+          {/* pitch */}
+          <rect x="10" y="10" width="580" height="240" fill="#0f3d24" stroke="rgba(255,255,255,0.3)" strokeWidth="2" rx="4" />
+          <line x1="300" y1="10" x2="300" y2="250" stroke="rgba(255,255,255,0.25)" />
+          <line x1="100" y1="10" x2="100" y2="250" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+          <line x1="500" y1="10" x2="500" y2="250" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+          {/* Own 22 */}
+          <text x="55" y="20" fill="rgba(255,255,255,0.4)" fontSize="9">Own 22</text>
+          <text x="200" y="20" fill="rgba(255,255,255,0.4)" fontSize="9">Own half</text>
+          <text x="380" y="20" fill="rgba(255,255,255,0.4)" fontSize="9">Opp half</text>
+          <text x="540" y="20" fill="rgba(255,255,255,0.4)" fontSize="9">Opp 22</text>
+          {/* Won markers */}
+          <circle cx="60" cy="80" r="14" fill="#10B981" opacity="0.7" />
+          <text x="60" y="84" fontSize="10" textAnchor="middle" fill="white" fontWeight="700">8</text>
+          <circle cx="200" cy="120" r="18" fill="#10B981" opacity="0.7" />
+          <text x="200" y="124" fontSize="10" textAnchor="middle" fill="white" fontWeight="700">14</text>
+          <circle cx="380" cy="80" r="16" fill="#10B981" opacity="0.7" />
+          <text x="380" y="84" fontSize="10" textAnchor="middle" fill="white" fontWeight="700">11</text>
+          <circle cx="540" cy="160" r="12" fill="#10B981" opacity="0.7" />
+          <text x="540" y="164" fontSize="10" textAnchor="middle" fill="white" fontWeight="700">6</text>
+          {/* Lost markers */}
+          <circle cx="150" cy="180" r="9"  fill="#EF4444" opacity="0.7" />
+          <text x="150" y="183" fontSize="9" textAnchor="middle" fill="white" fontWeight="700">3</text>
+          <circle cx="250" cy="60"  r="7"  fill="#EF4444" opacity="0.7" />
+          <text x="250" y="63" fontSize="9" textAnchor="middle" fill="white" fontWeight="700">2</text>
+          <circle cx="430" cy="200" r="10" fill="#EF4444" opacity="0.7" />
+          <text x="430" y="203" fontSize="9" textAnchor="middle" fill="white" fontWeight="700">4</text>
+        </svg>
+      </Card>
+    </div>
+  )
+}
+
+// ─── TRAINING PLANNER VIEW ────────────────────────────────────────────────────
+type TrainingSession = { time: string; title: string; group: string; note?: string }
+const WEEK_PLAN: { day: string; label: string; sessions: TrainingSession[]; accent: string }[] = [
+  { day: 'Mon', label: 'Monday',   accent: 'purple', sessions: [{ time: '09:00', title: 'Gym & S&C', group: 'Full squad' }] },
+  { day: 'Tue', label: 'Tuesday',  accent: 'purple', sessions: [
+    { time: '10:00', title: 'Tactical — attack patterns', group: 'Full squad' },
+    { time: '13:00', title: 'Set piece', group: 'Forwards', note: 'ACWR flag — see alert' },
+  ] },
+  { day: 'Wed', label: 'Wednesday', accent: 'blue',   sessions: [{ time: '—', title: 'Recovery & analysis only', group: 'Full squad' }] },
+  { day: 'Thu', label: 'Thursday',  accent: 'purple', sessions: [{ time: '11:00', title: "Captain's run", group: 'Full squad' }] },
+  { day: 'Fri', label: 'Friday',    accent: 'amber',  sessions: [{ time: 'AM',     title: 'Travel + pre-match prep', group: 'Matchday 23' }] },
+  { day: 'Sat', label: 'Saturday',  accent: 'red',    sessions: [{ time: '15:00', title: 'MATCH DAY — Bath RFC (A)', group: 'Matchday 23' }] },
+  { day: 'Sun', label: 'Sunday',    accent: 'green',  sessions: [{ time: '—', title: 'Rest / recovery', group: 'Full squad' }] },
+]
+
+function TrainingPlannerView() {
+  const [groupFilter, setGroupFilter] = useState<'All' | 'Forwards' | 'Backs'>('All')
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="📋" title="Training Planner" subtitle="Weekly schedule — Mon–Sun with position group splits" />
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          {(['All', 'Forwards', 'Backs'] as const).map(g => (
+            <button key={g} onClick={() => setGroupFilter(g)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${groupFilter === g ? 'border-purple-500 bg-purple-600/20 text-purple-300' : 'border-gray-800 bg-[#0a0c14] text-gray-400 hover:border-gray-700'}`}>
+              {g}
+            </button>
+          ))}
+        </div>
+        <button className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-500">+ Add Session</button>
+      </div>
+
+      <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-300">
+        ⚠ Load monitoring alert — Tuesday double session may spike ACWR for front row. Consider splitting the tactical block.
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+        {WEEK_PLAN.map(d => (
+          <Card key={d.day}>
+            <div className={`text-xs font-bold uppercase tracking-wider mb-2 text-${d.accent}-400`}>{d.label}</div>
+            <div className="space-y-2">
+              {d.sessions.map((s, i) => (
+                <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2">
+                  <div className="text-[10px] text-gray-500">{s.time}</div>
+                  <div className="text-xs text-white font-medium leading-tight">{s.title}</div>
+                  <div className="text-[10px] text-gray-400 mt-1">{s.group}</div>
+                  {s.note && <div className="text-[10px] text-amber-400 mt-1">⚠ {s.note}</div>}
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function RugbyPortalPage() {
   const [activeSection,setActiveSection]=useState('dashboard');
   const [sidebarCollapsed,setSidebarCollapsed]=useState(false);
   const club = DEMO_CLUB;
-  const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
+  const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','PERFORMANCE','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
 
   const renderView = () => {
     switch(activeSection) {
@@ -1673,6 +2076,10 @@ export default function RugbyPortalPage() {
       case 'selection':       return <SelectionPlannerView/>;
       case 'international':   return <InternationalDutyView/>;
       case 'loans':           return <LoanManagementView/>;
+      case 'gps-load':        return <GPSLoadView/>;
+      case 'video-analysis':  return <VideoAnalysisView/>;
+      case 'match-stats':     return <MatchStatsView/>;
+      case 'training-planner':return <TrainingPlannerView/>;
       case 'scouting':        return <ScoutingPipelineView/>;
       case 'capimpact':       return <CapImpactModellerView club={club}/>;
       case 'agents':          return <AgentContactsView/>;
