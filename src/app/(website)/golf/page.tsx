@@ -32,16 +32,18 @@ export default function GolfPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#E5E7EB' }}>
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
+      <section style={{ position: 'relative', overflow: 'hidden' }} className="px-6 pt-24 pb-20 text-center">
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${ACCENT}33, transparent 50%), radial-gradient(circle at 80% 60%, ${ACCENT}22, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative' }} className="max-w-5xl mx-auto">
         <Image src="/Sports/golf_logo.png" alt="Lumio Golf" width={120} height={120} className="mx-auto mb-6" />
         <div className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6" style={{ backgroundColor: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>
           Lumio Tour · Golf
         </div>
         <h1 className="text-4xl md:text-5xl font-black mb-4" style={{ color: '#F9FAFB' }}>
-          The career OS for touring golf professionals.
+          The operating system for professional golf players.
         </h1>
         <p className="text-lg max-w-2xl mx-auto mb-8" style={{ color: '#9CA3AF' }}>
-          OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit scoring, sponsorship manager and AI morning briefing.
+          OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — everything your team needs, in one place. Built for DP World Tour &amp; PGA Tour professionals.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#0A0B10' }}>
@@ -50,6 +52,7 @@ export default function GolfPage() {
           <Link href="/contact" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
             Book a walkthrough
           </Link>
+        </div>
         </div>
       </section>
 
