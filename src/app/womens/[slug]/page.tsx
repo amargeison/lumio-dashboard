@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
-import type { SportsDemoSession } from '@/components/sports-demo'
+import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2, Target, Zap, Calendar, FileText, DollarSign, Award } from 'lucide-react'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -115,8 +115,8 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
 )
 
 // ─── INSIGHTS VIEW ───────────────────────────────────────────────────────────
-const InsightsView = ({ club }: { club: WomensClub }) => {
-  const [activeRole, setActiveRole] = useState('coach');
+const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: string }) => {
+  const [activeRole, setActiveRole] = useState(defaultRole ?? 'coach');
   const roles = [
     { id: 'coach', label: 'Head Coach', icon: '🎽' },
     { id: 'dof', label: 'Director of Football', icon: '📋' },
@@ -3581,9 +3581,12 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
   return (
     <SportsDemoGate
       sport="womens"
-      accentColor="#EC4899"
-      sportLabel="Women's FC"
       defaultClubName={club.name}
+      defaultSlug={params.slug}
+      accentColor="#EC4899"
+      accentColorLight="#F472B6"
+      sportEmoji="⚽"
+      sportLabel="Lumio Women's FC"
       roles={WOMENS_ROLES}
     >
       {(session) => <WomensFootballPortalInner club={club} session={session} />}
@@ -3594,6 +3597,7 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
 function WomensFootballPortalInner({ club, session }: { club: WomensClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [activeRole, setActiveRole] = useState(session.role)
 
   const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'COMMERCIAL', 'OPERATIONS']
 
@@ -3608,7 +3612,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'fsr':         return <FSRDashboardView club={club} />
       case 'welfare':     return <WelfareView />
       case 'briefing':    return <MorningBriefingView club={club} />
-      case 'insights':    return <InsightsView club={club} />
+      case 'insights':    return <InsightsView club={club} defaultRole={activeRole} />
       case 'salary':      return <SalaryComplianceView />
       case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
@@ -3644,8 +3648,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
-          {session.logoUrl
-            ? <img src={session.logoUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
+          {session.logoDataUrl
+            ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
             : <span className="text-xl">⚽</span>}
           {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{session.clubName}</span>}
         </div>
@@ -3674,9 +3678,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             session={session}
             roles={WOMENS_ROLES}
             accentColor="#EC4899"
-            onRoleChange={() => {}}
-            onReset={() => { if (typeof window !== 'undefined') { localStorage.removeItem('lumio_womens_demo_session'); window.location.reload() } }}
-            collapsed={sidebarCollapsed}
+            onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('insights') }}
+            sidebarCollapsed={sidebarCollapsed}
           />
         </div>
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 text-gray-600 hover:text-gray-400 border-t border-gray-800 text-xs">
@@ -3688,7 +3691,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       <main className="flex-1 overflow-y-auto">
         <div className="border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0A0B12' }}>
           <div className="flex items-center gap-3">
-            <span className="text-lg">⚽</span>
+            {session.logoDataUrl
+              ? <img src={session.logoDataUrl} alt="" className="w-5 h-5 rounded object-cover" />
+              : <span className="text-lg">⚽</span>}
             <div>
               <h1 className="text-sm font-bold text-white">{session.clubName}</h1>
               <p className="text-[10px] text-gray-500">
@@ -3697,6 +3702,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {session.photoDataUrl && (
+              <img src={session.photoDataUrl} alt="" className="w-6 h-6 rounded-full object-cover border border-pink-600/40" />
+            )}
             {club.tier !== 'grassroots' && (
               <span className={`text-xs px-2 py-1 rounded ${
                 club.salarySpend !== null && club.salarySpend > 80 ? 'bg-red-600/20 text-red-400 border border-red-600/30' :

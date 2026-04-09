@@ -2680,11 +2680,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
             }
             setActiveSection(activeSection)
           }}
-          onReset={() => {
-            localStorage.removeItem('lumio_rugby_demo_session')
-            window.location.reload()
-          }}
-          collapsed={sidebarCollapsed}
+          sidebarCollapsed={sidebarCollapsed}
         />
 
         {!sidebarCollapsed&&(
@@ -2714,9 +2710,9 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           {/* Right Sidebar */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{width:'220px'}}>
             <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-4 text-center">
-              {session.logoUrl ? (
+              {session.logoDataUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={session.logoUrl} alt="" className="w-10 h-10 rounded-full mx-auto mb-2 object-cover" />
+                <img src={session.logoDataUrl} alt="" className="w-10 h-10 rounded-full mx-auto mb-2 object-cover" />
               ) : (
                 <div className="text-3xl mb-2">🏉</div>
               )}
