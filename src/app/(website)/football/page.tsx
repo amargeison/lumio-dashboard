@@ -1,940 +1,431 @@
 'use client'
-import { useState } from 'react'
+
 import Link from 'next/link'
-import { ArrowRight, Shield, Users, Target, Zap, BarChart3, Mic, Monitor, Layers, Award, Lock, Plug, Star, ChevronRight } from 'lucide-react'
 
-const RED = '#C0392B'
+const RED = '#EF4444'
+const RED_LIGHT = '#F87171'
+const NAVY = '#1B3A6B'
 const GOLD = '#F1C40F'
-const BG = '#0A0B10'
-const CARD = '#111318'
-const BORDER = '#1F2937'
+const BG = '#07080F'
+const CARD = '#0D1117'
+const CARD_ALT = '#111827'
+const BORDER = '#1E293B'
+const BORDER_ALT = '#1F2937'
+const TEXT = '#F9FAFB'
+const MUTED = '#9CA3AF'
 
-const STATS = [
-  { value: '15+', label: 'Departments' },
-  { value: '45+', label: 'Quick Actions' },
-  { value: 'GPS', label: 'Powered by PlayerData' },
-  { value: 'RBAC', label: 'Role-Based Access' },
-  { value: 'AI', label: 'Powered Insights' },
-  { value: 'LIVE', label: 'Data Feeds' },
+const STAT_PILLS = ['50+ features', 'Championship & League', 'AI powered', 'GPS vest ready', 'PSR compliant']
+
+const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
+  { icon: '📡', title: 'AI Half-Time GPS Brief', desc: "The world's first AI coaching brief powered by GPS vest data. Upload first-half load figures at half-time — Claude AI returns fatigue alerts, a substitution recommendation, and your second-half tactical instruction in 10 seconds." },
+  { icon: '📊', title: 'Directors Suite & PSR', desc: "Board-level financial dashboard, PSR compliance tracker, wage-to-revenue ratios, and FA/EFL governance reporting. Built for Chairmen and Finance Directors who need the full picture before the Board meeting — not just the table position." },
+  { icon: '🎯', title: 'AI Transfer Intelligence', desc: "The AI Transfer Researcher analyses your squad needs and returns five targets with a Lumio Fit Score, strengths, weaknesses, and a recommendation. Opposition reports, scouting database, and Wyscout integration in one toolkit." },
+  { icon: '⚽', title: 'GPS Load Monitoring', desc: "Lumio Vest GPS with Catapult OpenField and STATSports Sonra integration. Pitch heatmaps, ACWR load monitoring, training load planner with injury risk flags, and per-player readiness scores every morning before training." },
+  { icon: '💼', title: 'Fan Engagement & Commercial', desc: "Fan NPS, attendance trends, season ticket trajectory, social sentiment, sponsor pipeline, and matchday revenue. The commercial picture your Board needs alongside the football picture — in the same platform." },
+  { icon: '🏥', title: 'Medical & Fitness Hub', desc: "ACWR-based injury risk flagging, return-to-play tracking, GPS load history per player, medical clearance workflow, and physio case notes. Know who is at risk before the session starts — not after." },
 ]
 
-const FEATURES = [
-  { icon: '📡', title: 'GPS & Wearables', badge: 'Industry First', badgeColor: RED,
-    headline: 'Live Player Load Data on Your Dashboard',
-    bullets: ['Powered by PlayerData — FIFA Quality Certified GPS tracking', 'Session load, high-speed distance, sprint count', 'Player readiness scores updated after every session', 'Red flag alerts for overload or injury risk', 'Historical trends and load management charts'],
-  },
-  { icon: '🏛️', title: 'Board Suite', badge: 'Board Level Intelligence', badgeColor: GOLD,
-    headline: 'Run Your Club Like a Business',
-    bullets: ['Confidential board notes and meeting minutes', 'PSR/FFP dashboard with financial headroom calculator', 'Transfer budget tracking — spent, committed, remaining', 'Revenue vs expenditure reporting', 'Confidential transfer strategy documents', 'Role-gated: Chairman, CEO, and DoF access only'],
-  },
-  { icon: '🌅', title: 'Morning Roundup', badge: null, badgeColor: '',
-    headline: 'Your Club, First Thing Every Morning',
-    bullets: ['Agent messages, board communications, media enquiries', 'Unified inbox across Outlook, Gmail and Slack', 'Voice briefing — hear your club summary hands-free', 'AI-powered priority sorting and urgent flagging', 'One-tap actions: reply, forward, schedule meeting'],
-  },
-  { icon: '👥', title: 'Squad Management', badge: null, badgeColor: '',
-    headline: 'Know Your Squad Inside Out',
-    bullets: ['Player profiles with availability, fitness and form', 'GPS readiness scores integrated per player', 'Injury tracker with return-to-play timelines', 'Squad planner with contract expiry alerts', 'Academy pipeline with promotion candidates'],
-  },
-  { icon: '🔄', title: 'Transfer Hub', badge: null, badgeColor: '',
-    headline: 'Your Entire Transfer Operation in One Place',
-    bullets: ['Target tracking and scouting pipeline', 'Agent relationship management with contact log', 'Budget allocation by position priority', 'Confidential offload pipeline', 'PSR/FFP impact calculator per signing'],
-  },
-  { icon: '📋', title: 'Tactics Viewer', badge: null, badgeColor: '',
-    headline: 'Visualise Your Game Plan',
-    bullets: ['Interactive SVG pitch with clickable positions', 'Multiple formation templates (4-3-3, 3-5-2, etc.)', 'Save and compare tactical setups', 'Share with coaching staff digitally', 'Set piece routines with movement arrows'],
-  },
-  { icon: '🏟️', title: 'Match Day', badge: null, badgeColor: '',
-    headline: 'Everything You Need on Match Day',
-    bullets: ['Team sheet builder with drag-and-drop', 'Live match notes and tactical adjustments', 'Half-time data review with GPS stats', 'Post-match analysis and player ratings', 'Press conference prep with AI briefing notes'],
-  },
-  { icon: '📰', title: 'Media & PR', badge: null, badgeColor: '',
-    headline: "Control Your Club's Narrative",
-    bullets: ['Press conference prep with AI-generated talking points', 'Likely media questions with suggested responses', 'Social media content calendar', 'Media request inbox and approval workflow', 'Confidential: manager briefing notes'],
-  },
-  { icon: '⭐', title: 'Academy', badge: null, badgeColor: '',
-    headline: "Develop Tomorrow's Stars",
-    bullets: ['Academy player tracking across age groups', 'Development pathway management', 'U21 and U18 squad integration', 'Promotion pipeline to first team', 'Scout reports linked to academy targets'],
-  },
-  { icon: '🔐', title: 'Role-Based Access', badge: null, badgeColor: '',
-    headline: 'The Right Information for the Right People',
-    bullets: ['Chairman sees everything including financials', 'Head Coach sees squad, tactics, training — not finances', 'Scouts see scouting pipeline only', 'One platform, multiple permission levels', 'Role switcher for testing different views'],
-  },
-  { icon: '🔌', title: 'Integrations', badge: null, badgeColor: '',
-    headline: 'Connects With Your Existing Tools',
-    bullets: ['PlayerData EDGE GPS wearables', 'Microsoft Outlook & Gmail', 'Microsoft Teams & Slack', 'Google Calendar & Outlook Calendar', 'Xero, QuickBooks and accounting platforms'],
-  },
-  { icon: '🏛️', title: 'Board Suite', badge: 'Executive', badgeColor: GOLD,
-    headline: '5-Tab Executive Dashboard',
-    bullets: ['Overview, Finance, Squad & Performance, Governance, Facilities', 'Chairman-level intelligence across the entire club', 'Financial headroom and PSR/FFP compliance', 'Facility management and stadium roadmaps', 'Role-gated access for board members only'],
-  },
-  { icon: '📅', title: 'Club Planner', badge: null, badgeColor: '',
-    headline: 'Strategic Planning at Every Horizon',
-    bullets: ['1-year, 3-year, 5-year and 10-year strategic plans', 'KPIs and transfer budgets per planning horizon', 'Stadium roadmaps and infrastructure timelines', 'Decade P&L projections', 'Board-level strategy documents'],
-  },
-  { icon: '🧠', title: 'Club Intelligence', badge: null, badgeColor: '',
-    headline: '8 Role-Based Views as Compact Pill Tabs',
-    bullets: ['Director of Football', 'Chairman/CEO', 'Head Coach', 'Head of Medical', 'Head of Recruitment', 'Academy Director', 'Head of Analysis', 'Commercial Director'],
-  },
-  { icon: '📊', title: 'Performance Analytics', badge: null, badgeColor: '',
-    headline: 'Deep Performance Data Visualisations',
-    bullets: ['League position trend chart', 'Goals For/Against bars', 'Squad analytics — age, nationality, contract donuts', 'Form heatmap across last 20 games', 'Season-on-season comparison tools'],
-  },
-  { icon: '⚽', title: 'Interactive Tactics Pitch', badge: 'Industry First', badgeColor: RED,
-    headline: 'FIFA-Style Player Cards on Pitch',
-    bullets: ['Click-to-swap player positions', 'Formation switcher: 4-2-3-1, 4-3-3, 3-5-2, 4-4-2', 'Bench squad panel with drag-and-drop', 'Fullscreen, Print, and Share options', 'FIFA-style player cards with ratings and stats'],
-  },
-  { icon: '🔍', title: 'Recruitment Pipeline', badge: null, badgeColor: '',
-    headline: 'Your Entire Scouting Operation',
-    bullets: ['Scouting targets table with status badges', 'Summer budget tracker with progress bar', 'Agent contact log and relationship management', 'Position priority rankings', 'Shortlist comparison tools'],
-  },
-  { icon: '🎯', title: 'Set Pieces Library', badge: null, badgeColor: '',
-    headline: 'Full Routine Cards with SVG Pitch Diagrams',
-    bullets: ['Corner, free kick, and throw-in routines', '2-per-row grid layout for easy browsing', 'SVG pitch diagrams with movement arrows', 'Fullscreen, Print, and Share per routine', 'Coaching staff collaboration tools'],
-  },
-]
-
-const TESTIMONIALS = [
-  { quote: 'Lumio has completely changed how our board operates. The PSR dashboard alone has saved us thousands in consultancy fees.', name: 'James Whitworth', role: 'CEO', club: 'Championship Club' },
-  { quote: 'The morning roundup means I walk into the training ground knowing exactly what needs my attention. Game changer.', name: 'Mark Stevens', role: 'Head Coach', club: 'League One Club' },
-  { quote: 'Having GPS data, squad management and transfer tracking in one platform is something we\'ve needed for years.', name: 'Sarah Collins', role: 'Director of Football', club: 'League Two Club' },
+const TIERS = [
+  { name: 'Director of Football / Head of Performance', desc: 'Squad management, GPS load monitoring, training planner, medical hub, opposition reports, and AI transfer intelligence. The complete technical picture — every morning before training.' },
+  { name: 'Chairman / CEO / Finance Director', desc: 'Directors Suite, PSR compliance tracker, Board Suite financials, fan engagement dashboard, and commercial pipeline. The business of football, as well as the game.' },
+  { name: 'Manager / Coaching Staff', desc: 'Match prep, AI opposition report, AI half-time GPS brief, post-match analysis, press conference briefing, and tactical planning tools. From pre-match prep to the final whistle.' },
 ]
 
 const PRICING = [
-  { tier: 'Starter', desc: 'Free — get up and running today', price: 'Free', features: ['Squad & contracts', 'Live league tables & fixtures', 'Player profiles', 'Basic injury tracker', 'Single user'] },
-  { tier: 'Professional', desc: 'For clubs running real operations', price: '£199 / month', features: ['Everything in Starter', 'Transfer Pipeline (Kanban)', 'Training Load Planner (ACWR)', 'Match Report Builder', 'AI Press Conf, Opposition & Post-Match', 'GPS CSV import (Catapult / STATSports)', 'Branded PDF exports', 'White-label club branding'], highlight: true },
-  { tier: 'Elite', desc: 'For clubs that want every edge', price: '£499 / month', features: ['Everything in Professional', 'AI Transfer Researcher (Lumio Fit Score)', 'AI Fan Insights', 'Club Comparison (radar vs rivals)', 'Fan Engagement Dashboard', 'Board Suite with PSR/FFP', 'Priority support'] },
-  { tier: 'Enterprise', desc: 'Bespoke for top-flight clubs', price: 'Custom', features: ['Everything in Elite', 'Dedicated account manager', 'Custom integrations', 'Multi-department SSO', 'On-premise / private cloud option', 'SLA & data residency'] },
+  { name: 'Starter', price: 'Free', features: ['Squad & contract management', 'Fixtures & results (live data)', 'Match Report Builder', 'GPS CSV upload', 'Fan Hub KPI strip', '3 staff accounts'] },
+  { name: 'Professional', price: '£199/mo', highlight: true, features: ['Everything in Starter', 'Directors Suite & PSR tracker', 'AI Transfer Researcher + Opposition Report', 'AI Post-Match Analysis', 'Training Load Planner', 'GPS pitch heatmaps', 'AI half-time GPS brief', 'Full Fan Engagement Dashboard', 'PDF export across all dashboards', '10 staff accounts'] },
+  { name: 'Elite', price: '£499/mo', features: ['Everything in Professional', 'Catapult + STATSports direct API', 'Wyscout video integration', 'Opta / StatsBomb data', 'AI Club Comparison Analysis', 'White-label club branding', 'Unlimited staff accounts', 'Priority support'] },
+  { name: 'Enterprise', price: 'Custom', features: ['Everything in Elite', 'Custom integrations', 'Multi-club portfolio management', 'Dedicated account manager + SLA', 'Contact us for pricing'] },
 ]
 
-// ─── New Capability Surfaces (added 2026) ───────────────────────────────────
-const NEW_CAPABILITIES = [
-  {
-    group: 'Data & Live Integration',
-    accent: '#22C55E',
-    items: [
-      'Live data from API-Football — league tables, fixtures, results, and player stats update automatically',
-      'GPS data import — upload Catapult or STATSports CSV exports and ACWR scores calculate automatically',
-      'Full Supabase data layer — your squad, contracts, and finance live in the database from day one',
-    ],
-  },
-  {
-    group: 'AI Features (powered by Claude)',
-    accent: '#8B5CF6',
-    items: [
-      'AI Transfer Researcher — configure your criteria and get 5 realistic transfer targets with a Lumio Fit Score',
-      'AI Press Conference Briefing — one click generates 5 likely questions and suggested manager responses',
-      'AI Opposition Report — threats, weaknesses, tactical suggestions, and predicted lineup before every match',
-      'AI Post-Match Analysis — full match report with player ratings, key moments timeline, and manager quote',
-      'AI Fan Insights — 5 data-driven recommendations to grow attendance, NPS, and season ticket renewals',
-    ],
-  },
-  {
-    group: 'New Dashboards',
-    accent: '#3B82F6',
-    items: [
-      'Transfer Pipeline — Kanban board tracking every target from Identified through to Done or Failed',
-      'Player Profile — complete profile with stats history, GPS load trend, injury history, contract, and agent info',
-      'Training Load Planner — weekly calendar with ACWR risk flags before sessions to prevent injuries',
-      'Match Report Builder — template-based reports, editable sections, approve and publish in one click',
-      'Fan Engagement Dashboard — attendance trends, NPS, social sentiment, and season ticket analytics',
-      'Club Comparison — overlay your stats against up to 3 rivals and division benchmarks with a radar chart',
-    ],
-  },
-  {
-    group: 'Platform',
-    accent: '#F59E0B',
-    items: [
-      'Club Data Import Wizard — guided 6-step onboarding for squad, contracts, and fixtures (CSV or manual)',
-      'PDF Export — branded PDFs across every dashboard: Board Suite, Insights, Squad, Match Reports',
-      'White-label branding — your club colours applied across the entire portal with a live preview editor',
-      'Four pricing tiers: Starter (Free), Professional (£199/mo), Elite (£499/mo), Enterprise (custom)',
-    ],
-  },
-]
-
-// ─── Role Showcase Data ──────────────────────────────────────────────────────
-
-const ROLES = [
-  { id: 'dof', emoji: '🏟️', label: 'Director of Football',
-    features: [
-      { name: 'Transfer Pipeline Manager', points: ['Active targets tracked — position, value, agent, status', 'Window countdown — days, hours, minutes', 'Budget dashboard — spent, committed, remaining', 'Work permit tracker — post-Brexit requirements', 'Agent contact log — last contact, next action', 'Bid workflow — configure → submit → track'], outcome: 'Never miss a transfer deadline. Every target tracked, every agent logged, every deadline visible.' },
-      { name: 'Contract Expiry Tracker', points: ['Visual timeline of all contract end dates', 'Priority renewals flagged in red', 'Agent involved for each player', 'Wage budget impact of renewal', 'Board approval workflow', 'Release clause tracker'], outcome: 'See exactly which contracts need attention — today, this month, this season.' },
-      { name: 'Squad Planner (2-season)', points: ['Current squad with contract status', 'Next season projection — who leaves, who stays', 'Position gaps highlighted automatically', 'Academy pipeline integrated', 'Hypothetical targets added to plan', 'Export to board as visual report'], outcome: 'Plan two seasons ahead. Know exactly which positions need filling and when.' },
-      { name: 'AI Morning Briefing', points: ['Squad fitness summary', 'Transfer window updates', 'Contract alerts', 'Agent messages', 'Academy highlights', 'Board items for today'], outcome: 'Everything you need to know — read aloud in 60 seconds every morning.' },
-      { name: 'Board Report Generator', points: ['Select report type and period', 'AI compiles data across all departments', 'Financial summary auto-included', 'Transfer activity summarised', 'Squad performance metrics', 'Export as PDF or presentation'], outcome: 'Board-ready reports generated in seconds, not days.' },
-      { name: 'PSR / FFP Dashboard', points: ['3-year rolling loss calculated automatically', 'Allowable deductions tracked', 'What-if calculator for transfers', 'Year-end projection updated live', 'Wage/revenue ratio monitored', 'Board-ready compliance report'], outcome: 'Know your PSR position every day. Never risk a points deduction.' },
-    ],
-  },
-  { id: 'coach', emoji: '🧠', label: 'Head Coach',
-    features: [
-      { name: 'Team Sheet Builder', points: ['Drag-and-drop formation builder', 'Availability filter — injured, suspended, doubtful', 'GPS readiness scores per player', 'Save and compare multiple line-ups', 'Share with staff instantly', 'Voice command — "Build me a team sheet"'], outcome: 'Pick your best team with full confidence. Fitness, form and tactics — all in one view.' },
-      { name: 'Tactics Board', points: ['Interactive pitch with drag-and-drop', 'Multiple formation templates', 'Draw movement arrows and zones', 'Save and compare tactical setups', 'Share with coaching team digitally', 'Print for dressing room'], outcome: 'Visualise your game plan. Share it with one click.' },
-      { name: 'Training Planner', points: ['Weekly training calendar', 'GPS load per player tracked', 'Session templates for tactical, technical, fitness', 'Recovery group management', 'Share plan with medical team', 'Adjust based on upcoming fixtures'], outcome: 'Plan training around matches, load and fitness — not guesswork.' },
-      { name: 'Match Analysis', points: ['Post-match performance breakdown', 'Key events timeline', 'Player ratings with data backing', 'Half-time and full-time notes', 'Opposition comparison', 'Share insights with staff'], outcome: 'Review every match with data. Make better decisions next time.' },
-      { name: 'Player Dynamics', points: ['Dressing room mood tracker', 'Leadership group visibility', 'Clique detection alerts', 'One-to-one meeting log', 'Culture health score', 'Weekly dynamics summary'], outcome: 'Manage the room. Know what\'s happening before it becomes a problem.' },
-      { name: 'Opposition Scout Report', points: ['Auto-loaded next opponent data', 'Formation and key players', 'Strengths and weaknesses', 'Set piece threats flagged', 'Last 5 results analysed', 'Suggested tactical approach'], outcome: 'Know your opponent better than they know themselves.' },
-    ],
-  },
-  { id: 'medical', emoji: '🏥', label: 'Medical',
-    features: [
-      { name: 'Injury Tracker', points: ['Current injuries with expected return dates', 'GPS ACWR scores — flag overload before injury', 'Return-to-play protocol steps', 'Treatment log per player', 'Integration with PlayerData EDGE GPS', 'Alert when player exceeds safe load threshold'], outcome: 'Reduce injuries. Manage return-to-play with confidence. GPS data built in.' },
-      { name: 'Return-to-Play Planner', points: ['Step-by-step rehab protocol', 'Daily progress tracking', 'Medical sign-off required at each stage', 'GPS metrics integrated for clearance', 'Notification when player passes threshold', 'Automatic squad status update'], outcome: 'Every return-to-play managed safely. No player rushed back.' },
-      { name: 'GPS Load Monitor', points: ['Live session load data', 'Weekly load trends per player', 'ACWR calculation automated', 'Red/amber/green thresholds', 'Comparison to squad average', 'Historical load charts'], outcome: 'Prevent injuries before they happen. GPS data at your fingertips.' },
-      { name: 'Medical Notes', points: ['Confidential player medical records', 'Treatment history', 'Medication tracking', 'Scan results storage', 'Referral management', 'GDPR compliant'], outcome: 'Every medical note secure. Every treatment logged.' },
-      { name: 'DBS & Certifications', points: ['Staff DBS check tracking', 'First aid certification dates', 'Safeguarding training records', 'Renewal reminders', 'Compliance dashboard', 'Export for audits'], outcome: 'Never miss a renewal. Every certification tracked.' },
-      { name: 'Physio Dashboard', points: ['Treatment schedule for today', 'Player queue management', 'Notes per session', 'Recovery protocol tracking', 'Injury recurrence alerts', 'Workload balance across physio team'], outcome: 'Manage your treatment list efficiently. Every session documented.' },
-    ],
-  },
-  { id: 'recruitment', emoji: '🔍', label: 'Recruitment',
-    features: [
-      { name: 'Scouting Pipeline', points: ['Targets tracked by position, age, value, nationality', 'Scout report submission and review', 'Agent contact and commission log', 'Trial scheduling and feedback', 'Video room for match footage review', 'PSR impact calculator per target'], outcome: 'Build your squad intelligently. Every target, every report, every agent — tracked.' },
-      { name: 'Target Watchlist', points: ['Priority targets with status', 'Contract situation tracked', 'Alternative options per position', 'Value trend over time', 'Availability windows flagged', 'Quick share to DoF'], outcome: 'Your shortlist, always up to date. Never lose track of a target.' },
-      { name: 'Agent Directory', points: ['Agent database with contact details', 'Past dealings and commission history', 'Players represented', 'Relationship notes', 'Last contact date', 'Meeting log'], outcome: 'Know every agent. Track every relationship.' },
-      { name: 'Trial Manager', points: ['Trial scheduling', 'Training session allocation', 'Feedback forms from coaches', 'Medical clearance tracking', 'Decision workflow', 'Parent/agent communication log'], outcome: 'Run trials properly. Every trialist tracked from arrival to decision.' },
-      { name: 'Video Room', points: ['Upload match and training footage', 'Tag key moments', 'Share clips with staff', 'Build highlight reels per player', 'Opposition footage library', 'Scout from anywhere'], outcome: 'All your footage in one place. Tag, share, decide.' },
-      { name: 'Scout Reports', points: ['Standardised report template', 'Star rating system', 'Position-specific criteria', 'Photo and video attachment', 'Comparison to current squad', 'Recommendation workflow'], outcome: 'Professional scouting reports. Consistent, thorough, shareable.' },
-    ],
-  },
-  { id: 'academy', emoji: '🎓', label: 'Academy',
-    features: [
-      { name: 'Academy Squad Tracker', points: ['U18/U21 squad management', 'Development milestone tracking', 'First team promotion pipeline', 'Match reports per age group', 'GPS load monitoring for young players', 'Parent communication portal'], outcome: 'Develop tomorrow\'s first team. Track every player from U9 to the bench.' },
-      { name: 'Development Pathway', points: ['Individual development plans', 'Skill milestone tracking', 'Coach assessment forms', 'Progress reports for parents', 'Season objectives per player', 'Annual review scheduling'], outcome: 'Every young player on a clear pathway. Progress visible to everyone.' },
-      { name: 'Promotion Pipeline', points: ['First team readiness assessment', 'Training with first team scheduling', 'Head Coach recommendations', 'Physical development metrics', 'Mental readiness evaluation', 'Contract status alerts'], outcome: 'Know which academy players are ready. Promote with confidence.' },
-      { name: 'U21 Match Reports', points: ['Match report templates', 'Performance ratings per player', 'Key event logging', 'Opposition notes', 'Attendance tracking', 'Season statistics dashboard'], outcome: 'Every youth match documented. Scouts and coaches aligned.' },
-      { name: 'Parent Portal', points: ['Match schedule visibility', 'Transport information', 'Welfare check-ins', 'Development progress access', 'Consent form management', 'Communication log'], outcome: 'Keep parents informed and engaged. Build trust with families.' },
-      { name: 'Academy Analytics', points: ['Conversion rate by age group', 'Scholarship success metrics', 'Category compliance dashboard', 'EPPP audit preparation', 'Cost per player analysis', 'Benchmark against top academies'], outcome: 'Run your academy with data. Prove its value to the board.' },
-    ],
-  },
-  { id: 'analysis', emoji: '📊', label: 'Analysis',
-    features: [
-      { name: 'Match Analytics', points: ['Post-match performance breakdown', 'Player rating and contribution scores', 'GPS heat maps per player', 'Opposition shape and pattern analysis', 'Set piece catalogue — attacking and defending', 'Season trend lines per metric'], outcome: 'Turn data into decisions. Every match analysed. Every pattern spotted.' },
-      { name: 'Performance Trends', points: ['Player form over time', 'Fitness trend charts', 'Comparison to squad average', 'Seasonal peaks and troughs identified', 'Impact of training load on performance', 'Export for coaching presentations'], outcome: 'See the trends others miss. Data that makes a difference.' },
-      { name: 'Opposition Analysis', points: ['Next opponent auto-loaded', 'Formation and system analysis', 'Key player profiles', 'Defensive and attacking patterns', 'Set piece threats', 'Last 5 matches breakdown'], outcome: 'Prepare for every opponent with comprehensive intelligence.' },
-      { name: 'Set Piece Library', points: ['Corner routines — attacking and defending', 'Free kick playbook', 'Throw-in routines', 'Visual SVG pitch diagrams', 'Success rate tracking per routine', 'Share on tablet in dressing room'], outcome: 'Set pieces win games. Yours are planned, drilled and tracked.' },
-      { name: 'GPS Heat Maps', points: ['Player positional data visualised', 'Session vs match comparison', 'Team shape analysis', 'Running lanes and zones', 'Sprint locations mapped', 'Share with coaching team'], outcome: 'See where your players actually play. Not where you think they play.' },
-      { name: 'Video Tagging', points: ['Tag key moments in footage', 'Build clip sequences', 'Share individual player clips', 'Opposition tactical clips', 'Integration with analysis software', 'Searchable tag database'], outcome: 'Find any moment, any match, any player — in seconds.' },
-    ],
-  },
-  { id: 'finance', emoji: '💰', label: 'Finance & PSR',
-    features: [
-      { name: 'PSR/FFP Dashboard', points: ['Real-time PSR headroom calculation', 'Wage bill vs revenue ratio', 'Player amortisation schedule', 'Transfer spend vs budget remaining', 'Revenue streams — matchday, broadcast, commercial', 'Automatic board report generation'], outcome: 'Stay PSR compliant. Know your numbers before the window opens.' },
-      { name: 'Wage Bill Tracker', points: ['Total wage bill breakdown', 'Per player cost', 'Bonus and appearance fee tracking', 'Image rights payments', 'Projection for next season', 'Comparison to league averages'], outcome: 'Control your biggest expense. Every pound accounted for.' },
-      { name: 'Transfer Budget Manager', points: ['Total budget set by board', 'Committed spend tracked', 'Remaining budget calculated', 'What-if scenarios for targets', 'Sell-to-buy impact modelling', 'Real-time during window'], outcome: 'Spend smart. Know exactly what you can afford.' },
-      { name: 'Player Amortisation', points: ['Transfer fee spread calculation', 'Remaining book value per player', 'Impact of selling early or late', 'Multi-year contract amortisation', 'PSR impact per player', 'Visual amortisation charts'], outcome: 'Understand the true cost of every player. Not just the fee.' },
-      { name: 'Revenue Dashboard', points: ['Matchday revenue tracking', 'Commercial income summary', 'Broadcast revenue allocation', 'Sponsorship income', 'Merchandise sales', 'Year-on-year comparison'], outcome: 'See all your revenue in one place. Drive growth where it matters.' },
-      { name: 'Board Financial Report', points: ['One-click financial summary', 'P&L by department', 'Cash flow projection', 'Variance analysis', 'Board-ready formatting', 'Export as PDF'], outcome: 'Board reports in one click. Not one week.' },
-    ],
-  },
-  { id: 'dynamics', emoji: '⚡', label: 'Dynamics',
-    features: [
-      { name: 'Dressing Room Monitor', points: ['Anonymous player sentiment tracking', 'Leadership group assignments', 'Clique and faction detection', 'Mentor pairing for new signings', 'Culture health score', 'Weekly dynamics report for Head Coach'], outcome: 'Manage what you can\'t see. Build a winning culture from the inside out.' },
-      { name: 'Player Mood Tracker', points: ['Weekly mood check-ins', 'Trend analysis per player', 'Red flag alerts for concerning patterns', 'Comparison to performance data', 'Confidential — coach eyes only', 'Integration with medical welfare'], outcome: 'Catch problems early. Support players before they struggle.' },
-      { name: 'Leadership Groups', points: ['Define leadership group', 'Assign captaincy responsibilities', 'Track leadership actions', 'Mentoring assignments', 'New signing integration plan', 'Culture ambassador programme'], outcome: 'Build leaders on and off the pitch. Structure your culture.' },
-      { name: 'Clique Detection', points: ['Social mapping of squad', 'Faction identification', 'Integration risk for new signings', 'Language group visibility', 'Nationality group dynamics', 'Alert when cliques form'], outcome: 'See the invisible dynamics. Act before cliques become problems.' },
-      { name: 'Mentor Assignments', points: ['Assign mentors to new signings', 'Track mentoring meetings', 'Integration milestone checklist', 'Feedback from both parties', 'Success metrics', 'Cultural orientation programme'], outcome: 'Every new signing settles faster. Mentoring that works.' },
-      { name: 'Culture Report', points: ['Monthly culture health score', 'Player engagement metrics', 'Training attitude assessment', 'Community involvement tracking', 'Values alignment scoring', 'Board culture summary'], outcome: 'Measure your culture. Report it to the board. Build something lasting.' },
-    ],
-  },
-]
-
-// ─── Live Data Feature Cards ─────────────────────────────────────────────────
-
-const LIVE_FEATURES = [
-  { emoji: '🏆', title: 'Live League Tables', body: 'Premier League to National League North/South — all 7 tiers of English football updated in real time after every match. Click any club to see their full profile, squad, and upcoming fixtures.', badge: 'Updates within 90 seconds of full time', accent: '#22C55E' },
-  { emoji: '📅', title: 'Fixtures & Results', body: 'Every match across the English football pyramid — upcoming kickoff times, live scores during matches, and full results with scorers, cards, and substitutions the moment they happen.', badge: 'Live during matches', accent: '#3B82F6' },
-  { emoji: '🤕', title: 'Injury Tracker', body: "Real-time injury reports for every professional club. Know who's out, what the injury is, and when they're expected back — before you plan your team sheet or make a transfer decision.", badge: 'Updated daily from club reports', accent: '#F59E0B' },
-  { emoji: '👥', title: 'Deep Player Profiles', body: "Full career histories for every professional player — every club they've played for, every season's stats, contract status, market value, and agent details. Click any player anywhere in the platform for their full profile.", badge: '550,000+ player profiles', accent: '#8B5CF6' },
-  { emoji: '📊', title: 'xG, Pressure & Event Data', body: 'StatsBomb event data brings xG timelines, shot maps, pass completion, and pressure analytics to your dashboard. The same data Premier League clubs pay tens of thousands for — built into your morning briefing.', badge: 'Powered by StatsBomb', accent: '#0D9488' },
-  { emoji: '⚽', title: 'Live Squad Data', body: "Current registered squads for every club in the pyramid — player photos, positions, nationalities, shirt numbers, and fitness status. Always current, never a spreadsheet you forgot to update.", badge: 'Real-time from API-Football', accent: '#EF4444' },
-]
-
-// ─── Mini League Table Data ──────────────────────────────────────────────────
-
-const MINI_TABLE = [
-  { pos: 1, name: 'Birmingham City', pts: 91, form: 'WWWDW', logo: '🔵' },
-  { pos: 2, name: 'Wrexham', pts: 82, form: 'WDWWL', logo: '🔴' },
-  { pos: 3, name: 'Huddersfield Town', pts: 79, form: 'DWWWD', logo: '🔵' },
-  { pos: 4, name: 'Wycombe Wanderers', pts: 73, form: 'WWLWW', logo: '🟠' },
-  { pos: 5, name: 'Bolton Wanderers', pts: 72, form: 'WDWLW', logo: '⚪' },
-  { pos: 6, name: 'Reading', pts: 70, form: 'LWWWD', logo: '🔵' },
-  { pos: 14, name: 'Lumio FC', pts: 52, form: 'LLDWD', highlight: true, logo: '💛' },
-]
-
-// ─── RoleShowcase Component ──────────────────────────────────────────────────
-
-function RoleShowcase() {
-  const [activeRole, setActiveRole] = useState(0)
-  const [activeFeature, setActiveFeature] = useState(0)
-  const role = ROLES[activeRole]
-  const feature = role.features[activeFeature]
-
+// ── Mockup chrome ───────────────────────────────────────────────────────────
+function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
-    <section className="max-w-6xl mx-auto px-6 py-20">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl md:text-4xl font-black mb-2">Everything your club needs</h2>
-        <p className="text-sm" style={{ color: '#9CA3AF' }}>Click a role. See exactly what Lumio Pro Club does for them.</p>
+    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${NAVY}55` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER_ALT}`, backgroundColor: '#0B1020' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981' }} />
+        </div>
+        <div style={{ flex: 1, height: 18, borderRadius: 5, backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}` }} />
       </div>
+      <div style={{ padding: 18 }}>{children}</div>
+    </div>
+  )
+}
 
-      <div className="flex flex-wrap justify-center gap-2 mb-8">
-        {ROLES.map((r, i) => (
-          <button key={r.id} onClick={() => { setActiveRole(i); setActiveFeature(0) }}
-            className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-            style={{ backgroundColor: activeRole === i ? RED : CARD, color: activeRole === i ? '#F9FAFB' : '#9CA3AF', border: activeRole === i ? `1px solid ${RED}` : `1px solid ${BORDER}` }}>
-            {r.emoji} {r.label}
-          </button>
+function KPI({ value, label, sub, color }: { value: string; label: string; sub?: string; color: string }) {
+  return (
+    <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${color}55`, borderRadius: 10, padding: 12 }}>
+      <div style={{ fontSize: 14, fontWeight: 900, color }}>{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: TEXT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      {sub && <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+// ── Mockups ─────────────────────────────────────────────────────────────────
+function HalfTimeBriefMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🤖 AI Half-Time GPS Brief</div>
+        <span style={{ fontSize: 8, fontWeight: 900, padding: '2px 7px', borderRadius: 999, backgroundColor: 'rgba(239,68,68,0.2)', color: RED, border: `1px solid ${RED}55`, letterSpacing: '0.06em' }}>HALF TIME</span>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Lumio Sports FC vs Northgate City · Half-time 0-1</div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.5)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>⚠ C. Nwosu — 268 AU load, ACWR 1.38</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>Withdrawal recommended at 60 min</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: RED }}>⚠ D. Morris — ACWR 1.12</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>High first-half output. Monitor.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#3B82F6', marginBottom: 3 }}>📊 TACTICAL</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Pressing effective in first 20 min but space opened in behind. Drop trigger line 5m.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>🔄 SUB</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Barker off at 55 min — 87% weekly load cap. Walsh on.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981', marginBottom: 3 }}>▶ SECOND HALF</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Force play wider. Their left back GPS data shows slower recovery runs in last 15 minutes.</div>
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>📋 Copy for tablet</button>
+    </MockupFrame>
+  )
+}
+
+function BoardSuiteMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>Board Suite — Lumio Sports FC</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monthly Chairman&apos;s dashboard · Updated live</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 12 }}>
+        <KPI value="✓ Compliant" label="PSR" color="#10B981" />
+        <KPI value="64%" label="W:R Ratio" color="#F59E0B" />
+        <KPI value="£2.1m" label="Budget Left" color="#3B82F6" />
+        <KPI value="30 Jun" label="EFL Due" color="#F59E0B" />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 3 }}>
+          <span style={{ color: TEXT, fontWeight: 700 }}>Wage budget</span>
+          <span style={{ color: '#F59E0B', fontWeight: 800 }}>68% used</span>
+        </div>
+        <div style={{ height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
+          <div style={{ width: '68%', height: '100%', backgroundColor: '#F59E0B', borderRadius: 3 }} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 3 }}>
+          <span style={{ color: TEXT, fontWeight: 700 }}>Playing staff</span>
+          <span style={{ color: NAVY, fontWeight: 800 }}>72% used</span>
+        </div>
+        <div style={{ height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
+          <div style={{ width: '72%', height: '100%', backgroundColor: '#3B82F6', borderRadius: 3 }} />
+        </div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: '#F59E0B', fontWeight: 800 }}>⚠ Transfer window opens in 72 days</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>PSR headroom: £380k</div>
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>Generate Board Report PDF →</button>
+    </MockupFrame>
+  )
+}
+
+function GPSPitchMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>GPS Load Monitor — Lumio Sports FC</div>
+        <span style={{ fontSize: 8, fontWeight: 900, padding: '2px 7px', borderRadius: 999, backgroundColor: 'rgba(239,68,68,0.2)', color: RED, border: `1px solid ${RED}55`, letterSpacing: '0.06em' }}>● LIVE</span>
+      </div>
+      <svg viewBox="0 0 320 210" style={{ width: '100%', borderRadius: 8, marginBottom: 10, border: `1px solid ${BORDER_ALT}` }}>
+        <rect x={0} y={0} width={320} height={210} fill="#1a3d1a" />
+        {/* Stripes */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <rect key={i} x={i * 40} y={0} width={40} height={210} fill={i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'} />
+        ))}
+        {/* Outer */}
+        <rect x={6} y={6} width={308} height={198} fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.2" />
+        {/* Halfway */}
+        <line x1={160} y1={6} x2={160} y2={204} stroke="rgba(255,255,255,0.65)" strokeWidth="1" />
+        {/* Centre circle */}
+        <circle cx={160} cy={105} r={28} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        <circle cx={160} cy={105} r={2} fill="rgba(255,255,255,0.6)" />
+        {/* Left penalty area */}
+        <rect x={6} y={55} width={44} height={100} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        {/* Left 6-yard */}
+        <rect x={6} y={80} width={18} height={50} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" />
+        {/* Right penalty area */}
+        <rect x={270} y={55} width={44} height={100} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        {/* Right 6-yard */}
+        <rect x={296} y={80} width={18} height={50} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" />
+        {/* Heat zones — defence */}
+        <circle cx={45} cy={85} r={16} fill={NAVY} opacity="0.7" style={{ filter: 'blur(8px)' }} />
+        <circle cx={55} cy={120} r={14} fill={NAVY} opacity="0.65" style={{ filter: 'blur(8px)' }} />
+        <circle cx={70} cy={105} r={12} fill={NAVY} opacity="0.55" style={{ filter: 'blur(8px)' }} />
+        <circle cx={90} cy={80} r={10} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        {/* Midfield */}
+        <circle cx={160} cy={105} r={18} fill={NAVY} opacity="0.68" style={{ filter: 'blur(8px)' }} />
+        <circle cx={145} cy={130} r={14} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        <circle cx={175} cy={85} r={12} fill={NAVY} opacity="0.45" style={{ filter: 'blur(8px)' }} />
+        {/* Attack */}
+        <circle cx={260} cy={105} r={18} fill={NAVY} opacity="0.72" style={{ filter: 'blur(8px)' }} />
+        <circle cx={245} cy={80} r={13} fill={NAVY} opacity="0.55" style={{ filter: 'blur(8px)' }} />
+        <circle cx={250} cy={130} r={12} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        <circle cx={280} cy={110} r={10} fill={NAVY} opacity="0.4" style={{ filter: 'blur(8px)' }} />
+      </svg>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+        {[
+          { l: 'Full Squad', active: true },
+          { l: 'J. Hayes', active: false },
+          { l: 'C. Nwosu', active: false },
+          { l: 'T. Fletcher', active: false },
+        ].map(p => (
+          <span key={p.l} style={{ fontSize: 8, padding: '4px 8px', borderRadius: 999, backgroundColor: p.active ? NAVY : 'transparent', color: p.active ? GOLD : MUTED, border: `1px solid ${p.active ? NAVY : BORDER_ALT}`, fontWeight: 700 }}>{p.l}</span>
         ))}
       </div>
-
-      <div className="flex flex-col lg:flex-row gap-4 rounded-2xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-        <div className="lg:w-1/3 p-4 space-y-1" style={{ borderRight: `1px solid ${BORDER}` }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider mb-3 px-3" style={{ color: '#4B5563' }}>{role.label} tools</p>
-          {role.features.map((f, i) => (
-            <button key={f.name} onClick={() => setActiveFeature(i)}
-              className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all"
-              style={{ backgroundColor: activeFeature === i ? `${RED}20` : 'transparent', color: activeFeature === i ? '#F9FAFB' : '#9CA3AF', borderLeft: activeFeature === i ? `3px solid ${RED}` : '3px solid transparent' }}>
-              {f.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <h3 className="text-lg font-black" style={{ color: '#F9FAFB' }}>{feature.name}</h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${RED}20`, color: RED, border: `1px solid ${RED}40` }}>
-              {role.label}
-            </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+        {[
+          { n: 'C. Nwosu', au: 478, acwr: 1.38, c: '#EF4444' },
+          { n: 'D. Morris', au: 445, acwr: 1.12, c: '#F59E0B' },
+          { n: 'T. Fletcher', au: 420, acwr: 0.88, c: '#10B981' },
+        ].map(p => (
+          <div key={p.n} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: TEXT }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: p.c }} />
+            <span style={{ fontWeight: 700 }}>{p.n}</span>
+            <span style={{ color: MUTED, marginLeft: 'auto' }}>{p.au} AU · ACWR {p.acwr.toFixed(2)}</span>
           </div>
+        ))}
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>🤖 AI Post-Session Analysis</button>
+    </MockupFrame>
+  )
+}
 
-          <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>What it does</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-            {feature.points.map((p, i) => (
-              <div key={i} className="flex items-start gap-2.5 rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER}` }}>
-                <span className="flex items-center justify-center rounded-full shrink-0 text-[10px] font-bold" style={{ width: 20, height: 20, backgroundColor: `${RED}20`, color: RED }}>{i + 1}</span>
-                <span className="text-xs" style={{ color: '#D1D5DB', lineHeight: 1.5 }}>{p}</span>
-              </div>
+function InsightsMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>Good morning. Here&apos;s your club picture.</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Lumio Sports FC · Thursday 9 April 2026</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
+        {[
+          { l: 'Squad', s: '✓', c: '#10B981' },
+          { l: 'Medical', s: '⚠', c: '#F59E0B' },
+          { l: 'Transfers', s: '🔴', c: '#EF4444' },
+          { l: 'Commercial', s: '✓', c: '#10B981' },
+          { l: 'Finance', s: '✓', c: '#10B981' },
+          { l: 'Governance', s: '✓', c: '#10B981' },
+        ].map(t => (
+          <div key={t.l} style={{ backgroundColor: '#0A0B10', border: `1px solid ${t.c}55`, borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: t.c }}>{t.s}</div>
+            <div style={{ fontSize: 9, color: TEXT, fontWeight: 700, marginTop: 2 }}>{t.l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderLeft: `3px solid ${NAVY}`, borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: GOLD, marginBottom: 4 }}>🤖 AI SUMMARY</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.55 }}>Squad availability 18/22. C. Nwosu at injury risk — ACWR 1.38. Contract decision on P. Granger overdue by 6 days. Social sentiment up 12% after Saturday.</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {[
+          '1. Renew Granger contract — overdue',
+          '2. GPS plan — rest Nwosu tomorrow',
+          '3. PSR declaration — 72 days remaining',
+        ].map(a => (
+          <div key={a} style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 6, padding: '7px 10px', fontSize: 9, color: TEXT, fontWeight: 600 }}>{a}</div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+// ── Spotlight wrapper ────────────────────────────────────────────────────────
+function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
+  eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
+}) {
+  return (
+    <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ order: reverse ? 2 : 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
+          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bullets.map(b => (
+              <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
+                <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                <span>{b}</span>
+              </li>
             ))}
-          </div>
-
-          <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#0D9488' }}>Outcome</p>
-            <p className="text-sm font-semibold" style={{ color: '#0D9488' }}>{feature.outcome}</p>
-          </div>
+          </ul>
         </div>
+        <div style={{ order: reverse ? 1 : 2 }}>{mockup}</div>
       </div>
     </section>
   )
 }
 
-// ─── Scrolling Ticker ────────────────────────────────────────────────────────
-
-function LiveTicker() {
-  const items = [
-    '\u{1F7E2} LIVE: Lumio FC 1-0 Cardiff City \u00B7 67\' \u00B7 Browne (34\')',
-    '\u26BD League One Table updated \u00B7 Birmingham City top',
-    '\u{1F915} Injury: O. Bugiel (Hamstring) \u00B7 2-3 weeks',
-    '\u{1F4CA} Top scorer: M. Browne \u00B7 12 goals \u00B7 League One',
-    '\u{1F4C5} Next: Stockport vs Lumio FC \u00B7 Sat 15:00',
-    '\u{1F3C6} Bolton Wanderers 2-1 Barnsley \u00B7 FT',
-  ]
-  const text = items.join('   \u00B7\u00B7\u00B7   ')
-
+// ── Page ─────────────────────────────────────────────────────────────────────
+export default function FootballLandingPage() {
   return (
-    <div className="overflow-hidden whitespace-nowrap" style={{ backgroundColor: '#070810', borderBottom: `1px solid ${BORDER}` }}>
-      <div className="inline-block animate-[ticker_40s_linear_infinite] py-2 px-4">
-        <span className="text-xs font-medium" style={{ color: '#6B7280' }}>{text}   &middot;&middot;&middot;   {text}</span>
-      </div>
-      <style>{`@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
-    </div>
-  )
-}
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
-
-export default function FootballPage() {
-  return (
-    <div style={{ backgroundColor: BG, color: '#F9FAFB' }}>
-
-      {/* ── STEP 9: Scrolling Ticker ─────────────────────────────────── */}
-      <LiveTicker />
-
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${BG}, #1a0a0a)` }}>
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `radial-gradient(circle at 20% 50%, ${RED}40 0%, transparent 50%), radial-gradient(circle at 80% 50%, ${GOLD}20 0%, transparent 50%)` }} />
-        <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6" style={{ backgroundColor: `${RED}20`, border: `1px solid ${RED}40` }}>
-            <span className="text-sm font-bold" style={{ color: RED }}>&#x26BD;</span>
-            <span className="text-xs font-semibold" style={{ color: RED }}>Built for Championship &amp; League Football</span>
+    <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
+      {/* ── HERO ── */}
+      <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${NAVY}66, transparent 50%), radial-gradient(circle at 80% 60%, ${RED}22, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 24 }}>
+            LUMIO FOOTBALL · CHAMPIONSHIP &amp; LEAGUE
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight">
-            The Complete Club<br />Management Platform
+          <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
+            The complete club management platform.
           </h1>
-          <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto" style={{ color: '#9CA3AF' }}>
-            From the boardroom to the training pitch — everything your club needs in one place. <span style={{ color: '#F9FAFB', fontWeight: 700 }}>Powered by live data.</span>
+          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 860, margin: '0 auto 40px' }}>
+            Squad management, PSR compliance, GPS load monitoring, AI transfer intelligence, Directors Suite, fan engagement, and a world-first AI half-time brief. Everything your club needs. One platform.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/football/lumio-dev" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ backgroundColor: RED, color: '#F9FAFB', textDecoration: 'none' }}>
-              See live data in action <ArrowRight size={18} />
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <Link href="/football/lumio-dev" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
+              See live demo →
             </Link>
-            <a href="#features" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F9FAFB', textDecoration: 'none' }}>
-              See All Features
-            </a>
+            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Book a walkthrough
+            </Link>
           </div>
-          <p className="text-xs mt-4" style={{ color: '#6B7280' }}>No signup required &middot; Real live football data &middot; Updates every 90 seconds</p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {STAT_PILLS.map(p => (
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(27,58,107,0.25)', border: `1px solid ${NAVY}`, color: GOLD, fontSize: 13, fontWeight: 700 }}>{p}</span>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── Stats Bar ───────────────────────────────────────────────────── */}
-      <section style={{ borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-wrap justify-center gap-8 md:gap-16">
-          {STATS.map(s => (
-            <div key={s.label} className="text-center">
-              <p className="text-2xl font-black" style={{ color: s.value === 'LIVE' ? '#22C55E' : GOLD }}>{s.value}</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STEP 1: Live Data Hero Banner ────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6">
-        <div className="bg-gradient-to-r from-red-900/30 to-gray-900/30 border border-red-600/30 rounded-2xl p-6 md:p-8 my-12">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-red-400 text-xs font-bold uppercase tracking-widest">Live Data</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-black text-white mb-3">Real data. Right now.</h2>
-          <p className="text-gray-300 text-sm md:text-base leading-relaxed max-w-3xl">
-            Lumio Pro Club connects to live football data feeds — real league tables updated after every match,
-            live injury reports, player career histories, upcoming fixtures, and results the moment the final
-            whistle blows. Not yesterday&apos;s data. Not a spreadsheet. <span className="font-bold text-white">Live.</span>
+      {/* ── FEATURE GRID ── */}
+      <section id="features" style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Built for professional football clubs.
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+            Fifty-plus features across twelve departments — from the Chairman&apos;s office to the training pitch. Everything in one place.
           </p>
-        </div>
-      </section>
-
-      {/* ── STEP 2: What's Live Right Now — Feature Cards ────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black mb-2">What&apos;s live right now</h2>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>Six live data feeds built into every corner of the platform</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {LIVE_FEATURES.map(f => (
-            <div key={f.title} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">{f.emoji}</span>
-                <h3 className="text-base font-black" style={{ color: '#F9FAFB' }}>{f.title}</h3>
-              </div>
-              <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: '#9CA3AF' }}>{f.body}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: f.accent }} />
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: f.accent }}>{f.badge}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STEP 3: Live Data in Action — Mock League Table ──────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-black mb-2">Live data in action</h2>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>This is what your dashboard actually looks like — real clubs, real data, updated in real time</p>
-        </div>
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0d0f1a', border: `1px solid ${BORDER}` }}>
-          {/* Header bar */}
-          <div className="px-6 py-3 flex items-center gap-3" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${BORDER}` }}>
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-green-400 font-semibold">LIVE — EFL League One &middot; 2025/26</span>
-            <span className="text-xs ml-auto" style={{ color: '#4B5563' }}>Updated 2 min ago</span>
-          </div>
-          {/* Mini table */}
-          <div className="px-4 py-3">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ color: '#6B7280', borderBottom: `1px solid ${BORDER}` }}>
-                  <th className="text-left py-2 w-8">#</th>
-                  <th className="text-left py-2">Club</th>
-                  <th className="text-center py-2 w-14">Pts</th>
-                  <th className="text-center py-2 w-24">Form</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MINI_TABLE.map((t, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${BORDER}`, backgroundColor: t.highlight ? 'rgba(0,61,165,0.08)' : undefined }}>
-                    <td className="py-2.5"><span className={`text-xs font-bold w-5 h-5 rounded-full inline-flex items-center justify-center ${t.pos <= 2 ? 'bg-teal-600/30 text-teal-400' : t.pos <= 6 ? 'bg-blue-600/30 text-blue-400' : ''}`} style={{ color: t.pos > 6 ? '#6B7280' : undefined }}>{t.pos}</span></td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span>{t.logo}</span>
-                        <span className="font-semibold" style={{ color: t.highlight ? '#60A5FA' : '#F9FAFB' }}>{t.name}</span>
-                        {t.highlight && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: GOLD }}>Your club</span>}
-                      </div>
-                    </td>
-                    <td className="py-2.5 text-center font-bold" style={{ color: '#F9FAFB' }}>{t.pts}</td>
-                    <td className="py-2.5">
-                      <div className="flex gap-0.5 justify-center">
-                        {t.form.split('').map((r, j) => (
-                          <div key={j} className="w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: r === 'W' ? 'rgba(13,148,136,0.3)' : r === 'D' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)', color: r === 'W' ? '#0D9488' : r === 'D' ? '#F59E0B' : '#EF4444' }}>{r}</div>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Match cards */}
-          <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Match 1 — LIVE */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[10px] font-bold text-green-400">LIVE &middot; 67&apos;</span>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><span>💛</span><span className="text-sm font-bold" style={{ color: '#60A5FA' }}>Lumio FC</span></div>
-                <span className="text-xl font-black" style={{ color: '#F9FAFB' }}>1 — 0</span>
-                <div className="flex items-center gap-2"><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Cardiff City</span><span>🔵</span></div>
-              </div>
-              <div className="text-xs" style={{ color: '#6B7280' }}>&#x26BD; M. Browne 34&apos;</div>
-            </div>
-            {/* Match 2 — Upcoming */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-bold" style={{ color: '#6B7280' }}>UPCOMING</span>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><span>🟣</span><span className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Stockport County</span></div>
-                <span className="text-sm" style={{ color: '#6B7280' }}>vs</span>
-                <div className="flex items-center gap-2"><span className="text-sm font-bold" style={{ color: '#60A5FA' }}>Lumio FC</span><span>💛</span></div>
-              </div>
-              <div className="text-xs" style={{ color: '#6B7280' }}>Sat 5 Apr &middot; 15:00 &middot; Edgeley Park</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STEP 4: Injury Showcase ──────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <h3 className="text-2xl font-black text-white mb-2">Injury intelligence that actually matters</h3>
-        <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Know your injury situation before your DoF asks. Live updates from club medical reports, rated by severity, with expected return dates.</p>
-
-        {/* Summary strip */}
-        <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#111318', border: `1px solid ${BORDER}` }}>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>3 players unavailable</span>
-            <span className="text-xs" style={{ color: '#6B7280' }}>&middot;</span>
-            <span className="text-xs" style={{ color: '#F59E0B' }}>1 returning this week</span>
-            <span className="text-xs" style={{ color: '#6B7280' }}>&middot;</span>
-            <span className="text-xs" style={{ color: '#EF4444' }}>1 long-term</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {/* Injury 1 */}
-          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${BORDER}` }}>
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Omar Bugiel</span>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>ST</span>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#F97316' }}>MODERATE</span>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap text-xs">
-              <span style={{ color: '#EF4444' }}>Hamstring strain</span>
-              <span style={{ color: '#6B7280' }}>Out 2-3 weeks</span>
-              <span style={{ color: '#6B7280' }}>Expected return: 19 Apr</span>
-            </div>
-          </div>
-          {/* Injury 2 — Returning */}
-          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Marcus Browne</span>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>LW</span>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>RETURNED</span>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap text-xs">
-              <span style={{ color: '#22C55E' }}>Returned to training — available Saturday</span>
-              <span style={{ color: '#6B7280' }}>Previously: ankle knock (7 days)</span>
-            </div>
-          </div>
-          {/* Injury 3 — Serious */}
-          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Isaac Ogundere</span>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>CB</span>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' }}>SERIOUS</span>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap text-xs">
-              <span style={{ color: '#EF4444' }}>Knee ligament</span>
-              <span style={{ color: '#6B7280' }}>Season ended</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STEP 5: Player Profile Showcase ──────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <h3 className="text-2xl font-black text-white mb-2">Every player. Full career. One click.</h3>
-        <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>Click any player anywhere in Lumio — squad list, league table, top scorers, scouting database — to see their complete profile.</p>
-
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0d0f1a', border: `1px solid ${BORDER}` }}>
-          {/* Profile header */}
-          <div className="p-6" style={{ background: 'linear-gradient(135deg, rgba(0,61,165,0.2), rgba(0,0,0,0.1))' }}>
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-black" style={{ backgroundColor: '#003DA5', color: GOLD, border: '2px solid rgba(0,61,165,0.5)' }}>MB</div>
-              <div>
-                <div className="text-xl font-black" style={{ color: '#F9FAFB' }}>Marcus Browne</div>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>LW</span>
-                  <span className="text-xs" style={{ color: '#9CA3AF' }}>Age 28</span>
-                  <span className="text-xs" style={{ color: '#9CA3AF' }}>{'\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}'} English</span>
-                </div>
-                <div className="flex items-center gap-3 mt-2 flex-wrap text-xs" style={{ color: '#6B7280' }}>
-                  <span>Lumio FC</span>
-                  <span>#11</span>
-                  <span>Contract: Jun 2027</span>
-                </div>
-              </div>
-            </div>
-            {/* Stats row */}
-            <div className="grid grid-cols-4 gap-3 mt-4">
-              {[{ l: 'Apps', v: '36' }, { l: 'Goals', v: '12' }, { l: 'Assists', v: '3' }, { l: 'Rating', v: '7.2' }].map(s => (
-                <div key={s.l} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#111318' }}>
-                  <div className="text-lg font-black" style={{ color: '#F9FAFB' }}>{s.v}</div>
-                  <div className="text-xs" style={{ color: '#6B7280' }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="px-6 pt-4 flex gap-2">
-            {['This Season', 'Club History', 'Career Stats', 'Profile'].map((tab, i) => (
-              <span key={tab} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: i === 1 ? 'rgba(0,61,165,0.15)' : '#111318', color: i === 1 ? GOLD : '#6B7280', border: `1px solid ${i === 1 ? 'rgba(0,61,165,0.3)' : BORDER}` }}>{tab}</span>
-            ))}
-          </div>
-
-          {/* Club History tab content */}
-          <div className="p-6 space-y-1">
-            {[
-              { year: '2024 → present', club: 'Lumio FC', current: true },
-              { year: '2022 — 2024', club: 'Middlesbrough' },
-              { year: '2019 — 2022', club: 'Blackpool' },
-              { year: '2017 — 2019', club: 'Oxford United' },
-              { year: '2015 — 2017', club: 'West Ham United', note: 'youth → pro' },
-            ].map((t, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="flex flex-col items-center" style={{ width: 20, minHeight: 48 }}>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: i === 0 ? '#003DA5' : '#374151', border: `2px solid ${i === 0 ? GOLD : '#6B7280'}`, marginTop: 4 }} />
-                  {i < 4 && <div className="w-0.5 flex-1" style={{ backgroundColor: '#374151' }} />}
-                </div>
-                <div className="flex-1 rounded-lg p-3 mb-1" style={{ backgroundColor: '#111318' }}>
-                  <span className="text-sm font-semibold" style={{ color: t.current ? '#60A5FA' : '#F9FAFB' }}>{t.club}</span>
-                  {t.note && <span className="text-xs ml-2" style={{ color: '#6B7280' }}>({t.note})</span>}
-                  <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{t.year}</div>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── STEP 6: How the Data Flows ───────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black mb-2">How the data flows</h2>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>From pitch to platform in seconds</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { step: '1', icon: '&#x26BD;', title: 'Match played', desc: 'A match is played anywhere in English football — Premier League to National League' },
-            { step: '2', icon: '&#x{1F4E1};', title: 'Data captured', desc: 'API-Football + StatsBomb capture every event, score, and player action in real time' },
-            { step: '3', icon: '&#x2728;', title: 'Lumio surfaces insights', desc: 'Results appear in your morning briefing, squad view, board reports, and injury tracker' },
-          ].map(s => (
-            <div key={s.step} className="rounded-2xl p-6 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mx-auto mb-4" style={{ backgroundColor: `${RED}20`, color: RED, border: `1px solid ${RED}40` }}>{s.step}</div>
-              <h3 className="text-base font-bold mb-2" style={{ color: '#F9FAFB' }}>{s.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>{s.desc}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6 rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)' }}>
-          <p className="text-xs leading-relaxed" style={{ color: '#0D9488' }}>Lumio connects to <strong>API-Football</strong> (100m+ data points), <strong>StatsBomb Open Data</strong> (3,400+ events per match), and <strong>football-data.org</strong> for richer match detail on top European competitions.</p>
-        </div>
-      </section>
+      {/* ── SPOTLIGHTS ── */}
+      <Spotlight
+        eyebrow="SPOTLIGHT · AI HALF-TIME GPS BRIEF"
+        title="World's first. Nothing else like it."
+        body="At half-time, your analyst uploads first-half GPS data from the vests. Lumio reads distance covered, session load, and ACWR risk for every player — then Claude AI generates a structured coaching brief in under 10 seconds. Ready before the manager walks back in."
+        bullets={['Fatigue alerts per player — flagged automatically from GPS load data', 'Substitution recommendation — names the player and the replacement, with GPS reasoning', 'Tactical insight — what the movement patterns reveal about the first half', 'Second-half instruction — specific sentences based on data, not gut feel']}
+        mockup={<HalfTimeBriefMockup />}
+      />
 
-      {/* ── Role Tabs ───────────────────────────────────────────────────── */}
-      <RoleShowcase />
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · DIRECTORS SUITE & PSR"
+        title="The boardroom needs data too."
+        body="The Directors Suite gives your Chairman, CEO, and Finance Director everything they need — PSR compliance status, wage-to-revenue ratios, EFL/FA governance tracking, finance dashboards, and a one-click Board Report PDF. The full financial picture, updated in real time."
+        bullets={['PSR compliance tracker — automatic red/amber/green status with submission deadline calendar', 'Wage-to-revenue ratio — live calculation against EFL financial fair play ceiling', 'Board Report PDF — one-click branded board report ready for the monthly meeting', 'Finance dashboard — budget vs actual, revenue by stream, spend by department']}
+        mockup={<BoardSuiteMockup />}
+      />
 
-      {/* ── GPS Integration Hero Section ──────────────────────────────── */}
-      <section id="gps" className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, #1a0808, ${BG})` }}>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at 30% 40%, ${RED}60 0%, transparent 50%)` }} />
-        <div className="relative max-w-6xl mx-auto px-6 py-20">
-          <div className="flex flex-col md:flex-row gap-12 items-center">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ backgroundColor: `${GOLD}15`, border: `1px solid ${GOLD}40` }}>
-                <span className="text-xs font-black tracking-wider" style={{ color: GOLD }}>INDUSTRY FIRST</span>
+      <Spotlight
+        eyebrow="SPOTLIGHT · GPS & LOAD MONITORING"
+        title="See where every player is. Before and after."
+        body="Lumio GPS Vest integrates with Catapult OpenField and STATSports Sonra. Every training session and match generates a pitch heatmap, ACWR load score, and injury risk flag per player. The AI post-session analysis tells you who to rest and who can go harder — before you write tomorrow's session plan."
+        bullets={['Pitch heatmap — GPS positional data rendered on a full football pitch, per player or full squad', 'ACWR monitoring — 28-day rolling load vs 7-day acute, green/amber/red risk zones', 'AI post-session analysis — Claude reads the full squad load and generates coaching recommendations', 'Training Load Planner — weekly player × day calendar with auto-generated ACWR risk flags']}
+        mockup={<GPSPitchMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · CLUB INSIGHTS"
+        title="Every department. One morning view."
+        body="The Lumio Insights dashboard gives your Director of Football the complete picture across squad, medical, transfers, commercial, finance, and fan engagement — before the first meeting of the day. AI-generated summaries, priority actions, and weekly trends in one scroll."
+        bullets={['Department health scores — squad, medical, commercial, finance, governance at a glance', 'AI department summaries — Claude reads your live data and writes the morning briefing', 'Priority action feed — what needs your attention today, ranked by impact and urgency', 'Weekly trends — squad availability, GPS load, revenue, fan NPS over rolling 8 weeks']}
+        mockup={<InsightsMockup />}
+      />
+
+      {/* ── WHO IT'S FOR ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Who it&apos;s for.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
+            {TIERS.map(t => (
+              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${NAVY}`, borderRadius: 16, padding: 32 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>ROLE</div>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black mb-3 leading-tight">GPS Performance Tracking — Powered by PlayerData</h2>
-              <p className="text-lg mb-8" style={{ color: '#9CA3AF' }}>Connect your PlayerData account to sync EDGE GPS data directly into your club dashboard</p>
-
-              <div className="space-y-4">
-                {[
-                  { icon: '\u{1F3C3}', label: 'Real-time player load monitoring', desc: 'Track every sprint, acceleration and deceleration from training and match day' },
-                  { icon: '\u{2764}\u{FE0F}', label: 'Injury risk prediction', desc: 'ACWR scoring flags players at risk before injuries happen' },
-                  { icon: '\u{1F4CA}', label: 'Squad readiness dashboard', desc: "Instant traffic light view of who\u2019s ready to play" },
-                  { icon: '\u{26BD}', label: 'Match vs training comparison', desc: 'See how players perform when it matters most' },
-                  { icon: '\u{1F517}', label: 'Direct API connection', desc: 'PlayerData EDGE syncs automatically via API — legacy Catapult and STATSports supported via CSV' },
-                  { icon: '\u{1F4C1}', label: 'CSV upload fallback', desc: 'Manually export from your GPS platform and upload directly' },
-                ].map(item => (
-                  <div key={item.label} className="flex items-start gap-3">
-                    <span className="text-lg shrink-0 mt-0.5">{item.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{item.label}</p>
-                      <p className="text-sm" style={{ color: '#9CA3AF' }}>{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8">
-                <Link href="/football#gps" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: RED, color: '#F9FAFB', textDecoration: 'none' }}>
-                  See GPS Integration <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-
-            <div className="flex-1 w-full">
-              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a0a0a', border: `1px solid ${RED}30` }}>
-                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${RED}20` }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: RED }} />
-                    <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>GPS Dashboard</span>
-                  </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${GOLD}20`, color: GOLD }}>LIVE</span>
-                </div>
-
-                <div className="px-5 py-4 space-y-3">
-                  {[
-                    { name: 'J. Smith', load: 847, dist: '11.2km', hsr: '1.8km', status: 'green' },
-                    { name: 'R. Johnson', load: 923, dist: '10.8km', hsr: '2.1km', status: 'amber' },
-                    { name: 'D. Williams', load: 1102, dist: '12.4km', hsr: '2.6km', status: 'red' },
-                    { name: 'T. Brown', load: 689, dist: '9.1km', hsr: '1.4km', status: 'green' },
-                    { name: 'M. Davies', load: 756, dist: '10.0km', hsr: '1.6km', status: 'green' },
-                  ].map(player => (
-                    <div key={player.name} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: player.status === 'green' ? '#22C55E' : player.status === 'amber' ? '#F59E0B' : '#EF4444' }} />
-                      <span className="text-xs font-semibold w-24 truncate" style={{ color: '#F9FAFB' }}>{player.name}</span>
-                      <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <p className="text-[10px]" style={{ color: '#6B7280' }}>Load</p>
-                          <p className="text-xs font-bold" style={{ color: player.load > 1000 ? '#EF4444' : '#F9FAFB' }}>{player.load}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px]" style={{ color: '#6B7280' }}>Distance</p>
-                          <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{player.dist}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px]" style={{ color: '#6B7280' }}>HSR</p>
-                          <p className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{player.hsr}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="px-5 py-3 grid grid-cols-3 gap-2 text-center" style={{ borderTop: `1px solid ${RED}20`, backgroundColor: 'rgba(192,57,43,0.05)' }}>
-                  <div>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>Avg Load</p>
-                    <p className="text-sm font-black" style={{ color: GOLD }}>863</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>At Risk</p>
-                    <p className="text-sm font-black" style={{ color: '#EF4444' }}>1</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px]" style={{ color: '#6B7280' }}>Squad Ready</p>
-                    <p className="text-sm font-black" style={{ color: '#22C55E' }}>4/5</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── New Capabilities ─────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black mb-2">Built and shipping right now</h2>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>Every feature below is live in the portal — not on a roadmap</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {NEW_CAPABILITIES.map(group => (
-            <div key={group.group} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: group.accent }} />
-                <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: group.accent }}>{group.group}</h3>
-              </div>
-              <ul className="space-y-2.5">
-                {group.items.map(item => (
-                  <li key={item} className="flex items-start gap-2 text-sm" style={{ color: '#D1D5DB', lineHeight: 1.5 }}>
-                    <ChevronRight size={14} className="shrink-0 mt-1" style={{ color: group.accent }} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features ────────────────────────────────────────────────────── */}
-      <section id="features" className="max-w-6xl mx-auto px-6 py-20 space-y-20">
-        {FEATURES.map((f, i) => (
-          <div key={f.title + i} className={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">{f.icon}</span>
-                <h2 className="text-2xl font-black">{f.title}</h2>
-                {f.badge && (
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${f.badgeColor}20`, color: f.badgeColor, border: `1px solid ${f.badgeColor}40` }}>
-                    {f.badge}
-                  </span>
+      {/* ── PRICING ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Simple pricing. No contracts.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 56 }}>
+            {PRICING.map(p => (
+              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 24, position: 'relative' }}>
+                {p.highlight && (
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: RED, color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
                 )}
-              </div>
-              <p className="text-lg font-semibold mb-4" style={{ color: '#9CA3AF' }}>{f.headline}</p>
-              <ul className="space-y-2">
-                {f.bullets.map(b => (
-                  <li key={b} className="flex items-start gap-2 text-sm" style={{ color: '#D1D5DB' }}>
-                    <ChevronRight size={14} className="shrink-0 mt-0.5" style={{ color: RED }} />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex-1 w-full">
-              <div className="rounded-2xl p-8 flex items-center justify-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, minHeight: 280, background: `linear-gradient(135deg, ${CARD}, ${i % 2 === 0 ? `${RED}08` : `${GOLD}08`})` }}>
-                <div className="text-center">
-                  <span className="text-6xl block mb-3">{f.icon}</span>
-                  <p className="text-sm font-semibold" style={{ color: '#6B7280' }}>{f.title}</p>
-                  <p className="text-xs mt-1" style={{ color: '#4B5563' }}>Live in the demo portal</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* ── Testimonials ────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: '#0D0E14' }}>
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black mb-2">Trusted by Professional Clubs Across the EFL</h2>
-            <p className="text-sm" style={{ color: '#6B7280' }}>See how clubs are using Lumio to transform their operations</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-                <div className="flex mb-3">
-                  {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} fill={GOLD} style={{ color: GOLD }} />)}
-                </div>
-                <p className="text-sm mb-4 leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;{t.quote}&rdquo;</p>
-                <div>
-                  <p className="text-sm font-bold">{t.name}</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>{t.role} — {t.club}</p>
-                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
+                <div style={{ fontSize: 24, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {p.features.map(f => (
+                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 12, color: '#D1D5DB' }}>
+                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
-          <div className="text-center mt-8">
-            <Link href="/book-demo" className="text-sm font-semibold" style={{ color: RED, textDecoration: 'underline' }}>
-              Request a case study &rarr;
+        </div>
+      </section>
+
+      {/* ── BOTTOM CTA ── */}
+      <section style={{ padding: '120px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 48, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
+            The complete platform for professional football clubs.
+          </h2>
+          <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
+            Explore the live demo with Lumio Sports FC — no signup, no account needed. Or book a 30-minute walkthrough with the Lumio team.
+          </p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            <Link href="/football/lumio-dev" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
+              See live demo →
+            </Link>
+            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Book a walkthrough →
             </Link>
           </div>
+          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Fictional demo club · All player data is illustrative · GPS vest integration from Professional tier</p>
         </div>
       </section>
-
-      {/* ── STEP 7: Data Source Trust Badges ──────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6B7280' }}>Data powered by</p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-10 items-center">
-          {[
-            { name: 'API-Football', desc: '100m+ data points', color: '#22C55E' },
-            { name: 'StatsBomb', desc: 'Open Data', color: '#EF4444' },
-            { name: 'football-data.org', desc: 'European leagues', color: '#3B82F6' },
-            { name: '+ Claude AI', desc: 'Player intelligence', color: '#8B5CF6' },
-          ].map(p => (
-            <div key={p.name} className="text-center px-4 py-3 rounded-xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-              <p className="text-sm font-bold" style={{ color: p.color }}>{p.name}</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>{p.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Pricing ─────────────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-black mb-2">Pricing Tailored to Your Club</h2>
-          <p className="text-sm" style={{ color: '#6B7280' }}>All plans include onboarding support and a dedicated account manager</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PRICING.map(p => (
-            <div key={p.tier} className="rounded-2xl p-6 flex flex-col" style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}` }}>
-              {p.highlight && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full self-start mb-3" style={{ backgroundColor: `${RED}20`, color: RED }}>Most Popular</span>}
-              <h3 className="text-xl font-black mb-1">{p.tier}</h3>
-              <p className="text-2xl font-black mb-1" style={{ color: GOLD }}>{p.price}</p>
-              <p className="text-xs mb-4" style={{ color: '#6B7280' }}>{p.desc}</p>
-              <ul className="space-y-2 flex-1">
-                {p.features.map(f => (
-                  <li key={f} className="flex items-start gap-2 text-xs" style={{ color: '#D1D5DB' }}>
-                    <ChevronRight size={12} className="shrink-0 mt-0.5" style={{ color: RED }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/book-demo" className="mt-6 inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: p.highlight ? RED : 'rgba(255,255,255,0.05)', color: '#F9FAFB', border: p.highlight ? 'none' : '1px solid rgba(255,255,255,0.1)', textDecoration: 'none' }}>
-                Request Pricing <ArrowRight size={14} />
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STEP 8: Final CTA (Updated) ──────────────────────────────── */}
-      <section style={{ background: `linear-gradient(135deg, ${RED}15, ${GOLD}08)` }}>
-        <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-3xl md:text-4xl font-black mb-4">Ready to Transform How Your Club Operates?</h2>
-          <p className="text-lg mb-8" style={{ color: '#9CA3AF' }}>Join the clubs already using Lumio Pro Club — powered by live data</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/football/lumio-dev" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ backgroundColor: RED, color: '#F9FAFB', textDecoration: 'none' }}>
-              See live data in action <ArrowRight size={18} />
-            </Link>
-            <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F9FAFB', textDecoration: 'none' }}>
-              Book a Demo
-            </Link>
-          </div>
-          <p className="text-xs mt-4" style={{ color: '#6B7280' }}>No signup required &middot; Real live football data &middot; Updates every 90 seconds</p>
-        </div>
-      </section>
-
-      {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="px-6 py-8 text-center" style={{ borderTop: `1px solid ${BORDER}` }}>
-        <p className="text-xs" style={{ color: '#4B5563' }}>&copy; {new Date().getFullYear()} Lumio Ltd. All rights reserved. &middot; <Link href="/privacy" style={{ color: '#4B5563' }}>Privacy</Link> &middot; <Link href="/terms" style={{ color: '#4B5563' }}>Terms</Link></p>
-      </footer>
     </div>
   )
 }
