@@ -369,6 +369,57 @@ function PerformanceMockup() {
   )
 }
 
+function GPSCourtMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>📡 GPS &amp; Court Heatmap</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monte-Carlo 2026 · Lumio GPS Vest · Clay</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+        <svg width="220" height="150" viewBox="0 0 220 150">
+          <rect x="0" y="0" width="220" height="150" fill="#1a0a00" />
+          <rect x="18" y="8" width="184" height="134" fill="#8B4513" opacity="0.3" />
+          {/* outer & net */}
+          <rect x="18" y="8" width="184" height="134" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
+          <line x1="18" y1="75" x2="202" y2="75" stroke="white" strokeWidth="2" opacity="0.75" />
+          <line x1="110" y1="8" x2="110" y2="142" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          {/* service box */}
+          <line x1="60" y1="50" x2="160" y2="50" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          <line x1="60" y1="100" x2="160" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          <line x1="60" y1="50" x2="60" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          <line x1="160" y1="50" x2="160" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          {/* heat zones - baseline heavy */}
+          <circle cx="110" cy="135" r="26" fill={PURPLE} opacity="0.72" style={{ filter: 'blur(7px)' }} />
+          <circle cx="100" cy="133" r="18" fill={PURPLE_LIGHT} opacity="0.6" style={{ filter: 'blur(5px)' }} />
+          <circle cx="78" cy="128" r="14" fill={PURPLE} opacity="0.5" style={{ filter: 'blur(6px)' }} />
+          <circle cx="142" cy="130" r="13" fill={PURPLE} opacity="0.48" style={{ filter: 'blur(6px)' }} />
+          <circle cx="110" cy="85" r="12" fill="#F59E0B" opacity="0.35" style={{ filter: 'blur(5px)' }} />
+          <circle cx="110" cy="22" r="9" fill="#10B981" opacity="0.3" style={{ filter: 'blur(5px)' }} />
+          <text x="110" y="146" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7">BASELINE (68%)</text>
+        </svg>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        {[{ l: 'Baseline', v: 68, c: PURPLE }, { l: 'Mid-court', v: 22, c: '#F59E0B' }, { l: 'Net', v: 10, c: '#10B981' }].map(z => (
+          <div key={z.l} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 9, color: MUTED, width: 60 }}>{z.l}</div>
+            <div style={{ flex: 1, height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
+              <div style={{ width: `${z.v}%`, height: '100%', backgroundColor: z.c, borderRadius: 3 }} />
+            </div>
+            <div style={{ fontSize: 9, color: TEXT, width: 30, textAlign: 'right', fontWeight: 700 }}>{z.v}%</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+        <KPI value="1.17" label="ACWR" color="#F59E0B" />
+        <KPI value="8.8km" label="Distance" color={PURPLE} />
+        <KPI value="394" label="Load AU" color={PURPLE_LIGHT} />
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 8, padding: 8 }}>
+        <div style={{ fontSize: 9, color: '#F59E0B', fontWeight: 800 }}>● Sarah Okafor alert threshold: 1.15 — monitor tomorrow</div>
+      </div>
+    </MockupFrame>
+  )
+}
+
 // ── Spotlight wrapper ────────────────────────────────────────────────────────
 function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
   eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
@@ -469,6 +520,14 @@ export default function TennisLandingPage() {
         body="Lumio reads your ranking data, match schedule, opponent report, stringing notes and sponsor obligations — then delivers a personalised briefing to your player, coach, agent and physio. Voice-powered by ElevenLabs."
         bullets={['Separate briefing per team role', 'Voice delivery via ElevenLabs TTS (Rachel voice)', 'Auto-sent daily at configured times', '2m 14s average briefing — faster than a coffee']}
         mockup={<BriefingMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · GPS & COURT HEATMAP"
+        title="Every step. Quantified."
+        body="Lumio GPS Vest + UWB court beacons track your movement at 10Hz. Court heatmaps show where you spend time during matches — baseline vs mid-court vs net. ACWR load monitoring flags fatigue risk before it becomes injury."
+        bullets={["Court heatmap: baseline / mid-court / net zone breakdown per session", 'ACWR 28-day rolling load vs 7-day acute — green/amber/red risk zones', 'Sarah Okafor receives automated alert when ACWR enters amber zone', 'Double fault heatmap: where you miss serves under pressure (30-40)']}
+        mockup={<GPSCourtMockup />}
       />
 
       <Spotlight

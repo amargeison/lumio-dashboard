@@ -1,646 +1,429 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef } from 'react'
 
+const RED = '#EF4444'
+const RED_LIGHT = '#F87171'
+const NAVY = '#1B3A6B'
+const GOLD = '#F1C40F'
 const BG = '#07080F'
-const CARD_BG = '#0D1117'
+const CARD = '#0D1117'
+const CARD_ALT = '#111827'
 const BORDER = '#1E293B'
-const ACCENT = '#10B981'
+const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
-const MOCK_BG = '#111827'
-const MOCK_BORDER = '#1F2937'
 
-function BrowserFrame({ children, height }: { children: React.ReactNode; height?: number }) {
+const STAT_PILLS = ['50+ features', 'Championship & League', 'AI powered', 'GPS vest ready', 'PSR compliant']
+
+const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
+  { icon: '📡', title: 'AI Half-Time GPS Brief', desc: "The world's first AI coaching brief powered by GPS vest data. Upload first-half load figures at half-time — Claude AI returns fatigue alerts, a substitution recommendation, and your second-half tactical instruction in 10 seconds." },
+  { icon: '📊', title: 'Directors Suite & PSR', desc: "Board-level financial dashboard, PSR compliance tracker, wage-to-revenue ratios, and FA/EFL governance reporting. Built for Chairmen and Finance Directors who need the full picture before the Board meeting — not just the table position." },
+  { icon: '🎯', title: 'AI Transfer Intelligence', desc: "The AI Transfer Researcher analyses your squad needs and returns five targets with a Lumio Fit Score, strengths, weaknesses, and a recommendation. Opposition reports, scouting database, and Wyscout integration in one toolkit." },
+  { icon: '⚽', title: 'GPS Load Monitoring', desc: "Lumio Vest GPS with Catapult OpenField and STATSports Sonra integration. Pitch heatmaps, ACWR load monitoring, training load planner with injury risk flags, and per-player readiness scores every morning before training." },
+  { icon: '💼', title: 'Fan Engagement & Commercial', desc: "Fan NPS, attendance trends, season ticket trajectory, social sentiment, sponsor pipeline, and matchday revenue. The commercial picture your Board needs alongside the football picture — in the same platform." },
+  { icon: '🏥', title: 'Medical & Fitness Hub', desc: "ACWR-based injury risk flagging, return-to-play tracking, GPS load history per player, medical clearance workflow, and physio case notes. Know who is at risk before the session starts — not after." },
+]
+
+const TIERS = [
+  { name: 'Director of Football / Head of Performance', desc: 'Squad management, GPS load monitoring, training planner, medical hub, opposition reports, and AI transfer intelligence. The complete technical picture — every morning before training.' },
+  { name: 'Chairman / CEO / Finance Director', desc: 'Directors Suite, PSR compliance tracker, Board Suite financials, fan engagement dashboard, and commercial pipeline. The business of football, as well as the game.' },
+  { name: 'Manager / Coaching Staff', desc: 'Match prep, AI opposition report, AI half-time GPS brief, post-match analysis, press conference briefing, and tactical planning tools. From pre-match prep to the final whistle.' },
+]
+
+const PRICING = [
+  { name: 'Starter', price: 'Free', features: ['Squad & contract management', 'Fixtures & results (live data)', 'Match Report Builder', 'GPS CSV upload', 'Fan Hub KPI strip', '3 staff accounts'] },
+  { name: 'Professional', price: '£199/mo', highlight: true, features: ['Everything in Starter', 'Directors Suite & PSR tracker', 'AI Transfer Researcher + Opposition Report', 'AI Post-Match Analysis', 'Training Load Planner', 'GPS pitch heatmaps', 'AI half-time GPS brief', 'Full Fan Engagement Dashboard', 'PDF export across all dashboards', '10 staff accounts'] },
+  { name: 'Elite', price: '£499/mo', features: ['Everything in Professional', 'Catapult + STATSports direct API', 'Wyscout video integration', 'Opta / StatsBomb data', 'AI Club Comparison Analysis', 'White-label club branding', 'Unlimited staff accounts', 'Priority support'] },
+  { name: 'Enterprise', price: 'Custom', features: ['Everything in Elite', 'Custom integrations', 'Multi-club portfolio management', 'Dedicated account manager + SLA', 'Contact us for pricing'] },
+]
+
+// ── Mockup chrome ───────────────────────────────────────────────────────────
+function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: MOCK_BG,
-        border: `1px solid ${MOCK_BORDER}`,
-        borderRadius: 12,
-        overflow: 'hidden',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
-        width: '100%',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '10px 14px',
-          borderBottom: `1px solid ${MOCK_BORDER}`,
-          background: '#0B1220',
-        }}
-      >
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
-        <div
-          style={{
-            marginLeft: 10,
-            flex: 1,
-            height: 18,
-            borderRadius: 4,
-            background: '#0F172A',
-            border: `1px solid ${MOCK_BORDER}`,
-          }}
-        />
+    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${NAVY}55` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER_ALT}`, backgroundColor: '#0B1020' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981' }} />
+        </div>
+        <div style={{ flex: 1, height: 18, borderRadius: 5, backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}` }} />
       </div>
-      <div style={{ padding: 16, minHeight: height || 280 }}>{children}</div>
+      <div style={{ padding: 18 }}>{children}</div>
     </div>
   )
 }
 
-function FeatureCard({ icon, title, body }: { icon: string; title: string; body: string }) {
+function KPI({ value, label, sub, color }: { value: string; label: string; sub?: string; color: string }) {
   return (
-    <div
-      style={{
-        background: CARD_BG,
-        border: `1px solid ${BORDER}`,
-        borderRadius: 14,
-        padding: 24,
-      }}
-    >
-      <div style={{ fontSize: 28, marginBottom: 12 }}>{icon}</div>
-      <h3 style={{ color: TEXT, fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>{title}</h3>
-      <p style={{ color: MUTED, fontSize: 14, lineHeight: 1.55, margin: 0 }}>{body}</p>
+    <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${color}55`, borderRadius: 10, padding: 12 }}>
+      <div style={{ fontSize: 14, fontWeight: 900, color }}>{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: TEXT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      {sub && <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{sub}</div>}
     </div>
   )
 }
 
-function Tick() {
+// ── Mockups ─────────────────────────────────────────────────────────────────
+function HalfTimeBriefMockup() {
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 20,
-        height: 20,
-        borderRadius: '50%',
-        background: 'rgba(16,185,129,0.15)',
-        border: `1px solid ${ACCENT}`,
-        color: ACCENT,
-        fontSize: 12,
-        fontWeight: 800,
-        flexShrink: 0,
-      }}
-    >
-      ✓
-    </span>
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🤖 AI Half-Time GPS Brief</div>
+        <span style={{ fontSize: 8, fontWeight: 900, padding: '2px 7px', borderRadius: 999, backgroundColor: 'rgba(239,68,68,0.2)', color: RED, border: `1px solid ${RED}55`, letterSpacing: '0.06em' }}>HALF TIME</span>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Lumio Sports FC vs Northgate City · Half-time 0-1</div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.5)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B' }}>⚠ C. Nwosu — 268 AU load, ACWR 1.38</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>Withdrawal recommended at 60 min</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: RED }}>⚠ D. Morris — ACWR 1.12</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>High first-half output. Monitor.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#3B82F6', marginBottom: 3 }}>📊 TACTICAL</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Pressing effective in first 20 min but space opened in behind. Drop trigger line 5m.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>🔄 SUB</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Barker off at 55 min — 87% weekly load cap. Walsh on.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981', marginBottom: 3 }}>▶ SECOND HALF</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.5 }}>Force play wider. Their left back GPS data shows slower recovery runs in last 15 minutes.</div>
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>📋 Copy for tablet</button>
+    </MockupFrame>
   )
 }
 
-function BulletList({ items }: { items: string[] }) {
+function BoardSuiteMockup() {
   return (
-    <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {items.map(it => (
-        <li key={it} style={{ display: 'flex', alignItems: 'center', gap: 12, color: TEXT, fontSize: 15 }}>
-          <Tick />
-          <span>{it}</span>
-        </li>
-      ))}
-    </ul>
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>Board Suite — Lumio Sports FC</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monthly Chairman&apos;s dashboard · Updated live</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 12 }}>
+        <KPI value="✓ Compliant" label="PSR" color="#10B981" />
+        <KPI value="64%" label="W:R Ratio" color="#F59E0B" />
+        <KPI value="£2.1m" label="Budget Left" color="#3B82F6" />
+        <KPI value="30 Jun" label="EFL Due" color="#F59E0B" />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 3 }}>
+          <span style={{ color: TEXT, fontWeight: 700 }}>Wage budget</span>
+          <span style={{ color: '#F59E0B', fontWeight: 800 }}>68% used</span>
+        </div>
+        <div style={{ height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
+          <div style={{ width: '68%', height: '100%', backgroundColor: '#F59E0B', borderRadius: 3 }} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 3 }}>
+          <span style={{ color: TEXT, fontWeight: 700 }}>Playing staff</span>
+          <span style={{ color: NAVY, fontWeight: 800 }}>72% used</span>
+        </div>
+        <div style={{ height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
+          <div style={{ width: '72%', height: '100%', backgroundColor: '#3B82F6', borderRadius: 3 }} />
+        </div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: '#F59E0B', fontWeight: 800 }}>⚠ Transfer window opens in 72 days</div>
+        <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>PSR headroom: £380k</div>
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>Generate Board Report PDF →</button>
+    </MockupFrame>
   )
 }
 
-function SpotlightSection({
-  flip,
-  background,
-  text,
-  mockup,
-}: {
-  flip?: boolean
-  background: string
-  text: React.ReactNode
-  mockup: React.ReactNode
+function GPSPitchMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>GPS Load Monitor — Lumio Sports FC</div>
+        <span style={{ fontSize: 8, fontWeight: 900, padding: '2px 7px', borderRadius: 999, backgroundColor: 'rgba(239,68,68,0.2)', color: RED, border: `1px solid ${RED}55`, letterSpacing: '0.06em' }}>● LIVE</span>
+      </div>
+      <svg viewBox="0 0 320 210" style={{ width: '100%', borderRadius: 8, marginBottom: 10, border: `1px solid ${BORDER_ALT}` }}>
+        <rect x={0} y={0} width={320} height={210} fill="#1a3d1a" />
+        {/* Stripes */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <rect key={i} x={i * 40} y={0} width={40} height={210} fill={i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'} />
+        ))}
+        {/* Outer */}
+        <rect x={6} y={6} width={308} height={198} fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.2" />
+        {/* Halfway */}
+        <line x1={160} y1={6} x2={160} y2={204} stroke="rgba(255,255,255,0.65)" strokeWidth="1" />
+        {/* Centre circle */}
+        <circle cx={160} cy={105} r={28} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        <circle cx={160} cy={105} r={2} fill="rgba(255,255,255,0.6)" />
+        {/* Left penalty area */}
+        <rect x={6} y={55} width={44} height={100} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        {/* Left 6-yard */}
+        <rect x={6} y={80} width={18} height={50} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" />
+        {/* Right penalty area */}
+        <rect x={270} y={55} width={44} height={100} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+        {/* Right 6-yard */}
+        <rect x={296} y={80} width={18} height={50} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" />
+        {/* Heat zones — defence */}
+        <circle cx={45} cy={85} r={16} fill={NAVY} opacity="0.7" style={{ filter: 'blur(8px)' }} />
+        <circle cx={55} cy={120} r={14} fill={NAVY} opacity="0.65" style={{ filter: 'blur(8px)' }} />
+        <circle cx={70} cy={105} r={12} fill={NAVY} opacity="0.55" style={{ filter: 'blur(8px)' }} />
+        <circle cx={90} cy={80} r={10} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        {/* Midfield */}
+        <circle cx={160} cy={105} r={18} fill={NAVY} opacity="0.68" style={{ filter: 'blur(8px)' }} />
+        <circle cx={145} cy={130} r={14} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        <circle cx={175} cy={85} r={12} fill={NAVY} opacity="0.45" style={{ filter: 'blur(8px)' }} />
+        {/* Attack */}
+        <circle cx={260} cy={105} r={18} fill={NAVY} opacity="0.72" style={{ filter: 'blur(8px)' }} />
+        <circle cx={245} cy={80} r={13} fill={NAVY} opacity="0.55" style={{ filter: 'blur(8px)' }} />
+        <circle cx={250} cy={130} r={12} fill={NAVY} opacity="0.5" style={{ filter: 'blur(8px)' }} />
+        <circle cx={280} cy={110} r={10} fill={NAVY} opacity="0.4" style={{ filter: 'blur(8px)' }} />
+      </svg>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+        {[
+          { l: 'Full Squad', active: true },
+          { l: 'J. Hayes', active: false },
+          { l: 'C. Nwosu', active: false },
+          { l: 'T. Fletcher', active: false },
+        ].map(p => (
+          <span key={p.l} style={{ fontSize: 8, padding: '4px 8px', borderRadius: 999, backgroundColor: p.active ? NAVY : 'transparent', color: p.active ? GOLD : MUTED, border: `1px solid ${p.active ? NAVY : BORDER_ALT}`, fontWeight: 700 }}>{p.l}</span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+        {[
+          { n: 'C. Nwosu', au: 478, acwr: 1.38, c: '#EF4444' },
+          { n: 'D. Morris', au: 445, acwr: 1.12, c: '#F59E0B' },
+          { n: 'T. Fletcher', au: 420, acwr: 0.88, c: '#10B981' },
+        ].map(p => (
+          <div key={p.n} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: TEXT }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: p.c }} />
+            <span style={{ fontWeight: 700 }}>{p.n}</span>
+            <span style={{ color: MUTED, marginLeft: 'auto' }}>{p.au} AU · ACWR {p.acwr.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+      <button style={{ width: '100%', fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: NAVY, color: GOLD, border: 'none' }}>🤖 AI Post-Session Analysis</button>
+    </MockupFrame>
+  )
+}
+
+function InsightsMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>Good morning. Here&apos;s your club picture.</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Lumio Sports FC · Thursday 9 April 2026</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
+        {[
+          { l: 'Squad', s: '✓', c: '#10B981' },
+          { l: 'Medical', s: '⚠', c: '#F59E0B' },
+          { l: 'Transfers', s: '🔴', c: '#EF4444' },
+          { l: 'Commercial', s: '✓', c: '#10B981' },
+          { l: 'Finance', s: '✓', c: '#10B981' },
+          { l: 'Governance', s: '✓', c: '#10B981' },
+        ].map(t => (
+          <div key={t.l} style={{ backgroundColor: '#0A0B10', border: `1px solid ${t.c}55`, borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: t.c }}>{t.s}</div>
+            <div style={{ fontSize: 9, color: TEXT, fontWeight: 700, marginTop: 2 }}>{t.l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderLeft: `3px solid ${NAVY}`, borderRadius: 8, padding: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: GOLD, marginBottom: 4 }}>🤖 AI SUMMARY</div>
+        <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.55 }}>Squad availability 18/22. C. Nwosu at injury risk — ACWR 1.38. Contract decision on P. Granger overdue by 6 days. Social sentiment up 12% after Saturday.</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {[
+          '1. Renew Granger contract — overdue',
+          '2. GPS plan — rest Nwosu tomorrow',
+          '3. PSR declaration — 72 days remaining',
+        ].map(a => (
+          <div key={a} style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 6, padding: '7px 10px', fontSize: 9, color: TEXT, fontWeight: 600 }}>{a}</div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+// ── Spotlight wrapper ────────────────────────────────────────────────────────
+function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
+  eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
 }) {
   return (
-    <section style={{ background, padding: '120px 24px' }}>
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 64,
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ order: flip ? 2 : 1 }}>{text}</div>
-        <div style={{ order: flip ? 1 : 2 }}>{mockup}</div>
+    <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ order: reverse ? 2 : 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
+          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bullets.map(b => (
+              <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
+                <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ order: reverse ? 1 : 2 }}>{mockup}</div>
       </div>
     </section>
   )
 }
 
-export default function FootballLanding() {
-  const featuresRef = useRef<HTMLDivElement>(null)
-
-  const scrollToFeatures = () => {
-    featuresRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const features = [
-    { icon: '⚽', title: 'Squad Management', body: 'FIFA-style player cards, fitness tracking, contract status, injury log. Your entire squad at a glance.' },
-    { icon: '📊', title: 'Club Intelligence Insights', body: 'Role-specific dashboards for Director of Football, Head Coach, Commercial Director. Everyone sees what matters to them.' },
-    { icon: '🏦', title: 'Board Suite', body: 'League position, squad value, revenue breakdown, wage bill. Board-ready reports generated automatically.' },
-    { icon: '💰', title: 'Finance & PSR', body: 'Real-time PSR compliance tracking. 3-year rolling loss calculation, what-if transfer calculator. Never get caught out.' },
-    { icon: '🎯', title: 'Set Pieces', body: '90+ attacking and defending routines. Interactive pitch diagrams. Share with coaching staff instantly.' },
-    { icon: '📡', title: 'GPS & Performance', body: 'Catapult and STATSports integration. Load monitoring, ACWR injury risk scoring, recovery tracking.' },
-    { icon: '🎙️', title: 'Media & PR', body: 'Press conference scheduler, media request management, social media analytics. All coordinated in one place.' },
-    { icon: '🔍', title: 'Scouting & Transfers', body: 'Wyscout integration, opposition analysis, recruitment pipeline, agent contacts. Find your next signing faster.' },
-    { icon: '🤖', title: 'AI Morning Briefing', body: 'Every morning, Lumio reads your data and briefs your Club Director in plain English. Injuries, fixtures, financials, transfer targets.' },
-  ]
-
-  const integrations: Array<[string, string, string]> = [
-    ['⚡', 'StatsBomb', 'Match data and open data'],
-    ['📹', 'Wyscout', 'Video and scouting database'],
-    ['📡', 'Catapult', 'GPS and athlete tracking'],
-    ['📊', 'Opta', 'Live statistics feed'],
-    ['🏃', 'STATSports', 'Player load monitoring'],
-    ['📋', 'The FA', 'Registration and compliance'],
-    ['🎥', 'Hudl', 'Video analysis'],
-    ['💰', 'Xero', 'Financial management'],
-    ['📱', 'WhatsApp Business', 'Team communications'],
-    ['🔔', 'Slack', 'Staff notifications'],
-    ['📧', 'Microsoft 365', 'Email and calendar'],
-    ['🤖', 'Claude AI', 'Intelligence and briefings'],
-  ]
-
+// ── Page ─────────────────────────────────────────────────────────────────────
+export default function FootballLandingPage() {
   return (
-    <div style={{ background: BG, color: TEXT, fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-      {/* ── HERO ───────────────────────────────────────────── */}
-      <section
-        style={{
-          minHeight: '100vh',
-          padding: '80px 24px 60px',
-          background: `radial-gradient(circle at 20% 10%, rgba(16,185,129,0.18), transparent 60%), radial-gradient(circle at 80% 30%, rgba(16,185,129,0.10), transparent 55%), ${BG}`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/football_logo.png" alt="Lumio Football" style={{ width: 80, height: 80, marginBottom: 24 }} />
-        <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 24 }}>
-          Lumio Football Portal
-        </div>
-        <h1 style={{ fontSize: 'clamp(40px, 7vw, 84px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', margin: 0, maxWidth: 1100 }}>
-          The operating system for{' '}
-          <span style={{ color: ACCENT }}>professional football clubs.</span>
-        </h1>
-        <p style={{ color: MUTED, fontSize: 20, lineHeight: 1.6, maxWidth: 760, marginTop: 28 }}>
-          From League Two to the Championship. PSR compliance, squad intelligence, board reporting, set pieces, GPS tracking — one platform, built for football people.
-        </p>
-
-        <div style={{ display: 'flex', gap: 16, marginTop: 40, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link
-            href="/football/afc-wimbledon"
-            style={{ background: ACCENT, color: '#04140C', fontWeight: 800, fontSize: 17, padding: '18px 36px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 14px 40px rgba(16,185,129,0.35)' }}
-          >
-            Try the demo →
-          </Link>
-          <button
-            onClick={scrollToFeatures}
-            style={{ background: 'transparent', color: TEXT, fontWeight: 700, fontSize: 17, padding: '18px 32px', borderRadius: 12, border: `1px solid ${BORDER}`, cursor: 'pointer' }}
-          >
-            See all features ↓
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 56, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {['300+ features', 'PSR compliant', 'AI powered', 'GPS integrated', 'StatsBomb ready'].map(p => (
-            <span key={p} style={{ padding: '10px 18px', background: CARD_BG, border: `1px solid ${BORDER}`, borderRadius: 999, fontSize: 13, fontWeight: 600, color: TEXT }}>
-              {p}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURES GRID ──────────────────────────────────── */}
-      <section ref={featuresRef} style={{ padding: '120px 24px', background: BG }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 800, textAlign: 'center', margin: 0, letterSpacing: '-0.02em' }}>
-            Everything your club needs. <span style={{ color: ACCENT }}>In one place.</span>
-          </h2>
-          <p style={{ color: MUTED, fontSize: 18, textAlign: 'center', maxWidth: 720, margin: '20px auto 60px' }}>
-            Nine connected modules. One source of truth. Built specifically for the people who run football clubs.
+    <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
+      {/* ── HERO ── */}
+      <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${NAVY}66, transparent 50%), radial-gradient(circle at 80% 60%, ${RED}22, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 24 }}>
+            LUMIO FOOTBALL · CHAMPIONSHIP &amp; LEAGUE
+          </div>
+          <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
+            The complete club management platform.
+          </h1>
+          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 860, margin: '0 auto 40px' }}>
+            Squad management, PSR compliance, GPS load monitoring, AI transfer intelligence, Directors Suite, fan engagement, and a world-first AI half-time brief. Everything your club needs. One platform.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-            {features.map(f => <FeatureCard key={f.title} {...f} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SPOTLIGHT 1 — Club Intelligence ────────────────── */}
-      <SpotlightSection
-        background="#0A0C12"
-        text={
-          <div>
-            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Club Intelligence
-            </div>
-            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              Every role. <span style={{ color: ACCENT }}>One platform.</span>
-            </h2>
-            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
-              The Director of Football sees PSR headroom and transfer budget. The Head Coach sees fitness and set pieces. The Commercial Director sees revenue and sponsorship. Same data. Different views.
-            </p>
-            <BulletList items={['8 role-specific dashboard views', 'Real-time data across all departments', 'AI-generated morning briefing per role', 'Board pack generator']} />
-          </div>
-        }
-        mockup={
-          <BrowserFrame>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-              {['Director of Football', 'Chairman/CEO', 'Head Coach', 'Head of Medical', 'Head of Recruitment'].map((t, i) => (
-                <span key={t} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: i === 0 ? 'rgba(16,185,129,0.15)' : '#0F172A', border: `1px solid ${i === 0 ? ACCENT : MOCK_BORDER}`, color: i === 0 ? ACCENT : MUTED }}>
-                  {t}
-                </span>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-              {[['League Position', '8th'], ['Squad Value', '£34.2m'], ['PSR Headroom', '-£2.1m'], ['Days to Window', '11d']].map(([label, val]) => (
-                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 10, padding: 12 }}>
-                  <div style={{ color: MUTED, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-                  <div style={{ color: TEXT, fontSize: 22, fontWeight: 800, marginTop: 6 }}>{val}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 18, padding: 14, background: '#0B1220', borderRadius: 10, border: `1px solid ${MOCK_BORDER}` }}>
-              <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginBottom: 6 }}>🤖 MORNING BRIEFING</div>
-              <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
-                Two players returning to training today. PSR window narrowing — recommend deferring the Watson approach. Saturday opponent has conceded 6 set-piece goals.
-              </div>
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* ── SPOTLIGHT 2 — Finance & PSR ────────────────────── */}
-      <SpotlightSection
-        background={BG}
-        flip
-        text={
-          <div>
-            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Finance & PSR
-            </div>
-            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              PSR compliance. <span style={{ color: ACCENT }}>In real time.</span>
-            </h2>
-            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
-              One formula error in a spreadsheet could cost your club points. Lumio tracks your 3-year rolling loss automatically, flags risk the moment it appears, and models the impact of every transfer before you make it.
-            </p>
-            <BulletList items={['Live PSR status: Safe / Monitor / At Risk', 'What-If transfer calculator', 'Revenue attribution by category', 'Export-ready board financial pack']} />
-          </div>
-        }
-        mockup={
-          <BrowserFrame>
-            <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.5)', color: '#F59E0B', padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', marginBottom: 14 }}>
-              ⚠ PSR STATUS: MONITOR
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ color: MUTED, fontSize: 12 }}>3-Year Rolling Loss</span>
-              <span style={{ color: TEXT, fontSize: 14, fontWeight: 700 }}>£20.7m / £105m</span>
-            </div>
-            <div style={{ height: 10, background: '#0B1220', borderRadius: 999, overflow: 'hidden', border: `1px solid ${MOCK_BORDER}` }}>
-              <div style={{ width: '20%', height: '100%', background: '#F59E0B' }} />
-            </div>
-            <div style={{ marginTop: 10, color: ACCENT, fontSize: 12, fontWeight: 700 }}>£18.3m headroom remaining</div>
-            <div style={{ marginTop: 18, border: `1px solid ${MOCK_BORDER}`, borderRadius: 10, overflow: 'hidden' }}>
-              {[['2023/24', '£6.8m loss'], ['2024/25', '£8.1m loss'], ['2025/26', '£5.8m loss (forecast)']].map(([yr, val], i) => (
-                <div key={yr} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: i % 2 === 0 ? '#0B1220' : '#0E1626', fontSize: 13 }}>
-                  <span style={{ color: MUTED }}>{yr}</span>
-                  <span style={{ color: TEXT, fontWeight: 700 }}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* ── SPOTLIGHT 3 — Set Pieces ───────────────────────── */}
-      <SpotlightSection
-        background="#0A0C12"
-        text={
-          <div>
-            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Set Pieces
-            </div>
-            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              90+ routines. <span style={{ color: ACCENT }}>Interactive. Shareable.</span>
-            </h2>
-            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
-              Build your corner, free kick and throw-in library with interactive pitch diagrams. Assign takers, add coaching notes, share with your staff instantly. No more whiteboards.
-            </p>
-            <BulletList items={['Corners, free kicks, throw-ins, penalties', 'Attacking and defending routines', 'Taker and delivery type assignment', 'Instant share with coaching staff']} />
-          </div>
-        }
-        mockup={
-          <BrowserFrame height={520}>
-            {/* Club header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: TEXT }}>AFC Wimbledon</div>
-                <div style={{ fontSize: 11, color: MUTED, marginTop: 2, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Tactics</div>
-              </div>
-            </div>
-            {/* Tab nav */}
-            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-              {['Formation Builder', 'Opposition Report', 'Set Piece Planner', 'Video Analysis', 'Dept Insights'].map((t, i) => (
-                <span key={t} style={{ padding: '5px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: i === 4 ? 'rgba(16,185,129,0.18)' : '#0F172A', border: `1px solid ${i === 4 ? ACCENT : MOCK_BORDER}`, color: i === 4 ? ACCENT : MUTED }}>
-                  {t}
-                </span>
-              ))}
-            </div>
-            {/* KPI strip */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-              {[['Formation', '4-2-3-1'], ['Win Rate', '62%'], ['Goals Scored', '48'], ['Clean Sheets', '11']].map(([label, val]) => (
-                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 8, padding: 10 }}>
-                  <div style={{ color: MUTED, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-                  <div style={{ color: TEXT, fontSize: 16, fontWeight: 800, marginTop: 4 }}>{val}</div>
-                </div>
-              ))}
-            </div>
-            {/* Recent Formations table */}
-            <div style={{ border: `1px solid ${MOCK_BORDER}`, borderRadius: 8, overflow: 'hidden', marginBottom: 14 }}>
-              <div style={{ padding: '8px 12px', background: '#0B1220', fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: `1px solid ${MOCK_BORDER}` }}>
-                Recent Formations Used
-              </div>
-              {[
-                ['4-2-3-1', '14 matches', 9, 3, 2],
-                ['4-3-3', '8 matches', 4, 2, 2],
-                ['3-5-2', '4 matches', 3, 0, 1],
-                ['4-4-2', '2 matches', 1, 1, 0],
-              ].map(([form, matches, w, d, l], i) => (
-                <div key={form as string} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: i % 2 === 0 ? '#0B1220' : '#0E1626', fontSize: 11 }}>
-                  <span style={{ color: TEXT, fontWeight: 700 }}>{form}</span>
-                  <span style={{ color: MUTED }}>{matches}</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(16,185,129,0.18)', color: ACCENT, fontSize: 10, fontWeight: 800 }}>W{w as number}</span>
-                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(245,158,11,0.18)', color: '#F59E0B', fontSize: 10, fontWeight: 800 }}>D{d as number}</span>
-                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(239,68,68,0.18)', color: '#EF4444', fontSize: 10, fontWeight: 800 }}>L{l as number}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Set piece pitch */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>Near Post Flick-On</div>
-              <span style={{ padding: '3px 9px', background: 'rgba(16,185,129,0.15)', border: `1px solid ${ACCENT}`, borderRadius: 999, fontSize: 9, fontWeight: 800, color: ACCENT, letterSpacing: '0.08em' }}>
-                INSWINGER
-              </span>
-            </div>
-            <div style={{ position: 'relative', height: 150, borderRadius: 10, background: 'linear-gradient(180deg, #0F4C2F 0%, #0B3A23 100%)', border: '2px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, background: 'rgba(255,255,255,0.25)' }} />
-              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '52%', height: 50, border: '2px solid rgba(255,255,255,0.3)', borderTop: 'none' }} />
-              <div style={{ position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)', width: '24%', height: 22, border: '2px solid rgba(255,255,255,0.35)', borderTop: 'none' }} />
-              {[['10%', '60%', '7'], ['38%', '40%', '9'], ['48%', '30%', '10'], ['58%', '50%', '5'], ['68%', '35%', '4'], ['78%', '60%', '11']].map(([left, top, num]) => (
-                <div key={num} style={{ position: 'absolute', left, top, width: 20, height: 20, borderRadius: '50%', background: ACCENT, color: '#04140C', fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.7)', transform: 'translate(-50%, -50%)' }}>
-                  {num}
-                </div>
-              ))}
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* ── SPOTLIGHT 4 — Tactics AI Department Intelligence ── */}
-      <SpotlightSection
-        background={BG}
-        flip
-        text={
-          <div>
-            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Department Intelligence
-            </div>
-            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              AI that thinks like <span style={{ color: ACCENT }}>a football person.</span>
-            </h2>
-            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
-              Every department in Lumio has its own AI intelligence layer. The Tactics module reads your formation data, opposition reports and set piece stats — then surfaces the insights that matter, before you even ask.
-            </p>
-            <BulletList items={['AI Summary per department, generated fresh daily', 'Formation performance analysis', 'Opposition vulnerability detection', 'Watch-out flags and coaching recommendations']} />
-          </div>
-        }
-        mockup={
-          <BrowserFrame height={620}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ fontSize: 18 }}>📊</span>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>Tactics — Insights Report</div>
-                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>AI-generated department analysis</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <span style={{ padding: '4px 10px', borderRadius: 6, background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, color: MUTED, fontSize: 10, fontWeight: 700 }}>Export PDF</span>
-                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(16,185,129,0.15)', border: `1px solid ${ACCENT}`, color: ACCENT, fontSize: 10, fontWeight: 700 }}>Share</span>
-              </div>
-            </div>
-            {/* Time tabs */}
-            <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
-              {['Today', 'This Week', 'This Month', 'This Quarter', 'This Year'].map((t, i) => (
-                <span key={t} style={{ padding: '4px 9px', borderRadius: 5, fontSize: 9, fontWeight: 700, background: i === 2 ? 'rgba(16,185,129,0.18)' : '#0B1220', border: `1px solid ${i === 2 ? ACCENT : MOCK_BORDER}`, color: i === 2 ? ACCENT : MUTED }}>
-                  {t}
-                </span>
-              ))}
-            </div>
-            {/* Executive Summary */}
-            <div style={{ borderLeft: '3px solid #F59E0B', background: '#0B1220', padding: '10px 12px', borderRadius: 6, marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Executive Summary</div>
-              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
-                The tactics department has delivered strong performance this month with the 4-2-3-1 formation achieving a 68% win rate. Set piece conversion remains a weakness at 14%…
-              </div>
-            </div>
-            {/* Key metrics grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
-              {[
-                ['Headcount', '192'],
-                ['Attrition Rate', '4.2%'],
-                ['Time to Hire', '23 days'],
-                ['Training', '87%'],
-                ['eNPS Score', '42'],
-                ['Leave Util.', '62%'],
-              ].map(([label, val]) => (
-                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 8 }}>
-                  <div style={{ color: MUTED, fontSize: 9 }}>{label}</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 2 }}>
-                    <span style={{ color: TEXT, fontSize: 13, fontWeight: 800 }}>{val}</span>
-                    <span style={{ color: ACCENT, fontSize: 9, fontWeight: 700 }}>↑</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Top achievements */}
-            <div style={{ background: 'rgba(16,185,129,0.08)', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Top Achievements</div>
-              {[
-                '4-2-3-1 formation delivering 68% win rate',
-                'Identified Riverside vulnerability — 34% turnover',
-                'Tactical consistency maintained across squad',
-              ].map(a => (
-                <div key={a} style={{ fontSize: 10, color: TEXT, marginTop: 4, display: 'flex', gap: 6 }}>
-                  <span style={{ color: ACCENT }}>✅</span>
-                  <span>{a}</span>
-                </div>
-              ))}
-            </div>
-            {/* AI Summary + Highlights */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>🤖 AI Summary</div>
-                {[
-                  '4-2-3-1 outperforming alternatives',
-                  'Set piece conversion below par',
-                  'High press effective vs back-three',
-                  'Opposition weak on right channel',
-                ].map(s => (
-                  <div key={s} style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>• {s}</div>
-                ))}
-                <div style={{ marginTop: 6, padding: '4px 8px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 4, fontSize: 9, color: '#F59E0B', fontWeight: 700 }}>
-                  ⚠ Don&apos;t abandon 4-2-3-1 structure
-                </div>
-              </div>
-              <div style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 6, padding: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>✨ Key Highlights</div>
-                {[
-                  'Win rate up 12% vs last month',
-                  'Clean sheets doubled vs Q3',
-                  'Set piece routines: 90+ live',
-                  'Opposition reports auto-tagged',
-                  'Squad rotation balanced',
-                ].map((h, i) => (
-                  <div key={h} style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{i + 1}. {h}</div>
-                ))}
-              </div>
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* ── SPOTLIGHT 4 — Performance Analytics ────────────── */}
-      <SpotlightSection
-        background={BG}
-        flip
-        text={
-          <div>
-            <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Performance Analytics
-            </div>
-            <h2 style={{ fontSize: 44, fontWeight: 800, margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              xG, formations, GPS. <span style={{ color: ACCENT }}>All connected.</span>
-            </h2>
-            <p style={{ color: MUTED, fontSize: 16, lineHeight: 1.7, marginTop: 20 }}>
-              StatsBomb and Opta data live inside your portal. Formation analysis, xG timeline, shot maps, passing networks. GPS load data from Catapult and STATSports sitting alongside your match analysis.
-            </p>
-            <BulletList items={['StatsBomb Open Data integration', 'xG timeline and shot maps', 'GPS load monitoring and ACWR', 'Injury risk scoring']} />
-          </div>
-        }
-        mockup={
-          <BrowserFrame height={320}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-              {[['xG', '42.6'], ['xGA', '28.3'], ['Possession', '58%']].map(([label, val]) => (
-                <div key={label} style={{ background: '#0B1220', border: `1px solid ${MOCK_BORDER}`, borderRadius: 10, padding: 10, textAlign: 'center' }}>
-                  <div style={{ color: MUTED, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-                  <div style={{ color: ACCENT, fontSize: 22, fontWeight: 800, marginTop: 4 }}>{val}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ position: 'relative', height: 220, borderRadius: 10, background: 'linear-gradient(180deg, #0F4C2F 0%, #0B3A23 100%)', border: '2px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
-              {[
-                ['50%', '90%'],
-                ['15%', '72%'], ['38%', '72%'], ['62%', '72%'], ['85%', '72%'],
-                ['25%', '50%'], ['50%', '50%'], ['75%', '50%'],
-                ['20%', '25%'], ['50%', '20%'], ['80%', '25%'],
-              ].map(([left, top], i) => (
-                <div key={i} style={{ position: 'absolute', left, top, width: 22, height: 22, borderRadius: '50%', background: ACCENT, border: '2px solid rgba(255,255,255,0.7)', transform: 'translate(-50%, -50%)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }} />
-              ))}
-              <div style={{ position: 'absolute', bottom: 8, left: 12, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.08em' }}>
-                4-3-3 · AVG POSITIONS
-              </div>
-            </div>
-          </BrowserFrame>
-        }
-      />
-
-      {/* ── INTEGRATIONS ───────────────────────────────────── */}
-      <section style={{ background: '#0A0C12', padding: '120px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
-            Lumio connects to <span style={{ color: ACCENT }}>the tools you already use.</span>
-          </h2>
-          <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            {integrations.map(([icon, name, desc]) => (
-              <div key={name} style={{ background: CARD_BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
-                <div style={{ fontSize: 24 }}>{icon}</div>
-                <div>
-                  <div style={{ color: TEXT, fontWeight: 700, fontSize: 15 }}>{name}</div>
-                  <div style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CLUB TIERS ─────────────────────────────────────── */}
-      <section style={{ background: BG, padding: '120px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', textAlign: 'center' }}>
-            Built for <span style={{ color: ACCENT }}>every level</span> of the professional game.
-          </h2>
-          <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-            {[
-              { tier: 'League One / Two', body: 'PSR-compliant from day one. Squad management, finance tracking, board reporting.' },
-              { tier: 'Championship', body: 'Full commercial intelligence. Transfer market tools, media management, advanced analytics.' },
-              { tier: 'Non-League', body: 'Everything a growing club needs. Affordable, scalable, built for football people.' },
-            ].map(t => (
-              <div key={t.tier} style={{ background: CARD_BG, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 28 }}>
-                <div style={{ color: ACCENT, fontSize: 12, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t.tier}</div>
-                <p style={{ color: TEXT, fontSize: 16, lineHeight: 1.6, marginTop: 14, marginBottom: 0 }}>{t.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── EARLY ACCESS CTA ───────────────────────────────── */}
-      <section style={{ background: `radial-gradient(circle at 50% 0%, rgba(16,185,129,0.18), transparent 60%), #06070C`, padding: '120px 24px' }}>
-        <div style={{ maxWidth: 880, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            Be one of the first clubs on <span style={{ color: ACCENT }}>Lumio Football.</span>
-          </h2>
-          <p style={{ color: MUTED, fontSize: 18, lineHeight: 1.6, marginTop: 24 }}>
-            We&apos;re looking for a small number of clubs to help us build this properly. 6 months free. No commitment. At the end, all we ask is an honest case study.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 36 }}>
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} style={{ padding: '10px 20px', background: CARD_BG, border: `1px solid ${BORDER}`, borderRadius: 999, fontSize: 14, fontWeight: 700, color: TEXT }}>
-                {p}
-              </span>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 44 }}>
-            <a
-              href="mailto:hello@lumiosports.com?subject=Football%20Early%20Access"
-              style={{ background: ACCENT, color: '#04140C', fontWeight: 800, fontSize: 17, padding: '18px 36px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 14px 40px rgba(16,185,129,0.35)' }}
-            >
-              Apply for early access →
-            </a>
-            <Link
-              href="/football/afc-wimbledon"
-              style={{ background: 'transparent', color: TEXT, fontWeight: 700, fontSize: 17, padding: '18px 32px', borderRadius: 12, border: `1px solid ${BORDER}`, textDecoration: 'none' }}
-            >
-              Or try the demo →
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <Link href="/football/lumio-dev" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
+              See live demo →
+            </Link>
+            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Book a walkthrough
             </Link>
           </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {STAT_PILLS.map(p => (
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(27,58,107,0.25)', border: `1px solid ${NAVY}`, color: GOLD, fontSize: 13, fontWeight: 700 }}>{p}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURE GRID ── */}
+      <section id="features" style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Built for professional football clubs.
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+            Fifty-plus features across twelve departments — from the Chairman&apos;s office to the training pitch. Everything in one place.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SPOTLIGHTS ── */}
+      <Spotlight
+        eyebrow="SPOTLIGHT · AI HALF-TIME GPS BRIEF"
+        title="World's first. Nothing else like it."
+        body="At half-time, your analyst uploads first-half GPS data from the vests. Lumio reads distance covered, session load, and ACWR risk for every player — then Claude AI generates a structured coaching brief in under 10 seconds. Ready before the manager walks back in."
+        bullets={['Fatigue alerts per player — flagged automatically from GPS load data', 'Substitution recommendation — names the player and the replacement, with GPS reasoning', 'Tactical insight — what the movement patterns reveal about the first half', 'Second-half instruction — specific sentences based on data, not gut feel']}
+        mockup={<HalfTimeBriefMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · DIRECTORS SUITE & PSR"
+        title="The boardroom needs data too."
+        body="The Directors Suite gives your Chairman, CEO, and Finance Director everything they need — PSR compliance status, wage-to-revenue ratios, EFL/FA governance tracking, finance dashboards, and a one-click Board Report PDF. The full financial picture, updated in real time."
+        bullets={['PSR compliance tracker — automatic red/amber/green status with submission deadline calendar', 'Wage-to-revenue ratio — live calculation against EFL financial fair play ceiling', 'Board Report PDF — one-click branded board report ready for the monthly meeting', 'Finance dashboard — budget vs actual, revenue by stream, spend by department']}
+        mockup={<BoardSuiteMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · GPS & LOAD MONITORING"
+        title="See where every player is. Before and after."
+        body="Lumio GPS Vest integrates with Catapult OpenField and STATSports Sonra. Every training session and match generates a pitch heatmap, ACWR load score, and injury risk flag per player. The AI post-session analysis tells you who to rest and who can go harder — before you write tomorrow's session plan."
+        bullets={['Pitch heatmap — GPS positional data rendered on a full football pitch, per player or full squad', 'ACWR monitoring — 28-day rolling load vs 7-day acute, green/amber/red risk zones', 'AI post-session analysis — Claude reads the full squad load and generates coaching recommendations', 'Training Load Planner — weekly player × day calendar with auto-generated ACWR risk flags']}
+        mockup={<GPSPitchMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · CLUB INSIGHTS"
+        title="Every department. One morning view."
+        body="The Lumio Insights dashboard gives your Director of Football the complete picture across squad, medical, transfers, commercial, finance, and fan engagement — before the first meeting of the day. AI-generated summaries, priority actions, and weekly trends in one scroll."
+        bullets={['Department health scores — squad, medical, commercial, finance, governance at a glance', 'AI department summaries — Claude reads your live data and writes the morning briefing', 'Priority action feed — what needs your attention today, ranked by impact and urgency', 'Weekly trends — squad availability, GPS load, revenue, fan NPS over rolling 8 weeks']}
+        mockup={<InsightsMockup />}
+      />
+
+      {/* ── WHO IT'S FOR ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Who it&apos;s for.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
+            {TIERS.map(t => (
+              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${NAVY}`, borderRadius: 16, padding: 32 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>ROLE</div>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Simple pricing. No contracts.
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 56 }}>
+            {PRICING.map(p => (
+              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 24, position: 'relative' }}>
+                {p.highlight && (
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: RED, color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
+                )}
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
+                <div style={{ fontSize: 24, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {p.features.map(f => (
+                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 12, color: '#D1D5DB' }}>
+                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BOTTOM CTA ── */}
+      <section style={{ padding: '120px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 48, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
+            The complete platform for professional football clubs.
+          </h2>
+          <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
+            Explore the live demo with Lumio Sports FC — no signup, no account needed. Or book a 30-minute walkthrough with the Lumio team.
+          </p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            <Link href="/football/lumio-dev" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
+              See live demo →
+            </Link>
+            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Book a walkthrough →
+            </Link>
+          </div>
+          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Fictional demo club · All player data is illustrative · GPS vest integration from Professional tier</p>
         </div>
       </section>
     </div>

@@ -3273,7 +3273,7 @@ export default function GolfTourPage() {
       case 'exemptions':  return <ExemptionsView />;
       case 'matchprep':   return <RoundPrepView />;
       case 'media':       return <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." />;
-      case 'agent':       return <PlaceholderView icon="📬" title="Agent Pipeline" description="Deals in negotiation, sponsor pipeline, renewal timelines, and commercial opportunity tracking." />;
+      case 'agent':       return <AgentPipelineView />;
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." />;
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." />;
       case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." />;
