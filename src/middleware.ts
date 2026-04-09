@@ -27,9 +27,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Dev PIN gate (non-production only) ────────────────────────────────
-  const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
+  const hostname = request.headers.get('host') ?? ''
+  const isProductionDomain =
+    hostname === 'lumiosports.com' ||
+    hostname === 'lumiocms.com' ||
+    hostname === 'www.lumiosports.com' ||
+    hostname === 'www.lumiocms.com'
+
   const devPin = process.env.DEV_ACCESS_PIN
-  if (!isProduction && devPin) {
+  if (!isProductionDomain && devPin) {
     const isExcluded = pathname === '/dev-login'
       || pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
