@@ -28,6 +28,7 @@ interface RugbyClub {
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',       label: 'Club Dashboard',        icon: '🏠', group: 'CLUB OVERVIEW' },
   { id: 'dorbriefing',     label: 'DoR Briefing',          icon: '🌅', group: 'CLUB OVERVIEW' },
+  { id: 'insights',        label: 'Insights',              icon: '📊', group: 'CLUB OVERVIEW' },
   { id: 'matchday',        label: 'Match Day Centre',      icon: '🏟️', group: 'CLUB OVERVIEW' },
   { id: 'calendar',        label: 'Club Calendar',         icon: '📅', group: 'CLUB OVERVIEW' },
   { id: 'capdashboard',    label: 'Cap Dashboard',         icon: '⚖️', group: 'SALARY CAP' },
@@ -40,11 +41,15 @@ const SIDEBAR_ITEMS = [
   { id: 'gapanalysis',     label: 'Gap Analysis',          icon: '📊', group: 'FRANCHISE' },
   { id: 'availability',    label: 'Squad Availability',    icon: '👥', group: 'SQUAD' },
   { id: 'selection',       label: 'Selection Planner',     icon: '📝', group: 'SQUAD' },
+  { id: 'playerprofile',   label: 'Player Profiles',       icon: '👤', group: 'SQUAD' },
   { id: 'international',   label: 'International Duty',    icon: '🌍', group: 'SQUAD' },
   { id: 'loans',           label: 'Loan Management',       icon: '🔄', group: 'SQUAD' },
   { id: 'gps-load',        label: 'GPS & Load',            icon: '📡', group: 'PERFORMANCE' },
+  { id: 'heatmap',         label: 'Player Heatmap',        icon: '🗺️', group: 'PERFORMANCE' },
   { id: 'video-analysis',  label: 'Video Analysis',        icon: '🎬', group: 'PERFORMANCE' },
   { id: 'match-stats',     label: 'Match Stats',           icon: '📊', group: 'PERFORMANCE' },
+  { id: 'setpiece',        label: 'Set Piece Analytics',   icon: '📐', group: 'PERFORMANCE' },
+  { id: 'carryanalytics', label: 'Carry Analytics',        icon: '⚡', group: 'PERFORMANCE' },
   { id: 'training-planner',label: 'Training Planner',      icon: '📋', group: 'PERFORMANCE' },
   { id: 'scouting',        label: 'Scouting Pipeline',     icon: '🔍', group: 'RECRUITMENT' },
   { id: 'capimpact',       label: 'Cap Impact Modeller',   icon: '💷', group: 'RECRUITMENT' },
@@ -63,6 +68,7 @@ const SIDEBAR_ITEMS = [
   { id: 'sharedfacilities',label: 'Shared Facilities',     icon: '🏢', group: "WOMEN'S RUGBY" },
   { id: 'womenscommercial',label: "Women's Commercial",    icon: '💼', group: "WOMEN'S RUGBY" },
   { id: 'aibriefing',      label: 'AI Morning Briefing',   icon: '🤖', group: 'INTELLIGENCE' },
+  { id: 'halftime',        label: 'AI Halftime Brief',     icon: '🤖', group: 'INTELLIGENCE' },
   { id: 'clubtocountry',   label: 'Club-to-Country',       icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', group: 'INTELLIGENCE' },
   { id: 'opposition',      label: 'Opposition Analysis',   icon: '🔎', group: 'INTELLIGENCE' },
   { id: 'industrynews',    label: 'Industry News',         icon: '📰', group: 'INTELLIGENCE' },
@@ -319,72 +325,49 @@ function ClubDashboardView({club}:{club:RugbyClub}) {
   );
 }
 
-// ─── DIRECTOR OF RUGBY BRIEFING VIEW ──────────────────────────────────────────
-function DoRBriefingView({club}:{club:RugbyClub}) {
-  const [briefing,setBriefing]=useState<string|null>(null);
-  const [loading,setLoading]=useState(false);
-
-  const generateBriefing = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY||'','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Generate a Director of Rugby morning briefing for ${club.name} (${club.league}). Include sections: 🏉 SQUAD & SELECTION (31/38 available, Danny Foster on HIA protocol day 8, Ryan Patel doubtful hamstring, next match vs Jersey Reds Saturday), 💰 SALARY CAP STATUS (spend £2.34M of £2.8M ceiling, compliant, 34 days to next return), 🏆 FRANCHISE READINESS (71%, investment docs and women's registration outstanding), 🔍 RECRUITMENT (Marcus Jennings openside target in talks, Connor Walsh loan expiring Apr 30), ⚠ COMPLIANCE & WELFARE (1 active HIA, welfare audit 2 screenings outstanding), 📋 TODAY'S PRIORITIES. Tone: direct, professional, factual.`}]}),
-      });
-      const data = await res.json();
-      setBriefing(data.content?.[0]?.text||'Briefing generation failed.');
-    } catch { setBriefing('Error connecting to AI service. Check API key configuration.'); }
-    setLoading(false);
-  };
-
+// ─── INSIGHTS VIEW ──────────────────────────────────────────────────────────
+function InsightsView({club}:{club:RugbyClub}) {
+  const [activeRole, setActiveRole] = useState('dor');
+  const roles = [{id:'dor',label:'Director of Rugby',icon:'🏉'},{id:'coach',label:'Head Coach',icon:'🎽'},{id:'medical',label:'Head of Medical',icon:'🏥'},{id:'recruitment',label:'Recruitment',icon:'🔍'},{id:'academy',label:'Academy',icon:'🎓'},{id:'analysis',label:'Analysis',icon:'🎬'},{id:'commercial',label:'Commercial',icon:'💼'},{id:'ceo',label:'CEO / Chairman',icon:'🏛️'}];
+  const headroom = club.capCeiling - club.currentSpend;
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
-      <SectionHeader icon="🌅" title="Director of Rugby Briefing" subtitle={`${club.dor} — ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} — Match Week`} />
+      <QuickActionsBar/><SectionHeader icon="📊" title="Insights" subtitle="Role-specific dashboards — 8 views"/>
+      <div className="overflow-x-auto flex gap-1 border-b border-gray-800 pb-0">{roles.map(r=><button key={r.id} onClick={()=>setActiveRole(r.id)} className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeRole===r.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{r.icon}</span>{r.label}</button>)}</div>
+      {activeRole==='dor'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Cap Headroom" value={fmt(headroom)} sub="Compliant" color="green"/><StatCard label="Franchise" value={`${club.franchiseScore}%`} sub="2 RED criteria" color="orange"/><StatCard label="Targets" value="6" sub="2 priority" color="purple"/><StatCard label="Contract Exp" value="7" sub="Before Jun 2026" color="red"/></div><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><Card><div className="text-sm font-semibold text-white mb-3">Priority Actions</div>{[{a:'Confirm No.8 — Foster HIA Day 8',u:'red'},{a:'LHP contract — external interest',u:'red'},{a:"Women's Game plan — submit by 30 Apr",u:'amber'},{a:'Investment Capacity pack — CEO sign-off',u:'amber'},{a:'Salary cap return — due 10 May',u:'blue'}].map((a,i)=><div key={i} className="flex gap-2 py-2 border-b border-gray-800/50 last:border-0"><span className={`text-xs mt-0.5 flex-shrink-0 ${a.u==='red'?'text-red-400':a.u==='amber'?'text-amber-400':'text-blue-400'}`}>{a.u==='red'?'🔴':a.u==='amber'?'🟡':'🔵'}</span><span className="text-xs text-gray-300">{a.a}</span></div>)}</Card><Card><div className="text-sm font-semibold text-white mb-3">Franchise Gap — 30-Day Sprint</div>{[{c:"Women's Game (42%)",a:'Submit PWR reg',d:'30 Apr',p:'CRITICAL'},{c:'Investment (48%)',a:'Complete investor pack',d:'15 May',p:'HIGH'},{c:'Operating (65%)',a:'Book matchday assessment',d:'30 Jun',p:'MEDIUM'}].map((g,i)=><div key={i} className={`p-3 rounded-lg border mb-2 ${g.p==='CRITICAL'?'border-red-600/30 bg-red-600/5':g.p==='HIGH'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><div className="flex justify-between mb-1"><span className="text-xs font-bold text-white">{g.c}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${g.p==='CRITICAL'?'bg-red-600/20 text-red-400':g.p==='HIGH'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{g.p}</span></div><div className="text-[10px] text-gray-400">{g.a} · {g.d}</div></div>)}</Card></div></div>}
+      {activeRole==='coach'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Available" value="28/38" sub="2 HIA · 2 injured" color="teal"/><StatCard label="GPS Overloads" value="2" sub="Barnes · Foster" color="red"/><StatCard label="Team ACWR" value="1.22" sub="Amber" color="orange"/><StatCard label="Next Match" value="Sat" sub="vs Jersey Reds" color="purple"/></div><Card><div className="text-sm font-semibold text-white mb-3">Set Piece + Opposition</div><div className="space-y-2 text-xs"><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Lineout</span><span className="text-green-400 font-bold">85%</span></div><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Scrum</span><span className="text-amber-400 font-bold">71% ⚠</span></div><div className="flex justify-between py-1.5"><span className="text-gray-400">Gainline</span><span className="text-white font-bold">61%</span></div></div><div className="mt-3 text-xs text-gray-400"><div>• Jersey scrum weakness — 4 pen last 3</div><div>• Hawkins kicks left 60%</div><div>• Morris (OF) — 9 turnovers last 3</div></div></Card></div>}
+      {activeRole==='medical'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="HIA Active" value="1" sub="Danny Foster" color="red"/><StatCard label="Injured" value="2" sub="Briggs · Patel" color="amber"/><StatCard label="Overload" value="2" sub="Barnes · Foster K." color="orange"/><StatCard label="Screenings" value="2" sub="Overdue" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">Medical Register</div><table className="w-full text-xs"><tbody>{[{p:'Danny Foster',i:'HIA Day 8',r:'19 Apr',s:'Active'},{p:'Karl Briggs',i:'Shoulder post-op',r:'2 May',s:'RTP'},{p:'Ryan Patel',i:'Hamstring Gr2',r:'18 Apr',s:'Rehab'},{p:'Luke Barnes',i:'ACWR 1.52',r:'Managed',s:'Load mgmt'}].map((r,i)=><tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-white">{r.p}</td><td className="py-2 text-gray-400">{r.i}</td><td className="py-2 text-gray-300">{r.r}</td><td className="py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.s==='Active'?'bg-red-600/20 text-red-400':r.s==='RTP'?'bg-blue-600/20 text-blue-400':'bg-gray-800 text-gray-500'}`}>{r.s}</span></td></tr>)}</tbody></table></Card></div>}
+      {activeRole==='recruitment'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Cap Headroom" value={fmt(headroom)} sub="For signings" color="green"/><StatCard label="Priority" value="2" sub="LHP + DM" color="red"/><StatCard label="Agents" value="5" sub="3 negotiating" color="purple"/><StatCard label="Window" value="Open" sub="Summer" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">Target Pipeline</div><table className="w-full text-xs"><tbody>{[{n:'Mike Donovan',p:'LHP',c:'Richmond',s:78000,st:'Offer made'},{n:'Jake Morton',p:'DM',c:'Coventry',s:65000,st:'Approach'},{n:'Chris Lawton',p:'CB',c:'Nottingham',s:58000,st:'Scouting'},{n:'Rory Flynn',p:'FH',c:'Free agent',s:72000,st:'Meeting Thu'}].map((t,i)=>{const ca=headroom-t.s;return<tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-white">{t.n}</td><td className="py-2"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{t.p}</span></td><td className="py-2 text-gray-400">{t.c}</td><td className="py-2 text-right text-gray-300">{fmt(t.s)}</td><td className={`py-2 text-right font-bold ${ca>200000?'text-green-400':'text-amber-400'}`}>{fmt(ca)}</td><td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded ${t.st==='Offer made'?'bg-green-600/20 text-green-400':t.st.includes('Meet')?'bg-purple-600/20 text-purple-400':'bg-gray-800 text-gray-500'}`}>{t.st}</span></td></tr>;})}</tbody></table></Card></div>}
+      {activeRole==='academy'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Academy" value="28" sub="U18:14 · U21:14" color="purple"/><StatCard label="1st Team Ready" value="3" sub="Dual reg" color="green"/><StatCard label="Franchise pts" value="+12" sub="CoE compliance" color="teal"/><StatCard label="Graduates" value="2" sub="This season" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">U21 First Team Bridge</div>{[{n:'Tom Foley',a:20,p:'No.8',s:'First team debut R14',ss:18},{n:'Ali Rashid',a:19,p:'Wing',s:'Dual reg — Coventry',ss:12},{n:'Sam Clarke',a:21,p:'Hooker',s:'Training with 1st team',ss:8}].map((p,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs"><div><div className="text-white font-medium">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.a} · {p.s}</div></div><div className="text-right"><div className="text-purple-400 font-bold">{p.ss}</div><div className="text-[10px] text-gray-600">1st team sessions</div></div></div>)}</Card></div>}
+      {activeRole==='analysis'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Clips" value="128" sub="5 categories" color="purple"/><StatCard label="Set Piece" value="85%/71%" sub="LO / Scrum" color="teal"/><StatCard label="Gainline" value="61%" sub="vs 56% bench ↑" color="green"/><StatCard label="Tackle Miss" value="10%" sub="Target <12% ✓" color="green"/></div><Card><div className="text-sm font-semibold text-white mb-3">Analysis Queue</div>{[{t:'Jersey Reds opp report',d:'Thu AM',s:'In progress'},{t:'Own lineout call review',d:'Thu AM',s:'Complete ✓'},{t:'Bath tackle patterns (18 events)',d:'Wed',s:'Complete ✓'},{t:'Foster HIA video — contact events',d:'Tue',s:'Complete ✓'}].map((t,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs"><div className="flex-1 text-gray-300 mr-4">{t.t}</div><div className="flex items-center gap-3 flex-shrink-0"><span className="text-gray-500">{t.d}</span><span className={`px-2 py-0.5 rounded text-[10px] ${t.s.includes('✓')?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{t.s}</span></div></div>)}</Card></div>}
+      {activeRole==='commercial'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Sponsors" value="£172k" sub="5 active" color="green"/><StatCard label="Pipeline" value="£43k" sub="2 prospects" color="orange"/><StatCard label="Matchday Rev" value="£374k" sub="vs £400k (94%)" color="teal"/><StatCard label="Renewals" value="2" sub="Jun 2026" color="red"/></div><Card><div className="text-sm font-semibold text-white mb-3">Sponsor Actions</div>{[{s:'Hartfield Building Society',a:'Renewal — prepare for May',v:'£85k',u:'amber'},{s:'West Country Energy',a:'Meeting follow-up — proposal due',v:'£28k est.',u:'red'},{s:"Smith & Sons",a:'Activate obligation review',v:'£35k',u:'blue'}].map((s,i)=><div key={i} className={`p-3 rounded-lg border mb-2 ${s.u==='red'?'border-red-600/30 bg-red-600/5':s.u==='amber'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><div className="flex justify-between mb-1 text-xs"><span className="font-bold text-white">{s.s}</span><span className="text-purple-400">{s.v}</span></div><div className="text-[10px] text-gray-400">{s.a}</div></div>)}</Card></div>}
+      {activeRole==='ceo'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Franchise" value={`${club.franchiseScore}%`} sub="Target: 85%" color="orange"/><StatCard label="Cap" value="SAFE" sub={fmt(headroom)} color="green"/><StatCard label="Revenue" value="£1.84M" sub="Projected" color="purple"/><StatCard label="Operating" value="-£180k" sub="On plan" color="teal"/></div><Card><div className="text-sm font-semibold text-white mb-3">Board Actions</div>{[{a:"Women's Game — PWR registration budget (£180k/yr)",u:'red',d:'30 Apr'},{a:'Investment pack — legal due diligence',u:'amber',d:'15 May'},{a:'Stadium feasibility — East Stand (4,800→6,500)',u:'blue',d:'30 Jun'}].map((a,i)=><div key={i} className={`flex gap-3 p-3 rounded-lg border mb-2 ${a.u==='red'?'border-red-600/30 bg-red-600/5':a.u==='amber'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><span className="text-lg flex-shrink-0">{a.u==='red'?'🔴':a.u==='amber'?'🟡':'🔵'}</span><div><div className="text-xs text-gray-300">{a.a}</div><div className="text-[10px] text-gray-600 mt-1">Deadline: {a.d}</div></div></div>)}</Card></div>}
+    </div>
+  );
+}
 
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={generateBriefing} disabled={loading} className="px-4 py-2 rounded-lg text-xs font-bold bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors disabled:opacity-50">
-          {loading?'Generating...':'Generate AI Briefing'}
-        </button>
-        <span className="text-xs text-gray-500">Delivery: 7:30am on training days</span>
-      </div>
-
-      {loading && (
-        <Card><div className="flex items-center gap-2 text-xs text-purple-400"><div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>Generating Director of Rugby briefing...</div></Card>
-      )}
-
-      {briefing && !loading && (
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2"><div className="text-sm font-semibold text-white">AI Briefing</div><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Generated by Claude</span></div>
-            <button onClick={()=>navigator.clipboard.writeText(briefing)} className="text-xs text-gray-500 hover:text-gray-300">Copy</button>
-          </div>
-          <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{briefing}</div>
-        </Card>
-      )}
-
-      {!briefing && !loading && (
-        <div className="space-y-4">
-          {[
-            {icon:'🏉',title:'SQUAD & SELECTION',items:['31 of 38 players available','Danny Foster — HIA protocol Day 8 (unavailable)','Ryan Patel — hamstring, doubtful Saturday','Danny Cole — 71% readiness, monitoring','Jersey Reds preparation on track']},
-            {icon:'💰',title:'SALARY CAP STATUS',items:['Current spend: £2,340,000 of £2,800,000 ceiling','Headroom: £460,000 — COMPLIANT','Floor buffer: +£440,000 above minimum','Next return due: May 10 (34 days)']},
-            {icon:'🏆',title:'FRANCHISE READINESS',items:['Score: 71% (target 85%)','RED: Investment documentation incomplete','RED: Women\'s PWR registration outstanding','Next action: investor pack — Caroline Hughes']},
-            {icon:'🔍',title:'RECRUITMENT',items:['Marcus Jennings (openside) — in talks with agent','Connor Walsh loan expires April 30 — extend or release?','Tom Clarke (fly-half) — approached, exploring options']},
-            {icon:'⚠',title:'COMPLIANCE & WELFARE',items:['1 active HIA — Danny Foster, Day 8 of 21-day protocol','2 annual medical screenings outstanding (deferred — injury)','DBS checks: 47/47 current ✓']},
-            {icon:'📋',title:'TODAY\'S PRIORITIES',items:['Review Jersey Reds analysis with coaching team','Chase investor documentation from Caroline Hughes','Confirm Marcus Jennings meeting with Dan Hooper (agent)','Medical review: Danny Cole readiness assessment']},
-          ].map((s:{icon:string;title:string;items:string[]},i:number)=>(
-            <Card key={i}>
-              <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-2">{s.icon} {s.title}</div>
-              <div className="space-y-1">
-                {s.items.map((item:string,j:number)=>(
-                  <div key={j} className="text-sm text-gray-300 py-0.5">• {item}</div>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+// ─── DIRECTOR OF RUGBY BRIEFING VIEW ──────────────────────────────────────────
+function DoRBriefingView({club}:{club:RugbyClub}) {
+  const [brief,setBrief]=useState<string|null>(null);
+  const [loading,setLoading]=useState(false);
+  const [autoMode,setAutoMode]=useState(false);
+  const CONTEXT={date:'Thursday 9 April 2026',matchWeek:`vs Jersey Reds — Saturday 11 April — Home`,cap:{headroom:club.capCeiling-club.currentSpend,spend:club.currentSpend,ceiling:club.capCeiling},franchise:{score:club.franchiseScore,criticalGaps:['Investment Capacity (48%)',"Women's Game (42%)"]},gps:{avgACWR:1.22,overloaded:['Luke Barnes (1.52)','Danny Foster (1.38)'],managing:['Karl Foster (1.44)']},welfare:{hiaActive:'Danny Foster — Day 8',doubtful:['Danny Cole (hamstring)','Ryan Patel (hamstring)']},recruitment:{targets:6,priorityAction:'LHP closing — Championship clubs circling',capImpact:'Signing at £95k → headroom: £365k'},commercial:{nextMeeting:'Hartfield Building Society — 3 May',renewalDue:'Local Energy Co — May 2026'}};
+  const generate = async () => {
+    setLoading(true);setBrief(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are the Club Intelligence AI for ${club.name}. Generate a 400-word DoR morning briefing for ${club.dor}. Today: ${CONTEXT.date} — ${CONTEXT.matchWeek}. Cap: ceiling £${(CONTEXT.cap.ceiling/1e6).toFixed(2)}M, spend £${(CONTEXT.cap.spend/1e6).toFixed(2)}M, headroom £${(CONTEXT.cap.headroom/1000).toFixed(0)}k. Franchise: ${CONTEXT.franchise.score}% (target 85%), gaps: ${CONTEXT.franchise.criticalGaps.join(', ')}. GPS: avg ACWR ${CONTEXT.gps.avgACWR}, overload: ${CONTEXT.gps.overloaded.join(', ')}, manage: ${CONTEXT.gps.managing.join(', ')}. Welfare: HIA ${CONTEXT.welfare.hiaActive}, doubtful: ${CONTEXT.welfare.doubtful.join(', ')}. Recruitment: ${CONTEXT.recruitment.targets} targets, priority: ${CONTEXT.recruitment.priorityAction}. Commercial: next event ${CONTEXT.commercial.nextMeeting}, renewal ${CONTEXT.commercial.renewalDue}. Format: ## Good morning, ${club.dor} | ## 🏟️ MATCH WEEK | ## 📡 SQUAD HEALTH | ## ⚖️ CAP | ## 🏆 FRANCHISE | ## 💼 COMMERCIAL | ## ✅ YOUR 3 PRIORITIES TODAY. Under 400 words.`}]})});
+      const data=await res.json();setBrief(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
+    } catch { setBrief('Connection error.'); }
+    setLoading(false);
+  };
+  const renderBrief=(text:string)=>text.split('\n').map((line,i)=>{if(line.startsWith('## Good morning'))return<h2 key={i} className="text-base font-bold text-white mb-4">{line.replace('## ','')}</h2>;if(line.startsWith('## '))return<h3 key={i} className="text-sm font-bold text-white mt-5 mb-2">{line.replace('## ','')}</h3>;if(line.match(/^\d\./))return<div key={i} className="flex gap-2 text-xs text-gray-300 mb-1.5 ml-2"><span className="text-purple-400 font-bold flex-shrink-0">{line[0]}.</span><span>{line.slice(2)}</span></div>;if(line.startsWith('- '))return<div key={i} className="flex gap-2 text-xs text-gray-300 mb-1 ml-2"><span className="text-purple-500 flex-shrink-0 mt-0.5">•</span><span>{line.slice(2)}</span></div>;if(line.trim()==='')return<div key={i} className="h-1.5"/>;return<p key={i} className="text-xs text-gray-300 mb-1.5 leading-relaxed">{line}</p>;});
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar/><SectionHeader icon="🌅" title="DoR Morning Briefing" subtitle={`${club.dor} · ${CONTEXT.date} · ${CONTEXT.matchWeek}`}/>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3"><StatCard label="Cap Headroom" value={`£${(CONTEXT.cap.headroom/1000).toFixed(0)}k`} sub="Compliant" color="green"/><StatCard label="Franchise" value={`${CONTEXT.franchise.score}%`} sub="Target: 85%" color="orange"/><StatCard label="Squad ACWR" value={CONTEXT.gps.avgACWR} sub="2 overloaded" color={CONTEXT.gps.avgACWR>1.3?'red':'green'}/><StatCard label="HIA Active" value="1" sub={CONTEXT.welfare.hiaActive} color="red"/><StatCard label="Recruits" value={CONTEXT.recruitment.targets} sub="6 targets" color="purple"/></div>
+      <div className="flex items-center gap-4"><button onClick={generate} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:text-purple-800 text-white transition-all flex items-center gap-2">{loading?<><span className="animate-spin inline-block">⟳</span> Generating...</>:<><span>🤖</span> Generate Today&apos;s Brief</>}</button><div className="flex items-center gap-2"><button onClick={()=>setAutoMode(!autoMode)} className={`w-10 h-5 rounded-full relative transition-colors ${autoMode?'bg-purple-600':'bg-gray-700'}`}><div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${autoMode?'right-0.5':'left-0.5'}`}/></button><span className="text-xs text-gray-400">Auto 07:30</span></div></div>
+      {brief&&<Card className="border-purple-600/30"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><span className="text-purple-400 font-bold text-sm">🤖 Lumio AI · DoR Brief</span><span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">CONFIDENTIAL</span></div><button onClick={generate} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button></div><div className="divide-y divide-gray-800/30">{renderBrief(brief)}</div><div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · {CONTEXT.date}</span><button className="text-xs text-purple-400 hover:text-purple-300">Forward to Head Coach →</button></div></Card>}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{source:'Kitman Labs',status:'Live · 07:24',dot:'green'},{source:'Catapult GPS',status:'Live · last session',dot:'green'},{source:'Cap system',status:'Live',dot:'green'},{source:'Franchise tracker',status:'Updated 8 Apr',dot:'amber'}].map((s,i)=><div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-1.5 mb-1"><div className={`w-1.5 h-1.5 rounded-full ${s.dot==='green'?'bg-green-400':'bg-amber-400'}`}/><span className="text-xs text-white font-medium">{s.source}</span></div><div className="text-[10px] text-gray-500">{s.status}</div></div>)}</div>
     </div>
   );
 }
@@ -1664,120 +1647,404 @@ const GPS_DATA = [
   { name: 'Luke Barnes',  pos: 'Fullback',   dist: 12.3, hi: 1120, sprints: 26, maxSpeed: 31.9, acwr: 1.52, status: 'overload' as const },
 ]
 
+function SetPieceAnalyticsView() {
+  const [spTab, setSpTab] = useState<'lineout'|'scrum'|'restart'|'goalkicking'>('lineout');
+  const LINEOUT={season:{won:68,lost:12,stolen:4,total:80,successPct:85,oppWon:72,oppStolen:8},byZone:[{zone:'Own 22',won:18,lost:2,pct:90,note:'Strong — reliable ball'},{zone:'Midfield',won:28,lost:6,pct:82,note:'Occasional steal risk'},{zone:'Opp 22',won:22,lost:4,pct:85,note:'Good — clean platform'}],calls:[{call:'Front ball (#2)',used:28,success:25,pct:89,note:'Most reliable'},{call:'Middle lift (#4)',used:22,success:18,pct:82,note:'Good in midfield'},{call:'Back peel (#6)',used:18,success:14,pct:78,note:'Opposition learning'},{call:'Dummy front',used:12,success:11,pct:92,note:'Use more — highest %'}],weeklyWon:[82,79,88,85,90,83,85,87],weeklyLabels:['W8','W9','W10','W11','W12','W13','W14','W15']};
+  const SCRUM={season:{won:44,lost:18,penFor:12,penAgainst:8,total:62,successPct:71},byOutcome:[{outcome:'Clean ball',n:36,pct:58},{outcome:'Pen won',n:12,pct:19},{outcome:'Reset',n:6,pct:10},{outcome:'Pen conceded',n:8,pct:13}],weeklyPct:[68,72,65,74,71,69,73,71],weeklyLabels:['W8','W9','W10','W11','W12','W13','W14','W15']};
+  const RESTART={kickoffs:{retained:14,total:18,retentionPct:78},dropouts:{retained:6,total:8,retentionPct:75},opposition:{ourSteal:32}};
+  const KICKING={season:{attempts:42,converted:34,successPct:81},byZone:[{zone:'Central (<25m)',attempts:8,converted:8,pct:100},{zone:'Central (25–40m)',attempts:14,converted:13,pct:93},{zone:'Left angle',attempts:10,converted:7,pct:70},{zone:'Right angle',attempts:10,converted:6,pct:60}],kicker:'Danny Cole',pressureConversion:72};
+  const spBar = (data:number[],labels:string[],color:string,max=100) => {const W=520,H=120,pL=24,pR=8,pT=12,pB=28,iW=W-pL-pR,iH=H-pT-pB,bw=(iW/data.length)*0.55,bg=iW/data.length;return<svg viewBox={`0 0 ${W} ${H}`} width="100%">{[0,0.5,1].map((t,i)=><line key={i} x1={pL} x2={W-pR} y1={pT+iH-t*iH} y2={pT+iH-t*iH} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}{data.map((v,i)=>{const bh=(v/max)*iH;const x=pL+i*bg+(bg-bw)/2;const bc=v>=85?'#22C55E':v>=75?color:v>=65?'#F59E0B':'#EF4444';return<g key={i}><rect x={x} y={pT+iH-bh} width={bw} height={bh} fill={bc} opacity="0.8" rx="2"/><text x={x+bw/2} y={pT+iH-bh-3} fontSize="8" fill={bc} textAnchor="middle" fontWeight="bold">{v}%</text><text x={x+bw/2} y={H-4} fontSize="8" fill="#6B7280" textAnchor="middle">{labels[i]}</text></g>;})}</svg>;};
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar/><SectionHeader icon="📐" title="Set Piece Analytics" subtitle="FrameSports auto-tagged · Lineout · Scrum · Restarts · Goal-kicking"/>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Lineout Win%" value={`${LINEOUT.season.successPct}%`} sub={`${LINEOUT.season.won}/${LINEOUT.season.total}`} color="green"/><StatCard label="Scrum Win%" value={`${SCRUM.season.successPct}%`} sub={`${SCRUM.season.won}/${SCRUM.season.total}`} color="orange"/><StatCard label="Restart Retention" value={`${RESTART.kickoffs.retentionPct}%`} sub={`${RESTART.kickoffs.retained}/${RESTART.kickoffs.total}`} color="purple"/><StatCard label="Goal Kicking" value={`${KICKING.season.successPct}%`} sub={`${KICKING.season.converted}/${KICKING.season.attempts}`} color="green"/></div>
+      <div className="flex gap-1 border-b border-gray-800 overflow-x-auto">{([{id:'lineout',label:'Lineout',icon:'🤲'},{id:'scrum',label:'Scrum',icon:'💪'},{id:'restart',label:'Restarts',icon:'🏉'},{id:'goalkicking',label:'Goal-Kicking',icon:'🎯'}] as const).map(t=><button key={t.id} onClick={()=>setSpTab(t.id)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${spTab===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>
+      {spTab==='lineout'&&<div className="space-y-5"><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><Card><div className="text-sm font-semibold text-white mb-3">Win % by Zone</div>{LINEOUT.byZone.map((z,i)=><div key={i} className="mb-3"><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{z.zone}</span><span className={`font-bold ${z.pct>=85?'text-green-400':'text-amber-400'}`}>{z.pct}%</span></div><div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full bg-purple-500" style={{width:`${z.pct}%`}}/></div><div className="text-[10px] text-gray-600 mt-0.5">{z.note}</div></div>)}</Card><Card><div className="text-sm font-semibold text-white mb-3">Call Success</div>{LINEOUT.calls.map((c,i)=><div key={i} className="py-2 border-b border-gray-800/50 last:border-0"><div className="flex justify-between text-xs mb-1"><span className="text-gray-300">{c.call}</span><span className={`font-bold ${c.pct>=88?'text-green-400':c.pct>=80?'text-amber-400':'text-red-400'}`}>{c.pct}%</span></div><div className="flex items-center gap-3"><div className="flex-1 bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full bg-purple-500" style={{width:`${c.pct}%`}}/></div><span className="text-[10px] text-gray-500">{c.used} used</span></div><div className="text-[10px] text-gray-600 mt-0.5">{c.note}</div></div>)}</Card></div><Card><div className="text-sm font-semibold text-white mb-3">Last 8 Matches</div>{spBar(LINEOUT.weeklyWon,LINEOUT.weeklyLabels,'#8B5CF6')}</Card><Card><div className="text-sm font-semibold text-white mb-3">Opposition Lineout</div><div className="grid grid-cols-3 gap-4 text-center text-xs"><div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-2xl font-bold text-red-400">{LINEOUT.season.oppWon}</div><div className="text-gray-500 mt-1">Opp won</div></div><div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-2xl font-bold text-green-400">{LINEOUT.season.oppStolen}</div><div className="text-gray-500 mt-1">We stole</div></div><div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-2xl font-bold text-amber-400">{Math.round((LINEOUT.season.oppStolen/(LINEOUT.season.oppWon+LINEOUT.season.oppStolen))*100)}%</div><div className="text-gray-500 mt-1">Steal rate</div></div></div></Card></div>}
+      {spTab==='scrum'&&<div className="space-y-5"><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><Card><div className="text-sm font-semibold text-white mb-3">Outcomes (Season)</div>{SCRUM.byOutcome.map((o,i)=><div key={i} className="mb-2"><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{o.outcome}</span><span className="text-white">{o.n} ({o.pct}%)</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{width:`${o.pct}%`,backgroundColor:i===0?'#22C55E':i===1?'#8B5CF6':i===2?'#F59E0B':'#EF4444'}}/></div></div>)}<div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-3 text-xs text-center"><div className="bg-green-600/10 rounded-lg p-2"><div className="text-green-400 font-bold text-lg">{SCRUM.season.penFor}</div><div className="text-gray-500">Pen won</div></div><div className="bg-red-600/10 rounded-lg p-2"><div className="text-red-400 font-bold text-lg">{SCRUM.season.penAgainst}</div><div className="text-gray-500">Pen against</div></div></div></Card><Card><div className="text-sm font-semibold text-white mb-3">Last 8 Matches</div>{spBar(SCRUM.weeklyPct,SCRUM.weeklyLabels,'#8B5CF6')}<div className="mt-3 text-xs text-amber-400 bg-amber-600/10 border border-amber-600/20 rounded-lg p-2">⚠ 71% — below 75% target. Jersey concede 38% scrum pen rate.</div></Card></div></div>}
+      {spTab==='restart'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Kickoff Ret." value={`${RESTART.kickoffs.retentionPct}%`} sub={`${RESTART.kickoffs.retained}/${RESTART.kickoffs.total}`} color="green"/><StatCard label="Dropout Ret." value={`${RESTART.dropouts.retentionPct}%`} sub={`${RESTART.dropouts.retained}/${RESTART.dropouts.total}`} color="teal"/><StatCard label="Opp Stolen" value={`${RESTART.opposition.ourSteal}%`} sub="Of opp kickoffs" color="purple"/><StatCard label="Chase Success" value="82%" sub="Kick to challenge" color="orange"/></div><Card><div className="text-sm font-semibold text-white mb-3">Restart Patterns</div>{[{l:'Short kick (chase)',u:9,r:8,n:'Most effective'},{l:'Long to 10 channel',u:6,r:4,n:'Contested'},{l:'Long to 15',u:3,r:2,n:'Avoid until Barnes fit'}].map((r,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs"><div><div className="text-gray-300 font-medium">{r.l}</div><div className="text-[10px] text-gray-600">{r.n}</div></div><div className="text-right"><div className={`text-sm font-bold ${(r.r/r.u)>=0.8?'text-green-400':'text-amber-400'}`}>{Math.round((r.r/r.u)*100)}%</div><div className="text-[10px] text-gray-600">{r.r}/{r.u}</div></div></div>)}</Card></div>}
+      {spTab==='goalkicking'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-3">By Zone — {KICKING.kicker}</div>{KICKING.byZone.map((z,i)=><div key={i} className="mb-2"><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{z.zone}</span><span className={`font-bold ${z.pct>=85?'text-green-400':z.pct>=70?'text-amber-400':'text-red-400'}`}>{z.pct}% ({z.converted}/{z.attempts})</span></div><div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{width:`${z.pct}%`,backgroundColor:z.pct>=85?'#22C55E':z.pct>=70?'#F59E0B':'#EF4444'}}/></div></div>)}<div className="mt-4 pt-3 border-t border-gray-800 text-xs text-amber-400">⚠ Right-angle at 60% — focus Thursday.</div></Card><div className="grid grid-cols-3 gap-4"><StatCard label="Season" value={`${KICKING.season.successPct}%`} sub={`${KICKING.season.converted}/${KICKING.season.attempts}`} color="green"/><StatCard label="Pressure" value={`${KICKING.pressureConversion}%`} sub="Close games" color="amber"/><StatCard label="Points" value="102" sub="From boot" color="purple"/></div></div>}
+      <div className="text-[10px] text-gray-700">FrameSports auto-tagging · Pay-per-game · Uploaded within 2h</div>
+    </div>
+  );
+}
+
+function CarryAnalyticsView() {
+  const [caTab, setCaTab] = useState<'gainline'|'topcarriers'|'patterns'|'trends'>('gainline');
+  const SEASON={totalCarries:648,gainlineWon:398,gainlineLost:186,gainlineContested:64,gainlinePct:61,defendersBeaten:184,lineBreaks:28,offloads:112,aveMetresPerCarry:4.2,bench:{gainline:56,defendersBeaten:14,lineBreaks:2.1}};
+  const CARRIERS=[{name:'Danny Foster',pos:'No.8',carries:128,glWon:84,lb:8,db:32,offloads:18,avg:4.9,acwr:1.38},{name:'Luke Barnes',pos:'FB',carries:142,glWon:92,lb:7,db:28,offloads:8,avg:5.4,acwr:1.52},{name:'Matt Jones',pos:'Centre',carries:98,glWon:61,lb:5,db:24,offloads:14,avg:3.8,acwr:1.12},{name:'Marcus Webb',pos:'Lock',carries:88,glWon:52,lb:4,db:18,offloads:22,avg:3.2,acwr:1.12},{name:'Karl Foster',pos:'Flanker',carries:94,glWon:56,lb:2,db:14,offloads:28,avg:2.9,acwr:1.44},{name:'David Obi',pos:'Centre',carries:98,glWon:53,lb:2,db:22,offloads:12,avg:3.4,acwr:1.08}];
+  const MATCH_TREND=[{m:'W8',g:58},{m:'W9',g:64},{m:'W10',g:55},{m:'W11',g:68},{m:'W12',g:62},{m:'W13',g:59},{m:'W14',g:66},{m:'W15',g:61}];
+  const PATTERNS=[{p:'First-phase (0–2)',n:214,g:68,note:'Most effective — exploit early'},{p:'Third-phase+',n:186,g:54,note:'Defence organised — consider kick'},{p:'Short-side (blind)',n:98,g:72,note:'High success — underused'},{p:'Pick-and-go',n:112,g:58,note:'Standard — manage prop ACWR'},{p:'Ball from hands (wide)',n:38,g:61,note:'Growing — Barnes effective'}];
+  const W2=560,H2=160,pL2=36,pR2=12,pT2=16,pB2=32,iW2=W2-pL2-pR2,iH2=H2-pT2-pB2;
+  const glPath=MATCH_TREND.map((d,i)=>`${i===0?'M':'L'} ${pL2+(i/(MATCH_TREND.length-1))*iW2} ${pT2+iH2-((d.g-40)/40)*iH2}`).join(' ');
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar/><SectionHeader icon="⚡" title="Carry Analytics" subtitle="Gainline · Defenders beaten · Line breaks · Offloads — FrameSports"/>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Gainline Win%" value={`${SEASON.gainlinePct}%`} sub={`Bench: ${SEASON.bench.gainline}%`} color="green"/><StatCard label="Def Beaten" value={SEASON.defendersBeaten} sub={`${(SEASON.defendersBeaten/16).toFixed(1)}/match`} color="purple"/><StatCard label="Line Breaks" value={SEASON.lineBreaks} sub={`${(SEASON.lineBreaks/16).toFixed(1)}/match`} color="teal"/><StatCard label="Offloads" value={SEASON.offloads} sub={`${SEASON.aveMetresPerCarry}m/carry`} color="orange"/></div>
+      <div className="flex gap-1 border-b border-gray-800">{([{id:'gainline',label:'Gainline',icon:'📈'},{id:'topcarriers',label:'Top Carriers',icon:'🏉'},{id:'patterns',label:'Patterns',icon:'🗺️'},{id:'trends',label:'Trend',icon:'📉'}] as const).map(t=><button key={t.id} onClick={()=>setCaTab(t.id)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${caTab===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>
+      {caTab==='gainline'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-4">Gainline Breakdown ({SEASON.totalCarries} carries)</div><div className="grid grid-cols-3 gap-4 text-center mb-4"><div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4"><div className="text-3xl font-bold text-green-400">{SEASON.gainlineWon}</div><div className="text-xs text-gray-400 mt-1">Won ({SEASON.gainlinePct}%)</div></div><div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4"><div className="text-3xl font-bold text-red-400">{SEASON.gainlineLost}</div><div className="text-xs text-gray-400 mt-1">Lost ({Math.round(SEASON.gainlineLost/SEASON.totalCarries*100)}%)</div></div><div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4"><div className="text-3xl font-bold text-amber-400">{SEASON.gainlineContested}</div><div className="text-xs text-gray-400 mt-1">Contested</div></div></div><div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden flex"><div className="h-full bg-green-500" style={{width:`${SEASON.gainlinePct}%`}}/><div className="h-full bg-amber-500" style={{width:`${Math.round(SEASON.gainlineContested/SEASON.totalCarries*100)}%`}}/><div className="h-full bg-red-500" style={{width:`${Math.round(SEASON.gainlineLost/SEASON.totalCarries*100)}%`}}/></div></Card></div>}
+      {caTab==='topcarriers'&&<Card><div className="text-sm font-semibold text-white mb-3">Top Carriers — Season</div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider"><th className="text-left py-2">Player</th><th className="text-right py-2">Carries</th><th className="text-right py-2">GL%</th><th className="text-right py-2">LB</th><th className="text-right py-2">DB</th><th className="text-right py-2">Off</th><th className="text-right py-2">Avg m</th><th className="text-right py-2">ACWR</th></tr></thead><tbody>{CARRIERS.map((c,i)=>{const glP=Math.round((c.glWon/c.carries)*100);return<tr key={i} className="border-b border-gray-800/40"><td className="py-2"><div className="text-white font-medium">{c.name}</div><div className="text-gray-500 text-[10px]">{c.pos}</div></td><td className="py-2 text-right text-gray-200">{c.carries}</td><td className="py-2 text-right"><span className={`font-bold ${glP>=60?'text-green-400':'text-amber-400'}`}>{glP}%</span></td><td className="py-2 text-right text-purple-400 font-bold">{c.lb}</td><td className="py-2 text-right text-gray-200">{c.db}</td><td className="py-2 text-right text-teal-400">{c.offloads}</td><td className="py-2 text-right text-gray-200">{c.avg}m</td><td className={`py-2 text-right font-bold ${c.acwr>1.5?'text-red-400':c.acwr>1.3?'text-amber-400':'text-green-400'}`}>{c.acwr}</td></tr>;})}</tbody></table></div><div className="mt-3 p-3 bg-purple-600/10 border border-purple-600/20 rounded-lg text-xs text-purple-300">💡 Foster and Barnes lead line breaks but both carry elevated ACWR. Monitor load.</div></Card>}
+      {caTab==='patterns'&&<Card><div className="text-sm font-semibold text-white mb-3">Carry Patterns — Gainline by Phase/Channel</div>{PATTERNS.map((p,i)=><div key={i} className="py-2 border-b border-gray-800/50 last:border-0"><div className="flex justify-between text-xs mb-1"><span className="text-gray-300">{p.p}</span><div className="flex gap-3"><span className="text-gray-500">{p.n} carries</span><span className={`font-bold ${p.g>=65?'text-green-400':p.g>=58?'text-amber-400':'text-red-400'}`}>{p.g}%</span></div></div><div className="w-full bg-gray-800 rounded-full h-1.5 mb-1"><div className="h-1.5 rounded-full bg-purple-500" style={{width:`${p.g}%`}}/></div><div className="text-[10px] text-gray-600">{p.note}</div></div>)}<div className="mt-4 bg-green-600/10 border border-green-600/20 rounded-lg p-3 text-xs text-green-400">✓ Short-side carries win gainline at 72% — highest — but only 15% of carries. Increase vs Jersey.</div></Card>}
+      {caTab==='trends'&&<Card><div className="text-sm font-semibold text-white mb-3">Gainline % — Last 8</div><svg viewBox={`0 0 ${W2} ${H2}`} width="100%">{[0,0.25,0.5,0.75,1].map((t,i)=><line key={i} x1={pL2} x2={W2-pR2} y1={pT2+iH2-t*iH2} y2={pT2+iH2-t*iH2} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}<line x1={pL2} x2={W2-pR2} y1={pT2+iH2-0.5*iH2} y2={pT2+iH2-0.5*iH2} stroke="#22C55E" strokeWidth="1" strokeDasharray="4 3" opacity="0.5"/><path d={glPath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{MATCH_TREND.map((d,i)=><g key={i}><circle cx={pL2+(i/(MATCH_TREND.length-1))*iW2} cy={pT2+iH2-((d.g-40)/40)*iH2} r="3.5" fill="#8B5CF6"/><text x={pL2+(i/(MATCH_TREND.length-1))*iW2} y={H2-4} fontSize="9" fill="#6B7280" textAnchor="middle">{d.m}</text></g>)}</svg></Card>}
+    </div>
+  );
+}
+
 function GPSLoadView() {
-  const ready    = GPS_DATA.filter(p => p.status === 'optimal').length
-  const manage   = GPS_DATA.filter(p => p.status === 'manage').length
-  const rest     = GPS_DATA.filter(p => p.status === 'overload').length
-  const underlod = GPS_DATA.filter(p => p.status === 'underload').length
-  const flagged  = GPS_DATA.filter(p => p.acwr > 1.5)
+  const [filterStatus, setFilterStatus] = useState<'all'|'optimal'|'manage'|'overload'|'underload'>('all')
+
+  const FULL_SQUAD_LOAD = [
+    { name:'Tom Harrison',   pos:'Prop',       chronic:4820, acute:1340, todayAU:380, status:'optimal'   as const },
+    { name:'James Briggs',   pos:'Hooker',     chronic:4910, acute:1380, todayAU:410, status:'optimal'   as const },
+    { name:'Phil Dowd',      pos:'Prop',       chronic:4200, acute:1050, todayAU:320, status:'underload' as const },
+    { name:'Marcus Webb',    pos:'Lock',       chronic:5100, acute:1450, todayAU:420, status:'optimal'   as const },
+    { name:'Chris Palmer',   pos:'Lock',       chronic:4780, acute:1320, todayAU:390, status:'optimal'   as const },
+    { name:'Danny Foster',   pos:'No.8',       chronic:5240, acute:1820, todayAU:0,   status:'overload'  as const },
+    { name:'Karl Foster',    pos:'Flanker',    chronic:5080, acute:1620, todayAU:440, status:'manage'    as const },
+    { name:'Sam Ellis',      pos:'Scrum Half', chronic:4640, acute:1280, todayAU:360, status:'optimal'   as const },
+    { name:'Danny Cole',     pos:'Fly Half',   chronic:4380, acute:980,  todayAU:290, status:'underload' as const },
+    { name:'Ryan Patel',     pos:'Wing',       chronic:4120, acute:820,  todayAU:0,   status:'underload' as const },
+    { name:'Jake Rawlings',  pos:'Prop',       chronic:4560, acute:1240, todayAU:360, status:'optimal'   as const },
+    { name:'Connor Walsh',   pos:'Fly Half',   chronic:4280, acute:1180, todayAU:340, status:'optimal'   as const },
+    { name:'Ben Taylor',     pos:'Wing',       chronic:4450, acute:1210, todayAU:350, status:'optimal'   as const },
+    { name:'Matt Jones',     pos:'Centre',     chronic:4820, acute:1340, todayAU:390, status:'optimal'   as const },
+    { name:'Luke Barnes',    pos:'Fullback',   chronic:5160, acute:1680, todayAU:460, status:'overload'  as const },
+    { name:'Josh White',     pos:'Flanker',    chronic:4740, acute:1300, todayAU:380, status:'optimal'   as const },
+    { name:'David Obi',      pos:'Centre',     chronic:4680, acute:1290, todayAU:370, status:'optimal'   as const },
+    { name:'Callum Reeves',  pos:'Wing',       chronic:4510, acute:1240, todayAU:360, status:'optimal'   as const },
+    { name:'Oliver Grant',   pos:'Scrum Half', chronic:4600, acute:1270, todayAU:370, status:'optimal'   as const },
+  ]
+
+  const acwr = (p: typeof FULL_SQUAD_LOAD[0]) => p.chronic === 0 ? 0 : (p.acute / (p.chronic / 4))
+  const statusColor = (s: string) => s === 'optimal' ? 'text-green-400' : s === 'manage' ? 'text-amber-400' : s === 'overload' ? 'text-red-400' : s === 'underload' ? 'text-blue-400' : 'text-gray-600'
+  const statusBg = (s: string) => s === 'optimal' ? 'bg-green-600/10 border-green-600/30' : s === 'manage' ? 'bg-amber-600/10 border-amber-600/30' : s === 'overload' ? 'bg-red-600/10 border-red-600/30' : s === 'underload' ? 'bg-blue-600/10 border-blue-600/30' : 'bg-gray-800/30 border-gray-800'
+  const statusLabel = (s: string) => s === 'optimal' ? 'Ready' : s === 'manage' ? 'Manage' : s === 'overload' ? 'Rest' : s === 'underload' ? 'Build' : 'Unavail'
+
+  const filtered = filterStatus === 'all' ? FULL_SQUAD_LOAD : FULL_SQUAD_LOAD.filter(p => p.status === filterStatus)
+  const counts = { optimal: FULL_SQUAD_LOAD.filter(p=>p.status==='optimal').length, manage: FULL_SQUAD_LOAD.filter(p=>p.status==='manage').length, overload: FULL_SQUAD_LOAD.filter(p=>p.status==='overload').length, underload: FULL_SQUAD_LOAD.filter(p=>p.status==='underload').length }
+
+  const WEEKLY_LOAD = [
+    { week: 'W-4', planned: 4200, actual: 3980 },
+    { week: 'W-3', planned: 4600, actual: 4720 },
+    { week: 'W-2', planned: 4400, actual: 4380 },
+    { week: 'W-1', planned: 4800, actual: 5040 },
+    { week: 'Now', planned: 4600, actual: 4280 },
+  ]
+  const maxLoad = 5500, W = 560, H = 160, padL = 36, padR = 12, padT = 16, padB = 32
+  const innerW = W - padL - padR, innerH = H - padT - padB
+  const stepX = innerW / (WEEKLY_LOAD.length - 1)
+  const plannedPath = WEEKLY_LOAD.map((d, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (d.planned / maxLoad) * innerH}`).join(' ')
+  const actualPath = WEEKLY_LOAD.map((d, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (d.actual / maxLoad) * innerH}`).join(' ')
+
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="📡" title="GPS & Load" subtitle="Catapult + STATSports feeds — team ACWR readiness this week" />
+      <SectionHeader icon="📡" title="GPS & Load — Squad Dashboard" subtitle="28-day rolling ACWR · All players · Catapult OpenField + STATSports" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
-          <div className="text-3xl font-bold text-green-400">{ready}</div>
-          <div className="text-xs text-gray-400 mt-1">Ready (optimal)</div>
-        </div>
-        <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4">
-          <div className="text-3xl font-bold text-amber-400">{manage}</div>
-          <div className="text-xs text-gray-400 mt-1">Manage</div>
-        </div>
-        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4">
-          <div className="text-3xl font-bold text-red-400">{rest}</div>
-          <div className="text-xs text-gray-400 mt-1">Rest (overload)</div>
-        </div>
-        <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
-          <div className="text-3xl font-bold text-blue-400">{underlod}</div>
-          <div className="text-xs text-gray-400 mt-1">Underload</div>
-        </div>
-      </div>
-
-      {flagged.length > 0 && (
+      {counts.overload > 0 && (
         <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-sm text-red-300">
-          ⚠ Injury risk — {flagged.length} player{flagged.length > 1 ? 's' : ''} with ACWR &gt; 1.5: {flagged.map(p => p.name).join(', ')}. Recommend reduced loading Tuesday–Wednesday.
+          ⚠ <strong>{counts.overload} player{counts.overload > 1 ? 's' : ''} in overload zone</strong> — {FULL_SQUAD_LOAD.filter(p => p.status === 'overload').map(p => p.name).join(', ')}. Recommend rest or minimal load today.
         </div>
       )}
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Ready', count: counts.optimal, color: 'green', status: 'optimal' as const },
+          { label: 'Manage', count: counts.manage, color: 'amber', status: 'manage' as const },
+          { label: 'Rest', count: counts.overload, color: 'red', status: 'overload' as const },
+          { label: 'Build', count: counts.underload, color: 'blue', status: 'underload' as const },
+        ].map(z => (
+          <button key={z.status} onClick={() => setFilterStatus(filterStatus === z.status ? 'all' : z.status)}
+            className={`rounded-xl p-4 border text-left transition-all bg-${z.color}-600/10 border-${z.color}-600/30 hover:border-${z.color}-500/40`}>
+            <div className={`text-3xl font-bold text-${z.color}-400`}>{z.count}</div>
+            <div className="text-xs text-gray-400 mt-1">{z.label}</div>
+          </button>
+        ))}
+      </div>
+
       <Card>
-        <div className="text-sm font-semibold text-white mb-3">Per-player GPS (this week)</div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-semibold text-white">Team Load — 28-Day Rolling (AU)</div>
+          <div className="flex items-center gap-4 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-purple-400" />Planned</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-teal-400" />Actual</span>
+          </div>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%">
+          {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
+          {[0, 1500, 3000, 4500].map((v, i) => <text key={i} x={padL - 4} y={padT + innerH - (v / maxLoad) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+          <path d={plannedPath} fill="none" stroke="#8B5CF6" strokeWidth="2" strokeDasharray="5 3" strokeLinecap="round" />
+          <path d={actualPath} fill="none" stroke="#0D9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {WEEKLY_LOAD.map((d, i) => (
+            <g key={i}>
+              <circle cx={padL + i * stepX} cy={padT + innerH - (d.actual / maxLoad) * innerH} r="3.5" fill="#0D9488" />
+              <text x={padL + i * stepX} y={H - 4} fontSize="9" fill="#6B7280" textAnchor="middle">{d.week}</text>
+            </g>
+          ))}
+        </svg>
+        <p className="text-[10px] text-gray-600 mt-2">W-1 overshot planned load by 240 AU — contributing to current overload flags.</p>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-semibold text-white">Full Squad ACWR — {filtered.length} players{filterStatus !== 'all' ? ` (${filterStatus})` : ''}</div>
+          <div className="flex gap-1">
+            {(['all', 'optimal', 'manage', 'overload', 'underload'] as const).map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${filterStatus === s ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}>{s}</button>
+            ))}
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-gray-500 border-b border-gray-800">
-                <th className="text-left py-2 font-medium">Player</th>
-                <th className="text-left py-2 font-medium">Position</th>
-                <th className="text-right py-2 font-medium">Distance (km)</th>
-                <th className="text-right py-2 font-medium">HI Running (m)</th>
-                <th className="text-right py-2 font-medium">Sprints</th>
-                <th className="text-right py-2 font-medium">Max Speed (km/h)</th>
-                <th className="text-right py-2 font-medium">ACWR</th>
-                <th className="text-right py-2 font-medium">Status</th>
+              <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                <th className="text-left py-2 px-2">Player</th><th className="text-left py-2">Pos</th>
+                <th className="text-right py-2">Chronic (28d)</th><th className="text-right py-2">Acute (7d)</th>
+                <th className="text-right py-2">ACWR</th><th className="text-right py-2">Today AU</th>
+                <th className="text-center py-2">Status</th><th className="text-right py-2">ACWR bar</th>
               </tr>
             </thead>
             <tbody>
-              {GPS_DATA.map((p, i) => {
-                const colour = p.status === 'optimal' ? 'text-green-400' : p.status === 'manage' ? 'text-amber-400' : p.status === 'overload' ? 'text-red-400' : 'text-blue-400'
-                const label  = p.status === 'optimal' ? 'Ready' : p.status === 'manage' ? 'Manage' : p.status === 'overload' ? 'Rest' : 'Underload'
+              {filtered.map((p, i) => {
+                const ratio = acwr(p)
+                const barPct = Math.min((ratio / 2) * 100, 100)
+                const barCol = ratio > 1.5 ? '#EF4444' : ratio > 1.3 ? '#F59E0B' : ratio < 0.8 ? '#3B82F6' : '#22C55E'
                 return (
-                  <tr key={i} className="border-b border-gray-800/50">
-                    <td className="py-2 text-white">{p.name}</td>
+                  <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
+                    <td className="py-2 px-2 text-white font-medium">{p.name}</td>
                     <td className="py-2 text-gray-400">{p.pos}</td>
-                    <td className="py-2 text-right text-gray-200">{p.dist.toFixed(1)}</td>
-                    <td className="py-2 text-right text-gray-200">{p.hi}</td>
-                    <td className="py-2 text-right text-gray-200">{p.sprints}</td>
-                    <td className="py-2 text-right text-gray-200">{p.maxSpeed.toFixed(1)}</td>
-                    <td className={`py-2 text-right font-semibold ${p.acwr > 1.5 ? 'text-red-400' : p.acwr > 1.3 ? 'text-amber-400' : p.acwr < 0.8 ? 'text-blue-400' : 'text-green-400'}`}>{p.acwr.toFixed(2)}</td>
-                    <td className={`py-2 text-right font-semibold ${colour}`}>{label}</td>
+                    <td className="py-2 text-right text-gray-300">{p.chronic > 0 ? p.chronic.toLocaleString() : '—'}</td>
+                    <td className="py-2 text-right text-gray-300">{p.acute > 0 ? p.acute.toLocaleString() : '—'}</td>
+                    <td className={`py-2 text-right font-bold ${statusColor(p.status)}`}>{ratio > 0 ? ratio.toFixed(2) : '—'}</td>
+                    <td className="py-2 text-right text-gray-300">{p.todayAU > 0 ? p.todayAU : '—'}</td>
+                    <td className="py-2 text-center">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${statusBg(p.status)} ${statusColor(p.status)}`}>{statusLabel(p.status)}</span>
+                    </td>
+                    <td className="py-2 pl-4 pr-2">
+                      <div className="w-20 bg-gray-800 rounded-full h-1.5 ml-auto">
+                        <div className="h-1.5 rounded-full" style={{ width: `${barPct}%`, backgroundColor: barCol }} />
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
+        <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-gray-600">
+          ACWR zones: &lt;0.8 Underload (blue) · 0.8–1.3 Optimal (green) · 1.3–1.5 Manage (amber) · &gt;1.5 Overload (red)
+        </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <div className="text-sm font-semibold text-white mb-3">Session comparison — team avg</div>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-              <span className="text-gray-400">Distance / player</span>
-              <span className="text-white font-medium">11.5 km <span className="text-green-400 ml-2">+4% vs last week</span></span>
-            </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-              <span className="text-gray-400">HI running / player</span>
-              <span className="text-white font-medium">953 m <span className="text-green-400 ml-2">+7%</span></span>
-            </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-              <span className="text-gray-400">Sprints / player</span>
-              <span className="text-white font-medium">21 <span className="text-amber-400 ml-2">+12%</span></span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-gray-400">Team ACWR</span>
-              <span className="text-white font-medium">1.18 <span className="text-amber-400 ml-2">trending up</span></span>
-            </div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Kitman Labs</div>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">Player readiness feed</span><span className="text-green-400 text-xs font-bold">● Live</span></div>
+          <div className="text-[10px] text-gray-500">Last sync: today 07:24 · 20/38 players logged</div>
+        </Card>
+        <Card>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Catapult OpenField</div>
+          <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">GPS vest sync</span><span className="text-green-400 text-xs font-bold">● Connected</span></div>
+          <div className="text-[10px] text-gray-500">Last session: Tue 8 Apr · 29 vests active</div>
+        </Card>
+        <Card>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">S&C Alerts</div>
+          <div className="space-y-1 text-[10px]">
+            <div className="text-red-400">🔴 Danny Foster — Rest today (ACWR 1.38)</div>
+            <div className="text-red-400">🔴 Luke Barnes — Rest today (ACWR 1.52)</div>
+            <div className="text-amber-400">🟡 Karl Foster — Manage (ACWR 1.44)</div>
           </div>
         </Card>
+      </div>
+    </div>
+  )
+}
 
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Integrations</div>
-          <div className="space-y-2">
-            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
-              <span className="text-white">Catapult OpenField</span>
-              <span className="text-green-400">● Connected</span>
-            </button>
-            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
-              <span className="text-white">STATSports Sonra</span>
-              <span className="text-gray-500">Connect</span>
-            </button>
-            <button className="w-full flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs hover:border-purple-500/50">
-              <span className="text-white">Polar Team Pro</span>
-              <span className="text-gray-500">Connect</span>
-            </button>
+// ─── PLAYER HEATMAP VIEW ─────────────────────────────────────────────────────
+function PlayerHeatmapView() {
+  const [selectedPlayer, setSelectedPlayer] = useState('All')
+  const [selectedSession, setSelectedSession] = useState('Match vs Jersey Reds (11 Apr)')
+  const [selectedView, setSelectedView] = useState<'heatmap' | 'zones' | 'lines'>('heatmap')
+
+  const sessions = [
+    'Match vs Jersey Reds (11 Apr)',
+    "Training — Tue 8 Apr (Tactical)",
+    "Training — Mon 7 Apr (S&C)",
+    'Match vs Bath RFC (5 Apr)',
+    "Training — Thu 3 Apr (Captain's Run)",
+  ]
+
+  const players = ['All', 'Tom Harrison', 'Marcus Webb', 'Karl Foster', 'Sam Ellis', 'Danny Cole', 'Matt Jones', 'Luke Barnes', 'David Obi']
+
+  const HEATMAP_ZONES: Record<string, Array<[number, number, number]>> = {
+    'All': [
+      [15,20,0.9],[20,35,0.8],[18,50,0.7],[22,65,0.6],[25,80,0.5],
+      [50,20,0.6],[50,40,0.9],[50,60,0.8],[50,75,0.6],[50,90,0.4],
+      [80,25,0.7],[75,45,0.8],[78,60,0.7],[82,75,0.5],[85,85,0.4],
+      [35,30,0.8],[40,50,0.9],[38,70,0.7],[45,85,0.5],
+      [60,35,0.7],[65,55,0.8],[62,70,0.6],[70,80,0.4],
+      [30,15,0.5],[70,15,0.5],[50,10,0.6],[50,95,0.3],
+    ],
+    'Tom Harrison': [
+      [30,20,0.9],[28,35,0.8],[32,45,0.7],[25,55,0.6],[30,65,0.5],
+      [35,30,0.8],[40,40,0.7],[38,50,0.6],[35,60,0.5],
+      [20,25,0.6],[22,40,0.7],[18,55,0.5],
+    ],
+    'Luke Barnes': [
+      [50,85,0.9],[45,80,0.8],[55,80,0.8],[50,90,0.7],[48,75,0.6],
+      [30,70,0.6],[70,70,0.6],[50,65,0.5],[40,60,0.4],[60,60,0.4],
+      [20,50,0.3],[80,50,0.3],[50,55,0.5],
+    ],
+    'Karl Foster': [
+      [40,45,0.9],[45,55,0.8],[50,50,0.9],[55,45,0.8],[50,40,0.7],
+      [35,40,0.7],[60,40,0.7],[45,35,0.6],[55,35,0.6],
+      [40,60,0.6],[60,60,0.5],[50,65,0.4],
+    ],
+    'Sam Ellis': [
+      [48,30,0.7],[50,35,0.9],[52,30,0.7],[50,40,0.8],[48,45,0.6],
+      [50,50,0.9],[50,55,0.8],[50,60,0.7],[50,65,0.6],
+      [45,25,0.5],[55,25,0.5],[50,20,0.4],
+    ],
+  }
+
+  const zoneData = HEATMAP_ZONES[selectedPlayer] ?? HEATMAP_ZONES['All']
+
+  const ZONE_STATS: Record<string, { ownHalf: number; midfield: number; oppHalf: number; opp22: number }> = {
+    'All':          { ownHalf: 28, midfield: 34, oppHalf: 26, opp22: 12 },
+    'Tom Harrison': { ownHalf: 52, midfield: 31, oppHalf: 14, opp22: 3 },
+    'Luke Barnes':  { ownHalf: 8,  midfield: 22, oppHalf: 42, opp22: 28 },
+    'Karl Foster':  { ownHalf: 18, midfield: 48, oppHalf: 26, opp22: 8 },
+    'Sam Ellis':    { ownHalf: 24, midfield: 44, oppHalf: 24, opp22: 8 },
+  }
+  const zones = ZONE_STATS[selectedPlayer] ?? ZONE_STATS['All']
+
+  const PW = 600, PH = 400
+  const lineCol = 'rgba(255,255,255,0.18)'
+  const cx = (xPct: number) => (xPct / 100) * PW
+  const cy2 = (yPct: number) => PH - (yPct / 100) * PH
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🗺️" title="Player Heatmap" subtitle="GPS x/y position density — match and training sessions" />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Session</label>
+          <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
+            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+            {sessions.map(s => <option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Player</label>
+          <div className="flex flex-wrap gap-1">
+            {players.map(p => (
+              <button key={p} onClick={() => setSelectedPlayer(p)}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${selectedPlayer === p ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>
+            ))}
           </div>
-        </Card>
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">View</label>
+          <div className="flex gap-2">
+            {(['heatmap', 'zones', 'lines'] as const).map(v => (
+              <button key={v} onClick={() => setSelectedView(v)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border capitalize transition-all ${selectedView === v ? 'border-purple-500 bg-purple-600/20 text-purple-300' : 'border-gray-800 text-gray-500 hover:text-gray-300'}`}>{v}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-semibold text-white">{selectedPlayer === 'All' ? 'Full squad' : selectedPlayer} — {selectedSession}</div>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-purple-500 opacity-90" />High density</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-blue-500 opacity-60" />Medium</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-teal-500 opacity-40" />Low</span>
+          </div>
+        </div>
+
+        <svg viewBox={`0 0 ${PW} ${PH}`} width="100%" style={{ maxHeight: 360 }}>
+          <rect width={PW} height={PH} fill="#0a1a0a" rx="4" />
+          <rect x={0} y={0} width={PW} height={PH} fill="none" stroke={lineCol} strokeWidth="2" />
+          <line x1={0} y1={PH/2} x2={PW} y2={PH/2} stroke={lineCol} strokeWidth="1.5" />
+          <circle cx={PW/2} cy={PH/2} r={PH*0.12} fill="none" stroke={lineCol} strokeWidth="1" />
+          <circle cx={PW/2} cy={PH/2} r="3" fill={lineCol} />
+          <line x1={0} y1={PH*0.22} x2={PW} y2={PH*0.22} stroke={lineCol} strokeWidth="1" strokeDasharray="6 4" />
+          <line x1={0} y1={PH*0.78} x2={PW} y2={PH*0.78} stroke={lineCol} strokeWidth="1" strokeDasharray="6 4" />
+          <line x1={0} y1={PH*0.04} x2={PW} y2={PH*0.04} stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
+          <line x1={0} y1={PH*0.96} x2={PW} y2={PH*0.96} stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
+          <rect x={PW*0.42} y={0} width={PW*0.16} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+          <rect x={PW*0.42} y={PH*0.96} width={PW*0.16} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+          <text x="8" y="16" fontSize="9" fill="rgba(255,255,255,0.3)">Own try line</text>
+          <text x="8" y={PH*0.22 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Own 22</text>
+          <text x="8" y={PH/2 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Halfway</text>
+          <text x="8" y={PH*0.78 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Opp 22</text>
+          <text x="8" y={PH - 6} fontSize="9" fill="rgba(255,255,255,0.3)">Opp try line</text>
+
+          {selectedView === 'heatmap' && zoneData.map(([x, y, intensity], i) => (
+            <circle key={i} cx={cx(x)} cy={cy2(y)} r={intensity * 55}
+              fill={intensity > 0.75 ? '#8B5CF6' : intensity > 0.5 ? '#3B82F6' : '#0D9488'}
+              opacity={intensity * 0.45} />
+          ))}
+
+          {selectedView === 'zones' && (
+            <g>
+              <rect x={0} y={PH*0.78} width={PW} height={PH*0.18} fill="#8B5CF6" opacity={zones.opp22 / 200} rx="2" />
+              <rect x={0} y={PH*0.22} width={PW} height={PH*0.56} fill="#3B82F6" opacity={zones.midfield / 200} rx="2" />
+              <rect x={0} y={0} width={PW} height={PH*0.22} fill="#0D9488" opacity={zones.ownHalf / 200} rx="2" />
+              <text x={PW/2} y={PH*0.88} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.opp22}%</text>
+              <text x={PW/2} y={PH*0.52} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.midfield}%</text>
+              <text x={PW/2} y={PH*0.14} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.ownHalf}%</text>
+            </g>
+          )}
+
+          {selectedView === 'lines' && zoneData.slice(0, -1).map(([x, y], i) => {
+            const next = zoneData[i + 1]
+            if (!next) return null
+            return <line key={i} x1={cx(x)} y1={cy2(y)} x2={cx(next[0])} y2={cy2(next[1])} stroke="#8B5CF6" strokeWidth="1.5" opacity="0.4" strokeLinecap="round" />
+          })}
+        </svg>
+      </Card>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Own Half" value={`${zones.ownHalf}%`} sub="Time in own half" color="teal" />
+        <StatCard label="Midfield" value={`${zones.midfield}%`} sub="22–22 zone" color="blue" />
+        <StatCard label="Opp Half" value={`${zones.oppHalf}%`} sub="Opposition territory" color="purple" />
+        <StatCard label="Opp 22" value={`${zones.opp22}%`} sub="Attacking 22" color="orange" />
+      </div>
+
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Championship Position Benchmarks — {selectedPlayer}</div>
+        <div className="space-y-2 text-xs text-gray-400">
+          {selectedPlayer === 'Luke Barnes' && (
+            <>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Time in opp 22</span><span className="text-purple-400 font-bold">28% <span className="text-green-400 ml-1">↑ bench: 18%</span></span></div>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Carrying distance</span><span className="text-white">2.4km</span></div>
+              <div className="flex justify-between py-1.5"><span>High-speed runs in opp half</span><span className="text-white">14</span></div>
+            </>
+          )}
+          {selectedPlayer === 'Tom Harrison' && (
+            <>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Time in own half</span><span className="text-purple-400 font-bold">52% <span className="text-gray-400 ml-1">— typical for Prop</span></span></div>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Scrummaging zone entries</span><span className="text-white">18</span></div>
+              <div className="flex justify-between py-1.5"><span>Carrying distance</span><span className="text-white">0.9km</span></div>
+            </>
+          )}
+          {(selectedPlayer === 'All' || !['Luke Barnes', 'Tom Harrison'].includes(selectedPlayer)) && (
+            <>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Opp 22 entries</span><span className="text-purple-400 font-bold">{zones.opp22}% <span className="text-gray-400 ml-1">(bench: 14%)</span></span></div>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Midfield density</span><span className="text-white">{zones.midfield}%</span></div>
+              <div className="flex justify-between py-1.5"><span>Own half defensive coverage</span><span className="text-white">{zones.ownHalf}%</span></div>
+            </>
+          )}
+        </div>
+      </Card>
+
+      <div className="text-[10px] text-gray-700 text-center">
+        GPS position data: Catapult OpenField · 10Hz sampling · Updated after each session sync
       </div>
     </div>
   )
@@ -1791,6 +2058,8 @@ const VIDEO_CLIPS = [
   { id: 4, title: 'Set piece — attacking maul drive',       category: 'Training',    duration: '11:05', date: '4 Apr',  tags: ['Maul', 'Attack'],              notes: 'Foley cleanout technique — teach to the front row.' },
   { id: 5, title: 'Individual — Foley breakdown technique', category: 'Individual',  duration: '9:22',  date: '3 Apr',  tags: ['Foley', 'Breakdown'],          notes: 'Body height is excellent — share as coaching clip.' },
 ]
+
+function PlayerProfileView(){const[sid,setSid]=useState(1);const[pt,setPt]=useState<'overview'|'contract'|'medical'|'value'>('overview');const PL=[{id:1,name:'Tom Harrison',pos:'Prop',age:28,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',w:1800,end:'Jun 2027',intl:false,rd:94,gps:{d:10.8,hi:720,spr:14,ms:27.8,ac:0.94},st:{ap:16,tr:1,tk:82,mi:4,ca:94,me:312},inj:[{i:'Calf strain',d:'Oct 2025',o:10,ok:true}],val:{mv:'£85–95k/yr',sc:'High',rec:'Renew'}},{id:4,name:'Marcus Webb',pos:'Lock',age:26,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',w:2500,end:'Jun 2028',intl:true,rd:87,gps:{d:11.6,hi:880,spr:18,ms:29.2,ac:1.12},st:{ap:14,tr:2,tk:104,mi:6,ca:88,me:264},inj:[],val:{mv:'£120–140k/yr',sc:'Medium',rec:'Central contract'}},{id:6,name:'Danny Foster',pos:'No.8',age:24,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',w:2200,end:'Jun 2028',intl:true,rd:0,gps:{d:12.4,hi:1240,spr:28,ms:32.1,ac:1.38},st:{ap:15,tr:4,tk:112,mi:8,ca:128,me:498},inj:[{i:'HIA Protocol',d:'5 Apr 2026',o:null,ok:false}],val:{mv:'£110–130k/yr',sc:'High',rec:'Protect from Prem'}},{id:16,name:'Luke Barnes',pos:'Fullback',age:23,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',w:2000,end:'Jun 2027',intl:false,rd:95,gps:{d:12.3,hi:1120,spr:26,ms:31.9,ac:1.52},st:{ap:16,tr:6,tk:88,mi:4,ca:142,me:562},inj:[],val:{mv:'£100–120k/yr',sc:'Rising star',rec:'Extend now'}}];const p=PL.find(x=>x.id===sid)??PL[0];return(<div className="space-y-6"><QuickActionsBar/><SectionHeader icon="👤" title="Player Profiles" subtitle="GPS · Stats · Contract · Medical · Value"/><div className="flex gap-6"><div className="w-44 flex-shrink-0 space-y-1">{PL.map(pl=><button key={pl.id} onClick={()=>{setSid(pl.id);setPt('overview')}} className={`w-full text-left px-3 py-2.5 rounded-lg text-xs ${sid===pl.id?'bg-purple-600/20 text-purple-300 border border-purple-600/30':'text-gray-400 hover:bg-gray-800/50'}`}><div className="font-medium truncate">{pl.name}</div><div className="text-[10px] text-gray-500 mt-0.5">{pl.pos}</div></button>)}</div><div className="flex-1 min-w-0 space-y-5"><div className="bg-gradient-to-r from-purple-900/30 to-gray-900/20 border border-purple-600/30 rounded-xl p-5"><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 mb-1"><span className="text-2xl">{p.nat}</span><h3 className="text-xl font-bold text-white">{p.name}</h3>{p.intl&&<span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400">Intl</span>}</div><p className="text-sm text-gray-400">{p.pos} · Age {p.age} · {p.end}</p></div><div className="text-right"><div className={`text-3xl font-bold ${p.rd>=80?'text-green-400':p.rd===0?'text-red-400':'text-amber-400'}`}>{p.rd>0?`${p.rd}%`:'N/A'}</div><div className="text-xs text-gray-500">Readiness</div></div></div><div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-800/50">{[{l:'Apps',v:p.st.ap},{l:'Tries',v:p.st.tr},{l:'Tackles',v:p.st.tk},{l:'Metres',v:p.st.me}].map((s,i)=><div key={i} className="text-center"><div className="text-lg font-bold text-white">{s.v}</div><div className="text-[10px] text-gray-500">{s.l}</div></div>)}</div></div><div className="flex gap-1 border-b border-gray-800">{([{id:'overview' as const,l:'Overview',ic:'📋'},{id:'contract' as const,l:'Contract',ic:'📄'},{id:'medical' as const,l:'Medical',ic:'🏥'},{id:'value' as const,l:'Value',ic:'💷'}]).map(t=><button key={t.id} onClick={()=>setPt(t.id)} className={`px-3 py-2 text-xs font-semibold flex items-center gap-1 border-b-2 -mb-px ${pt===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500'}`}><span>{t.ic}</span>{t.l}</button>)}</div>{pt==='overview'&&<div className="grid grid-cols-2 gap-4"><Card><div className="text-xs font-bold text-gray-400 uppercase mb-3">GPS</div>{[{l:'Dist',v:`${p.gps.d}km`},{l:'HI',v:`${p.gps.hi}m`},{l:'Sprints',v:p.gps.spr},{l:'Max',v:`${p.gps.ms}km/h`},{l:'ACWR',v:p.gps.ac}].map((r,i)=><div key={i} className="flex justify-between py-1.5 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.l}</span><span className="text-white">{r.v}</span></div>)}</Card><Card><div className="text-xs font-bold text-gray-400 uppercase mb-3">Stats</div>{[{l:'Apps',v:p.st.ap},{l:'Tries',v:p.st.tr},{l:'Tackles',v:p.st.tk},{l:'Missed',v:p.st.mi},{l:'Carries',v:p.st.ca},{l:'Metres',v:`${p.st.me}m`}].map((r,i)=><div key={i} className="flex justify-between py-1.5 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.l}</span><span className="text-white">{r.v}</span></div>)}</Card></div>}{pt==='contract'&&<Card><div className="text-sm font-semibold text-white mb-3">Contract</div>{[{l:'Weekly',v:fmt(p.w)},{l:'Annual',v:fmt(p.w*52)},{l:'End',v:p.end},{l:'Intl',v:p.intl?'Yes':'No'},{l:'Cap %',v:`${((p.w*52/2800000)*100).toFixed(1)}%`}].map((r,i)=><div key={i} className="flex justify-between py-2 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.l}</span><span className="text-white">{r.v}</span></div>)}</Card>}{pt==='medical'&&<Card><div className="text-sm font-semibold text-white mb-3">Injury Log</div>{p.inj.length===0?<div className="text-xs text-green-400 bg-green-600/10 border border-green-600/20 rounded-lg p-3">✓ No injuries.</div>:p.inj.map((inj,i)=><div key={i} className={`rounded-lg p-3 border mb-2 ${inj.ok?'border-gray-800':'border-amber-600/30 bg-amber-600/5'}`}><div className="flex justify-between mb-1"><span className="text-sm font-semibold text-white">{inj.i}</span><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${inj.ok?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{inj.ok?'Resolved':'Active'}</span></div><div className="text-xs text-gray-400">{inj.d}{inj.o?` · ${inj.o}d`:''}</div></div>)}</Card>}{pt==='value'&&<Card><div className="text-sm font-semibold text-white mb-4">Market Value</div><div className="bg-purple-600/10 border border-purple-600/20 rounded-lg p-4 mb-3"><div className="text-purple-400 font-bold text-lg">{p.val.mv}</div></div>{[{l:'Scarcity',v:p.val.sc},{l:'Rec',v:p.val.rec}].map((r,i)=><div key={i} className="flex justify-between py-2 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.l}</span><span className="text-white text-right ml-4">{r.v}</span></div>)}</Card>}</div></div></div>)}
 
 function VideoAnalysisView() {
   const [filter, setFilter] = useState<string>('All')
@@ -2051,6 +2320,141 @@ function TrainingPlannerView() {
   )
 }
 
+// ─── AI HALFTIME BRIEF VIEW ──────────────────────────────────────────────────
+function AIHalftimeBriefView({ club }: { club: RugbyClub }) {
+  const [brief, setBrief] = useState<string|null>(null);
+  const [loading, setLoading] = useState(false);
+  const MATCH = { opponent: 'Jersey Reds', score: '7–10', venue: 'Home', minute: 40 };
+  const GPS_HT = {
+    distanceKm: 52.4, hiRunningM: 4820, sprints: 94, avgACWR: 1.22,
+    flagged: [
+      { name: 'Danny Foley', issue: 'ACWR 1.38 — pre-overload', action: 'Reduce contact minutes 2nd half' },
+      { name: 'Luke Barnes', issue: 'ACWR 1.52 — overload zone', action: 'Priority sub candidate 55–60 min' },
+      { name: 'Karl Foster', issue: 'ACWR 1.44 — manage zone', action: 'Monitor — limit breakdown work' },
+    ],
+  };
+  const FS = {
+    scrums:{won:3,lost:2,penAgainst:2},lineouts:{won:7,lost:1,successPct:87},
+    rucks:{won:38,lost:6,slowBall:9},tackles:{made:84,missed:12,missRate:12.5},
+    territory:{oppHalf:62},carries:{gainLine:22,lostGainLine:11,lineBreaks:3},
+  };
+
+  const generate = async () => {
+    setLoading(true); setBrief(null);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are the AI performance analyst for ${club.name}, a Championship Rugby club.
+Generate a structured AI Halftime Brief for the Head Coach's iPad. Match: ${club.name} ${MATCH.score} ${MATCH.opponent} (HT).
+
+GPS DATA (first 40 minutes):
+- Team distance: ${GPS_HT.distanceKm}km | HI running: ${GPS_HT.hiRunningM}m | Sprints: ${GPS_HT.sprints}
+- Team avg ACWR: ${GPS_HT.avgACWR} (amber)
+- Load flags: ${GPS_HT.flagged.map(f=>`${f.name} (${f.issue})`).join(', ')}
+
+FRAMESPORTS VIDEO TAGS:
+- Scrums: ${FS.scrums.won}W/${FS.scrums.lost}L | ${FS.scrums.penAgainst} pen against
+- Lineouts: ${FS.lineouts.successPct}% (${FS.lineouts.won}/${FS.lineouts.won+FS.lineouts.lost})
+- Rucks: ${FS.rucks.won}W/${FS.rucks.lost}L | ${FS.rucks.slowBall} slow ball
+- Tackles: ${FS.tackles.made} made / ${FS.tackles.missed} missed (${FS.tackles.missRate}% miss rate)
+- Territory: ${FS.territory.oppHalf}% in opposition half
+- Carries: ${FS.carries.gainLine}W gainline / ${FS.carries.lostGainLine}L / ${FS.carries.lineBreaks} line breaks
+
+Generate brief in exactly this format:
+## 🔴 SCOREBOARD
+One sentence on match state and urgency.
+## 📡 PHYSICAL (GPS)
+3–4 bullet points on load data. Name flagged players and actions.
+## 🏉 SET PIECE
+Bullet points on scrum and lineout. What works, what must change.
+## ⚔️ CONTACT & BREAKDOWN
+Tackle miss rate, ruck speed, gainline — tactical meaning.
+## 🎯 3 HALF-TIME ADJUSTMENTS
+Numbered list. Specific, actionable. 90 seconds to read.
+## 🔄 SUBSTITUTION CALL
+1–2 subs with exact reasoning — GPS load + position + game state.
+## 💬 TEAM TALK (30 seconds)
+One short paragraph. Direct. No clichés.
+Keep under 400 words.` }]
+        })
+      });
+      const data = await res.json();
+      setBrief(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error generating brief.');
+    } catch { setBrief('Connection error. Check API.'); }
+    setLoading(false);
+  };
+
+  const renderBrief = (text: string) => text.split('\n').map((line, i) => {
+    if (line.startsWith('## ')) return <h3 key={i} className="text-sm font-bold text-white mt-5 mb-2">{line.replace('## ','')}</h3>;
+    if (line.match(/^\d\./)) return <div key={i} className="flex gap-2 text-xs text-gray-300 mb-1.5"><span className="text-purple-400 flex-shrink-0 font-bold">{line[0]}.</span><span>{line.slice(2)}</span></div>;
+    if (line.startsWith('- ')) return <div key={i} className="flex gap-2 text-xs text-gray-300 mb-1"><span className="text-purple-500 flex-shrink-0 mt-0.5">•</span><span>{line.slice(2)}</span></div>;
+    if (line.trim()==='') return <div key={i} className="h-1"/>;
+    return <p key={i} className="text-xs text-gray-300 mb-1.5 leading-relaxed">{line}</p>;
+  });
+
+  return (
+    <div className="space-y-6">
+      <QuickActionsBar />
+      <SectionHeader icon="🤖" title="AI Halftime Brief" subtitle="GPS + FrameSports video tags + Claude API → Head Coach iPad in under 4 minutes"/>
+      <div className="bg-gradient-to-r from-purple-900/30 to-gray-900/20 border border-purple-600/30 rounded-xl p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          {[{l:'Score',v:`${club.name} ${MATCH.score} ${MATCH.opponent}`},{l:'Venue',v:MATCH.venue},{l:'Minute',v:`${MATCH.minute}' (HT)`},{l:'Team ACWR',v:`${GPS_HT.avgACWR} — Amber`}].map((d,i)=>(
+            <div key={i}><div className="text-gray-500">{d.l}</div><div className="text-white font-semibold mt-0.5">{d.v}</div></div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">📡 GPS — First Half</div>
+          {[{label:'Distance',us:`${GPS_HT.distanceKm}km`,bench:'54km bench'},{label:'HI Running',us:`${GPS_HT.hiRunningM}m`,bench:'5,100m bench'},{label:'Sprints',us:`${GPS_HT.sprints}`,bench:'105 bench'}].map((r,i)=>(
+            <div key={i} className="flex justify-between py-1.5 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.label}</span><div className="text-right"><span className="text-white font-medium">{r.us}</span><span className="text-gray-600 ml-2">{r.bench}</span></div></div>
+          ))}
+        </Card>
+        <Card>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">🎬 FrameSports Tags</div>
+          {[{label:'Scrum',v:`${FS.scrums.won}W ${FS.scrums.lost}L — ${FS.scrums.penAgainst} pen`,color:'text-red-400'},{label:'Lineout',v:`${FS.lineouts.successPct}% (${FS.lineouts.won}/${FS.lineouts.won+FS.lineouts.lost})`,color:'text-green-400'},{label:'Tackles missed',v:`${FS.tackles.missed} (${FS.tackles.missRate}%)`,color:'text-amber-400'},{label:'Gainline',v:`${FS.carries.gainLine}W / ${FS.carries.lostGainLine}L`,color:'text-purple-400'}].map((r,i)=>(
+            <div key={i} className="flex justify-between py-1.5 border-b border-gray-800/50 text-xs"><span className="text-gray-400">{r.label}</span><span className={`font-medium ${r.color}`}>{r.v}</span></div>
+          ))}
+        </Card>
+        <Card className="border-amber-600/30">
+          <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3">⚠ Load Flags</div>
+          <div className="space-y-2">{GPS_HT.flagged.map((f,i)=>(
+            <div key={i} className="bg-[#0a0c14] border border-amber-600/20 rounded-lg p-2.5">
+              <div className="text-xs font-bold text-white">{f.name}</div>
+              <div className="text-[10px] text-amber-400 mt-0.5">{f.issue}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">→ {f.action}</div>
+            </div>
+          ))}</div>
+        </Card>
+      </div>
+      <div>
+        <button onClick={generate} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:text-purple-800 text-white transition-all flex items-center gap-2">
+          {loading?<><span className="animate-spin inline-block">⟳</span> Generating brief...</>:<><span>🤖</span> Generate AI Halftime Brief</>}
+        </button>
+        {!brief&&!loading&&<p className="text-xs text-gray-600 mt-2">Combines GPS load + FrameSports video tags → structured coach brief in under 4 minutes.</p>}
+      </div>
+      {brief&&(
+        <Card className="border-purple-600/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2"><span className="text-purple-400 font-bold text-sm">🤖 Lumio AI Brief</span><span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">COACHING STAFF ONLY</span></div>
+            <button onClick={generate} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button>
+          </div>
+          <div className="divide-y divide-gray-800/40">{renderBrief(brief)}</div>
+          <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+            <span className="text-[10px] text-gray-600">Powered by Claude · Lumio Rugby · HT {MATCH.minute}&apos;</span>
+            <button className="text-xs text-purple-400 hover:text-purple-300">Print for dressing room →</button>
+          </div>
+        </Card>
+      )}
+      <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl p-4">
+        <p className="text-xs text-purple-300"><strong>Why this is world-leading:</strong> No Championship Rugby club has a system that combines live GPS load data, FrameSports auto-tagged video (scrums, lineouts, rucks), and AI narrative into a single coaching brief delivered within 4 minutes of the halftime whistle. Lumio Rugby does this first.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function RugbyPortalPage() {
   const [activeSection,setActiveSection]=useState('dashboard');
@@ -2062,6 +2466,7 @@ export default function RugbyPortalPage() {
     switch(activeSection) {
       case 'dashboard':       return <ClubDashboardView club={club}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
+      case 'insights':        return <InsightsView club={club}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
       case 'calendar':        return <ClubCalendarView/>;
       case 'capdashboard':    return <CapDashboardView club={club}/>;
@@ -2074,11 +2479,15 @@ export default function RugbyPortalPage() {
       case 'gapanalysis':     return <GapAnalysisView/>;
       case 'availability':    return <SquadAvailabilityView/>;
       case 'selection':       return <SelectionPlannerView/>;
+      case 'playerprofile':   return <PlayerProfileView/>;
       case 'international':   return <InternationalDutyView/>;
       case 'loans':           return <LoanManagementView/>;
       case 'gps-load':        return <GPSLoadView/>;
+      case 'heatmap':         return <PlayerHeatmapView/>;
       case 'video-analysis':  return <VideoAnalysisView/>;
       case 'match-stats':     return <MatchStatsView/>;
+      case 'setpiece':        return <SetPieceAnalyticsView/>;
+      case 'carryanalytics':  return <CarryAnalyticsView/>;
       case 'training-planner':return <TrainingPlannerView/>;
       case 'scouting':        return <ScoutingPipelineView/>;
       case 'capimpact':       return <CapImpactModellerView club={club}/>;
@@ -2097,6 +2506,7 @@ export default function RugbyPortalPage() {
       case 'sharedfacilities':return <SharedFacilitiesView/>;
       case 'womenscommercial':return <WomensCommercialView/>;
       case 'aibriefing':      return <AIBriefingView club={club}/>;
+      case 'halftime':        return <AIHalftimeBriefView club={club}/>;
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
