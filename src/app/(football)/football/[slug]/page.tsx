@@ -6367,4 +6367,27 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
                         ))}
                       </div>
                     </div>
-              
+                  </div>
+                  <div>
+                    <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
+                      {'\u{1F4CA}'} Insights
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </main>
+        </div>
+      </div>
+
+      {activeAction && (
+        <FootballActionModal
+          actionId={activeAction}
+          onClose={() => setActiveAction(null)}
+          onToast={fireToast}
+        />
+      )}
+      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
+    </div>
+  )
+}
