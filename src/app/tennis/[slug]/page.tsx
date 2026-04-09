@@ -3062,7 +3062,6 @@ function NutritionView({ player, session }: { player: TennisPlayer; session: Spo
           </div>
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
