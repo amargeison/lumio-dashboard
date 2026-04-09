@@ -7163,12 +7163,22 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           </div>
         )}
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
-          <div className="text-xs font-bold tracking-widest" style={{ color: '#4B5563' }}>LUMIO TENNIS</div>
+          <img src="/tennis_logo.png" alt="Lumio Tennis" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
+            onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
+          <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+          style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+            To see your own data — sign up for 6 months free →
+          </a>
+        </div>
         {/* Top Bar */}
         <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between"
           style={{ background: '#0a0c14' }}>
