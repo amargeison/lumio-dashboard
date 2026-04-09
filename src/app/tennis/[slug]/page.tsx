@@ -787,6 +787,7 @@ const IncomeExpenseChart = () => {
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
 function DashboardView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -804,31 +805,6 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
 
   return (
     <div className="space-y-6">
-
-      {/* Quick Actions Bar */}
-      <div className="overflow-x-auto pb-2 -mx-1">
-        <div className="flex gap-2 px-1 min-w-max">
-          {[
-            { label: 'Book Flight',       icon: '✈️' },
-            { label: 'Log Practice',      icon: '🎾' },
-            { label: 'Book Stringing',    icon: '🔧' },
-            { label: 'Log Injury',        icon: '⚕️' },
-            { label: 'View Draw',         icon: '🏆' },
-            { label: 'Match Notes',       icon: '📝' },
-            { label: 'Wildcard Request',  icon: '🎯' },
-            { label: 'Sponsor Post',      icon: '📱' },
-            { label: 'Press Statement',   icon: '📣' },
-            { label: 'Add Expense',       icon: '💰' },
-            { label: 'Flight Search',     icon: '🔍' },
-            { label: 'Video Upload',      icon: '🎬' },
-          ].map((a, i) => (
-            <button key={i}
-              className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-[#0ea5e9]/50 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
-              <span>{a.icon}</span>{a.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Greeting + KPI strip */}
       <div className="bg-gradient-to-r from-[#0ea5e9]/20 to-[#0d1117] border border-[#0ea5e9]/20 rounded-2xl p-6">
@@ -886,8 +862,14 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
         </div>
       </div>
 
-      {/* Three-column main layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Dashboard tabs */}
+      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">{([{id:'today' as const,label:'Today',icon:'🏠'},{id:'quickwins' as const,label:'Quick Wins',icon:'⚡'},{id:'dailytasks' as const,label:'Daily Tasks',icon:'✅'},{id:'insights' as const,label:'Insights',icon:'📊'},{id:'dontmiss' as const,label:"Don't Miss",icon:'🔴'},{id:'team' as const,label:'Team',icon:'👥'}]).map(t=><button key={t.id} onClick={()=>setDashTab(t.id)} className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab===t.id?'border-[#0ea5e9] text-white':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>
+
+      {/* Quick Actions — always visible */}
+      <div className="overflow-x-auto pb-2 -mx-1"><div className="flex gap-2 px-1 min-w-max">{[{label:'Book Flight',icon:'✈️'},{label:'Log Practice',icon:'🎾'},{label:'Book Stringing',icon:'🔧'},{label:'Log Injury',icon:'⚕️'},{label:'View Draw',icon:'🏆'},{label:'Match Notes',icon:'📝'},{label:'Wildcard Request',icon:'🎯'},{label:'Sponsor Post',icon:'📱'},{label:'Press Statement',icon:'📣'},{label:'Add Expense',icon:'💰'},{label:'Flight Search',icon:'🔍'},{label:'Video Upload',icon:'🎬'}].map((a,i)=><button key={i} className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-[#0ea5e9]/50 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap"><span>{a.icon}</span>{a.label}</button>)}</div></div>
+
+      {/* TODAY tab */}
+      {dashTab==='today'&&<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* LEFT: Morning Roundup */}
         <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
@@ -1004,33 +986,24 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
             </div>
           </div>
 
-          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span>🤖</span>
-                <span className="text-sm font-bold text-white">AI Morning Summary</span>
-              </div>
-              <span className="text-[10px] text-gray-600">
-                {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {[
-                "Match vs C. Martinez today — H2H 3–1 in your favour. Clay serve avg 4% below season — focus kick serve.",
-                "312 ranking points drop off after Monte-Carlo. Win tonight keeps you at #67. Loss risks dropping to #71.",
-                "Rolex renewal due in 47 days — agent follow-up scheduled for tomorrow.",
-                "Roland-Garros direct acceptance confirmed — no wildcard needed. Entry deadline 3 May.",
-                "New Coach debrief added — Carlos requests 17:00 session post-match.",
-              ].map((item, i) => (
-                <div key={i} className="flex gap-2 text-xs text-gray-400">
-                  <span className="text-[#0ea5e9] font-bold flex-shrink-0 w-4">{i+1}</span>
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* AI Morning Summary removed — handled by TennisAISection below */}
         </div>
-      </div>
+      </div>}
+
+      {/* QUICK WINS tab */}
+      {dashTab==='quickwins'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Your highest-impact actions right now.</p>{[{p:1,a:'Book Madrid flights — prices rising, depart 26 Apr',i:'High',c:'Travel',ic:'✈️'},{p:2,a:'Reply to Rolex renewal inquiry — deadline 47 days',i:'High',c:'Commercial',ic:'🤝'},{p:3,a:'Submit Roland-Garros hotel preference to agent',i:'High',c:'Logistics',ic:'🏨'},{p:4,a:'Review Martinez serve patterns before 13:00 match',i:'High',c:'Match Prep',ic:'🎾'},{p:5,a:'Post Lululemon sponsor content — due this week',i:'Med',c:'Commercial',ic:'📱'},{p:6,a:'Confirm Hamburg vs Eastbourne clash with agent',i:'Med',c:'Entries',ic:'📋'},{p:7,a:'Book physio for post-match recovery session',i:'Med',c:'Wellness',ic:'⚕️'}].map((w,idx)=><div key={idx} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all"><div className="w-7 h-7 rounded-full bg-[#0ea5e9]/15 flex items-center justify-center text-[#0ea5e9] font-black text-xs flex-shrink-0">{w.p}</div><span className="text-lg flex-shrink-0">{w.ic}</span><div className="flex-1"><p className="text-sm text-gray-200">{w.a}</p><span className="text-[10px] text-gray-500">{w.c}</span></div><span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${w.i==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.i}</span></div>)}</div>}
+
+      {/* DAILY TASKS tab */}
+      {dashTab==='dailytasks'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Your task list for today.</p>{[{t:'07:30',l:'AI Morning Briefing',d:true,h:false,c:'Routine'},{t:'08:30',l:'Physio treatment — right shoulder',d:true,h:false,c:'Wellness'},{t:'10:00',l:'Practice — serve patterns',d:false,h:false,c:'Training'},{t:'11:45',l:'Stringing with Carlos (2x Wilson)',d:false,h:false,c:'Equipment'},{t:'13:00',l:'Match vs C. Martinez — Court 4',d:false,h:true,c:'Match'},{t:'15:30',l:'Post-match physio recovery',d:false,h:false,c:'Wellness'},{t:'17:00',l:'Coach debrief with Carlos',d:false,h:false,c:'Coaching'},{t:'18:30',l:'Sponsor content post — Lululemon',d:false,h:false,c:'Commercial'},{t:'20:00',l:'Nutrition check-in with dietitian',d:false,h:false,c:'Wellness'}].map((tk,idx)=><div key={idx} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${tk.h?'bg-[#0ea5e9]/10 border-[#0ea5e9]/30':tk.d?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}><div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${tk.d?'bg-green-500 border-green-500':tk.h?'border-[#0ea5e9]':'border-gray-600'}`}>{tk.d&&<span className="text-[9px] text-white font-bold">✓</span>}</div><span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{tk.t}</span><span className={`text-sm flex-1 ${tk.d?'line-through text-gray-600':tk.h?'text-[#0ea5e9] font-semibold':'text-gray-200'}`}>{tk.l}</span><span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{tk.c}</span></div>)}</div>}
+
+      {/* INSIGHTS tab */}
+      {dashTab==='insights'&&<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[{title:'Ranking trajectory',value:'#67 → #58',sub:'If you win Monte-Carlo',color:'#0ea5e9',icon:'📈'},{title:'Points expiring soon',value:'312 pts',sub:'After Monte-Carlo (this week)',color:'#EF4444',icon:'⚠️'},{title:'Clay win rate',value:'68%',sub:'Above ATP tour avg (61%)',color:'#22C55E',icon:'🏟️'},{title:'Season prize money',value:'£387k',sub:'Ahead of projection (+12%)',color:'#F59E0B',icon:'💰'},{title:'Serve % (last 5)',value:'64%',sub:'↑ from 58% season avg',color:'#8B5CF6',icon:'🎾'},{title:'Sponsor obligations',value:'2 due',sub:'This week — Lululemon + Nike',color:'#EC4899',icon:'🤝'}].map((ins,idx)=><div key={idx} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4"><div className="text-2xl flex-shrink-0">{ins.icon}</div><div className="flex-1"><div className="text-xs text-gray-500 mb-1">{ins.title}</div><div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div><div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div></div></div>)}</div>}
+
+      {/* DON'T MISS tab */}
+      {dashTab==='dontmiss'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Time-sensitive — act today.</p>{[{u:'TODAY',item:'Match vs C. Martinez — 13:00 Court 4. Monte-Carlo QF.',color:'#0ea5e9'},{u:'TODAY',item:'Lululemon sponsor post due today — kit photo needed before 12:00.',color:'#EF4444'},{u:'THIS WEEK',item:'Rolex renewal content — 2 posts outstanding. Agent chasing.',color:'#F59E0B'},{u:'THIS WEEK',item:'Madrid flights — prices increasing daily. Depart 26 Apr needed.',color:'#F59E0B'},{u:'47 DAYS',item:'Rolex sponsorship renewal deadline. Agent meeting needed this month.',color:'#8B5CF6'},{u:'3 MAY',item:'Roland-Garros entry deadline. Direct acceptance confirmed — admin to submit.',color:'#6B7280'}].map((d,idx)=><div key={idx} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4"><span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.u==='TODAY'?'bg-red-600/20 text-red-400':d.u==='THIS WEEK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.u}</span><p className="text-sm text-gray-200 flex-1">{d.item}</p></div>)}</div>}
+
+      {/* TEAM tab */}
+      {dashTab==='team'&&<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[{name:'Carlos Mendez',role:'Head Coach',status:'Debrief requested — 17:00 today',av:true,ph:'CM'},{name:'Dr Sarah Lee',role:'Physiotherapist',status:'Treatment complete — shoulder OK',av:true,ph:'SL'},{name:'James Wright',role:'Agent',status:'3 sponsor inquiries pending',av:true,ph:'JW'},{name:'Petra Novak',role:'Nutritionist',status:'Clay season plan updated',av:true,ph:'PN'},{name:'Marcos Silva',role:'Sports Psychologist',status:'Session Thursday 14:00',av:false,ph:'MS'},{name:'Tom Ellis',role:'Stringer',status:'11:45 appointment confirmed',av:true,ph:'TE'}].map((m,idx)=><div key={idx} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#0ea5e9]/20 border border-[#0ea5e9]/30 flex items-center justify-center text-xs font-bold text-[#0ea5e9] flex-shrink-0">{m.ph}</div><div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white">{m.name}</div><div className="text-[10px] text-[#0ea5e9]">{m.role}</div><div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div></div><div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.av?'bg-green-400':'bg-gray-600'}`}/></div>)}</div>}
 
       <TennisAISection context="dashboard" player={player} session={session} />
     </div>
