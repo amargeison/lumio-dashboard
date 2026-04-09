@@ -787,21 +787,74 @@ const IncomeExpenseChart = () => {
 };
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
-function DashboardView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+function DashboardView({ player, session, photos, setPhotos }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void }) {
   const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  const ROUNDUP_ITEMS = [
-    { id:'agent',      label:'Agent Messages',    icon:'📞', count:2, urgent:false, color:'#8B5CF6' },
-    { id:'tournament', label:'Tournament Desk',   icon:'🏆', count:3, urgent:true,  color:'#0ea5e9' },
-    { id:'sponsor',    label:'Media & Sponsor',   icon:'📱', count:4, urgent:false, color:'#F59E0B' },
-    { id:'physio',     label:'Physio & Medical',  icon:'⚕️', count:1, urgent:true,  color:'#EF4444' },
-    { id:'coach',      label:'Coach Messages',    icon:'🎾', count:2, urgent:false, color:'#10B981' },
-    { id:'prize',      label:'Prize Money',       icon:'💰', count:1, urgent:false, color:'#D97706' },
-    { id:'travel',     label:'Travel & Logistics',icon:'✈️', count:3, urgent:false, color:'#6B7280' },
-    { id:'wildcard',   label:'Wildcard & Entries',icon:'📋', count:2, urgent:false, color:'#EC4899' },
+  // Photo frame state
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isPaused || photos.length <= 1) return
+    const t = setInterval(() => setPhotoIndex(i => (i + 1) % photos.length), 5000)
+    return () => clearInterval(t)
+  }, [isPaused, photos.length])
+
+  const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || photos.length >= 3) return
+    const reader = new FileReader()
+    reader.onload = () => setPhotos(prev => [...prev, reader.result as string])
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  // Morning Roundup state
+  const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [repliedTo, setRepliedTo] = useState<string[]>([])
+  const [replyToast, setReplyToast] = useState(false)
+
+  const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id:'agent', label:'Agent Messages', icon:'📞', count:2, urgent:false, color:'#8B5CF6', messages: [
+      { id:'a1', from:'James Wright', text:'Rolex renewal — they want a response by end of week. Call me.', time:'8:14am' },
+      { id:'a2', from:'James Wright', text:'Paddy Power inquiry — new ambassador deal. £85k/yr. Interested?', time:'7:52am' },
+    ]},
+    { id:'tournament', label:'Tournament Desk', icon:'🏆', count:3, urgent:true, color:'#0ea5e9', messages: [
+      { id:'t1', from:'Monte-Carlo Masters', text:'URGENT: Court 4 time moved to 13:30 (30 min delay). Confirm receipt.', time:'9:01am' },
+      { id:'t2', from:'Monte-Carlo Masters', text:'Media accreditation for your coach confirmed — collect at gate B.', time:'8:45am' },
+      { id:'t3', from:'Hamburg 500', text:'Wildcard confirmation for Hamburg 500 — deadline today 5pm.', time:'7:30am' },
+    ]},
+    { id:'sponsor', label:'Media & Sponsor', icon:'📱', count:4, urgent:false, color:'#F59E0B', messages: [
+      { id:'s1', from:'Lululemon', text:'Lululemon post due TODAY — Carlos needs kit photo before 12:00.', time:'8:30am' },
+      { id:'s2', from:'Nike', text:'Nike obligation: 1 post outstanding from March. Please prioritise.', time:'Yesterday' },
+      { id:'s3', from:"L'Equipe", text:'Interview request: L\'Equipe — 15 min post-match. Yes/no?', time:'8:05am' },
+      { id:'s4', from:'Rolex', text:'Rolex content calendar attached — next shoot: Paris May 20.', time:'7:48am' },
+    ]},
+    { id:'physio', label:'Physio & Medical', icon:'⚕️', count:1, urgent:true, color:'#EF4444', messages: [
+      { id:'p1', from:'Dr Sarah Lee', text:'URGENT: Shoulder inflammation — recommend ice 20 min pre-match. See me at 12:30.', time:'9:15am' },
+    ]},
+    { id:'coach', label:'Coach Messages', icon:'🎾', count:2, urgent:false, color:'#10B981', messages: [
+      { id:'c1', from:'Carlos', text:'Match notes ready on the app. Key: kick serve to his backhand on deuce court.', time:'8:55am' },
+      { id:'c2', from:'Carlos', text:'Warm-up plan updated — 45 min. See you at 11:45 for stringing check.', time:'8:20am' },
+    ]},
+    { id:'prize', label:'Prize Money', icon:'💰', count:1, urgent:false, color:'#D97706', messages: [
+      { id:'pm1', from:'ATP Tour Finance', text:'QF prize of EUR 47,500 banked — confirmation attached.', time:'Yesterday' },
+    ]},
+    { id:'travel', label:'Travel & Logistics', icon:'✈️', count:3, urgent:false, color:'#6B7280', messages: [
+      { id:'tr1', from:'Travel desk', text:'Madrid hotel confirmed — NH Eurobuilding, arriving Mon 26 Apr.', time:'8:00am' },
+      { id:'tr2', from:'Travel desk', text:'Halle camp flights — Tue 10 Jun, LHR→HAJ. Confirm passenger details.', time:'Yesterday' },
+      { id:'tr3', from:'Travel desk', text:'Roland-Garros apartment: owner requests deposit by 1 May.', time:'2 days ago' },
+    ]},
+    { id:'wildcard', label:'Wildcard & Entries', icon:'📋', count:2, urgent:false, color:'#EC4899', messages: [
+      { id:'w1', from:'ATP Entry', text:'Hamburg 500 wildcard — tournament director needs answer today.', time:'7:30am' },
+      { id:'w2', from:'ATP Entry', text:'Winston-Salem: application submitted. Decision by 15 Aug.', time:'3 days ago' },
+    ]},
   ]
 
   const STAT_BOXES = [
@@ -890,31 +943,6 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
           </div>
         </div>
 
-        {/* TODAY'S MATCH STRIP */}
-        <div className="mt-4 flex items-center justify-between rounded-xl px-4 py-2.5"
-          style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(14,165,233,0.2)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#0ea5e9' }}>
-              <span className="text-[10px] text-white ml-0.5">▶</span>
-            </div>
-            <div>
-              <div className="text-[10px]" style={{ color: '#9CA3AF' }}>Today&apos;s match</div>
-              <div className="text-xs font-semibold text-white">vs Martinez, 13:00, Court 4</div>
-            </div>
-          </div>
-          <div className="hidden sm:flex items-center gap-6 text-xs">
-            {CLOCKS.map(({ city, tz }) => (
-              <div key={city} className="text-center">
-                <div className="font-bold text-white">{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</div>
-                <div className="text-[10px]" style={{ color: '#6B7280' }}>{city}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs font-bold text-white">{session.userName || player.name || 'Alex Rivera'}</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.2)', color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</span>
-          </div>
-        </div>
       </div>
 
       {/* ── TAB BAR ── */}
@@ -972,7 +1000,7 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
           {/* 3-column grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-            {/* LEFT: Morning Roundup */}
+            {/* LEFT: Morning Roundup — expandable like football */}
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
@@ -981,23 +1009,67 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
                 </div>
                 <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
               </div>
-              <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-                {ROUNDUP_ITEMS.map((ch) => (
-                  <div key={ch.id} className="flex items-center justify-between px-5 py-3 cursor-pointer transition-all hover:bg-white/[0.02]">
-                    <div className="flex items-center gap-3">
-                      <span className="text-base">{ch.icon}</span>
-                      <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
-                      {ch.urgent && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
+              <div>
+                {ROUNDUP_ITEMS.map((ch) => {
+                  const isOpen = expandedChannel === ch.id
+                  return (
+                    <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
+                      <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
+                        className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
+                        <div className="flex items-center gap-3">
+                          <span className="text-base">{ch.icon}</span>
+                          <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                          {ch.urgent && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className="px-5 pb-3 space-y-2">
+                          {ch.messages.map(msg => (
+                            <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: ch.color + '22', color: ch.color }}>
+                                    {msg.from.split(' ').map(w => w[0]).join('').slice(0,2)}
+                                  </div>
+                                  <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                                </div>
+                                <span className="text-[10px] flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                              </div>
+                              <p className="text-xs leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{msg.text}</p>
+                              {repliedTo.includes(msg.id) ? (
+                                <span className="text-[10px]" style={{ color: '#0ea5e9' }}>Replied ✓</span>
+                              ) : replyingTo === msg.id ? (
+                                <div className="mt-2">
+                                  <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={2}
+                                    className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+                                  <div className="flex gap-2 mt-1.5">
+                                    <button onClick={() => { setRepliedTo(prev => [...prev, msg.id]); setReplyingTo(null); setReplyText(''); setReplyToast(true); setTimeout(() => setReplyToast(false), 2000) }}
+                                      className="text-[10px] px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>Send</button>
+                                    <button onClick={() => { setReplyingTo(null); setReplyText('') }}
+                                      className="text-[10px] px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => setReplyingTo(msg.id)} className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }}>Reply</button>
+                                  <button className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
-                      <span style={{ color: '#374151' }}>▾</span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
+              {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
             </div>
 
             {/* MIDDLE: Today's match + schedule */}
@@ -1074,7 +1146,7 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
 
             {/* RIGHT: Photo frame + AI Morning Summary + AI Key Highlights */}
             <div className="space-y-3">
-              {/* Photo frame */}
+              {/* Photo frame — live localStorage slideshow */}
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
@@ -1082,23 +1154,32 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
                     <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Photo Frame</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button className="text-[10px]" style={{ color: '#6B7280' }}>⏸ Pause</button>
-                    <button className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>
-                    <button className="text-[10px] font-semibold" style={{ color: '#0ea5e9' }}>+ Add</button>
+                    {photos.length > 1 && <button onClick={() => setIsPaused(!isPaused)} className="text-[10px]" style={{ color: '#6B7280' }}>{isPaused ? '▶ Play' : '⏸ Pause'}</button>}
+                    {photos.length > 0 && <button onClick={() => { setPhotos(prev => prev.filter((_, i) => i !== photoIndex)); setPhotoIndex(0) }} className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>}
+                    <button onClick={() => photoInputRef.current?.click()} disabled={photos.length >= 3} className="text-[10px] font-semibold" style={{ color: photos.length >= 3 ? '#374151' : '#0ea5e9' }} title={photos.length >= 3 ? '3 max' : 'Add photo'}>+ Add</button>
+                    <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={addPhoto} />
                   </div>
                 </div>
-                <div className="relative h-36 flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.08), rgba(0,0,0,0.4))' }}>
-                  <div className="text-center">
-                    <div className="text-3xl mb-1">🎾</div>
-                    <div className="text-[10px]" style={{ color: '#4B5563' }}>Add your photos above</div>
-                  </div>
-                </div>
-                <div className="px-4 py-2 flex items-center gap-2">
-                  {['3s','5s','10s','30s'].map(s => (
-                    <button key={s} className="text-[10px] px-2 py-0.5 rounded transition-all"
-                      style={{ background: s === '5s' ? 'rgba(14,165,233,0.2)' : 'transparent', color: s === '5s' ? '#0ea5e9' : '#6B7280' }}>{s}</button>
-                  ))}
+                <div className="relative h-40 overflow-hidden" style={{ background: '#0a0c14' }}>
+                  {photos.length > 0 ? (
+                    <>
+                      <img src={photos[photoIndex]} alt="Photo frame" className="w-full h-full object-cover" draggable={false} />
+                      {photos.length > 1 && (
+                        <>
+                          <button onClick={() => setPhotoIndex(i => (i - 1 + photos.length) % photos.length)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center">‹</button>
+                          <button onClick={() => setPhotoIndex(i => (i + 1) % photos.length)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center">›</button>
+                        </>
+                      )}
+                      <div className="absolute bottom-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-black/50 text-white">{photoIndex + 1}/{photos.length}</div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center flex-col gap-1">
+                      <div className="text-2xl">🎾</div>
+                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Click + Add to upload photos</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1313,8 +1394,6 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
         </div>
       )}
 
-      {/* AI Department Intelligence */}
-      <TennisAISection context="dashboard" player={player} session={session} />
     </div>
   )
 }
@@ -5180,12 +5259,48 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
     </div>
   );
 }
-function SettingsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+function SettingsView({ player, session, photos, setPhotos }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void }) {
   const [tourMode, setTourMode] = useState<'ATP' | 'WTA'>(player.tour || 'ATP');
   return (
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, notifications, team access, integrations, and billing." />
+
+      {/* Photo Frame Management */}
+      <div className="rounded-xl overflow-hidden mb-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 border-b" style={{ borderColor: '#1F2937' }}>
+          <p className="text-sm font-semibold text-white">📸 Photo Frame</p>
+          <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Add up to 3 photos to your dashboard photo frame</p>
+        </div>
+        <div className="p-5">
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[0,1,2].map(i => (
+              <div key={i} className="relative aspect-video rounded-lg overflow-hidden" style={{ background: '#0a0c14', border: '1px dashed #374151' }}>
+                {photos[i] ? (
+                  <>
+                    <img src={photos[i]} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center">✕</button>
+                  </>
+                ) : (
+                  <label htmlFor={`tennis-photo-${i}`} className="w-full h-full flex items-center justify-center cursor-pointer text-gray-600 hover:text-gray-400 transition-colors">
+                    <span className="text-xl">+</span>
+                    <input type="file" accept="image/*" id={`tennis-photo-${i}`} className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = () => setPhotos(prev => { const next = [...prev]; next[i] = reader.result as string; return next })
+                        reader.readAsDataURL(file)
+                      }} />
+                  </label>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px]" style={{ color: '#6B7280' }}>Photos auto-advance every 5 seconds on your dashboard. Drag to reorder not yet supported.</p>
+        </div>
+      </div>
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
         <div className="text-sm font-semibold text-white mb-4">Tour Mode</div>
@@ -6483,6 +6598,10 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [h2hData, setH2hData] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [sponsorToast, setSponsorToast] = useState<string>('');
+  const [photos, setPhotos] = useState<string[]>(() => {
+    try { const stored = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_photos') : null; return stored ? JSON.parse(stored) : [] } catch { return [] }
+  });
+  useEffect(() => { localStorage.setItem('lumio_tennis_photos', JSON.stringify(photos)) }, [photos]);
   const activeRole = session.role;
 
   useEffect(() => {
@@ -6909,7 +7028,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} session={session} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
@@ -6945,13 +7064,13 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'courtbooking': return <CourtBookingView player={player} session={session} />;
       case 'teamcomms':    return <TeamCommsView player={player} session={session} />;
       case 'accreditations': return <AccreditationsView player={player} session={session} />;
-      case 'settings':     return <SettingsView player={player} session={session} />;
+      case 'settings':     return <SettingsView player={player} session={session} photos={photos} setPhotos={setPhotos} />;
       case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} player={player} session={session} />;
       case 'scout':       return <OpponentScoutView h2hData={h2hData} player={player} session={session} />;
       case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
       case 'gps':         return <GPSCourtView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
-      default:             return <DashboardView player={player} session={session} />;
+      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} />;
     }
   };
 
@@ -6991,22 +7110,6 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             {sidebarCollapsed ? '→' : '←'}
           </button>
         </div>
-
-        {/* Player Mini Card */}
-        {!sidebarCollapsed && (
-          <div className="p-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-purple-500/40"
-                style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.3), rgba(13,148,136,0.3))' }}>
-                {player.flag}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-white">{player.name}</div>
-                <div className="text-[10px] text-gray-500">#{player.ranking} ATP . {player.nationality}</div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-2 px-2">
@@ -7084,7 +7187,6 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            <WaveBanner player={player} />
             {renderView()}
           </div>
 
