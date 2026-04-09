@@ -304,8 +304,14 @@ export default function SportsDemoGate({
     } catch { return null }
   })()
 
+  const isDevHost = typeof window !== 'undefined' && (
+    window.location.hostname.includes('vercel.app') ||
+    window.location.hostname.includes('dev.') ||
+    window.location.hostname === 'localhost'
+  )
+
   const [session, setSession] = useState<SportsDemoSession | null>(existingSession)
-  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(existingSession ? 'done' : 'email')
+  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(existingSession ? 'done' : isDevHost ? 'club' : 'email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [selectedRole, setSelectedRole] = useState(roles[0]?.id ?? '')
@@ -365,7 +371,7 @@ export default function SportsDemoGate({
     console.log('finaliseSession called', { email, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, logoDataUrl })
 
     const newSession: SportsDemoSession = {
-      email,
+      email: email || 'dev@lumio.test',
       userName: resolvedUserName,
       clubName: resolvedClubName,
       role: selectedRole,
