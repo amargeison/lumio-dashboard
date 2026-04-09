@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
+import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface GolfPlayer {
@@ -3225,9 +3227,37 @@ function AgentPipelineView() {
 }
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+// ─── GOLF ROLES ───────────────────────────────────────────────────────────────
+const GOLF_ROLES = [
+  { id: 'chairman',   label: 'Club Chairman',    icon: '🏛️', description: 'Board & strategy'     },
+  { id: 'manager',    label: 'Club Manager',      icon: '⛳', description: 'Full club view'        },
+  { id: 'captain',    label: 'Club Captain',      icon: '🏆', description: 'Competitions & teams'  },
+  { id: 'commercial', label: 'Commercial',        icon: '💼', description: 'Sponsorship & events'  },
+  { id: 'head_pro',   label: 'Head Professional', icon: '🎯', description: 'Coaching & lessons'    },
+  { id: 'secretary',  label: 'Club Secretary',    icon: '📋', description: 'Admin & compliance'    },
+]
+
+// ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function GolfTourPage() {
+  return (
+    <SportsDemoGate
+      sport="golf"
+      defaultClubName="Lumio Golf Club"
+      accentColor="#15803D"
+      accentColorLight="#16a34a"
+      sportEmoji="⛳"
+      sportLabel="Lumio Golf"
+      roles={GOLF_ROLES}
+    >
+      {(session) => <GolfPortalInner session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const activeRole = session.role;
   const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   const player = DEMO_PLAYER;
@@ -3368,6 +3398,21 @@ export default function GolfTourPage() {
             );
           })}
         </nav>
+        <RoleSwitcher
+          session={session}
+          roles={GOLF_ROLES}
+          accentColor="#15803D"
+          onRoleChange={(role) => {
+            const key = 'lumio_golf_demo_session'
+            const stored = localStorage.getItem(key)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+            }
+          }}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>

@@ -2,6 +2,8 @@
 
 import { use, useState, useEffect } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList } from 'lucide-react';
+import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface DartsPlayer {
@@ -5631,11 +5633,39 @@ function CountyDartsView({ player: _player }: { player: DartsPlayer }) {
   );
 }
 
+// ─── DARTS ROLES ──────────────────────────────────────────────────────────────
+const DARTS_ROLES = [
+  { id: 'chairman',   label: 'Organisation Chair', icon: '🏛️', description: 'Board & strategy'   },
+  { id: 'manager',    label: 'Tour Manager',        icon: '🎯', description: 'Full tour view'      },
+  { id: 'director',   label: 'Player Director',     icon: '⭐', description: 'Player management'   },
+  { id: 'commercial', label: 'Commercial',          icon: '💼', description: 'Sponsors & events'   },
+  { id: 'secretary',  label: 'Secretary',           icon: '📋', description: 'Admin & compliance'  },
+]
+
+// ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function DartsPortalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
+  return (
+    <SportsDemoGate
+      sport="darts"
+      defaultClubName="Lumio Darts Tour"
+      defaultSlug={slug}
+      accentColor="#dc2626"
+      accentColorLight="#ef4444"
+      sportEmoji="🎯"
+      sportLabel="Lumio Darts"
+      roles={DARTS_ROLES}
+    >
+      {(session) => <DartsPortalInner slug={slug} session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [livePlayer, setLivePlayer] = useState<DartsPlayer | null>(null);
+  const activeRole = session.role;
 
   useEffect(() => {
     let cancelled = false;
@@ -5783,6 +5813,21 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
             );
           })}
         </nav>
+
+        <RoleSwitcher
+          session={session}
+          roles={DARTS_ROLES}
+          accentColor="#dc2626"
+          onRoleChange={(role) => {
+            const key = 'lumio_darts_demo_session'
+            const stored = localStorage.getItem(key)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+            }
+          }}
+          sidebarCollapsed={sidebarCollapsed}
+        />
 
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-gray-800">

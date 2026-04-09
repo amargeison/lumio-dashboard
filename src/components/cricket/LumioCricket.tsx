@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line, ReferenceLine, Cell } from "recharts";
+import { RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
+
+export const CRICKET_ROLES = [
+  { id: 'chairman',   label: 'Club Chairman',   icon: '🏛️', description: 'Board & strategy'    },
+  { id: 'manager',    label: 'Club Manager',     icon: '🏏', description: 'Full club view'       },
+  { id: 'captain',    label: 'Club Captain',     icon: '🏆', description: 'Squad & fixtures'     },
+  { id: 'head_coach', label: 'Head Coach',       icon: '🎯', description: 'Coaching & analytics' },
+  { id: 'commercial', label: 'Commercial',       icon: '💼', description: 'Sponsors & events'    },
+  { id: 'secretary',  label: 'Club Secretary',   icon: '📋', description: 'Admin & compliance'   },
+]
 
 const C = {
   bg:'#07080F',sidebar:'#0B0D1B',card:'#0F1629',cardAlt:'#111827',
@@ -335,7 +346,7 @@ const SIGNING_PIPELINE = [
   { id:7, name:'Lee Clifford',   role:'Seam Bowler',    age:22, county:'—',              col:'Failed',      value:'£55k/yr',        agent:'—',              notes:'Released by Durham — signed Nottinghamshire instead.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
 ];
 
-export default function LumioCricket(){
+export default function LumioCricket({ session }: { session?: SportsDemoSession } = {}){
   const[page,setPage]=useState('dashboard');
   const[battingFmt,setBattingFmt]=useState('All');
   const[bowlingFmt,setBowlingFmt]=useState('All');
@@ -3982,6 +3993,22 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
             </div>
           ))}
         </nav>
+        {session && (
+          <RoleSwitcher
+            session={session}
+            roles={CRICKET_ROLES}
+            accentColor="#b45309"
+            onRoleChange={(role) => {
+              const key = 'lumio_cricket_demo_session'
+              const stored = localStorage.getItem(key)
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+              }
+            }}
+            sidebarCollapsed={false}
+          />
+        )}
         <button
           type="button"
           onClick={() => setPage('gps')}

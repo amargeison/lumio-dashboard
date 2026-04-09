@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
 
 // ─── TENNIS API ──────────────────────────────────────────────────────────────
 const TENNIS_API_KEY = process.env.NEXT_PUBLIC_TENNIS_API_KEY ?? '';
@@ -5998,7 +6000,34 @@ function PrizeForecasterView({ player: _player }: { player: TennisPlayer }) {
 }
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+// ─── TENNIS ROLES ─────────────────────────────────────────────────────────────
+const TENNIS_ROLES = [
+  { id: 'chairman',   label: 'Club Chairman',  icon: '🏛️', description: 'Board & strategy'    },
+  { id: 'manager',    label: 'Club Manager',    icon: '🎾', description: 'Full club view'       },
+  { id: 'captain',    label: 'Club Captain',    icon: '🏆', description: 'Teams & competitions' },
+  { id: 'head_coach', label: 'Head Coach',      icon: '🎯', description: 'Coaching & players'   },
+  { id: 'commercial', label: 'Commercial',      icon: '💼', description: 'Sponsors & events'    },
+  { id: 'secretary',  label: 'Club Secretary',  icon: '📋', description: 'Admin & compliance'   },
+]
+
+// ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function TennisTourPage() {
+  return (
+    <SportsDemoGate
+      sport="tennis"
+      defaultClubName="Lumio Tennis Club"
+      accentColor="#0ea5e9"
+      accentColorLight="#38bdf8"
+      sportEmoji="🎾"
+      sportLabel="Lumio Tennis"
+      roles={TENNIS_ROLES}
+    >
+      {(session) => <TennisPortalInner session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const player = DEMO_PLAYER;
@@ -6006,6 +6035,7 @@ export default function TennisTourPage() {
   const [h2hData, setH2hData] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [sponsorToast, setSponsorToast] = useState<string>('');
+  const activeRole = session.role;
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -6501,6 +6531,21 @@ function DataHubView() {
             );
           })}
         </nav>
+
+        <RoleSwitcher
+          session={session}
+          roles={TENNIS_ROLES}
+          accentColor="#0ea5e9"
+          onRoleChange={(role) => {
+            const key = 'lumio_tennis_demo_session'
+            const stored = localStorage.getItem(key)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+            }
+          }}
+          sidebarCollapsed={sidebarCollapsed}
+        />
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
