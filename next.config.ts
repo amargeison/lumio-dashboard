@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     // Football portal redirects — old URLs → new separate portals
     { source: '/demo/football/:slug', destination: '/football/pro/:slug', permanent: true },
     { source: '/demo/football-amateur/:slug', destination: '/football/grassroots/:slug', permanent: true },
+    // Non-league and grassroots → new lumiosports.com route groups
+    { source: '/football/nonleague/:slug', destination: '/nonleague/:slug', permanent: true },
+    { source: '/football/grassroots/:slug', destination: '/grassroots/:slug', permanent: true },
   ],
   headers: async () => [
     {

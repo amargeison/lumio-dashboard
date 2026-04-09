@@ -3229,6 +3229,7 @@ function AgentPipelineView() {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 // ─── GOLF ROLES ───────────────────────────────────────────────────────────────
 const GOLF_ROLES = [
+  { id: 'player',     label: 'Player',            icon: '⛳', description: 'My performance & stats' },
   { id: 'chairman',   label: 'Club Chairman',    icon: '🏛️', description: 'Board & strategy'     },
   { id: 'manager',    label: 'Club Manager',      icon: '⛳', description: 'Full club view'        },
   { id: 'captain',    label: 'Club Captain',      icon: '🏆', description: 'Competitions & teams'  },

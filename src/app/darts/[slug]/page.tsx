@@ -5635,6 +5635,7 @@ function CountyDartsView({ player: _player }: { player: DartsPlayer }) {
 
 // ─── DARTS ROLES ──────────────────────────────────────────────────────────────
 const DARTS_ROLES = [
+  { id: 'player',     label: 'Player',              icon: '🎯', description: 'My stats & tour career' },
   { id: 'chairman',   label: 'Organisation Chair', icon: '🏛️', description: 'Board & strategy'   },
   { id: 'manager',    label: 'Tour Manager',        icon: '🎯', description: 'Full tour view'      },
   { id: 'director',   label: 'Player Director',     icon: '⭐', description: 'Player management'   },

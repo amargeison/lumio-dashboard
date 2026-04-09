@@ -65,7 +65,7 @@ export default function NonLeaguePage() {
             The operating platform for semi-professional football clubs.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/football/nonleague/harfield-fc" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#475569', color: '#fff', textDecoration: 'none' }}>
+            <Link href="/nonleague/harfield-fc" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#475569', color: '#fff', textDecoration: 'none' }}>
               See the demo <ArrowRight size={14} />
             </Link>
             <Link href="/contact" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #1F2937', textDecoration: 'none' }}>
@@ -168,7 +168,7 @@ export default function NonLeaguePage() {
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
-              href="/football/nonleague/harfield-fc"
+              href="/nonleague/harfield-fc"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold"
               style={{ backgroundColor: '#F9FAFB', color: '#07080F' }}
             >
