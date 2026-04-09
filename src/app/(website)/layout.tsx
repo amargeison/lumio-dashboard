@@ -9,16 +9,16 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',    href: '/product' },
+  { label: 'Product',    href: '/sports-product' },
   { label: 'Football',   href: '/football' },
-  { label: 'Womens FC',  href: '/womens' },
+  { label: 'Womens FC',  href: '/womens-football' },
   { label: 'Rugby',      href: '/rugby' },
   { label: 'Cricket',    href: '/cricket' },
   { label: 'Tennis',     href: '/tennis' },
   { label: 'Golf',       href: '/golf' },
   { label: 'Boxing',     href: '/boxing' },
   { label: 'Darts',      href: '/darts' },
-  { label: 'Pricing',    href: '/pricing' },
+  { label: 'Pricing',    href: '/pricing-sports' },
   { label: 'About',      href: '/about' },
   { label: 'Blog',       href: '/blog' },
 ]

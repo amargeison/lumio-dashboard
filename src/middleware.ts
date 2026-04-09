@@ -8,6 +8,8 @@ const RESERVED_SLUGS = new Set([
   'workflows', 'strategy', 'trials', 'partners', 'buy', 'book-demo',
   'hr', 'accounts', 'sales', 'crm', 'marketing', 'operations', 'it',
   'insights', 'school-office', 'offline', 'admin', 'blog', 'football',
+  'womens', 'rugby', 'cricket', 'tennis', 'golf', 'boxing', 'darts',
+  'nonleague', 'grassroots',
 ])
 
 const DASHBOARD_ROUTES = new Set([
