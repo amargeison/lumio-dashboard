@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { DARTS_ROLES } from '../components/sportRoles'
 
 const RED = '#C41E3A'
 const RED_LIGHT = '#EF4455'
@@ -451,6 +453,8 @@ export default function DartsLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="darts" demoHref="/darts/demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={DARTS_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight

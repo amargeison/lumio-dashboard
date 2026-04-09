@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { GOLF_ROLES } from '../components/sportRoles'
 
 const ACCENT = '#2DD4BF' // teal-400
 const ACCENT_DEEP = '#0D9488' // teal-600
@@ -313,6 +315,8 @@ export default function GolfPage() {
           ))}
         </div>
       </section>
+
+      <SportRoleTabs sport="golf" demoHref="/golf/golf-demo" accentColor="#0D9488" accentColorDim="rgba(13,148,136,0.15)" roles={GOLF_ROLES} />
 
       {/* Spotlights */}
       <Spotlight

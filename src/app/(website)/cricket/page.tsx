@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { CRICKET_ROLES } from '../components/sportRoles'
 
 const PURPLE = '#8B5CF6'
 const PURPLE_LIGHT = '#A78BFA'
@@ -320,6 +322,8 @@ export default function CricketLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="cricket" demoHref="/cricket/demo" accentColor="#8B5CF6" accentColorDim="rgba(139,92,246,0.15)" roles={CRICKET_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight

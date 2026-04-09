@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { WOMENS_ROLES } from '../components/sportRoles'
 
 const PINK = '#EC4899'
 const PURPLE = '#A855F7'
@@ -496,6 +498,8 @@ export default function WomensLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="womens football" demoHref="/womens/demo" accentColor="#EC4899" accentColorDim="rgba(236,72,153,0.15)" roles={WOMENS_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
