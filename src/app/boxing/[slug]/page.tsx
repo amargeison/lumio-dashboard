@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface BoxingFighter {
@@ -43,6 +45,14 @@ interface BoxingFighter {
   };
   plan: 'pro' | 'pro_plus' | 'elite';
 }
+
+// ─── BOXING ROLES ─────────────────────────────────────────────────────────────
+const BOXING_ROLES = [
+  { id: 'fighter',  label: 'Fighter',          icon: '🥊', description: 'My camp & performance'  },
+  { id: 'trainer',  label: 'Trainer / Coach',   icon: '🎽', description: 'Training & preparation' },
+  { id: 'manager',  label: 'Manager',           icon: '💼', description: 'Fights & contracts'     },
+  { id: 'promoter', label: 'Promoter',          icon: '🏟️', description: 'Events & purse bids'   },
+]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
@@ -4300,6 +4310,22 @@ function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function BoxingPortalPage() {
+  return (
+    <SportsDemoGate
+      sport="boxing"
+      defaultClubName="Marcus Cole Boxing"
+      accentColor="#dc2626"
+      accentColorLight="#ef4444"
+      sportEmoji="🥊"
+      sportLabel="Lumio Boxing"
+      roles={BOXING_ROLES}
+    >
+      {(session) => <BoxingPortalInner session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
@@ -4398,12 +4424,16 @@ export default function BoxingPortalPage() {
         {!sidebarCollapsed && (
           <div className="p-3 border-b border-gray-800">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-red-500/40"
-                style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(234,88,12,0.3))' }}>
-                {fighter.flag}
-              </div>
+              {session.logoDataUrl ? (
+                <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-red-500/40" />
+              ) : (
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-red-500/40"
+                  style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(234,88,12,0.3))' }}>
+                  {fighter.flag}
+                </div>
+              )}
               <div>
-                <div className="text-xs font-semibold text-white">{fighter.name}</div>
+                <div className="text-xs font-semibold text-white">{session.clubName || fighter.name}</div>
                 <div className="text-[10px] text-gray-500">{fighter.record.wins}-{fighter.record.losses} ({fighter.record.ko} KO) . {fighter.nationality}</div>
               </div>
             </div>
@@ -4439,6 +4469,15 @@ export default function BoxingPortalPage() {
           })}
         </nav>
 
+        {/* Role Switcher */}
+        <RoleSwitcher
+          session={session}
+          roles={BOXING_ROLES}
+          accentColor="#dc2626"
+          onRoleChange={() => {}}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-gray-800">
@@ -4462,6 +4501,10 @@ export default function BoxingPortalPage() {
             <div className="text-xs text-gray-600">Camp Day {fighter.camp_day}/{fighter.camp_total} . {fighter.next_fight.days_away}d to fight</div>
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
             <div className="text-xs text-gray-500">vs {fighter.next_fight.opponent}</div>
+            {session.photoDataUrl && (
+              <img src={session.photoDataUrl} alt="" className="w-6 h-6 rounded-full object-cover border border-red-500/40" />
+            )}
+            <span className="text-[10px] text-gray-600">Demo</span>
           </div>
         </div>
 

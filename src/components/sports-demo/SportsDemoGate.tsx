@@ -16,7 +16,7 @@ export interface SportsDemoSession {
 
 export type SportKey =
   | 'rugby' | 'football' | 'womens' | 'nonleague' | 'grassroots'
-  | 'golf' | 'tennis' | 'darts' | 'cricket'
+  | 'golf' | 'tennis' | 'darts' | 'cricket' | 'boxing'
 
 interface SportsDemoGateProps {
   sport: string

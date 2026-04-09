@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
   const { business_id } = session
   const cookieStore = await cookies()
-  const devPinActive = cookieStore.get('lumio_dev_access')?.value === '0717'
+  const devPinActive = cookieStore.get('lumio_dev_access')?.value === process.env.DEV_ACCESS_PIN
 
   const { data: business } = await supabase
     .from('businesses')
