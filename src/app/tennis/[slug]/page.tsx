@@ -793,219 +793,527 @@ function DashboardView({ player, session }: { player: TennisPlayer; session: Spo
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  const ROUNDUP_CHANNELS = [
-    { label: 'Agent Messages',      icon: '📞', count: 2, color: '#8B5CF6', urgent: false },
-    { label: 'Tournament Desk',     icon: '🏆', count: 3, color: '#0ea5e9', urgent: true  },
-    { label: 'Media & Sponsor',     icon: '📱', count: 4, color: '#F59E0B', urgent: false },
-    { label: 'Physio & Medical',    icon: '⚕️', count: 1, color: '#EF4444', urgent: true  },
-    { label: 'Coach Messages',      icon: '🎾', count: 2, color: '#10B981', urgent: false },
-    { label: 'Prize Money',         icon: '💰', count: 1, color: '#D97706', urgent: false },
-    { label: 'Travel & Logistics',  icon: '✈️', count: 3, color: '#6B7280', urgent: false },
-    { label: 'Wildcard & Entries',  icon: '📋', count: 2, color: '#EC4899', urgent: false },
+  const ROUNDUP_ITEMS = [
+    { id:'agent',      label:'Agent Messages',    icon:'📞', count:2, urgent:false, color:'#8B5CF6' },
+    { id:'tournament', label:'Tournament Desk',   icon:'🏆', count:3, urgent:true,  color:'#0ea5e9' },
+    { id:'sponsor',    label:'Media & Sponsor',   icon:'📱', count:4, urgent:false, color:'#F59E0B' },
+    { id:'physio',     label:'Physio & Medical',  icon:'⚕️', count:1, urgent:true,  color:'#EF4444' },
+    { id:'coach',      label:'Coach Messages',    icon:'🎾', count:2, urgent:false, color:'#10B981' },
+    { id:'prize',      label:'Prize Money',       icon:'💰', count:1, urgent:false, color:'#D97706' },
+    { id:'travel',     label:'Travel & Logistics',icon:'✈️', count:3, urgent:false, color:'#6B7280' },
+    { id:'wildcard',   label:'Wildcard & Entries',icon:'📋', count:2, urgent:false, color:'#EC4899' },
+  ]
+
+  const STAT_BOXES = [
+    { label:'ATP Rank',    value:`#${player.ranking ?? 67}`,                       icon:'📊', color:'#8B5CF6' },
+    { label:'Race',        value:`#${player.race_ranking ?? 54}`,                  icon:'✅', color:'#22C55E' },
+    { label:'Points',      value:(player.ranking_points ?? 1847).toLocaleString(), icon:'🔴', color:'#EF4444' },
+    { label:'Career High', value:`#${player.career_high ?? 44}`,                   icon:'📧', color:'#0ea5e9' },
+  ]
+
+  const CLOCKS = [
+    { city:'London',    tz:'Europe/London',       isUser:true  },
+    { city:'New York',  tz:'America/New_York',    isUser:false },
+    { city:'Melbourne', tz:'Australia/Melbourne', isUser:false },
+    { city:'Dubai',     tz:'Asia/Dubai',          isUser:false },
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
 
-      {/* Greeting + KPI strip */}
-      <div className="bg-gradient-to-r from-[#0ea5e9]/20 to-[#0d1117] border border-[#0ea5e9]/20 rounded-2xl p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              {greeting}, {firstName}. 👋
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs text-gray-600 italic mt-2">
-              {'"Champions keep playing until they get it right." — Billie Jean King'}
-            </p>
+      {/* ── PERSONAL BANNER ── */}
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
+        style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(14,165,233,0.2)' }}>
+
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl overflow-hidden border-2 flex items-center justify-center"
+                style={{ borderColor: 'rgba(14,165,233,0.4)', background: 'rgba(14,165,233,0.1)' }}>
+                {session.logoDataUrl
+                  ? <img src={session.logoDataUrl} alt="" className="w-full h-full object-cover" />
+                  : <span className="text-2xl">🎾</span>}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-white">
+                  {greeting}, {firstName} 👋
+                </h1>
+                <button
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all text-sm"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  title="Read briefing aloud">
+                  🔊
+                </button>
+              </div>
+              <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
+                {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+              </p>
+              <p className="text-xs italic" style={{ color: '#F1C40F' }}>
+                &ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King
+              </p>
+            </div>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-xs text-right">
-            {[
-              { city:'London',    tz:'Europe/London'         },
-              { city:'New York',  tz:'America/New_York'      },
-              { city:'Melbourne', tz:'Australia/Melbourne'   },
-              { city:'Dubai',     tz:'Asia/Dubai'            },
-            ].map(({ city, tz }) => {
-              const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })
-              return (
-                <div key={city}>
-                  <div className="text-white font-bold">{time}</div>
-                  <div className="text-gray-500">{city}</div>
-                </div>
-              )
-            })}
+
+          <div className="hidden md:flex items-center gap-3 ml-4">
+            {STAT_BOXES.map((s, i) => (
+              <div key={i}
+                className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
+                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
+                <div className="text-xl mb-0.5">{s.icon}</div>
+                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
+              </div>
+            ))}
+
+            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="text-xl">🌤️</div>
+              <div className="text-sm font-bold text-white">10°C</div>
+              <div className="text-[9px]" style={{ color: '#6B7280' }}>Monaco</div>
+            </div>
+
+            <div className="flex flex-col gap-0.5 ml-1 text-right">
+              {CLOCKS.map(({ city, tz, isUser }) => {
+                const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
+                return (
+                  <div key={city} className="flex items-center gap-2 justify-end">
+                    <span className="text-xs font-bold" style={{ color: isUser ? '#F1C40F' : '#FFFFFF' }}>{time}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#F1C40F' : '#6B7280' }}>{city}</span>
+                  </div>
+                )
+              })}
+              <div className="text-[9px] mt-0.5 cursor-pointer hover:text-gray-400 text-right" style={{ color: '#4B5563' }}>World Clock</div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{player.ranking}</div>
-            <div className="text-xs text-gray-400 mt-0.5">ATP Ranking</div>
-            <div className="text-[10px] text-green-400 mt-1">↑2 this week</div>
+        {/* TODAY'S MATCH STRIP */}
+        <div className="mt-4 flex items-center justify-between rounded-xl px-4 py-2.5"
+          style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(14,165,233,0.2)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#0ea5e9' }}>
+              <span className="text-[10px] text-white ml-0.5">▶</span>
+            </div>
+            <div>
+              <div className="text-[10px]" style={{ color: '#9CA3AF' }}>Today&apos;s match</div>
+              <div className="text-xs font-semibold text-white">vs Martinez, 13:00, Court 4</div>
+            </div>
           </div>
-          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{player.race_ranking}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Race Standing</div>
-            <div className="text-[10px] text-gray-500 mt-1">Race to Turin</div>
+          <div className="hidden sm:flex items-center gap-6 text-xs">
+            {CLOCKS.map(({ city, tz }) => (
+              <div key={city} className="text-center">
+                <div className="font-bold text-white">{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</div>
+                <div className="text-[10px]" style={{ color: '#6B7280' }}>{city}</div>
+              </div>
+            ))}
           </div>
-          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">{player.ranking_points?.toLocaleString()}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Ranking Points</div>
-            <div className="text-[10px] text-gray-500 mt-1">Rolling 52 weeks</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{player.career_high}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Career High</div>
-            <div className="text-[10px] text-gray-500 mt-1">{player.career_high_date}</div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs font-bold text-white">{session.userName || player.name || 'Alex Rivera'}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.2)', color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</span>
           </div>
         </div>
       </div>
 
-      {/* Dashboard tabs */}
-      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">{([{id:'today' as const,label:'Today',icon:'🏠'},{id:'quickwins' as const,label:'Quick Wins',icon:'⚡'},{id:'dailytasks' as const,label:'Daily Tasks',icon:'✅'},{id:'insights' as const,label:'Insights',icon:'📊'},{id:'dontmiss' as const,label:"Don't Miss",icon:'🔴'},{id:'team' as const,label:'Team',icon:'👥'}]).map(t=><button key={t.id} onClick={()=>setDashTab(t.id)} className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab===t.id?'border-[#0ea5e9] text-white':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>
+      {/* ── TAB BAR ── */}
+      <div className="flex gap-0 border-b overflow-x-auto mb-0" style={{ borderColor: '#1F2937' }}>
+        {([
+          { id:'today' as const,      label:'Today',       icon:'🏠' },
+          { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
+          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
+          { id:'insights' as const,   label:'Insights',    icon:'📊' },
+          { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
+          { id:'team' as const,       label:'Team',        icon:'👥' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{
+              borderColor: dashTab === t.id ? '#0ea5e9' : 'transparent',
+              color: dashTab === t.id ? '#F1C40F' : '#6B7280',
+            }}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Quick Actions — always visible */}
-      <div className="overflow-x-auto pb-2 -mx-1"><div className="flex gap-2 px-1 min-w-max">{[{label:'Book Flight',icon:'✈️'},{label:'Log Practice',icon:'🎾'},{label:'Book Stringing',icon:'🔧'},{label:'Log Injury',icon:'⚕️'},{label:'View Draw',icon:'🏆'},{label:'Match Notes',icon:'📝'},{label:'Wildcard Request',icon:'🎯'},{label:'Sponsor Post',icon:'📱'},{label:'Press Statement',icon:'📣'},{label:'Add Expense',icon:'💰'},{label:'Flight Search',icon:'🔍'},{label:'Video Upload',icon:'🎬'}].map((a,i)=><button key={i} className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-[#0ea5e9]/50 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap"><span>{a.icon}</span>{a.label}</button>)}</div></div>
-
-      {/* TODAY tab */}
-      {dashTab==='today'&&<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* LEFT: Morning Roundup */}
-        <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span>🌅</span>
-              <span className="text-sm font-bold text-white">Morning Roundup</span>
-            </div>
-            <span className="text-[10px] text-gray-600">Since you were last here</span>
-          </div>
-          <div className="space-y-2">
-            {ROUNDUP_CHANNELS.map((ch, i) => (
-              <div key={i}
-                className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">{ch.icon}</span>
-                  <span className="text-sm text-gray-300">{ch.label}</span>
-                  {ch.urgent && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
-                  <span className="text-gray-700 text-xs">▾</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* MIDDLE: Today's match + schedule */}
-        <div className="space-y-4">
-          <div className="bg-[#0d1117] border border-[#0ea5e9]/30 rounded-2xl p-5">
-            <div className="text-[10px] text-[#0ea5e9] font-bold uppercase tracking-wider mb-3">
-              TODAY&apos;S MATCH &mdash; MONTE-CARLO MASTERS
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/20 border border-[#0ea5e9]/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">
-                  {session.photoDataUrl
-                    ? <img src={session.photoDataUrl} alt="" className="w-full h-full rounded-full object-cover" />
-                    : firstName.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
-                <div className="text-[10px] text-[#0ea5e9]">#{player.ranking} ATP</div>
-              </div>
-              <div className="text-center px-4">
-                <div className="text-2xl font-black text-gray-600">VS</div>
-                <div className="text-[10px] text-gray-500 mt-1">13:00 · Court 4</div>
-                <div className="text-[10px] text-[#0ea5e9] mt-0.5">Clay · H2H: 3–1</div>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">CM</div>
-                <div className="text-xs font-bold text-white">C. Martinez</div>
-                <div className="text-[10px] text-gray-500">#34 ATP</div>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-amber-400">
-              Clay serve avg: 61% (4% below season avg) — focus on kick serve to backhand
-            </div>
-          </div>
-
-          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-            <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
-            <div className="space-y-2">
+      {/* ── TODAY TAB ── */}
+      {dashTab === 'today' && (
+        <div className="pt-4 space-y-6">
+          {/* Quick Actions Bar */}
+          <div className="overflow-x-auto pb-2 -mx-1">
+            <div className="flex gap-2 px-1 min-w-max">
               {[
-                { time:'07:30', label:'AI Morning Briefing',          done:true  },
-                { time:'08:30', label:'Physio treatment — shoulder',  done:true  },
-                { time:'10:00', label:'Practice — serve patterns',    done:false },
-                { time:'11:45', label:'Stringing with Carlos',        done:false },
-                { time:'13:00', label:'Match vs C. Martinez',         done:false, highlight:true },
-                { time:'15:30', label:'Post-match physio',            done:false },
-                { time:'17:00', label:'Coach debrief',                done:false },
-              ].map((s, i) => (
-                <div key={i} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${s.highlight ? 'text-[#0ea5e9]' : ''}`}>
-                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                    s.done ? 'bg-green-500/20 border-green-500' : s.highlight ? 'border-[#0ea5e9] bg-[#0ea5e9]/10' : 'border-gray-700'
-                  }`}>
-                    {s.done && <span className="text-[8px] text-green-400">✓</span>}
-                  </div>
-                  <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                  <span className={`text-xs ${s.done ? 'line-through text-gray-600' : s.highlight ? 'text-[#0ea5e9] font-semibold' : 'text-gray-300'}`}>
-                    {s.label}
-                  </span>
-                </div>
+                { label:'Book Flight',       icon:'✈️' },
+                { label:'Log Practice',      icon:'🎾' },
+                { label:'Book Stringing',    icon:'🔧' },
+                { label:'Log Injury',        icon:'⚕️' },
+                { label:'View Draw',         icon:'🏆' },
+                { label:'Match Notes',       icon:'📝' },
+                { label:'Wildcard Request',  icon:'🎯' },
+                { label:'Sponsor Post',      icon:'📱' },
+                { label:'Press Statement',   icon:'📣' },
+                { label:'Add Expense',       icon:'💰' },
+                { label:'Flight Search',     icon:'🔍' },
+                { label:'Video Upload',      icon:'🎬' },
+              ].map((a, i) => (
+                <button key={i}
+                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs transition-all whitespace-nowrap"
+                  style={{ background: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(14,165,233,0.4)'; e.currentTarget.style.color = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
+                  <span>{a.icon}</span>{a.label}
+                </button>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* RIGHT: Photo frame + AI Morning Summary */}
-        <div className="space-y-4">
-          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-white">📸 Photo Frame</span>
-              <div className="flex items-center gap-2">
-                <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
-                <button className="text-[10px] text-[#0ea5e9] hover:text-[#38bdf8]">+ Add</button>
+          {/* 3-column grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            {/* LEFT: Morning Roundup */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>🌅</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p>
+                </div>
+                <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+              </div>
+              <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+                {ROUNDUP_ITEMS.map((ch) => (
+                  <div key={ch.id} className="flex items-center justify-between px-5 py-3 cursor-pointer transition-all hover:bg-white/[0.02]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base">{ch.icon}</span>
+                      <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                      {ch.urgent && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                      <span style={{ color: '#374151' }}>▾</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="rounded-xl overflow-hidden bg-gradient-to-br from-[#0ea5e9]/20 to-gray-900 h-40 flex items-center justify-center">
-              {session.photoDataUrl
-                ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
-                : <div className="text-center">
-                    <div className="text-4xl mb-2">🎾</div>
-                    <div className="text-xs text-gray-600">Add your photo in settings</div>
-                  </div>}
+
+            {/* MIDDLE: Today's match + schedule */}
+            <div className="space-y-3">
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.3)' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0ea5e9' }}>TODAY&apos;S MATCH &mdash; ATP MONTE-CARLO MASTERS</span>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-center">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
+                        style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
+                        {session.photoDataUrl
+                          ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                          : firstName.slice(0,2).toUpperCase()}
+                      </div>
+                      <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
+                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
+                    </div>
+                    <div className="text-center px-3">
+                      <div className="text-xl font-black" style={{ color: '#374151' }}>VS</div>
+                      <div className="text-[10px] mt-1" style={{ color: '#6B7280' }}>13:00 · Court 4</div>
+                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Clay · H2H: 3–1</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-1" style={{ background: '#1F2937', color: '#9CA3AF' }}>CM</div>
+                      <div className="text-xs font-bold text-white">C. Martinez</div>
+                      <div className="text-[10px]" style={{ color: '#6B7280' }}>#34 ATP</div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg px-3 py-2 text-[10px]" style={{ background: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>
+                    Clay serve avg: 61% (4% below season avg) — focus on kick serve to backhand
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Schedule</p>
+                </div>
+                <div className="px-5 py-3 space-y-2">
+                  {[
+                    { time:'07:30', label:'AI Morning Briefing',        done:true,  highlight:false },
+                    { time:'08:30', label:'Physio — right shoulder',    done:true,  highlight:false },
+                    { time:'10:00', label:'Practice — serve patterns',  done:false, highlight:false },
+                    { time:'11:45', label:'Stringing with Carlos',      done:false, highlight:false },
+                    { time:'13:00', label:'Match vs C. Martinez',       done:false, highlight:true  },
+                    { time:'15:30', label:'Post-match physio',          done:false, highlight:false },
+                    { time:'17:00', label:'Coach debrief',              done:false, highlight:false },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 py-1">
+                      <div className="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                        style={{
+                          borderColor: s.done ? '#22C55E' : s.highlight ? '#0ea5e9' : '#374151',
+                          background: s.done ? 'rgba(34,197,94,0.15)' : s.highlight ? 'rgba(14,165,233,0.1)' : 'transparent',
+                        }}>
+                        {s.done && <span className="text-[8px]" style={{ color: '#22C55E' }}>✓</span>}
+                      </div>
+                      <span className="text-[10px] w-9 flex-shrink-0" style={{ color: '#6B7280' }}>{s.time}</span>
+                      <span className="text-xs"
+                        style={{
+                          color: s.done ? '#4B5563' : s.highlight ? '#0ea5e9' : '#D1D5DB',
+                          textDecoration: s.done ? 'line-through' : 'none',
+                          fontWeight: s.highlight ? 600 : 400,
+                        }}>
+                        {s.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              {['3s','5s','10s','30s'].map(s => (
-                <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-[#0ea5e9]/20 text-[#0ea5e9]':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
-              ))}
+
+            {/* RIGHT: Photo frame + AI Morning Summary + AI Key Highlights */}
+            <div className="space-y-3">
+              {/* Photo frame */}
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <div className="flex items-center gap-2">
+                    <span>📸</span>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Photo Frame</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button className="text-[10px]" style={{ color: '#6B7280' }}>⏸ Pause</button>
+                    <button className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>
+                    <button className="text-[10px] font-semibold" style={{ color: '#0ea5e9' }}>+ Add</button>
+                  </div>
+                </div>
+                <div className="relative h-36 flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.08), rgba(0,0,0,0.4))' }}>
+                  <div className="text-center">
+                    <div className="text-3xl mb-1">🎾</div>
+                    <div className="text-[10px]" style={{ color: '#4B5563' }}>Add your photos above</div>
+                  </div>
+                </div>
+                <div className="px-4 py-2 flex items-center gap-2">
+                  {['3s','5s','10s','30s'].map(s => (
+                    <button key={s} className="text-[10px] px-2 py-0.5 rounded transition-all"
+                      style={{ background: s === '5s' ? 'rgba(14,165,233,0.2)' : 'transparent', color: s === '5s' ? '#0ea5e9' : '#6B7280' }}>{s}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Morning Summary */}
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} style={{ color: '#8B5CF6' }} />
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>
+                      {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                    </span>
+                    <ChevronUp size={14} style={{ color: '#6B7280' }} />
+                  </div>
+                </div>
+                <div className="px-5 py-4 space-y-2.5">
+                  {[
+                    'Match vs C. Martinez today — H2H 3–1 in your favour. Focus kick serve.',
+                    '312 ranking points drop off after Monte-Carlo — win tonight critical.',
+                    'Rolex renewal due in 47 days — agent follow-up scheduled.',
+                    'Roland-Garros direct acceptance confirmed — entry deadline 3 May.',
+                    'Coach debrief added — Carlos requests 17:00 session post-match.',
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-3 text-xs" style={{ color: '#9CA3AF' }}>
+                      <span className="font-bold flex-shrink-0 w-4" style={{ color: '#0ea5e9' }}>{i+1}</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Key Highlights */}
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <div className="flex items-center gap-2">
+                    <span>⚡</span>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</p>
+                  </div>
+                  <span className="text-[10px] font-medium cursor-pointer hover:underline" style={{ color: '#0ea5e9' }}>Today</span>
+                </div>
+                <div className="px-5 py-4 space-y-2.5">
+                  {[
+                    'Match vs Martinez today — H2H 3–1 in your favour',
+                    'Rolex renewal due in 47 days — agent follow-up needed',
+                    '312 pts drop off after Monte-Carlo — win tonight critical',
+                    'Roland-Garros direct acceptance confirmed',
+                    'New coach debrief requested for 17:00',
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-3 text-xs" style={{ color: '#9CA3AF' }}>
+                      <span className="font-bold flex-shrink-0 w-4" style={{ color: '#F1C40F' }}>{i+1}</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* AI Morning Summary removed — handled by TennisAISection below */}
         </div>
-      </div>}
+      )}
 
-      {/* QUICK WINS tab */}
-      {dashTab==='quickwins'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Your highest-impact actions right now.</p>{[{p:1,a:'Book Madrid flights — prices rising, depart 26 Apr',i:'High',c:'Travel',ic:'✈️'},{p:2,a:'Reply to Rolex renewal inquiry — deadline 47 days',i:'High',c:'Commercial',ic:'🤝'},{p:3,a:'Submit Roland-Garros hotel preference to agent',i:'High',c:'Logistics',ic:'🏨'},{p:4,a:'Review Martinez serve patterns before 13:00 match',i:'High',c:'Match Prep',ic:'🎾'},{p:5,a:'Post Lululemon sponsor content — due this week',i:'Med',c:'Commercial',ic:'📱'},{p:6,a:'Confirm Hamburg vs Eastbourne clash with agent',i:'Med',c:'Entries',ic:'📋'},{p:7,a:'Book physio for post-match recovery session',i:'Med',c:'Wellness',ic:'⚕️'}].map((w,idx)=><div key={idx} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all"><div className="w-7 h-7 rounded-full bg-[#0ea5e9]/15 flex items-center justify-center text-[#0ea5e9] font-black text-xs flex-shrink-0">{w.p}</div><span className="text-lg flex-shrink-0">{w.ic}</span><div className="flex-1"><p className="text-sm text-gray-200">{w.a}</p><span className="text-[10px] text-gray-500">{w.c}</span></div><span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${w.i==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.i}</span></div>)}</div>}
+      {/* QUICK WINS TAB */}
+      {dashTab === 'quickwins' && (
+        <div className="pt-4 space-y-3">
+          {[
+            { p:1, action:'Book Madrid flights — prices rising, depart 26 Apr',     impact:'High', cat:'Travel',      icon:'✈️' },
+            { p:2, action:'Reply to Rolex renewal inquiry — deadline 47 days',      impact:'High', cat:'Commercial',  icon:'🤝' },
+            { p:3, action:'Submit Roland-Garros hotel preference to agent',         impact:'High', cat:'Logistics',   icon:'🏨' },
+            { p:4, action:'Review Martinez serve patterns before 13:00 match',     impact:'High', cat:'Match Prep',  icon:'🎾' },
+            { p:5, action:'Post Lululemon sponsor content — due this week',        impact:'Med',  cat:'Commercial',  icon:'📱' },
+            { p:6, action:'Confirm Hamburg 500 vs Eastbourne clash with agent',    impact:'Med',  cat:'Entries',     icon:'📋' },
+            { p:7, action:'Book physio for post-match recovery session',           impact:'Med',  cat:'Wellness',    icon:'⚕️' },
+          ].map((w, i) => (
+            <div key={i}
+              className="flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all"
+              style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
+                style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>{w.p}</div>
+              <span className="text-lg flex-shrink-0">{w.icon}</span>
+              <div className="flex-1">
+                <p className="text-sm" style={{ color: '#E5E7EB' }}>{w.action}</p>
+                <span className="text-[10px]" style={{ color: '#6B7280' }}>{w.cat}</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                style={{
+                  background: w.impact === 'High' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                  color: w.impact === 'High' ? '#EF4444' : '#F59E0B',
+                }}>{w.impact}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* DAILY TASKS tab */}
-      {dashTab==='dailytasks'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Your task list for today.</p>{[{t:'07:30',l:'AI Morning Briefing',d:true,h:false,c:'Routine'},{t:'08:30',l:'Physio treatment — right shoulder',d:true,h:false,c:'Wellness'},{t:'10:00',l:'Practice — serve patterns',d:false,h:false,c:'Training'},{t:'11:45',l:'Stringing with Carlos (2x Wilson)',d:false,h:false,c:'Equipment'},{t:'13:00',l:'Match vs C. Martinez — Court 4',d:false,h:true,c:'Match'},{t:'15:30',l:'Post-match physio recovery',d:false,h:false,c:'Wellness'},{t:'17:00',l:'Coach debrief with Carlos',d:false,h:false,c:'Coaching'},{t:'18:30',l:'Sponsor content post — Lululemon',d:false,h:false,c:'Commercial'},{t:'20:00',l:'Nutrition check-in with dietitian',d:false,h:false,c:'Wellness'}].map((tk,idx)=><div key={idx} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${tk.h?'bg-[#0ea5e9]/10 border-[#0ea5e9]/30':tk.d?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}><div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${tk.d?'bg-green-500 border-green-500':tk.h?'border-[#0ea5e9]':'border-gray-600'}`}>{tk.d&&<span className="text-[9px] text-white font-bold">✓</span>}</div><span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{tk.t}</span><span className={`text-sm flex-1 ${tk.d?'line-through text-gray-600':tk.h?'text-[#0ea5e9] font-semibold':'text-gray-200'}`}>{tk.l}</span><span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{tk.c}</span></div>)}</div>}
+      {/* DAILY TASKS TAB */}
+      {dashTab === 'dailytasks' && (
+        <div className="pt-4 space-y-2">
+          {[
+            { time:'07:30', task:'AI Morning Briefing',              done:true,  cat:'Routine',    highlight:false },
+            { time:'08:30', task:'Physio treatment — right shoulder',done:true,  cat:'Wellness',   highlight:false },
+            { time:'10:00', task:'Practice session — serve patterns', done:false, cat:'Training',   highlight:false },
+            { time:'11:45', task:'Stringing with Carlos (2x Wilson)', done:false, cat:'Equipment',  highlight:false },
+            { time:'13:00', task:'Match vs C. Martinez — Court 4',   done:false, cat:'Match',      highlight:true  },
+            { time:'15:30', task:'Post-match physio recovery',        done:false, cat:'Wellness',   highlight:false },
+            { time:'17:00', task:'Coach debrief with Carlos',         done:false, cat:'Coaching',   highlight:false },
+            { time:'18:30', task:'Sponsor content post — Lululemon',  done:false, cat:'Commercial', highlight:false },
+          ].map((t, i) => (
+            <div key={i}
+              className="flex items-center gap-4 rounded-xl p-4 border transition-all"
+              style={{
+                backgroundColor: t.highlight ? 'rgba(14,165,233,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318',
+                borderColor: t.highlight ? 'rgba(14,165,233,0.3)' : '#1F2937',
+                opacity: t.done ? 0.6 : 1,
+              }}>
+              <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                style={{
+                  borderColor: t.done ? '#22C55E' : t.highlight ? '#0ea5e9' : '#374151',
+                  background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent',
+                }}>
+                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+              </div>
+              <span className="text-[10px] w-10 flex-shrink-0" style={{ color: '#6B7280' }}>{t.time}</span>
+              <div className="flex-1">
+                <span className="text-sm"
+                  style={{
+                    color: t.done ? '#4B5563' : t.highlight ? '#0ea5e9' : '#D1D5DB',
+                    textDecoration: t.done ? 'line-through' : 'none',
+                    fontWeight: t.highlight ? 600 : 400,
+                  }}>{t.task}</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.cat}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* INSIGHTS tab */}
-      {dashTab==='insights'&&<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[{title:'Ranking trajectory',value:'#67 → #58',sub:'If you win Monte-Carlo',color:'#0ea5e9',icon:'📈'},{title:'Points expiring soon',value:'312 pts',sub:'After Monte-Carlo (this week)',color:'#EF4444',icon:'⚠️'},{title:'Clay win rate',value:'68%',sub:'Above ATP tour avg (61%)',color:'#22C55E',icon:'🏟️'},{title:'Season prize money',value:'£387k',sub:'Ahead of projection (+12%)',color:'#F59E0B',icon:'💰'},{title:'Serve % (last 5)',value:'64%',sub:'↑ from 58% season avg',color:'#8B5CF6',icon:'🎾'},{title:'Sponsor obligations',value:'2 due',sub:'This week — Lululemon + Nike',color:'#EC4899',icon:'🤝'}].map((ins,idx)=><div key={idx} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4"><div className="text-2xl flex-shrink-0">{ins.icon}</div><div className="flex-1"><div className="text-xs text-gray-500 mb-1">{ins.title}</div><div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div><div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div></div></div>)}</div>}
+      {/* INSIGHTS TAB */}
+      {dashTab === 'insights' && (
+        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { title:'Ranking trajectory',   value:'#67 → #58', sub:'If you win Monte-Carlo',        color:'#0ea5e9', icon:'📈' },
+            { title:'Points expiring soon', value:'312 pts',   sub:'After Monte-Carlo (this week)', color:'#EF4444', icon:'⚠️' },
+            { title:'Clay win rate',        value:'68%',       sub:'Above ATP tour avg (61%)',       color:'#22C55E', icon:'🏟️' },
+            { title:'Season prize money',   value:'£387k',     sub:'Ahead of projection (+12%)',    color:'#F59E0B', icon:'💰' },
+            { title:'Serve % (last 5)',     value:'64%',       sub:'↑ from 58% season avg',         color:'#8B5CF6', icon:'🎾' },
+            { title:'Sponsor obligations',  value:'2 due',     sub:'This week — Lululemon + Nike',  color:'#EC4899', icon:'🤝' },
+          ].map((ins, i) => (
+            <div key={i} className="flex items-start gap-4 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
+              <div className="flex-1">
+                <div className="text-xs mb-1" style={{ color: '#6B7280' }}>{ins.title}</div>
+                <div className="text-2xl font-black" style={{ color: ins.color }}>{ins.value}</div>
+                <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>{ins.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* DON'T MISS tab */}
-      {dashTab==='dontmiss'&&<div className="space-y-3"><p className="text-xs text-gray-500 mb-4">Time-sensitive — act today.</p>{[{u:'TODAY',item:'Match vs C. Martinez — 13:00 Court 4. Monte-Carlo QF.',color:'#0ea5e9'},{u:'TODAY',item:'Lululemon sponsor post due today — kit photo needed before 12:00.',color:'#EF4444'},{u:'THIS WEEK',item:'Rolex renewal content — 2 posts outstanding. Agent chasing.',color:'#F59E0B'},{u:'THIS WEEK',item:'Madrid flights — prices increasing daily. Depart 26 Apr needed.',color:'#F59E0B'},{u:'47 DAYS',item:'Rolex sponsorship renewal deadline. Agent meeting needed this month.',color:'#8B5CF6'},{u:'3 MAY',item:'Roland-Garros entry deadline. Direct acceptance confirmed — admin to submit.',color:'#6B7280'}].map((d,idx)=><div key={idx} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4"><span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.u==='TODAY'?'bg-red-600/20 text-red-400':d.u==='THIS WEEK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.u}</span><p className="text-sm text-gray-200 flex-1">{d.item}</p></div>)}</div>}
+      {/* DON'T MISS TAB */}
+      {dashTab === 'dontmiss' && (
+        <div className="pt-4 space-y-3">
+          {[
+            { urgency:'TODAY',    item:'Match vs C. Martinez — 13:00 Court 4. Monte-Carlo QF.',           action:'View match prep →', color:'#0ea5e9' },
+            { urgency:'TODAY',    item:'Lululemon sponsor post due — Carlos needs kit photo before 12:00.',action:'Open brief →',      color:'#EF4444' },
+            { urgency:'THIS WEEK',item:'Rolex renewal content — 2 posts outstanding. Agent chasing.',     action:'Review obligation →',color:'#F59E0B'},
+            { urgency:'THIS WEEK',item:'Madrid flights — prices increasing daily. Depart 26 Apr.',        action:'Search flights →',   color:'#F59E0B' },
+            { urgency:'47 DAYS',  item:'Rolex sponsorship renewal deadline. Agent meeting needed.',        action:'View contract →',    color:'#8B5CF6' },
+            { urgency:'3 MAY',    item:'Roland-Garros entry deadline. Direct acceptance — admin to submit.',action:'Check entry →',    color:'#6B7280' },
+          ].map((d, i) => (
+            <div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5"
+                style={{
+                  background: d.urgency === 'TODAY' ? 'rgba(239,68,68,0.12)' : d.urgency === 'THIS WEEK' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)',
+                  color: d.urgency === 'TODAY' ? '#EF4444' : d.urgency === 'THIS WEEK' ? '#F59E0B' : '#6B7280',
+                }}>{d.urgency}</span>
+              <div className="flex-1">
+                <p className="text-sm mb-1" style={{ color: '#E5E7EB' }}>{d.item}</p>
+                <button className="text-[10px] font-semibold" style={{ color: d.color }}>{d.action}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* TEAM tab */}
-      {dashTab==='team'&&<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[{name:'Carlos Mendez',role:'Head Coach',status:'Debrief requested — 17:00 today',av:true,ph:'CM'},{name:'Dr Sarah Lee',role:'Physiotherapist',status:'Treatment complete — shoulder OK',av:true,ph:'SL'},{name:'James Wright',role:'Agent',status:'3 sponsor inquiries pending',av:true,ph:'JW'},{name:'Petra Novak',role:'Nutritionist',status:'Clay season plan updated',av:true,ph:'PN'},{name:'Marcos Silva',role:'Sports Psychologist',status:'Session Thursday 14:00',av:false,ph:'MS'},{name:'Tom Ellis',role:'Stringer',status:'11:45 appointment confirmed',av:true,ph:'TE'}].map((m,idx)=><div key={idx} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4"><div className="w-10 h-10 rounded-full bg-[#0ea5e9]/20 border border-[#0ea5e9]/30 flex items-center justify-center text-xs font-bold text-[#0ea5e9] flex-shrink-0">{m.ph}</div><div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white">{m.name}</div><div className="text-[10px] text-[#0ea5e9]">{m.role}</div><div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div></div><div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.av?'bg-green-400':'bg-gray-600'}`}/></div>)}</div>}
+      {/* TEAM TAB */}
+      {dashTab === 'team' && (
+        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { name:'Carlos Mendez',   role:'Head Coach',          status:'Debrief requested — 17:00 today',  available:true,  initials:'CM' },
+            { name:'Dr Sarah Lee',    role:'Physiotherapist',     status:'Treatment complete — shoulder OK',  available:true,  initials:'SL' },
+            { name:'James Wright',    role:'Agent',               status:'3 sponsor inquiries pending',       available:true,  initials:'JW' },
+            { name:'Petra Novak',     role:'Nutritionist',        status:'Clay season plan updated',          available:true,  initials:'PN' },
+            { name:'Marcos Silva',    role:'Sports Psychologist', status:'Session Thursday 14:00',            available:false, initials:'MS' },
+            { name:'Tom Ellis',       role:'Stringer',            status:'11:45 appointment confirmed',       available:true,  initials:'TE' },
+          ].map((m, i) => (
+            <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
+                {m.initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white">{m.name}</div>
+                <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
+                <div className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.status}</div>
+              </div>
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? '#22C55E' : '#374151' }} />
+            </div>
+          ))}
+        </div>
+      )}
 
+      {/* AI Department Intelligence */}
       <TennisAISection context="dashboard" player={player} session={session} />
     </div>
   )
@@ -5024,7 +5332,7 @@ function SettingsView({ player, session }: { player: TennisPlayer; session: Spor
 }
 
 // ─── PLAYER PROFILE CARD (ENHANCED) ──────────────────────────────────────────
-function PlayerCard({ player }: { player: TennisPlayer }) {
+function PlayerCard({ player, session }: { player: TennisPlayer; session?: SportsDemoSession }) {
   const surfaceWinPct = [
     { surface: 'Clay', pct: 58, color: 'bg-orange-500' },
     { surface: 'Hard', pct: 65, color: 'bg-blue-500' },
@@ -5051,17 +5359,22 @@ function PlayerCard({ player }: { player: TennisPlayer }) {
             <div className="text-[9px] text-gray-500 font-medium uppercase tracking-wider">Doubles</div>
           </div>
         </div>
-        {/* Player photo placeholder */}
-        <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center text-5xl"
+        {/* Player photo */}
+        <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden"
           style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2) 0%, rgba(13,148,136,0.2) 100%)', border: '1px solid rgba(108,63,197,0.3)' }}>
-          {player.flag}
+          {session?.photoDataUrl
+            ? <img src={session.photoDataUrl} alt={session.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} />
+            : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>
+                {(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}
+              </div>
+          }
         </div>
         {/* Name */}
         <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
-          {player.name.split(' ')[0]}
+          {(session?.userName || player.name).split(' ')[0]}
         </div>
         <div className="text-purple-300 font-bold text-xs uppercase tracking-widest text-center mb-2">
-          {player.name.split(' ').slice(1).join(' ')}
+          {(session?.userName || player.name).split(' ').slice(1).join(' ')}
         </div>
 
         {/* Surface Win % bars */}
@@ -6659,18 +6972,23 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`}
         style={{ background: '#0a0c14' }}>
         {/* Sidebar Header */}
-        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ background: 'linear-gradient(90deg, #8B5CF6, #22D3EE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                LUMIO TOUR
-              </div>
-              <div className="text-[10px] text-gray-600">Tennis</div>
-            </div>
-          )}
-          {sidebarCollapsed && <span className="text-lg mx-auto">🎾</span>}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600 hover:text-gray-400 text-xs ml-auto flex-shrink-0">
-            {sidebarCollapsed ? '>' : '<'}
+        <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            {session.logoDataUrl
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+                  style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                  🎾
+                </div>
+            }
+            {!sidebarCollapsed && (
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#4B5563' }}>
+                Lumio Tennis
+              </span>
+            )}
+          </div>
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-xs ml-auto" style={{ color: '#4B5563' }}>
+            {sidebarCollapsed ? '→' : '←'}
           </button>
         </div>
 
@@ -6741,6 +7059,9 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             <div className="text-xs text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
           </div>
         )}
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
+          <div className="text-xs font-bold tracking-widest" style={{ color: '#4B5563' }}>LUMIO TENNIS</div>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -6753,8 +7074,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
               {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon} {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.label}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-600">Monte-Carlo . Clay . Live</div>
+          <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
             <div className="text-xs text-gray-500">ATP Monte-Carlo Masters</div>
           </div>
@@ -6771,7 +7091,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           {/* Player Card Column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0"
             style={{ width: '220px' }}>
-            <PlayerCard player={player} />
+            <PlayerCard player={player} session={session} />
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Live Match</div>
               <div className="text-xs text-teal-400 font-medium">In Progress</div>
