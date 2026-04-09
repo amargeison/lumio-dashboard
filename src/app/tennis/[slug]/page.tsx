@@ -53,48 +53,30 @@ interface TennisPlayer {
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
-  { id: 'morning',      label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
-  { id: 'rankings',     label: 'Rankings & Race',     icon: '📊', group: 'PERFORMANCE' },
-  { id: 'forecaster',   label: 'Points Forecaster',   icon: '🔮', group: 'PERFORMANCE' },
-  { id: 'entries',       label: 'Entry Manager',       icon: '📋', group: 'PERFORMANCE' },
-  { id: 'schedule',     label: 'Tournament Sched',    icon: '🗓️', group: 'PERFORMANCE' },
-  { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'PERFORMANCE' },
-  { id: 'scout',       label: 'Opponent Scout',      icon: '🔍', group: 'PERFORMANCE' },
-  { id: 'surface',     label: 'Surface Analysis',    icon: '🏟️', group: 'PERFORMANCE' },
-  { id: 'gps',         label: 'GPS & Court Heatmap', icon: '📡', group: 'PERFORMANCE' },
-  { id: 'draw',        label: 'Draw & Bracket',      icon: '🏆', group: 'PERFORMANCE' },
-  { id: 'performance',  label: 'Performance Stats',   icon: '📈', group: 'PERFORMANCE' },
-  { id: 'matchprep',    label: 'Match Prep',          icon: '🎯', group: 'PERFORMANCE' },
-  { id: 'matchreports', label: 'Match Reports',        icon: '📄', group: 'PERFORMANCE' },
-  { id: 'practice',     label: 'Practice Log',        icon: '📝', group: 'PERFORMANCE' },
-  { id: 'video',        label: 'Video Library',       icon: '🎬', group: 'PERFORMANCE' },
-  { id: 'shotheatmaps', label: 'Shot Heatmaps',       icon: '🔥', group: 'PERFORMANCE' },
-  { id: 'perfrating',   label: 'Performance Rating',  icon: '⭐', group: 'PERFORMANCE' },
-  { id: 'pressure',     label: 'Pressure Analysis',   icon: '🔥', group: 'PERFORMANCE' },
-  { id: 'acetracker',   label: 'Ace Tracker',         icon: '🎯', group: 'PERFORMANCE' },
-  { id: 'team',         label: 'Team Hub',            icon: '👥', group: 'TEAM' },
-  { id: 'physio',       label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM' },
-  { id: 'nutrition',    label: 'Nutrition & Conditioning', icon: '🥗', group: 'TEAM' },
-  { id: 'racket',       label: 'Racket & Strings',    icon: '🎾', group: 'TEAM' },
-  { id: 'partners',     label: 'Playing Partners',    icon: '🤜', group: 'TEAM' },
-  { id: 'doubles',      label: 'Doubles',             icon: '🎭', group: 'TEAM' },
-  { id: 'sponsorship',  label: 'Sponsorship',         icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
-  { id: 'financial',    label: 'Financial Dash',      icon: '💰', group: 'COMMERCIAL' },
-  { id: 'prizeforecast',label: 'Prize Forecaster',    icon: '💵', group: 'COMMERCIAL' },
-  { id: 'exhibition',   label: 'Exhibitions',         icon: '🎪', group: 'COMMERCIAL' },
-  { id: 'pipeline',     label: 'Agent Pipeline',      icon: '📋', group: 'COMMERCIAL' },
-  { id: 'travel',       label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
-  { id: 'federation',   label: 'Federation',          icon: '🏛️', group: 'OPERATIONS' },
-  { id: 'datahub',      label: 'Data Hub',             icon: '🔌', group: 'OPERATIONS' },
-  { id: 'career',       label: 'Career Planning',     icon: '🚀', group: 'OPERATIONS' },
-  { id: 'academy',      label: 'Academy & Dev',       icon: '🎓', group: 'OPERATIONS' },
-  { id: 'mental',       label: 'Mental Performance',  icon: '🧠', group: 'OPERATIONS' },
-  { id: 'courtbooking', label: 'Court Booking',        icon: '🏟️', group: 'OPERATIONS' },
-  { id: 'teamcomms',    label: 'Team Comms',           icon: '💬', group: 'OPERATIONS' },
-  { id: 'accreditations',label: 'Accreditations',      icon: '🪪', group: 'OPERATIONS' },
-  { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
+  { id: 'dashboard',   label: 'Dashboard',          icon: '🏠', group: 'OVERVIEW'     },
+  { id: 'morning',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW'     },
+  { id: 'performance', label: 'Performance',         icon: '📊', group: 'PERFORMANCE'  },
+  { id: 'schedule',    label: 'Tournament Schedule', icon: '🗓️', group: 'MATCH'        },
+  { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'MATCH'        },
+  { id: 'matchprep',   label: 'Match Prep',          icon: '🎯', group: 'MATCH'        },
+  { id: 'scout',       label: 'Opponent Scout',      icon: '🔍', group: 'MATCH'        },
+  { id: 'draw',        label: 'Draw & Bracket',      icon: '🏆', group: 'MATCH'        },
+  { id: 'team',        label: 'Team Hub',            icon: '👥', group: 'TEAM'         },
+  { id: 'physio',      label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM'         },
+  { id: 'nutrition',   label: 'Nutrition',           icon: '🥗', group: 'TEAM'         },
+  { id: 'racket',      label: 'Racket & Strings',    icon: '🎾', group: 'TEAM'         },
+  { id: 'mental',      label: 'Mental Performance',  icon: '🧠', group: 'TEAM'         },
+  { id: 'travel',      label: 'Travel & Logistics',  icon: '✈️', group: 'TEAM'         },
+  { id: 'sponsorship', label: 'Sponsorship',         icon: '🤝', group: 'COMMERCIAL'   },
+  { id: 'financial',   label: 'Financial',           icon: '💰', group: 'COMMERCIAL'   },
+  { id: 'media',       label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL'   },
+  { id: 'exhibition',  label: 'Exhibitions',         icon: '🎪', group: 'COMMERCIAL'   },
+  { id: 'pipeline',    label: 'Agent Pipeline',      icon: '📋', group: 'COMMERCIAL'   },
+  { id: 'entries',     label: 'Entry Manager',       icon: '📋', group: 'TOOLS'        },
+  { id: 'career',      label: 'Career Planning',     icon: '🚀', group: 'TOOLS'        },
+  { id: 'academy',     label: 'Academy & Dev',       icon: '🎓', group: 'TOOLS'        },
+  { id: 'datahub',     label: 'Data Hub',            icon: '🔌', group: 'TOOLS'        },
+  { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'TOOLS'        },
 ];
 
 // ─── DEMO PLAYER DATA ─────────────────────────────────────────────────────────
@@ -6060,7 +6042,7 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
     }
   }, [activeSection]);
 
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
 
 // ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
@@ -6408,50 +6390,83 @@ function DataHubView() {
   );
 }
 
+  // ── Consolidated Performance Tabs ──
+  const PerformanceTabsView = () => {
+    const [perfTab, setPerfTab] = useState('rankings')
+    const perfTabs = [
+      { id: 'rankings',    label: 'Rankings & Race',    icon: '📊' },
+      { id: 'forecaster',  label: 'Points Forecaster',  icon: '🔮' },
+      { id: 'surface',     label: 'Surface Analysis',   icon: '🏟️' },
+      { id: 'stats',       label: 'Match Stats',        icon: '📈' },
+      { id: 'matchreports',label: 'Match Reports',      icon: '📄' },
+      { id: 'practice',    label: 'Practice Log',       icon: '📝' },
+      { id: 'video',       label: 'Video Library',      icon: '🎬' },
+      { id: 'heatmaps',    label: 'Shot Heatmaps',      icon: '🔥' },
+      { id: 'rating',      label: 'Performance Rating', icon: '⭐' },
+      { id: 'pressure',    label: 'Pressure Analysis',  icon: '💥' },
+      { id: 'ace',         label: 'Ace Tracker',        icon: '🎯' },
+      { id: 'gps',         label: 'GPS & Court',        icon: '📡' },
+    ]
+    const renderPerfTab = () => {
+      switch (perfTab) {
+        case 'rankings':     return <RankingsView player={player} />
+        case 'forecaster':   return <PointsForecasterView player={player} />
+        case 'surface':      return <SurfaceAnalysisView player={player} />
+        case 'stats':        return <PerformanceView player={player} />
+        case 'matchreports': return <MatchReportsView />
+        case 'practice':     return <PracticeLogView />
+        case 'video':        return <VideoLibraryView />
+        case 'heatmaps':     return <ShotHeatmapsView />
+        case 'rating':       return <PerformanceRatingView />
+        case 'pressure':     return <PressureAnalysisView player={player} />
+        case 'ace':          return <AceTrackerView player={player} />
+        case 'gps':          return <GPSCourtView player={player} />
+        default:             return <RankingsView player={player} />
+      }
+    }
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-1 border-b border-gray-800 overflow-x-auto pb-0">
+          {perfTabs.map(t => (
+            <button key={t.id} onClick={() => setPerfTab(t.id)}
+              className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${
+                perfTab === t.id ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'
+              }`}>
+              <span>{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
+        {renderPerfTab()}
+      </div>
+    )
+  }
+
   const renderView = () => {
     switch (activeSection) {
       case 'dashboard':    return <DashboardView player={player} setActiveSection={setActiveSection} />;
       case 'morning':      return <MorningBriefingView player={player} />;
-      case 'rankings':     return <RankingsView player={player} />;
-      case 'forecaster':   return <PointsForecasterView player={player} />;
-      case 'entries':      return <EntryManagerView />;
+      case 'performance':  return <PerformanceTabsView />;
       case 'schedule':     return <ScheduleView />;
-      case 'performance':  return <PerformanceView player={player} />;
+      case 'livescores':   return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
       case 'matchprep':    return <MatchPrepView />;
-      case 'matchreports': return <MatchReportsView />;
-      case 'practice':     return <PracticeLogView />;
-      case 'video':        return <VideoLibraryView />;
-      case 'shotheatmaps': return <ShotHeatmapsView />;
-      case 'perfrating':   return <PerformanceRatingView />;
+      case 'scout':        return <OpponentScoutView h2hData={h2hData} />;
+      case 'draw':         return <DrawBracketView />;
       case 'team':         return <TeamHubView player={player} />;
       case 'physio':       return <PhysioView />;
       case 'nutrition':    return <NutritionView player={player} />;
-      case 'pressure':     return <PressureAnalysisView player={player} />;
-      case 'acetracker':   return <AceTrackerView player={player} />;
       case 'racket':       return <RacketView />;
-      case 'partners':     return <PlayingPartnersView />;
-      case 'doubles':      return <DoublesView player={player} />;
+      case 'mental':       return <MentalPerformanceView />;
+      case 'travel':       return <TravelView />;
       case 'sponsorship':  return <SponsorshipView />;
-      case 'media':        return <MediaView />;
       case 'financial':    return <FinancialView />;
-      case 'prizeforecast': return <PrizeForecasterView player={player} />;
+      case 'media':        return <MediaView />;
       case 'exhibition':   return <ExhibitionView />;
       case 'pipeline':     return <AgentPipelineView />;
-      case 'travel':       return <TravelView />;
-      case 'federation':   return <FederationView />;
-      case 'datahub':      return <DataHubView />;
+      case 'entries':      return <EntryManagerView />;
       case 'career':       return <CareerView player={player} />;
       case 'academy':      return <AcademyView />;
-      case 'mental':       return <MentalPerformanceView />;
-      case 'courtbooking': return <CourtBookingView />;
-      case 'teamcomms':    return <TeamCommsView />;
-      case 'accreditations': return <AccreditationsView />;
+      case 'datahub':      return <DataHubView />;
       case 'settings':     return <SettingsView player={player} />;
-      case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
-      case 'scout':       return <OpponentScoutView h2hData={h2hData} />;
-      case 'surface':     return <SurfaceAnalysisView player={player} />;
-      case 'gps':         return <GPSCourtView player={player} />;
-      case 'draw':        return <DrawBracketView />;
       default:             return <DashboardView player={player} setActiveSection={setActiveSection} />;
     }
   };
